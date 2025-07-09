@@ -20,7 +20,7 @@ class AIOrchestrator:
         orkes_clients = OrkesClients(api_configuration)
 
         self.integration_client = orkes_clients.get_integration_client()
-        self.workflow_client = orkes_clients.get_integration_client()
+        self.workflow_client = orkes_clients.get_workflow_client()
         self.workflow_executor = orkes_clients.get_workflow_executor()
         self.prompt_client = orkes_clients.get_prompt_client()
 
