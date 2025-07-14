@@ -74,10 +74,11 @@ class ApiClient(object):
                 _preload_content=_preload_content, _request_timeout=_request_timeout
             )
         except AuthorizationException as ae:
-            if ae.token_expired:
+            if ae.token_expired or ae.invalid_token:
+                token_status = "expired" if ae.token_expired else "invalid"
                 logger.warning(
-                    f'authentication token has expired, refreshing the token.  request= {method} {resource_path}')
-                # if the token has expired, lets refresh the token
+                    f'authentication token is {token_status}, refreshing the token.  request= {method} {resource_path}')
+                # if the token has expired or is invalid, lets refresh the token
                 self.__force_refresh_auth_token()
                 # and now retry the same request
                 return self.__call_api_no_retry(
@@ -87,20 +88,7 @@ class ApiClient(object):
                     _return_http_data_only=_return_http_data_only, collection_formats=collection_formats,
                     _preload_content=_preload_content, _request_timeout=_request_timeout
                 )
-            elif ae.invalid_token:
-                logger.warning(
-                    f'authentication token is invalid, refreshing the token.  request= {method} {resource_path}')
-                # if the token is invalid, lets refresh the token
-                self.__force_refresh_auth_token()
-                # and now retry the same request
-                return self.__call_api_no_retry(
-                    resource_path=resource_path, method=method, path_params=path_params,
-                    query_params=query_params, header_params=header_params, body=body, post_params=post_params,
-                    files=files, response_type=response_type, auth_settings=auth_settings,
-                    _return_http_data_only=_return_http_data_only, collection_formats=collection_formats,
-                    _preload_content=_preload_content, _request_timeout=_request_timeout
-                )
-            raise  ae
+            raise ae
 
     def __call_api_no_retry(
             self, resource_path, method, path_params=None,
