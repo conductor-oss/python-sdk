@@ -75,9 +75,22 @@ class ApiClient(object):
             )
         except AuthorizationException as ae:
             if ae.token_expired:
-                logger.error(
+                logger.warning(
                     f'authentication token has expired, refreshing the token.  request= {method} {resource_path}')
                 # if the token has expired, lets refresh the token
+                self.__force_refresh_auth_token()
+                # and now retry the same request
+                return self.__call_api_no_retry(
+                    resource_path=resource_path, method=method, path_params=path_params,
+                    query_params=query_params, header_params=header_params, body=body, post_params=post_params,
+                    files=files, response_type=response_type, auth_settings=auth_settings,
+                    _return_http_data_only=_return_http_data_only, collection_formats=collection_formats,
+                    _preload_content=_preload_content, _request_timeout=_request_timeout
+                )
+            elif ae.invalid_token:
+                logger.warning(
+                    f'authentication token is invalid, refreshing the token.  request= {method} {resource_path}')
+                # if the token is invalid, lets refresh the token
                 self.__force_refresh_auth_token()
                 # and now retry the same request
                 return self.__call_api_no_retry(
@@ -266,7 +279,7 @@ class ApiClient(object):
         if data is None:
             return None
 
-        if type(klass) == str:
+        if isinstance(klass, str):
             if klass.startswith('list['):
                 sub_kls = re.match(r'list\[(.*)\]', klass).group(1)
                 return [self.__deserialize(sub_data, sub_kls)
@@ -290,7 +303,7 @@ class ApiClient(object):
 
         if klass in self.PRIMITIVE_TYPES:
             return self.__deserialize_primitive(data, klass)
-        elif klass == object:
+        elif klass is object:
             return self.__deserialize_object(data)
         elif klass == datetime.date:
             return self.__deserialize_date(data)
@@ -567,7 +580,7 @@ class ApiClient(object):
         :return: int, long, float, str, bool.
         """
         try:
-            if klass == str and type(data) == bytes:
+            if klass is str and isinstance(data, bytes):
                 return self.__deserialize_bytes_to_str(data)
             return klass(data)
         except UnicodeEncodeError:
@@ -669,7 +682,7 @@ class ApiClient(object):
 
         if time_since_last_update > self.configuration.auth_token_ttl_msec:
             # time to refresh the token
-            logger.debug(f'refreshing authentication token')
+            logger.debug('refreshing authentication token')
             token = self.__get_new_token()
             self.configuration.update_token(token)
 
@@ -699,9 +712,10 @@ class ApiClient(object):
     def __get_new_token(self) -> str:
         try:
             if self.configuration.authentication_settings.key_id is None or self.configuration.authentication_settings.key_secret is None:
-                logger.error('Authentication Key or Secret is set.  Failed to get the auth token')
+                logger.error('Authentication Key or Secret is not set. Failed to get the auth token')
                 return None
 
+            logger.debug('Requesting new authentication token from server')
             response = self.call_api(
                 '/token', 'POST',
                 header_params={
