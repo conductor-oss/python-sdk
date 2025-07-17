@@ -4,7 +4,7 @@ FROM python:3.12-alpine AS python_base
 RUN apk add --no-cache tk curl
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH="/root/.local/bin:$PATH"
+ENV PATH "/root/.local/bin:$PATH"
 
 FROM python_base AS python_test_base
 RUN mkdir -p /package
