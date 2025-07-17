@@ -9,4 +9,4 @@ class TestApiClient(unittest.TestCase):
         api_client = ApiClient()
         obj = uuid.uuid4()
         sanitized = api_client.sanitize_for_serialization(obj)
-        self.assertEquals(str(obj), sanitized)
+        self.assertEqual(str(obj), sanitized)
