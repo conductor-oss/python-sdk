@@ -8,7 +8,7 @@ ENV PATH="/root/.local/bin:$PATH"
 
 FROM python_base as python_test_base
 RUN mkdir -p /package
-COPY pyproject.toml poetry.lock README.md /package/
+COPY pyproject.toml poetry.lock /package/
 WORKDIR /package
 
 RUN poetry config virtualenvs.create false && \
