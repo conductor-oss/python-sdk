@@ -1,12 +1,12 @@
 ARG SDK_ORIGIN=no_sdk
 
-FROM python:3.12-alpine as python_base
+FROM python:3.12-alpine AS python_base
 RUN apk add --no-cache tk curl
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH="/root/.local/bin:$PATH"
+ENV PATH "/root/.local/bin:$PATH"
 
-FROM python_base as python_test_base
+FROM python_base AS python_test_base
 RUN mkdir -p /package
 COPY pyproject.toml poetry.lock /package/
 WORKDIR /package
@@ -19,35 +19,34 @@ ENV PYTHONPATH /package/src:/package/tests
 
 RUN poetry install --no-interaction --no-ansi
 
-FROM python_test_base as unit_test
+FROM python_test_base AS unit_test
 ARG CONDUCTOR_AUTH_KEY
 ARG CONDUCTOR_AUTH_SECRET
 ARG CONDUCTOR_SERVER_URL
-ENV CONDUCTOR_AUTH_KEY=${CONDUCTOR_AUTH_KEY}
-ENV CONDUCTOR_AUTH_SECRET=${CONDUCTOR_AUTH_SECRET}
-ENV CONDUCTOR_SERVER_URL=${CONDUCTOR_SERVER_URL}
-RUN ls -ltr
+ENV CONDUCTOR_AUTH_KEY ${CONDUCTOR_AUTH_KEY}
+ENV CONDUCTOR_AUTH_SECRET ${CONDUCTOR_AUTH_SECRET}
+ENV CONDUCTOR_SERVER_URL ${CONDUCTOR_SERVER_URL}
 RUN python3 -m unittest discover --verbose --start-directory=./tests/unit
 RUN python3 -m unittest discover --verbose --start-directory=./tests/backwardcompatibility
 RUN python3 -m unittest discover --verbose --start-directory=./tests/serdesertest
 RUN coverage run --source=./src/conductor/client/orkes -m unittest discover --verbose --start-directory=./tests/integration
 RUN coverage report -m
 
-FROM python_test_base as test
+FROM python_test_base AS test
 ARG CONDUCTOR_AUTH_KEY
 ARG CONDUCTOR_AUTH_SECRET
 ARG CONDUCTOR_SERVER_URL
-ENV CONDUCTOR_AUTH_KEY=${CONDUCTOR_AUTH_KEY}
-ENV CONDUCTOR_AUTH_SECRET=${CONDUCTOR_AUTH_SECRET}
-ENV CONDUCTOR_SERVER_URL=${CONDUCTOR_SERVER_URL}
+ENV CONDUCTOR_AUTH_KEY ${CONDUCTOR_AUTH_KEY}
+ENV CONDUCTOR_AUTH_SECRET ${CONDUCTOR_AUTH_SECRET}
+ENV CONDUCTOR_SERVER_URL ${CONDUCTOR_SERVER_URL}
 RUN python3 ./tests/integration/main.py
 
-FROM python:3.12-alpine as publish
+FROM python:3.12-alpine AS publish
 RUN apk add --no-cache tk curl
 WORKDIR /package
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH="/root/.local/bin:$PATH"
+ENV PATH "/root/.local/bin:$PATH"
 
 COPY pyproject.toml poetry.lock /package/
 COPY --from=python_test_base /package/src /package/src
@@ -57,10 +56,9 @@ RUN poetry config virtualenvs.create false && \
     poetry install --no-root --no-interaction --no-ansi
 
 ENV PYTHONPATH /package/src
-RUN ls -ltr
 
 ARG CONDUCTOR_PYTHON_VERSION
-ENV CONDUCTOR_PYTHON_VERSION=${CONDUCTOR_PYTHON_VERSION}
+ENV CONDUCTOR_PYTHON_VERSION ${CONDUCTOR_PYTHON_VERSION}
 RUN poetry build
 ARG PYPI_USER
 ARG PYPI_PASS
