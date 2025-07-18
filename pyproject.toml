@@ -43,12 +43,8 @@ pre-commit = "^4.2.0"
 
 [tool.ruff]
 target-version = "py39"
-
 line-length = 100
-
-# Source directory
 src = ["src"]
-
 extend-exclude = [
     "tests/",
     "examples/",
@@ -57,7 +53,6 @@ extend-exclude = [
     "build",
     "dist",
 ]
-
 fix = false
 show-fixes = true
 
@@ -75,7 +70,6 @@ select = [
     "PGH",
     "RUF",
 ]
-
 ignore = [
     "B008",
     "C901",
