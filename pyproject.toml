@@ -113,7 +113,6 @@ select = [
   # flake8-raise
   "RSE"
 ]
-
 ignore = [
     "B008",
     "C901",
