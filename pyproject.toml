@@ -59,18 +59,60 @@ show-fixes = true
 
 [tool.ruff.lint]
 select = [
-    "E",
-    "W",
-    "F",
-    "I",
-    "B",
+  # pyflakes
+  "F",
+  # pycodestyle
+  "E", "W",
+  # flake8-2020
+  "YTT",
+  # flake8-bugbear
+  "B",
+  # flake8-quotes
+  "Q",
+  # flake8-debugger
+  "T10",
+  # flake8-gettext
+  "INT",
+  # pylint
+  "PL",
+  # flake8-pytest-style
+  "PT",
+  # misc lints
+  "PIE",
+  # flake8-pyi
+  "PYI",
+  # tidy imports
+  "TID",
+  # implicit string concatenation
+  "ISC",
+  # flake8-type-checking
+  "TC",
+  # comprehensions
     "C4",
-    "UP",
-    "SIM",
-    "PIE",
+  # pygrep-hooks
     "PGH",
+  # Ruff-specific rules
     "RUF",
+  # flake8-bandit: exec-builtin
+  "S102",
+  # numpy-legacy-random
+  "NPY002",
+  # Perflint
+  "PERF",
+  # flynt
+  "FLY",
+  # flake8-logging-format
+  "G",
+  # flake8-future-annotations
+  "FA",
+  # unconventional-import-alias
+  "ICN001",
+  # flake8-slots
+  "SLOT",
+  # flake8-raise
+  "RSE"
 ]
+
 ignore = [
     "B008",
     "C901",
@@ -95,5 +137,6 @@ line-ending = "auto"
 
 [tool.ruff.lint.per-file-ignores]
 "src/conductor/client/http/**/*.py" = ["ALL"]
+"src/conductor/client/orkes/api/*.py" = ["ALL"]
 "tests/**/*.py" = ["B", "C4", "SIM"]
 "examples/**/*.py" = ["B", "C4", "SIM"]
