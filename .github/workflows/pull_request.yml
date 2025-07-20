@@ -39,7 +39,7 @@ jobs:
             -e CONDUCTOR_SERVER_URL=${{ secrets.CONDUCTOR_SERVER_URL }} \
             -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
             conductor-sdk-test:latest \
-            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.unit coverage run --source=src/conductor -m pytest discover --verbose --start-directory=./tests/unit"
+            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.unit coverage run -m pytest tests/unit -v"
 
       - name: Run backward compatibility tests
         id: bc_tests
@@ -51,7 +51,7 @@ jobs:
             -e CONDUCTOR_SERVER_URL=${{ secrets.CONDUCTOR_SERVER_URL }} \
             -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
             conductor-sdk-test:latest \
-            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.bc coverage run --source=src/conductor -m pytest discover --verbose --start-directory=./tests/backwardcompatibility"
+            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.bc coverage run -m pytest tests/backwardcompatibility -v"
 
       - name: Run serdeser tests
         id: serdeser_tests
@@ -63,7 +63,7 @@ jobs:
             -e CONDUCTOR_SERVER_URL=${{ secrets.CONDUCTOR_SERVER_URL }} \
             -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
             conductor-sdk-test:latest \
-            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.serdeser coverage run --source=src/conductor -m pytest discover --verbose --start-directory=./tests/serdesertest"
+            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.serdeser coverage run -m pytest tests/serdesertest -v"
 
       - name: Generate coverage report
         id: coverage_report
