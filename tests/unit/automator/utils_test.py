@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import List
 
 from requests.structures import CaseInsensitiveDict
-from resources.workers import UserInfo
+from tests.unit.resources.workers import UserInfo
 
 from conductor.client.automator.utils import convert_from_dict
 

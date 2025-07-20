@@ -26,10 +26,10 @@ ARG CONDUCTOR_SERVER_URL
 ENV CONDUCTOR_AUTH_KEY ${CONDUCTOR_AUTH_KEY}
 ENV CONDUCTOR_AUTH_SECRET ${CONDUCTOR_AUTH_SECRET}
 ENV CONDUCTOR_SERVER_URL ${CONDUCTOR_SERVER_URL}
-RUN python3 -m unittest discover --verbose --start-directory=./tests/unit
-RUN python3 -m unittest discover --verbose --start-directory=./tests/backwardcompatibility
-RUN python3 -m unittest discover --verbose --start-directory=./tests/serdesertest
-RUN coverage run --source=./src/conductor/client/orkes -m unittest discover --verbose --start-directory=./tests/integration
+RUN pytest tests/unit -v
+RUN pytest tests/backwardcompatibility -v
+RUN pytest tests/serdesertest -v
+RUN coverage run --source=./src/conductor/client/orkes -m pytest tests/integration -v
 RUN coverage report -m
 
 FROM python_test_base AS test

@@ -41,6 +41,7 @@ pytest-cov = ">=4.1.0"
 ruff = "^0.2.0"
 pre-commit = "^4.2.0"
 setuptools = "^80.9.0"
+pytest = "^8.4.1"
 
 [tool.ruff]
 target-version = "py39"
@@ -88,11 +89,11 @@ select = [
   # flake8-type-checking
   "TC",
   # comprehensions
-    "C4",
+  "C4",
   # pygrep-hooks
-    "PGH",
+  "PGH",
   # Ruff-specific rules
-    "RUF",
+  "RUF",
   # flake8-bandit: exec-builtin
   "S102",
   # numpy-legacy-random

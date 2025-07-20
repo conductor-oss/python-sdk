@@ -12,7 +12,7 @@ from conductor.client.worker.worker import Worker
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.simple_task import SimpleTask
-from resources.worker.python.python_worker import *
+from tests.integration.resources.worker.python.python_worker import *
 
 WORKFLOW_NAME = "sdk_python_integration_test_workflow"
 WORKFLOW_DESCRIPTION = "Python SDK Integration Test"
@@ -43,7 +43,7 @@ def run_workflow_execution_tests(configuration: Configuration, workflow_executor
         workers=workers,
         configuration=configuration,
         scan_for_annotated_workers=True,
-        import_modules=['resources.worker.python.python_worker']
+        import_modules=['tests.integration.resources.worker.python.python_worker']
     )
     set_start_method('fork', force=True)
     task_handler.start_processes()
