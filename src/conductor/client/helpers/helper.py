@@ -19,14 +19,14 @@ logger = logging.getLogger(
 class ObjectMapper(object):
     PRIMITIVE_TYPES = (float, bool, bytes, six.text_type) + six.integer_types
     NATIVE_TYPES_MAPPING = {
-        'int': int,
-        'long': int if six.PY3 else long,  # noqa: F821
-        'float': float,
-        'str': str,
-        'bool': bool,
-        'date': datetime.date,
-        'datetime': datetime.datetime,
-        'object': object,
+        "int": int,
+        "long": int if six.PY3 else long,  # noqa: F821
+        "float": float,
+        "str": str,
+        "bool": bool,
+        "date": datetime.date,
+        "datetime": datetime.datetime,
+        "object": object,
     }
 
     def to_json(self, obj):
@@ -46,20 +46,19 @@ class ObjectMapper(object):
 
         if isinstance(obj, dict) or isinstance(obj, CaseInsensitiveDict):
             obj_dict = obj
+        # Convert model obj to dict except
+        # attributes `swagger_types`, `attribute_map`
+        # and attributes which value is not None.
+        # Convert attribute name to json key in
+        # model definition for request.
+        elif hasattr(obj, "attribute_map") and hasattr(obj, "swagger_types"):
+            obj_dict = {obj.attribute_map[attr]: getattr(obj, attr)
+                        for attr, _ in six.iteritems(obj.swagger_types)
+                        if getattr(obj, attr) is not None}
         else:
-            # Convert model obj to dict except
-            # attributes `swagger_types`, `attribute_map`
-            # and attributes which value is not None.
-            # Convert attribute name to json key in
-            # model definition for request.
-            if hasattr(obj, 'attribute_map') and hasattr(obj, 'swagger_types'):
-                obj_dict = {obj.attribute_map[attr]: getattr(obj, attr)
-                            for attr, _ in six.iteritems(obj.swagger_types)
-                            if getattr(obj, attr) is not None}
-            else:
-                obj_dict = {name: getattr(obj, name)
-                            for name in vars(obj)
-                            if getattr(obj, name) is not None}
+            obj_dict = {name: getattr(obj, name)
+                        for name in vars(obj)
+                        if getattr(obj, name) is not None}
 
         return {key: self.to_json(val)
                 for key, val in six.iteritems(obj_dict)}
@@ -72,13 +71,13 @@ class ObjectMapper(object):
             return None
 
         if type(klass) == str:
-            if klass.startswith('list['):
-                sub_kls = re.match(r'list\[(.*)\]', klass).group(1)
+            if klass.startswith("list["):
+                sub_kls = re.match(r"list\[(.*)\]", klass).group(1)
                 return [self.__deserialize(sub_data, sub_kls)
                         for sub_data in data]
 
-            if klass.startswith('dict('):
-                sub_kls = re.match(r'dict\(([^,]*), (.*)\)', klass).group(2)
+            if klass.startswith("dict("):
+                sub_kls = re.match(r"dict\(([^,]*), (.*)\)", klass).group(2)
                 return {k: self.__deserialize(v, sub_kls)
                         for k, v in six.iteritems(data)}
 
@@ -117,7 +116,7 @@ class ObjectMapper(object):
             return data
 
     def __deserialize_bytes_to_str(self, data):
-        return data.decode('utf-8')
+        return data.decode("utf-8")
 
     def __deserialize_object(self, value):
         """Return a original value.
@@ -169,7 +168,7 @@ class ObjectMapper(object):
         return name in object.__class__.__dict__
 
     def __deserialize_model(self, data, klass):
-        if not klass.swagger_types and not self.__hasattr(klass, 'get_real_child_model'):
+        if not klass.swagger_types and not self.__hasattr(klass, "get_real_child_model"):
             return data
 
         kwargs = {}
@@ -189,7 +188,7 @@ class ObjectMapper(object):
             for key, value in data.items():
                 if key not in klass.swagger_types:
                     instance[key] = value
-        if self.__hasattr(instance, 'get_real_child_model'):
+        if self.__hasattr(instance, "get_real_child_model"):
             klass_name = instance.get_real_child_model(data)
             if klass_name:
                 instance = self.__deserialize(data, klass_name)

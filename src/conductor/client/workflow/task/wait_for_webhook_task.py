@@ -34,7 +34,7 @@ class WaitForWebHookTask(TaskInterface, ABC):
             task_reference_name=task_ref_name,
             task_type=TaskType.WAIT_FOR_WEBHOOK
         )
-        self.input_parameters['matches'] = matches
+        self.input_parameters["matches"] = matches
 
 
 def wait_for_webhook(task_ref_name: str, matches: Dict[str, object], task_def_name: str = None) -> TaskInterface:

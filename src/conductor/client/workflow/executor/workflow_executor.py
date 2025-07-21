@@ -23,7 +23,7 @@ class WorkflowExecutor:
         """Create a new workflow definition"""
         kwargs = {}
         if overwrite is not None:
-            kwargs['overwrite'] = overwrite
+            kwargs["overwrite"] = overwrite
         return self.metadata_client.update1(
             body=[workflow], **kwargs
         )
@@ -38,7 +38,7 @@ class WorkflowExecutor:
         """Start multiple instances of workflows.  Note, there is no parallelism implemented in starting so giving a
         very large number can impact the latencies and performance
         """
-        workflow_id_list = [''] * len(start_workflow_request)
+        workflow_id_list = [""] * len(start_workflow_request)
         for i in range(len(start_workflow_request)):
             workflow_id_list[i] = self.start_workflow(
                 start_workflow_request=start_workflow_request[i]
@@ -89,7 +89,7 @@ class WorkflowExecutor:
         request.input = workflow_input
         request.correlation_id = correlation_id
         if domain is not None:
-            request.task_to_domain = {'*': domain}
+            request.task_to_domain = {"*": domain}
 
         return self.workflow_client.execute_workflow(
             start_workflow_request=request,
@@ -102,7 +102,7 @@ class WorkflowExecutor:
         """Removes the workflow permanently from the system"""
         kwargs = {}
         if archive_workflow is not None:
-            kwargs['archive_workflow'] = archive_workflow
+            kwargs["archive_workflow"] = archive_workflow
         return self.workflow_client.delete_workflow(
             workflow_id=workflow_id, **kwargs
         )
@@ -111,7 +111,7 @@ class WorkflowExecutor:
         """Gets the workflow by workflow id"""
         kwargs = {}
         if include_tasks is not None:
-            kwargs['include_tasks'] = include_tasks
+            kwargs["include_tasks"] = include_tasks
         return self.workflow_client.get_workflow(
             workflow_id=workflow_id, **kwargs
         )
@@ -121,9 +121,9 @@ class WorkflowExecutor:
         """Gets the workflow by workflow id"""
         kwargs = {}
         if include_output is not None:
-            kwargs['include_output'] = include_output
+            kwargs["include_output"] = include_output
         if include_variables is not None:
-            kwargs['include_variables'] = include_variables
+            kwargs["include_variables"] = include_variables
         return self.workflow_client.get_workflow_status(
             workflow_id=workflow_id, include_output=include_output, include_variables=include_variables
         )

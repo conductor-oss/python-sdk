@@ -10,7 +10,7 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 def get_join_task(task_reference_name: str) -> str:
-    return task_reference_name + '_join'
+    return task_reference_name + "_join"
 
 
 class ForkTask(TaskInterface):
@@ -39,7 +39,7 @@ class ForkTask(TaskInterface):
             )
         if self._join_on is not None:
             join_on = self._join_on
-            join_task = JoinTask(workflow_task.task_reference_name + '_join', join_on=join_on)
+            join_task = JoinTask(workflow_task.task_reference_name + "_join", join_on=join_on)
             tasks.append(workflow_task)
             tasks.append(join_task.to_workflow_task())
             return tasks

@@ -39,16 +39,16 @@ class LlmChatComplete(TaskInterface):
         input_params.update(optional_input_params)
 
         super().__init__(
-            task_name='llm_chat_complete',
+            task_name="llm_chat_complete",
             task_reference_name=task_ref_name,
             task_type=TaskType.LLM_CHAT_COMPLETE,
             input_parameters=input_params
         )
 
     def prompt_variables(self, variables: Dict[str, object]) -> Self:
-        self.input_parameters['promptVariables'].update(variables)
+        self.input_parameters["promptVariables"].update(variables)
         return self
 
     def prompt_variable(self, variable: str, value: object) -> Self:
-        self.input_parameters['promptVariables'][variable] = value
+        self.input_parameters["promptVariables"][variable] = value
         return self

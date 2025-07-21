@@ -9,7 +9,7 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class DynamicForkTask(TaskInterface):
-    def __init__(self, task_ref_name: str, tasks_param: str = 'dynamicTasks', tasks_input_param_name: str = 'dynamicTasksInputs', join_task: JoinTask = None) -> Self:
+    def __init__(self, task_ref_name: str, tasks_param: str = "dynamicTasks", tasks_input_param_name: str = "dynamicTasksInputs", join_task: JoinTask = None) -> Self:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.FORK_JOIN_DYNAMIC

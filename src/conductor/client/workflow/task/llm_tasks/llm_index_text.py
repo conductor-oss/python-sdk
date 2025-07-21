@@ -23,7 +23,7 @@ class LlmIndexText(TaskInterface):
                  embedding_model: EmbeddingModel, text: str, doc_id: str, namespace: str = None, task_name: str = None,
                  metadata: dict = {}) -> Self:
         if task_name is None:
-            task_name = 'llm_index_doc'
+            task_name = "llm_index_doc"
 
         super().__init__(
             task_name=task_name,
@@ -40,4 +40,4 @@ class LlmIndexText(TaskInterface):
             }
         )
         if namespace is not None:
-            self.input_parameter('namespace', namespace)
+            self.input_parameter("namespace", namespace)

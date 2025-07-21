@@ -13,7 +13,7 @@ class EventTaskInterface(TaskInterface):
             task_reference_name=task_ref_name,
             task_type=TaskType.EVENT
         )
-        self._sink = deepcopy(event_prefix) + ':' + deepcopy(event_suffix)
+        self._sink = deepcopy(event_prefix) + ":" + deepcopy(event_suffix)
 
     def to_workflow_task(self) -> WorkflowTask:
         workflow_task = super().to_workflow_task()
@@ -23,9 +23,9 @@ class EventTaskInterface(TaskInterface):
 
 class SqsEventTask(EventTaskInterface):
     def __init__(self, task_ref_name: str, queue_name: str) -> Self:
-        super().__init__(task_ref_name, 'sqs', queue_name)
+        super().__init__(task_ref_name, "sqs", queue_name)
 
 
 class ConductorEventTask(EventTaskInterface):
     def __init__(self, task_ref_name: str, event_name: str) -> Self:
-        super().__init__(task_ref_name, 'conductor', event_name)
+        super().__init__(task_ref_name, "conductor", event_name)

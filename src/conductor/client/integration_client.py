@@ -35,16 +35,13 @@ class IntegrationClient(ABC):
     @abstractmethod
     def associate_prompt_with_integration(self, ai_integration:str, model_name:str, prompt_name:str):
         """Associate a prompt with an AI integration and model"""
-        pass
 
     @abstractmethod
     def delete_integration_api(self, api_name:str, integration_name:str):
         """Delete a specific integration api for a given integration"""
-        pass
 
     def delete_integration(self, integration_name:str):
         """Delete an integration"""
-        pass
 
     def get_integration_api(self, api_name:str, integration_name:str) -> IntegrationApi:
         pass
@@ -57,7 +54,6 @@ class IntegrationClient(ABC):
 
     def get_integrations(self) -> List[Integration]:
         """Returns the list of all the available integrations"""
-        pass
 
     def get_prompts_with_integration(self, ai_integration:str, model_name:str) -> List[PromptTemplate]:
         pass
@@ -81,7 +77,6 @@ class IntegrationClient(ABC):
 
     def delete_tag_for_integration(self, body, tag_name, integration_name):
         """Delete an integration"""
-        pass
 
     def delete_tag_for_integration_provider(self, body, name):
         pass

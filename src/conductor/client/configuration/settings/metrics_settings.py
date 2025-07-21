@@ -12,14 +12,14 @@ logger = logging.getLogger(
 
 
 def get_default_temporary_folder() -> str:
-    return f'{str(Path.home())}/tmp/'
+    return f"{Path.home()!s}/tmp/"
 
 
 class MetricsSettings:
     def __init__(
             self,
             directory: str = None,
-            file_name: str = 'metrics.log',
+            file_name: str = "metrics.log",
             update_interval: float = 0.1):
         if directory is None:
             directory = get_default_temporary_folder()
@@ -33,5 +33,5 @@ class MetricsSettings:
                 os.mkdir(dir)
             except Exception as e:
                 logger.warning(
-                    'Failed to create metrics temporary folder, reason: ', e)
+                    "Failed to create metrics temporary folder, reason: ", e)
         self.directory = dir

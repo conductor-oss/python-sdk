@@ -16,7 +16,7 @@ from conductor.client.orkes_clients import OrkesClients
 
 
 class AIOrchestrator:
-    def __init__(self, api_configuration: Configuration, prompt_test_workflow_name: str = '') -> Self:
+    def __init__(self, api_configuration: Configuration, prompt_test_workflow_name: str = "") -> Self:
         orkes_clients = OrkesClients(api_configuration)
 
         self.integration_client = orkes_clients.get_integration_client()
@@ -25,8 +25,8 @@ class AIOrchestrator:
         self.prompt_client = orkes_clients.get_prompt_client()
 
         self.prompt_test_workflow_name = prompt_test_workflow_name
-        if self.prompt_test_workflow_name == '':
-            self.prompt_test_workflow_name = 'prompt_test_' + str(uuid4())
+        if self.prompt_test_workflow_name == "":
+            self.prompt_test_workflow_name = "prompt_test_" + str(uuid4())
 
     def add_prompt_template(self, name: str, prompt_template: str, description: str):
         self.prompt_client.save_prompt(name, description, prompt_template)
@@ -59,7 +59,7 @@ class AIOrchestrator:
         details = IntegrationUpdate()
         details.configuration = config.to_dict()
         details.type = provider.value
-        details.category = 'AI_MODEL'
+        details.category = "AI_MODEL"
         details.enabled = True
         details.description = description
         existing_integration = self.integration_client.get_integration(integration_name=ai_integration_name)
@@ -78,7 +78,7 @@ class AIOrchestrator:
         vector_db = IntegrationUpdate()
         vector_db.configuration = config.to_dict()
         vector_db.type = provider.value
-        vector_db.category = 'VECTOR_DB'
+        vector_db.category = "VECTOR_DB"
         vector_db.enabled = True
         if description is None:
             description = db_integration_name
@@ -93,7 +93,6 @@ class AIOrchestrator:
             existing_integration_api = self.integration_client.get_integration_api(db_integration_name, index)
             if existing_integration_api is None or overwrite:
                 self.integration_client.save_integration_api(db_integration_name, index, api_details)
-        pass
 
     def get_token_used(self, ai_integration: str) -> dict:
         return self.integration_client.get_token_usage_for_integration_provider(ai_integration)

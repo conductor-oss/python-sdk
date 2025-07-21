@@ -20,10 +20,10 @@ class JavascriptTask(TaskInterface):
 
     def output(self, json_path: str = None) -> str:
         if json_path is None:
-            return '${' + f'{self.task_reference_name}.output.result' + '}'
+            return "${" + f"{self.task_reference_name}.output.result" + "}"
         else:
-            return '${' + f'{self.task_reference_name}.output.result.{json_path}' + '}'
+            return "${" + f"{self.task_reference_name}.output.result.{json_path}" + "}"
 
     def evaluator_type(self, evaluator_type: str) -> Self:
-        self.input_parameters['evaluatorType'] = evaluator_type
+        self.input_parameters["evaluatorType"] = evaluator_type
         return self

@@ -37,12 +37,12 @@ class HumanTask(TaskInterface):
             task_type=TaskType.HUMAN
         )
         self.input_parameters.update({
-            '__humanTaskDefinition': {
-                'assignmentCompletionStrategy': assignment_completion_strategy.name,
-                'displayName': display_name,
-                'userFormTemplate': {
-                    'name': form_template,
-                    'version': form_version
+            "__humanTaskDefinition": {
+                "assignmentCompletionStrategy": assignment_completion_strategy.name,
+                "displayName": display_name,
+                "userFormTemplate": {
+                    "name": form_template,
+                    "version": form_version
                 }
             }
         })

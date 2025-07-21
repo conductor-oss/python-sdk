@@ -17,9 +17,9 @@ def WorkerTask(task_definition_name: str, poll_interval: int = 100, domain: str 
 
         @functools.wraps(func)
         def wrapper_func(*args, **kwargs):
-            if 'task_ref_name' in kwargs:
-                task = SimpleTask(task_def_name=task_definition_name, task_reference_name=kwargs['task_ref_name'])
-                kwargs.pop('task_ref_name')
+            if "task_ref_name" in kwargs:
+                task = SimpleTask(task_def_name=task_definition_name, task_reference_name=kwargs["task_ref_name"])
+                kwargs.pop("task_ref_name")
                 task.input_parameters.update(kwargs)
                 return task
             return func(*args, **kwargs)
@@ -36,9 +36,9 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
 
         @functools.wraps(func)
         def wrapper_func(*args, **kwargs):
-            if 'task_ref_name' in kwargs:
-                task = SimpleTask(task_def_name=task_definition_name, task_reference_name=kwargs['task_ref_name'])
-                kwargs.pop('task_ref_name')
+            if "task_ref_name" in kwargs:
+                task = SimpleTask(task_def_name=task_definition_name, task_reference_name=kwargs["task_ref_name"])
+                kwargs.pop("task_ref_name")
                 task.input_parameters.update(kwargs)
                 return task
             return func(*args, **kwargs)

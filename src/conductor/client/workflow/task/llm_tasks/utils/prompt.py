@@ -2,13 +2,13 @@ from typing import Dict
 
 class Prompt(object):
     swagger_types = {
-        'name': 'str',
-        'variables': 'str'
+        "name": "str",
+        "variables": "str"
     }
 
     attribute_map = {
-        'name': 'promptName',
-        'variables': 'promptVariables'
+        "name": "promptName",
+        "variables": "promptVariables"
     }
 
     def __init__(self, name: str, variables: Dict[str, object]):

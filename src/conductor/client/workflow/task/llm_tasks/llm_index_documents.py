@@ -54,7 +54,7 @@ class LlmIndexDocument(TaskInterface):
 
         input_params.update(optional_input_params)
         if task_name is None:
-            task_name = 'llm_index_document'
+            task_name = "llm_index_document"
 
         super().__init__(
             task_name=task_name,

@@ -157,7 +157,7 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
     def get_granted_permissions_for_group(self, group_id: str) -> List[GrantedPermission]:
         granted_access_obj = self.groupResourceApi.get_granted_permissions1(group_id)
         granted_permissions = []
-        for ga in granted_access_obj['grantedAccess']:
+        for ga in granted_access_obj["grantedAccess"]:
             target = TargetRef(ga["target"]["type"], ga["target"]["id"])
             access = ga["access"]
             granted_permissions.append(GrantedPermission(target, access))
@@ -166,7 +166,7 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
     def get_granted_permissions_for_user(self, user_id: str) -> List[GrantedPermission]:
         granted_access_obj = self.userResourceApi.get_granted_permissions(user_id)
         granted_permissions = []
-        for ga in granted_access_obj['grantedAccess']:
+        for ga in granted_access_obj["grantedAccess"]:
             target = TargetRef(ga["target"]["type"], ga["target"]["id"])
             access = ga["access"]
             granted_permissions.append(GrantedPermission(target, access))

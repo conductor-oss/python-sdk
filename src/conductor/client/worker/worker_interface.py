@@ -25,7 +25,6 @@ class WorkerInterface(abc.ABC):
         :return: TaskResult
                  If the task is not completed yet, return with the status as IN_PROGRESS.
         """
-        pass
 
     def get_identity(self) -> str:
         """

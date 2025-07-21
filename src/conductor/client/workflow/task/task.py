@@ -50,7 +50,7 @@ class TaskInterface(ABC):
     @task_reference_name.setter
     def task_reference_name(self, task_reference_name: str) -> None:
         if not isinstance(task_reference_name, str):
-            raise Exception('invalid type')
+            raise Exception("invalid type")
         self._task_reference_name = deepcopy(task_reference_name)
 
     @property
@@ -60,7 +60,7 @@ class TaskInterface(ABC):
     @task_type.setter
     def task_type(self, task_type: TaskType) -> None:
         if not isinstance(task_type, TaskType):
-            raise Exception('invalid type')
+            raise Exception("invalid type")
         self._task_type = deepcopy(task_type)
 
     @property
@@ -70,7 +70,7 @@ class TaskInterface(ABC):
     @name.setter
     def name(self, name: str) -> None:
         if not isinstance(name, str):
-            raise Exception('invalid type')
+            raise Exception("invalid type")
         self._name = name
 
     @property
@@ -100,7 +100,7 @@ class TaskInterface(ABC):
     @description.setter
     def description(self, description: str) -> None:
         if description != None and not isinstance(description, str):
-            raise Exception('invalid type')
+            raise Exception("invalid type")
         self._description = deepcopy(description)
 
     @property
@@ -110,7 +110,7 @@ class TaskInterface(ABC):
     @optional.setter
     def optional(self, optional: bool) -> None:
         if optional is not None and not isinstance(optional, bool):
-            raise Exception('invalid type')
+            raise Exception("invalid type")
         self._optional = deepcopy(optional)
 
     @property
@@ -126,12 +126,12 @@ class TaskInterface(ABC):
             try:
                 self._input_parameters = input_parameters.__dict__
             except:
-                raise Exception(f'invalid type: {type(input_parameters)}')
+                raise Exception(f"invalid type: {type(input_parameters)}")
         self._input_parameters = deepcopy(input_parameters)
 
     def input_parameter(self, key: str, value: Any) -> Self:
         if not isinstance(key, str):
-            raise Exception('invalid type')
+            raise Exception("invalid type")
         self._input_parameters[key] = deepcopy(value)
         return self
 
@@ -153,12 +153,11 @@ class TaskInterface(ABC):
 
     def output(self, json_path: str = None) -> str:
         if json_path is None:
-            return '${' + f'{self.task_reference_name}.output' + '}'
+            return "${" + f"{self.task_reference_name}.output" + "}"
+        elif json_path.startswith("."):
+            return "${" + f"{self.task_reference_name}.output{json_path}" + "}"
         else:
-            if json_path.startswith('.'):
-                return '${' + f'{self.task_reference_name}.output{json_path}' + '}'
-            else:
-                return '${' + f'{self.task_reference_name}.output.{json_path}' + '}'
+            return "${" + f"{self.task_reference_name}.output.{json_path}" + "}"
 
     def input(self, json_path: str = None, key : str = None, value : Any = None) -> Union[str, Self]:
         if key is not None and value is not None:
@@ -168,15 +167,15 @@ class TaskInterface(ABC):
             return self.input_parameter(key, value)
 
         if json_path is None:
-            return '${' + f'{self.task_reference_name}.input' + '}'
+            return "${" + f"{self.task_reference_name}.input" + "}"
         else:
-            return '${' + f'{self.task_reference_name}.input.{json_path}' + '}'
+            return "${" + f"{self.task_reference_name}.input.{json_path}" + "}"
 
     def __getattribute__(self, __name: str) -> Any:
         try:
             val = super().__getattribute__(__name)
             return val
         except AttributeError as ae:
-            if not __name.startswith('_'):
-                return '${' + self.task_reference_name + '.output.' + __name + '}'
+            if not __name.startswith("_"):
+                return "${" + self.task_reference_name + ".output." + __name + "}"
             raise ae

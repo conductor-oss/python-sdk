@@ -86,11 +86,10 @@ class Worker(WorkerInterface):
                             task_input[input_name] = task.input_data[input_name]
                         else:
                             task_input[input_name] = convert_from_dict_or_list(typ, task.input_data[input_name])
+                    elif default_value is not inspect.Parameter.empty:
+                        task_input[input_name] = default_value
                     else:
-                        if default_value is not inspect.Parameter.empty:
-                            task_input[input_name] = default_value
-                        else:
-                            task_input[input_name] = None
+                        task_input[input_name] = None
                 task_output = self.execute_function(**task_input)
 
             if type(task_output) == TaskResult:
@@ -108,7 +107,7 @@ class Worker(WorkerInterface):
 
         except Exception as ne:
             logger.error(
-                f'Error executing task {task.task_def_name} with id {task.task_id}.  error = {traceback.format_exc()}')
+                f"Error executing task {task.task_def_name} with id {task.task_id}.  error = {traceback.format_exc()}")
 
             task_result.logs = [TaskExecLog(
                 traceback.format_exc(), task_result.task_id, int(time.time()))]
@@ -124,7 +123,7 @@ class Worker(WorkerInterface):
             task_output = task_result.output_data
             task_result.output_data = self.api_client.sanitize_for_serialization(task_output)
             if not isinstance(task_result.output_data, dict):
-                task_result.output_data = {'result': task_result.output_data}
+                task_result.output_data = {"result": task_result.output_data}
 
         return task_result
 

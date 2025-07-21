@@ -16,7 +16,7 @@ class JoinTask(TaskInterface):
         )
         self._join_on = deepcopy(join_on)
         if join_on_script is not None:
-            self.evaluator_type = 'js'
+            self.evaluator_type = "js"
             self.expression = join_on_script
 
     def to_workflow_task(self) -> WorkflowTask:

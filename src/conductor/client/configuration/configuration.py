@@ -19,23 +19,23 @@ class Configuration:
         if server_api_url is not None:
             self.host = server_api_url
         elif base_url is not None:
-            self.host = base_url + '/api'
+            self.host = base_url + "/api"
         else:
-            self.host = os.getenv('CONDUCTOR_SERVER_URL')
+            self.host = os.getenv("CONDUCTOR_SERVER_URL")
 
-        if self.host is None or self.host == '':
-            self.host = 'http://localhost:8080/api'
+        if self.host is None or self.host == "":
+            self.host = "http://localhost:8080/api"
 
         self.temp_folder_path = None
-        self.__ui_host = os.getenv('CONDUCTOR_UI_SERVER_URL')
+        self.__ui_host = os.getenv("CONDUCTOR_UI_SERVER_URL")
         if self.__ui_host is None:
-            self.__ui_host = self.host.replace('8080/api', '5001')
+            self.__ui_host = self.host.replace("8080/api", "5001")
 
         if authentication_settings is not None:
             self.authentication_settings = authentication_settings
         else:
-            key = os.getenv('CONDUCTOR_AUTH_KEY')
-            secret = os.getenv('CONDUCTOR_AUTH_SECRET')
+            key = os.getenv("CONDUCTOR_AUTH_KEY")
+            secret = os.getenv("CONDUCTOR_AUTH_SECRET")
             if key is not None and secret is not None:
                 self.authentication_settings = AuthenticationSettings(key_id=key, key_secret=secret)
             else:
@@ -45,7 +45,7 @@ class Configuration:
         # Debug switch
         self.debug = debug
         # Log format
-        self.logger_format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+        self.logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 
         # SSL/TLS verification
         # Set this to false to skip verifying SSL certificate when calling API
@@ -63,7 +63,7 @@ class Configuration:
         # Proxy URL
         self.proxy = None
         # Safe chars for path_param
-        self.safe_chars_for_path_param = ''
+        self.safe_chars_for_path_param = ""
 
         # Provide an alterative to requests.Session() for HTTP connection.
         self.http_connection = None
@@ -150,7 +150,7 @@ class Configuration:
 
     @staticmethod
     def get_logging_formatted_name(name):
-        return f'[{os.getpid()}] {name}'
+        return f"[{os.getpid()}] {name}"
 
     def update_token(self, token: str) -> None:
         self.AUTH_TOKEN = token

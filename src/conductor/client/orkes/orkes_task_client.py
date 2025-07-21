@@ -73,7 +73,7 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
             worker_id: Optional[str] = None
     ) -> Workflow:
         if not isinstance(output, dict):
-            output = {'result': output}
+            output = {"result": output}
         body = output
         kwargs = {}
         if worker_id:

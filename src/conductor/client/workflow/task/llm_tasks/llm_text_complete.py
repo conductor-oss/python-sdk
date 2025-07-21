@@ -19,7 +19,7 @@ class LlmTextComplete(TaskInterface):
             optional_input_params.update({"maxTokens": max_tokens})
 
         if not task_name:
-            task_name = 'llm_text_complete'
+            task_name = "llm_text_complete"
 
         input_params = {
             "llmProvider": llm_provider,
@@ -38,12 +38,12 @@ class LlmTextComplete(TaskInterface):
             task_type=TaskType.LLM_TEXT_COMPLETE,
             input_parameters=input_params
         )
-        self.input_parameters['promptVariables'] = {}
+        self.input_parameters["promptVariables"] = {}
 
     def prompt_variables(self, variables: Dict[str, object]) -> Self:
-        self.input_parameters['promptVariables'].update(variables)
+        self.input_parameters["promptVariables"].update(variables)
         return self
 
     def prompt_variable(self, variable: str, value: object) -> Self:
-        self.input_parameters['promptVariables'][variable] = value
+        self.input_parameters["promptVariables"][variable] = value
         return self
