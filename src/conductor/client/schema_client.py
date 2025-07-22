@@ -5,12 +5,8 @@ from abc import ABC, abstractmethod
 from typing import List
 
 # python 2 and python 3 compatibility library
-import six
 
-from conductor.client.http.api_client import ApiClient
-from conductor.client.http.models.prompt_template import PromptTemplate
 from conductor.client.http.models.schema_def import SchemaDef
-from conductor.client.orkes.models.metadata_tag import MetadataTag
 
 
 class SchemaClient(ABC):

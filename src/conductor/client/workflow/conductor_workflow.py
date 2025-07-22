@@ -2,10 +2,15 @@ from copy import deepcopy
 from typing import Any, Dict, List, Union
 
 from shortuuid import uuid
-from typing import Dict
 from typing_extensions import Self
 
-from conductor.client.http.models import *
+from conductor.client.http.models import (
+    StartWorkflowRequest,
+    WorkflowDef,
+    WorkflowRun,
+    WorkflowTask,
+    SubWorkflowParams,
+)
 from conductor.client.http.models.start_workflow_request import IdempotencyStrategy
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.fork_task import ForkTask
@@ -56,7 +61,7 @@ class ConductorWorkflow:
 
     @version.setter
     def version(self, version: int) -> None:
-        if version != None and not isinstance(version, int):
+        if version is not None and not isinstance(version, int):
             raise Exception('invalid type')
         self._version = deepcopy(version)
 
@@ -66,7 +71,7 @@ class ConductorWorkflow:
 
     @description.setter
     def description(self, description: str) -> None:
-        if description != None and not isinstance(description, str):
+        if description is not None and not isinstance(description, str):
             raise Exception('invalid type')
         self._description = deepcopy(description)
 
@@ -115,7 +120,7 @@ class ConductorWorkflow:
     # Workflow output follows similar structure as task input
     # See https://conductor.netflix.com/how-tos/Tasks/task-inputs.html for more details
     def output_parameters(self, output_parameters: Dict[str, Any]) -> Self:
-        if output_parameters == None:
+        if output_parameters is None:
             self._output_parameters = {}
             return
         if not isinstance(output_parameters, dict):
@@ -135,7 +140,7 @@ class ConductorWorkflow:
 
     # InputTemplate template input to the workflow.  Can have combination of variables (e.g. ${workflow.input.abc}) and static values
     def input_template(self, input_template: Dict[str, Any]) -> Self:
-        if input_template == None:
+        if input_template is None:
             self._input_template = {}
             return
         if not isinstance(input_template, dict):
@@ -149,7 +154,7 @@ class ConductorWorkflow:
     # Variables are set using SET_VARIABLE task. Excellent way to maintain business state
     # e.g. Variables can maintain business/user specific states which can be queried and inspected to find out the state of the workflow
     def variables(self, variables: Dict[str, Any]) -> Self:
-        if variables == None:
+        if variables is None:
             self._variables = {}
             return
         if not isinstance(variables, dict):
@@ -174,7 +179,6 @@ class ConductorWorkflow:
         return self
 
     def workflow_input(self, input: dict) -> Self:
-        keys = list(input.keys())
         self.input_template(input)
         return self
 
@@ -353,13 +357,13 @@ class ConductorWorkflow:
 
     def input(self, json_path: str) -> str:
         if json_path is None:
-            return '${' + f'workflow.input' + '}'
+            return '${' + 'workflow.input' + '}'
         else:
             return '${' + f'workflow.input.{json_path}' + '}'
 
     def output(self, json_path: str = None) -> str:
         if json_path is None:
-            return '${' + f'workflow.output' + '}'
+            return '${' + 'workflow.output' + '}'
         else:
             return '${' + f'workflow.output.{json_path}' + '}'
 

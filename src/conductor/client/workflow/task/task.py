@@ -99,7 +99,7 @@ class TaskInterface(ABC):
 
     @description.setter
     def description(self, description: str) -> None:
-        if description != None and not isinstance(description, str):
+        if description is not None and not isinstance(description, str):
             raise Exception('invalid type')
         self._description = deepcopy(description)
 
@@ -125,7 +125,7 @@ class TaskInterface(ABC):
         if not isinstance(input_parameters, dict):
             try:
                 self._input_parameters = input_parameters.__dict__
-            except:
+            except AttributeError:
                 raise Exception(f'invalid type: {type(input_parameters)}')
         self._input_parameters = deepcopy(input_parameters)
 

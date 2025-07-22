@@ -43,7 +43,7 @@ def convert_from_dict(cls: type, data: dict) -> object:
     if data is None:
         return data
 
-    if type(data) == cls:
+    if isinstance(data, cls):
         return data
 
     if dataclasses.is_dataclass(cls):
@@ -53,7 +53,7 @@ def convert_from_dict(cls: type, data: dict) -> object:
     if not ((str(typ).startswith('dict[') or
              str(typ).startswith('typing.Dict[') or
              str(typ).startswith('requests.structures.CaseInsensitiveDict[') or
-             typ == dict or str(typ).startswith('OrderedDict['))):
+             isinstance(typ, dict) or str(typ).startswith('OrderedDict['))):
         data = {}
 
     members = inspect.signature(cls.__init__).parameters
@@ -81,7 +81,7 @@ def convert_from_dict(cls: type, data: dict) -> object:
         elif (str(typ).startswith('dict[') or
               str(typ).startswith('typing.Dict[') or
               str(typ).startswith('requests.structures.CaseInsensitiveDict[') or
-              typ == dict or str(typ).startswith('OrderedDict[')):
+              isinstance(typ, dict) or str(typ).startswith('OrderedDict[')):
 
             values = {}
             generic_type = object
@@ -116,7 +116,7 @@ def get_value(typ: type, val: object) -> object:
             values.append(converted)
         return values
     elif str(typ).startswith('dict[') or str(typ).startswith(
-            'typing.Dict[') or str(typ).startswith('requests.structures.CaseInsensitiveDict[') or typ == dict:
+            'typing.Dict[') or str(typ).startswith('requests.structures.CaseInsensitiveDict[') or isinstance(typ, dict):
         values = {}
         for k in val:
             v = val[k]

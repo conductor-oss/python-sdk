@@ -38,7 +38,7 @@ def is_callable_input_parameter_a_task(callable: ExecuteTaskFunction, object_typ
     if len(parameters) != 1:
         return False
     parameter = parameters[list(parameters.keys())[0]]
-    return parameter.annotation == object_type or parameter.annotation == parameter.empty or parameter.annotation == object
+    return parameter.annotation == object_type or parameter.annotation == parameter.empty or parameter.annotation is object
 
 
 def is_callable_return_value_of_type(callable: ExecuteTaskFunction, object_type: Any) -> bool:
@@ -93,7 +93,7 @@ class Worker(WorkerInterface):
                             task_input[input_name] = None
                 task_output = self.execute_function(**task_input)
 
-            if type(task_output) == TaskResult:
+            if isinstance(task_output, TaskResult):
                 task_output.task_id = task.task_id
                 task_output.workflow_instance_id = task.workflow_instance_id
                 return task_output

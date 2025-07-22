@@ -1,10 +1,9 @@
 from copy import deepcopy
-from enum import Enum
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from typing_extensions import Self
 
-from conductor.client.workflow.task.http_task import HttpTask, HttpInput, HttpMethod
+from conductor.client.workflow.task.http_task import HttpMethod
 from conductor.client.workflow.task.task import TaskInterface
 from conductor.client.workflow.task.task_type import TaskType
 
