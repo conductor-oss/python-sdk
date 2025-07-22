@@ -1,6 +1,7 @@
 import datetime
 import logging
 import re
+from typing import Any, ClassVar, Dict, Tuple
 
 import six
 from requests.structures import CaseInsensitiveDict
@@ -17,10 +18,10 @@ logger = logging.getLogger(
 
 
 class ObjectMapper(object):
-    PRIMITIVE_TYPES = (float, bool, bytes, six.text_type) + six.integer_types
-    NATIVE_TYPES_MAPPING = {
+    PRIMITIVE_TYPES: ClassVar[Tuple[Any, ...]] = (float, bool, bytes, six.text_type, *six.integer_types)
+    NATIVE_TYPES_MAPPING: ClassVar[Dict[str, Any]] = {
         'int': int,
-        'long': int if six.PY3 else long,  # noqa: F821
+        'long': int if six.PY3 else long,  # noqa: F821, RUF100
         'float': float,
         'str': str,
         'bool': bool,
@@ -137,11 +138,11 @@ class ObjectMapper(object):
             return parse(string).date()
         except ImportError:
             return string
-        except ValueError:
+        except ValueError as err:
             raise rest.ApiException(
                 status=0,
                 reason="Failed to parse `{0}` as date object".format(string)
-            )
+            ) from err
 
     def __deserialize_datatime(self, string):
         """Deserializes string to datetime.
@@ -156,14 +157,14 @@ class ObjectMapper(object):
             return parse(string)
         except ImportError:
             return string
-        except ValueError:
+        except ValueError as err:
             raise rest.ApiException(
                 status=0,
                 reason=(
                     "Failed to parse `{0}` as datetime object"
                     .format(string)
                 )
-            )
+            ) from err
 
     def __hasattr(self, object, name):
         return name in object.__class__.__dict__

@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import re  # noqa: F401
 from typing import List
 
 from conductor.client.configuration.configuration import Configuration

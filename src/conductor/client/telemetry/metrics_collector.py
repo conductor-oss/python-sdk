@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import Any, Dict, List
+from typing import Any, ClassVar, Dict, List
 
 from prometheus_client import CollectorRegistry
 from prometheus_client import Counter
@@ -23,8 +23,8 @@ logger = logging.getLogger(
 
 
 class MetricsCollector:
-    counters = {}
-    gauges = {}
+    counters: ClassVar[Dict[str, Counter]] = {}
+    gauges: ClassVar[Dict[str, Gauge]] = {}
     registry = CollectorRegistry()
     must_collect_metrics = False
 

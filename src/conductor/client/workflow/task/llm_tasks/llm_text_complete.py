@@ -8,8 +8,9 @@ from conductor.client.workflow.task.task_type import TaskType
 
 class LlmTextComplete(TaskInterface):
     def __init__(self, task_ref_name: str, llm_provider: str, model: str, prompt_name: str,
-                 stop_words: Optional[List[str]] = [], max_tokens: Optional[int] = 100,
+                 stop_words: Optional[List[str]] = None, max_tokens: Optional[int] = 100,
                  temperature: int = 0, top_p: int = 1, task_name: str = None) -> Self:
+        stop_words = stop_words or []
         optional_input_params = {}
 
         if stop_words:

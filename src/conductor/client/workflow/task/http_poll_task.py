@@ -1,6 +1,6 @@
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Dict, List, Union
+from typing import Any, ClassVar, Dict, List, Union
 
 from typing_extensions import Self
 
@@ -10,7 +10,7 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class HttpPollInput():
-    swagger_types = {
+    swagger_types: ClassVar[Dict[str, str]] = {
         '_uri': 'str',
         '_method': 'str',
         '_accept': 'list[str]',
@@ -25,7 +25,7 @@ class HttpPollInput():
         '_polling_strategy': str
     }
 
-    attribute_map = {
+    attribute_map: ClassVar[Dict[str, str]] = {
         '_uri': 'uri',
         '_method': 'method',
         '_accept': 'accept',

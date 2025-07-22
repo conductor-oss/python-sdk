@@ -58,18 +58,18 @@ class TaskRunner:
                     f'interval {self.worker.get_polling_interval_in_seconds()}')
 
         while True:
-            try:
-                self.run_once()
-            except Exception as e:
-                pass
+            self.run_once()
 
     def run_once(self) -> None:
-        task = self.__poll_task()
-        if task is not None and task.task_id is not None:
-            task_result = self.__execute_task(task)
-            self.__update_task(task_result)
-        self.__wait_for_polling_interval()
-        self.worker.clear_task_definition_name_cache()
+        try:
+            task = self.__poll_task()
+            if task is not None and task.task_id is not None:
+                task_result = self.__execute_task(task)
+                self.__update_task(task_result)
+            self.__wait_for_polling_interval()
+            self.worker.clear_task_definition_name_cache()
+        except Exception as e:
+            pass
 
     def __poll_task(self) -> Task:
         task_definition_name = self.worker.get_task_definition_name()

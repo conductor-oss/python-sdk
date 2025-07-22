@@ -29,7 +29,8 @@ class LlmIndexDocument(TaskInterface):
                  embedding_model: EmbeddingModel, index: str, url: str, media_type: str,
                  chunk_size: Optional[int] = None, chunk_overlap: Optional[int] = None, doc_id: str = None,
                  task_name: str = None,
-                 metadata: dict = {}) -> Self:
+                 metadata: dict = None) -> Self:
+        metadata = metadata or {}
         input_params = {
             "vectorDB": vector_db,
             "namespace": namespace,

@@ -74,11 +74,12 @@ class WorkflowExecutor:
                                                                           consistency=consistency,
                                                                           return_strategy=return_strategy)
 
-    def execute(self, name: str, version: Optional[int] = None, workflow_input: Any = {},
+    def execute(self, name: str, version: Optional[int] = None, workflow_input: Any = None,
                 wait_until_task_ref: str = None, wait_for_seconds: int = 10,
                 request_id: str = None, correlation_id: str = None, domain: str = None) -> WorkflowRun:
         """Executes a workflow with StartWorkflowRequest and waits for the completion of the workflow or until a
         specific task in the workflow """
+        workflow_input = workflow_input or {}
         if request_id is None:
             request_id = str(uuid.uuid4())
 

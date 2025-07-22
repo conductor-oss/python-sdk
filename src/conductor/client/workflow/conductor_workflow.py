@@ -203,12 +203,12 @@ class ConductorWorkflow:
         start_workflow_request.version = self.version
         return self._executor.start_workflow(start_workflow_request)
 
-    def start_workflow_with_input(self, workflow_input: dict = {}, correlation_id=None, task_to_domain=None,
+    def start_workflow_with_input(self, workflow_input: dict = None, correlation_id=None, task_to_domain=None,
                  priority=None, idempotency_key: str = None, idempotency_strategy: IdempotencyStrategy = IdempotencyStrategy.FAIL) -> str:
         """
         Starts the workflow with given inputs and parameters and returns the id of the started workflow
         """
-
+        workflow_input = workflow_input or {}
         start_workflow_request = StartWorkflowRequest()
         start_workflow_request.workflow_def = self.to_workflow_def()
         start_workflow_request.name = self.name
@@ -222,7 +222,7 @@ class ConductorWorkflow:
 
         return self._executor.start_workflow(start_workflow_request)
 
-    def execute(self, workflow_input: Any = {}, wait_until_task_ref: str = '', wait_for_seconds: int = 10,
+    def execute(self, workflow_input: Any = None, wait_until_task_ref: str = '', wait_for_seconds: int = 10,
                 request_id: str = None,
                 idempotency_key: str = None, idempotency_strategy : IdempotencyStrategy = IdempotencyStrategy.FAIL, task_to_domain: Dict[str, str] = None) -> WorkflowRun:
         """
@@ -238,6 +238,7 @@ class ConductorWorkflow:
         Workflow execution run.  check the status field to identify if the workflow was completed or still running
         when the call completed.
         """
+        workflow_input = workflow_input or {}
         request = StartWorkflowRequest()
         request.workflow_def = self.to_workflow_def()
         request.input = workflow_input
@@ -282,8 +283,7 @@ class ConductorWorkflow:
         for task in self._tasks:
             converted_task = task.to_workflow_task()
             if isinstance(converted_task, list):
-                for subtask in converted_task:
-                    workflow_task_list.append(subtask)
+                workflow_task_list.extend(converted_task)
             else:
                 workflow_task_list.append(converted_task)
         updated_task_list = []
@@ -291,7 +291,7 @@ class ConductorWorkflow:
             wft: WorkflowTask = workflow_task_list[i]
             updated_task_list.append(wft)
             if wft.type == 'FORK_JOIN' and i < len(workflow_task_list) - 1 and workflow_task_list[i + 1].type != 'JOIN':
-                join_on = list(map(lambda ft: ft[len(ft) - 1].task_reference_name, wft.fork_tasks))
+                join_on = [ft[-1].task_reference_name for ft in wft.fork_tasks]
                 join = JoinTask(task_ref_name='join_' + wft.task_reference_name, join_on=join_on)
                 updated_task_list.append(join.to_workflow_task())
 

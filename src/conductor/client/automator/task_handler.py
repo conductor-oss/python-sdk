@@ -45,12 +45,13 @@ def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id:
 class TaskHandler:
     def __init__(
             self,
-            workers: List[WorkerInterface] = [],
+            workers: List[WorkerInterface] = None,
             configuration: Configuration = None,
             metrics_settings: MetricsSettings = None,
             scan_for_annotated_workers: bool = True,
             import_modules: List[str] = None
     ):
+        workers = workers or []
         self.logger_process, self.queue = _setup_logging_queue(configuration)
 
         # imports

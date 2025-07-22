@@ -12,7 +12,7 @@ logger = logging.getLogger(
 
 
 def get_default_temporary_folder() -> str:
-    return f'{str(Path.home())}/tmp/'
+    return f'{Path.home()!s}/tmp/'
 
 
 class MetricsSettings:

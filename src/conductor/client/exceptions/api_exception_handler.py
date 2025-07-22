@@ -46,11 +46,11 @@ def api_exception_handler(function):
     return inner_function
 
 
-def for_all_methods(decorator, exclude=[]):
+def for_all_methods(decorator, exclude=None):
     def decorate(cls):
+        exclude_local = [] if exclude is None else exclude
         for attr in cls.__dict__:
-            if callable(getattr(cls, attr)) and attr not in exclude:
+            if callable(getattr(cls, attr)) and attr not in exclude_local:
                 setattr(cls, attr, decorator(getattr(cls, attr)))
         return cls
-
     return decorate

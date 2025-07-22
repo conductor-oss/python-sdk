@@ -14,8 +14,7 @@ def get_task_interface_list_as_workflow_task_list(*tasks: Self) -> List[Workflow
         wf_task = task.to_workflow_task()
         if isinstance(wf_task, list):
             # to_workflow_task() returned a list. E.g.: DynamicFork.to_workflow_task() returns the DynamicFork and the Join task.
-            for t in wf_task:
-                converted_tasks.append(t)
+            converted_tasks.extend(wf_task)
         else:
             converted_tasks.append(task.to_workflow_task())
     return converted_tasks
@@ -125,8 +124,8 @@ class TaskInterface(ABC):
         if not isinstance(input_parameters, dict):
             try:
                 self._input_parameters = input_parameters.__dict__
-            except:
-                raise Exception(f'invalid type: {type(input_parameters)}')
+            except AttributeError as err:
+                raise ValueError(f'Invalid type: {type(input_parameters)}') from err
         self._input_parameters = deepcopy(input_parameters)
 
     def input_parameter(self, key: str, value: Any) -> Self:

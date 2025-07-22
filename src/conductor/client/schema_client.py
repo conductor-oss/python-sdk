@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import re  # noqa: F401
 from abc import ABC, abstractmethod
 from typing import List
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import List, Optional
 from conductor.client.http.models.workflow_def import WorkflowDef
 from conductor.client.http.models.task_def import TaskDef
 from conductor.client.orkes.models.metadata_tag import MetadataTag
@@ -56,11 +56,14 @@ class MetadataClient(ABC):
     def add_workflow_tag(self, tag: MetadataTag, workflow_name: str):
         pass
 
+    @abstractmethod
     def get_workflow_tags(self, workflow_name: str) -> List[MetadataTag]:
         pass
 
+    @abstractmethod
     def set_workflow_tags(self, tags: List[MetadataTag], workflow_name: str):
         pass
 
+    @abstractmethod
     def delete_workflow_tag(self, tag: MetadataTag, workflow_name: str):
         pass

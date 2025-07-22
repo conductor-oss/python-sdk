@@ -15,9 +15,11 @@ class ChatMessage:
 
 class LlmChatComplete(TaskInterface):
     def __init__(self, task_ref_name: str, llm_provider: str, model: str, messages: List[ChatMessage],
-                 stop_words: Optional[List[str]] = [], max_tokens: Optional[int] = 100,
+                 stop_words: Optional[List[str]] = None, max_tokens: Optional[int] = 100,
                  temperature: int = 0, top_p: int = 1, instructions_template: str = None,
-                 template_variables: Dict[str, object] = {}) -> Self:
+                 template_variables: Dict[str, object] = None) -> Self:
+        template_variables = template_variables or {}
+        stop_words = stop_words or []
         optional_input_params = {}
 
         if stop_words:

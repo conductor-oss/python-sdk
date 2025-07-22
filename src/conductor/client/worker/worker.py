@@ -37,7 +37,7 @@ def is_callable_input_parameter_a_task(callable: ExecuteTaskFunction, object_typ
     parameters = inspect.signature(callable).parameters
     if len(parameters) != 1:
         return False
-    parameter = parameters[list(parameters.keys())[0]]
+    parameter = parameters[next(iter(parameters.keys()))]
     return parameter.annotation == object_type or parameter.annotation == parameter.empty or parameter.annotation == object
 
 
