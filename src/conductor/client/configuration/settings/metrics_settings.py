@@ -1,5 +1,7 @@
+from __future__ import annotations
 import logging
 import os
+from typing import Optional
 from pathlib import Path
 
 from conductor.client.configuration.configuration import Configuration
@@ -18,7 +20,7 @@ def get_default_temporary_folder() -> str:
 class MetricsSettings:
     def __init__(
             self,
-            directory: str = None,
+            directory: Optional[str] = None,
             file_name: str = 'metrics.log',
             update_interval: float = 0.1):
         if directory is None:

@@ -1,10 +1,11 @@
+from __future__ import annotations
 import dataclasses
 import inspect
 import logging
 import time
 import traceback
 from copy import deepcopy
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, Optional
 
 from typing_extensions import Self
 
@@ -50,9 +51,9 @@ class Worker(WorkerInterface):
     def __init__(self,
                  task_definition_name: str,
                  execute_function: ExecuteTaskFunction,
-                 poll_interval: float = None,
-                 domain: str = None,
-                 worker_id: str = None,
+                 poll_interval: Optional[float] = None,
+                 domain: Optional[str] = None,
+                 worker_id: Optional[str] = None,
                  ) -> Self:
         super().__init__(task_definition_name)
         self.api_client = ApiClient()

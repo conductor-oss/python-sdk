@@ -1,9 +1,10 @@
+from __future__ import annotations
 import importlib
 import logging
 import os
 from multiprocessing import Process, freeze_support, Queue, set_start_method, get_context
 from sys import platform
-from typing import List
+from typing import List, Optional
 
 from conductor.client.automator.task_runner import TaskRunner
 from conductor.client.configuration.configuration import Configuration
@@ -46,10 +47,10 @@ class TaskHandler:
     def __init__(
             self,
             workers: List[WorkerInterface] = [],
-            configuration: Configuration = None,
-            metrics_settings: MetricsSettings = None,
+            configuration: Optional[Configuration] = None,
+            metrics_settings: Optional[MetricsSettings] = None,
             scan_for_annotated_workers: bool = True,
-            import_modules: List[str] = None
+            import_modules: Optional[List[str]] = None
     ):
         self.logger_process, self.queue = _setup_logging_queue(configuration)
 

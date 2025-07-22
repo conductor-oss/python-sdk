@@ -1,5 +1,6 @@
+from __future__ import annotations
 from copy import deepcopy
-from typing import List
+from typing import List, Optional
 
 from typing_extensions import Self
 
@@ -14,7 +15,7 @@ def get_join_task(task_reference_name: str) -> str:
 
 
 class ForkTask(TaskInterface):
-    def __init__(self, task_ref_name: str, forked_tasks: List[List[TaskInterface]], join_on: List[str] = None) -> Self:
+    def __init__(self, task_ref_name: str, forked_tasks: List[List[TaskInterface]], join_on: Optional[List[str]] = None) -> Self:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.FORK_JOIN

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, List, Dict
 
 from typing_extensions import Self
@@ -15,9 +16,15 @@ class ChatMessage:
 
 class LlmChatComplete(TaskInterface):
     def __init__(self, task_ref_name: str, llm_provider: str, model: str, messages: List[ChatMessage],
-                 stop_words: Optional[List[str]] = [], max_tokens: Optional[int] = 100,
-                 temperature: int = 0, top_p: int = 1, instructions_template: str = None,
-                 template_variables: Dict[str, object] = {}) -> Self:
+                 stop_words: Optional[List[str]] = None, max_tokens: Optional[int] = 100,
+                 temperature: int = 0, top_p: int = 1, instructions_template: Optional[str] = None,
+                 template_variables: Optional[Dict[str, object]] = None) -> Self:
+        if stop_words is None:
+            stop_words = []
+
+        if template_variables is None:
+            template_variables = {}
+
         optional_input_params = {}
 
         if stop_words:
