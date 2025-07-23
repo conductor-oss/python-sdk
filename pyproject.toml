@@ -33,6 +33,7 @@ astor = ">=0.8.1"
 shortuuid = ">=1.0.11"
 dacite = ">=1.8.1"
 deprecated = ">=1.2.14"
+python-dateutil = "^2.8.2"
 
 [tool.poetry.group.dev.dependencies]
 pylint = ">=2.17.5"
