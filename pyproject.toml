@@ -120,6 +120,14 @@ ignore = [
     "W191",
     "E501",
     "B011",
+    # too-many-arguments
+    "PLR0913",
+    # collapsible-else-if
+    "PLR5501",
+    # too-many-branches
+    "PLR0912",
+    # too-many-return-statements
+    "PLR0911"
 ]
 
 [tool.ruff.lint.isort]

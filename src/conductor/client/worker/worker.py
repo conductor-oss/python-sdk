@@ -38,7 +38,7 @@ def is_callable_input_parameter_a_task(callable: ExecuteTaskFunction, object_typ
     if len(parameters) != 1:
         return False
     parameter = parameters[list(parameters.keys())[0]]
-    return parameter.annotation == object_type or parameter.annotation == parameter.empty or parameter.annotation == object
+    return parameter.annotation in (object_type, parameter.empty, object)
 
 
 def is_callable_return_value_of_type(callable: ExecuteTaskFunction, object_type: Any) -> bool:

@@ -1,6 +1,7 @@
 import datetime
 import logging
 import re
+from dateutil.parser import parse
 
 import six
 from requests.structures import CaseInsensitiveDict
@@ -20,7 +21,7 @@ class ObjectMapper(object):
     PRIMITIVE_TYPES = (float, bool, bytes, six.text_type) + six.integer_types
     NATIVE_TYPES_MAPPING = {
         'int': int,
-        'long': int if six.PY3 else long,  # noqa: F821
+        'long': int if six.PY3 else long,  # noqa: F821, YTT202
         'float': float,
         'str': str,
         'bool': bool,
@@ -30,39 +31,29 @@ class ObjectMapper(object):
     }
 
     def to_json(self, obj):
-
         if obj is None:
             return None
         elif isinstance(obj, self.PRIMITIVE_TYPES):
             return obj
         elif isinstance(obj, list):
-            return [self.to_json(sub_obj)
-                    for sub_obj in obj]
+            return [self.to_json(sub_obj) for sub_obj in obj]
         elif isinstance(obj, tuple):
-            return tuple(self.to_json(sub_obj)
-                         for sub_obj in obj)
+            return tuple(self.to_json(sub_obj) for sub_obj in obj)
         elif isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
-
-        if isinstance(obj, dict) or isinstance(obj, CaseInsensitiveDict):
+        elif isinstance(obj, dict) or isinstance(obj, CaseInsensitiveDict):
             obj_dict = obj
+        elif hasattr(obj, 'attribute_map') and hasattr(obj, 'swagger_types'):
+            obj_dict = {obj.attribute_map[attr]: getattr(obj, attr)
+                    for attr, _ in six.iteritems(obj.swagger_types)
+                    if getattr(obj, attr) is not None}
         else:
-            # Convert model obj to dict except
-            # attributes `swagger_types`, `attribute_map`
-            # and attributes which value is not None.
-            # Convert attribute name to json key in
-            # model definition for request.
-            if hasattr(obj, 'attribute_map') and hasattr(obj, 'swagger_types'):
-                obj_dict = {obj.attribute_map[attr]: getattr(obj, attr)
-                            for attr, _ in six.iteritems(obj.swagger_types)
-                            if getattr(obj, attr) is not None}
-            else:
-                obj_dict = {name: getattr(obj, name)
-                            for name in vars(obj)
-                            if getattr(obj, name) is not None}
+            obj_dict = {name: getattr(obj, name)
+                    for name in vars(obj)
+                    if getattr(obj, name) is not None}
 
         return {key: self.to_json(val)
-                for key, val in six.iteritems(obj_dict)}
+            for key, val in six.iteritems(obj_dict)}
 
     def from_json(self, data, klass):
         return self.__deserialize(data, klass)
@@ -133,7 +124,6 @@ class ObjectMapper(object):
         :return: date.
         """
         try:
-            from dateutil.parser import parse
             return parse(string).date()
         except ImportError:
             return string
@@ -152,7 +142,6 @@ class ObjectMapper(object):
         :return: datetime.
         """
         try:
-            from dateutil.parser import parse
             return parse(string)
         except ImportError:
             return string

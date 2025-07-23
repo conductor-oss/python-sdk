@@ -20,32 +20,32 @@ class SchemaClient(ABC):
         """
         Register a new schema.
         """
-        pass
+        ...
 
     @abstractmethod
     def get_schema(self, schema_name: str, version: int) -> SchemaDef:
         """
         Retrieve a schema by its name and version.
         """
-        pass
+        ...
 
     @abstractmethod
     def get_all_schemas(self) -> List[SchemaDef]:
         """
         Retrieve all schemas.
         """
-        pass
+        ...
 
     @abstractmethod
     def delete_schema(self, schema_name: str, version: int) -> None:
         """
         Delete a schema by its name and version.
         """
-        pass
+        ...
 
     @abstractmethod
     def delete_schema_by_name(self, schema_name: str) -> None:
         """
         Delete all the versions of a schema by its name
         """
-        pass
+        ...

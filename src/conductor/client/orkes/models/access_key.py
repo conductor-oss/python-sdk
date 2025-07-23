@@ -3,7 +3,7 @@ from typing_extensions import Self
 from conductor.client.orkes.models.access_key_status import AccessKeyStatus
 
 
-class AccessKey:
+class AccessKey:  # noqa: PLW1641
     def __init__(self, id: str, status: AccessKeyStatus, created_at: int) -> Self:
         self._id = id
         self._status = status

@@ -1,19 +1,22 @@
 from __future__ import annotations
 
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from uuid import uuid4
 
 from typing_extensions import Self
 
-from conductor.client.ai.configuration import LLMProvider, VectorDB
-from conductor.client.ai.integrations import IntegrationConfig
-from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.integration_api_update import IntegrationApiUpdate
 from conductor.client.http.models.integration_update import IntegrationUpdate
-from conductor.client.http.models.prompt_template import PromptTemplate
 from conductor.client.http.rest import ApiException
 from conductor.client.orkes_clients import OrkesClients
 
+if TYPE_CHECKING:
+    from conductor.client.http.models.prompt_template import PromptTemplate
+    from conductor.client.configuration.configuration import Configuration
+    from conductor.client.ai.integrations import IntegrationConfig
+    from conductor.client.ai.configuration import LLMProvider, VectorDB
+
+NOT_FOUND_STATUS = 404
 
 class AIOrchestrator:
     def __init__(self, api_configuration: Configuration, prompt_test_workflow_name: str = '') -> Self:
@@ -36,7 +39,7 @@ class AIOrchestrator:
         try:
             return self.prompt_client.get_prompt(template_name)
         except ApiException as e:
-            if e.code == 404:
+            if e.code == NOT_FOUND_STATUS:
                 return None
             raise e
 
@@ -93,7 +96,6 @@ class AIOrchestrator:
             existing_integration_api = self.integration_client.get_integration_api(db_integration_name, index)
             if existing_integration_api is None or overwrite:
                 self.integration_client.save_integration_api(db_integration_name, index, api_details)
-        pass
 
     def get_token_used(self, ai_integration: str) -> dict:
         return self.integration_client.get_token_usage_for_integration_provider(ai_integration)

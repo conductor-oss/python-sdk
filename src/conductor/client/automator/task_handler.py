@@ -66,8 +66,7 @@ class TaskHandler:
         elif not isinstance(workers, list):
             workers = [workers]
         if scan_for_annotated_workers is True:
-            for (task_def_name, domain) in _decorated_functions:
-                record = _decorated_functions[(task_def_name, domain)]
+            for (task_def_name, domain), record in _decorated_functions.items():
                 fn = record['func']
                 worker_id = record['worker_id']
                 poll_interval = record['poll_interval']

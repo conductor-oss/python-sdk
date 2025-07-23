@@ -3,12 +3,18 @@ import json
 from conductor.client.exceptions.api_error import APIError, APIErrorCode
 from conductor.client.http.rest import ApiException
 
+BAD_REQUEST_STATUS = 400
+FORBIDDEN_STATUS = 403
+NOT_FOUND_STATUS = 404
+REQUEST_TIMEOUT_STATUS = 408
+CONFLICT_STATUS = 409
+
 STATUS_TO_MESSAGE_DEFAULT_MAPPING = {
-    400: "Invalid request",
-    403: "Access forbidden",
-    404: "Resource not found",
-    408: "Request timed out",
-    409: "Resource exists already",
+    BAD_REQUEST_STATUS: "Invalid request",
+    FORBIDDEN_STATUS: "Access forbidden",
+    NOT_FOUND_STATUS: "Resource not found",
+    REQUEST_TIMEOUT_STATUS: "Request timed out",
+    CONFLICT_STATUS: "Resource exists already",
 }
 
 
@@ -18,20 +24,20 @@ def api_exception_handler(function):
             return function(*args, **kwargs)
         except ApiException as e:
 
-            if e.status == 404:
+            if e.status == NOT_FOUND_STATUS:
                 code = APIErrorCode.NOT_FOUND
-            elif e.status == 403:
+            elif e.status == FORBIDDEN_STATUS:
                 code = APIErrorCode.FORBIDDEN
-            elif e.status == 409:
+            elif e.status == CONFLICT_STATUS:
                 code = APIErrorCode.CONFLICT
-            elif e.status == 400:
+            elif e.status == BAD_REQUEST_STATUS:
                 code = APIErrorCode.BAD_REQUEST
-            elif e.status == 408:
+            elif e.status == REQUEST_TIMEOUT_STATUS:
                 code = APIErrorCode.REQUEST_TIMEOUT
             else:
                 code = APIErrorCode.UNKNOWN
 
-            message = STATUS_TO_MESSAGE_DEFAULT_MAPPING[e.status]
+            message = STATUS_TO_MESSAGE_DEFAULT_MAPPING.get(e.status, "Unknown error")
 
             try:
                 if e.body:

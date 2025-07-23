@@ -5,7 +5,7 @@ from typing_extensions import Self
 from conductor.client.http.models.target_ref import TargetRef
 
 
-class GrantedPermission:
+class GrantedPermission:  # noqa: PLW1641
     def __init__(self, target: TargetRef, access: List[str]) -> Self:
         self._target = target
         self._access = access
