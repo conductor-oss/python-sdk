@@ -141,3 +141,23 @@ line-ending = "auto"
 "src/conductor/client/orkes/api/*.py" = ["ALL"]
 "tests/**/*.py" = ["B", "C4", "SIM"]
 "examples/**/*.py" = ["B", "C4", "SIM"]
+
+[tool.coverage.run]
+source = ["src/conductor"]
+omit = [
+    "tests/*",
+    "examples/*",
+    "*/__init__.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+    "except ImportError:",
+    "if TYPE_CHECKING:"
+]
