@@ -29,6 +29,7 @@ class ObjectMapper(object):
         "date": datetime.date,
         "datetime": datetime.datetime,
         "object": object,
+    }
 
     def to_json(self, obj):
         if obj is None:
