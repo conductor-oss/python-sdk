@@ -1,5 +1,6 @@
+from __future__ import annotations
 from copy import deepcopy
-from typing import List
+from typing import List, Optional
 
 from typing_extensions import Self
 
@@ -46,7 +47,7 @@ class LoopTask(DoWhileTask):
 
 
 class ForEachTask(DoWhileTask):
-    def __init__(self, task_ref_name: str, tasks: List[TaskInterface], iterate_over:str, variables: List[str] = None) -> Self:
+    def __init__(self, task_ref_name: str, tasks: List[TaskInterface], iterate_over:str, variables: Optional[List[str]] = None) -> Self:
         super().__init__(
             task_ref_name=task_ref_name,
             termination_condition=get_for_loop_condition(

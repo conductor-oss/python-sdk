@@ -1,5 +1,6 @@
+from __future__ import annotations
 from copy import deepcopy
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 
 from shortuuid import uuid
 from typing_extensions import Self
@@ -26,8 +27,8 @@ class ConductorWorkflow:
     def __init__(self,
                  executor: WorkflowExecutor,
                  name: str,
-                 version: int = None,
-                 description: str = None) -> Self:
+                 version: Optional[int] = None,
+                 description: Optional[str] = None) -> Self:
         self._executor = executor
         self.name = name
         self.version = version
@@ -207,8 +208,8 @@ class ConductorWorkflow:
         start_workflow_request.version = self.version
         return self._executor.start_workflow(start_workflow_request)
 
-    def start_workflow_with_input(self, workflow_input: dict = {}, correlation_id=None, task_to_domain=None,
-                 priority=None, idempotency_key: str = None, idempotency_strategy: IdempotencyStrategy = IdempotencyStrategy.FAIL) -> str:
+    def start_workflow_with_input(self, workflow_input: Optional[dict] = None, correlation_id: Optional[str] = None, task_to_domain: Optional[Dict[str, str]] = None,
+                 priority: Optional[int] = None, idempotency_key: Optional[str] = None, idempotency_strategy: IdempotencyStrategy = IdempotencyStrategy.FAIL) -> str:
         """
         Starts the workflow with given inputs and parameters and returns the id of the started workflow
         """
@@ -226,9 +227,9 @@ class ConductorWorkflow:
 
         return self._executor.start_workflow(start_workflow_request)
 
-    def execute(self, workflow_input: Any = {}, wait_until_task_ref: str = '', wait_for_seconds: int = 10,
-                request_id: str = None,
-                idempotency_key: str = None, idempotency_strategy : IdempotencyStrategy = IdempotencyStrategy.FAIL, task_to_domain: Dict[str, str] = None) -> WorkflowRun:
+    def execute(self, workflow_input: Any = None, wait_until_task_ref: str = '', wait_for_seconds: int = 10,
+                request_id: Optional[str] = None,
+                idempotency_key: Optional[str] = None, idempotency_strategy : IdempotencyStrategy = IdempotencyStrategy.FAIL, task_to_domain: Optional[Dict[str, str]] = None) -> WorkflowRun:
         """
         Executes a workflow synchronously.  Useful for short duration workflow (e.g. < 20 seconds)
         Parameters
@@ -361,7 +362,7 @@ class ConductorWorkflow:
         else:
             return '${' + f'workflow.input.{json_path}' + '}'
 
-    def output(self, json_path: str = None) -> str:
+    def output(self, json_path: Optional[str] = None) -> str:
         if json_path is None:
             return '${' + 'workflow.output' + '}'
         else:
