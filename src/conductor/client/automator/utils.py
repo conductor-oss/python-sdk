@@ -54,7 +54,7 @@ def convert_from_dict(cls: type, data: dict) -> object:
     if not ((str(typ).startswith('dict[') or
              str(typ).startswith('typing.Dict[') or
              str(typ).startswith('requests.structures.CaseInsensitiveDict[') or
-             typ == dict or str(typ).startswith('OrderedDict['))):
+             typ is dict or str(typ).startswith('OrderedDict['))):
         data = {}
 
     members = inspect.signature(cls.__init__).parameters
@@ -82,7 +82,7 @@ def convert_from_dict(cls: type, data: dict) -> object:
         elif (str(typ).startswith('dict[') or
               str(typ).startswith('typing.Dict[') or
               str(typ).startswith('requests.structures.CaseInsensitiveDict[') or
-              typ == dict or str(typ).startswith('OrderedDict[')):
+              typ is dict or str(typ).startswith('OrderedDict[')):
 
             values = {}
             generic_type = object
@@ -92,7 +92,7 @@ def convert_from_dict(cls: type, data: dict) -> object:
                 v = data[member][k]
                 values[k] = get_value(generic_type, v)
             kwargs[member] = values
-        elif typ == inspect.Parameter.empty:
+        elif typ is inspect.Parameter.empty:
             if inspect.Parameter.VAR_KEYWORD == members[member].kind:
                 if type(data) in dict_types:
                     kwargs.update(data)
@@ -117,7 +117,7 @@ def get_value(typ: type, val: object) -> object:
             values.append(converted)
         return values
     elif str(typ).startswith('dict[') or str(typ).startswith(
-            'typing.Dict[') or str(typ).startswith('requests.structures.CaseInsensitiveDict[') or typ == dict:
+            'typing.Dict[') or str(typ).startswith('requests.structures.CaseInsensitiveDict[') or typ is dict:
         values = {}
         for k in val:
             v = val[k]
