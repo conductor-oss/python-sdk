@@ -1,7 +1,7 @@
 import unittest
 from conductor.client.http.models.group import Group
 from conductor.client.http.models.role import Role
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 import json
 
 

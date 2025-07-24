@@ -2,12 +2,9 @@ from __future__ import annotations
 
 import os
 from abc import ABC, abstractmethod
-
+from typing import Optional
 
 class IntegrationConfig(ABC):
-    def __init__(self):
-        pass
-
     @abstractmethod
     def to_dict(self) -> dict:
         pass
@@ -29,7 +26,7 @@ class WeaviateConfig(IntegrationConfig):
 
 class OpenAIConfig(IntegrationConfig):
 
-    def __init__(self, api_key: str = None) -> None:
+    def __init__(self, api_key: Optional[str] = None) -> None:
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY')
         self.api_key = api_key
@@ -55,7 +52,7 @@ class AzureOpenAIConfig(IntegrationConfig):
 
 class PineconeConfig(IntegrationConfig):
 
-    def __init__(self, api_key: str = None, endpoint: str = None, environment: str = None, project_name: str = None) -> None:
+    def __init__(self, api_key: Optional[str] = None, endpoint: Optional[str] = None, environment: Optional[str] = None, project_name: Optional[str] = None) -> None:
         if api_key is None:
             self.api_key = os.getenv('PINECONE_API_KEY')
         else:

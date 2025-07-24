@@ -1,7 +1,7 @@
 import unittest
 import json
 from conductor.client.http.models.target_ref import TargetRef, TargetType
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestTargetRefSerDes(unittest.TestCase):

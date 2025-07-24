@@ -1,10 +1,12 @@
+from typing import ClassVar, Dict
+
 class EmbeddingModel(object):
-    swagger_types = {
+    swagger_types: ClassVar[Dict[str, str]] = {
         'provider': 'str',
         'model': 'str'
     }
 
-    attribute_map = {
+    attribute_map: ClassVar[Dict[str, str]] = {
         'provider': 'embeddingModelProvider',
         'model': 'embeddingModel'
     }

@@ -2,7 +2,7 @@ import unittest
 import json
 from typing import Set
 from conductor.client.http.models.workflow_summary import WorkflowSummary
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestWorkflowSummarySerialization(unittest.TestCase):

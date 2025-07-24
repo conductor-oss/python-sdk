@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 
 from typing_extensions import Self
 
@@ -14,32 +16,30 @@ def get_task_interface_list_as_workflow_task_list(*tasks: Self) -> List[Workflow
         wf_task = task.to_workflow_task()
         if isinstance(wf_task, list):
             # to_workflow_task() returned a list. E.g.: DynamicFork.to_workflow_task() returns the DynamicFork and the Join task.
-            for t in wf_task:
-                converted_tasks.append(t)
+            converted_tasks.extend(wf_task)
         else:
             converted_tasks.append(task.to_workflow_task())
     return converted_tasks
 
 
 class TaskInterface(ABC):
-    @abstractmethod
     def __init__(self,
                  task_reference_name: str,
                  task_type: TaskType,
-                 task_name: str = None,
-                 description: str = None,
-                 optional: bool = None,
-                 input_parameters: Dict[str, Any] = None,
-                 cache_key : str = None,
-                 cache_ttl_second : int = 0) -> Self:
+                 task_name: Optional[str] = None,
+                 description: Optional[str] = None,
+                 optional: Optional[bool] = None,
+                 input_parameters: Optional[Dict[str, Any]] = None,
+                 cache_key: Optional[str] = None,
+                 cache_ttl_second: int = 0) -> Self:
         self.task_reference_name = task_reference_name
         self.task_type = task_type
-        self.name = task_name or task_reference_name
+        self.task_name = task_name if task_name is not None else task_type.value
         self.description = description
         self.optional = optional
-        self.input_parameters = input_parameters
-        self._cache_key = cache_key
-        self._cache_ttl_second = cache_ttl_second
+        self.input_parameters = input_parameters if input_parameters is not None else {}
+        self.cache_key = cache_key
+        self.cache_ttl_second = cache_ttl_second
         self._expression = None
         self._evaluator_type = None
 
@@ -99,7 +99,7 @@ class TaskInterface(ABC):
 
     @description.setter
     def description(self, description: str) -> None:
-        if description != None and not isinstance(description, str):
+        if description is not None and not isinstance(description, str):
             raise Exception('invalid type')
         self._description = deepcopy(description)
 
@@ -125,8 +125,9 @@ class TaskInterface(ABC):
         if not isinstance(input_parameters, dict):
             try:
                 self._input_parameters = input_parameters.__dict__
-            except:
-                raise Exception(f'invalid type: {type(input_parameters)}')
+            except AttributeError as err:
+                raise ValueError(f'Invalid type: {type(input_parameters)}') from err
+
         self._input_parameters = deepcopy(input_parameters)
 
     def input_parameter(self, key: str, value: Any) -> Self:
@@ -151,7 +152,7 @@ class TaskInterface(ABC):
             evaluator_type=self._evaluator_type
         )
 
-    def output(self, json_path: str = None) -> str:
+    def output(self, json_path: Optional[str] = None) -> str:
         if json_path is None:
             return '${' + f'{self.task_reference_name}.output' + '}'
         elif json_path.startswith('.'):
@@ -159,17 +160,21 @@ class TaskInterface(ABC):
         else:
             return '${' + f'{self.task_reference_name}.output.{json_path}' + '}'
 
-    def input(self, json_path: str = None, key : str = None, value : Any = None) -> Union[str, Self]:
+    def input(self, json_path: Optional[str] = None, key: Optional[str] = None, value: Optional[Any] = None) -> Union[str, Self]:
         if key is not None and value is not None:
             """
-            For the backwards compatibility
+            Set input parameter
             """
-            return self.input_parameter(key, value)
-
-        if json_path is None:
-            return '${' + f'{self.task_reference_name}.input' + '}'
+            self.input_parameters[key] = value
+            return self
         else:
-            return '${' + f'{self.task_reference_name}.input.{json_path}' + '}'
+            """
+            Get input parameter
+            """
+            if json_path is None:
+                return '${' + f'{self.task_reference_name}.input' + '}'
+            else:
+                return '${' + f'{self.task_reference_name}.input.{json_path}' + '}'
 
     def __getattribute__(self, __name: str, /) -> Any:
         try:

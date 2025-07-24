@@ -2,6 +2,7 @@ import datetime
 import logging
 import re
 from dateutil.parser import parse
+from typing import Any, ClassVar, Dict, Tuple
 
 import six
 from requests.structures import CaseInsensitiveDict
@@ -18,10 +19,10 @@ logger = logging.getLogger(
 
 
 class ObjectMapper(object):
-    PRIMITIVE_TYPES = (float, bool, bytes, six.text_type) + six.integer_types
-    NATIVE_TYPES_MAPPING = {
+    PRIMITIVE_TYPES: ClassVar[Tuple[Any, ...]] = (float, bool, bytes, six.text_type, *six.integer_types)
+    NATIVE_TYPES_MAPPING: ClassVar[Dict[str, Any]] = {
         'int': int,
-        'long': int if six.PY3 else long,  # noqa: F821, YTT202
+        'long': int if six.PY3 else long,  # noqa: F821, RUF100, YTT202
         'float': float,
         'str': str,
         'bool': bool,
@@ -62,7 +63,7 @@ class ObjectMapper(object):
         if data is None:
             return None
 
-        if type(klass) == str:
+        if isinstance(klass, str):
             if klass.startswith('list['):
                 sub_kls = re.match(r'list\[(.*)\]', klass).group(1)
                 return [self.__deserialize(sub_data, sub_kls)
@@ -81,11 +82,11 @@ class ObjectMapper(object):
 
         if klass in self.PRIMITIVE_TYPES:
             return self.__deserialize_primitive(data, klass)
-        elif klass == object:
+        elif klass is object:
             return self.__deserialize_object(data)
-        elif klass == datetime.date:
+        elif klass is datetime.date:
             return self.__deserialize_date(data)
-        elif klass == datetime.datetime:
+        elif klass is datetime.datetime:
             return self.__deserialize_datatime(data)
         else:
             return self.__deserialize_model(data, klass)
@@ -99,7 +100,7 @@ class ObjectMapper(object):
         :return: int, long, float, str, bool.
         """
         try:
-            if klass == str and type(data) == bytes:
+            if isinstance(klass, str) and isinstance(data, bytes):
                 return self.__deserialize_bytes_to_str(data)
             return klass(data)
         except UnicodeEncodeError:
@@ -127,11 +128,11 @@ class ObjectMapper(object):
             return parse(string).date()
         except ImportError:
             return string
-        except ValueError:
+        except ValueError as err:
             raise rest.ApiException(
                 status=0,
                 reason="Failed to parse `{0}` as date object".format(string)
-            )
+            ) from err
 
     def __deserialize_datatime(self, string):
         """Deserializes string to datetime.
@@ -145,14 +146,14 @@ class ObjectMapper(object):
             return parse(string)
         except ImportError:
             return string
-        except ValueError:
+        except ValueError as err:
             raise rest.ApiException(
                 status=0,
                 reason=(
                     "Failed to parse `{0}` as datetime object"
                     .format(string)
                 )
-            )
+            ) from err
 
     def __hasattr(self, object, name):
         return name in object.__class__.__dict__

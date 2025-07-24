@@ -3,7 +3,7 @@ import json
 from typing import Dict, List
 
 from conductor.client.http.models.state_change_event import StateChangeEvent, StateChangeConfig, StateChangeEventType
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestStateChangeEventSerialization(unittest.TestCase):

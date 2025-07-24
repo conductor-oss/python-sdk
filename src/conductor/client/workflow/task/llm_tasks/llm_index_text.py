@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional
 from typing_extensions import Self
 
 from conductor.client.workflow.task.llm_tasks.utils.embedding_model import EmbeddingModel
@@ -20,8 +22,9 @@ class LlmIndexText(TaskInterface):
         """
 
     def __init__(self, task_ref_name: str, vector_db: str, index: str,
-                 embedding_model: EmbeddingModel, text: str, doc_id: str, namespace: str = None, task_name: str = None,
-                 metadata: dict = {}) -> Self:
+                 embedding_model: EmbeddingModel, text: str, doc_id: str, namespace: Optional[str] = None, task_name: Optional[str] = None,
+                 metadata: Optional[dict] = None) -> Self:
+        metadata = metadata or {}
         if task_name is None:
             task_name = 'llm_index_doc'
 

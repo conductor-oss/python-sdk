@@ -1,7 +1,7 @@
 import unittest
 import json
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestSaveScheduleRequestSerDes(unittest.TestCase):

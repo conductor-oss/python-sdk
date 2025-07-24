@@ -2,7 +2,7 @@ import unittest
 import json
 from conductor.client.http.models.integration_api import IntegrationApi
 from conductor.client.http.models.tag_object import TagObject
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class IntegrationApiSerializationTest(unittest.TestCase):

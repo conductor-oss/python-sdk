@@ -1,6 +1,8 @@
+from __future__ import annotations
 import logging
 import os
 import time
+from typing import Optional
 
 from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
 
@@ -10,10 +12,10 @@ class Configuration:
 
     def __init__(
             self,
-            base_url: str = None,
+            base_url: Optional[str] = None,
             debug: bool = False,
             authentication_settings: AuthenticationSettings = None,
-            server_api_url: str = None,
+            server_api_url: Optional[str] = None,
             auth_token_ttl_min: int = 45
     ):
         if server_api_url is not None:
@@ -138,7 +140,7 @@ class Configuration:
         """
         return self.__ui_host
 
-    def apply_logging_config(self, log_format : str = None, level = None):
+    def apply_logging_config(self, log_format : Optional[str] = None, level = None):
         if log_format is None:
             log_format = self.logger_format
         if level is None:

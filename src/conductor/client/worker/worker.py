@@ -1,10 +1,11 @@
+from __future__ import annotations
 import dataclasses
 import inspect
 import logging
 import time
 import traceback
 from copy import deepcopy
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, Optional
 
 from typing_extensions import Self
 
@@ -37,8 +38,8 @@ def is_callable_input_parameter_a_task(callable: ExecuteTaskFunction, object_typ
     parameters = inspect.signature(callable).parameters
     if len(parameters) != 1:
         return False
-    parameter = parameters[list(parameters.keys())[0]]
-    return parameter.annotation in (object_type, parameter.empty, object)
+    parameter = parameters[next(iter(parameters.keys()))]
+    return parameter.annotation == object_type or parameter.annotation == parameter.empty or parameter.annotation is object
 
 
 def is_callable_return_value_of_type(callable: ExecuteTaskFunction, object_type: Any) -> bool:
@@ -50,9 +51,9 @@ class Worker(WorkerInterface):
     def __init__(self,
                  task_definition_name: str,
                  execute_function: ExecuteTaskFunction,
-                 poll_interval: float = None,
-                 domain: str = None,
-                 worker_id: str = None,
+                 poll_interval: Optional[float] = None,
+                 domain: Optional[str] = None,
+                 worker_id: Optional[str] = None,
                  ) -> Self:
         super().__init__(task_definition_name)
         self.api_client = ApiClient()
@@ -93,7 +94,7 @@ class Worker(WorkerInterface):
                             task_input[input_name] = None
                 task_output = self.execute_function(**task_input)
 
-            if type(task_output) == TaskResult:
+            if isinstance(task_output, TaskResult):
                 task_output.task_id = task.task_id
                 task_output.workflow_instance_id = task.workflow_instance_id
                 return task_output

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, List, Dict
 
 from conductor.client.configuration.configuration import Configuration
@@ -45,7 +46,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def execute_workflow(
             self,
             start_workflow_request: StartWorkflowRequest,
-            request_id: str = None,
+            request_id: Optional[str] = None,
             wait_until_task_ref: Optional[str] = None,
             wait_for_seconds: int = 30
     ) -> WorkflowRun:
@@ -62,7 +63,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def execute_workflow_with_return_strategy(
             self,
             start_workflow_request: StartWorkflowRequest,
-            request_id: str = None,
+            request_id: Optional[str] = None,
             wait_until_task_ref: Optional[str] = None,
             wait_for_seconds: int = 30,
             consistency: Optional[str] = None,
@@ -130,8 +131,8 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
             kwargs['include_tasks'] = include_tasks
         return self.workflowResourceApi.get_execution_status(workflow_id, **kwargs)
 
-    def get_workflow_status(self, workflow_id: str, include_output: bool = None,
-                            include_variables: bool = None) -> WorkflowStatus:
+    def get_workflow_status(self, workflow_id: str, include_output: Optional[bool] = None,
+                            include_variables: Optional[bool] = None) -> WorkflowStatus:
         kwargs = {}
         if include_output is not None:
             kwargs['include_output'] = include_output
@@ -148,8 +149,8 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def test_workflow(self, test_request: WorkflowTestRequest) -> Workflow:
         return self.workflowResourceApi.test_workflow(test_request)
 
-    def search(self, start: int = 0, size: int = 100, free_text: str = '*', query: str = None,
-               query_id: str = None) -> ScrollableSearchResultWorkflowSummary:
+    def search(self, start: int = 0, size: int = 100, free_text: str = '*', query: Optional[str] = None,
+               query_id: Optional[str] = None) -> ScrollableSearchResultWorkflowSummary:
         args = {
             'start': start,
             'size': size,
@@ -201,11 +202,12 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def remove_workflow(self, workflow_id: str):
         self.workflowResourceApi.delete(workflow_id)
 
-    def update_variables(self, workflow_id: str, variables: Dict[str, object] = {}) -> None:
+    def update_variables(self, workflow_id: str, variables: Dict[str, object] = None) -> None:
+        variables = variables or {}
         self.workflowResourceApi.update_workflow_state(variables, workflow_id)
 
     def update_state(self, workflow_id: str, update_requesst: WorkflowStateUpdate,
-                     wait_until_task_ref_names: List[str] = None, wait_for_seconds: int = None) -> WorkflowRun:
+                     wait_until_task_ref_names: Optional[List[str]] = None, wait_for_seconds: Optional[int] = None) -> WorkflowRun:
         kwargs = {}
         if wait_until_task_ref_names is not None:
             kwargs['wait_until_task_ref'] = ','.join(wait_until_task_ref_names)
