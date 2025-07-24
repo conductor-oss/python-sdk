@@ -29,14 +29,14 @@ class MetricsCollector:
     must_collect_metrics = False
 
     def __init__(self, settings: MetricsSettings):
-        if settings != None:
+        if settings is not None:
             os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.directory
             MultiProcessCollector(self.registry)
             self.must_collect_metrics = True
 
     @staticmethod
     def provide_metrics(settings: MetricsSettings) -> None:
-        if settings == None:
+        if settings is None:
             return
         OUTPUT_FILE_PATH = os.path.join(
             settings.directory,

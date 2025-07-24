@@ -1,7 +1,7 @@
 import unittest
 from conductor.client.http.models.search_result_task_summary import SearchResultTaskSummary
 from conductor.client.http.models.task_summary import TaskSummary
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 import json
 
 

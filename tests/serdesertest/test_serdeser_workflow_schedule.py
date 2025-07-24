@@ -2,7 +2,7 @@ import unittest
 from conductor.client.http.models.workflow_schedule import WorkflowSchedule
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
 from conductor.client.http.models.tag_object import TagObject
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 import json
 
 

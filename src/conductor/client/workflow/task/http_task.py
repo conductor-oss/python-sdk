@@ -1,6 +1,7 @@
+from __future__ import annotations
 from copy import deepcopy
 from enum import Enum
-from typing import Any, ClassVar, Dict, List, Union
+from typing import Any, ClassVar, Dict, List, Optional, Union
 
 from typing_extensions import Self
 
@@ -42,12 +43,12 @@ class HttpInput:
 
     def __init__(self,
                  method: HttpMethod = HttpMethod.GET,
-                 uri: str = None,
-                 headers: Dict[str, List[str]] = None,
-                 accept: str = None,
-                 content_type: str = None,
-                 connection_time_out: int = None,
-                 read_timeout: int = None,
+                 uri: Optional[str] = None,
+                 headers: Optional[Dict[str, List[str]]] = None,
+                 accept: Optional[str] = None,
+                 content_type: Optional[str] = None,
+                 connection_time_out: Optional[int] = None,
+                 read_timeout: Optional[int] = None,
                  body: Any = None) -> Self:
         self._method = deepcopy(method)
         self._uri = deepcopy(uri)
@@ -72,13 +73,13 @@ class HttpTask(TaskInterface):
     def status_code(self) -> int:
         return '${' + f'{self.task_reference_name}.output.response.statusCode' + '}'
 
-    def headers(self, json_path: str = None) -> str:
+    def headers(self, json_path: Optional[str] = None) -> str:
         if json_path is None:
             return '${' + f'{self.task_reference_name}.output.response.headers' + '}'
         else:
             return '${' + f'{self.task_reference_name}.output.response.headers.{json_path}' + '}'
 
-    def body(self, json_path: str = None) -> str:
+    def body(self, json_path: Optional[str] = None) -> str:
         if json_path is None:
             return '${' + f'{self.task_reference_name}.output.response.body' + '}'
         else:

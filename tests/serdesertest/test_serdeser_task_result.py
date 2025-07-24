@@ -3,7 +3,7 @@ import json
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result_status import TaskResultStatus
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestTaskResultSerDeser(unittest.TestCase):

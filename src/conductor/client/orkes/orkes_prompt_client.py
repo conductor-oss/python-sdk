@@ -1,6 +1,6 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 
-from typing import List
+from typing import List, Optional
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.prompt_template import PromptTemplate
@@ -9,9 +9,6 @@ from conductor.client.http.rest import ApiException
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.prompt_client import PromptClient
-
-
-# python 2 and python 3 compatibility library
 
 
 class OrkesPromptClient(OrkesBaseClient, PromptClient):
@@ -46,7 +43,7 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
         self.promptApi.delete_tag_for_prompt_template(tags, prompt_name)
 
     def test_prompt(self, prompt_text: str, variables: dict, ai_integration: str, text_complete_model: str,
-                    temperature: float = 0.1, top_p: float = 0.9, stop_words: List[str] = None) -> str:
+                    temperature: float = 0.1, top_p: float = 0.9, stop_words: Optional[List[str]] = None) -> str:
         request = PromptTemplateTestRequest()
         request.prompt = prompt_text
         request.llm_provider = ai_integration

@@ -1,7 +1,7 @@
 import unittest
 import json
 from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestUpsertGroupRequest(unittest.TestCase):

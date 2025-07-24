@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, List, Dict
 
 from typing_extensions import Self
@@ -20,6 +21,7 @@ class LlmChatComplete(TaskInterface):
                  template_variables: Dict[str, object] = None) -> Self:
         template_variables = template_variables or {}
         stop_words = stop_words or []
+
         optional_input_params = {}
 
         if stop_words:

@@ -3,7 +3,7 @@ import json
 from copy import deepcopy
 
 from conductor.client.http.models import RerunWorkflowRequest
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestRerunWorkflowRequestSerialization(unittest.TestCase):

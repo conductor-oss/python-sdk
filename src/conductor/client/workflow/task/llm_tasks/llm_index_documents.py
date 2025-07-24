@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional
 
 from typing_extensions import Self
@@ -27,9 +29,9 @@ class LlmIndexDocument(TaskInterface):
 
     def __init__(self, task_ref_name: str, vector_db: str, namespace: str,
                  embedding_model: EmbeddingModel, index: str, url: str, media_type: str,
-                 chunk_size: Optional[int] = None, chunk_overlap: Optional[int] = None, doc_id: str = None,
-                 task_name: str = None,
-                 metadata: dict = None) -> Self:
+                 chunk_size: Optional[int] = None, chunk_overlap: Optional[int] = None, doc_id: Optional[str] = None,
+                 task_name: Optional[str] = None,
+                 metadata: Optional[dict] = None) -> Self:
         metadata = metadata or {}
         input_params = {
             "vectorDB": vector_db,
@@ -44,13 +46,13 @@ class LlmIndexDocument(TaskInterface):
 
         optional_input_params = {}
 
-        if chunk_size:
+        if chunk_size is not None:
             optional_input_params.update({"chunkSize": chunk_size})
 
-        if chunk_overlap:
+        if chunk_overlap is not None:
             optional_input_params.update({"chunkOverlap": chunk_overlap})
 
-        if doc_id:
+        if doc_id is not None:
             optional_input_params.update({"docId": doc_id})
 
         input_params.update(optional_input_params)

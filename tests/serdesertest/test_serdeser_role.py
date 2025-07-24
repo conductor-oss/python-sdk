@@ -4,7 +4,7 @@ from typing import List
 
 from conductor.client.http.models.role import Role
 from conductor.client.http.models.permission import Permission
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestRoleSerialization(unittest.TestCase):

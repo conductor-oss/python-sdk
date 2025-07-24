@@ -1,5 +1,6 @@
+from __future__ import annotations
 from abc import ABC
-
+from typing import Optional
 from typing_extensions import Self
 
 from conductor.client.workflow.task.task import TaskInterface
@@ -8,7 +9,7 @@ from conductor.client.workflow.task.task_type import TaskType
 
 class WaitTask(TaskInterface, ABC):
 
-    def __init__(self, task_ref_name: str, wait_until: str = None, wait_for_seconds: int = None) -> Self:
+    def __init__(self, task_ref_name: str, wait_until: Optional[str] = None, wait_for_seconds: Optional[int] = None) -> Self:
         """
         wait_until: Specific date/time to wait for e.g. 2023-12-25 05:25 PST
         wait_for_seconds: time to block for - e.g. specifying 60 will wait for 60 seconds

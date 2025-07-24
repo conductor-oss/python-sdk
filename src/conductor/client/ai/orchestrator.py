@@ -73,8 +73,8 @@ class AIOrchestrator:
             if existing_integration_api is None or overwrite:
                 self.integration_client.save_integration_api(ai_integration_name, model, api_details)
 
-    def add_vector_store(self, db_integration_name: str, provider: VectorDB, indices: List[str],config: IntegrationConfig,
-                         description: str = None,overwrite : bool = False):
+    def add_vector_store(self, db_integration_name: str, provider: VectorDB, indices: List[str], config: IntegrationConfig,
+                         description: Optional[str] = None, overwrite: bool = False):
         vector_db = IntegrationUpdate()
         vector_db.configuration = config.to_dict()
         vector_db.type = provider.value

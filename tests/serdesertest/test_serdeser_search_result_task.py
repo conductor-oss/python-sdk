@@ -2,7 +2,7 @@ import unittest
 import json
 from conductor.client.http.models.search_result_task import SearchResultTask
 from conductor.client.http.models.task import Task
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestSearchResultTaskSerDes(unittest.TestCase):

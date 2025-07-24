@@ -229,14 +229,13 @@ class TaskRunner:
         if polling_interval:
             try:
                 self.worker.poll_interval = float(polling_interval)
-            except Exception as e:
+            except Exception:
                 logger.error(f'error reading and parsing the polling interval value {polling_interval}')
                 self.worker.poll_interval = self.worker.get_polling_interval_in_seconds()
 
         if polling_interval:
             try:
                 self.worker.poll_interval = float(polling_interval)
-                polling_interval_initialized = True
             except Exception as e:
                 logger.error("Exception in reading polling interval from environment variable: {0}.".format(str(e)))
 

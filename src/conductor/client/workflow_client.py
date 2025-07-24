@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional, List, Dict
 
@@ -21,8 +22,8 @@ class WorkflowClient(ABC):
         pass
 
     @abstractmethod
-    def get_workflow_status(self, workflow_id: str, include_output: bool = None,
-                            include_variables: bool = None) -> WorkflowStatus:
+    def get_workflow_status(self, workflow_id: str, include_output: Optional[bool] = None,
+                            include_variables: Optional[bool] = None) -> WorkflowStatus:
         pass
 
     @abstractmethod
@@ -38,7 +39,7 @@ class WorkflowClient(ABC):
     def execute_workflow(
             self,
             start_workflow_request: StartWorkflowRequest,
-            request_id: str = None,
+            request_id: Optional[str] = None,
             wait_until_task_ref: Optional[str] = None,
             wait_for_seconds: int = 30
     ) -> WorkflowRun:
@@ -48,7 +49,7 @@ class WorkflowClient(ABC):
     def execute_workflow_with_return_strategy(
             self,
             start_workflow_request: StartWorkflowRequest,
-            request_id: str = None,
+            request_id: Optional[str] = None,
             wait_until_task_ref: Optional[str] = None,
             wait_for_seconds: int = 30,
             consistency: Optional[str] = None,
@@ -86,7 +87,7 @@ class WorkflowClient(ABC):
 
     @abstractmethod
     def search(self, start: int = 0, size: int = 100, free_text: str = '*',
-               query: str = None) -> ScrollableSearchResultWorkflowSummary:
+               query: Optional[str] = None) -> ScrollableSearchResultWorkflowSummary:
         pass
 
     @abstractmethod
@@ -117,5 +118,5 @@ class WorkflowClient(ABC):
 
     @abstractmethod
     def update_state(self, workflow_id: str, update_requesst: WorkflowStateUpdate,
-                     wait_until_task_ref_names: List[str] = None, wait_for_seconds : int = None) -> WorkflowRun:
+                     wait_until_task_ref_names: Optional[List[str]] = None, wait_for_seconds: Optional[int] = None) -> WorkflowRun:
         pass

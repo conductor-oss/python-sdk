@@ -2,7 +2,7 @@ import unittest
 import json
 from conductor.client.http.models import WorkflowDef, WorkflowTask, RateLimit
 from conductor.client.http.models.schema_def import SchemaDef
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestWorkflowDefSerDeSer(unittest.TestCase):
