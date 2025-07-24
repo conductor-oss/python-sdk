@@ -1,7 +1,7 @@
 import json
 import unittest
 from conductor.client.http.models.integration import Integration
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class IntegrationSerdeserTest(unittest.TestCase):

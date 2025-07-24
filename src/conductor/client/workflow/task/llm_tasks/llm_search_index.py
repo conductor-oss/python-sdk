@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional
 from typing_extensions import Self
 
 from conductor.client.workflow.task.task import TaskInterface
@@ -6,7 +8,7 @@ from conductor.client.workflow.task.task_type import TaskType
 
 class LlmSearchIndex(TaskInterface):
     def __init__(self, task_ref_name: str, vector_db: str, namespace: str, index: str,
-                 embedding_model_provider: str, embedding_model: str, query: str, task_name: str = None, max_results : int = 1) -> Self:
+                 embedding_model_provider: str, embedding_model: str, query: str, task_name: Optional[str] = None, max_results : int = 1) -> Self:
         if task_name is None:
             task_name = "llm_search_index"
 

@@ -33,6 +33,7 @@ astor = ">=0.8.1"
 shortuuid = ">=1.0.11"
 dacite = ">=1.8.1"
 deprecated = ">=1.2.14"
+python-dateutil = "^2.8.2"
 
 [tool.poetry.group.dev.dependencies]
 pylint = ">=2.17.5"
@@ -120,6 +121,14 @@ ignore = [
     "W191",
     "E501",
     "B011",
+    # too-many-arguments
+    "PLR0913",
+    # collapsible-else-if
+    "PLR5501",
+    # too-many-branches
+    "PLR0912",
+    # too-many-return-statements
+    "PLR0911"
 ]
 
 [tool.ruff.lint.isort]

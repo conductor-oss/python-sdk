@@ -58,6 +58,7 @@ class TestTaskRunner(unittest.TestCase):
                       'd': [{'name': 'conductor', 'id': 123}, {'F': 3}],
                       'g': {'userA': {'name': 'userA', 'id': 100}, 'userB': {'name': 'userB', 'id': 101}}}
         value = convert_from_dict(Test, dictionary)
+
         self.assertEqual(Test, type(value))
         self.assertEqual(123, value.a)
         self.assertEqual(2, len(value.b))

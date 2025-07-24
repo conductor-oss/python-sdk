@@ -1,5 +1,7 @@
+from __future__ import annotations
 import logging
 import os
+from typing import Optional
 from pathlib import Path
 
 from conductor.client.configuration.configuration import Configuration
@@ -34,4 +36,5 @@ class MetricsSettings:
             except Exception as e:
                 logger.warning(
                     "Failed to create metrics temporary folder, reason: ", e)
+
         self.directory = dir

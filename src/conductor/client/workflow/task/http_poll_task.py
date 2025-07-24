@@ -1,5 +1,7 @@
+from __future__ import annotations
 from copy import deepcopy
-from typing import Any, Dict, List
+
+from typing import Any, ClassVar, Dict, List, Optional
 
 from typing_extensions import Self
 
@@ -9,7 +11,7 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class HttpPollInput():
-    swagger_types = {
+    swagger_types: ClassVar[Dict[str, str]] = {
         "_uri": "str",
         "_method": "str",
         "_accept": "list[str]",
@@ -24,7 +26,7 @@ class HttpPollInput():
         "_polling_strategy": str
     }
 
-    attribute_map = {
+    attribute_map: ClassVar[Dict[str, str]] = {
         "_uri": "uri",
         "_method": "method",
         "_accept": "accept",
@@ -40,17 +42,17 @@ class HttpPollInput():
     }
 
     def __init__(self,
-                 termination_condition: str = None,
+                 termination_condition: Optional[str] = None,
                  max_poll_count : int = 100,
                  polling_interval : int = 100,
                  polling_strategy: str = "FIXED",
                  method: HttpMethod = HttpMethod.GET,
-                 uri: str = None,
-                 headers: Dict[str, List[str]] = None,
-                 accept: str = None,
-                 content_type: str = None,
-                 connection_time_out: int = None,
-                 read_timeout: int = None,
+                 uri: Optional[str] = None,
+                 headers: Optional[Dict[str, List[str]]] = None,
+                 accept: Optional[str] = None,
+                 content_type: Optional[str] = None,
+                 connection_time_out: Optional[int] = None,
+                 read_timeout: Optional[int] = None,
                  body: Any = None) -> Self:
         self._method = deepcopy(method)
         self._uri = deepcopy(uri)

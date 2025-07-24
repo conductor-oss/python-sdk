@@ -1,7 +1,7 @@
 import unittest
 from conductor.client.http.models.search_result_workflow import SearchResultWorkflow
 from conductor.client.http.models.workflow import Workflow
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 import json
 
 

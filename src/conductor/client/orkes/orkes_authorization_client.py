@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Dict, List, Optional
 
 from conductor.client.authorization_client import AuthorizationClient
@@ -146,11 +147,7 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
         resp_obj = self.authorizationResourceApi.get_permissions(target.type.name, target.id)
         permissions = {}
         for access_type, subjects in resp_obj.items():
-            subject_list = []
-            for sub in subjects:
-                subject_list.append(
-                    SubjectRef(sub["type"], sub["id"])
-                )
+            subject_list = [SubjectRef(sub["type"], sub["id"]) for sub in subjects]
             permissions[access_type] = subject_list
         return permissions
 

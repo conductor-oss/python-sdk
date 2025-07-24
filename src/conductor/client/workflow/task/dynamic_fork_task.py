@@ -25,6 +25,6 @@ class DynamicForkTask(TaskInterface):
         tasks = [
             wf_task,
         ]
-        if self._join_task != None:
+        if self._join_task is not None:
             tasks.append(self._join_task.to_workflow_task())
         return tasks

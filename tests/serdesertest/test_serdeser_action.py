@@ -4,7 +4,7 @@ from conductor.client.http.models.start_workflow import StartWorkflow
 from conductor.client.http.models.task_details import TaskDetails
 from conductor.client.http.models.terminate_workflow import TerminateWorkflow
 from conductor.client.http.models.update_workflow_variables import UpdateWorkflowVariables
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 import json
 import re
 

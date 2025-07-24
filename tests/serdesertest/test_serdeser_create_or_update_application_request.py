@@ -2,7 +2,7 @@ import unittest
 import json
 
 from conductor.client.http.models import CreateOrUpdateApplicationRequest
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestCreateOrUpdateApplicationRequest(unittest.TestCase):

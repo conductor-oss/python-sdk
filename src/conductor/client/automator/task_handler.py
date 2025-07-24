@@ -1,9 +1,10 @@
+from __future__ import annotations
 import importlib
 import logging
 import os
 from multiprocessing import Process, freeze_support, Queue, set_start_method
 from sys import platform
-from typing import List
+from typing import List, Optional
 
 from conductor.client.automator.task_runner import TaskRunner
 from conductor.client.configuration.configuration import Configuration
@@ -45,12 +46,13 @@ def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id:
 class TaskHandler:
     def __init__(
             self,
-            workers: List[WorkerInterface] = [],
-            configuration: Configuration = None,
-            metrics_settings: MetricsSettings = None,
+            workers: Optional[List[WorkerInterface]] = None,
+            configuration: Optional[Configuration] = None,
+            metrics_settings: Optional[MetricsSettings] = None,
             scan_for_annotated_workers: bool = True,
-            import_modules: List[str] = None
+            import_modules: Optional[List[str]] = None
     ):
+        workers = workers or []
         self.logger_process, self.queue = _setup_logging_queue(configuration)
 
         # imports
@@ -61,16 +63,13 @@ class TaskHandler:
                 logger.info(f"loading module {module}")
                 importlib.import_module(module)
 
-        if workers is None:
-            workers = []
         elif not isinstance(workers, list):
             workers = [workers]
         if scan_for_annotated_workers is True:
-            for (task_def_name, domain) in _decorated_functions:
-                record = _decorated_functions[(task_def_name, domain)]
-                fn = record["func"]
-                worker_id = record["worker_id"]
-                poll_interval = record["poll_interval"]
+            for (task_def_name, domain), record in _decorated_functions.items():
+                fn = record['func']
+                worker_id = record['worker_id']
+                poll_interval = record['poll_interval']
 
                 worker = Worker(
                     task_definition_name=task_def_name,

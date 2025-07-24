@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import Any, Dict, List
+from typing import Any, ClassVar, Dict, List
 
 from prometheus_client import CollectorRegistry
 from prometheus_client import Counter
@@ -23,20 +23,20 @@ logger = logging.getLogger(
 
 
 class MetricsCollector:
-    counters = {}
-    gauges = {}
+    counters: ClassVar[Dict[str, Counter]] = {}
+    gauges: ClassVar[Dict[str, Gauge]] = {}
     registry = CollectorRegistry()
     must_collect_metrics = False
 
     def __init__(self, settings: MetricsSettings):
-        if settings != None:
+        if settings is not None:
             os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.directory
             MultiProcessCollector(self.registry)
             self.must_collect_metrics = True
 
     @staticmethod
     def provide_metrics(settings: MetricsSettings) -> None:
-        if settings == None:
+        if settings is None:
             return
         OUTPUT_FILE_PATH = os.path.join(
             settings.directory,

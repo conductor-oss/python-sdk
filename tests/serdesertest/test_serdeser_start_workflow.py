@@ -1,7 +1,7 @@
 import unittest
 import json
 from conductor.client.http.models.start_workflow import StartWorkflow
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestStartWorkflowSerDes(unittest.TestCase):

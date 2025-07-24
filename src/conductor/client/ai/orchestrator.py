@@ -1,19 +1,22 @@
 from __future__ import annotations
 
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from uuid import uuid4
 
 from typing_extensions import Self
 
-from conductor.client.ai.configuration import LLMProvider, VectorDB
-from conductor.client.ai.integrations import IntegrationConfig
-from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.integration_api_update import IntegrationApiUpdate
 from conductor.client.http.models.integration_update import IntegrationUpdate
-from conductor.client.http.models.prompt_template import PromptTemplate
 from conductor.client.http.rest import ApiException
 from conductor.client.orkes_clients import OrkesClients
 
+if TYPE_CHECKING:
+    from conductor.client.http.models.prompt_template import PromptTemplate
+    from conductor.client.configuration.configuration import Configuration
+    from conductor.client.ai.integrations import IntegrationConfig
+    from conductor.client.ai.configuration import LLMProvider, VectorDB
+
+NOT_FOUND_STATUS = 404
 
 class AIOrchestrator:
     def __init__(self, api_configuration: Configuration, prompt_test_workflow_name: str = "") -> Self:
@@ -36,7 +39,7 @@ class AIOrchestrator:
         try:
             return self.prompt_client.get_prompt(template_name)
         except ApiException as e:
-            if e.code == 404:
+            if e.code == NOT_FOUND_STATUS:
                 return None
             raise e
 
@@ -47,10 +50,10 @@ class AIOrchestrator:
     def test_prompt_template(self, text: str, variables: dict,
                              ai_integration: str,
                              text_complete_model: str,
-                             stop_words: Optional[List[str]] = [], max_tokens: Optional[int] = 100,
+                             stop_words: List[str] = None, max_tokens: int = 100,
                              temperature: int = 0,
                              top_p: int = 1):
-
+        stop_words = stop_words or []
         return self.prompt_client.test_prompt(text, variables, ai_integration, text_complete_model, temperature, top_p,
                                               stop_words)
 
@@ -73,8 +76,8 @@ class AIOrchestrator:
             if existing_integration_api is None or overwrite:
                 self.integration_client.save_integration_api(ai_integration_name, model, api_details)
 
-    def add_vector_store(self, db_integration_name: str, provider: VectorDB, indices: List[str],config: IntegrationConfig,
-                         description: str = None,overwrite : bool = False):
+    def add_vector_store(self, db_integration_name: str, provider: VectorDB, indices: List[str], config: IntegrationConfig,
+                         description: Optional[str] = None, overwrite: bool = False):
         vector_db = IntegrationUpdate()
         vector_db.configuration = config.to_dict()
         vector_db.type = provider.value
