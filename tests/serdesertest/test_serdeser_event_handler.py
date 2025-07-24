@@ -2,7 +2,7 @@ import unittest
 import json
 from conductor.client.http.models.event_handler import EventHandler
 from conductor.client.http.models.action import Action
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestEventHandlerSerDe(unittest.TestCase):

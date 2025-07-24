@@ -1,7 +1,7 @@
 import json
 import unittest
 from conductor.client.http.models.external_storage_location import ExternalStorageLocation
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestExternalStorageLocationSerDe(unittest.TestCase):

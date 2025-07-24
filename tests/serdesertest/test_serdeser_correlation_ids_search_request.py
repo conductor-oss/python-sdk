@@ -2,7 +2,7 @@ import unittest
 import json
 
 from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 class TestCorrelationIdsSearchRequest(unittest.TestCase):
     """Test case for CorrelationIdsSearchRequest class."""

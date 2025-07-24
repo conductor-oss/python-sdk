@@ -1,6 +1,6 @@
 import unittest
 import json
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 # Import the classes being tested
 from conductor.client.http.models.authorization_request import AuthorizationRequest

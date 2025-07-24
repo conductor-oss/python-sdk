@@ -1,6 +1,6 @@
 import unittest
 from conductor.client.http.models.upsert_user_request import UpsertUserRequest, RolesEnum
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 import json
 
 
