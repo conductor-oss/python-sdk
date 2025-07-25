@@ -3,4 +3,4 @@ repos:
     rev: v0.12.3
     hooks:
       - id: ruff
-        args: ["--exit-zero"]
+        args: [""]
