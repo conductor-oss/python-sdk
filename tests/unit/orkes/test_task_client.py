@@ -36,9 +36,24 @@ def disable_logging():
 @pytest.fixture
 def tasks():
     return [
-        Task(task_type=TaskType.SIMPLE, task_def_name=TASK_NAME, reference_task_name="simple_task_ref_1", task_id=TASK_ID),
-        Task(task_type=TaskType.SIMPLE, task_def_name=TASK_NAME, reference_task_name="simple_task_ref_2", task_id="task_id_2"),
-        Task(task_type=TaskType.SIMPLE, task_def_name=TASK_NAME, reference_task_name="simple_task_ref_3", task_id="task_id_3"),
+        Task(
+            task_type=TaskType.SIMPLE,
+            task_def_name=TASK_NAME,
+            reference_task_name="simple_task_ref_1",
+            task_id=TASK_ID,
+        ),
+        Task(
+            task_type=TaskType.SIMPLE,
+            task_def_name=TASK_NAME,
+            reference_task_name="simple_task_ref_2",
+            task_id="task_id_2",
+        ),
+        Task(
+            task_type=TaskType.SIMPLE,
+            task_def_name=TASK_NAME,
+            reference_task_name="simple_task_ref_3",
+            task_id="task_id_3",
+        ),
     ]
 
 
@@ -83,7 +98,9 @@ def test_batch_poll_tasks_in_domain(mocker, task_client, tasks):
     mock = mocker.patch.object(TaskResourceApi, "batch_poll")
     mock.return_value = tasks
     polled_tasks = task_client.batch_poll_tasks(TASK_NAME, WORKER_ID, 3, 200, DOMAIN)
-    mock.assert_called_with(TASK_NAME, workerid=WORKER_ID, domain=DOMAIN, count=3, timeout=200)
+    mock.assert_called_with(
+        TASK_NAME, workerid=WORKER_ID, domain=DOMAIN, count=3, timeout=200
+    )
     assert len(polled_tasks) == len(tasks)
 
 
@@ -98,7 +115,9 @@ def test_get_task(mocker, task_client, tasks):
 def test_get_task_non_existent(mocker, task_client):
     mock = mocker.patch.object(TaskResourceApi, "get_task")
     error_body = {"status": 404, "message": "Task not found"}
-    mock.side_effect = mocker.MagicMock(side_effect=ApiException(status=404, body=json.dumps(error_body)))
+    mock.side_effect = mocker.MagicMock(
+        side_effect=ApiException(status=404, body=json.dumps(error_body))
+    )
     with pytest.raises(ApiException):
         task_client.get_task(TASK_ID)
         mock.assert_called_with(TASK_ID)
@@ -123,8 +142,12 @@ def test_update_task_by_ref_name_with_worker_id(mocker, task_client):
     mock = mocker.patch.object(TaskResourceApi, "update_task1")
     status = TaskResultStatus.COMPLETED
     output = {"a": 56}
-    task_client.update_task_by_ref_name("wf_id", "test_task_ref_name", status, output, "worker_id")
-    mock.assert_called_with({"result": output}, "wf_id", "test_task_ref_name", status, workerid="worker_id")
+    task_client.update_task_by_ref_name(
+        "wf_id", "test_task_ref_name", status, output, "worker_id"
+    )
+    mock.assert_called_with(
+        {"result": output}, "wf_id", "test_task_ref_name", status, workerid="worker_id"
+    )
 
 
 def test_update_task_sync(mocker, task_client):
@@ -134,7 +157,9 @@ def test_update_task_sync(mocker, task_client):
     mock.return_value = workflow
     status = TaskResultStatus.COMPLETED
     output = {"a": 56}
-    returned_workflow = task_client.update_task_sync(workflow_id, "test_task_ref_name", status, output)
+    returned_workflow = task_client.update_task_sync(
+        workflow_id, "test_task_ref_name", status, output
+    )
     mock.assert_called_with(output, workflow_id, "test_task_ref_name", status)
     assert returned_workflow == workflow
 
@@ -146,8 +171,12 @@ def test_update_task_sync_with_worker_id(mocker, task_client):
     mock.return_value = workflow
     status = TaskResultStatus.COMPLETED
     output = {"a": 56}
-    returned_workflow = task_client.update_task_sync(workflow_id, "test_task_ref_name", status, output, "worker_id")
-    mock.assert_called_with(output, workflow_id, "test_task_ref_name", status, workerid="worker_id")
+    returned_workflow = task_client.update_task_sync(
+        workflow_id, "test_task_ref_name", status, output, "worker_id"
+    )
+    mock.assert_called_with(
+        output, workflow_id, "test_task_ref_name", status, workerid="worker_id"
+    )
     assert returned_workflow == workflow
 
 

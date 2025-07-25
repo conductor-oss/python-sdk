@@ -47,9 +47,7 @@ def wf_tag_obj():
 
 def test_init(metadata_client):
     message = "metadataResourceApi is not of type MetadataResourceApi"
-    assert isinstance(
-        metadata_client.metadataResourceApi, MetadataResourceApi
-    ), message
+    assert isinstance(metadata_client.metadataResourceApi, MetadataResourceApi), message
 
 
 def test_register_workflow_def(mocker, metadata_client, workflow_def):
@@ -108,7 +106,9 @@ def test_get_workflow_def_non_existent(mocker, metadata_client, workflow_def):
     mock = mocker.patch.object(MetadataResourceApi, "get")
     message = f"No such workflow found by name:{WORKFLOW_NAME}, version: null"
     error_body = {"status": 404, "message": message}
-    mock.side_effect = mocker.MagicMock(side_effect=ApiException(status=404, body=json.dumps(error_body)))
+    mock.side_effect = mocker.MagicMock(
+        side_effect=ApiException(status=404, body=json.dumps(error_body))
+    )
     with pytest.raises(ApiException):
         metadata_client.get_workflow_def(WORKFLOW_NAME)
 
@@ -251,7 +251,9 @@ def test_get_workflow_rate_limit_not_set(mocker, metadata_client):
 
 def test_remove_workflow_rate_limit(mocker, metadata_client):
     patched_tags_api = mocker.patch.object(TagsApi, "delete_workflow_tag")
-    patched_metadata_client = mocker.patch.object(OrkesMetadataClient, "getWorkflowRateLimit")
+    patched_metadata_client = mocker.patch.object(
+        OrkesMetadataClient, "getWorkflowRateLimit"
+    )
     patched_metadata_client.return_value = 5
     metadata_client.removeWorkflowRateLimit(WORKFLOW_NAME)
     rate_limit_tag = RateLimitTag(WORKFLOW_NAME, 5)

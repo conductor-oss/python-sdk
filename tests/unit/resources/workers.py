@@ -27,9 +27,13 @@ class SimplePythonWorker(WorkerInterface):
         task_result.add_output_data("worker_style", "class")
         task_result.add_output_data("secret_number", 1234)
         task_result.add_output_data("is_it_true", False)
-        task_result.add_output_data("dictionary_ojb", {"name": "sdk_worker", "idx": 465})
-        task_result.add_output_data("case_insensitive_dictionary_ojb",
-                                    CaseInsensitiveDict(data={"NaMe": "sdk_worker", "iDX": 465}))
+        task_result.add_output_data(
+            "dictionary_ojb", {"name": "sdk_worker", "idx": 465}
+        )
+        task_result.add_output_data(
+            "case_insensitive_dictionary_ojb",
+            CaseInsensitiveDict(data={"NaMe": "sdk_worker", "iDX": 465}),
+        )
         task_result.status = TaskResultStatus.COMPLETED
         return task_result
 
@@ -51,8 +55,12 @@ class ClassWorker(WorkerInterface):
         task_result.add_output_data("worker_style", "class")
         task_result.add_output_data("secret_number", 1234)
         task_result.add_output_data("is_it_true", False)
-        task_result.add_output_data("dictionary_ojb", {"name": "sdk_worker", "idx": 465})
-        task_result.add_output_data("case_insensitive_dictionary_ojb",
-                                    CaseInsensitiveDict(data={"NaMe": "sdk_worker", "iDX": 465}))
+        task_result.add_output_data(
+            "dictionary_ojb", {"name": "sdk_worker", "idx": 465}
+        )
+        task_result.add_output_data(
+            "case_insensitive_dictionary_ojb",
+            CaseInsensitiveDict(data={"NaMe": "sdk_worker", "iDX": 465}),
+        )
         task_result.status = TaskResultStatus.COMPLETED
         return task_result

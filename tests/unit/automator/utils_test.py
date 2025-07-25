@@ -32,7 +32,13 @@ class SubTest:
 
 
 class Test:
-    def __init__(self, a, b: List[SubTest], d: list[UserInfo], g: CaseInsensitiveDict[str, UserInfo]) -> None:
+    def __init__(
+        self,
+        a,
+        b: List[SubTest],
+        d: list[UserInfo],
+        g: CaseInsensitiveDict[str, UserInfo],
+    ) -> None:
         self.a = a
         self.b = b
         self.d = d
@@ -51,9 +57,15 @@ def disable_logging():
 
 
 def test_convert_non_dataclass():
-    dictionary = {"a": 123, "b": [{"ba": 2}, {"ba": 21}],
-                  "d": [{"name": "conductor", "id": 123}, {"F": 3}],
-                  "g": {"userA": {"name": "userA", "id": 100}, "userB": {"name": "userB", "id": 101}}}
+    dictionary = {
+        "a": 123,
+        "b": [{"ba": 2}, {"ba": 21}],
+        "d": [{"name": "conductor", "id": 123}, {"F": 3}],
+        "g": {
+            "userA": {"name": "userA", "id": 100},
+            "userB": {"name": "userB", "id": 101},
+        },
+    }
     value = convert_from_dict(Test, dictionary)
     assert type(value) is Test
     assert value.a == 123
@@ -63,7 +75,10 @@ def test_convert_non_dataclass():
 
 
 def test_convert_dataclass():
-    dictionary = {"name": "user_a", "id": 123,
-                  "address": [{"street": "21 jump street", "zip": "10101", "country": "USA"}]}
+    dictionary = {
+        "name": "user_a",
+        "id": 123,
+        "address": [{"street": "21 jump street", "zip": "10101", "country": "USA"}],
+    }
     value = convert_from_dict(UserDetails, dictionary)
     assert type(value) is UserDetails, f"expected UserInfo, found {type(value)}"

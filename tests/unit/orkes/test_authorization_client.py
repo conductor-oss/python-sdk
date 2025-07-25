@@ -3,7 +3,9 @@ import pytest
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.application_resource_api import ApplicationResourceApi
-from conductor.client.http.api.authorization_resource_api import AuthorizationResourceApi
+from conductor.client.http.api.authorization_resource_api import (
+    AuthorizationResourceApi,
+)
 from conductor.client.http.api.group_resource_api import GroupResourceApi
 from conductor.client.http.api.user_resource_api import UserResourceApi
 from conductor.client.http.models.authorization_request import AuthorizationRequest
@@ -126,13 +128,9 @@ def test_init(authorization_client):
         authorization_client.applicationResourceApi, ApplicationResourceApi
     ), message
     message = "userResourceApi is not of type UserResourceApi"
-    assert isinstance(
-        authorization_client.userResourceApi, UserResourceApi
-    ), message
+    assert isinstance(authorization_client.userResourceApi, UserResourceApi), message
     message = "groupResourceApi is not of type GroupResourceApi"
-    assert isinstance(
-        authorization_client.groupResourceApi, GroupResourceApi
-    ), message
+    assert isinstance(authorization_client.groupResourceApi, GroupResourceApi), message
     message = "authorizationResourceApi is not of type AuthorizationResourceApi"
     assert isinstance(
         authorization_client.authorizationResourceApi, AuthorizationResourceApi
@@ -207,7 +205,9 @@ def test_add_role_to_application_user(mocker, authorization_client):
 
 
 def test_remove_role_from_application_user(mocker, authorization_client):
-    mock = mocker.patch.object(ApplicationResourceApi, "remove_role_from_application_user")
+    mock = mocker.patch.object(
+        ApplicationResourceApi, "remove_role_from_application_user"
+    )
     authorization_client.remove_role_from_application_user(APP_ID, "USER")
     mock.assert_called_with(APP_ID, "USER")
 
@@ -277,9 +277,7 @@ def test_toggle_access_key_status(mocker, authorization_client, access_key):
         "createdAt": 1698926045112,
         "status": "INACTIVE",
     }
-    access_key = authorization_client.toggle_access_key_status(
-        APP_ID, ACCESS_KEY_ID
-    )
+    access_key = authorization_client.toggle_access_key_status(APP_ID, ACCESS_KEY_ID)
     mock.assert_called_with(APP_ID, ACCESS_KEY_ID)
     assert access_key.status == AccessKeyStatus.INACTIVE
 

@@ -5,7 +5,9 @@ import pytest
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.scheduler_resource_api import SchedulerResourceApi
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
-from conductor.client.http.models.search_result_workflow_schedule_execution_model import SearchResultWorkflowScheduleExecutionModel
+from conductor.client.http.models.search_result_workflow_schedule_execution_model import (
+    SearchResultWorkflowScheduleExecutionModel,
+)
 from conductor.client.http.models.workflow_schedule import WorkflowSchedule
 from conductor.client.http.rest import ApiException
 from conductor.client.orkes.models.metadata_tag import MetadataTag
@@ -65,7 +67,9 @@ def test_get_schedule(mocker, scheduler_client, workflow_schedule):
 def test_get_schedule_non_existing(mocker, scheduler_client):
     mock = mocker.patch.object(SchedulerResourceApi, "get_schedule")
     error_body = {"status": 404, "message": "Schedule not found"}
-    mock.side_effect = mocker.MagicMock(side_effect=ApiException(status=404, body=json.dumps(error_body)))
+    mock.side_effect = mocker.MagicMock(
+        side_effect=ApiException(status=404, body=json.dumps(error_body))
+    )
     with pytest.raises(ApiException):
         scheduler_client.get_schedule("WRONG_SCHEDULE")
         mock.assert_called_with("WRONG_SCHEDULE")
@@ -79,7 +83,9 @@ def test_get_all_schedules(mocker, scheduler_client, workflow_schedule):
     assert mock.called
 
 
-def test_get_all_schedules_with_workflow_name(mocker, scheduler_client, workflow_schedule):
+def test_get_all_schedules_with_workflow_name(
+    mocker, scheduler_client, workflow_schedule
+):
     mock = mocker.patch.object(SchedulerResourceApi, "get_all_schedules")
     mock.return_value = [workflow_schedule]
     schedules = scheduler_client.get_all_schedules(WORKFLOW_NAME)
@@ -96,7 +102,9 @@ def test_get_next_few_schedule_execution_times(mocker, scheduler_client):
     mock.assert_called_with(cron_expression)
 
 
-def test_get_next_few_schedule_execution_times_with_optional_params(mocker, scheduler_client):
+def test_get_next_few_schedule_execution_times_with_optional_params(
+    mocker, scheduler_client
+):
     mock = mocker.patch.object(SchedulerResourceApi, "get_next_few_schedules")
     cron_expression = "0 */5 * ? * *"
     mock.return_value = [1698093300000, 1698093600000]

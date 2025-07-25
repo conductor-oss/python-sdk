@@ -68,4 +68,3 @@ def test_delete_schema_by_name(mocker, schema_client):
     schema_client.delete_schema_by_name(SCHEMA_NAME)
     assert mock.called
     mock.assert_called_with(name=SCHEMA_NAME)
-

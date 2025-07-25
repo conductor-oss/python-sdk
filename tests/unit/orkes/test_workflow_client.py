@@ -54,23 +54,35 @@ def test_start_workflow_by_name(mocker, workflow_client, workflow_input):
 def test_start_workflow_by_name_with_version(mocker, workflow_client, workflow_input):
     mock = mocker.patch.object(WorkflowResourceApi, "start_workflow1")
     mock.return_value = WORKFLOW_UUID
-    wf_id = workflow_client.start_workflow_by_name(WORKFLOW_NAME, workflow_input, version=1)
+    wf_id = workflow_client.start_workflow_by_name(
+        WORKFLOW_NAME, workflow_input, version=1
+    )
     mock.assert_called_with(workflow_input, WORKFLOW_NAME, version=1)
     assert wf_id == WORKFLOW_UUID
 
 
-def test_start_workflow_by_name_with_correlation_id(mocker, workflow_client, workflow_input):
+def test_start_workflow_by_name_with_correlation_id(
+    mocker, workflow_client, workflow_input
+):
     mock = mocker.patch.object(WorkflowResourceApi, "start_workflow1")
     mock.return_value = WORKFLOW_UUID
-    wf_id = workflow_client.start_workflow_by_name(WORKFLOW_NAME, workflow_input, correlationId=CORRELATION_ID)
-    mock.assert_called_with(workflow_input, WORKFLOW_NAME, correlation_id=CORRELATION_ID)
+    wf_id = workflow_client.start_workflow_by_name(
+        WORKFLOW_NAME, workflow_input, correlationId=CORRELATION_ID
+    )
+    mock.assert_called_with(
+        workflow_input, WORKFLOW_NAME, correlation_id=CORRELATION_ID
+    )
     assert wf_id == WORKFLOW_UUID
 
 
-def test_start_workflow_by_name_with_version_and_priority(mocker, workflow_client, workflow_input):
+def test_start_workflow_by_name_with_version_and_priority(
+    mocker, workflow_client, workflow_input
+):
     mock = mocker.patch.object(WorkflowResourceApi, "start_workflow1")
     mock.return_value = WORKFLOW_UUID
-    wf_id = workflow_client.start_workflow_by_name(WORKFLOW_NAME, workflow_input, version=1, priority=1)
+    wf_id = workflow_client.start_workflow_by_name(
+        WORKFLOW_NAME, workflow_input, version=1, priority=1
+    )
     mock.assert_called_with(workflow_input, WORKFLOW_NAME, version=1, priority=1)
     assert wf_id == WORKFLOW_UUID
 
@@ -95,8 +107,12 @@ def test_execute_workflow(mocker, workflow_client):
         start_workflow_req, "request_id", None, 30
     )
     mock.assert_called_with(
-        body=start_workflow_req, request_id="request_id", name=WORKFLOW_NAME, version=1,
-        wait_until_task_ref=None, wait_for_seconds=30
+        body=start_workflow_req,
+        request_id="request_id",
+        name=WORKFLOW_NAME,
+        version=1,
+        wait_until_task_ref=None,
+        wait_for_seconds=30,
     )
     assert workflow_run == expected_wf_run
 
@@ -176,7 +192,9 @@ def test_get_workflow_without_tasks(mocker, workflow_client):
 def test_get_workflow_non_existent(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "get_execution_status")
     error_body = {"status": 404, "message": "Workflow not found"}
-    mock.side_effect = mocker.MagicMock(side_effect=ApiException(status=404, body=json.dumps(error_body)))
+    mock.side_effect = mocker.MagicMock(
+        side_effect=ApiException(status=404, body=json.dumps(error_body))
+    )
     with pytest.raises(ApiException):
         workflow_client.get_workflow(WORKFLOW_UUID, False)
         mock.assert_called_with(WORKFLOW_UUID, include_tasks=False)
@@ -198,7 +216,9 @@ def test_skip_task_from_workflow(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "skip_task_from_workflow")
     task_ref_name = TASK_NAME + "_ref"
     request = SkipTaskRequest()
-    workflow = workflow_client.skip_task_from_workflow(WORKFLOW_UUID, task_ref_name, request)
+    workflow = workflow_client.skip_task_from_workflow(
+        WORKFLOW_UUID, task_ref_name, request
+    )
     mock.assert_called_with(WORKFLOW_UUID, task_ref_name, request)
 
 
@@ -206,8 +226,7 @@ def test_test_workflow(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "test_workflow")
     mock.return_value = Workflow(workflow_id=WORKFLOW_UUID)
     test_request = WorkflowTestRequest(
-        workflow_def=WorkflowDef(name=WORKFLOW_NAME, version=1),
-        name=WORKFLOW_NAME
+        workflow_def=WorkflowDef(name=WORKFLOW_NAME, version=1), name=WORKFLOW_NAME
     )
     workflow = workflow_client.test_workflow(test_request)
     mock.assert_called_with(test_request)

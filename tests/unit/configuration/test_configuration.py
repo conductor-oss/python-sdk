@@ -20,10 +20,15 @@ def test_initialization_with_server_api_url():
 
 
 def test_initialization_with_basic_auth_server_api_url():
-    configuration = Configuration(server_api_url="https://user:password@play.orkes.io/api")
+    configuration = Configuration(
+        server_api_url="https://user:password@play.orkes.io/api"
+    )
     basic_auth = "user:password"
     expected_host = f"https://{basic_auth}@play.orkes.io/api"
     assert configuration.host == expected_host
     token = "Basic " + base64.b64encode(bytes(basic_auth, "utf-8")).decode("utf-8")
     api_client = ApiClient(configuration)
-    assert api_client.default_headers == {"Accept-Encoding": "gzip", "authorization": token}
+    assert api_client.default_headers == {
+        "Accept-Encoding": "gzip",
+        "authorization": token,
+    }

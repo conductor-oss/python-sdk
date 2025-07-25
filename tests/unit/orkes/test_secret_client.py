@@ -53,7 +53,9 @@ def test_list_all_secret_names(mocker, secret_client):
 
 
 def test_list_secrets_that_user_can_grant_access_to(mocker, secret_client):
-    mock = mocker.patch.object(SecretResourceApi, "list_secrets_that_user_can_grant_access_to")
+    mock = mocker.patch.object(
+        SecretResourceApi, "list_secrets_that_user_can_grant_access_to"
+    )
     secret_list = ["TEST_SECRET_1", "TEST_SECRET_2"]
     mock.return_value = secret_list
     secret_names = secret_client.list_secrets_that_user_can_grant_access_to()
