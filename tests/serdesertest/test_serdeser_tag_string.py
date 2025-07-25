@@ -1,7 +1,7 @@
 import unittest
 import json
 from conductor.client.http.models.tag_string import TagString, TypeEnum
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestTagStringSerialization(unittest.TestCase):

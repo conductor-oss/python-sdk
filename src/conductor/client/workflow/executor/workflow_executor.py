@@ -1,3 +1,4 @@
+from __future__ import annotations
 import uuid
 from typing import Any, Dict, List, Optional
 
@@ -7,8 +8,21 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api_client import ApiClient
-from conductor.client.http.models import *
-from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
+from conductor.client.http.models import (
+    TaskResult,
+    Workflow,
+    WorkflowDef,
+    WorkflowRun,
+    WorkflowStatus,
+    ScrollableSearchResultWorkflowSummary,
+    StartWorkflowRequest,
+    SkipTaskRequest,
+    RerunWorkflowRequest,
+    SignalResponse,
+)
+from conductor.client.http.models.correlation_ids_search_request import (
+    CorrelationIdsSearchRequest,
+)
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 
 
@@ -19,11 +33,11 @@ class WorkflowExecutor:
         self.task_client = TaskResourceApi(api_client)
         self.workflow_client = OrkesWorkflowClient(configuration)
 
-    def register_workflow(self, workflow: WorkflowDef, overwrite: bool = None) -> object:
+    def register_workflow(self, workflow: WorkflowDef, overwrite: Optional[bool] = None) -> object:
         """Create a new workflow definition"""
         kwargs = {}
         if overwrite is not None:
-            kwargs['overwrite'] = overwrite
+            kwargs["overwrite"] = overwrite
         return self.metadata_client.update1(
             body=[workflow], **kwargs
         )
@@ -38,15 +52,15 @@ class WorkflowExecutor:
         """Start multiple instances of workflows.  Note, there is no parallelism implemented in starting so giving a
         very large number can impact the latencies and performance
         """
-        workflow_id_list = [''] * len(start_workflow_request)
+        workflow_id_list = [""] * len(start_workflow_request)
         for i in range(len(start_workflow_request)):
             workflow_id_list[i] = self.start_workflow(
                 start_workflow_request=start_workflow_request[i]
             )
         return workflow_id_list
 
-    def execute_workflow(self, request: StartWorkflowRequest, wait_until_task_ref: str, wait_for_seconds: int = 10,
-                         request_id: str = None) -> WorkflowRun:
+    def execute_workflow(self, request: StartWorkflowRequest, wait_until_task_ref: Optional[str] = None, wait_for_seconds: int = 10,
+                         request_id: Optional[str] = None) -> WorkflowRun:
         """Executes a workflow with StartWorkflowRequest and waits for the completion of the workflow or until a
         specific task in the workflow """
         if request_id is None:
@@ -59,10 +73,10 @@ class WorkflowExecutor:
             wait_for_seconds=wait_for_seconds,
         )
 
-    def execute_workflow_with_return_strategy(self, request: StartWorkflowRequest, wait_until_task_ref: str = None,
-                         wait_for_seconds: int = 10, request_id: str = None,
-                         consistency: str = None,
-                         return_strategy: str = None) -> SignalResponse:
+    def execute_workflow_with_return_strategy(self, request: StartWorkflowRequest, wait_until_task_ref: Optional[str] = None,
+                         wait_for_seconds: int = 10, request_id: Optional[str] = None,
+                         consistency: Optional[str] = None,
+                         return_strategy: Optional[str] = None) -> SignalResponse:
         """Execute a workflow synchronously with optional reactive features"""
         if request_id is None:
             request_id = str(uuid.uuid4())
@@ -74,11 +88,12 @@ class WorkflowExecutor:
                                                                           consistency=consistency,
                                                                           return_strategy=return_strategy)
 
-    def execute(self, name: str, version: Optional[int] = None, workflow_input: Any = {},
-                wait_until_task_ref: str = None, wait_for_seconds: int = 10,
-                request_id: str = None, correlation_id: str = None, domain: str = None) -> WorkflowRun:
+    def execute(self, name: str, version: Optional[int] = None, workflow_input: Any = None,
+                wait_until_task_ref: Optional[str] = None, wait_for_seconds: int = 10,
+                request_id: Optional[str] = None, correlation_id: Optional[str] = None, domain: Optional[str] = None) -> WorkflowRun:
         """Executes a workflow with StartWorkflowRequest and waits for the completion of the workflow or until a
         specific task in the workflow """
+        workflow_input = workflow_input or {}
         if request_id is None:
             request_id = str(uuid.uuid4())
 
@@ -89,7 +104,7 @@ class WorkflowExecutor:
         request.input = workflow_input
         request.correlation_id = correlation_id
         if domain is not None:
-            request.task_to_domain = {'*': domain}
+            request.task_to_domain = {"*": domain}
 
         return self.workflow_client.execute_workflow(
             start_workflow_request=request,
@@ -98,45 +113,45 @@ class WorkflowExecutor:
             wait_for_seconds=wait_for_seconds,
         )
 
-    def remove_workflow(self, workflow_id: str, archive_workflow: bool = None) -> None:
+    def remove_workflow(self, workflow_id: str, archive_workflow: Optional[bool] = None) -> None:
         """Removes the workflow permanently from the system"""
         kwargs = {}
         if archive_workflow is not None:
-            kwargs['archive_workflow'] = archive_workflow
+            kwargs["archive_workflow"] = archive_workflow
         return self.workflow_client.delete_workflow(
             workflow_id=workflow_id, **kwargs
         )
 
-    def get_workflow(self, workflow_id: str, include_tasks: bool = None) -> Workflow:
+    def get_workflow(self, workflow_id: str, include_tasks: Optional[bool] = None) -> Workflow:
         """Gets the workflow by workflow id"""
         kwargs = {}
         if include_tasks is not None:
-            kwargs['include_tasks'] = include_tasks
+            kwargs["include_tasks"] = include_tasks
         return self.workflow_client.get_workflow(
             workflow_id=workflow_id, **kwargs
         )
 
-    def get_workflow_status(self, workflow_id: str, include_output: bool = None,
-                            include_variables: bool = None) -> WorkflowStatus:
+    def get_workflow_status(self, workflow_id: str, include_output: Optional[bool] = None,
+                            include_variables: Optional[bool] = None) -> WorkflowStatus:
         """Gets the workflow by workflow id"""
         kwargs = {}
         if include_output is not None:
-            kwargs['include_output'] = include_output
+            kwargs["include_output"] = include_output
         if include_variables is not None:
-            kwargs['include_variables'] = include_variables
+            kwargs["include_variables"] = include_variables
         return self.workflow_client.get_workflow_status(
             workflow_id=workflow_id, include_output=include_output, include_variables=include_variables
         )
 
     def search(
             self,
-            query_id: str = None,
-            start: int = None,
-            size: int = None,
-            sort: str = None,
-            free_text: str = None,
-            query: str = None,
-            skip_cache: bool = None,
+            query_id: Optional[str] = None,
+            start: Optional[int] = None,
+            size: Optional[int] = None,
+            sort: Optional[str] = None,
+            free_text: Optional[str] = None,
+            query: Optional[str] = None,
+            skip_cache: Optional[bool] = None,
     ) -> ScrollableSearchResultWorkflowSummary:
         """Search for workflows based on payload and other parameters"""
         return self.workflow_client.search(start=start, size=size, free_text=free_text, query=query)
@@ -145,8 +160,8 @@ class WorkflowExecutor:
             self,
             workflow_name: str,
             correlation_ids: List[str],
-            include_closed: bool = None,
-            include_tasks: bool = None
+            include_closed: Optional[bool] = None,
+            include_tasks: Optional[bool] = None
     ) -> Dict[str, List[Workflow]]:
         """Lists workflows for the given correlation id list"""
         return self.workflow_client.get_by_correlation_ids(
@@ -156,8 +171,8 @@ class WorkflowExecutor:
             include_completed=include_closed
         )
 
-    def get_by_correlation_ids_and_names(self, batch_request: CorrelationIdsSearchRequest, include_closed: bool = None,
-                                         include_tasks: bool = None) -> Dict[str, List[Workflow]]:
+    def get_by_correlation_ids_and_names(self, batch_request: CorrelationIdsSearchRequest, include_closed: Optional[bool] = None,
+                                         include_tasks: Optional[bool] = None) -> Dict[str, List[Workflow]]:
         """
         Given the list of correlation ids and list of workflow names, find and return workflows Returns a map with
         key as correlationId and value as a list of Workflows When IncludeClosed is set to true, the return value
@@ -179,7 +194,7 @@ class WorkflowExecutor:
             workflow_id=workflow_id
         )
 
-    def terminate(self, workflow_id: str, reason: str = None, trigger_failure_workflow: bool = None) -> None:
+    def terminate(self, workflow_id: str, reason: Optional[str] = None, trigger_failure_workflow: Optional[bool] = None) -> None:
         """Terminate workflow execution"""
         return self.workflow_client.terminate_workflow(
             workflow_id=workflow_id,
@@ -187,13 +202,13 @@ class WorkflowExecutor:
             trigger_failure_workflow=trigger_failure_workflow
         )
 
-    def restart(self, workflow_id: str, use_latest_definitions: bool = None) -> None:
+    def restart(self, workflow_id: str, use_latest_definitions: Optional[bool] = None) -> None:
         """Restarts a completed workflow"""
         return self.workflow_client.restart_workflow(
             workflow_id=workflow_id, use_latest_def=use_latest_definitions
         )
 
-    def retry(self, workflow_id: str, resume_subworkflow_tasks: bool = None) -> None:
+    def retry(self, workflow_id: str, resume_subworkflow_tasks: Optional[bool] = None) -> None:
         """Retries the last failed task"""
         return self.workflow_client.retry_workflow(
             workflow_id=workflow_id, resume_subworkflow_tasks=resume_subworkflow_tasks
@@ -251,7 +266,7 @@ class WorkflowExecutor:
         )
 
     def signal(self, workflow_id: str, status: str, body: Dict[str, Any],
-               return_strategy: str = None) -> SignalResponse:
+               return_strategy: Optional[str] = None) -> SignalResponse:
         """Update running task in the workflow with given status and output synchronously and return back updated workflow"""
         return self.task_client.signal_workflow_task_sync(
             workflow_id=workflow_id,

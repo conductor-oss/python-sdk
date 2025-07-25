@@ -1,7 +1,7 @@
 import json
 import unittest
 from conductor.client.http.models.poll_data import PollData
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestPollDataSerDes(unittest.TestCase):

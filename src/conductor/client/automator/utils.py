@@ -1,3 +1,4 @@
+from __future__ import annotations
 import dataclasses
 import datetime
 import inspect
@@ -43,24 +44,24 @@ def convert_from_dict(cls: type, data: dict) -> object:
     if data is None:
         return data
 
-    if type(data) == cls:
+    if isinstance(data, cls):
         return data
 
     if dataclasses.is_dataclass(cls):
         return from_dict(data_class=cls, data=data)
 
     typ = type(data)
-    if not ((str(typ).startswith('dict[') or
-             str(typ).startswith('typing.Dict[') or
-             str(typ).startswith('requests.structures.CaseInsensitiveDict[') or
-             typ == dict or str(typ).startswith('OrderedDict['))):
+    if not ((str(typ).startswith("dict[") or
+             str(typ).startswith("typing.Dict[") or
+             str(typ).startswith("requests.structures.CaseInsensitiveDict[") or
+             typ is dict or str(typ).startswith("OrderedDict["))):
         data = {}
 
     members = inspect.signature(cls.__init__).parameters
     kwargs = {}
 
     for member in members:
-        if 'self' == member:
+        if "self" == member:
             continue
         typ = members[member].annotation
         generic_types = typing.get_args(members[member].annotation)
@@ -70,18 +71,18 @@ def convert_from_dict(cls: type, data: dict) -> object:
                 kwargs[member] = data[member]
             else:
                 kwargs[member] = members[member].default
-        elif str(typ).startswith('typing.List[') or str(typ).startswith('typing.Set[') or str(typ).startswith('list['):
+        elif str(typ).startswith("typing.List[") or str(typ).startswith("typing.Set[") or str(typ).startswith("list["):
             values = []
+
             generic_type = object
             if len(generic_types) > 0:
                 generic_type = generic_types[0]
-            for val in data[member]:
-                values.append(get_value(generic_type, val))
+            values = [get_value(generic_type, item) for item in data[member]]
             kwargs[member] = values
-        elif (str(typ).startswith('dict[') or
-              str(typ).startswith('typing.Dict[') or
-              str(typ).startswith('requests.structures.CaseInsensitiveDict[') or
-              typ == dict or str(typ).startswith('OrderedDict[')):
+        elif (str(typ).startswith("dict[") or
+              str(typ).startswith("typing.Dict[") or
+              str(typ).startswith("requests.structures.CaseInsensitiveDict[") or
+              typ is dict or str(typ).startswith("OrderedDict[")):
 
             values = {}
             generic_type = object
@@ -91,7 +92,7 @@ def convert_from_dict(cls: type, data: dict) -> object:
                 v = data[member][k]
                 values[k] = get_value(generic_type, v)
             kwargs[member] = values
-        elif typ == inspect.Parameter.empty:
+        elif typ is inspect.Parameter.empty:
             if inspect.Parameter.VAR_KEYWORD == members[member].kind:
                 if type(data) in dict_types:
                     kwargs.update(data)
@@ -109,14 +110,11 @@ def convert_from_dict(cls: type, data: dict) -> object:
 def get_value(typ: type, val: object) -> object:
     if typ in simple_types:
         return val
-    elif str(typ).startswith('typing.List[') or str(typ).startswith('typing.Set[') or str(typ).startswith('list['):
-        values = []
-        for val in val:
-            converted = get_value(type(val), val)
-            values.append(converted)
+    elif str(typ).startswith("typing.List[") or str(typ).startswith("typing.Set[") or str(typ).startswith("list["):
+        values = [get_value(type(item), item) for item in val]
         return values
-    elif str(typ).startswith('dict[') or str(typ).startswith(
-            'typing.Dict[') or str(typ).startswith('requests.structures.CaseInsensitiveDict[') or typ == dict:
+    elif str(typ).startswith("dict[") or str(typ).startswith(
+            "typing.Dict[") or str(typ).startswith("requests.structures.CaseInsensitiveDict[") or typ is dict:
         values = {}
         for k in val:
             v = val[k]

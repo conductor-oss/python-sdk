@@ -1,6 +1,9 @@
+from __future__ import annotations
 import logging
 import os
 from pathlib import Path
+
+from typing import Optional
 
 from conductor.client.configuration.configuration import Configuration
 
@@ -12,14 +15,14 @@ logger = logging.getLogger(
 
 
 def get_default_temporary_folder() -> str:
-    return f'{str(Path.home())}/tmp/'
+    return f"{Path.home()!s}/tmp/"
 
 
 class MetricsSettings:
     def __init__(
             self,
-            directory: str = None,
-            file_name: str = 'metrics.log',
+            directory: Optional[str] = None,
+            file_name: str = "metrics.log",
             update_interval: float = 0.1):
         if directory is None:
             directory = get_default_temporary_folder()
@@ -33,5 +36,6 @@ class MetricsSettings:
                 os.mkdir(dir)
             except Exception as e:
                 logger.warning(
-                    'Failed to create metrics temporary folder, reason: ', e)
+                    "Failed to create metrics temporary folder, reason: %s", e)
+
         self.directory = dir

@@ -1,5 +1,6 @@
+from __future__ import annotations
 from copy import deepcopy
-from typing import Dict
+from typing import Dict, Optional
 
 from typing_extensions import Self
 
@@ -11,8 +12,8 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class SubWorkflowTask(TaskInterface):
-    def __init__(self, task_ref_name: str, workflow_name: str, version: int = None,
-                 task_to_domain_map: Dict[str, str] = None) -> Self:
+    def __init__(self, task_ref_name: str, workflow_name: str, version: Optional[int] = None,
+                 task_to_domain_map: Optional[Dict[str, str]] = None) -> Self:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.SUB_WORKFLOW

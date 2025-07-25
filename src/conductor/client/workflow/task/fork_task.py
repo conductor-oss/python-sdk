@@ -1,5 +1,6 @@
+from __future__ import annotations
 from copy import deepcopy
-from typing import List
+from typing import List, Optional
 
 from typing_extensions import Self
 
@@ -10,11 +11,11 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 def get_join_task(task_reference_name: str) -> str:
-    return task_reference_name + '_join'
+    return task_reference_name + "_join"
 
 
 class ForkTask(TaskInterface):
-    def __init__(self, task_ref_name: str, forked_tasks: List[List[TaskInterface]], join_on: List[str] = None) -> Self:
+    def __init__(self, task_ref_name: str, forked_tasks: List[List[TaskInterface]], join_on: Optional[List[str]] = None) -> Self:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.FORK_JOIN
@@ -28,18 +29,17 @@ class ForkTask(TaskInterface):
         workflow_task.fork_tasks = []
         workflow_task.join_on = []
         for inner_forked_tasks in self._forked_tasks:
-            converted_inner_forked_tasks = []
-            for inner_forked_task in inner_forked_tasks:
-                converted_inner_forked_tasks.append(
-                    inner_forked_task.to_workflow_task()
-                )
+            converted_inner_forked_tasks = [
+                inner_forked_task.to_workflow_task()
+                for inner_forked_task in inner_forked_tasks
+            ]
             workflow_task.fork_tasks.append(converted_inner_forked_tasks)
             workflow_task.join_on.append(
                 converted_inner_forked_tasks[-1].task_reference_name
             )
         if self._join_on is not None:
             join_on = self._join_on
-            join_task = JoinTask(workflow_task.task_reference_name + '_join', join_on=join_on)
+            join_task = JoinTask(workflow_task.task_reference_name + "_join", join_on=join_on)
             tasks.append(workflow_task)
             tasks.append(join_task.to_workflow_task())
             return tasks

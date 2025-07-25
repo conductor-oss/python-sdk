@@ -65,25 +65,24 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
         return self.integrationApi.get_token_usage_for_integration_provider(name)
 
     def register_token_usage(self, body, name, integration_name):
-        pass
+        ...
 
     # Tags
 
     def delete_tag_for_integration(self, body, tag_name, integration_name):
         """Delete an integration"""
-        pass
 
     def delete_tag_for_integration_provider(self, body, name):
-        pass
+        ...
 
     def put_tag_for_integration(self, body, name, integration_name):
-        pass
+        ...
 
     def put_tag_for_integration_provider(self, body, name):
-        pass
+        ...
 
     def get_tags_for_integration(self, name, integration_name):
-        pass
+        ...
 
     def get_tags_for_integration_provider(self, name):
-        pass
+        ...

@@ -1,10 +1,11 @@
+from __future__ import annotations
 import dataclasses
 import inspect
 import logging
 import time
 import traceback
 from copy import deepcopy
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, Optional
 
 from typing_extensions import Self
 
@@ -37,8 +38,8 @@ def is_callable_input_parameter_a_task(callable: ExecuteTaskFunction, object_typ
     parameters = inspect.signature(callable).parameters
     if len(parameters) != 1:
         return False
-    parameter = parameters[list(parameters.keys())[0]]
-    return parameter.annotation == object_type or parameter.annotation == parameter.empty or parameter.annotation == object
+    parameter = parameters[next(iter(parameters.keys()))]
+    return parameter.annotation == object_type or parameter.annotation == parameter.empty or parameter.annotation is object  # noqa: PLR1714
 
 
 def is_callable_return_value_of_type(callable: ExecuteTaskFunction, object_type: Any) -> bool:
@@ -50,9 +51,9 @@ class Worker(WorkerInterface):
     def __init__(self,
                  task_definition_name: str,
                  execute_function: ExecuteTaskFunction,
-                 poll_interval: float = None,
-                 domain: str = None,
-                 worker_id: str = None,
+                 poll_interval: Optional[float] = None,
+                 domain: Optional[str] = None,
+                 worker_id: Optional[str] = None,
                  ) -> Self:
         super().__init__(task_definition_name)
         self.api_client = ApiClient()
@@ -86,14 +87,13 @@ class Worker(WorkerInterface):
                             task_input[input_name] = task.input_data[input_name]
                         else:
                             task_input[input_name] = convert_from_dict_or_list(typ, task.input_data[input_name])
+                    elif default_value is not inspect.Parameter.empty:
+                        task_input[input_name] = default_value
                     else:
-                        if default_value is not inspect.Parameter.empty:
-                            task_input[input_name] = default_value
-                        else:
-                            task_input[input_name] = None
+                        task_input[input_name] = None
                 task_output = self.execute_function(**task_input)
 
-            if type(task_output) == TaskResult:
+            if isinstance(task_output, TaskResult):
                 task_output.task_id = task.task_id
                 task_output.workflow_instance_id = task.workflow_instance_id
                 return task_output
@@ -108,7 +108,11 @@ class Worker(WorkerInterface):
 
         except Exception as ne:
             logger.error(
-                f'Error executing task {task.task_def_name} with id {task.task_id}.  error = {traceback.format_exc()}')
+                "Error executing task %s with id %s. error = %s",
+                task.task_def_name,
+                task.task_id,
+                traceback.format_exc()
+            )
 
             task_result.logs = [TaskExecLog(
                 traceback.format_exc(), task_result.task_id, int(time.time()))]
@@ -124,7 +128,7 @@ class Worker(WorkerInterface):
             task_output = task_result.output_data
             task_result.output_data = self.api_client.sanitize_for_serialization(task_output)
             if not isinstance(task_result.output_data, dict):
-                task_result.output_data = {'result': task_result.output_data}
+                task_result.output_data = {"result": task_result.output_data}
 
         return task_result
 

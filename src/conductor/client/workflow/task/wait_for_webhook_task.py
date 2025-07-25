@@ -1,5 +1,6 @@
+from __future__ import annotations
 from abc import ABC
-from typing import Dict
+from typing import Dict, Optional
 from typing_extensions import Self
 
 from conductor.client.workflow.task.task import TaskInterface
@@ -34,10 +35,10 @@ class WaitForWebHookTask(TaskInterface, ABC):
             task_reference_name=task_ref_name,
             task_type=TaskType.WAIT_FOR_WEBHOOK
         )
-        self.input_parameters['matches'] = matches
+        self.input_parameters["matches"] = matches
 
 
-def wait_for_webhook(task_ref_name: str, matches: Dict[str, object], task_def_name: str = None) -> TaskInterface:
+def wait_for_webhook(task_ref_name: str, matches: Dict[str, object], task_def_name: Optional[str] = None) -> TaskInterface:
     task = WaitForWebHookTask(task_ref_name=task_ref_name, matches=matches)
     if task_def_name is not None:
         task.name = task_def_name

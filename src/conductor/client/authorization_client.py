@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 from conductor.client.orkes.models.metadata_tag import MetadataTag

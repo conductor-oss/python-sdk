@@ -35,65 +35,82 @@ class IntegrationClient(ABC):
     @abstractmethod
     def associate_prompt_with_integration(self, ai_integration:str, model_name:str, prompt_name:str):
         """Associate a prompt with an AI integration and model"""
-        pass
+        ...
 
     @abstractmethod
     def delete_integration_api(self, api_name:str, integration_name:str):
         """Delete a specific integration api for a given integration"""
-        pass
+        ...
 
+    @abstractmethod
     def delete_integration(self, integration_name:str):
         """Delete an integration"""
-        pass
 
+
+    @abstractmethod
     def get_integration_api(self, api_name:str, integration_name:str) -> IntegrationApi:
-        pass
+        ...
 
+    @abstractmethod
     def get_integration_apis(self, integration_name:str) -> List[IntegrationApi]:
-        pass
+        ...
 
+    @abstractmethod
     def get_integration(self, integration_name:str) -> Integration:
-        pass
+        ...
 
+    @abstractmethod
     def get_integrations(self) -> List[Integration]:
         """Returns the list of all the available integrations"""
-        pass
 
+
+    @abstractmethod
     def get_prompts_with_integration(self, ai_integration:str, model_name:str) -> List[PromptTemplate]:
-        pass
+        ...
 
+    @abstractmethod
     def get_token_usage_for_integration(self, name, integration_name) -> int:
-        pass
+        ...
 
+    @abstractmethod
     def get_token_usage_for_integration_provider(self, name) -> dict:
-        pass
+        ...
 
+    @abstractmethod
     def register_token_usage(self, body, name, integration_name):
-        pass
+        ...
 
+    @abstractmethod
     def save_integration_api(self, integration_name, api_name, api_details: IntegrationApiUpdate):
-        pass
+        ...
 
+    @abstractmethod
     def save_integration(self, integration_name, integration_details: IntegrationUpdate):
-        pass
+        ...
 
     # Tags
 
+    @abstractmethod
     def delete_tag_for_integration(self, body, tag_name, integration_name):
         """Delete an integration"""
-        pass
 
+
+    @abstractmethod
     def delete_tag_for_integration_provider(self, body, name):
-        pass
+        ...
 
+    @abstractmethod
     def put_tag_for_integration(self, body, name, integration_name):
-        pass
+        ...
 
+    @abstractmethod
     def put_tag_for_integration_provider(self, body, name):
-        pass
+        ...
 
+    @abstractmethod
     def get_tags_for_integration(self, name, integration_name):
-        pass
+        ...
 
+    @abstractmethod
     def get_tags_for_integration_provider(self, name):
-        pass
+        ...

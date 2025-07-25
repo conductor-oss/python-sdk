@@ -47,8 +47,8 @@ class SwitchTask(TaskInterface):
             workflow.expression = self._expression
         else:
             workflow.evaluator_type = EvaluatorType.VALUE_PARAM
-            workflow.input_parameters['switchCaseValue'] = self._expression
-            workflow.expression = 'switchCaseValue'
+            workflow.input_parameters["switchCaseValue"] = self._expression
+            workflow.expression = "switchCaseValue"
         workflow.decision_cases = {}
         for case_value, tasks in self._decision_cases.items():
             workflow.decision_cases[case_value] = get_task_interface_list_as_workflow_task_list(

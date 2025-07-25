@@ -1,5 +1,6 @@
+from __future__ import annotations
 from enum import Enum
-
+from typing import Optional
 from typing_extensions import Self
 
 from conductor.client.workflow.task.task import TaskInterface
@@ -28,8 +29,8 @@ class TriggerType(str, Enum):
 
 class HumanTask(TaskInterface):
     def __init__(self, task_ref_name: str,
-                 display_name : str = None,
-                 form_template: str = None, form_version : int = 0,
+                 display_name: Optional[str] = None,
+                 form_template: Optional[str] = None, form_version : int = 0,
                  assignment_completion_strategy : AssignmentCompletionStrategy = AssignmentCompletionStrategy.LEAVE_OPEN,
                  ) -> Self:
         super().__init__(
@@ -37,12 +38,12 @@ class HumanTask(TaskInterface):
             task_type=TaskType.HUMAN
         )
         self.input_parameters.update({
-            '__humanTaskDefinition': {
-                'assignmentCompletionStrategy': assignment_completion_strategy.name,
-                'displayName': display_name,
-                'userFormTemplate': {
-                    'name': form_template,
-                    'version': form_version
+            "__humanTaskDefinition": {
+                "assignmentCompletionStrategy": assignment_completion_strategy.name,
+                "displayName": display_name,
+                "userFormTemplate": {
+                    "name": form_template,
+                    "version": form_version
                 }
             }
         })

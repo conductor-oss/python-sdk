@@ -2,7 +2,7 @@ import unittest
 import json
 from conductor.client.http.models.search_result_workflow_summary import SearchResultWorkflowSummary
 from conductor.client.http.models.workflow_summary import WorkflowSummary
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestSearchResultWorkflowSummary(unittest.TestCase):

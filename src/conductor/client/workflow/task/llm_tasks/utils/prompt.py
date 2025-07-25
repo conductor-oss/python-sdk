@@ -1,14 +1,14 @@
-from typing import Dict
+from typing import ClassVar, Dict
 
 class Prompt(object):
-    swagger_types = {
-        'name': 'str',
-        'variables': 'str'
+    swagger_types: ClassVar[Dict[str, str]] = {
+        "name": "str",
+        "variables": "str"
     }
 
-    attribute_map = {
-        'name': 'promptName',
-        'variables': 'promptVariables'
+    attribute_map: ClassVar[Dict[str, str]] = {
+        "name": "promptName",
+        "variables": "promptVariables"
     }
 
     def __init__(self, name: str, variables: Dict[str, object]):

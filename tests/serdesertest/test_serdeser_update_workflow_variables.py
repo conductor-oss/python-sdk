@@ -2,7 +2,7 @@ import json
 import unittest
 from dataclasses import asdict
 from conductor.client.http.models.update_workflow_variables import UpdateWorkflowVariables
-from serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
+from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
 class TestUpdateWorkflowVariables(unittest.TestCase):

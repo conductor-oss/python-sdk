@@ -1,9 +1,10 @@
+from __future__ import annotations
 import importlib
 import logging
 import os
-from multiprocessing import Process, freeze_support, Queue, set_start_method, get_context
+from multiprocessing import Process, freeze_support, Queue, set_start_method
 from sys import platform
-from typing import List
+from typing import List, Optional
 
 from conductor.client.automator.task_runner import TaskRunner
 from conductor.client.configuration.configuration import Configuration
@@ -22,55 +23,53 @@ _decorated_functions = {}
 _mp_fork_set = False
 if not _mp_fork_set:
     try:
-        if platform == 'win32':
-            set_start_method('spawn')
+        if platform == "win32":
+            set_start_method("spawn")
         else:
-            set_start_method('fork')
+            set_start_method("fork")
         _mp_fork_set = True
     except Exception as e:
-        logger.info(f'error when setting multiprocessing.set_start_method - maybe the context is set {e.args}')
+        logger.info("error when setting multiprocessing.set_start_method - maybe the context is set %s", e.args)
     if platform == "darwin":
-        os.environ['no_proxy'] = '*'
+        os.environ["no_proxy"] = "*"
 
 def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func):
-    logger.info(f'decorated {name}')
+    logger.info("decorated %s", name)
     _decorated_functions[(name, domain)] = {
-        'func': func,
-        'poll_interval': poll_interval,
-        'domain': domain,
-        'worker_id': worker_id
+        "func": func,
+        "poll_interval": poll_interval,
+        "domain": domain,
+        "worker_id": worker_id
     }
 
 
 class TaskHandler:
     def __init__(
             self,
-            workers: List[WorkerInterface] = [],
-            configuration: Configuration = None,
-            metrics_settings: MetricsSettings = None,
+            workers: Optional[List[WorkerInterface]] = None,
+            configuration: Optional[Configuration] = None,
+            metrics_settings: Optional[MetricsSettings] = None,
             scan_for_annotated_workers: bool = True,
-            import_modules: List[str] = None
+            import_modules: Optional[List[str]] = None
     ):
+        workers = workers or []
         self.logger_process, self.queue = _setup_logging_queue(configuration)
 
         # imports
-        importlib.import_module('conductor.client.http.models.task')
-        importlib.import_module('conductor.client.worker.worker_task')
+        importlib.import_module("conductor.client.http.models.task")
+        importlib.import_module("conductor.client.worker.worker_task")
         if import_modules is not None:
             for module in import_modules:
-                logger.info(f'loading module {module}')
+                logger.info("loading module %s", module)
                 importlib.import_module(module)
 
-        if workers is None:
-            workers = []
         elif not isinstance(workers, list):
             workers = [workers]
         if scan_for_annotated_workers is True:
-            for (task_def_name, domain) in _decorated_functions:
-                record = _decorated_functions[(task_def_name, domain)]
-                fn = record['func']
-                worker_id = record['worker_id']
-                poll_interval = record['poll_interval']
+            for (task_def_name, domain), record in _decorated_functions.items():
+                fn = record["func"]
+                worker_id = record["worker_id"]
+                poll_interval = record["poll_interval"]
 
                 worker = Worker(
                     task_definition_name=task_def_name,
@@ -78,12 +77,12 @@ class TaskHandler:
                     worker_id=worker_id,
                     domain=domain,
                     poll_interval=poll_interval)
-                logger.info(f'created worker with name={task_def_name} and domain={domain}')
+                logger.info("created worker with name=%s and domain=%s", task_def_name, domain)
                 workers.append(worker)
 
         self.__create_task_runner_processes(workers, configuration, metrics_settings)
         self.__create_metrics_provider_process(metrics_settings)
-        logger.info('TaskHandler initialized')
+        logger.info("TaskHandler initialized")
 
     def __enter__(self):
         return self
@@ -94,24 +93,24 @@ class TaskHandler:
     def stop_processes(self) -> None:
         self.__stop_task_runner_processes()
         self.__stop_metrics_provider_process()
-        logger.info('Stopped worker processes...')
+        logger.info("Stopped worker processes...")
         self.queue.put(None)
         self.logger_process.terminate()
 
     def start_processes(self) -> None:
-        logger.info('Starting worker processes...')
+        logger.info("Starting worker processes...")
         freeze_support()
         self.__start_task_runner_processes()
         self.__start_metrics_provider_process()
-        logger.info('Started all processes')
+        logger.info("Started all processes")
 
     def join_processes(self) -> None:
         try:
             self.__join_task_runner_processes()
             self.__join_metrics_provider_process()
-            logger.info('Joined all processes')
+            logger.info("Joined all processes")
         except KeyboardInterrupt:
-            logger.info('KeyboardInterrupt: Stopping all processes')
+            logger.info("KeyboardInterrupt: Stopping all processes")
             self.stop_processes()
 
     def __create_metrics_provider_process(self, metrics_settings: MetricsSettings) -> None:
@@ -122,7 +121,7 @@ class TaskHandler:
             target=MetricsCollector.provide_metrics,
             args=(metrics_settings,)
         )
-        logger.info('Created MetricsProvider process')
+        logger.info("Created MetricsProvider process")
 
     def __create_task_runner_processes(
             self,
@@ -150,25 +149,25 @@ class TaskHandler:
         if self.metrics_provider_process is None:
             return
         self.metrics_provider_process.start()
-        logger.info('Started MetricsProvider process')
+        logger.info("Started MetricsProvider process")
 
     def __start_task_runner_processes(self):
         n = 0
         for task_runner_process in self.task_runner_processes:
             task_runner_process.start()
             n = n + 1
-        logger.info(f'Started {n} TaskRunner process')
+        logger.info("Started %s TaskRunner process", n)
 
     def __join_metrics_provider_process(self):
         if self.metrics_provider_process is None:
             return
         self.metrics_provider_process.join()
-        logger.info('Joined MetricsProvider processes')
+        logger.info("Joined MetricsProvider processes")
 
     def __join_task_runner_processes(self):
         for task_runner_process in self.task_runner_processes:
             task_runner_process.join()
-        logger.info('Joined TaskRunner processes')
+        logger.info("Joined TaskRunner processes")
 
     def __stop_metrics_provider_process(self):
         self.__stop_process(self.metrics_provider_process)
@@ -181,12 +180,12 @@ class TaskHandler:
         if process is None:
             return
         try:
-            logger.debug(f'Terminating process: {process.pid}')
+            logger.debug("Terminating process: %s", process.pid)
             process.terminate()
         except Exception as e:
-            logger.debug(f'Failed to terminate process: {process.pid}, reason: {e}')
+            logger.debug("Failed to terminate process: %s, reason: %s", process.pid, e)
             process.kill()
-            logger.debug(f'Killed process: {process.pid}')
+            logger.debug("Killed process: %s", process.pid)
 
 
 # Setup centralized logging queue

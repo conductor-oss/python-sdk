@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, List
 
 from conductor.client.configuration.configuration import Configuration
@@ -73,7 +74,7 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
             worker_id: Optional[str] = None
     ) -> Workflow:
         if not isinstance(output, dict):
-            output = {'result': output}
+            output = {"result": output}
         body = output
         kwargs = {}
         if worker_id:

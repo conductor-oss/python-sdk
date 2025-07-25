@@ -30,7 +30,7 @@ class TaskRunner:
             metrics_settings: MetricsSettings = None
     ):
         if not isinstance(worker, WorkerInterface):
-            raise Exception('Invalid worker')
+            raise Exception("Invalid worker")
         self.worker = worker
         self.__set_worker_properties()
         if not isinstance(configuration, Configuration):
@@ -53,28 +53,32 @@ class TaskRunner:
         else:
             logger.setLevel(logging.DEBUG)
 
-        task_names = ','.join(self.worker.task_definition_names)
-        logger.info(f'Polling task {task_names} with domain {self.worker.get_domain()} with polling '
-                    f'interval {self.worker.get_polling_interval_in_seconds()}')
+        task_names = ",".join(self.worker.task_definition_names)
+        logger.info(
+            "Polling task %s with domain %s with polling interval %s",
+            task_names,
+            self.worker.get_domain(),
+            self.worker.get_polling_interval_in_seconds()
+        )
 
         while True:
-            try:
-                self.run_once()
-            except Exception as e:
-                pass
+            self.run_once()
 
     def run_once(self) -> None:
-        task = self.__poll_task()
-        if task is not None and task.task_id is not None:
-            task_result = self.__execute_task(task)
-            self.__update_task(task_result)
-        self.__wait_for_polling_interval()
-        self.worker.clear_task_definition_name_cache()
+        try:
+            task = self.__poll_task()
+            if task is not None and task.task_id is not None:
+                task_result = self.__execute_task(task)
+                self.__update_task(task_result)
+            self.__wait_for_polling_interval()
+            self.worker.clear_task_definition_name_cache()
+        except Exception:
+            pass
 
     def __poll_task(self) -> Task:
         task_definition_name = self.worker.get_task_definition_name()
         if self.worker.paused():
-            logger.debug(f'Stop polling task for: {task_definition_name}')
+            logger.debug("Stop polling task for: %s", task_definition_name)
             return None
         if self.metrics_collector is not None:
             self.metrics_collector.increment_task_poll(
@@ -84,9 +88,9 @@ class TaskRunner:
         try:
             start_time = time.time()
             domain = self.worker.get_domain()
-            params = {'workerid': self.worker.get_identity()}
+            params = {"workerid": self.worker.get_identity()}
             if domain is not None:
-                params['domain'] = domain
+                params["domain"] = domain
             task = self.task_client.poll(tasktype=task_definition_name, **params)
             finish_time = time.time()
             time_spent = finish_time - start_time
@@ -96,20 +100,26 @@ class TaskRunner:
             if self.metrics_collector is not None:
                 self.metrics_collector.increment_task_poll_error(task_definition_name, type(auth_exception))
             if auth_exception.invalid_token:
-                logger.fatal(f'failed to poll task {task_definition_name} due to invalid auth token')
+                logger.fatal(f"failed to poll task {task_definition_name} due to invalid auth token")
             else:
-                logger.fatal(f'failed to poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code}')
+                logger.fatal(f"failed to poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code}")
             return None
         except Exception as e:
             if self.metrics_collector is not None:
                 self.metrics_collector.increment_task_poll_error(task_definition_name, type(e))
             logger.error(
-                f'Failed to poll task for: {task_definition_name}, reason: {traceback.format_exc()}'
+                "Failed to poll task for: %s, reason: %s",
+                task_definition_name,
+                traceback.format_exc()
             )
             return None
         if task is not None:
             logger.debug(
-                f'Polled task: {task_definition_name}, worker_id: {self.worker.get_identity()}, domain: {self.worker.get_domain()}')
+                "Polled task: %s, worker_id: %s, domain: %s",
+                task_definition_name,
+                self.worker.get_identity(),
+                self.worker.get_domain()
+            )
         return task
 
     def __execute_task(self, task: Task) -> TaskResult:
@@ -117,11 +127,10 @@ class TaskRunner:
             return None
         task_definition_name = self.worker.get_task_definition_name()
         logger.debug(
-            'Executing task, id: {task_id}, workflow_instance_id: {workflow_instance_id}, task_definition_name: {task_definition_name}'.format(
-                task_id=task.task_id,
-                workflow_instance_id=task.workflow_instance_id,
-                task_definition_name=task_definition_name
-            )
+            "Executing task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
+            task.task_id,
+            task.workflow_instance_id,
+            task_definition_name
         )
         try:
             start_time = time.time()
@@ -138,11 +147,10 @@ class TaskRunner:
                     sys.getsizeof(task_result)
                 )
             logger.debug(
-                'Executed task, id: {task_id}, workflow_instance_id: {workflow_instance_id}, task_definition_name: {task_definition_name}'.format(
-                    task_id=task.task_id,
-                    workflow_instance_id=task.workflow_instance_id,
-                    task_definition_name=task_definition_name
-                )
+                "Executed task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
+                task.task_id,
+                task.workflow_instance_id,
+                task_definition_name
             )
         except Exception as e:
             if self.metrics_collector is not None:
@@ -154,17 +162,17 @@ class TaskRunner:
                 workflow_instance_id=task.workflow_instance_id,
                 worker_id=self.worker.get_identity()
             )
-            task_result.status = 'FAILED'
+            task_result.status = "FAILED"
             task_result.reason_for_incompletion = str(e)
             task_result.logs = [TaskExecLog(
                 traceback.format_exc(), task_result.task_id, int(time.time()))]
             logger.error(
-                'Failed to execute task, id: {task_id}, workflow_instance_id: {workflow_instance_id}, task_definition_name: {task_definition_name}, reason: {reason}'.format(
-                    task_id=task.task_id,
-                    workflow_instance_id=task.workflow_instance_id,
-                    task_definition_name=task_definition_name,
-                    reason=traceback.format_exc()
-                )
+                "Failed to execute task, id: %s, workflow_instance_id: %s, "
+                "task_definition_name: %s, reason: %s",
+                task.task_id,
+                task.workflow_instance_id,
+                task_definition_name,
+                traceback.format_exc()
             )
         return task_result
 
@@ -173,11 +181,10 @@ class TaskRunner:
             return None
         task_definition_name = self.worker.get_task_definition_name()
         logger.debug(
-            'Updating task, id: {task_id}, workflow_instance_id: {workflow_instance_id}, task_definition_name: {task_definition_name}'.format(
-                task_id=task_result.task_id,
-                workflow_instance_id=task_result.workflow_instance_id,
-                task_definition_name=task_definition_name
-            )
+            "Updating task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
+            task_result.task_id,
+            task_result.workflow_instance_id,
+            task_definition_name
         )
         for attempt in range(4):
             if attempt > 0:
@@ -186,12 +193,11 @@ class TaskRunner:
             try:
                 response = self.task_client.update_task(body=task_result)
                 logger.debug(
-                    'Updated task, id: {task_id}, workflow_instance_id: {workflow_instance_id}, task_definition_name: {task_definition_name}, response: {response}'.format(
-                        task_id=task_result.task_id,
-                        workflow_instance_id=task_result.workflow_instance_id,
-                        task_definition_name=task_definition_name,
-                        response=response
-                    )
+                    "Updated task, id: %s, workflow_instance_id: %s, task_definition_name: %s, response: %s",
+                    task_result.task_id,
+                    task_result.workflow_instance_id,
+                    task_definition_name,
+                    response
                 )
                 return response
             except Exception as e:
@@ -200,13 +206,11 @@ class TaskRunner:
                         task_definition_name, type(e)
                     )
                 logger.error(
-                    'Failed to update task, id: {task_id}, workflow_instance_id: {workflow_instance_id}, '
-                    'task_definition_name: {task_definition_name}, reason: {reason}'.format(
-                        task_id=task_result.task_id,
-                        workflow_instance_id=task_result.workflow_instance_id,
-                        task_definition_name=task_definition_name,
-                        reason=traceback.format_exc()
-                    )
+                    "Failed to update task, id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
+                    task_result.task_id,
+                    task_result.workflow_instance_id,
+                    task_definition_name,
+                    traceback.format_exc()
                 )
         return None
 
@@ -229,16 +233,15 @@ class TaskRunner:
         if polling_interval:
             try:
                 self.worker.poll_interval = float(polling_interval)
-            except Exception as e:
-                logger.error(f'error reading and parsing the polling interval value {polling_interval}')
+            except Exception:
+                logger.error("error reading and parsing the polling interval value %s", polling_interval)
                 self.worker.poll_interval = self.worker.get_polling_interval_in_seconds()
 
         if polling_interval:
             try:
                 self.worker.poll_interval = float(polling_interval)
-                polling_interval_initialized = True
             except Exception as e:
-                logger.error("Exception in reading polling interval from environment variable: {0}.".format(str(e)))
+                logger.error("Exception in reading polling interval from environment variable: %s", e)
 
     def __get_property_value_from_env(self, prop, task_type):
         """

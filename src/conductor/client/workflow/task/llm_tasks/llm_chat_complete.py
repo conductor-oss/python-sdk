@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, List, Dict
 
 from typing_extensions import Self
@@ -15,9 +16,12 @@ class ChatMessage:
 
 class LlmChatComplete(TaskInterface):
     def __init__(self, task_ref_name: str, llm_provider: str, model: str, messages: List[ChatMessage],
-                 stop_words: Optional[List[str]] = [], max_tokens: Optional[int] = 100,
-                 temperature: int = 0, top_p: int = 1, instructions_template: str = None,
-                 template_variables: Dict[str, object] = {}) -> Self:
+                 stop_words: Optional[List[str]] = None, max_tokens: Optional[int] = 100,
+                 temperature: int = 0, top_p: int = 1, instructions_template: Optional[str] = None,
+                 template_variables: Optional[Dict[str, object]] = None) -> Self:
+        template_variables = template_variables or {}
+        stop_words = stop_words or []
+
         optional_input_params = {}
 
         if stop_words:
@@ -39,16 +43,16 @@ class LlmChatComplete(TaskInterface):
         input_params.update(optional_input_params)
 
         super().__init__(
-            task_name='llm_chat_complete',
+            task_name="llm_chat_complete",
             task_reference_name=task_ref_name,
             task_type=TaskType.LLM_CHAT_COMPLETE,
             input_parameters=input_params
         )
 
     def prompt_variables(self, variables: Dict[str, object]) -> Self:
-        self.input_parameters['promptVariables'].update(variables)
+        self.input_parameters["promptVariables"].update(variables)
         return self
 
     def prompt_variable(self, variable: str, value: object) -> Self:
-        self.input_parameters['promptVariables'][variable] = value
+        self.input_parameters["promptVariables"][variable] = value
         return self

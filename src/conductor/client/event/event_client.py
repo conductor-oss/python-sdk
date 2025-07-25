@@ -15,7 +15,7 @@ class EventClient:
 
     def get_kafka_queue_configuration(self, queue_topic: str) -> QueueConfiguration:
         return self.get_queue_configuration(
-            queue_type='kafka',
+            queue_type="kafka",
             queue_name=queue_topic,
         )
 

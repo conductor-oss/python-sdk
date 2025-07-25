@@ -1,22 +1,25 @@
 from __future__ import annotations
 
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from uuid import uuid4
 
 from typing_extensions import Self
 
-from conductor.client.ai.configuration import LLMProvider, VectorDB
-from conductor.client.ai.integrations import IntegrationConfig
-from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.integration_api_update import IntegrationApiUpdate
 from conductor.client.http.models.integration_update import IntegrationUpdate
-from conductor.client.http.models.prompt_template import PromptTemplate
 from conductor.client.http.rest import ApiException
 from conductor.client.orkes_clients import OrkesClients
 
+if TYPE_CHECKING:
+    from conductor.client.http.models.prompt_template import PromptTemplate
+    from conductor.client.configuration.configuration import Configuration
+    from conductor.client.ai.integrations import IntegrationConfig
+    from conductor.client.ai.configuration import LLMProvider, VectorDB
+
+NOT_FOUND_STATUS = 404
 
 class AIOrchestrator:
-    def __init__(self, api_configuration: Configuration, prompt_test_workflow_name: str = '') -> Self:
+    def __init__(self, api_configuration: Configuration, prompt_test_workflow_name: str = "") -> Self:
         orkes_clients = OrkesClients(api_configuration)
 
         self.integration_client = orkes_clients.get_integration_client()
@@ -25,8 +28,8 @@ class AIOrchestrator:
         self.prompt_client = orkes_clients.get_prompt_client()
 
         self.prompt_test_workflow_name = prompt_test_workflow_name
-        if self.prompt_test_workflow_name == '':
-            self.prompt_test_workflow_name = 'prompt_test_' + str(uuid4())
+        if self.prompt_test_workflow_name == "":
+            self.prompt_test_workflow_name = "prompt_test_" + str(uuid4())
 
     def add_prompt_template(self, name: str, prompt_template: str, description: str):
         self.prompt_client.save_prompt(name, description, prompt_template)
@@ -36,7 +39,7 @@ class AIOrchestrator:
         try:
             return self.prompt_client.get_prompt(template_name)
         except ApiException as e:
-            if e.code == 404:
+            if e.code == NOT_FOUND_STATUS:
                 return None
             raise e
 
@@ -47,10 +50,10 @@ class AIOrchestrator:
     def test_prompt_template(self, text: str, variables: dict,
                              ai_integration: str,
                              text_complete_model: str,
-                             stop_words: Optional[List[str]] = [], max_tokens: Optional[int] = 100,
+                             stop_words: Optional[List[str]] = None, max_tokens: int = 100,
                              temperature: int = 0,
                              top_p: int = 1):
-
+        stop_words = stop_words or []
         return self.prompt_client.test_prompt(text, variables, ai_integration, text_complete_model, temperature, top_p,
                                               stop_words)
 
@@ -59,7 +62,7 @@ class AIOrchestrator:
         details = IntegrationUpdate()
         details.configuration = config.to_dict()
         details.type = provider.value
-        details.category = 'AI_MODEL'
+        details.category = "AI_MODEL"
         details.enabled = True
         details.description = description
         existing_integration = self.integration_client.get_integration(integration_name=ai_integration_name)
@@ -73,12 +76,12 @@ class AIOrchestrator:
             if existing_integration_api is None or overwrite:
                 self.integration_client.save_integration_api(ai_integration_name, model, api_details)
 
-    def add_vector_store(self, db_integration_name: str, provider: VectorDB, indices: List[str],config: IntegrationConfig,
-                         description: str = None,overwrite : bool = False):
+    def add_vector_store(self, db_integration_name: str, provider: VectorDB, indices: List[str], config: IntegrationConfig,
+                         description: Optional[str] = None, overwrite: bool = False):
         vector_db = IntegrationUpdate()
         vector_db.configuration = config.to_dict()
         vector_db.type = provider.value
-        vector_db.category = 'VECTOR_DB'
+        vector_db.category = "VECTOR_DB"
         vector_db.enabled = True
         if description is None:
             description = db_integration_name
@@ -93,7 +96,6 @@ class AIOrchestrator:
             existing_integration_api = self.integration_client.get_integration_api(db_integration_name, index)
             if existing_integration_api is None or overwrite:
                 self.integration_client.save_integration_api(db_integration_name, index, api_details)
-        pass
 
     def get_token_used(self, ai_integration: str) -> dict:
         return self.integration_client.get_token_usage_for_integration_provider(ai_integration)
