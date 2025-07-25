@@ -1,7 +1,6 @@
 import json
 import logging
-import unittest
-from unittest.mock import patch, MagicMock
+import pytest
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
@@ -14,206 +13,246 @@ from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.models.ratelimit_tag import RateLimitTag
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 
-WORKFLOW_NAME = 'ut_wf'
-TASK_NAME = 'ut_task'
+WORKFLOW_NAME = "ut_wf"
+TASK_NAME = "ut_task"
 
 
-class TestOrkesMetadataClient(unittest.TestCase):
+@pytest.fixture(scope="module")
+def metadata_client():
+    configuration = Configuration("http://localhost:8080/api")
+    return OrkesMetadataClient(configuration)
 
-    @classmethod
-    def setUpClass(cls):
-        configuration = Configuration("http://localhost:8080/api")
-        cls.metadata_client = OrkesMetadataClient(configuration)
 
-    def setUp(self):
-        self.workflowDef = WorkflowDef(name=WORKFLOW_NAME, version=1)
-        self.taskDef = TaskDef(TASK_NAME)
-        self.wfTagObj = MetadataTag("test", "val")
-        logging.disable(logging.CRITICAL)
+@pytest.fixture(autouse=True)
+def disable_logging():
+    logging.disable(logging.CRITICAL)
+    yield
+    logging.disable(logging.NOTSET)
 
-    def tearDown(self):
-        logging.disable(logging.NOTSET)
 
-    def test_init(self):
-        message = "metadataResourceApi is not of type MetadataResourceApi"
-        self.assertIsInstance(self.metadata_client.metadataResourceApi, MetadataResourceApi, message)
+@pytest.fixture
+def workflow_def():
+    return WorkflowDef(name=WORKFLOW_NAME, version=1)
 
-    @patch.object(MetadataResourceApi, 'create')
-    def test_registerWorkflowDef(self, mock):
-        self.metadata_client.register_workflow_def(self.workflowDef)
-        self.assertTrue(mock.called)
-        mock.assert_called_with(self.workflowDef, overwrite=True)
 
-    @patch.object(MetadataResourceApi, 'create')
-    def test_registerWorkflowDef_without_overwrite(self, mock):
-        self.metadata_client.register_workflow_def(self.workflowDef, False)
-        self.assertTrue(mock.called)
-        mock.assert_called_with(self.workflowDef, overwrite=False)
+@pytest.fixture
+def task_def():
+    return TaskDef(TASK_NAME)
 
-    @patch.object(MetadataResourceApi, 'update1')
-    def test_updateWorkflowDef(self, mock):
-        self.metadata_client.update_workflow_def(self.workflowDef)
-        self.assertTrue(mock.called)
-        mock.assert_called_with([self.workflowDef], overwrite=True)
 
-    @patch.object(MetadataResourceApi, 'update1')
-    def test_updateWorkflowDef_without_overwrite(self, mock):
-        self.metadata_client.update_workflow_def(self.workflowDef, False)
-        self.assertTrue(mock.called)
-        mock.assert_called_with([self.workflowDef], overwrite=False)
+@pytest.fixture
+def wf_tag_obj():
+    return MetadataTag("test", "val")
 
-    @patch.object(MetadataResourceApi, 'unregister_workflow_def')
-    def test_unregisterWorkflowDef(self, mock):
-        self.metadata_client.unregister_workflow_def(WORKFLOW_NAME, 1)
-        self.assertTrue(mock.called)
-        mock.assert_called_with(WORKFLOW_NAME, 1)
 
-    @patch.object(MetadataResourceApi, 'get')
-    def test_getWorkflowDef_without_version(self, mock):
-        mock.return_value = self.workflowDef
-        wf = self.metadata_client.get_workflow_def(WORKFLOW_NAME)
-        self.assertEqual(wf, self.workflowDef)
-        self.assertTrue(mock.called)
-        mock.assert_called_with(WORKFLOW_NAME)
+def test_init(metadata_client):
+    message = "metadataResourceApi is not of type MetadataResourceApi"
+    assert isinstance(
+        metadata_client.metadataResourceApi, MetadataResourceApi
+    ), message
 
-    @patch.object(MetadataResourceApi, 'get')
-    def test_getWorkflowDef_with_version(self, mock):
-        mock.return_value = self.workflowDef
-        wf = self.metadata_client.get_workflow_def(WORKFLOW_NAME, 1)
-        self.assertEqual(wf, self.workflowDef)
-        mock.assert_called_with(WORKFLOW_NAME, version=1)
 
-    @patch.object(MetadataResourceApi, 'get')
-    def test_getWorkflowDef_non_existent(self, mock):
-        message = 'No such workflow found by name:' + WORKFLOW_NAME + ', version: null'
-        error_body = {'status': 404, 'message': message}
-        mock.side_effect = MagicMock(side_effect=ApiException(status=404, body=json.dumps(error_body)))
-        with self.assertRaises(ApiException):
-            self.metadata_client.get_workflow_def(WORKFLOW_NAME)
+def test_register_workflow_def(mocker, metadata_client, workflow_def):
+    mock = mocker.patch.object(MetadataResourceApi, "create")
+    metadata_client.register_workflow_def(workflow_def)
+    assert mock.called
+    mock.assert_called_with(workflow_def, overwrite=True)
 
-    @patch.object(MetadataResourceApi, 'get_all_workflows')
-    def test_getAllWorkflowDefs(self, mock):
-        workflowDef2 = WorkflowDef(name='ut_wf_2', version=1)
-        mock.return_value = [self.workflowDef, workflowDef2]
-        wfs = self.metadata_client.get_all_workflow_defs()
-        self.assertEqual(len(wfs), 2)
 
-    @patch.object(MetadataResourceApi, 'register_task_def')
-    def test_registerTaskDef(self, mock):
-        self.metadata_client.register_task_def(self.taskDef)
-        self.assertTrue(mock.called)
-        mock.assert_called_with([self.taskDef])
+def test_register_workflow_def_without_overwrite(mocker, metadata_client, workflow_def):
+    mock = mocker.patch.object(MetadataResourceApi, "create")
+    metadata_client.register_workflow_def(workflow_def, False)
+    assert mock.called
+    mock.assert_called_with(workflow_def, overwrite=False)
 
-    @patch.object(MetadataResourceApi, 'update_task_def')
-    def test_updateTaskDef(self, mock):
-        self.metadata_client.update_task_def(self.taskDef)
-        self.assertTrue(mock.called)
-        mock.assert_called_with(self.taskDef)
 
-    @patch.object(MetadataResourceApi, 'unregister_task_def')
-    def test_unregisterTaskDef(self, mock):
-        self.metadata_client.unregister_task_def(TASK_NAME)
-        self.assertTrue(mock.called)
-        mock.assert_called_with(TASK_NAME)
+def test_update_workflow_def(mocker, metadata_client, workflow_def):
+    mock = mocker.patch.object(MetadataResourceApi, "update1")
+    metadata_client.update_workflow_def(workflow_def)
+    assert mock.called
+    mock.assert_called_with([workflow_def], overwrite=True)
 
-    @patch.object(MetadataResourceApi, 'get_task_def')
-    def test_getTaskDef(self, mock):
-        mock.return_value = self.taskDef
-        taskDefinition = self.metadata_client.get_task_def(TASK_NAME)
-        self.assertEqual(taskDefinition, self.taskDef)
-        mock.assert_called_with(TASK_NAME)
 
-    @patch.object(MetadataResourceApi, 'get_task_defs')
-    def test_getAllTaskDefs(self, mock):
-        taskDef2 = TaskDef("ut_task2")
-        mock.return_value = [self.taskDef, taskDef2]
-        tasks = self.metadata_client.get_all_task_defs()
-        self.assertEqual(len(tasks), 2)
+def test_update_workflow_def_without_overwrite(mocker, metadata_client, workflow_def):
+    mock = mocker.patch.object(MetadataResourceApi, "update1")
+    metadata_client.update_workflow_def(workflow_def, False)
+    assert mock.called
+    mock.assert_called_with([workflow_def], overwrite=False)
 
-    @patch.object(TagsApi, 'add_workflow_tag')
-    def test_addWorkflowTag(self, mock):
-        self.metadata_client.add_workflow_tag(self.wfTagObj, WORKFLOW_NAME)
-        mock.assert_called_with(self.wfTagObj, WORKFLOW_NAME)
 
-    @patch.object(TagsApi, 'delete_workflow_tag')
-    def test_deleteWorkflowTag(self, mock):
-        wfTagOStr = TagString("test", "METADATA", "val")
-        self.metadata_client.delete_workflow_tag(self.wfTagObj, WORKFLOW_NAME)
-        mock.assert_called_with(wfTagOStr, WORKFLOW_NAME)
+def test_unregister_workflow_def(mocker, metadata_client):
+    mock = mocker.patch.object(MetadataResourceApi, "unregister_workflow_def")
+    metadata_client.unregister_workflow_def(WORKFLOW_NAME, 1)
+    assert mock.called
+    mock.assert_called_with(WORKFLOW_NAME, 1)
 
-    @patch.object(TagsApi, 'set_workflow_tags')
-    def test_setWorkflowTags(self, mock):
-        wfTagObj2 = MetadataTag("test2", "val2")
-        wfTagObjs = [self.wfTagObj, wfTagObj2]
-        self.metadata_client.set_workflow_tags(wfTagObjs, WORKFLOW_NAME)
-        mock.assert_called_with(wfTagObjs, WORKFLOW_NAME)
 
-    @patch.object(TagsApi, 'get_workflow_tags')
-    def test_getWorkflowTags(self, mock):
-        wfTagObj2 = MetadataTag("test2", "val2")
-        mock.return_value = [self.wfTagObj, wfTagObj2]
-        tags = self.metadata_client.get_workflow_tags(WORKFLOW_NAME)
-        mock.assert_called_with(WORKFLOW_NAME)
-        self.assertEqual(len(tags), 2)
+def test_get_workflow_def_without_version(mocker, metadata_client, workflow_def):
+    mock = mocker.patch.object(MetadataResourceApi, "get")
+    mock.return_value = workflow_def
+    wf = metadata_client.get_workflow_def(WORKFLOW_NAME)
+    assert wf == workflow_def
+    assert mock.called
+    mock.assert_called_with(WORKFLOW_NAME)
 
-    @patch.object(TagsApi, 'add_task_tag')
-    def test_addTaskTag(self, mock):
-        taskTag = MetadataTag("tag1", "val1")
-        self.metadata_client.addTaskTag(taskTag, TASK_NAME)
-        mock.assert_called_with(taskTag, TASK_NAME)
 
-    @patch.object(TagsApi, 'delete_task_tag')
-    def test_deleteTaskTag(self, mock):
-        taskTag = MetadataTag("tag1", "val1")
-        taskTagStr = TagString("tag1", "METADATA", "val1")
-        self.metadata_client.deleteTaskTag(taskTag, TASK_NAME)
-        mock.assert_called_with(taskTagStr, TASK_NAME)
+def test_get_workflow_def_with_version(mocker, metadata_client, workflow_def):
+    mock = mocker.patch.object(MetadataResourceApi, "get")
+    mock.return_value = workflow_def
+    wf = metadata_client.get_workflow_def(WORKFLOW_NAME, 1)
+    assert wf == workflow_def
+    mock.assert_called_with(WORKFLOW_NAME, version=1)
 
-    @patch.object(TagsApi, 'set_task_tags')
-    def test_setTaskTags(self, mock):
-        taskTag1 = MetadataTag("tag1", "val1")
-        taskTag2 = MetadataTag("tag2", "val2")
-        taskTagObjs = [taskTag1, taskTag2]
-        self.metadata_client.setTaskTags(taskTagObjs, TASK_NAME)
-        mock.assert_called_with(taskTagObjs, TASK_NAME)
 
-    @patch.object(TagsApi, 'get_task_tags')
-    def test_getTaskTags(self, mock):
-        taskTag1 = MetadataTag("tag1", "val1")
-        taskTag2 = MetadataTag("tag2", "val2")
-        mock.return_value = [taskTag1, taskTag2]
-        tags = self.metadata_client.getTaskTags(TASK_NAME)
-        mock.assert_called_with(TASK_NAME)
-        self.assertEqual(len(tags), 2)
+def test_get_workflow_def_non_existent(mocker, metadata_client, workflow_def):
+    mock = mocker.patch.object(MetadataResourceApi, "get")
+    message = f"No such workflow found by name:{WORKFLOW_NAME}, version: null"
+    error_body = {"status": 404, "message": message}
+    mock.side_effect = mocker.MagicMock(side_effect=ApiException(status=404, body=json.dumps(error_body)))
+    with pytest.raises(ApiException):
+        metadata_client.get_workflow_def(WORKFLOW_NAME)
 
-    @patch.object(TagsApi, 'get_workflow_tags')
-    @patch.object(TagsApi, 'add_workflow_tag')
-    def test_setWorkflowRateLimit(self, mockSet, mockRemove):
-        mockRemove.return_value = []
-        rateLimitTag = RateLimitTag(WORKFLOW_NAME, 5)
-        self.metadata_client.setWorkflowRateLimit(5, WORKFLOW_NAME)
-        mockRemove.assert_called_with(WORKFLOW_NAME)
-        mockSet.assert_called_with(rateLimitTag, WORKFLOW_NAME)
 
-    @patch.object(TagsApi, 'get_workflow_tags')
-    def test_getWorkflowRateLimit(self, mock):
-        metadataTag = MetadataTag("test", "val")
-        rateLimitTag = RateLimitTag(WORKFLOW_NAME, 5)
-        mock.return_value = [metadataTag, rateLimitTag]
-        rateLimit = self.metadata_client.getWorkflowRateLimit(WORKFLOW_NAME)
-        self.assertEqual(rateLimit, 5)
+def test_get_all_workflow_defs(mocker, metadata_client, workflow_def):
+    mock = mocker.patch.object(MetadataResourceApi, "get_all_workflows")
+    workflow_def2 = WorkflowDef(name="ut_wf_2", version=1)
+    mock.return_value = [workflow_def, workflow_def2]
+    wfs = metadata_client.get_all_workflow_defs()
+    assert len(wfs) == 2
 
-    @patch.object(TagsApi, 'get_workflow_tags')
-    def test_getWorkflowRateLimit_not_set(self, mock):
-        mock.return_value = []
-        rateLimit = self.metadata_client.getWorkflowRateLimit(WORKFLOW_NAME)
-        mock.assert_called_with(WORKFLOW_NAME)
-        self.assertIsNone(rateLimit)
 
-    @patch.object(OrkesMetadataClient, 'getWorkflowRateLimit')
-    @patch.object(TagsApi, 'delete_workflow_tag')
-    def test_removeWorkflowRateLimit(self, patchedTagsApi, patchedMetadataClient):
-        patchedMetadataClient.return_value = 5
-        self.metadata_client.removeWorkflowRateLimit(WORKFLOW_NAME)
-        rateLimitTag = RateLimitTag(WORKFLOW_NAME, 5)
-        patchedTagsApi.assert_called_with(rateLimitTag, WORKFLOW_NAME)
+def test_register_task_def(mocker, metadata_client, task_def):
+    mock = mocker.patch.object(MetadataResourceApi, "register_task_def")
+    metadata_client.register_task_def(task_def)
+    assert mock.called
+    mock.assert_called_with([task_def])
+
+
+def test_update_task_def(mocker, metadata_client, task_def):
+    mock = mocker.patch.object(MetadataResourceApi, "update_task_def")
+    metadata_client.update_task_def(task_def)
+    assert mock.called
+    mock.assert_called_with(task_def)
+
+
+def test_unregister_task_def(mocker, metadata_client):
+    mock = mocker.patch.object(MetadataResourceApi, "unregister_task_def")
+    metadata_client.unregister_task_def(TASK_NAME)
+    assert mock.called
+    mock.assert_called_with(TASK_NAME)
+
+
+def test_get_task_def(mocker, metadata_client, task_def):
+    mock = mocker.patch.object(MetadataResourceApi, "get_task_def")
+    mock.return_value = task_def
+    task_definition = metadata_client.get_task_def(TASK_NAME)
+    assert task_definition == task_def
+    mock.assert_called_with(TASK_NAME)
+
+
+def test_get_all_task_defs(mocker, metadata_client, task_def):
+    mock = mocker.patch.object(MetadataResourceApi, "get_task_defs")
+    task_def2 = TaskDef("ut_task2")
+    mock.return_value = [task_def, task_def2]
+    tasks = metadata_client.get_all_task_defs()
+    assert len(tasks) == 2
+
+
+def test_add_workflow_tag(mocker, metadata_client, wf_tag_obj):
+    mock = mocker.patch.object(TagsApi, "add_workflow_tag")
+    metadata_client.add_workflow_tag(wf_tag_obj, WORKFLOW_NAME)
+    mock.assert_called_with(wf_tag_obj, WORKFLOW_NAME)
+
+
+def test_delete_workflow_tag(mocker, metadata_client, wf_tag_obj):
+    mock = mocker.patch.object(TagsApi, "delete_workflow_tag")
+    wf_tag_str = TagString("test", "METADATA", "val")
+    metadata_client.delete_workflow_tag(wf_tag_obj, WORKFLOW_NAME)
+    mock.assert_called_with(wf_tag_str, WORKFLOW_NAME)
+
+
+def test_set_workflow_tags(mocker, metadata_client, wf_tag_obj):
+    mock = mocker.patch.object(TagsApi, "set_workflow_tags")
+    wf_tag_obj2 = MetadataTag("test2", "val2")
+    wf_tag_objs = [wf_tag_obj, wf_tag_obj2]
+    metadata_client.set_workflow_tags(wf_tag_objs, WORKFLOW_NAME)
+    mock.assert_called_with(wf_tag_objs, WORKFLOW_NAME)
+
+
+def test_get_workflow_tags(mocker, metadata_client, wf_tag_obj):
+    mock = mocker.patch.object(TagsApi, "get_workflow_tags")
+    wf_tag_obj2 = MetadataTag("test2", "val2")
+    mock.return_value = [wf_tag_obj, wf_tag_obj2]
+    tags = metadata_client.get_workflow_tags(WORKFLOW_NAME)
+    mock.assert_called_with(WORKFLOW_NAME)
+    assert len(tags) == 2
+
+
+def test_add_task_tag(mocker, metadata_client):
+    mock = mocker.patch.object(TagsApi, "add_task_tag")
+    task_tag = MetadataTag("tag1", "val1")
+    metadata_client.addTaskTag(task_tag, TASK_NAME)
+    mock.assert_called_with(task_tag, TASK_NAME)
+
+
+def test_delete_task_tag(mocker, metadata_client):
+    mock = mocker.patch.object(TagsApi, "delete_task_tag")
+    task_tag = MetadataTag("tag1", "val1")
+    task_tag_str = TagString("tag1", "METADATA", "val1")
+    metadata_client.deleteTaskTag(task_tag, TASK_NAME)
+    mock.assert_called_with(task_tag_str, TASK_NAME)
+
+
+def test_set_task_tags(mocker, metadata_client):
+    mock = mocker.patch.object(TagsApi, "set_task_tags")
+    task_tag1 = MetadataTag("tag1", "val1")
+    task_tag2 = MetadataTag("tag2", "val2")
+    task_tag_objs = [task_tag1, task_tag2]
+    metadata_client.setTaskTags(task_tag_objs, TASK_NAME)
+    mock.assert_called_with(task_tag_objs, TASK_NAME)
+
+
+def test_get_task_tags(mocker, metadata_client):
+    mock = mocker.patch.object(TagsApi, "get_task_tags")
+    task_tag1 = MetadataTag("tag1", "val1")
+    task_tag2 = MetadataTag("tag2", "val2")
+    mock.return_value = [task_tag1, task_tag2]
+    tags = metadata_client.getTaskTags(TASK_NAME)
+    mock.assert_called_with(TASK_NAME)
+    assert len(tags) == 2
+
+
+def test_set_workflow_rate_limit(mocker, metadata_client):
+    mock_set = mocker.patch.object(TagsApi, "add_workflow_tag")
+    mock_remove = mocker.patch.object(TagsApi, "get_workflow_tags")
+    mock_remove.return_value = []
+    rate_limit_tag = RateLimitTag(WORKFLOW_NAME, 5)
+    metadata_client.setWorkflowRateLimit(5, WORKFLOW_NAME)
+    mock_remove.assert_called_with(WORKFLOW_NAME)
+    mock_set.assert_called_with(rate_limit_tag, WORKFLOW_NAME)
+
+
+def test_get_workflow_rate_limit(mocker, metadata_client):
+    mock = mocker.patch.object(TagsApi, "get_workflow_tags")
+    metadata_tag = MetadataTag("test", "val")
+    rate_limit_tag = RateLimitTag(WORKFLOW_NAME, 5)
+    mock.return_value = [metadata_tag, rate_limit_tag]
+    rate_limit = metadata_client.getWorkflowRateLimit(WORKFLOW_NAME)
+    assert rate_limit == 5
+
+
+def test_get_workflow_rate_limit_not_set(mocker, metadata_client):
+    mock = mocker.patch.object(TagsApi, "get_workflow_tags")
+    mock.return_value = []
+    rate_limit = metadata_client.getWorkflowRateLimit(WORKFLOW_NAME)
+    mock.assert_called_with(WORKFLOW_NAME)
+    assert rate_limit is None
+
+
+def test_remove_workflow_rate_limit(mocker, metadata_client):
+    patched_tags_api = mocker.patch.object(TagsApi, "delete_workflow_tag")
+    patched_metadata_client = mocker.patch.object(OrkesMetadataClient, "getWorkflowRateLimit")
+    patched_metadata_client.return_value = 5
+    metadata_client.removeWorkflowRateLimit(WORKFLOW_NAME)
+    rate_limit_tag = RateLimitTag(WORKFLOW_NAME, 5)
+    patched_tags_api.assert_called_with(rate_limit_tag, WORKFLOW_NAME)

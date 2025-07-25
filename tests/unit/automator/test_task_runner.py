@@ -1,8 +1,7 @@
 import logging
-import os
 import time
-import unittest
-from unittest.mock import patch, ANY, Mock
+import pytest
+from unittest.mock import ANY, Mock
 
 from requests.structures import CaseInsensitiveDict
 
@@ -13,300 +12,277 @@ from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.worker.worker_interface import DEFAULT_POLLING_INTERVAL
-from tests.unit.resources.workers import ClassWorker
-from tests.unit.resources.workers import FaultyExecutionWorker
+from tests.unit.resources.workers import ClassWorker, FaultyExecutionWorker
 
 
-class TestTaskRunner(unittest.TestCase):
-    TASK_ID = 'VALID_TASK_ID'
-    WORKFLOW_INSTANCE_ID = 'VALID_WORKFLOW_INSTANCE_ID'
-    UPDATE_TASK_RESPONSE = 'VALID_UPDATE_TASK_RESPONSE'
+@pytest.fixture(autouse=True)
+def disable_logging():
+    logging.disable(logging.CRITICAL)
+    yield
+    logging.disable(logging.NOTSET)
 
-    def setUp(self):
-        logging.disable(logging.CRITICAL)
 
-    def tearDown(self):
-        logging.disable(logging.NOTSET)
+def get_valid_task_runner_with_worker_config(worker_config=None):
+    return TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker()
+    )
 
-    def test_initialization_with_invalid_configuration(self):
-        expected_exception = Exception('Invalid configuration')
-        with self.assertRaises(Exception) as context:
-            TaskRunner(
-                configuration=None,
-                worker=self.__get_valid_worker()
-            )
-            self.assertEqual(expected_exception, context.exception)
 
-    def test_initialization_with_invalid_worker(self):
-        expected_exception = Exception('Invalid worker')
-        with self.assertRaises(Exception) as context:
-            TaskRunner(
-                configuration=Configuration("http://localhost:8080/api"),
-                worker=None
-            )
-            self.assertEqual(expected_exception, context.exception)
+def get_valid_task_runner_with_worker_config_and_domain(domain):
+    return TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker(domain=domain)
+    )
 
-    def test_initialization_with_domain_passed_in_constructor(self):
-        task_runner = self.__get_valid_task_runner_with_worker_config_and_domain("passed")
-        self.assertEqual(task_runner.worker.domain, 'passed')
 
-    @unittest.mock.patch.dict(os.environ, {"CONDUCTOR_WORKER_DOMAIN": "generic"}, clear=True)
-    def test_initialization_with_generic_domain_in_worker_config(self):
-        task_runner = self.__get_valid_task_runner_with_worker_config_and_domain("passed")
-        self.assertEqual(task_runner.worker.domain, 'generic')
+def get_valid_task_runner_with_worker_config_and_poll_interval(poll_interval):
+    return TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker(poll_interval=poll_interval)
+    )
 
-    @unittest.mock.patch.dict(os.environ, {"CONDUCTOR_WORKER_DOMAIN": "generic",
-                                           "conductor_worker_task_domain": "test"}, clear=True)
-    def test_initialization_with_specific_domain_in_worker_config(self):
-        task_runner = self.__get_valid_task_runner_with_worker_config_and_domain("passed")
-        self.assertEqual(task_runner.worker.domain, 'test')
 
-    @unittest.mock.patch.dict(os.environ, {"CONDUCTOR_WORKER_DOMAIN": "cool",
-                                           "CONDUCTOR_WORKER_task2_DOMAIN": "test"}, clear=True)
-    def test_initialization_with_generic_domain_in_env_var(self):
-        task_runner = self.__get_valid_task_runner_with_worker_config_and_domain("passed")
-        self.assertEqual(task_runner.worker.domain, 'cool')
+def get_valid_task_runner():
+    return TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker()
+    )
 
-    @unittest.mock.patch.dict(os.environ, {"CONDUCTOR_WORKER_DOMAIN": "generic",
-                                           "CONDUCTOR_WORKER_task_DOMAIN": "hot"}, clear=True)
-    def test_initialization_with_specific_domain_in_env_var(self):
-        task_runner = self.__get_valid_task_runner_with_worker_config_and_domain("passed")
-        self.assertEqual(task_runner.worker.domain, 'hot')
 
-    @unittest.mock.patch.dict(os.environ, {}, clear=True)
-    def test_initialization_with_default_polling_interval(self):
-        task_runner = self.__get_valid_task_runner()
-        self.assertEqual(task_runner.worker.get_polling_interval_in_seconds() * 1000, DEFAULT_POLLING_INTERVAL)
+def get_valid_roundrobin_task_runner():
+    return TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_multi_task_worker()
+    )
 
-    @unittest.mock.patch.dict(os.environ, {}, clear=True)
-    def test_initialization_with_polling_interval_passed_in_constructor(self):
-        task_runner = self.__get_valid_task_runner_with_worker_config_and_poll_interval(3000)
-        self.assertEqual(task_runner.worker.get_polling_interval_in_seconds(), 3.0)
 
-    def test_initialization_with_common_polling_interval_in_worker_config(self):
-        os.environ['conductor_worker_polling_interval'] = '2000'
-        task_runner = self.__get_valid_task_runner_with_worker_config_and_poll_interval(3000)
-        self.assertEqual(task_runner.worker.get_polling_interval_in_seconds(), 2.0)
+def get_valid_task():
+    return Task(
+        task_id="VALID_TASK_ID",
+        workflow_instance_id="VALID_WORKFLOW_INSTANCE_ID"
+    )
 
-    def test_initialization_with_specific_polling_interval_in_worker_config(self):
-        os.environ['conductor_worker_polling_interval'] = '2000'
-        os.environ['conductor_worker_task_polling_interval'] = '5000'
-        task_runner = self.__get_valid_task_runner_with_worker_config_and_poll_interval(3000)
-        self.assertEqual(task_runner.worker.get_polling_interval_in_seconds(), 5.0)
 
-    @unittest.mock.patch.dict(os.environ, {"conductor_worker_polling_interval": "1000.0"}, clear=True)
-    def test_initialization_with_generic_polling_interval_in_env_var(self):
-        task_runner = self.__get_valid_task_runner_with_worker_config_and_poll_interval(3000)
-        self.assertEqual(task_runner.worker.get_polling_interval_in_seconds(), 1.0)
+def get_valid_task_result():
+    return TaskResult(
+        task_id="VALID_TASK_ID",
+        workflow_instance_id="VALID_WORKFLOW_INSTANCE_ID",
+        worker_id=get_valid_worker().get_identity(),
+        status=TaskResultStatus.COMPLETED,
+        output_data={
+            "worker_style": "class",
+            "secret_number": 1234,
+            "is_it_true": False,
+            "dictionary_ojb": {"name": "sdk_worker", "idx": 465},
+            "case_insensitive_dictionary_ojb": CaseInsensitiveDict(data={"NaMe": "sdk_worker", "iDX": 465}),
+        }
+    )
 
-    @unittest.mock.patch.dict(os.environ, {"CONDUCTOR_WORKER_task_POLLING_INTERVAL": "250.0"}, clear=True)
-    def test_initialization_with_specific_polling_interval_in_env_var(self):
-        task_runner = self.__get_valid_task_runner_with_worker_config_and_poll_interval(3000)
-        self.assertEqual(task_runner.worker.get_polling_interval_in_seconds(), 0.25)
 
-    def test_run_once(self):
-        expected_time = self.__get_valid_worker().get_polling_interval_in_seconds()
-        with patch.object(
-                TaskResourceApi,
-                'poll',
-                return_value=self.__get_valid_task()
-        ):
-            with patch.object(
-                    TaskResourceApi,
-                    'update_task',
-                    return_value=self.UPDATE_TASK_RESPONSE
-            ):
-                task_runner = self.__get_valid_task_runner()
-                start_time = time.time()
-                task_runner.run_once()
-                finish_time = time.time()
-                spent_time = finish_time - start_time
-                self.assertGreater(spent_time, expected_time)
+def get_valid_multi_task_worker():
+    return ClassWorker(["task1", "task2", "task3", "task4", "task5", "task6"])
 
-    def test_run_once_roundrobin(self):
-        with patch.object(
-                TaskResourceApi,
-                'poll',
-                return_value=self.__get_valid_task()
-        ):
-            with patch.object(
-                    TaskResourceApi,
-                    'update_task',
-            ) as mock_update_task:
-                mock_update_task.return_value = self.UPDATE_TASK_RESPONSE
-                task_runner = self.__get_valid_roundrobin_task_runner()
-                for i in range(0, 6):
-                    current_task_name = task_runner.worker.get_task_definition_name()
-                    task_runner.run_once()
-                    self.assertEqual(current_task_name, self.__shared_task_list[i])
 
-    def test_poll_task(self):
-        expected_task = self.__get_valid_task()
-        with patch.object(
-                TaskResourceApi,
-                'poll',
-                return_value=self.__get_valid_task()
-        ):
-            task_runner = self.__get_valid_task_runner()
-            task = task_runner._TaskRunner__poll_task()
-            self.assertEqual(task, expected_task)
+def get_valid_worker(domain=None, poll_interval=None):
+    cw = ClassWorker("task")
+    cw.domain = domain
+    cw.poll_interval = poll_interval
+    return cw
 
-    def test_poll_task_with_faulty_task_api(self):
-        expected_task = None
-        with patch.object(
-                TaskResourceApi,
-                'poll',
-                side_effect=Exception()
-        ):
-            task_runner = self.__get_valid_task_runner()
-            task = task_runner._TaskRunner__poll_task()
-            self.assertEqual(task, expected_task)
-
-    def test_execute_task_with_invalid_task(self):
-        task_runner = self.__get_valid_task_runner()
-        task_result = task_runner._TaskRunner__execute_task(None)
-        self.assertEqual(task_result, None)
-
-    def test_execute_task_with_faulty_execution_worker(self):
-        worker = FaultyExecutionWorker('task')
-        expected_task_result = TaskResult(
-            task_id=self.TASK_ID,
-            workflow_instance_id=self.WORKFLOW_INSTANCE_ID,
-            worker_id=worker.get_identity(),
-            status=TaskResultStatus.FAILED,
-            reason_for_incompletion='faulty execution',
-            logs=ANY
+def test_initialization_with_invalid_worker():
+    with pytest.raises(Exception) as context:
+        TaskRunner(
+            configuration=Configuration("http://localhost:8080/api"),
+            worker=None
         )
-        task_runner = TaskRunner(
-            configuration=Configuration(),
-            worker=worker
-        )
-        task = self.__get_valid_task()
-        task_result = task_runner._TaskRunner__execute_task(task)
-        self.assertEqual(task_result, expected_task_result)
-        self.assertIsNotNone(task_result.logs)
+    assert str(context.value) == "Invalid worker"
 
-    def test_execute_task(self):
-        expected_task_result = self.__get_valid_task_result()
-        worker = self.__get_valid_worker()
-        task_runner = TaskRunner(
-            configuration=Configuration(),
-            worker=worker
-        )
-        task = self.__get_valid_task()
-        task_result = task_runner._TaskRunner__execute_task(task)
-        self.assertEqual(task_result, expected_task_result)
 
-    def test_update_task_with_invalid_task_result(self):
-        expected_response = None
-        task_runner = self.__get_valid_task_runner()
-        response = task_runner._TaskRunner__update_task(None)
-        self.assertEqual(response, expected_response)
+def test_initialization_with_domain_passed_in_constructor():
+    task_runner = get_valid_task_runner_with_worker_config_and_domain("passed")
+    assert task_runner.worker.domain == "passed"
 
-    @patch('time.sleep', Mock(return_value=None))
-    def test_update_task_with_faulty_task_api(self):
-        expected_response = None
-        with patch.object(TaskResourceApi, 'update_task', side_effect=Exception()):
-            task_runner = self.__get_valid_task_runner()
-            task_result = self.__get_valid_task_result()
-            response = task_runner._TaskRunner__update_task(task_result)
-            self.assertEqual(response, expected_response)
 
-    def test_update_task(self):
-        expected_response = self.UPDATE_TASK_RESPONSE
-        with patch.object(
-                TaskResourceApi,
-                'update_task',
-                return_value=self.UPDATE_TASK_RESPONSE
-        ):
-            task_runner = self.__get_valid_task_runner()
-            task_result = self.__get_valid_task_result()
-            response = task_runner._TaskRunner__update_task(task_result)
-            self.assertEqual(response, expected_response)
+def test_initialization_with_generic_domain_in_worker_config(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_WORKER_DOMAIN", "generic")
+    task_runner = get_valid_task_runner_with_worker_config_and_domain("passed")
+    assert task_runner.worker.domain == "generic"
 
-    def test_wait_for_polling_interval_with_faulty_worker(self):
-        expected_exception = Exception(
-            "Failed to get polling interval"
-        )
-        with patch.object(
-                ClassWorker,
-                'get_polling_interval_in_seconds',
-                side_effect=expected_exception
-        ):
-            task_runner = self.__get_valid_task_runner()
-            with self.assertRaises(Exception) as context:
-                task_runner._TaskRunner__wait_for_polling_interval()
-                self.assertEqual(expected_exception, context.exception)
 
-    def test_wait_for_polling_interval(self):
-        expected_time = self.__get_valid_worker().get_polling_interval_in_seconds()
-        task_runner = self.__get_valid_task_runner()
-        start_time = time.time()
+def test_initialization_with_specific_domain_in_worker_config(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_WORKER_DOMAIN", "generic")
+    monkeypatch.setenv("conductor_worker_task_domain", "test")
+    task_runner = get_valid_task_runner_with_worker_config_and_domain("passed")
+    assert task_runner.worker.domain == "test"
+
+
+def test_initialization_with_generic_domain_in_env_var(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_WORKER_DOMAIN", "cool")
+    monkeypatch.setenv("CONDUCTOR_WORKER_task2_DOMAIN", "test")
+    task_runner = get_valid_task_runner_with_worker_config_and_domain("passed")
+    assert task_runner.worker.domain == "cool"
+
+
+def test_initialization_with_specific_domain_in_env_var(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_WORKER_DOMAIN", "generic")
+    monkeypatch.setenv("CONDUCTOR_WORKER_task_DOMAIN", "hot")
+    task_runner = get_valid_task_runner_with_worker_config_and_domain("passed")
+    assert task_runner.worker.domain == "hot"
+
+
+def test_initialization_with_default_polling_interval(monkeypatch):
+    monkeypatch.delenv("conductor_worker_polling_interval", raising=False)
+    task_runner = get_valid_task_runner()
+    assert task_runner.worker.get_polling_interval_in_seconds() * 1000 == DEFAULT_POLLING_INTERVAL
+
+
+def test_initialization_with_polling_interval_passed_in_constructor(monkeypatch):
+    monkeypatch.delenv("conductor_worker_polling_interval", raising=False)
+    task_runner = get_valid_task_runner_with_worker_config_and_poll_interval(3000)
+    assert task_runner.worker.get_polling_interval_in_seconds() == 3.0
+
+
+def test_initialization_with_common_polling_interval_in_worker_config(monkeypatch):
+    monkeypatch.setenv("conductor_worker_polling_interval", "2000")
+    task_runner = get_valid_task_runner_with_worker_config_and_poll_interval(3000)
+    assert task_runner.worker.get_polling_interval_in_seconds() == 2.0
+
+
+def test_initialization_with_specific_polling_interval_in_worker_config(monkeypatch):
+    monkeypatch.setenv("conductor_worker_polling_interval", "2000")
+    monkeypatch.setenv("conductor_worker_task_polling_interval", "5000")
+    task_runner = get_valid_task_runner_with_worker_config_and_poll_interval(3000)
+    assert task_runner.worker.get_polling_interval_in_seconds() == 5.0
+
+
+def test_initialization_with_generic_polling_interval_in_env_var(monkeypatch):
+    monkeypatch.setenv("conductor_worker_polling_interval", "1000.0")
+    task_runner = get_valid_task_runner_with_worker_config_and_poll_interval(3000)
+    assert task_runner.worker.get_polling_interval_in_seconds() == 1.0
+
+
+def test_initialization_with_specific_polling_interval_in_env_var(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_WORKER_task_POLLING_INTERVAL", "250.0")
+    task_runner = get_valid_task_runner_with_worker_config_and_poll_interval(3000)
+    assert task_runner.worker.get_polling_interval_in_seconds() == 0.25
+
+
+def test_run_once(mocker):
+    expected_time = get_valid_worker().get_polling_interval_in_seconds()
+    mocker.patch.object(TaskResourceApi, "poll", return_value=get_valid_task())
+    mocker.patch.object(TaskResourceApi, "update_task", return_value="VALID_UPDATE_TASK_RESPONSE")
+    task_runner = get_valid_task_runner()
+    start_time = time.time()
+    task_runner.run_once()
+    finish_time = time.time()
+    spent_time = finish_time - start_time
+    assert spent_time > expected_time
+
+
+def test_run_once_roundrobin(mocker):
+    mocker.patch.object(TaskResourceApi, "poll", return_value=get_valid_task())
+    mock_update_task = mocker.patch.object(TaskResourceApi, "update_task")
+    mock_update_task.return_value = "VALID_UPDATE_TASK_RESPONSE"
+    task_runner = get_valid_roundrobin_task_runner()
+    for i in range(6):
+        current_task_name = task_runner.worker.get_task_definition_name()
+        task_runner.run_once()
+        assert current_task_name == ["task1", "task2", "task3", "task4", "task5", "task6"][i]
+
+
+def test_poll_task(mocker):
+    expected_task = get_valid_task()
+    mocker.patch.object(TaskResourceApi, "poll", return_value=get_valid_task())
+    task_runner = get_valid_task_runner()
+    task = task_runner._TaskRunner__poll_task()
+    assert task == expected_task
+
+
+def test_poll_task_with_faulty_task_api(mocker):
+    expected_task = None
+    mocker.patch.object(TaskResourceApi, "poll", side_effect=Exception())
+    task_runner = get_valid_task_runner()
+    task = task_runner._TaskRunner__poll_task()
+    assert task == expected_task
+
+
+def test_execute_task_with_invalid_task():
+    task_runner = get_valid_task_runner()
+    task_result = task_runner._TaskRunner__execute_task(None)
+    assert task_result is None
+
+
+def test_execute_task_with_faulty_execution_worker():
+    worker = FaultyExecutionWorker("task")
+    expected_task_result = TaskResult(
+        task_id="VALID_TASK_ID",
+        workflow_instance_id="VALID_WORKFLOW_INSTANCE_ID",
+        worker_id=worker.get_identity(),
+        status=TaskResultStatus.FAILED,
+        reason_for_incompletion="faulty execution",
+        logs=ANY
+    )
+    task_runner = TaskRunner(
+        configuration=Configuration(),
+        worker=worker
+    )
+    task = get_valid_task()
+    task_result = task_runner._TaskRunner__execute_task(task)
+    assert task_result == expected_task_result
+    assert task_result.logs is not None
+
+
+def test_execute_task():
+    expected_task_result = get_valid_task_result()
+    worker = get_valid_worker()
+    task_runner = TaskRunner(
+        configuration=Configuration(),
+        worker=worker
+    )
+    task = get_valid_task()
+    task_result = task_runner._TaskRunner__execute_task(task)
+    assert task_result == expected_task_result
+
+
+def test_update_task_with_invalid_task_result():
+    expected_response = None
+    task_runner = get_valid_task_runner()
+    response = task_runner._TaskRunner__update_task(None)
+    assert response == expected_response
+
+
+def test_update_task_with_faulty_task_api(mocker):
+    mocker.patch("time.sleep", Mock(return_value=None))
+    mocker.patch.object(TaskResourceApi, "update_task", side_effect=Exception())
+    task_runner = get_valid_task_runner()
+    task_result = get_valid_task_result()
+    response = task_runner._TaskRunner__update_task(task_result)
+    assert response is None
+
+
+def test_update_task(mocker):
+    mocker.patch.object(TaskResourceApi, "update_task", return_value="VALID_UPDATE_TASK_RESPONSE")
+    task_runner = get_valid_task_runner()
+    task_result = get_valid_task_result()
+    response = task_runner._TaskRunner__update_task(task_result)
+    assert response == "VALID_UPDATE_TASK_RESPONSE"
+
+
+def test_wait_for_polling_interval_with_faulty_worker(mocker):
+    expected_exception = Exception("Failed to get polling interval")
+    mocker.patch.object(ClassWorker, "get_polling_interval_in_seconds", side_effect=expected_exception)
+    task_runner = get_valid_task_runner()
+    with pytest.raises(Exception) as context:
         task_runner._TaskRunner__wait_for_polling_interval()
-        finish_time = time.time()
-        spent_time = finish_time - start_time
-        self.assertGreater(spent_time, expected_time)
+    assert str(context.value) == str(expected_exception)
 
-    def __get_valid_task_runner_with_worker_config(self, worker_config):
-        return TaskRunner(
-            configuration=Configuration(),
-            worker=self.__get_valid_worker()
-        )
 
-    def __get_valid_task_runner_with_worker_config_and_domain(self, domain):
-        return TaskRunner(
-            configuration=Configuration(),
-            worker=self.__get_valid_worker(domain=domain)
-        )
-
-    def __get_valid_task_runner_with_worker_config_and_poll_interval(self, poll_interval):
-        return TaskRunner(
-            configuration=Configuration(),
-            worker=self.__get_valid_worker(poll_interval=poll_interval)
-        )
-
-    def __get_valid_task_runner(self):
-        return TaskRunner(
-            configuration=Configuration(),
-            worker=self.__get_valid_worker()
-        )
-
-    def __get_valid_roundrobin_task_runner(self):
-        return TaskRunner(
-            configuration=Configuration(),
-            worker=self.__get_valid_multi_task_worker()
-        )
-
-    def __get_valid_task(self):
-        return Task(
-            task_id=self.TASK_ID,
-            workflow_instance_id=self.WORKFLOW_INSTANCE_ID
-        )
-
-    def __get_valid_task_result(self):
-        return TaskResult(
-            task_id=self.TASK_ID,
-            workflow_instance_id=self.WORKFLOW_INSTANCE_ID,
-            worker_id=self.__get_valid_worker().get_identity(),
-            status=TaskResultStatus.COMPLETED,
-            output_data={
-                'worker_style': 'class',
-                'secret_number': 1234,
-                'is_it_true': False,
-                'dictionary_ojb': {'name': 'sdk_worker', 'idx': 465},
-                'case_insensitive_dictionary_ojb': CaseInsensitiveDict(data={'NaMe': 'sdk_worker', 'iDX': 465}),
-            }
-        )
-
-    @property
-    def __shared_task_list(self):
-        return ['task1', 'task2', 'task3', 'task4', 'task5', 'task6']
-
-    def __get_valid_multi_task_worker(self):
-        return ClassWorker(self.__shared_task_list)
-
-    def __get_valid_worker(self, domain=None, poll_interval=None):
-        cw = ClassWorker('task')
-        cw.domain = domain
-        cw.poll_interval = poll_interval
-        return cw
+def test_wait_for_polling_interval():
+    expected_time = get_valid_worker().get_polling_interval_in_seconds()
+    task_runner = get_valid_task_runner()
+    start_time = time.time()
+    task_runner._TaskRunner__wait_for_polling_interval()
+    finish_time = time.time()
+    spent_time = finish_time - start_time
+    assert spent_time > expected_time
