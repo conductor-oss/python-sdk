@@ -87,8 +87,6 @@ select = [
   "TID",
   # implicit string concatenation
   "ISC",
-  # flake8-type-checking
-  "TC",
   # comprehensions
   "C4",
   # pygrep-hooks
@@ -128,7 +126,9 @@ ignore = [
     # too-many-branches
     "PLR0912",
     # too-many-return-statements
-    "PLR0911"
+    "PLR0911",
+    # flake8-type-checking (150 errors)
+    "TC"
 ]
 
 [tool.ruff.lint.isort]
