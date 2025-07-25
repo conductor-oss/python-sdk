@@ -202,7 +202,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def remove_workflow(self, workflow_id: str):
         self.workflowResourceApi.delete(workflow_id)
 
-    def update_variables(self, workflow_id: str, variables: Dict[str, object] = None) -> None:
+    def update_variables(self, workflow_id: str, variables: Optional[Dict[str, object]] = None) -> None:
         variables = variables or {}
         self.workflowResourceApi.update_workflow_state(variables, workflow_id)
 

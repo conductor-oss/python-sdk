@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Dict, List, Union, Optional
 
@@ -22,7 +21,7 @@ def get_task_interface_list_as_workflow_task_list(*tasks: Self) -> List[Workflow
     return converted_tasks
 
 
-class TaskInterface(ABC):
+class TaskInterface():
     def __init__(self,
                  task_reference_name: str,
                  task_type: TaskType,

@@ -2,7 +2,7 @@ import datetime
 import logging
 import re
 from dateutil.parser import parse
-from typing import Any, ClassVar, Dict, Tuple
+from typing import ClassVar, Dict, Tuple
 
 import six
 from requests.structures import CaseInsensitiveDict
@@ -19,10 +19,10 @@ logger = logging.getLogger(
 
 
 class ObjectMapper(object):
-    PRIMITIVE_TYPES = (float, bool, bytes, six.text_type) + six.integer_types
-    NATIVE_TYPES_MAPPING = {
+    PRIMITIVE_TYPES: ClassVar[Tuple] = (float, bool, bytes, six.text_type, *six.integer_types)
+    NATIVE_TYPES_MAPPING: ClassVar[Dict] = {
         "int": int,
-        "long": int if six.PY3 else long,  # noqa: F821
+        "long": int if six.PY3 else long,  # noqa: F821, YTT202
         "float": float,
         "str": str,
         "bool": bool,
@@ -68,7 +68,7 @@ class ObjectMapper(object):
         if data is None:
             return None
 
-        if type(klass) == str:
+        if isinstance(klass, str):
             if klass.startswith("list["):
                 sub_kls = re.match(r"list\[(.*)\]", klass).group(1)
 

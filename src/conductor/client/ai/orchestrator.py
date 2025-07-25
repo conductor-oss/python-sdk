@@ -50,7 +50,7 @@ class AIOrchestrator:
     def test_prompt_template(self, text: str, variables: dict,
                              ai_integration: str,
                              text_complete_model: str,
-                             stop_words: List[str] = None, max_tokens: int = 100,
+                             stop_words: Optional[List[str]] = None, max_tokens: int = 100,
                              temperature: int = 0,
                              top_p: int = 1):
         stop_words = stop_words or []

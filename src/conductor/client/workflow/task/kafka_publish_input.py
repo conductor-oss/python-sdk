@@ -1,12 +1,12 @@
 from __future__ import annotations
 from copy import deepcopy
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, ClassVar
 
 from typing_extensions import Self
 
 
 class KafkaPublishInput:
-    swagger_types = {
+    swagger_types: ClassVar[Dict[str, str]] = {
         "_bootstrap_servers": "str",
         "_key": "str",
         "_key_serializer": "str",
@@ -17,7 +17,7 @@ class KafkaPublishInput:
         "_topic": "str",
     }
 
-    attribute_map = {
+    attribute_map: ClassVar[Dict[str, str]] = {
         "_bootstrap_servers": "bootStrapServers",
         "_key": "key",
         "_key_serializer": "keySerializer",

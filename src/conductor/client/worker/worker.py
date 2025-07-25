@@ -39,7 +39,7 @@ def is_callable_input_parameter_a_task(callable: ExecuteTaskFunction, object_typ
     if len(parameters) != 1:
         return False
     parameter = parameters[next(iter(parameters.keys()))]
-    return parameter.annotation == object_type or parameter.annotation == parameter.empty or parameter.annotation is object
+    return parameter.annotation == object_type or parameter.annotation == parameter.empty or parameter.annotation is object  # noqa: PLR1714
 
 
 def is_callable_return_value_of_type(callable: ExecuteTaskFunction, object_type: Any) -> bool:
@@ -108,7 +108,11 @@ class Worker(WorkerInterface):
 
         except Exception as ne:
             logger.error(
-                f"Error executing task {task.task_def_name} with id {task.task_id}.  error = {traceback.format_exc()}")
+                "Error executing task %s with id %s. error = %s",
+                task.task_def_name,
+                task.task_id,
+                traceback.format_exc()
+            )
 
             task_result.logs = [TaskExecLog(
                 traceback.format_exc(), task_result.task_id, int(time.time()))]

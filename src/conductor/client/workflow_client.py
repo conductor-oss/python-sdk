@@ -113,7 +113,7 @@ class WorkflowClient(ABC):
         pass
 
     @abstractmethod
-    def update_variables(self, workflow_id: str, variables: Dict[str, object] = None) -> None:
+    def update_variables(self, workflow_id: str, variables: Optional[Dict[str, object]] = None) -> None:
         pass
 
     @abstractmethod

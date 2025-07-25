@@ -39,6 +39,7 @@ class HttpInput:
         "_connection_time_out": "connectionTimeOut",
         "_read_timeout": "readTimeOut",
         "_body": "body",
+    }
 
     def __init__(self,
                  method: HttpMethod = HttpMethod.GET,

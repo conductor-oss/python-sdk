@@ -29,12 +29,12 @@ if not _mp_fork_set:
             set_start_method("fork")
         _mp_fork_set = True
     except Exception as e:
-        logger.info(f"error when setting multiprocessing.set_start_method - maybe the context is set {e.args}")
+        logger.info("error when setting multiprocessing.set_start_method - maybe the context is set %s", e.args)
     if platform == "darwin":
         os.environ["no_proxy"] = "*"
 
 def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func):
-    logger.info(f"decorated {name}")
+    logger.info("decorated %s", name)
     _decorated_functions[(name, domain)] = {
         "func": func,
         "poll_interval": poll_interval,
@@ -60,16 +60,16 @@ class TaskHandler:
         importlib.import_module("conductor.client.worker.worker_task")
         if import_modules is not None:
             for module in import_modules:
-                logger.info(f"loading module {module}")
+                logger.info("loading module %s", module)
                 importlib.import_module(module)
 
         elif not isinstance(workers, list):
             workers = [workers]
         if scan_for_annotated_workers is True:
             for (task_def_name, domain), record in _decorated_functions.items():
-                fn = record['func']
-                worker_id = record['worker_id']
-                poll_interval = record['poll_interval']
+                fn = record["func"]
+                worker_id = record["worker_id"]
+                poll_interval = record["poll_interval"]
 
                 worker = Worker(
                     task_definition_name=task_def_name,
@@ -77,7 +77,7 @@ class TaskHandler:
                     worker_id=worker_id,
                     domain=domain,
                     poll_interval=poll_interval)
-                logger.info(f"created worker with name={task_def_name} and domain={domain}")
+                logger.info("created worker with name=%s and domain=%s", task_def_name, domain)
                 workers.append(worker)
 
         self.__create_task_runner_processes(workers, configuration, metrics_settings)
@@ -156,7 +156,7 @@ class TaskHandler:
         for task_runner_process in self.task_runner_processes:
             task_runner_process.start()
             n = n + 1
-        logger.info(f"Started {n} TaskRunner process")
+        logger.info("Started %s TaskRunner process", n)
 
     def __join_metrics_provider_process(self):
         if self.metrics_provider_process is None:
@@ -180,12 +180,12 @@ class TaskHandler:
         if process is None:
             return
         try:
-            logger.debug(f"Terminating process: {process.pid}")
+            logger.debug("Terminating process: %s", process.pid)
             process.terminate()
         except Exception as e:
-            logger.debug(f"Failed to terminate process: {process.pid}, reason: {e}")
+            logger.debug("Failed to terminate process: %s, reason: %s", process.pid, e)
             process.kill()
-            logger.debug(f"Killed process: {process.pid}")
+            logger.debug("Killed process: %s", process.pid)
 
 
 # Setup centralized logging queue
