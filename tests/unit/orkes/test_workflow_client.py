@@ -1,5 +1,6 @@
 import json
 import logging
+
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
@@ -197,18 +198,17 @@ def test_get_workflow_non_existent(mocker, workflow_client):
     )
     with pytest.raises(ApiException):
         workflow_client.get_workflow(WORKFLOW_UUID, False)
-        mock.assert_called_with(WORKFLOW_UUID, include_tasks=False)
 
 
 def test_delete_workflow(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "delete")
-    workflow = workflow_client.delete_workflow(WORKFLOW_UUID)
+    workflow_client.delete_workflow(WORKFLOW_UUID)
     mock.assert_called_with(WORKFLOW_UUID, archive_workflow=True)
 
 
 def test_delete_workflow_without_archival(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "delete")
-    workflow = workflow_client.delete_workflow(WORKFLOW_UUID, False)
+    workflow_client.delete_workflow(WORKFLOW_UUID, False)
     mock.assert_called_with(WORKFLOW_UUID, archive_workflow=False)
 
 
@@ -216,9 +216,7 @@ def test_skip_task_from_workflow(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "skip_task_from_workflow")
     task_ref_name = TASK_NAME + "_ref"
     request = SkipTaskRequest()
-    workflow = workflow_client.skip_task_from_workflow(
-        WORKFLOW_UUID, task_ref_name, request
-    )
+    workflow_client.skip_task_from_workflow(WORKFLOW_UUID, task_ref_name, request)
     mock.assert_called_with(WORKFLOW_UUID, task_ref_name, request)
 
 

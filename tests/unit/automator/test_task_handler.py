@@ -1,4 +1,5 @@
 import multiprocessing
+
 import pytest
 
 from conductor.client.automator.task_handler import TaskHandler

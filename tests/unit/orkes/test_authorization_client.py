@@ -1,4 +1,5 @@
 import logging
+
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
@@ -223,12 +224,13 @@ def test_set_application_tags(mocker, authorization_client, conductor_applicatio
 
 def test_get_application_tags(mocker, authorization_client, conductor_application):
     mock = mocker.patch.object(ApplicationResourceApi, "get_tags_for_application")
+    expected_application_tags_len = 2
     tag1 = MetadataTag("tag1", "val1")
     tag2 = MetadataTag("tag2", "val2")
     mock.return_value = [tag1, tag2]
     tags = authorization_client.get_application_tags(APP_ID)
     mock.assert_called_with(APP_ID)
-    assert len(tags) == 2
+    assert len(tags) == expected_application_tags_len
 
 
 def test_delete_application_tags(mocker, authorization_client, conductor_application):

@@ -1,5 +1,7 @@
 import logging
+
 import pytest
+
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 
 
@@ -11,9 +13,10 @@ def disable_logging():
 
 
 def test_default_initialization():
+    expected_update_interval = 0.1
     metrics_settings = MetricsSettings()
     assert metrics_settings.file_name == "metrics.log"
-    assert metrics_settings.update_interval == 0.1
+    assert metrics_settings.update_interval == expected_update_interval
 
 
 def test_default_initialization_with_parameters():

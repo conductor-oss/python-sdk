@@ -1,4 +1,5 @@
 import pytest
+
 from conductor.client.http.api_client import ApiClient
 from conductor.client.workflow.task.kafka_publish_input import KafkaPublishInput
 
@@ -95,7 +96,7 @@ def test_kafka_publish_input_swagger_types_consistency(api_client):
         topic="test",
     )
     serialized = api_client.sanitize_for_serialization(kafka_input)
-    for internal_attr, expected_type in swagger_types.items():
+    for internal_attr in swagger_types.keys():
         external_attr = KafkaPublishInput.attribute_map[internal_attr]
         assert (
             external_attr in serialized

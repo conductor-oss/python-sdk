@@ -1,4 +1,5 @@
 import logging
+
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
@@ -87,12 +88,13 @@ def test_set_secret_tags(mocker, secret_client):
 
 def test_get_secret_tags(mocker, secret_client):
     mock = mocker.patch.object(SecretResourceApi, "get_tags")
+    expected_tags_len = 2
     tag1 = MetadataTag("tag1", "val1")
     tag2 = MetadataTag("tag2", "val2")
     mock.return_value = [tag1, tag2]
     tags = secret_client.get_secret_tags(SECRET_KEY)
     mock.assert_called_with(SECRET_KEY)
-    assert len(tags) == 2
+    assert len(tags) == expected_tags_len
 
 
 def test_delete_secret_tags(mocker, secret_client):

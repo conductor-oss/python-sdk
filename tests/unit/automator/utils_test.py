@@ -1,11 +1,12 @@
 import logging
-import pytest
 from dataclasses import dataclass
 from typing import List
 
+import pytest
 from requests.structures import CaseInsensitiveDict
-from tests.unit.resources.workers import UserInfo
+
 from conductor.client.automator.utils import convert_from_dict
+from tests.unit.resources.workers import UserInfo
 
 
 @dataclass
@@ -68,9 +69,9 @@ def test_convert_non_dataclass():
     }
     value = convert_from_dict(Test, dictionary)
     assert type(value) is Test
-    assert value.a == 123
-    assert len(value.b) == 2
-    assert value.b[1].ba == 21
+    assert value.a == dictionary["a"]
+    assert len(value.b) == dictionary["b"][0]["ba"]
+    assert value.b[1].ba == dictionary["b"][1]["ba"]
     assert type(value.b[1]) is SubTest
 
 

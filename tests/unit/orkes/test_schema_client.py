@@ -1,4 +1,5 @@
 import logging
+
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
@@ -50,10 +51,11 @@ def test_get_schema(mocker, schema_client, schema_def):
 
 def test_get_all_schemas(mocker, schema_client, schema_def):
     mock = mocker.patch.object(SchemaResourceApi, "get_all_schemas")
+    expected_schemas_len = 2
     schema_def2 = SchemaDef(name="ut_schema_2", version=1)
     mock.return_value = [schema_def, schema_def2]
     schemas = schema_client.get_all_schemas()
-    assert len(schemas) == 2
+    assert len(schemas) == expected_schemas_len
 
 
 def test_delete_schema(mocker, schema_client, schema_def):

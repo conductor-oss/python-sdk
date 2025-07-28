@@ -1,5 +1,6 @@
 import json
 import logging
+
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
@@ -115,10 +116,11 @@ def test_get_workflow_def_non_existent(mocker, metadata_client, workflow_def):
 
 def test_get_all_workflow_defs(mocker, metadata_client, workflow_def):
     mock = mocker.patch.object(MetadataResourceApi, "get_all_workflows")
+    expected_workflow_defs_len = 2
     workflow_def2 = WorkflowDef(name="ut_wf_2", version=1)
     mock.return_value = [workflow_def, workflow_def2]
     wfs = metadata_client.get_all_workflow_defs()
-    assert len(wfs) == 2
+    assert len(wfs) == expected_workflow_defs_len
 
 
 def test_register_task_def(mocker, metadata_client, task_def):
@@ -152,10 +154,11 @@ def test_get_task_def(mocker, metadata_client, task_def):
 
 def test_get_all_task_defs(mocker, metadata_client, task_def):
     mock = mocker.patch.object(MetadataResourceApi, "get_task_defs")
+    expected_tasks_defs_len = 2
     task_def2 = TaskDef("ut_task2")
     mock.return_value = [task_def, task_def2]
     tasks = metadata_client.get_all_task_defs()
-    assert len(tasks) == 2
+    assert len(tasks) == expected_tasks_defs_len
 
 
 def test_add_workflow_tag(mocker, metadata_client, wf_tag_obj):
@@ -181,11 +184,12 @@ def test_set_workflow_tags(mocker, metadata_client, wf_tag_obj):
 
 def test_get_workflow_tags(mocker, metadata_client, wf_tag_obj):
     mock = mocker.patch.object(TagsApi, "get_workflow_tags")
+    expected_tags_len = 2
     wf_tag_obj2 = MetadataTag("test2", "val2")
     mock.return_value = [wf_tag_obj, wf_tag_obj2]
     tags = metadata_client.get_workflow_tags(WORKFLOW_NAME)
     mock.assert_called_with(WORKFLOW_NAME)
-    assert len(tags) == 2
+    assert len(tags) == expected_tags_len
 
 
 def test_add_task_tag(mocker, metadata_client):
@@ -214,12 +218,13 @@ def test_set_task_tags(mocker, metadata_client):
 
 def test_get_task_tags(mocker, metadata_client):
     mock = mocker.patch.object(TagsApi, "get_task_tags")
+    expected_tags_len = 2
     task_tag1 = MetadataTag("tag1", "val1")
     task_tag2 = MetadataTag("tag2", "val2")
     mock.return_value = [task_tag1, task_tag2]
     tags = metadata_client.getTaskTags(TASK_NAME)
     mock.assert_called_with(TASK_NAME)
-    assert len(tags) == 2
+    assert len(tags) == expected_tags_len
 
 
 def test_set_workflow_rate_limit(mocker, metadata_client):
@@ -234,11 +239,12 @@ def test_set_workflow_rate_limit(mocker, metadata_client):
 
 def test_get_workflow_rate_limit(mocker, metadata_client):
     mock = mocker.patch.object(TagsApi, "get_workflow_tags")
+    expected_workflow_rate_limit = 5
     metadata_tag = MetadataTag("test", "val")
     rate_limit_tag = RateLimitTag(WORKFLOW_NAME, 5)
     mock.return_value = [metadata_tag, rate_limit_tag]
     rate_limit = metadata_client.getWorkflowRateLimit(WORKFLOW_NAME)
-    assert rate_limit == 5
+    assert rate_limit == expected_workflow_rate_limit
 
 
 def test_get_workflow_rate_limit_not_set(mocker, metadata_client):

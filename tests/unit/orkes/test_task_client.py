@@ -1,5 +1,6 @@
 import json
 import logging
+
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
@@ -120,7 +121,6 @@ def test_get_task_non_existent(mocker, task_client):
     )
     with pytest.raises(ApiException):
         task_client.get_task(TASK_ID)
-        mock.assert_called_with(TASK_ID)
 
 
 def test_update_task(mocker, task_client):
@@ -183,9 +183,10 @@ def test_update_task_sync_with_worker_id(mocker, task_client):
 def test_get_queue_size_for_task(mocker, task_client):
     mock = mocker.patch.object(TaskResourceApi, "size")
     mock.return_value = {TASK_NAME: 4}
+    expected_queue_size_for_task = 4
     size = task_client.get_queue_size_for_task(TASK_NAME)
     mock.assert_called_with(task_type=[TASK_NAME])
-    assert size == 4
+    assert size == expected_queue_size_for_task
 
 
 def test_get_queue_size_for_task_empty(mocker, task_client):
@@ -205,9 +206,10 @@ def test_add_task_log(mocker, task_client):
 
 def test_get_task_logs(mocker, task_client):
     mock = mocker.patch.object(TaskResourceApi, "get_task_logs")
+    expected_log_len = 2
     task_exec_log1 = TaskExecLog("Test log 1", TASK_ID)
     task_exec_log2 = TaskExecLog("Test log 2", TASK_ID)
     mock.return_value = [task_exec_log1, task_exec_log2]
     logs = task_client.get_task_logs(TASK_ID)
     mock.assert_called_with(TASK_ID)
-    assert len(logs) == 2
+    assert len(logs) == expected_log_len

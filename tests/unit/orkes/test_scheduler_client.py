@@ -1,5 +1,6 @@
 import json
 import logging
+
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
@@ -72,7 +73,6 @@ def test_get_schedule_non_existing(mocker, scheduler_client):
     )
     with pytest.raises(ApiException):
         scheduler_client.get_schedule("WRONG_SCHEDULE")
-        mock.assert_called_with("WRONG_SCHEDULE")
 
 
 def test_get_all_schedules(mocker, scheduler_client, workflow_schedule):
@@ -95,10 +95,11 @@ def test_get_all_schedules_with_workflow_name(
 
 def test_get_next_few_schedule_execution_times(mocker, scheduler_client):
     mock = mocker.patch.object(SchedulerResourceApi, "get_next_few_schedules")
+    expected_next_few_schedule_execution_times = 3
     cron_expression = "0 */5 * ? * *"
     mock.return_value = [1698093000000, 1698093300000, 1698093600000]
     times = scheduler_client.get_next_few_schedule_execution_times(cron_expression)
-    assert len(times) == 3
+    assert len(times) == expected_next_few_schedule_execution_times
     mock.assert_called_with(cron_expression)
 
 
@@ -106,12 +107,13 @@ def test_get_next_few_schedule_execution_times_with_optional_params(
     mocker, scheduler_client
 ):
     mock = mocker.patch.object(SchedulerResourceApi, "get_next_few_schedules")
+    expected_next_few_schedule_execution_times = 2
     cron_expression = "0 */5 * ? * *"
     mock.return_value = [1698093300000, 1698093600000]
     times = scheduler_client.get_next_few_schedule_execution_times(
         cron_expression, 1698093300000, 1698093600000, 2
     )
-    assert len(times) == 2
+    assert len(times) == expected_next_few_schedule_execution_times
     mock.assert_called_with(
         cron_expression,
         schedule_start_time=1698093300000,
@@ -188,12 +190,13 @@ def test_set_scheduler_tags(mocker, scheduler_client):
 
 def test_get_scheduler_tags(mocker, scheduler_client):
     mock = mocker.patch.object(SchedulerResourceApi, "get_tags_for_schedule")
+    expected_tags_len = 2
     tag1 = MetadataTag("tag1", "val1")
     tag2 = MetadataTag("tag2", "val2")
     mock.return_value = [tag1, tag2]
     tags = scheduler_client.get_scheduler_tags(SCHEDULE_NAME)
     mock.assert_called_with(SCHEDULE_NAME)
-    assert len(tags) == 2
+    assert len(tags) == expected_tags_len
 
 
 def test_delete_scheduler_tags(mocker, scheduler_client):
