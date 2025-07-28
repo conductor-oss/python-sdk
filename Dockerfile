@@ -48,7 +48,7 @@ WORKDIR /package
 RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV PATH "/root/.local/bin:$PATH"
 
-COPY pyproject.toml poetry.lock /package/
+COPY pyproject.toml poetry.lock README.md /package/
 COPY --from=python_test_base /package/src /package/src
 
 RUN poetry config virtualenvs.create false && \
