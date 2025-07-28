@@ -1,6 +1,5 @@
-import json
-import os
 import copy
+import json
 from pathlib import Path
 
 
@@ -18,9 +17,11 @@ class JsonTemplateResolver:
         file_path = current_dir / cls._template_resource_path
 
         if not file_path.exists():
-            raise FileNotFoundError(f"Resource not found: {cls._template_resource_path}")
+            raise FileNotFoundError(
+                f"Resource not found: {cls._template_resource_path}"
+            )
 
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             root = json.load(f)
 
         if "templates" not in root:
@@ -75,7 +76,9 @@ class JsonTemplateResolver:
         template = cls._templates_root[template_name]
 
         if "content" not in template:
-            raise ValueError(f"Template '{template_name}' does not contain 'content' node")
+            raise ValueError(
+                f"Template '{template_name}' does not contain 'content' node"
+            )
 
         content_node = template["content"]
 
@@ -90,7 +93,9 @@ class JsonTemplateResolver:
         if "inherits" in template and isinstance(template["inherits"], list):
             for parent_name in template["inherits"]:
                 # Resolve parent template
-                parent_node = cls._resolve_template_with_inheritance(parent_name, set(processed_templates))
+                parent_node = cls._resolve_template_with_inheritance(
+                    parent_name, set(processed_templates)
+                )
 
                 # Only merge if parent is a dict
                 if isinstance(parent_node, dict):
@@ -108,7 +113,11 @@ class JsonTemplateResolver:
             for field_name, source_value in source.items():
                 # Only add the field if it doesn't exist in the target
                 if field_name not in target:
-                    if isinstance(source_value, dict) and field_name in target and isinstance(target[field_name], dict):
+                    if (
+                        isinstance(source_value, dict)
+                        and field_name in target
+                        and isinstance(target[field_name], dict)
+                    ):
                         # Recursively merge objects
                         cls._merge_nodes(target[field_name], source_value)
                     else:
@@ -129,7 +138,7 @@ class JsonTemplateResolver:
         # Collect field names to avoid RuntimeError during iteration
         fields_to_process = list(obj_node.keys())
 
-        for field_name in fields_to_process:
+        for i, field_name in enumerate(fields_to_process):
             field_value = obj_node[field_name]
 
             # Check if the field name is a reference that needs to be resolved
@@ -147,7 +156,9 @@ class JsonTemplateResolver:
                 field_dependencies.add(reference_name)
 
                 # Resolve the template to get the actual key name
-                resolved_reference = cls._resolve_template_with_inheritance(reference_name, set())
+                resolved_reference = cls._resolve_template_with_inheritance(
+                    reference_name, set()
+                )
 
                 # Only apply if the resolved reference is a simple value (string, number, etc.)
                 if not isinstance(resolved_reference, (dict, list)):
@@ -158,7 +169,7 @@ class JsonTemplateResolver:
                     obj_node[resolved_key] = original_value
 
                     # Update the field name for further processing
-                    field_name = resolved_key
+                    fields_to_process[i] = resolved_key
                     field_value = original_value
 
             # Check if the field value is a string reference
@@ -172,13 +183,17 @@ class JsonTemplateResolver:
 
                     if reference_name in field_dependencies:
                         # Circular reference detected
-                        print(f"Warning: Circular reference detected for {reference_name}")
+                        print(
+                            f"Warning: Circular reference detected for {reference_name}"
+                        )
                         continue
 
                     field_dependencies.add(reference_name)
 
                     # Resolve the template WITH inheritance
-                    resolved_reference = cls._resolve_template_with_inheritance(reference_name, set())
+                    resolved_reference = cls._resolve_template_with_inheritance(
+                        reference_name, set()
+                    )
 
                     # Resolve any references in the resolved template
                     cls._resolve_references(resolved_reference, field_dependencies)
@@ -203,13 +218,17 @@ class JsonTemplateResolver:
 
                     if reference_name in element_dependencies:
                         # Circular reference detected
-                        print(f"Warning: Circular reference detected for {reference_name}")
+                        print(
+                            f"Warning: Circular reference detected for {reference_name}"
+                        )
                         continue
 
                     element_dependencies.add(reference_name)
 
                     # Resolve the template WITH inheritance
-                    resolved_reference = cls._resolve_template_with_inheritance(reference_name, set())
+                    resolved_reference = cls._resolve_template_with_inheritance(
+                        reference_name, set()
+                    )
 
                     # Resolve any references in the resolved template
                     cls._resolve_references(resolved_reference, element_dependencies)
