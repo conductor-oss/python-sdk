@@ -21,7 +21,7 @@ from typing import Optional, Union
 import aiohttp
 import aiohttp_retry
 
-from my_aiohttp_client.exceptions import ApiException, ApiValueError
+from conductor.client.my_aiohttp_client.exceptions import ApiException, ApiValueError
 
 RESTResponseType = aiohttp.ClientResponse
 

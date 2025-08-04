@@ -26,11 +26,10 @@ from urllib.parse import quote
 from typing import Tuple, Optional, List, Dict, Union
 from pydantic import SecretStr
 
-from my_aiohttp_client.configuration import Configuration
-from my_aiohttp_client.api_response import ApiResponse, T as ApiResponseT
-import my_aiohttp_client.models
-from my_aiohttp_client import rest
-from my_aiohttp_client.exceptions import (
+from conductor.client.my_aiohttp_client.configuration import Configuration
+from conductor.client.my_aiohttp_client.api_response import ApiResponse, T as ApiResponseT
+from conductor.client.my_aiohttp_client import rest
+from conductor.client.my_aiohttp_client.exceptions import (
     ApiValueError,
     ApiException,
     BadRequestException,

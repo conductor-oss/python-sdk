@@ -18,13 +18,13 @@ from typing_extensions import Annotated
 
 from pydantic import StrictStr
 from typing import Any, Dict, List
-from my_aiohttp_client.models.create_or_update_application_request import CreateOrUpdateApplicationRequest
-from my_aiohttp_client.models.extended_conductor_application import ExtendedConductorApplication
-from my_aiohttp_client.models.tag import Tag
+from conductor.client.my_aiohttp_client.models.create_or_update_application_request import CreateOrUpdateApplicationRequest
+from conductor.client.my_aiohttp_client.models.extended_conductor_application import ExtendedConductorApplication
+from conductor.client.my_aiohttp_client.models.tag import Tag
 
-from my_aiohttp_client.api_client import ApiClient, RequestSerialized
-from my_aiohttp_client.api_response import ApiResponse
-from my_aiohttp_client.rest import RESTResponseType
+from conductor.client.my_aiohttp_client.api_client import ApiClient, RequestSerialized
+from conductor.client.my_aiohttp_client.api_response import ApiResponse
+from conductor.client.my_aiohttp_client.rest import RESTResponseType
 
 
 class ApplicationResourceApi:

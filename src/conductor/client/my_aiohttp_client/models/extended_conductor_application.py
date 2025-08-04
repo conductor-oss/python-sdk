@@ -19,7 +19,7 @@ import json
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
-from my_aiohttp_client.models.tag import Tag
+from conductor.client.my_aiohttp_client.models.tag import Tag
 from typing import Optional, Set
 from typing_extensions import Self
 
