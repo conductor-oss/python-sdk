@@ -154,6 +154,7 @@ line-ending = "auto"
 "src/conductor/client/orkes/api/*.py" = ["ALL"]
 "tests/**/*.py" = ["B", "C4", "SIM", "PLR2004"]
 "examples/**/*.py" = ["B", "C4", "SIM"]
+"src/conductor/asyncio_client/http/**/*.py" = ["ALL"]
 
 [tool.coverage.run]
 source = ["src/conductor"]
