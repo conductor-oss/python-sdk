@@ -284,7 +284,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/scheduler/schedules/{name}',
+            resource_path='/scheduler/schedules/{name}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -564,7 +564,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/scheduler/schedules/{name}/tags',
+            resource_path='/scheduler/schedules/{name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -824,7 +824,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/scheduler/schedules',
+            resource_path='/scheduler/schedules',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1135,7 +1135,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/scheduler/nextFewSchedules',
+            resource_path='/scheduler/nextFewSchedules',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1393,7 +1393,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/scheduler/schedules/{name}',
+            resource_path='/scheduler/schedules/{name}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1653,7 +1653,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/scheduler/schedules/tags',
+            resource_path='/scheduler/schedules/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1911,7 +1911,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/scheduler/schedules/{name}/tags',
+            resource_path='/scheduler/schedules/{name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2154,7 +2154,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/scheduler/admin/pause',
+            resource_path='/scheduler/admin/pause',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2412,7 +2412,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/scheduler/schedules/{name}/pause',
+            resource_path='/scheduler/schedules/{name}/pause',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2692,7 +2692,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/scheduler/schedules/{name}/tags',
+            resource_path='/scheduler/schedules/{name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2935,7 +2935,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/scheduler/admin/requeue',
+            resource_path='/scheduler/admin/requeue',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3178,7 +3178,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/scheduler/admin/resume',
+            resource_path='/scheduler/admin/resume',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3436,7 +3436,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/scheduler/schedules/{name}/resume',
+            resource_path='/scheduler/schedules/{name}/resume',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3707,7 +3707,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/scheduler/schedules',
+            resource_path='/scheduler/schedules',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -4038,7 +4038,7 @@ class SchedulerResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/scheduler/search/executions',
+            resource_path='/scheduler/search/executions',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

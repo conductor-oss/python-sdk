@@ -270,7 +270,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/tasks/queue/all',
+            resource_path='/tasks/queue/all',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -513,7 +513,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/tasks/queue/all/verbose',
+            resource_path='/tasks/queue/all/verbose',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -839,7 +839,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/tasks/poll/batch/{tasktype}',
+            resource_path='/tasks/poll/batch/{tasktype}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1184,7 +1184,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/tasks/queue/polldata/all',
+            resource_path='/tasks/queue/polldata/all',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1444,7 +1444,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/tasks/queue/polldata',
+            resource_path='/tasks/queue/polldata',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1702,7 +1702,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/tasks/{taskId}',
+            resource_path='/tasks/{taskId}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1960,7 +1960,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/tasks/{taskId}/log',
+            resource_path='/tasks/{taskId}/log',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2239,7 +2239,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/tasks/{taskId}/log',
+            resource_path='/tasks/{taskId}/log',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2531,7 +2531,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/tasks/poll/{tasktype}',
+            resource_path='/tasks/poll/{tasktype}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2789,7 +2789,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/tasks/queue/requeue/{taskType}',
+            resource_path='/tasks/queue/requeue/{taskType}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3120,7 +3120,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/tasks/search',
+            resource_path='/tasks/search',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3381,7 +3381,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/tasks/queue/sizes',
+            resource_path='/tasks/queue/sizes',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3652,7 +3652,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/tasks',
+            resource_path='/tasks',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3985,7 +3985,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/tasks/{workflowId}/{taskRefName}/{status}',
+            resource_path='/tasks/{workflowId}/{taskRefName}/{status}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -4318,7 +4318,7 @@ class TaskResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/tasks/{workflowId}/{taskRefName}/{status}/sync',
+            resource_path='/tasks/{workflowId}/{taskRefName}/{status}/sync',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

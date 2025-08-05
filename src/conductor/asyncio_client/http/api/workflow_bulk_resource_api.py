@@ -294,7 +294,7 @@ class WorkflowBulkResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/workflow/bulk/delete',
+            resource_path='/workflow/bulk/delete',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -566,7 +566,7 @@ class WorkflowBulkResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/workflow/bulk/pause',
+            resource_path='/workflow/bulk/pause',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -855,7 +855,7 @@ class WorkflowBulkResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/workflow/bulk/restart',
+            resource_path='/workflow/bulk/restart',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1127,7 +1127,7 @@ class WorkflowBulkResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/workflow/bulk/resume',
+            resource_path='/workflow/bulk/resume',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1399,7 +1399,7 @@ class WorkflowBulkResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/workflow/bulk/retry',
+            resource_path='/workflow/bulk/retry',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1705,7 +1705,7 @@ class WorkflowBulkResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/workflow/bulk/terminate',
+            resource_path='/workflow/bulk/terminate',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

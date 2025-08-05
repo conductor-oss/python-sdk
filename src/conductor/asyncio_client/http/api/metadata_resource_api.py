@@ -330,7 +330,7 @@ class MetadataResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/metadata/workflow',
+            resource_path='/metadata/workflow',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -622,7 +622,7 @@ class MetadataResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/metadata/workflow/{name}',
+            resource_path='/metadata/workflow/{name}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -897,7 +897,7 @@ class MetadataResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/metadata/taskdefs/{tasktype}',
+            resource_path='/metadata/taskdefs/{tasktype}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1208,7 +1208,7 @@ class MetadataResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/metadata/taskdefs',
+            resource_path='/metadata/taskdefs',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1553,7 +1553,7 @@ class MetadataResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/metadata/workflow',
+            resource_path='/metadata/workflow',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1825,7 +1825,7 @@ class MetadataResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/metadata/taskdefs',
+            resource_path='/metadata/taskdefs',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2076,7 +2076,7 @@ class MetadataResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/metadata/taskdefs/{tasktype}',
+            resource_path='/metadata/taskdefs/{tasktype}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2342,7 +2342,7 @@ class MetadataResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/metadata/workflow/{name}/{version}',
+            resource_path='/metadata/workflow/{name}/{version}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2648,7 +2648,7 @@ class MetadataResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/metadata/workflow',
+            resource_path='/metadata/workflow',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2919,7 +2919,7 @@ class MetadataResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/metadata/taskdefs',
+            resource_path='/metadata/taskdefs',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3155,7 +3155,7 @@ class MetadataResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/metadata/workflow-task-defs/upload',
+            resource_path='/metadata/workflow-task-defs/upload',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

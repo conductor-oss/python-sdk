@@ -290,7 +290,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/event',
+            resource_path='/event',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -556,7 +556,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/event/queue/config/{queueType}/{queueName}',
+            resource_path='/event/queue/config/{queueType}/{queueName}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -836,7 +836,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/event/{name}/tags',
+            resource_path='/event/{name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1094,7 +1094,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/event/handler/{name}',
+            resource_path='/event/handler/{name}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1337,7 +1337,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/event',
+            resource_path='/event',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1612,7 +1612,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/event/{event}',
+            resource_path='/event/{event}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1885,7 +1885,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/event/queue/config/{queueType}/{queueName}',
+            resource_path='/event/queue/config/{queueType}/{queueName}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2128,7 +2128,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/event/queue/config',
+            resource_path='/event/queue/config',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2386,7 +2386,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/event/{name}/tags',
+            resource_path='/event/{name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2650,7 +2650,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/event/handleIncomingEvent',
+            resource_path='/event/handleIncomingEvent',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2715,7 +2715,7 @@ class EventResourceApi:
         :type _host_index: int, optional
         :return: Returns the result object.
         """ # noqa: E501
-        warnings.warn("PUT /api/event/queue/config/{queueType}/{queueName} is deprecated.", DeprecationWarning)
+        warnings.warn("PUT /event/queue/config/{queueType}/{queueName} is deprecated.", DeprecationWarning)
 
         _param = self._put_queue_config_serialize(
             queue_type=queue_type,
@@ -2790,7 +2790,7 @@ class EventResourceApi:
         :type _host_index: int, optional
         :return: Returns the result object.
         """ # noqa: E501
-        warnings.warn("PUT /api/event/queue/config/{queueType}/{queueName} is deprecated.", DeprecationWarning)
+        warnings.warn("PUT /event/queue/config/{queueType}/{queueName} is deprecated.", DeprecationWarning)
 
         _param = self._put_queue_config_serialize(
             queue_type=queue_type,
@@ -2865,7 +2865,7 @@ class EventResourceApi:
         :type _host_index: int, optional
         :return: Returns the result object.
         """ # noqa: E501
-        warnings.warn("PUT /api/event/queue/config/{queueType}/{queueName} is deprecated.", DeprecationWarning)
+        warnings.warn("PUT /event/queue/config/{queueType}/{queueName} is deprecated.", DeprecationWarning)
 
         _param = self._put_queue_config_serialize(
             queue_type=queue_type,
@@ -2947,7 +2947,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/event/queue/config/{queueType}/{queueName}',
+            resource_path='/event/queue/config/{queueType}/{queueName}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3227,7 +3227,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/event/{name}/tags',
+            resource_path='/event/{name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3478,7 +3478,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/event/{name}',
+            resource_path='/event/{name}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3721,7 +3721,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/event/handler/',
+            resource_path='/event/handler/',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3992,7 +3992,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/event/queue/connectivity',
+            resource_path='/event/queue/connectivity',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -4256,7 +4256,7 @@ class EventResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/event',
+            resource_path='/event',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

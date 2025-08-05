@@ -208,7 +208,7 @@ conf = conductor.asyncio_client.http.Configuration(
     ) -> None:
         """Constructor
         """
-        self._base_path = "https://siliconmint-dev.orkesconductor.io" if host is None else host
+        self._base_path = "http://localhost:8080" if host is None else host
         """Default Base url
         """
         self.server_index = 0 if server_index is None and host is None else server_index
@@ -537,7 +537,7 @@ conf = conductor.asyncio_client.http.Configuration(
         """
         return [
             {
-                'url': "https://siliconmint-dev.orkesconductor.io",
+                'url': "http://localhost:8080",
                 'description': "Generated server url",
             }
         ]

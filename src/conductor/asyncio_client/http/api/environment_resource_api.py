@@ -303,7 +303,7 @@ class EnvironmentResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/environment/{key}',
+            resource_path='/environment/{key}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -561,7 +561,7 @@ class EnvironmentResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/environment/{key}',
+            resource_path='/environment/{key}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -841,7 +841,7 @@ class EnvironmentResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/environment/{name}/tags',
+            resource_path='/environment/{name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1099,7 +1099,7 @@ class EnvironmentResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/environment/{key}',
+            resource_path='/environment/{key}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1342,7 +1342,7 @@ class EnvironmentResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/environment',
+            resource_path='/environment',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1600,7 +1600,7 @@ class EnvironmentResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/environment/{name}/tags',
+            resource_path='/environment/{name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1880,7 +1880,7 @@ class EnvironmentResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/environment/{name}/tags',
+            resource_path='/environment/{name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

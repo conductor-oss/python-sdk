@@ -273,7 +273,7 @@ class AdminResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/admin/cache/clear/{taskDefName}',
+            resource_path='/admin/cache/clear/{taskDefName}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -516,7 +516,7 @@ class AdminResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/admin/redisUsage',
+            resource_path='/admin/redisUsage',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -774,7 +774,7 @@ class AdminResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/admin/sweep/requeue/{workflowId}',
+            resource_path='/admin/sweep/requeue/{workflowId}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1032,7 +1032,7 @@ class AdminResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/admin/consistency/verifyAndRepair/{workflowId}',
+            resource_path='/admin/consistency/verifyAndRepair/{workflowId}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1324,7 +1324,7 @@ class AdminResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/admin/task/{tasktype}',
+            resource_path='/admin/task/{tasktype}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

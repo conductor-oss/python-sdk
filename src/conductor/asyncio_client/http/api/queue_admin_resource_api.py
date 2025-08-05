@@ -264,7 +264,7 @@ class QueueAdminResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/queue/',
+            resource_path='/queue/',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -507,7 +507,7 @@ class QueueAdminResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/queue/size',
+            resource_path='/queue/size',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

@@ -310,7 +310,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/integrations/provider/{integration_provider}/integration/{integration_name}/prompt/{prompt_name}',
+            resource_path='/integrations/provider/{integration_provider}/integration/{integration_name}/prompt/{prompt_name}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -576,7 +576,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/integrations/provider/{name}/integration/{integration_name}',
+            resource_path='/integrations/provider/{name}/integration/{integration_name}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -827,7 +827,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/integrations/provider/{name}',
+            resource_path='/integrations/provider/{name}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1122,7 +1122,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/integrations/provider/{name}/integration/{integration_name}/tags',
+            resource_path='/integrations/provider/{name}/integration/{integration_name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1402,7 +1402,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/integrations/provider/{name}/tags',
+            resource_path='/integrations/provider/{name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1679,7 +1679,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/',
+            resource_path='/integrations/',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1952,7 +1952,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/provider/{name}/integration/{integration_name}',
+            resource_path='/integrations/provider/{name}/integration/{integration_name}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2227,7 +2227,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/provider/{name}/integration',
+            resource_path='/integrations/provider/{name}/integration',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2485,7 +2485,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/provider/{name}/integration/all',
+            resource_path='/integrations/provider/{name}/integration/all',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2743,7 +2743,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/provider/{name}',
+            resource_path='/integrations/provider/{name}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2986,7 +2986,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/def',
+            resource_path='/integrations/def',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3263,7 +3263,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/provider',
+            resource_path='/integrations/provider',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3536,7 +3536,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/provider/{integration_provider}/integration/{integration_name}/prompt',
+            resource_path='/integrations/provider/{integration_provider}/integration/{integration_name}/prompt',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3813,7 +3813,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/all',
+            resource_path='/integrations/all',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -4086,7 +4086,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/provider/{name}/integration/{integration_name}/tags',
+            resource_path='/integrations/provider/{name}/integration/{integration_name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -4344,7 +4344,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/provider/{name}/tags',
+            resource_path='/integrations/provider/{name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -4617,7 +4617,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/provider/{name}/integration/{integration_name}/metrics',
+            resource_path='/integrations/provider/{name}/integration/{integration_name}/metrics',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -4875,7 +4875,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/integrations/provider/{name}/metrics',
+            resource_path='/integrations/provider/{name}/metrics',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -5170,7 +5170,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/integrations/provider/{name}/integration/{integration_name}/tags',
+            resource_path='/integrations/provider/{name}/integration/{integration_name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -5450,7 +5450,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/integrations/provider/{name}/tags',
+            resource_path='/integrations/provider/{name}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -5730,7 +5730,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/integrations/eventStats/{type}',
+            resource_path='/integrations/eventStats/{type}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -6024,7 +6024,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/integrations/provider/{name}/integration/{integration_name}/metrics',
+            resource_path='/integrations/provider/{name}/integration/{integration_name}/metrics',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -6289,7 +6289,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/integrations/',
+            resource_path='/integrations/',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -6583,7 +6583,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/integrations/provider/{name}/integration/{integration_name}',
+            resource_path='/integrations/provider/{name}/integration/{integration_name}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -6862,7 +6862,7 @@ class IntegrationResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/integrations/provider/{name}',
+            resource_path='/integrations/provider/{name}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

@@ -267,7 +267,7 @@ class SecretResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/secrets/clearLocalCache',
+            resource_path='/secrets/clearLocalCache',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -510,7 +510,7 @@ class SecretResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/secrets/clearRedisCache',
+            resource_path='/secrets/clearRedisCache',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -768,7 +768,7 @@ class SecretResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/secrets/{key}',
+            resource_path='/secrets/{key}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1048,7 +1048,7 @@ class SecretResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/secrets/{key}/tags',
+            resource_path='/secrets/{key}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1306,7 +1306,7 @@ class SecretResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/secrets/{key}',
+            resource_path='/secrets/{key}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1564,7 +1564,7 @@ class SecretResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/secrets/{key}/tags',
+            resource_path='/secrets/{key}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1807,7 +1807,7 @@ class SecretResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/secrets',
+            resource_path='/secrets',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2050,7 +2050,7 @@ class SecretResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/secrets',
+            resource_path='/secrets',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2293,7 +2293,7 @@ class SecretResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/secrets-v2',
+            resource_path='/secrets-v2',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2579,7 +2579,7 @@ class SecretResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/secrets/{key}',
+            resource_path='/secrets/{key}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2859,7 +2859,7 @@ class SecretResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/secrets/{key}/tags',
+            resource_path='/secrets/{key}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3117,7 +3117,7 @@ class SecretResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/secrets/{key}/exists',
+            resource_path='/secrets/{key}/exists',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

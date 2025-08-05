@@ -15,7 +15,7 @@ logger = logging.getLogger(
 
 
 def get_default_temporary_folder() -> str:
-    return f"{Path.home()!s}/tmp/"
+    return f"{Path.home()!s}/conductor.asyncio_client.http/"
 
 
 class MetricsSettings:

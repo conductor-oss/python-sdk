@@ -315,7 +315,7 @@ class UserResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/users/{userId}/checkPermissions',
+            resource_path='/users/{userId}/checkPermissions',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -573,7 +573,7 @@ class UserResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/users/{id}',
+            resource_path='/users/{id}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -831,7 +831,7 @@ class UserResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/users/{userId}/permissions',
+            resource_path='/users/{userId}/permissions',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1089,7 +1089,7 @@ class UserResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/users/{id}',
+            resource_path='/users/{id}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1349,7 +1349,7 @@ class UserResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/users',
+            resource_path='/users',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1635,7 +1635,7 @@ class UserResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/users/{id}',
+            resource_path='/users/{id}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

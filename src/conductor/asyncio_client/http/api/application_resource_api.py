@@ -297,7 +297,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/applications/{applicationId}/roles/{role}',
+            resource_path='/applications/{applicationId}/roles/{role}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -555,7 +555,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/applications/{id}/accessKeys',
+            resource_path='/applications/{id}/accessKeys',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -826,7 +826,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/applications',
+            resource_path='/applications',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1099,7 +1099,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/applications/{applicationId}/accessKeys/{keyId}',
+            resource_path='/applications/{applicationId}/accessKeys/{keyId}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1357,7 +1357,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/applications/{id}',
+            resource_path='/applications/{id}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1637,7 +1637,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/applications/{id}/tags',
+            resource_path='/applications/{id}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1895,7 +1895,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/applications/{id}/accessKeys',
+            resource_path='/applications/{id}/accessKeys',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2153,7 +2153,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/applications/key/{accessKeyId}',
+            resource_path='/applications/key/{accessKeyId}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2411,7 +2411,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/applications/{id}',
+            resource_path='/applications/{id}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2669,7 +2669,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/applications/{id}/tags',
+            resource_path='/applications/{id}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2912,7 +2912,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/applications',
+            resource_path='/applications',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3192,7 +3192,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/applications/{id}/tags',
+            resource_path='/applications/{id}/tags',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3465,7 +3465,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/applications/{applicationId}/roles/{role}',
+            resource_path='/applications/{applicationId}/roles/{role}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -3738,7 +3738,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/applications/{applicationId}/accessKeys/{keyId}/status',
+            resource_path='/applications/{applicationId}/accessKeys/{keyId}/status',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -4024,7 +4024,7 @@ class ApplicationResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/applications/{id}',
+            resource_path='/applications/{id}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

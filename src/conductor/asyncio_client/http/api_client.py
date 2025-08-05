@@ -692,7 +692,7 @@ class ApiClient:
         using the filename from the `Content-Disposition` header if provided.
 
         handle file downloading
-        save response body into a tmp file and return the instance
+        save response body into a conductor.asyncio_client.http file and return the instance
 
         :param response:  RESTResponse.
         :return: file path.

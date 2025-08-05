@@ -266,7 +266,7 @@ class EventExecutionResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/event/execution',
+            resource_path='/event/execution',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -541,7 +541,7 @@ class EventExecutionResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/event/execution/{event}',
+            resource_path='/event/execution/{event}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

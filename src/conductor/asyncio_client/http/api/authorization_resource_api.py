@@ -295,7 +295,7 @@ class AuthorizationResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/auth/authorization/{type}/{id}',
+            resource_path='/auth/authorization/{type}/{id}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -566,7 +566,7 @@ class AuthorizationResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/auth/authorization',
+            resource_path='/auth/authorization',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -837,7 +837,7 @@ class AuthorizationResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/auth/authorization',
+            resource_path='/auth/authorization',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

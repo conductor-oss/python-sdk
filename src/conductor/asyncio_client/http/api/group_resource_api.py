@@ -297,7 +297,7 @@ class GroupResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/groups/{groupId}/users/{userId}',
+            resource_path='/groups/{groupId}/users/{userId}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -577,7 +577,7 @@ class GroupResourceApi:
 
         return self.api_client.param_serialize(
             method='POST',
-            resource_path='/api/groups/{groupId}/users',
+            resource_path='/groups/{groupId}/users',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -835,7 +835,7 @@ class GroupResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/groups/{id}',
+            resource_path='/groups/{id}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1093,7 +1093,7 @@ class GroupResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/groups/{groupId}/permissions',
+            resource_path='/groups/{groupId}/permissions',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1351,7 +1351,7 @@ class GroupResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/groups/{id}',
+            resource_path='/groups/{id}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1609,7 +1609,7 @@ class GroupResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/groups/{id}/users',
+            resource_path='/groups/{id}/users',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -1852,7 +1852,7 @@ class GroupResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/groups',
+            resource_path='/groups',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2125,7 +2125,7 @@ class GroupResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/groups/{groupId}/users/{userId}',
+            resource_path='/groups/{groupId}/users/{userId}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2405,7 +2405,7 @@ class GroupResourceApi:
 
         return self.api_client.param_serialize(
             method='DELETE',
-            resource_path='/api/groups/{groupId}/users',
+            resource_path='/groups/{groupId}/users',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -2691,7 +2691,7 @@ class GroupResourceApi:
 
         return self.api_client.param_serialize(
             method='PUT',
-            resource_path='/api/groups/{id}',
+            resource_path='/groups/{id}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

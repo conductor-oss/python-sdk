@@ -333,7 +333,7 @@ class MetricsResourceApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/metrics/task/{taskName}',
+            resource_path='/metrics/task/{taskName}',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
