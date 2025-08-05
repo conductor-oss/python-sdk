@@ -29,7 +29,7 @@ from pydantic import SecretStr
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.http.api_response import ApiResponse, T as ApiResponseT
 import conductor.asyncio_client.http.models
-from openapi_client import rest
+from conductor.asyncio_client.http import rest
 from conductor.asyncio_client.http.exceptions import (
     ApiValueError,
     ApiException,
