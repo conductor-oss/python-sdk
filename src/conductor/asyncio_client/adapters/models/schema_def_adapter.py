@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import SchemaDef
+from conductor.asyncio_client.http.models import SchemaDef
 
 
 class SchemaDefAdapter(SchemaDef):

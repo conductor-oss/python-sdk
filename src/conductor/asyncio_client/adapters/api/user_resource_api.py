@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import UserResourceApi
+from conductor.asyncio_client.http.api import UserResourceApi
 
 
 class UserResourceApiAdapter(UserResourceApi):

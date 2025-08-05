@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import SubWorkflowParams
+from conductor.asyncio_client.http.models import SubWorkflowParams
 
 
 class SubWorkflowParamsAdapter(SubWorkflowParams):

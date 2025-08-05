@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import TaskMock
+from conductor.asyncio_client.http.models import TaskMock
 
 
 class TaskMockAdapter(TaskMock):

@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import ExtensionRangeOptionsOrBuilder
+from conductor.asyncio_client.http.models import ExtensionRangeOptionsOrBuilder
 
 
 class ExtensionRangeOptionsOrBuilderAdapter(ExtensionRangeOptionsOrBuilder):

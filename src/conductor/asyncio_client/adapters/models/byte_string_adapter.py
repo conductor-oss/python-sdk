@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import ByteString
+from conductor.asyncio_client.http.models import ByteString
 
 
 class ByteStringAdapter(ByteString):

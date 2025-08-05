@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import FileDescriptor
+from conductor.asyncio_client.http.models import FileDescriptor
 
 
 class FileDescriptorAdapter(FileDescriptor):

@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import MetricsResourceApi
+from conductor.asyncio_client.http.api import MetricsResourceApi
 
 
 class MetricsResourceApiAdapter(MetricsResourceApi):

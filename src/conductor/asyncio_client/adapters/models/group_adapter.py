@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import Group
+from conductor.asyncio_client.http.models import Group
 
 
 class GroupAdapter(Group):

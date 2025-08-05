@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import PollData
+from conductor.asyncio_client.http.models import PollData
 
 
 class PollDataAdapter(PollData):

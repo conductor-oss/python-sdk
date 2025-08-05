@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import CreateOrUpdateApplicationRequest
+from conductor.asyncio_client.http.models import CreateOrUpdateApplicationRequest
 
 
 class CreateOrUpdateApplicationRequestAdapter(CreateOrUpdateApplicationRequest):

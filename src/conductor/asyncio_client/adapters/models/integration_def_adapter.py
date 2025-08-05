@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import IntegrationDef
+from conductor.asyncio_client.http.models import IntegrationDef
 
 
 class IntegrationDefAdapter(IntegrationDef):

@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import ExtendedTaskDef
+from conductor.asyncio_client.http.models import ExtendedTaskDef
 
 
 class ExtendedTaskDefAdapter(ExtendedTaskDef):

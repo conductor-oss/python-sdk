@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import FieldOptionsOrBuilder
+from conductor.asyncio_client.http.models import FieldOptionsOrBuilder
 
 
 class FieldOptionsOrBuilderAdapter(FieldOptionsOrBuilder):

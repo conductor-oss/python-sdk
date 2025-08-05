@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import Declaration
+from conductor.asyncio_client.http.models import Declaration
 
 
 class DeclarationAdapter(Declaration):

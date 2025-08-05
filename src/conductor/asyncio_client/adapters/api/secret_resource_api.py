@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import SecretResourceApi
+from conductor.asyncio_client.http.api import SecretResourceApi
 
 
 class SecretResourceApiAdapter(SecretResourceApi):

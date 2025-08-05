@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import Integration
+from conductor.asyncio_client.http.models import Integration
 
 
 class IntegrationAdapter(Integration):

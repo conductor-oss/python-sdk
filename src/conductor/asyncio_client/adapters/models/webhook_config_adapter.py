@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import WebhookConfig
+from conductor.asyncio_client.http.models import WebhookConfig
 
 
 class WebhookConfigAdapter(WebhookConfig):

@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import RateLimitConfig
+from conductor.asyncio_client.http.models import RateLimitConfig
 
 
 class RateLimitConfigAdapter(RateLimitConfig):

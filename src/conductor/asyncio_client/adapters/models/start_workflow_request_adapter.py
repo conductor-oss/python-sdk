@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import StartWorkflowRequest
+from conductor.asyncio_client.http.models import StartWorkflowRequest
 
 
 class StartWorkflowRequestAdapter(StartWorkflowRequest):

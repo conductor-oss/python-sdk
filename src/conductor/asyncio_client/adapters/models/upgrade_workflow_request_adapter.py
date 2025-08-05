@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import UpgradeWorkflowRequest
+from conductor.asyncio_client.http.models import UpgradeWorkflowRequest
 
 
 class UpgradeWorkflowRequestAdapter(UpgradeWorkflowRequest):

@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import WorkflowTaskAdapter
+from conductor.asyncio_client.http.models import WorkflowTaskAdapter
 
 
 class WorkflowTaskAdapter(WorkflowTaskAdapter):

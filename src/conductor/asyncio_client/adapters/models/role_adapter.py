@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import Role
+from conductor.asyncio_client.http.models import Role
 
 
 class RoleAdapter(Role):

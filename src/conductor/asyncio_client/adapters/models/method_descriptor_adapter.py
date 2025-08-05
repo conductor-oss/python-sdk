@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import MethodDescriptor
+from conductor.asyncio_client.http.models import MethodDescriptor
 
 
 class MethodDescriptorAdapter(MethodDescriptor):

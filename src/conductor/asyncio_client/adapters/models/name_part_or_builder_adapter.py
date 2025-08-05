@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import NamePartOrBuilder
+from conductor.asyncio_client.http.models import NamePartOrBuilder
 
 
 class NamePartOrBuilderAdapter(NamePartOrBuilder):

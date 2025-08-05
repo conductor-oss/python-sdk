@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import IncomingWebhookResourceApi
+from conductor.asyncio_client.http.api import IncomingWebhookResourceApi
 
 
 class IncomingWebhookResourceApiAdapter(IncomingWebhookResourceApi):

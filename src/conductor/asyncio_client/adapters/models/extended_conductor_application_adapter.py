@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import ExtendedConductorApplication
+from conductor.asyncio_client.http.models import ExtendedConductorApplication
 
 
 class ExtendedConductorApplicationAdapter(ExtendedConductorApplication):

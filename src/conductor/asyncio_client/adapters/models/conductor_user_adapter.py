@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import ConductorUser
+from conductor.asyncio_client.http.models import ConductorUser
 
 
 class ConductorUserAdapter(ConductorUser):

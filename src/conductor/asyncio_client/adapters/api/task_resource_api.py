@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import TaskResourceApi
+from conductor.asyncio_client.http.api import TaskResourceApi
 
 
 class TaskResourceApiAdapter(TaskResourceApi):

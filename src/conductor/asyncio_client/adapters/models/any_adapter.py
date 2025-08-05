@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import Any
+from conductor.asyncio_client.http.models import Any
 
 
 class AnyAdapter(Any):

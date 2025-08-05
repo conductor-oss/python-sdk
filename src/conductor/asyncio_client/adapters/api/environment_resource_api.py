@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import EnvironmentResourceApi
+from conductor.asyncio_client.http.api import EnvironmentResourceApi
 
 
 class EnvironmentResourceApiAdapter(EnvironmentResourceApi):

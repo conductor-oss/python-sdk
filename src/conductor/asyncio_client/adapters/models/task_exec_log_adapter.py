@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import TaskExecLog
+from conductor.asyncio_client.http.models import TaskExecLog
 
 
 class TaskExecLogAdapter(TaskExecLog):

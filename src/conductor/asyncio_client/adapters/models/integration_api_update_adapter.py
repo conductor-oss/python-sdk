@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import IntegrationApiUpdate
+from conductor.asyncio_client.http.models import IntegrationApiUpdate
 
 
 class IntegrationApiUpdateAdapter(IntegrationApiUpdate):

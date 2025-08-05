@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import EditionDefault
+from conductor.asyncio_client.http.models import EditionDefault
 
 
 class EditionDefaultAdapter(EditionDefault):

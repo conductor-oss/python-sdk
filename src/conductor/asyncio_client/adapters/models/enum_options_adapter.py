@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import EnumOptions
+from conductor.asyncio_client.http.models import EnumOptions
 
 
 class EnumOptionsAdapter(EnumOptions):

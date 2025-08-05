@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import TokenResourceApi
+from conductor.asyncio_client.http.api import TokenResourceApi
 
 
 class TokenResourceApiAdapter(TokenResourceApi):

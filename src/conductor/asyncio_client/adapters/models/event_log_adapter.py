@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import EventLog
+from conductor.asyncio_client.http.models import EventLog
 
 
 class EventLogAdapter(EventLog):

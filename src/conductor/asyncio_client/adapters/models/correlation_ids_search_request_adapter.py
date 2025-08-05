@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import CorrelationIdsSearchRequest
+from conductor.asyncio_client.http.models import CorrelationIdsSearchRequest
 
 
 class CorrelationIdsSearchRequestAdapter(CorrelationIdsSearchRequest):

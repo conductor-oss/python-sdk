@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import GenerateTokenRequest
+from conductor.asyncio_client.http.models import GenerateTokenRequest
 
 
 class GenerateTokenRequestAdapter(GenerateTokenRequest):

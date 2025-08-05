@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import ReservedRange
+from conductor.asyncio_client.http.models import ReservedRange
 
 
 class ReservedRangeAdapter(ReservedRange):

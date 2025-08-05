@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import HandledEventResponse
+from conductor.asyncio_client.http.models import HandledEventResponse
 
 
 class HandledEventResponseAdapter(HandledEventResponse):

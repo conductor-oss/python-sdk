@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import UninterpretedOption
+from conductor.asyncio_client.http.models import UninterpretedOption
 
 
 class UninterpretedOptionAdapter(UninterpretedOption):

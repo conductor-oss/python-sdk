@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import WorkflowStateUpdateAdapter
+from conductor.asyncio_client.http.models import WorkflowStateUpdateAdapter
 
 
 class WorkflowStateUpdateAdapter(WorkflowStateUpdateAdapter):

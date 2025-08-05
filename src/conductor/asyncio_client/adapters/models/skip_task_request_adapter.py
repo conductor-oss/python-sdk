@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import SkipTaskRequest
+from conductor.asyncio_client.http.models import SkipTaskRequest
 
 
 class SkipTaskRequestAdapter(SkipTaskRequest):

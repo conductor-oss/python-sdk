@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import RerunWorkflowRequest
+from conductor.asyncio_client.http.models import RerunWorkflowRequest
 
 
 class RerunWorkflowRequestAdapter(RerunWorkflowRequest):

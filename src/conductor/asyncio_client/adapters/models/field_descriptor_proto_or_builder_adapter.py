@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import FieldDescriptorProtoOrBuilder
+from conductor.asyncio_client.http.models import FieldDescriptorProtoOrBuilder
 
 
 class FieldDescriptorProtoOrBuilderAdapter(FieldDescriptorProtoOrBuilder):

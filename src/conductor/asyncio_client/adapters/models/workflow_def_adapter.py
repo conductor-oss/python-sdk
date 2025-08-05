@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import WorkflowDef
+from conductor.asyncio_client.http.models import WorkflowDef
 
 
 class WorkflowDefAdapter(WorkflowDef):

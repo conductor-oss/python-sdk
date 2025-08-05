@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import TaskListSearchResultSummary
+from conductor.asyncio_client.http.models import TaskListSearchResultSummary
 
 
 class TaskListSearchResultSummaryAdapter(TaskListSearchResultSummary):

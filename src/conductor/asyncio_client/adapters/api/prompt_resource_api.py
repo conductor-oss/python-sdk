@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import PromptResourceApi
+from conductor.asyncio_client.http.api import PromptResourceApi
 
 
 class PromptResourceApiAdapter(PromptResourceApi):

@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import EventExecutionResourceApi
+from conductor.asyncio_client.http.api import EventExecutionResourceApi
 
 
 class EventExecutionResourceApiAdapter(EventExecutionResourceApi):

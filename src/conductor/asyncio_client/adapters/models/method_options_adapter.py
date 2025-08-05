@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import MethodOptions
+from conductor.asyncio_client.http.models import MethodOptions
 
 
 class MethodOptionsAdapter(MethodOptions):

@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import WorkflowSummaryAdapter
+from conductor.asyncio_client.http.models import WorkflowSummaryAdapter
 
 
 class WorkflowSummaryAdapter(WorkflowSummaryAdapter):

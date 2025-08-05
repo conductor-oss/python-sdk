@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import ServiceDescriptor
+from conductor.asyncio_client.http.models import ServiceDescriptor
 
 
 class ServiceDescriptorAdapter(ServiceDescriptor):

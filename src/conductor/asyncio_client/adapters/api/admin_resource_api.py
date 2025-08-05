@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import AdminResourceApi
+from conductor.asyncio_client.http.api import AdminResourceApi
 
 
 class AdminResourceApiAdapter(AdminResourceApi):

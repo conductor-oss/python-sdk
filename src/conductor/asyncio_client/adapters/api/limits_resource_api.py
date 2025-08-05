@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import LimitsResourceApi
+from conductor.asyncio_client.http.api import LimitsResourceApi
 
 
 class LimitsResourceApiAdapter(LimitsResourceApi):

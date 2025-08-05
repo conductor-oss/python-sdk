@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import ServiceOptions
+from conductor.asyncio_client.http.models import ServiceOptions
 
 
 class ServiceOptionsAdapter(ServiceOptions):

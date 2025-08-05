@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import LocationOrBuilder
+from conductor.asyncio_client.http.models import LocationOrBuilder
 
 
 class LocationOrBuilderAdapter(LocationOrBuilder):

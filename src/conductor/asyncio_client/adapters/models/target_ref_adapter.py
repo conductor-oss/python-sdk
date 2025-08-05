@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import TargetRef
+from conductor.asyncio_client.http.models import TargetRef
 
 
 class TargetRefAdapter(TargetRef):

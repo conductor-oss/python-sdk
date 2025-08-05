@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import SourceCodeInfo
+from conductor.asyncio_client.http.models import SourceCodeInfo
 
 
 class SourceCodeInfoAdapter(SourceCodeInfo):

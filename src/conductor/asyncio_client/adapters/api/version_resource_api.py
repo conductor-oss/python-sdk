@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import VersionResourceApi
+from conductor.asyncio_client.http.api import VersionResourceApi
 
 
 class VersionResourceApiAdapter(VersionResourceApi):

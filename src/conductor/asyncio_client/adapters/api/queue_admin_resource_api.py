@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import QueueAdminResourceApi
+from conductor.asyncio_client.http.api import QueueAdminResourceApi
 
 
 class QueueAdminResourceApiAdapter(QueueAdminResourceApi):

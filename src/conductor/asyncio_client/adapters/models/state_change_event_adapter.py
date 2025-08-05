@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import StateChangeEvent
+from conductor.asyncio_client.http.models import StateChangeEvent
 
 
 class StateChangeEventAdapter(StateChangeEvent):

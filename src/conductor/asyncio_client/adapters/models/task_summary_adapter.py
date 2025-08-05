@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import TaskSummary
+from conductor.asyncio_client.http.models import TaskSummary
 
 
 class TaskSummaryAdapter(TaskSummary):

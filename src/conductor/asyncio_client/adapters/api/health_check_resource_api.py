@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import HealthCheckResourceApi
+from conductor.asyncio_client.http.api import HealthCheckResourceApi
 
 
 class HealthCheckResourceApiAdapter(HealthCheckResourceApi):

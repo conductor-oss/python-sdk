@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import MessageOptionsOrBuilder
+from conductor.asyncio_client.http.models import MessageOptionsOrBuilder
 
 
 class MessageOptionsOrBuilderAdapter(MessageOptionsOrBuilder):

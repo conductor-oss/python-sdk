@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import ExtendedSecret
+from conductor.asyncio_client.http.models import ExtendedSecret
 
 
 class ExtendedSecretAdapter(ExtendedSecret):

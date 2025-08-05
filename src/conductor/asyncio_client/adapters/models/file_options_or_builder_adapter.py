@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import FileOptionsOrBuilder
+from conductor.asyncio_client.http.models import FileOptionsOrBuilder
 
 
 class FileOptionsOrBuilderAdapter(FileOptionsOrBuilder):

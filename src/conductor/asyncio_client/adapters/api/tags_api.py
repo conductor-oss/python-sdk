@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import TagsApi
+from conductor.asyncio_client.http.api import TagsApi
 
 
 class TagsApiAdapter(TagsApi):

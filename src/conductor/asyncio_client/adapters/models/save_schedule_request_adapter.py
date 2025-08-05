@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.models import SaveScheduleRequest
+from conductor.asyncio_client.http.models import SaveScheduleRequest
 
 
 class SaveScheduleRequestAdapter(SaveScheduleRequest):

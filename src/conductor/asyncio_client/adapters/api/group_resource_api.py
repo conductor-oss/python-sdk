@@ -1,4 +1,4 @@
-from conductor.asyncio_client.adapters.api import GroupResourceApi
+from conductor.asyncio_client.http.api import GroupResourceApi
 
 
 class GroupResourceApiAdapter(GroupResourceApi):
