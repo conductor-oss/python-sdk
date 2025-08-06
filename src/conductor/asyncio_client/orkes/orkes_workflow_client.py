@@ -300,13 +300,6 @@ class OrkesWorkflowClient(OrkesBaseClient):
         """Trigger workflow decision processing"""
         await self.workflow_api.decide(workflow_id=workflow_id)
 
-    # async def upgrade_running_workflow_to_version(self, workflow_id: str, version: Optional[int] = None, task_output: Optional[Dict[str, Any]] = None) -> None:
-    #     """Upgrade a running workflow to a new version"""
-    #     # This method would require creating an UpgradeWorkflowRequest object
-    #     # For now, we'll comment this out as it requires additional model imports
-    #     # await self.workflow_api.upgrade_running_workflow_to_version(workflow_id, upgrade_workflow_request)
-    #     raise NotImplementedError("This method requires UpgradeWorkflowRequest adapter which is not available")
-
     # Convenience Methods (for backward compatibility)
     async def execute_workflow_with_return_strategy(
         self,

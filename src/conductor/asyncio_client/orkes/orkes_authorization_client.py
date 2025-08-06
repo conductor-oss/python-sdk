@@ -182,12 +182,3 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     ) -> GroupAdapter:
         """Alias for create_group/update_group"""
         return await self.create_group(group_id, upsert_group_request)
-
-    # Note: Role and Permission CRUD operations are not available in the current API
-    # The following methods would be available if the API supported them:
-    # - create_role, update_role, get_role, delete_role, list_roles
-    # - create_permission, update_permission, get_permission, delete_permission, list_permissions
-    # - authorize (direct authorization check)
-
-    # For now, permissions are managed through grant_permissions and remove_permissions methods
-    # which work with AuthorizationRequestAdapter objects
