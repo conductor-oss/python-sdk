@@ -174,7 +174,7 @@ def main():
                          )
     init.input_parameter('last_user', '')
 
-    wf = ConductorWorkflow(name='multiparty_chat_conductor.asyncio_client.http', version=1, executor=workflow_executor)
+    wf = ConductorWorkflow(name='multiparty_chat_tmp', version=1, executor=workflow_executor)
 
     script = """
     (function(){         
