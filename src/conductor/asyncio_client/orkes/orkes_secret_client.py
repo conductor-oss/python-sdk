@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from conductor.asyncio_client.adapters.models.extended_secret_adapter import (
-    ExtendedSecretAdapter,
-)
+from conductor.asyncio_client.adapters.models.extended_secret_adapter import \
+    ExtendedSecretAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient

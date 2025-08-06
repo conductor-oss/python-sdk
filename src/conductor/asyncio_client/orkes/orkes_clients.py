@@ -2,20 +2,24 @@ from __future__ import annotations
 
 from typing import Optional
 
-from conductor.asyncio_client.http.configuration import Configuration
-from conductor.asyncio_client.orkes.orkes_authorization_client import (
-    OrkesAuthorizationClient,
-)
-from conductor.asyncio_client.orkes.orkes_integration_client import (
-    OrkesIntegrationClient,
-)
-from conductor.asyncio_client.orkes.orkes_metadata_client import OrkesMetadataClient
-from conductor.asyncio_client.orkes.orkes_prompt_client import OrkesPromptClient
-from conductor.asyncio_client.orkes.orkes_scheduler_client import OrkesSchedulerClient
-from conductor.asyncio_client.orkes.orkes_schema_client import OrkesSchemaClient
-from conductor.asyncio_client.orkes.orkes_secret_client import OrkesSecretClient
+from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.orkes.orkes_authorization_client import \
+    OrkesAuthorizationClient
+from conductor.asyncio_client.orkes.orkes_integration_client import \
+    OrkesIntegrationClient
+from conductor.asyncio_client.orkes.orkes_metadata_client import \
+    OrkesMetadataClient
+from conductor.asyncio_client.orkes.orkes_prompt_client import \
+    OrkesPromptClient
+from conductor.asyncio_client.orkes.orkes_scheduler_client import \
+    OrkesSchedulerClient
+from conductor.asyncio_client.orkes.orkes_schema_client import \
+    OrkesSchemaClient
+from conductor.asyncio_client.orkes.orkes_secret_client import \
+    OrkesSecretClient
 from conductor.asyncio_client.orkes.orkes_task_client import OrkesTaskClient
-from conductor.asyncio_client.orkes.orkes_workflow_client import OrkesWorkflowClient
+from conductor.asyncio_client.orkes.orkes_workflow_client import \
+    OrkesWorkflowClient
 
 
 class OrkesClients:
@@ -30,19 +34,38 @@ class OrkesClients:
     ensuring that all clients share the same configuration while providing access to
     different aspects of the Conductor platform.
 
+    Environment Variable Support:
+    -----------------------------
+    The OrkesClients now supports automatic configuration via environment variables:
+
+    - CONDUCTOR_SERVER_URL: Server URL (e.g., http://localhost:8080/api)
+    - CONDUCTOR_AUTH_KEY: Authentication key ID
+    - CONDUCTOR_AUTH_SECRET: Authentication key secret
+    - CONDUCTOR_WORKER_POLLING_INTERVAL: Default polling interval in seconds
+    - CONDUCTOR_WORKER_DOMAIN: Default worker domain
+    - CONDUCTOR_WORKER_<TASK_TYPE>_POLLING_INTERVAL: Task-specific polling interval
+    - CONDUCTOR_WORKER_<TASK_TYPE>_DOMAIN: Task-specific domain
+
     Example:
     --------
     ```python
-    from conductor.asyncio_client.http.configuration import Configuration
+    import os
     from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 
-    # Create with default configuration
+    # Set environment variables
+    os.environ['CONDUCTOR_SERVER_URL'] = 'http://localhost:8080/api'
+    os.environ['CONDUCTOR_AUTH_KEY'] = 'your_key'
+    os.environ['CONDUCTOR_AUTH_SECRET'] = 'your_secret'
+
+    # Create with automatic environment variable configuration
     orkes = OrkesClients()
 
-    # Or with custom configuration
+    # Or with explicit configuration
+    from conductor.asyncio_client.configuration import Configuration
     config = Configuration(
-        server_api_url='https://api.orkes.io',
-        authentication_settings=authentication_settings
+        server_url='http://localhost:8080/api',
+        auth_key='your_key',
+        auth_secret='your_secret'
     )
     orkes = OrkesClients(config)
 
@@ -55,7 +78,7 @@ class OrkesClients:
     Attributes:
     -----------
     configuration : Configuration
-        The HTTP configuration used by all client instances
+        The configuration adapter with environment variable support
     """
 
     def __init__(self, configuration: Optional[Configuration] = None):
@@ -65,9 +88,10 @@ class OrkesClients:
         Parameters:
         -----------
         configuration : Configuration, optional
-            HTTP configuration containing server URL, authentication settings,
-            and other connection parameters. If None, a default Configuration
-            instance will be created.
+            Configuration adapter containing server URL, authentication settings,
+            worker properties, and other connection parameters. If None, a default
+            Configuration instance will be created that automatically reads from
+            environment variables.
         """
         if configuration is None:
             configuration = Configuration()
@@ -174,13 +198,15 @@ class OrkesClients:
 
         The task client manages individual task executions within workflows,
         providing capabilities to poll for tasks, update task status, and
-        manage task queues and worker interactions.
+        manage task queues and worker interactions. The client automatically
+        supports worker properties like polling intervals and domains from
+        environment variables.
 
         Returns:
         --------
         OrkesTaskClient
             Client for task operations including:
-            - Polling for available tasks
+            - Polling for available tasks with configurable intervals
             - Updating task execution status
             - Managing task queues and worker assignments
             - Retrieving task execution history and logs

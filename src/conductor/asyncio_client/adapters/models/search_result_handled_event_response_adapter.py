@@ -1,4 +1,5 @@
-from conductor.asyncio_client.http.models import SearchResultHandledEventResponse
+from conductor.asyncio_client.http.models import \
+    SearchResultHandledEventResponse
 
 
 class SearchResultHandledEventResponseAdapter(SearchResultHandledEventResponse): ...

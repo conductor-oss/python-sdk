@@ -2,22 +2,17 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from conductor.asyncio_client.adapters.models.save_schedule_request_adapter import (
-    SaveScheduleRequestAdapter,
-)
-from conductor.asyncio_client.adapters.models.search_result_workflow_schedule_execution_model_adapter import (
-    SearchResultWorkflowScheduleExecutionModelAdapter,
-)
-from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
-    StartWorkflowRequestAdapter,
-)
+from conductor.asyncio_client.adapters.models.save_schedule_request_adapter import \
+    SaveScheduleRequestAdapter
+from conductor.asyncio_client.adapters.models.search_result_workflow_schedule_execution_model_adapter import \
+    SearchResultWorkflowScheduleExecutionModelAdapter
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import \
+    StartWorkflowRequestAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.adapters.models.workflow_schedule_adapter import (
-    WorkflowScheduleAdapter,
-)
-from conductor.asyncio_client.adapters.models.workflow_schedule_model_adapter import (
-    WorkflowScheduleModelAdapter,
-)
+from conductor.asyncio_client.adapters.models.workflow_schedule_adapter import \
+    WorkflowScheduleAdapter
+from conductor.asyncio_client.adapters.models.workflow_schedule_model_adapter import \
+    WorkflowScheduleModelAdapter
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
