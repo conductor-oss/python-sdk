@@ -1,5 +1,8 @@
-from conductor.asyncio_client.http.models import SearchResultWorkflowScheduleExecutionModel
+from conductor.asyncio_client.http.models import (
+    SearchResultWorkflowScheduleExecutionModel,
+)
 
 
-class SearchResultWorkflowScheduleExecutionModelAdapter(SearchResultWorkflowScheduleExecutionModel):
-    ...
+class SearchResultWorkflowScheduleExecutionModelAdapter(
+    SearchResultWorkflowScheduleExecutionModel
+): ...

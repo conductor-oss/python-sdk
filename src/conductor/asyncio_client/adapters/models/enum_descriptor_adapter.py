@@ -1,5 +1,4 @@
 from conductor.asyncio_client.http.models import EnumDescriptor
 
 
-class EnumDescriptorAdapter(EnumDescriptor):
-    ...
+class EnumDescriptorAdapter(EnumDescriptor): ...
