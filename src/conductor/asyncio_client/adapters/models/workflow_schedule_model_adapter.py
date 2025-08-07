@@ -1,4 +1,4 @@
-from conductor.asyncio_client.http.models import WorkflowScheduleModelAdapter
+from conductor.asyncio_client.http.models import WorkflowScheduleModel
 
 
-class WorkflowScheduleModelAdapter(WorkflowScheduleModelAdapter): ...
+class WorkflowScheduleModelAdapter(WorkflowScheduleModel): ...
