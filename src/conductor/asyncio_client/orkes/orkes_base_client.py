@@ -1,30 +1,30 @@
 import logging
 
 from conductor.asyncio_client.adapters.api.application_resource_api import \
-    ApplicationResourceApi
+    ApplicationResourceApiAdapter
 from conductor.asyncio_client.adapters.api.authorization_resource_api import \
-    AuthorizationResourceApi
+    AuthorizationResourceApiAdapter
 from conductor.asyncio_client.adapters.api.group_resource_api import \
-    GroupResourceApi
+    GroupResourceApiAdapter
 from conductor.asyncio_client.adapters.api.integration_resource_api import \
-    IntegrationResourceApi
+    IntegrationResourceApiAdapter
 from conductor.asyncio_client.adapters.api.metadata_resource_api import \
-    MetadataResourceApi
+    MetadataResourceApiAdapter
 from conductor.asyncio_client.adapters.api.prompt_resource_api import \
-    PromptResourceApi
+    PromptResourceApiAdapter
 from conductor.asyncio_client.adapters.api.scheduler_resource_api import \
-    SchedulerResourceApi
+    SchedulerResourceApiAdapter
 from conductor.asyncio_client.adapters.api.schema_resource_api import \
-    SchemaResourceApi
+    SchemaResourceApiAdapter
 from conductor.asyncio_client.adapters.api.secret_resource_api import \
-    SecretResourceApi
-from conductor.asyncio_client.adapters.api.tags_api import TagsApi
+    SecretResourceApiAdapter
+from conductor.asyncio_client.adapters.api.tags_api import TagsApiAdapter
 from conductor.asyncio_client.adapters.api.task_resource_api import \
-    TaskResourceApi
+    TaskResourceApiAdapter
 from conductor.asyncio_client.adapters.api.user_resource_api import \
-    UserResourceApi
+    UserResourceApiAdapter
 from conductor.asyncio_client.adapters.api.workflow_resource_api import \
-    WorkflowResourceApi
+    WorkflowResourceApiAdapter
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.http.api_client import ApiClient
 
@@ -54,16 +54,16 @@ class OrkesBaseClient:
         self.logger = logging.getLogger(__name__)
 
         # Initialize all API clients
-        self.metadata_api = MetadataResourceApi(self.api_client)
-        self.task_api = TaskResourceApi(self.api_client)
-        self.workflow_api = WorkflowResourceApi(self.api_client)
-        self.application_api = ApplicationResourceApi(self.api_client)
-        self.secret_api = SecretResourceApi(self.api_client)
-        self.user_api = UserResourceApi(self.api_client)
-        self.group_api = GroupResourceApi(self.api_client)
-        self.authorization_api = AuthorizationResourceApi(self.api_client)
-        self.scheduler_api = SchedulerResourceApi(self.api_client)
-        self.tags_api = TagsApi(self.api_client)
-        self.integration_api = IntegrationResourceApi(self.api_client)
-        self.prompt_api = PromptResourceApi(self.api_client)
-        self.schema_api = SchemaResourceApi(self.api_client)
+        self.metadata_api = MetadataResourceApiAdapter(self.api_client)
+        self.task_api = TaskResourceApiAdapter(self.api_client)
+        self.workflow_api = WorkflowResourceApiAdapter(self.api_client)
+        self.application_api = ApplicationResourceApiAdapter(self.api_client)
+        self.secret_api = SecretResourceApiAdapter(self.api_client)
+        self.user_api = UserResourceApiAdapter(self.api_client)
+        self.group_api = GroupResourceApiAdapter(self.api_client)
+        self.authorization_api = AuthorizationResourceApiAdapter(self.api_client)
+        self.scheduler_api = SchedulerResourceApiAdapter(self.api_client)
+        self.tags_api = TagsApiAdapter(self.api_client)
+        self.integration_api = IntegrationResourceApiAdapter(self.api_client)
+        self.prompt_api = PromptResourceApiAdapter(self.api_client)
+        self.schema_api = SchemaResourceApiAdapter(self.api_client)
