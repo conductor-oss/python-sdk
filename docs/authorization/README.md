@@ -225,8 +225,10 @@ authorization_client.remove_user_from_group(group_id, user_id)
 Grants a set of accesses to the specified Subject for a given Target.
 
 ```python
-from conductor.client.http.models.target_ref import TargetRef, TargetType
-from conductor.client.http.models.subject_ref import SubjectRef, SubjectType
+from conductor.client.http.models.target_ref import TargetRef
+from conductor.shared.http.enums.target_type import TargetType
+from conductor.client.http.models.subject_ref import SubjectRef
+from conductor.shared.http.enums.subject_type import SubjectType
 from conductor.client.orkes.models.access_type import AccessType
 
 target = TargetRef(TargetType.WORKFLOW_DEF, "TEST_WORKFLOW")
@@ -245,7 +247,8 @@ Given the target, returns all permissions associated with it as a Dict[str, List
 In the returned dictionary, key is AccessType and value is a list of subjects.
 
 ```python
-from conductor.client.http.models.target_ref import TargetRef, TargetType
+from conductor.client.http.models.target_ref import TargetRef
+from conductor.shared.http.enums.target_type import TargetType
 
 target = TargetRef(TargetType.WORKFLOW_DEF, WORKFLOW_NAME)
 target_permissions = authorization_client.get_permissions(target)
@@ -273,8 +276,10 @@ user_permissions = authorization_client.get_granted_permissions_for_user(user_id
 Removes a set of accesses from a specified Subject for a given Target.
 
 ```python
-from conductor.client.http.models.target_ref import TargetRef, TargetType
-from conductor.client.http.models.subject_ref import SubjectRef, SubjectType
+from conductor.client.http.models.target_ref import TargetRef
+from conductor.shared.http.enums.target_type import TargetType
+from conductor.client.http.models.subject_ref import SubjectRef
+from conductor.shared.http.enums.subject_type import SubjectType
 from conductor.client.orkes.models.access_type import AccessType
 
 target = TargetRef(TargetType.WORKFLOW_DEF, "TEST_WORKFLOW")

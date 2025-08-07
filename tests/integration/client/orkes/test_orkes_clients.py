@@ -8,8 +8,10 @@ from conductor.client.http.models import SkipTaskRequest
 from conductor.client.http.models.create_or_update_application_request import CreateOrUpdateApplicationRequest
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
-from conductor.client.http.models.subject_ref import SubjectRef, SubjectType
-from conductor.client.http.models.target_ref import TargetRef, TargetType
+from conductor.client.http.models.subject_ref import SubjectRef
+from conductor.shared.http.enums.subject_type import SubjectType
+from conductor.client.http.models.target_ref import TargetRef
+from conductor.shared.http.enums.target_type import TargetType
 from conductor.client.http.models.task_def import TaskDef
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_result_status import TaskResultStatus

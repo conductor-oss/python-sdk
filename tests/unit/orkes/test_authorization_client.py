@@ -18,8 +18,8 @@ from conductor.client.http.models.create_or_update_application_request import (
 from conductor.client.http.models.group import Group
 from conductor.client.http.models.permission import Permission
 from conductor.client.http.models.role import Role
-from conductor.client.http.models.subject_ref import SubjectRef, SubjectType
-from conductor.client.http.models.target_ref import TargetRef, TargetType
+from conductor.client.http.models.subject_ref import SubjectRef
+from conductor.client.http.models.target_ref import TargetRef
 from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
 from conductor.client.http.models.upsert_user_request import UpsertUserRequest
 from conductor.client.orkes.models.access_key import AccessKey
@@ -29,6 +29,8 @@ from conductor.client.orkes.models.created_access_key import CreatedAccessKey
 from conductor.client.orkes.models.granted_permission import GrantedPermission
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_authorization_client import OrkesAuthorizationClient
+from conductor.shared.http.enums import TargetType
+from conductor.shared.http.enums.subject_type import SubjectType
 
 APP_ID = "5d860b70-a429-4b20-8d28-6b5198155882"
 APP_NAME = "ut_application_name"

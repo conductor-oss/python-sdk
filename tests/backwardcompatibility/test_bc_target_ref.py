@@ -1,6 +1,7 @@
 import pytest
 
-from conductor.client.http.models.target_ref import TargetRef, TargetType
+from conductor.client.http.models.target_ref import TargetRef
+from conductor.shared.http.enums.target_type import TargetType
 
 
 @pytest.fixture
