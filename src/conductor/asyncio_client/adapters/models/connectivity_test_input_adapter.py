@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from typing import Dict, Any, Optional
+
 from conductor.asyncio_client.http.models import ConnectivityTestInput
 
 
-class ConnectivityTestInputAdapter(ConnectivityTestInput): ...
+class ConnectivityTestInputAdapter(ConnectivityTestInput):
+    input: Optional[Dict[str, Any]] = None

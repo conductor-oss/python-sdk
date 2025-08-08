@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from typing import Dict, Any, Optional
+
 from conductor.asyncio_client.http.models import IntegrationApiUpdate
 
 
-class IntegrationApiUpdateAdapter(IntegrationApiUpdate): ...
+class IntegrationApiUpdateAdapter(IntegrationApiUpdate):
+    configuration: Optional[Dict[str, Any]] = None
