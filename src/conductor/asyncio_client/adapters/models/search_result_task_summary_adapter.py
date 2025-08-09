@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import Optional, List
+from typing import List, Optional
 
+from conductor.asyncio_client.adapters.models.task_summary_adapter import (
+    TaskSummaryAdapter,
+)
 from conductor.asyncio_client.http.models import SearchResultTaskSummary
-from conductor.asyncio_client.adapters.models.task_summary_adapter import TaskSummaryAdapter
 
 
 class SearchResultTaskSummaryAdapter(SearchResultTaskSummary):
