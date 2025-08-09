@@ -1,20 +1,10 @@
 import pprint
 import re  # noqa: F401
-from enum import Enum
 from dataclasses import dataclass, field, InitVar
-from typing import Optional, Dict, List, Any
+from typing import Optional
 import six
 
-
-class TargetType(str, Enum):
-    WORKFLOW_DEF = "WORKFLOW_DEF",
-    TASK_DEF = "TASK_DEF",
-    APPLICATION = "APPLICATION",
-    USER = "USER",
-    SECRET = "SECRET",
-    SECRET_NAME = "SECRET_NAME",
-    TAG = "TAG",
-    DOMAIN = "DOMAIN"
+from conductor.shared.http.enums.target_type import TargetType
 
 
 @dataclass
