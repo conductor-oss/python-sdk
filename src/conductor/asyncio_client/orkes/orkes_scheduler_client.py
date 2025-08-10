@@ -207,15 +207,15 @@ class OrkesSchedulerClient(OrkesBaseClient):
         for name in schedule_names:
             try:
                 await self.pause_schedule(name)
-            except Exception:
-                continue  # Continue with other operations even if one fails
+            except Exception:  # noqa: PERF203
+                continue
 
     async def bulk_resume_schedules(self, schedule_names: List[str]) -> None:
         """Resume multiple schedules in bulk"""
         for name in schedule_names:
             try:
                 await self.resume_schedule(name)
-            except Exception:
+            except Exception:  # noqa: PERF203
                 continue
 
     async def bulk_delete_schedules(self, schedule_names: List[str]) -> None:
@@ -223,7 +223,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
         for name in schedule_names:
             try:
                 await self.delete_schedule(name)
-            except Exception:
+            except Exception:  # noqa: PERF203
                 continue
 
     async def validate_cron_expression(

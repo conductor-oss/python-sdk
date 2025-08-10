@@ -4,9 +4,8 @@ from typing import Any, Dict, List, Optional, Self
 
 from pydantic import Field
 
-from conductor.asyncio_client.adapters.models.task_exec_log_adapter import (
-    TaskExecLogAdapter,
-)
+from conductor.asyncio_client.adapters.models.task_exec_log_adapter import \
+    TaskExecLogAdapter
 from conductor.asyncio_client.http.models import TaskResult
 
 

@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.rate_limit_config_adapter import (
-    RateLimitConfigAdapter,
-)
-from conductor.asyncio_client.adapters.models.schema_def_adapter import SchemaDefAdapter
-from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
-    WorkflowTaskAdapter,
-)
+from conductor.asyncio_client.adapters.models.rate_limit_config_adapter import \
+    RateLimitConfigAdapter
+from conductor.asyncio_client.adapters.models.schema_def_adapter import \
+    SchemaDefAdapter
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import \
+    WorkflowTaskAdapter
 from conductor.asyncio_client.http.models import WorkflowDef
 
 
@@ -23,6 +22,7 @@ class WorkflowDefAdapter(WorkflowDef):
         default=None, alias="outputParameters"
     )
     variables: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
     tasks: List[WorkflowTaskAdapter]
     schema_version: Optional[int] = Field(default=None, alias="schemaVersion")
     output_schema: Optional[SchemaDefAdapter] = Field(
@@ -32,6 +32,34 @@ class WorkflowDefAdapter(WorkflowDef):
     rate_limit_config: Optional[RateLimitConfigAdapter] = Field(
         default=None, alias="rateLimitConfig"
     )
+    __properties: ClassVar[List[str]] = [
+        "createTime",
+        "createdBy",
+        "description",
+        "enforceSchema",
+        "failureWorkflow",
+        "inputParameters",
+        "inputSchema",
+        "inputTemplate",
+        "name",
+        "outputParameters",
+        "outputSchema",
+        "ownerApp",
+        "ownerEmail",
+        "rateLimitConfig",
+        "restartable",
+        "schemaVersion",
+        "tasks",
+        "timeoutPolicy",
+        "timeoutSeconds",
+        "updateTime",
+        "updatedBy",
+        "variables",
+        "version",
+        "workflowStatusListenerEnabled",
+        "workflowStatusListenerSink",
+        "metadata",
+    ]
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -56,6 +84,7 @@ class WorkflowDefAdapter(WorkflowDef):
                     else None
                 ),
                 "inputTemplate": obj.get("inputTemplate"),
+                "metadata": obj.get("metadata"),
                 "name": obj.get("name"),
                 "outputParameters": obj.get("outputParameters"),
                 "outputSchema": (

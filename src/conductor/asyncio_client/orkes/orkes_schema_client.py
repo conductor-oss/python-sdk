@@ -117,7 +117,7 @@ class OrkesSchemaClient(OrkesBaseClient):
     async def get_unique_schema_names(self) -> List[str]:
         """Get a list of unique schema names"""
         all_schemas = await self.get_all_schemas()
-        names = set(schema.name for schema in all_schemas if schema.name)
+        names = {schema.name for schema in all_schemas if schema.name}
         return sorted(names)
 
     async def bulk_save_schemas(

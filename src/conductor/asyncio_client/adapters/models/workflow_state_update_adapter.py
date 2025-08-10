@@ -5,9 +5,8 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.task_result_adapter import (
-    TaskResultAdapter,
-)
+from conductor.asyncio_client.adapters.models.task_result_adapter import \
+    TaskResultAdapter
 from conductor.asyncio_client.http.models import WorkflowStateUpdate
 
 

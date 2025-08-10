@@ -162,7 +162,10 @@ source = ["src/conductor"]
 omit = [
     "tests/*",
     "examples/*",
-    "*/__init__.py"
+    "*/__init__.py",
+    "src/conductor/asyncio_client/http/",
+    "src/conductor/client/http/",
+    "src/conductor/client/orkes/api/"
 ]
 
 [tool.coverage.report]

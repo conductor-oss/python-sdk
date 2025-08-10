@@ -3,18 +3,15 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from pydantic import Field
-
-from conductor.asyncio_client.adapters.models.descriptor_adapter import (
-    DescriptorAdapter,
-)
-from conductor.asyncio_client.adapters.models.message_lite_adapter import (
-    MessageLiteAdapter,
-)
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
-    UnknownFieldSetAdapter,
-)
-from conductor.asyncio_client.http.models import Message
 from typing_extensions import Self
+
+from conductor.asyncio_client.adapters.models.descriptor_adapter import \
+    DescriptorAdapter
+from conductor.asyncio_client.adapters.models.message_lite_adapter import \
+    MessageLiteAdapter
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
+    UnknownFieldSetAdapter
+from conductor.asyncio_client.http.models import Message
 
 
 class MessageAdapter(Message):
@@ -38,14 +35,28 @@ class MessageAdapter(Message):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "allFields": obj.get("allFields"),
-            "defaultInstanceForType": MessageLiteAdapter.from_dict(obj["defaultInstanceForType"]) if obj.get("defaultInstanceForType") is not None else None,
-            "descriptorForType": DescriptorAdapter.from_dict(obj["descriptorForType"]) if obj.get("descriptorForType") is not None else None,
-            "initializationErrorString": obj.get("initializationErrorString"),
-            "initialized": obj.get("initialized"),
-            "parserForType": obj.get("parserForType"),
-            "serializedSize": obj.get("serializedSize"),
-            "unknownFields": UnknownFieldSetAdapter.from_dict(obj["unknownFields"]) if obj.get("unknownFields") is not None else None
-        })
+        _obj = cls.model_validate(
+            {
+                "allFields": obj.get("allFields"),
+                "defaultInstanceForType": (
+                    MessageLiteAdapter.from_dict(obj["defaultInstanceForType"])
+                    if obj.get("defaultInstanceForType") is not None
+                    else None
+                ),
+                "descriptorForType": (
+                    DescriptorAdapter.from_dict(obj["descriptorForType"])
+                    if obj.get("descriptorForType") is not None
+                    else None
+                ),
+                "initializationErrorString": obj.get("initializationErrorString"),
+                "initialized": obj.get("initialized"),
+                "parserForType": obj.get("parserForType"),
+                "serializedSize": obj.get("serializedSize"),
+                "unknownFields": (
+                    UnknownFieldSetAdapter.from_dict(obj["unknownFields"])
+                    if obj.get("unknownFields") is not None
+                    else None
+                ),
+            }
+        )
         return _obj

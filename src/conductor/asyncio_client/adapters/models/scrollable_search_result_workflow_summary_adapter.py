@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.workflow_summary_adapter import (
-    WorkflowSummaryAdapter,
-)
-from conductor.asyncio_client.http.models import ScrollableSearchResultWorkflowSummary
+from conductor.asyncio_client.adapters.models.workflow_summary_adapter import \
+    WorkflowSummaryAdapter
+from conductor.asyncio_client.http.models import \
+    ScrollableSearchResultWorkflowSummary
 
 
 class ScrollableSearchResultWorkflowSummaryAdapter(
@@ -23,9 +24,18 @@ class ScrollableSearchResultWorkflowSummaryAdapter(
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "queryId": obj.get("queryId"),
-            "results": [WorkflowSummaryAdapter.from_dict(_item) for _item in obj["results"]] if obj.get("results") is not None else None,
-            "totalHits": obj.get("totalHits")
-        })
+        _obj = cls.model_validate(
+            {
+                "queryId": obj.get("queryId"),
+                "results": (
+                    [
+                        WorkflowSummaryAdapter.from_dict(_item)
+                        for _item in obj["results"]
+                    ]
+                    if obj.get("results") is not None
+                    else None
+                ),
+                "totalHits": obj.get("totalHits"),
+            }
+        )
         return _obj

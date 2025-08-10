@@ -5,16 +5,14 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.cache_config_adapter import (
-    CacheConfigAdapter,
-)
-from conductor.asyncio_client.adapters.models.state_change_event_adapter import (
-    StateChangeEventAdapter,
-)
-from conductor.asyncio_client.adapters.models.sub_workflow_params_adapter import (
-    SubWorkflowParamsAdapter,
-)
-from conductor.asyncio_client.adapters.models.task_def_adapter import TaskDefAdapter
+from conductor.asyncio_client.adapters.models.cache_config_adapter import \
+    CacheConfigAdapter
+from conductor.asyncio_client.adapters.models.state_change_event_adapter import \
+    StateChangeEventAdapter
+from conductor.asyncio_client.adapters.models.sub_workflow_params_adapter import \
+    SubWorkflowParamsAdapter
+from conductor.asyncio_client.adapters.models.task_def_adapter import \
+    TaskDefAdapter
 from conductor.asyncio_client.http.models import WorkflowTask
 
 
@@ -66,19 +64,19 @@ class WorkflowTaskAdapter(WorkflowTask):
                 ),
                 "caseExpression": obj.get("caseExpression"),
                 "caseValueParam": obj.get("caseValueParam"),
-                "decisionCases": dict(
-                    (
-                        _k,
-                        (
-                            [WorkflowTaskAdapter.from_dict(_item) for _item in _v]
-                            if _v is not None
-                            else None
-                        ),
+                "decisionCases": {
+                    _k: (
+                        [WorkflowTaskAdapter.from_dict(_item) for _item in _v]
+                        if _v is not None
+                        else None
                     )
                     for _k, _v in obj.get("decisionCases", {}).items()
-                ),
+                },
                 "defaultCase": (
-                    [WorkflowTaskAdapter.from_dict(_item) for _item in obj["defaultCase"]]
+                    [
+                        WorkflowTaskAdapter.from_dict(_item)
+                        for _item in obj["defaultCase"]
+                    ]
                     if obj.get("defaultCase") is not None
                     else None
                 ),
@@ -94,7 +92,10 @@ class WorkflowTaskAdapter(WorkflowTask):
                 "expression": obj.get("expression"),
                 "forkTasks": (
                     [
-                        [WorkflowTaskAdapter.from_dict(_inner_item) for _inner_item in _item]
+                        [
+                            WorkflowTaskAdapter.from_dict(_inner_item)
+                            for _inner_item in _item
+                        ]
                         for _item in obj["forkTasks"]
                     ]
                     if obj.get("forkTasks") is not None
@@ -110,17 +111,14 @@ class WorkflowTaskAdapter(WorkflowTask):
                     else None
                 ),
                 "name": obj.get("name"),
-                "onStateChange": dict(
-                    (
-                        _k,
-                        (
-                            [StateChangeEventAdapter.from_dict(_item) for _item in _v]
-                            if _v is not None
-                            else None
-                        ),
+                "onStateChange": {
+                    _k: (
+                        [StateChangeEventAdapter.from_dict(_item) for _item in _v]
+                        if _v is not None
+                        else None
                     )
                     for _k, _v in obj.get("onStateChange", {}).items()
-                ),
+                },
                 "optional": obj.get("optional"),
                 "permissive": obj.get("permissive"),
                 "rateLimited": obj.get("rateLimited"),

@@ -5,27 +5,20 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.byte_string_adapter import (
-    ByteStringAdapter,
-)
-from conductor.asyncio_client.adapters.models.descriptor_adapter import (
-    DescriptorAdapter,
-)
-from conductor.asyncio_client.adapters.models.method_descriptor_proto_adapter import (
-    MethodDescriptorProtoAdapter,
-)
-from conductor.asyncio_client.adapters.models.method_descriptor_proto_or_builder_adapter import (
-    MethodDescriptorProtoOrBuilderAdapter,
-)
-from conductor.asyncio_client.adapters.models.service_options_adapter import (
-    ServiceOptionsAdapter,
-)
-from conductor.asyncio_client.adapters.models.service_options_or_builder_adapter import (
-    ServiceOptionsOrBuilderAdapter,
-)
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
-    UnknownFieldSetAdapter,
-)
+from conductor.asyncio_client.adapters.models.byte_string_adapter import \
+    ByteStringAdapter
+from conductor.asyncio_client.adapters.models.descriptor_adapter import \
+    DescriptorAdapter
+from conductor.asyncio_client.adapters.models.method_descriptor_proto_adapter import \
+    MethodDescriptorProtoAdapter
+from conductor.asyncio_client.adapters.models.method_descriptor_proto_or_builder_adapter import \
+    MethodDescriptorProtoOrBuilderAdapter
+from conductor.asyncio_client.adapters.models.service_options_adapter import \
+    ServiceOptionsAdapter
+from conductor.asyncio_client.adapters.models.service_options_or_builder_adapter import \
+    ServiceOptionsOrBuilderAdapter
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
+    UnknownFieldSetAdapter
 from conductor.asyncio_client.http.models import ServiceDescriptorProto
 
 

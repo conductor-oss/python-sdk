@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
@@ -20,13 +20,19 @@ class ExtendedConductorApplicationAdapter(ExtendedConductorApplication):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "createTime": obj.get("createTime"),
-            "createdBy": obj.get("createdBy"),
-            "id": obj.get("id"),
-            "name": obj.get("name"),
-            "tags": [TagAdapter.from_dict(_item) for _item in obj["tags"]] if obj.get("tags") is not None else None,
-            "updateTime": obj.get("updateTime"),
-            "updatedBy": obj.get("updatedBy")
-        })
+        _obj = cls.model_validate(
+            {
+                "createTime": obj.get("createTime"),
+                "createdBy": obj.get("createdBy"),
+                "id": obj.get("id"),
+                "name": obj.get("name"),
+                "tags": (
+                    [TagAdapter.from_dict(_item) for _item in obj["tags"]]
+                    if obj.get("tags") is not None
+                    else None
+                ),
+                "updateTime": obj.get("updateTime"),
+                "updatedBy": obj.get("updatedBy"),
+            }
+        )
         return _obj

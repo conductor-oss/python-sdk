@@ -5,7 +5,8 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.schema_def_adapter import SchemaDefAdapter
+from conductor.asyncio_client.adapters.models.schema_def_adapter import \
+    SchemaDefAdapter
 from conductor.asyncio_client.http.models import TaskDef
 
 

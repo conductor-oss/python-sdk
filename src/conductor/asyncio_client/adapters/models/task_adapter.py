@@ -5,10 +5,10 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.task_def_adapter import TaskDefAdapter
-from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
-    WorkflowTaskAdapter,
-)
+from conductor.asyncio_client.adapters.models.task_def_adapter import \
+    TaskDefAdapter
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import \
+    WorkflowTaskAdapter
 from conductor.asyncio_client.http.models import Task
 
 

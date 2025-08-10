@@ -6,9 +6,8 @@ from pydantic import Field
 from typing_extensions import Self
 
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.adapters.models.webhook_execution_history_adapter import (
-    WebhookExecutionHistoryAdapter,
-)
+from conductor.asyncio_client.adapters.models.webhook_execution_history_adapter import \
+    WebhookExecutionHistoryAdapter
 from conductor.asyncio_client.http.models import WebhookConfig
 
 

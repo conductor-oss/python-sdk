@@ -4,9 +4,8 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.permission_adapter import (
-    PermissionAdapter,
-)
+from conductor.asyncio_client.adapters.models.permission_adapter import \
+    PermissionAdapter
 from conductor.asyncio_client.http.models import Role
 
 
@@ -22,8 +21,14 @@ class RoleAdapter(Role):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "name": obj.get("name"),
-            "permissions": [PermissionAdapter.from_dict(_item) for _item in obj["permissions"]] if obj.get("permissions") is not None else None
-        })
+        _obj = cls.model_validate(
+            {
+                "name": obj.get("name"),
+                "permissions": (
+                    [PermissionAdapter.from_dict(_item) for _item in obj["permissions"]]
+                    if obj.get("permissions") is not None
+                    else None
+                ),
+            }
+        )
         return _obj

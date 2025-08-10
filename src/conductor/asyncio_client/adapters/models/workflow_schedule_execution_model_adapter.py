@@ -5,9 +5,8 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
-    StartWorkflowRequestAdapter,
-)
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import \
+    StartWorkflowRequestAdapter
 from conductor.asyncio_client.http.models import WorkflowScheduleExecutionModel
 
 

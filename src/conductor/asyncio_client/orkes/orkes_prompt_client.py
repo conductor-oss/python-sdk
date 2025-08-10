@@ -103,7 +103,7 @@ class OrkesPromptClient(OrkesBaseClient):
                 tags = await self.get_tags_for_prompt_template(template.name)
                 if any(tag.key == tag_key and tag.value == tag_value for tag in tags):
                     matching_templates.append(template)
-            except Exception:
+            except Exception:  # noqa: PERF203
                 continue
 
         return matching_templates
@@ -129,7 +129,7 @@ class OrkesPromptClient(OrkesBaseClient):
         for name in template_names:
             try:
                 await self.delete_message_template(name)
-            except Exception:
+            except Exception:  # noqa: PERF203
                 continue
 
     # Legacy compatibility methods (aliasing new method names to match the original draft)
@@ -175,12 +175,11 @@ class OrkesPromptClient(OrkesBaseClient):
         all_templates = await self.get_message_templates()
         matching_templates = []
 
-        for template in all_templates:
-            if (
-                hasattr(template, "models")
-                and template.models
-                and model_name in template.models
-            ):
-                matching_templates.append(template)
+        matching_templates = [
+            template for template in all_templates
+            if hasattr(template, "models")
+            and template.models
+            and model_name in template.models
+        ]
 
         return matching_templates

@@ -164,7 +164,7 @@ class Configuration:
             if value is not None:
                 return float(value)
         except (ValueError, TypeError):
-            self.logger.warning(f"Invalid float value for {env_var}: {value}")
+            self.logger.warning("Invalid float value for %s: %s", env_var, value)
         return default
 
     def _get_env_int(self, env_var: str, default: int) -> int:
@@ -174,7 +174,7 @@ class Configuration:
             if value is not None:
                 return int(value)
         except (ValueError, TypeError):
-            self.logger.warning(f"Invalid integer value for {env_var}: {value}")
+            self.logger.warning("Invalid float value for %s: %s", env_var, value)
         return default
 
     def get_worker_property_value(
@@ -229,7 +229,7 @@ class Configuration:
             try:
                 return float(value)
             except (ValueError, TypeError):
-                self.logger.warning(f"Invalid polling_interval value: {value}")
+                self.logger.warning("Invalid polling_interval value: %s", value)
                 return self.default_polling_interval
 
         # For other properties, return as string

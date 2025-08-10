@@ -3,18 +3,15 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from pydantic import Field
-
-from conductor.asyncio_client.adapters.models.descriptor_adapter import (
-    DescriptorAdapter,
-)
-from conductor.asyncio_client.adapters.models.byte_string_adapter import (
-    ByteStringAdapter,
-)
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
-    UnknownFieldSetAdapter,
-)
-from conductor.asyncio_client.http.models import Location
 from typing_extensions import Self
+
+from conductor.asyncio_client.adapters.models.byte_string_adapter import \
+    ByteStringAdapter
+from conductor.asyncio_client.adapters.models.descriptor_adapter import \
+    DescriptorAdapter
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
+    UnknownFieldSetAdapter
+from conductor.asyncio_client.http.models import Location
 
 
 class LocationAdapter(Location):
@@ -38,24 +35,46 @@ class LocationAdapter(Location):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "allFields": obj.get("allFields"),
-            "defaultInstanceForType": LocationAdapter.from_dict(obj["defaultInstanceForType"]) if obj.get("defaultInstanceForType") is not None else None,
-            "descriptorForType": DescriptorAdapter.from_dict(obj["descriptorForType"]) if obj.get("descriptorForType") is not None else None,
-            "initializationErrorString": obj.get("initializationErrorString"),
-            "initialized": obj.get("initialized"),
-            "leadingComments": obj.get("leadingComments"),
-            "leadingCommentsBytes": ByteStringAdapter.from_dict(obj["leadingCommentsBytes"]) if obj.get("leadingCommentsBytes") is not None else None,
-            "leadingDetachedCommentsCount": obj.get("leadingDetachedCommentsCount"),
-            "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
-            "parserForType": obj.get("parserForType"),
-            "pathCount": obj.get("pathCount"),
-            "pathList": obj.get("pathList"),
-            "serializedSize": obj.get("serializedSize"),
-            "spanCount": obj.get("spanCount"),
-            "spanList": obj.get("spanList"),
-            "trailingComments": obj.get("trailingComments"),
-            "trailingCommentsBytes": ByteStringAdapter.from_dict(obj["trailingCommentsBytes"]) if obj.get("trailingCommentsBytes") is not None else None,
-            "unknownFields": UnknownFieldSetAdapter.from_dict(obj["unknownFields"]) if obj.get("unknownFields") is not None else None
-        })
+        _obj = cls.model_validate(
+            {
+                "allFields": obj.get("allFields"),
+                "defaultInstanceForType": (
+                    LocationAdapter.from_dict(obj["defaultInstanceForType"])
+                    if obj.get("defaultInstanceForType") is not None
+                    else None
+                ),
+                "descriptorForType": (
+                    DescriptorAdapter.from_dict(obj["descriptorForType"])
+                    if obj.get("descriptorForType") is not None
+                    else None
+                ),
+                "initializationErrorString": obj.get("initializationErrorString"),
+                "initialized": obj.get("initialized"),
+                "leadingComments": obj.get("leadingComments"),
+                "leadingCommentsBytes": (
+                    ByteStringAdapter.from_dict(obj["leadingCommentsBytes"])
+                    if obj.get("leadingCommentsBytes") is not None
+                    else None
+                ),
+                "leadingDetachedCommentsCount": obj.get("leadingDetachedCommentsCount"),
+                "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
+                "parserForType": obj.get("parserForType"),
+                "pathCount": obj.get("pathCount"),
+                "pathList": obj.get("pathList"),
+                "serializedSize": obj.get("serializedSize"),
+                "spanCount": obj.get("spanCount"),
+                "spanList": obj.get("spanList"),
+                "trailingComments": obj.get("trailingComments"),
+                "trailingCommentsBytes": (
+                    ByteStringAdapter.from_dict(obj["trailingCommentsBytes"])
+                    if obj.get("trailingCommentsBytes") is not None
+                    else None
+                ),
+                "unknownFields": (
+                    UnknownFieldSetAdapter.from_dict(obj["unknownFields"])
+                    if obj.get("unknownFields") is not None
+                    else None
+                ),
+            }
+        )
         return _obj

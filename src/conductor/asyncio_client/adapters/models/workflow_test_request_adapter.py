@@ -5,10 +5,10 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.task_mock_adapter import TaskMockAdapter
-from conductor.asyncio_client.adapters.models.workflow_def_adapter import (
-    WorkflowDefAdapter,
-)
+from conductor.asyncio_client.adapters.models.task_mock_adapter import \
+    TaskMockAdapter
+from conductor.asyncio_client.adapters.models.workflow_def_adapter import \
+    WorkflowDefAdapter
 from conductor.asyncio_client.http.models import WorkflowTestRequest
 
 
@@ -47,24 +47,21 @@ class WorkflowTestRequestAdapter(WorkflowTestRequest):
                 "name": obj.get("name"),
                 "priority": obj.get("priority"),
                 "subWorkflowTestRequest": (
-                    dict(
-                        (_k, WorkflowTestRequestAdapter.from_dict(_v))
+                    {
+                        _k: WorkflowTestRequestAdapter.from_dict(_v)
                         for _k, _v in obj["subWorkflowTestRequest"].items()
-                    )
+                    }
                     if obj.get("subWorkflowTestRequest") is not None
                     else None
                 ),
-                "taskRefToMockOutput": dict(
-                    (
-                        _k,
-                        (
-                            [TaskMockAdapter.from_dict(_item) for _item in _v]
-                            if _v is not None
-                            else None
-                        ),
+                "taskRefToMockOutput": {
+                    _k: (
+                        [TaskMockAdapter.from_dict(_item) for _item in _v]
+                        if _v is not None
+                        else None
                     )
                     for _k, _v in obj.get("taskRefToMockOutput", {}).items()
-                ),
+                },
                 "taskToDomain": obj.get("taskToDomain"),
                 "version": obj.get("version"),
                 "workflowDef": (

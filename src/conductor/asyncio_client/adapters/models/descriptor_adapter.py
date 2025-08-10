@@ -5,24 +5,18 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.descriptor_proto_adapter import (
-    DescriptorProtoAdapter,
-)
-from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import (
-    EnumDescriptorAdapter,
-)
-from conductor.asyncio_client.adapters.models.field_descriptor_adapter import (
-    FieldDescriptorAdapter,
-)
-from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
-    FileDescriptorAdapter,
-)
-from conductor.asyncio_client.adapters.models.message_options_adapter import (
-    MessageOptionsAdapter,
-)
-from conductor.asyncio_client.adapters.models.oneof_descriptor_adapter import (
-    OneofDescriptorAdapter,
-)
+from conductor.asyncio_client.adapters.models.descriptor_proto_adapter import \
+    DescriptorProtoAdapter
+from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import \
+    EnumDescriptorAdapter
+from conductor.asyncio_client.adapters.models.field_descriptor_adapter import \
+    FieldDescriptorAdapter
+from conductor.asyncio_client.adapters.models.file_descriptor_adapter import \
+    FileDescriptorAdapter
+from conductor.asyncio_client.adapters.models.message_options_adapter import \
+    MessageOptionsAdapter
+from conductor.asyncio_client.adapters.models.oneof_descriptor_adapter import \
+    OneofDescriptorAdapter
 from conductor.asyncio_client.http.models import Descriptor
 
 

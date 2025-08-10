@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from pydantic import Field
+from typing_extensions import Self
 
 from conductor.asyncio_client.http.models import MessageLite
-from typing_extensions import Self
 
 
 class MessageLiteAdapter(MessageLite):
@@ -22,10 +22,16 @@ class MessageLiteAdapter(MessageLite):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "defaultInstanceForType": MessageLiteAdapter.from_dict(obj["defaultInstanceForType"]) if obj.get("defaultInstanceForType") is not None else None,
-            "initialized": obj.get("initialized"),
-            "parserForType": obj.get("parserForType"),
-            "serializedSize": obj.get("serializedSize")
-        })
+        _obj = cls.model_validate(
+            {
+                "defaultInstanceForType": (
+                    MessageLiteAdapter.from_dict(obj["defaultInstanceForType"])
+                    if obj.get("defaultInstanceForType") is not None
+                    else None
+                ),
+                "initialized": obj.get("initialized"),
+                "parserForType": obj.get("parserForType"),
+                "serializedSize": obj.get("serializedSize"),
+            }
+        )
         return _obj

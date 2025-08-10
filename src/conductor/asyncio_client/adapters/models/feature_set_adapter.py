@@ -3,15 +3,13 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from pydantic import Field
-
-from conductor.asyncio_client.adapters.models.descriptor_adapter import (
-    DescriptorAdapter,
-)
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
-    UnknownFieldSetAdapter,
-)
-from conductor.asyncio_client.http.models import FeatureSet
 from typing_extensions import Self
+
+from conductor.asyncio_client.adapters.models.descriptor_adapter import \
+    DescriptorAdapter
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
+    UnknownFieldSetAdapter
+from conductor.asyncio_client.http.models import FeatureSet
 
 
 class FeatureSetAdapter(FeatureSet):
@@ -36,22 +34,36 @@ class FeatureSetAdapter(FeatureSet):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "allFields": obj.get("allFields"),
-            "allFieldsRaw": obj.get("allFieldsRaw"),
-            "defaultInstanceForType": FeatureSetAdapter.from_dict(obj["defaultInstanceForType"]) if obj.get("defaultInstanceForType") is not None else None,
-            "descriptorForType": DescriptorAdapter.from_dict(obj["descriptorForType"]) if obj.get("descriptorForType") is not None else None,
-            "enumType": obj.get("enumType"),
-            "fieldPresence": obj.get("fieldPresence"),
-            "initializationErrorString": obj.get("initializationErrorString"),
-            "initialized": obj.get("initialized"),
-            "jsonFormat": obj.get("jsonFormat"),
-            "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
-            "messageEncoding": obj.get("messageEncoding"),
-            "parserForType": obj.get("parserForType"),
-            "repeatedFieldEncoding": obj.get("repeatedFieldEncoding"),
-            "serializedSize": obj.get("serializedSize"),
-            "unknownFields": UnknownFieldSetAdapter.from_dict(obj["unknownFields"]) if obj.get("unknownFields") is not None else None,
-            "utf8Validation": obj.get("utf8Validation")
-        })
+        _obj = cls.model_validate(
+            {
+                "allFields": obj.get("allFields"),
+                "allFieldsRaw": obj.get("allFieldsRaw"),
+                "defaultInstanceForType": (
+                    FeatureSetAdapter.from_dict(obj["defaultInstanceForType"])
+                    if obj.get("defaultInstanceForType") is not None
+                    else None
+                ),
+                "descriptorForType": (
+                    DescriptorAdapter.from_dict(obj["descriptorForType"])
+                    if obj.get("descriptorForType") is not None
+                    else None
+                ),
+                "enumType": obj.get("enumType"),
+                "fieldPresence": obj.get("fieldPresence"),
+                "initializationErrorString": obj.get("initializationErrorString"),
+                "initialized": obj.get("initialized"),
+                "jsonFormat": obj.get("jsonFormat"),
+                "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
+                "messageEncoding": obj.get("messageEncoding"),
+                "parserForType": obj.get("parserForType"),
+                "repeatedFieldEncoding": obj.get("repeatedFieldEncoding"),
+                "serializedSize": obj.get("serializedSize"),
+                "unknownFields": (
+                    UnknownFieldSetAdapter.from_dict(obj["unknownFields"])
+                    if obj.get("unknownFields") is not None
+                    else None
+                ),
+                "utf8Validation": obj.get("utf8Validation"),
+            }
+        )
         return _obj

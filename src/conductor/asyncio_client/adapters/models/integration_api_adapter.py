@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
@@ -21,17 +21,23 @@ class IntegrationApiAdapter(IntegrationApi):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "api": obj.get("api"),
-            "configuration": obj.get("configuration"),
-            "createTime": obj.get("createTime"),
-            "createdBy": obj.get("createdBy"),
-            "description": obj.get("description"),
-            "enabled": obj.get("enabled"),
-            "integrationName": obj.get("integrationName"),
-            "ownerApp": obj.get("ownerApp"),
-            "tags": [TagAdapter.from_dict(_item) for _item in obj["tags"]] if obj.get("tags") is not None else None,
-            "updateTime": obj.get("updateTime"),
-            "updatedBy": obj.get("updatedBy")
-        })
+        _obj = cls.model_validate(
+            {
+                "api": obj.get("api"),
+                "configuration": obj.get("configuration"),
+                "createTime": obj.get("createTime"),
+                "createdBy": obj.get("createdBy"),
+                "description": obj.get("description"),
+                "enabled": obj.get("enabled"),
+                "integrationName": obj.get("integrationName"),
+                "ownerApp": obj.get("ownerApp"),
+                "tags": (
+                    [TagAdapter.from_dict(_item) for _item in obj["tags"]]
+                    if obj.get("tags") is not None
+                    else None
+                ),
+                "updateTime": obj.get("updateTime"),
+                "updatedBy": obj.get("updatedBy"),
+            }
+        )
         return _obj

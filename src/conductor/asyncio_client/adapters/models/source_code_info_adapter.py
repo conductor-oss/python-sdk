@@ -5,16 +5,14 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.descriptor_adapter import (
-    DescriptorAdapter,
-)
-from conductor.asyncio_client.adapters.models.location_adapter import LocationAdapter
-from conductor.asyncio_client.adapters.models.location_or_builder_adapter import (
-    LocationOrBuilderAdapter,
-)
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
-    UnknownFieldSetAdapter,
-)
+from conductor.asyncio_client.adapters.models.descriptor_adapter import \
+    DescriptorAdapter
+from conductor.asyncio_client.adapters.models.location_adapter import \
+    LocationAdapter
+from conductor.asyncio_client.adapters.models.location_or_builder_adapter import \
+    LocationOrBuilderAdapter
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
+    UnknownFieldSetAdapter
 from conductor.asyncio_client.http.models import SourceCodeInfo
 
 

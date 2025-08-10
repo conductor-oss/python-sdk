@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.workflow_schedule_execution_model_adapter import (
-    WorkflowScheduleExecutionModelAdapter,
-)
-from conductor.asyncio_client.http.models import (
-    SearchResultWorkflowScheduleExecutionModel,
-)
+from conductor.asyncio_client.adapters.models.workflow_schedule_execution_model_adapter import \
+    WorkflowScheduleExecutionModelAdapter
+from conductor.asyncio_client.http.models import \
+    SearchResultWorkflowScheduleExecutionModel
 
 
 class SearchResultWorkflowScheduleExecutionModelAdapter(
@@ -25,8 +24,17 @@ class SearchResultWorkflowScheduleExecutionModelAdapter(
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "results": [WorkflowScheduleExecutionModelAdapter.from_dict(_item) for _item in obj["results"]] if obj.get("results") is not None else None,
-            "totalHits": obj.get("totalHits")
-        })
+        _obj = cls.model_validate(
+            {
+                "results": (
+                    [
+                        WorkflowScheduleExecutionModelAdapter.from_dict(_item)
+                        for _item in obj["results"]
+                    ]
+                    if obj.get("results") is not None
+                    else None
+                ),
+                "totalHits": obj.get("totalHits"),
+            }
+        )
         return _obj

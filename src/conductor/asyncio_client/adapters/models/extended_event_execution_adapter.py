@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
-from typing_extensions import Self
 
 from pydantic import Field
+from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.event_handler_adapter import (
-    EventHandlerAdapter,
-)
+from conductor.asyncio_client.adapters.models.event_handler_adapter import \
+    EventHandlerAdapter
 from conductor.asyncio_client.http.models import ExtendedEventExecution
 
 
@@ -30,19 +29,25 @@ class ExtendedEventExecutionAdapter(ExtendedEventExecution):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        _obj = cls.model_validate({
-            "action": obj.get("action"),
-            "created": obj.get("created"),
-            "event": obj.get("event"),
-            "eventHandler": EventHandlerAdapter.from_dict(obj["eventHandler"]) if obj.get("eventHandler") is not None else None,
-            "fullMessagePayload": obj.get("fullMessagePayload"),
-            "id": obj.get("id"),
-            "messageId": obj.get("messageId"),
-            "name": obj.get("name"),
-            "orgId": obj.get("orgId"),
-            "output": obj.get("output"),
-            "payload": obj.get("payload"),
-            "status": obj.get("status"),
-            "statusDescription": obj.get("statusDescription")
-        })
+        _obj = cls.model_validate(
+            {
+                "action": obj.get("action"),
+                "created": obj.get("created"),
+                "event": obj.get("event"),
+                "eventHandler": (
+                    EventHandlerAdapter.from_dict(obj["eventHandler"])
+                    if obj.get("eventHandler") is not None
+                    else None
+                ),
+                "fullMessagePayload": obj.get("fullMessagePayload"),
+                "id": obj.get("id"),
+                "messageId": obj.get("messageId"),
+                "name": obj.get("name"),
+                "orgId": obj.get("orgId"),
+                "output": obj.get("output"),
+                "payload": obj.get("payload"),
+                "status": obj.get("status"),
+                "statusDescription": obj.get("statusDescription"),
+            }
+        )
         return _obj
