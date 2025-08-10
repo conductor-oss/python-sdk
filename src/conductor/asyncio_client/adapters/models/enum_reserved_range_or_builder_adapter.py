@@ -12,6 +12,7 @@ from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
     UnknownFieldSetAdapter,
 )
 from conductor.asyncio_client.http.models import EnumReservedRangeOrBuilder
+from typing_extensions import Self
 
 
 class EnumReservedRangeOrBuilderAdapter(EnumReservedRangeOrBuilder):
@@ -25,3 +26,24 @@ class EnumReservedRangeOrBuilderAdapter(EnumReservedRangeOrBuilder):
     unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
         default=None, alias="unknownFields"
     )
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of EnumReservedRangeOrBuilder from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate({
+            "allFields": obj.get("allFields"),
+            "defaultInstanceForType": MessageAdapter.from_dict(obj["defaultInstanceForType"]) if obj.get("defaultInstanceForType") is not None else None,
+            "descriptorForType": DescriptorAdapter.from_dict(obj["descriptorForType"]) if obj.get("descriptorForType") is not None else None,
+            "end": obj.get("end"),
+            "initializationErrorString": obj.get("initializationErrorString"),
+            "initialized": obj.get("initialized"),
+            "start": obj.get("start"),
+            "unknownFields": UnknownFieldSetAdapter.from_dict(obj["unknownFields"]) if obj.get("unknownFields") is not None else None
+        })
+        return _obj

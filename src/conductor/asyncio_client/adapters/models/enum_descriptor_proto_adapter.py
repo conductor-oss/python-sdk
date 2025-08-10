@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from typing_extensions import Self
 from pydantic import Field
 
+from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+    ByteStringAdapter,
+)
 from conductor.asyncio_client.adapters.models.descriptor_adapter import (
     DescriptorAdapter,
 )
@@ -58,3 +62,36 @@ class EnumDescriptorProtoAdapter(EnumDescriptorProto):
     value_or_builder_list: Optional[List[EnumValueDescriptorProtoOrBuilderAdapter]] = (
         Field(default=None, alias="valueOrBuilderList")
     )
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of EnumDescriptorProto from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate({
+            "allFields": obj.get("allFields"),
+            "defaultInstanceForType": EnumDescriptorProto.from_dict(obj["defaultInstanceForType"]) if obj.get("defaultInstanceForType") is not None else None,
+            "descriptorForType": DescriptorAdapter.from_dict(obj["descriptorForType"]) if obj.get("descriptorForType") is not None else None,
+            "initializationErrorString": obj.get("initializationErrorString"),
+            "initialized": obj.get("initialized"),
+            "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
+            "name": obj.get("name"),
+            "nameBytes": ByteStringAdapter.from_dict(obj["nameBytes"]) if obj.get("nameBytes") is not None else None,
+            "options": EnumOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None,
+            "optionsOrBuilder": EnumOptionsOrBuilderAdapter.from_dict(obj["optionsOrBuilder"]) if obj.get("optionsOrBuilder") is not None else None,
+            "parserForType": obj.get("parserForType"),
+            "reservedNameCount": obj.get("reservedNameCount"),
+            "reservedRangeCount": obj.get("reservedRangeCount"),
+            "reservedRangeList": [EnumReservedRangeAdapter.from_dict(_item) for _item in obj["reservedRangeList"]] if obj.get("reservedRangeList") is not None else None,
+            "reservedRangeOrBuilderList": [EnumReservedRangeOrBuilderAdapter.from_dict(_item) for _item in obj["reservedRangeOrBuilderList"]] if obj.get("reservedRangeOrBuilderList") is not None else None,
+            "serializedSize": obj.get("serializedSize"),
+            "unknownFields": UnknownFieldSetAdapter.from_dict(obj["unknownFields"]) if obj.get("unknownFields") is not None else None,
+            "valueCount": obj.get("valueCount"),
+            "valueList": [EnumValueDescriptorProtoAdapter.from_dict(_item) for _item in obj["valueList"]] if obj.get("valueList") is not None else None,
+            "valueOrBuilderList": [EnumValueDescriptorProtoOrBuilderAdapter.from_dict(_item) for _item in obj["valueOrBuilderList"]] if obj.get("valueOrBuilderList") is not None else None
+        })
+        return _obj

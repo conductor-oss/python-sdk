@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+from typing_extensions import Self
 
 from pydantic import Field
 
@@ -32,3 +33,43 @@ class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef):
     tags: Optional[List[TagAdapter]] = None
     tasks: List[WorkflowTaskAdapter]
     variables: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of ExtendedWorkflowDef from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate({
+            "createTime": obj.get("createTime"),
+            "createdBy": obj.get("createdBy"),
+            "description": obj.get("description"),
+            "enforceSchema": obj.get("enforceSchema"),
+            "failureWorkflow": obj.get("failureWorkflow"),
+            "inputParameters": obj.get("inputParameters"),
+            "inputSchema": SchemaDefAdapter.from_dict(obj["inputSchema"]) if obj.get("inputSchema") is not None else None,
+            "inputTemplate": obj.get("inputTemplate"),
+            "name": obj.get("name"),
+            "outputParameters": obj.get("outputParameters"),
+            "outputSchema": SchemaDefAdapter.from_dict(obj["outputSchema"]) if obj.get("outputSchema") is not None else None,
+            "overwriteTags": obj.get("overwriteTags"),
+            "ownerApp": obj.get("ownerApp"),
+            "ownerEmail": obj.get("ownerEmail"),
+            "rateLimitConfig": RateLimitConfigAdapter.from_dict(obj["rateLimitConfig"]) if obj.get("rateLimitConfig") is not None else None,
+            "restartable": obj.get("restartable"),
+            "schemaVersion": obj.get("schemaVersion"),
+            "tags": [TagAdapter.from_dict(_item) for _item in obj["tags"]] if obj.get("tags") is not None else None,
+            "tasks": [WorkflowTaskAdapter.from_dict(_item) for _item in obj["tasks"]] if obj.get("tasks") is not None else None,
+            "timeoutPolicy": obj.get("timeoutPolicy"),
+            "timeoutSeconds": obj.get("timeoutSeconds"),
+            "updateTime": obj.get("updateTime"),
+            "updatedBy": obj.get("updatedBy"),
+            "variables": obj.get("variables"),
+            "version": obj.get("version"),
+            "workflowStatusListenerEnabled": obj.get("workflowStatusListenerEnabled"),
+            "workflowStatusListenerSink": obj.get("workflowStatusListenerSink")
+        })
+        return _obj

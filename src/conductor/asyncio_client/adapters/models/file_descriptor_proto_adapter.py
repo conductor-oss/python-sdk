@@ -46,6 +46,10 @@ from conductor.asyncio_client.adapters.models.source_code_info_or_builder_adapte
 from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
     UnknownFieldSetAdapter,
 )
+from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+    ByteStringAdapter,
+)
+from typing_extensions import Self
 from conductor.asyncio_client.http.models import FileDescriptorProto
 
 
@@ -94,3 +98,53 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
     unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
         default=None, alias="unknownFields"
     )
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of FileDescriptorProto from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate({
+            "allFields": obj.get("allFields"),
+            "defaultInstanceForType": FileDescriptorProtoAdapter.from_dict(obj["defaultInstanceForType"]) if obj.get("defaultInstanceForType") is not None else None,
+            "dependencyCount": obj.get("dependencyCount"),
+            "descriptorForType": DescriptorAdapter.from_dict(obj["descriptorForType"]) if obj.get("descriptorForType") is not None else None,
+            "edition": obj.get("edition"),
+            "enumTypeCount": obj.get("enumTypeCount"),
+            "enumTypeList": [EnumDescriptorProtoAdapter.from_dict(_item) for _item in obj["enumTypeList"]] if obj.get("enumTypeList") is not None else None,
+            "enumTypeOrBuilderList": [EnumDescriptorProtoOrBuilderAdapter.from_dict(_item) for _item in obj["enumTypeOrBuilderList"]] if obj.get("enumTypeOrBuilderList") is not None else None,
+            "extensionCount": obj.get("extensionCount"),
+            "extensionList": [FieldDescriptorProtoAdapter.from_dict(_item) for _item in obj["extensionList"]] if obj.get("extensionList") is not None else None,
+            "extensionOrBuilderList": [FieldDescriptorProtoOrBuilderAdapter.from_dict(_item) for _item in obj["extensionOrBuilderList"]] if obj.get("extensionOrBuilderList") is not None else None,
+            "initializationErrorString": obj.get("initializationErrorString"),
+            "initialized": obj.get("initialized"),
+            "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
+            "messageTypeCount": obj.get("messageTypeCount"),
+            "messageTypeList": [DescriptorProtoAdapter.from_dict(_item) for _item in obj["messageTypeList"]] if obj.get("messageTypeList") is not None else None,
+            "messageTypeOrBuilderList": [DescriptorProtoOrBuilderAdapter.from_dict(_item) for _item in obj["messageTypeOrBuilderList"]] if obj.get("messageTypeOrBuilderList") is not None else None,
+            "name": obj.get("name"),
+            "nameBytes": ByteStringAdapter.from_dict(obj["nameBytes"]) if obj.get("nameBytes") is not None else None,
+            "options": FileOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None,
+            "optionsOrBuilder": FileOptionsOrBuilderAdapter.from_dict(obj["optionsOrBuilder"]) if obj.get("optionsOrBuilder") is not None else None,
+            "package": obj.get("package"),
+            "packageBytes": ByteStringAdapter.from_dict(obj["packageBytes"]) if obj.get("packageBytes") is not None else None,
+            "parserForType": obj.get("parserForType"),
+            "publicDependencyCount": obj.get("publicDependencyCount"),
+            "publicDependencyList": obj.get("publicDependencyList"),
+            "serializedSize": obj.get("serializedSize"),
+            "serviceCount": obj.get("serviceCount"),
+            "serviceList": [ServiceDescriptorProtoAdapter.from_dict(_item) for _item in obj["serviceList"]] if obj.get("serviceList") is not None else None,
+            "serviceOrBuilderList": [ServiceDescriptorProtoOrBuilderAdapter.from_dict(_item) for _item in obj["serviceOrBuilderList"]] if obj.get("serviceOrBuilderList") is not None else None,
+            "sourceCodeInfo": SourceCodeInfoAdapter.from_dict(obj["sourceCodeInfo"]) if obj.get("sourceCodeInfo") is not None else None,
+            "sourceCodeInfoOrBuilder": SourceCodeInfoOrBuilderAdapter.from_dict(obj["sourceCodeInfoOrBuilder"]) if obj.get("sourceCodeInfoOrBuilder") is not None else None,
+            "syntax": obj.get("syntax"),
+            "syntaxBytes": ByteStringAdapter.from_dict(obj["syntaxBytes"]) if obj.get("syntaxBytes") is not None else None,
+            "unknownFields": UnknownFieldSetAdapter.from_dict(obj["unknownFields"]) if obj.get("unknownFields") is not None else None,
+            "weakDependencyCount": obj.get("weakDependencyCount"),
+            "weakDependencyList": obj.get("weakDependencyList")
+        })
+        return _obj

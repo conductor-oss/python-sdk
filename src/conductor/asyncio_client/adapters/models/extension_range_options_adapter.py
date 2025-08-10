@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+from typing_extensions import Self
 
 from pydantic import Field
 
+from conductor.asyncio_client.adapters.models.declaration_adapter import (
+    DeclarationAdapter,
+)
 from conductor.asyncio_client.adapters.models.declaration_or_builder_adapter import (
     DeclarationOrBuilderAdapter,
 )
@@ -53,3 +57,35 @@ class ExtensionRangeOptionsAdapter(ExtensionRangeOptions):
     unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
         default=None, alias="unknownFields"
     )
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of ExtensionRangeOptions from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate({
+            "allFields": obj.get("allFields"),
+            "allFieldsRaw": obj.get("allFieldsRaw"),
+            "declarationCount": obj.get("declarationCount"),
+            "declarationList": [DeclarationAdapter.from_dict(_item) for _item in obj["declarationList"]] if obj.get("declarationList") is not None else None,
+            "declarationOrBuilderList": [DeclarationOrBuilderAdapter.from_dict(_item) for _item in obj["declarationOrBuilderList"]] if obj.get("declarationOrBuilderList") is not None else None,
+            "defaultInstanceForType": ExtensionRangeOptionsAdapter.from_dict(obj["defaultInstanceForType"]) if obj.get("defaultInstanceForType") is not None else None,
+            "descriptorForType": DescriptorAdapter.from_dict(obj["descriptorForType"]) if obj.get("descriptorForType") is not None else None,
+            "features": FeatureSetAdapter.from_dict(obj["features"]) if obj.get("features") is not None else None,
+            "featuresOrBuilder": FeatureSetOrBuilderAdapter.from_dict(obj["featuresOrBuilder"]) if obj.get("featuresOrBuilder") is not None else None,
+            "initializationErrorString": obj.get("initializationErrorString"),
+            "initialized": obj.get("initialized"),
+            "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
+            "parserForType": obj.get("parserForType"),
+            "serializedSize": obj.get("serializedSize"),
+            "uninterpretedOptionCount": obj.get("uninterpretedOptionCount"),
+            "uninterpretedOptionList": [UninterpretedOptionAdapter.from_dict(_item) for _item in obj["uninterpretedOptionList"]] if obj.get("uninterpretedOptionList") is not None else None,
+            "uninterpretedOptionOrBuilderList": [UninterpretedOptionOrBuilderAdapter.from_dict(_item) for _item in obj["uninterpretedOptionOrBuilderList"]] if obj.get("uninterpretedOptionOrBuilderList") is not None else None,
+            "unknownFields": UnknownFieldSetAdapter.from_dict(obj["unknownFields"]) if obj.get("unknownFields") is not None else None,
+            "verification": obj.get("verification")
+        })
+        return _obj

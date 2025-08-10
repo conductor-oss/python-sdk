@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from typing_extensions import Self
 from pydantic import Field
 
 from conductor.asyncio_client.adapters.models.descriptor_adapter import (
@@ -59,3 +60,45 @@ class FieldOptionsAdapter(FieldOptions):
     unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
         default=None, alias="unknownFields"
     )
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of FieldOptions from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate({
+            "allFields": obj.get("allFields"),
+            "allFieldsRaw": obj.get("allFieldsRaw"),
+            "ctype": obj.get("ctype"),
+            "debugRedact": obj.get("debugRedact"),
+            "defaultInstanceForType": FieldOptionsAdapter.from_dict(obj["defaultInstanceForType"]) if obj.get("defaultInstanceForType") is not None else None,
+            "deprecated": obj.get("deprecated"),
+            "descriptorForType": DescriptorAdapter.from_dict(obj["descriptorForType"]) if obj.get("descriptorForType") is not None else None,
+            "editionDefaultsCount": obj.get("editionDefaultsCount"),
+            "editionDefaultsList": [EditionDefaultAdapter.from_dict(_item) for _item in obj["editionDefaultsList"]] if obj.get("editionDefaultsList") is not None else None,
+            "editionDefaultsOrBuilderList": [EditionDefaultOrBuilderAdapter.from_dict(_item) for _item in obj["editionDefaultsOrBuilderList"]] if obj.get("editionDefaultsOrBuilderList") is not None else None,
+            "features": FeatureSetAdapter.from_dict(obj["features"]) if obj.get("features") is not None else None,
+            "featuresOrBuilder": FeatureSetOrBuilderAdapter.from_dict(obj["featuresOrBuilder"]) if obj.get("featuresOrBuilder") is not None else None,
+            "initializationErrorString": obj.get("initializationErrorString"),
+            "initialized": obj.get("initialized"),
+            "jstype": obj.get("jstype"),
+            "lazy": obj.get("lazy"),
+            "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
+            "packed": obj.get("packed"),
+            "parserForType": obj.get("parserForType"),
+            "retention": obj.get("retention"),
+            "serializedSize": obj.get("serializedSize"),
+            "targetsCount": obj.get("targetsCount"),
+            "targetsList": obj.get("targetsList"),
+            "uninterpretedOptionCount": obj.get("uninterpretedOptionCount"),
+            "uninterpretedOptionList": [UninterpretedOptionAdapter.from_dict(_item) for _item in obj["uninterpretedOptionList"]] if obj.get("uninterpretedOptionList") is not None else None,
+            "uninterpretedOptionOrBuilderList": [UninterpretedOptionOrBuilderAdapter.from_dict(_item) for _item in obj["uninterpretedOptionOrBuilderList"]] if obj.get("uninterpretedOptionOrBuilderList") is not None else None,
+            "unknownFields": UnknownFieldSetAdapter.from_dict(obj["unknownFields"]) if obj.get("unknownFields") is not None else None,
+            "unverifiedLazy": obj.get("unverifiedLazy"),
+            "weak": obj.get("weak")
+        })
+        return _obj

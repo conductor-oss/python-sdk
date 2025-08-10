@@ -24,6 +24,10 @@ from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
     UnknownFieldSetAdapter,
 )
 from conductor.asyncio_client.http.models import FileOptionsOrBuilder
+from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+    ByteStringAdapter,
+)
+from typing_extensions import Self
 
 
 class FileOptionsOrBuilderAdapter(FileOptionsOrBuilder):
@@ -47,3 +51,57 @@ class FileOptionsOrBuilderAdapter(FileOptionsOrBuilder):
     unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
         default=None, alias="unknownFields"
     )
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of FileOptionsOrBuilder from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate({
+            "allFields": obj.get("allFields"),
+            "ccEnableArenas": obj.get("ccEnableArenas"),
+            "ccGenericServices": obj.get("ccGenericServices"),
+            "csharpNamespace": obj.get("csharpNamespace"),
+            "csharpNamespaceBytes": ByteStringAdapter.from_dict(obj["csharpNamespaceBytes"]) if obj.get("csharpNamespaceBytes") is not None else None,
+            "defaultInstanceForType": MessageAdapter.from_dict(obj["defaultInstanceForType"]) if obj.get("defaultInstanceForType") is not None else None,
+            "deprecated": obj.get("deprecated"),
+            "descriptorForType": DescriptorAdapter.from_dict(obj["descriptorForType"]) if obj.get("descriptorForType") is not None else None,
+            "features": FeatureSetAdapter.from_dict(obj["features"]) if obj.get("features") is not None else None,
+            "featuresOrBuilder": FeatureSetOrBuilderAdapter.from_dict(obj["featuresOrBuilder"]) if obj.get("featuresOrBuilder") is not None else None,
+            "goPackage": obj.get("goPackage"),
+            "goPackageBytes": ByteStringAdapter.from_dict(obj["goPackageBytes"]) if obj.get("goPackageBytes") is not None else None,
+            "initializationErrorString": obj.get("initializationErrorString"),
+            "initialized": obj.get("initialized"),
+            "javaGenerateEqualsAndHash": obj.get("javaGenerateEqualsAndHash"),
+            "javaGenericServices": obj.get("javaGenericServices"),
+            "javaMultipleFiles": obj.get("javaMultipleFiles"),
+            "javaOuterClassname": obj.get("javaOuterClassname"),
+            "javaOuterClassnameBytes": ByteStringAdapter.from_dict(obj["javaOuterClassnameBytes"]) if obj.get("javaOuterClassnameBytes") is not None else None,
+            "javaPackage": obj.get("javaPackage"),
+            "javaPackageBytes": ByteStringAdapter.from_dict(obj["javaPackageBytes"]) if obj.get("javaPackageBytes") is not None else None,
+            "javaStringCheckUtf8": obj.get("javaStringCheckUtf8"),
+            "objcClassPrefix": obj.get("objcClassPrefix"),
+            "objcClassPrefixBytes": ByteStringAdapter.from_dict(obj["objcClassPrefixBytes"]) if obj.get("objcClassPrefixBytes") is not None else None,
+            "optimizeFor": obj.get("optimizeFor"),
+            "phpClassPrefix": obj.get("phpClassPrefix"),
+            "phpClassPrefixBytes": ByteStringAdapter.from_dict(obj["phpClassPrefixBytes"]) if obj.get("phpClassPrefixBytes") is not None else None,
+            "phpGenericServices": obj.get("phpGenericServices"),
+            "phpMetadataNamespace": obj.get("phpMetadataNamespace"),
+            "phpMetadataNamespaceBytes": ByteStringAdapter.from_dict(obj["phpMetadataNamespaceBytes"]) if obj.get("phpMetadataNamespaceBytes") is not None else None,
+            "phpNamespace": obj.get("phpNamespace"),
+            "phpNamespaceBytes": ByteStringAdapter.from_dict(obj["phpNamespaceBytes"]) if obj.get("phpNamespaceBytes") is not None else None,
+            "pyGenericServices": obj.get("pyGenericServices"),
+            "rubyPackage": obj.get("rubyPackage"),
+            "rubyPackageBytes": ByteStringAdapter.from_dict(obj["rubyPackageBytes"]) if obj.get("rubyPackageBytes") is not None else None,
+            "swiftPrefix": obj.get("swiftPrefix"),
+            "swiftPrefixBytes": ByteStringAdapter.from_dict(obj["swiftPrefixBytes"]) if obj.get("swiftPrefixBytes") is not None else None,
+            "uninterpretedOptionCount": obj.get("uninterpretedOptionCount"),
+            "uninterpretedOptionList": [UninterpretedOptionAdapter.from_dict(_item) for _item in obj["uninterpretedOptionList"]] if obj.get("uninterpretedOptionList") is not None else None,
+            "uninterpretedOptionOrBuilderList": [UninterpretedOptionOrBuilderAdapter.from_dict(_item) for _item in obj["uninterpretedOptionOrBuilderList"]] if obj.get("uninterpretedOptionOrBuilderList") is not None else None,
+            "unknownFields": UnknownFieldSetAdapter.from_dict(obj["unknownFields"]) if obj.get("unknownFields") is not None else None
+        })
+        return _obj

@@ -11,6 +11,7 @@ from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
     UnknownFieldSetAdapter,
 )
 from conductor.asyncio_client.http.models import FeatureSet
+from typing_extensions import Self
 
 
 class FeatureSetAdapter(FeatureSet):
@@ -25,3 +26,32 @@ class FeatureSetAdapter(FeatureSet):
     unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
         default=None, alias="unknownFields"
     )
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of FeatureSet from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate({
+            "allFields": obj.get("allFields"),
+            "allFieldsRaw": obj.get("allFieldsRaw"),
+            "defaultInstanceForType": FeatureSetAdapter.from_dict(obj["defaultInstanceForType"]) if obj.get("defaultInstanceForType") is not None else None,
+            "descriptorForType": DescriptorAdapter.from_dict(obj["descriptorForType"]) if obj.get("descriptorForType") is not None else None,
+            "enumType": obj.get("enumType"),
+            "fieldPresence": obj.get("fieldPresence"),
+            "initializationErrorString": obj.get("initializationErrorString"),
+            "initialized": obj.get("initialized"),
+            "jsonFormat": obj.get("jsonFormat"),
+            "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
+            "messageEncoding": obj.get("messageEncoding"),
+            "parserForType": obj.get("parserForType"),
+            "repeatedFieldEncoding": obj.get("repeatedFieldEncoding"),
+            "serializedSize": obj.get("serializedSize"),
+            "unknownFields": UnknownFieldSetAdapter.from_dict(obj["unknownFields"]) if obj.get("unknownFields") is not None else None,
+            "utf8Validation": obj.get("utf8Validation")
+        })
+        return _obj
