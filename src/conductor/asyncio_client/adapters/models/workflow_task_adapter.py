@@ -70,7 +70,7 @@ class WorkflowTaskAdapter(WorkflowTask):
                     (
                         _k,
                         (
-                            [WorkflowTask.from_dict(_item) for _item in _v]
+                            [WorkflowTaskAdapter.from_dict(_item) for _item in _v]
                             if _v is not None
                             else None
                         ),
@@ -78,7 +78,7 @@ class WorkflowTaskAdapter(WorkflowTask):
                     for _k, _v in obj.get("decisionCases", {}).items()
                 ),
                 "defaultCase": (
-                    [WorkflowTask.from_dict(_item) for _item in obj["defaultCase"]]
+                    [WorkflowTaskAdapter.from_dict(_item) for _item in obj["defaultCase"]]
                     if obj.get("defaultCase") is not None
                     else None
                 ),
@@ -94,7 +94,7 @@ class WorkflowTaskAdapter(WorkflowTask):
                 "expression": obj.get("expression"),
                 "forkTasks": (
                     [
-                        [WorkflowTask.from_dict(_inner_item) for _inner_item in _item]
+                        [WorkflowTaskAdapter.from_dict(_inner_item) for _inner_item in _item]
                         for _item in obj["forkTasks"]
                     ]
                     if obj.get("forkTasks") is not None
@@ -105,7 +105,7 @@ class WorkflowTaskAdapter(WorkflowTask):
                 "joinStatus": obj.get("joinStatus"),
                 "loopCondition": obj.get("loopCondition"),
                 "loopOver": (
-                    [WorkflowTask.from_dict(_item) for _item in obj["loopOver"]]
+                    [WorkflowTaskAdapter.from_dict(_item) for _item in obj["loopOver"]]
                     if obj.get("loopOver") is not None
                     else None
                 ),
