@@ -29,6 +29,9 @@ class WorkflowDefAdapter(WorkflowDef):
         default=None, alias="outputSchema"
     )
     input_schema: Optional[SchemaDefAdapter] = Field(default=None, alias="inputSchema")
+    rate_limit_config: Optional[RateLimitConfigAdapter] = Field(
+        default=None, alias="rateLimitConfig"
+    )
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

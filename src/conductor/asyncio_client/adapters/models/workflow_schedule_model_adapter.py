@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import Field
+from typing_extensions import Self
 
 from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
     StartWorkflowRequestAdapter,
@@ -16,3 +17,43 @@ class WorkflowScheduleModelAdapter(WorkflowScheduleModel):
         default=None, alias="startWorkflowRequest"
     )
     tags: Optional[List[TagAdapter]] = None
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of WorkflowScheduleModel from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate(
+            {
+                "createTime": obj.get("createTime"),
+                "createdBy": obj.get("createdBy"),
+                "cronExpression": obj.get("cronExpression"),
+                "description": obj.get("description"),
+                "name": obj.get("name"),
+                "orgId": obj.get("orgId"),
+                "paused": obj.get("paused"),
+                "pausedReason": obj.get("pausedReason"),
+                "queueMsgId": obj.get("queueMsgId"),
+                "runCatchupScheduleInstances": obj.get("runCatchupScheduleInstances"),
+                "scheduleEndTime": obj.get("scheduleEndTime"),
+                "scheduleStartTime": obj.get("scheduleStartTime"),
+                "startWorkflowRequest": (
+                    StartWorkflowRequestAdapter.from_dict(obj["startWorkflowRequest"])
+                    if obj.get("startWorkflowRequest") is not None
+                    else None
+                ),
+                "tags": (
+                    [TagAdapter.from_dict(_item) for _item in obj["tags"]]
+                    if obj.get("tags") is not None
+                    else None
+                ),
+                "updatedBy": obj.get("updatedBy"),
+                "updatedTime": obj.get("updatedTime"),
+                "zoneId": obj.get("zoneId"),
+            }
+        )
+        return _obj

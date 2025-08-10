@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from pydantic import Field
+from typing_extensions import Self
 
 from conductor.asyncio_client.adapters.models.task_mock_adapter import TaskMockAdapter
 from conductor.asyncio_client.adapters.models.workflow_def_adapter import (
@@ -23,3 +24,54 @@ class WorkflowTestRequestAdapter(WorkflowTestRequest):
         default=None, alias="workflowDef"
     )
     priority: Optional[int] = Field(default=None, alias="priority")
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of WorkflowTestRequest from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate(
+            {
+                "correlationId": obj.get("correlationId"),
+                "createdBy": obj.get("createdBy"),
+                "externalInputPayloadStoragePath": obj.get(
+                    "externalInputPayloadStoragePath"
+                ),
+                "idempotencyKey": obj.get("idempotencyKey"),
+                "idempotencyStrategy": obj.get("idempotencyStrategy"),
+                "input": obj.get("input"),
+                "name": obj.get("name"),
+                "priority": obj.get("priority"),
+                "subWorkflowTestRequest": (
+                    dict(
+                        (_k, WorkflowTestRequestAdapter.from_dict(_v))
+                        for _k, _v in obj["subWorkflowTestRequest"].items()
+                    )
+                    if obj.get("subWorkflowTestRequest") is not None
+                    else None
+                ),
+                "taskRefToMockOutput": dict(
+                    (
+                        _k,
+                        (
+                            [TaskMockAdapter.from_dict(_item) for _item in _v]
+                            if _v is not None
+                            else None
+                        ),
+                    )
+                    for _k, _v in obj.get("taskRefToMockOutput", {}).items()
+                ),
+                "taskToDomain": obj.get("taskToDomain"),
+                "version": obj.get("version"),
+                "workflowDef": (
+                    WorkflowDefAdapter.from_dict(obj["workflowDef"])
+                    if obj.get("workflowDef") is not None
+                    else None
+                ),
+            }
+        )
+        return _obj

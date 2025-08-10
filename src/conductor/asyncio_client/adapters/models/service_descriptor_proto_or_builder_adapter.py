@@ -3,7 +3,11 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from pydantic import Field
+from typing_extensions import Self
 
+from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+    ByteStringAdapter,
+)
 from conductor.asyncio_client.adapters.models.descriptor_adapter import (
     DescriptorAdapter,
 )
@@ -47,3 +51,69 @@ class ServiceDescriptorProtoOrBuilderAdapter(ServiceDescriptorProtoOrBuilder):
     unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
         default=None, alias="unknownFields"
     )
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of ServiceDescriptorProtoOrBuilder from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate(
+            {
+                "allFields": obj.get("allFields"),
+                "defaultInstanceForType": (
+                    MessageAdapter.from_dict(obj["defaultInstanceForType"])
+                    if obj.get("defaultInstanceForType") is not None
+                    else None
+                ),
+                "descriptorForType": (
+                    DescriptorAdapter.from_dict(obj["descriptorForType"])
+                    if obj.get("descriptorForType") is not None
+                    else None
+                ),
+                "initializationErrorString": obj.get("initializationErrorString"),
+                "initialized": obj.get("initialized"),
+                "methodCount": obj.get("methodCount"),
+                "methodList": (
+                    [
+                        MethodDescriptorProtoAdapter.from_dict(_item)
+                        for _item in obj["methodList"]
+                    ]
+                    if obj.get("methodList") is not None
+                    else None
+                ),
+                "methodOrBuilderList": (
+                    [
+                        MethodDescriptorProtoOrBuilderAdapter.from_dict(_item)
+                        for _item in obj["methodOrBuilderList"]
+                    ]
+                    if obj.get("methodOrBuilderList") is not None
+                    else None
+                ),
+                "name": obj.get("name"),
+                "nameBytes": (
+                    ByteStringAdapter.from_dict(obj["nameBytes"])
+                    if obj.get("nameBytes") is not None
+                    else None
+                ),
+                "options": (
+                    ServiceOptionsAdapter.from_dict(obj["options"])
+                    if obj.get("options") is not None
+                    else None
+                ),
+                "optionsOrBuilder": (
+                    ServiceOptionsOrBuilderAdapter.from_dict(obj["optionsOrBuilder"])
+                    if obj.get("optionsOrBuilder") is not None
+                    else None
+                ),
+                "unknownFields": (
+                    UnknownFieldSetAdapter.from_dict(obj["unknownFields"])
+                    if obj.get("unknownFields") is not None
+                    else None
+                ),
+            }
+        )
+        return _obj

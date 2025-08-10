@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from pydantic import Field
+from typing_extensions import Self
 
 from conductor.asyncio_client.adapters.models.cache_config_adapter import (
     CacheConfigAdapter,
@@ -45,3 +46,101 @@ class WorkflowTaskAdapter(WorkflowTask):
     decision_cases: Optional[Dict[str, List[WorkflowTaskAdapter]]] = Field(
         default=None, alias="decisionCases"
     )
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of WorkflowTask from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate(
+            {
+                "asyncComplete": obj.get("asyncComplete"),
+                "cacheConfig": (
+                    CacheConfigAdapter.from_dict(obj["cacheConfig"])
+                    if obj.get("cacheConfig") is not None
+                    else None
+                ),
+                "caseExpression": obj.get("caseExpression"),
+                "caseValueParam": obj.get("caseValueParam"),
+                "decisionCases": dict(
+                    (
+                        _k,
+                        (
+                            [WorkflowTask.from_dict(_item) for _item in _v]
+                            if _v is not None
+                            else None
+                        ),
+                    )
+                    for _k, _v in obj.get("decisionCases", {}).items()
+                ),
+                "defaultCase": (
+                    [WorkflowTask.from_dict(_item) for _item in obj["defaultCase"]]
+                    if obj.get("defaultCase") is not None
+                    else None
+                ),
+                "defaultExclusiveJoinTask": obj.get("defaultExclusiveJoinTask"),
+                "description": obj.get("description"),
+                "dynamicForkJoinTasksParam": obj.get("dynamicForkJoinTasksParam"),
+                "dynamicForkTasksInputParamName": obj.get(
+                    "dynamicForkTasksInputParamName"
+                ),
+                "dynamicForkTasksParam": obj.get("dynamicForkTasksParam"),
+                "dynamicTaskNameParam": obj.get("dynamicTaskNameParam"),
+                "evaluatorType": obj.get("evaluatorType"),
+                "expression": obj.get("expression"),
+                "forkTasks": (
+                    [
+                        [WorkflowTask.from_dict(_inner_item) for _inner_item in _item]
+                        for _item in obj["forkTasks"]
+                    ]
+                    if obj.get("forkTasks") is not None
+                    else None
+                ),
+                "inputParameters": obj.get("inputParameters"),
+                "joinOn": obj.get("joinOn"),
+                "joinStatus": obj.get("joinStatus"),
+                "loopCondition": obj.get("loopCondition"),
+                "loopOver": (
+                    [WorkflowTask.from_dict(_item) for _item in obj["loopOver"]]
+                    if obj.get("loopOver") is not None
+                    else None
+                ),
+                "name": obj.get("name"),
+                "onStateChange": dict(
+                    (
+                        _k,
+                        (
+                            [StateChangeEventAdapter.from_dict(_item) for _item in _v]
+                            if _v is not None
+                            else None
+                        ),
+                    )
+                    for _k, _v in obj.get("onStateChange", {}).items()
+                ),
+                "optional": obj.get("optional"),
+                "permissive": obj.get("permissive"),
+                "rateLimited": obj.get("rateLimited"),
+                "retryCount": obj.get("retryCount"),
+                "scriptExpression": obj.get("scriptExpression"),
+                "sink": obj.get("sink"),
+                "startDelay": obj.get("startDelay"),
+                "subWorkflowParam": (
+                    SubWorkflowParamsAdapter.from_dict(obj["subWorkflowParam"])
+                    if obj.get("subWorkflowParam") is not None
+                    else None
+                ),
+                "taskDefinition": (
+                    TaskDefAdapter.from_dict(obj["taskDefinition"])
+                    if obj.get("taskDefinition") is not None
+                    else None
+                ),
+                "taskReferenceName": obj.get("taskReferenceName"),
+                "type": obj.get("type"),
+                "workflowTaskType": obj.get("workflowTaskType"),
+            }
+        )
+        return _obj

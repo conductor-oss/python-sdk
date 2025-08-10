@@ -3,7 +3,11 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from pydantic import Field
+from typing_extensions import Self
 
+from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+    ByteStringAdapter,
+)
 from conductor.asyncio_client.adapters.models.descriptor_adapter import (
     DescriptorAdapter,
 )
@@ -33,3 +37,70 @@ class UninterpretedOptionOrBuilderAdapter(UninterpretedOptionOrBuilder):
     unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
         default=None, alias="unknownFields"
     )
+
+    @classmethod
+    def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
+        """Create an instance of UninterpretedOptionOrBuilder from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return cls.model_validate(obj)
+
+        _obj = cls.model_validate(
+            {
+                "aggregateValue": obj.get("aggregateValue"),
+                "aggregateValueBytes": (
+                    ByteStringAdapter.from_dict(obj["aggregateValueBytes"])
+                    if obj.get("aggregateValueBytes") is not None
+                    else None
+                ),
+                "allFields": obj.get("allFields"),
+                "defaultInstanceForType": (
+                    MessageAdapter.from_dict(obj["defaultInstanceForType"])
+                    if obj.get("defaultInstanceForType") is not None
+                    else None
+                ),
+                "descriptorForType": (
+                    DescriptorAdapter.from_dict(obj["descriptorForType"])
+                    if obj.get("descriptorForType") is not None
+                    else None
+                ),
+                "doubleValue": obj.get("doubleValue"),
+                "identifierValue": obj.get("identifierValue"),
+                "identifierValueBytes": (
+                    ByteStringAdapter.from_dict(obj["identifierValueBytes"])
+                    if obj.get("identifierValueBytes") is not None
+                    else None
+                ),
+                "initializationErrorString": obj.get("initializationErrorString"),
+                "initialized": obj.get("initialized"),
+                "nameCount": obj.get("nameCount"),
+                "nameList": (
+                    [NamePartAdapter.from_dict(_item) for _item in obj["nameList"]]
+                    if obj.get("nameList") is not None
+                    else None
+                ),
+                "nameOrBuilderList": (
+                    [
+                        NamePartOrBuilderAdapter.from_dict(_item)
+                        for _item in obj["nameOrBuilderList"]
+                    ]
+                    if obj.get("nameOrBuilderList") is not None
+                    else None
+                ),
+                "negativeIntValue": obj.get("negativeIntValue"),
+                "positiveIntValue": obj.get("positiveIntValue"),
+                "stringValue": (
+                    ByteStringAdapter.from_dict(obj["stringValue"])
+                    if obj.get("stringValue") is not None
+                    else None
+                ),
+                "unknownFields": (
+                    UnknownFieldSetAdapter.from_dict(obj["unknownFields"])
+                    if obj.get("unknownFields") is not None
+                    else None
+                ),
+            }
+        )
+        return _obj
