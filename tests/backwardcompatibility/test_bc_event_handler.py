@@ -239,3 +239,37 @@ def test_none_values_handling():
     assert result["condition"] is None
     assert result["active"] is None
     assert result["evaluator_type"] is None
+
+
+def test_backward_compatibility_without_description():
+    """Test backward compatibility when description field is not provided."""
+    # Test constructor without description parameter
+    handler = EventHandler(
+        name="bc_test",
+        event="test_event",
+        condition="test_condition",
+        actions=[],
+        active=True,
+        evaluator_type="javascript",
+    )
+    
+    assert handler.description is None
+    
+    result = handler.to_dict()
+    assert isinstance(result, dict)
+    
+    assert "description" in result
+    assert result["description"] is None
+    
+    assert result["name"] == "bc_test"
+    assert result["event"] == "test_event"
+    assert result["condition"] == "test_condition"
+    assert result["actions"] == []
+    assert result["active"]
+    assert result["evaluator_type"] == "javascript"
+    
+    handler.description = "added_description"
+    assert handler.description == "added_description"
+    
+    updated_result = handler.to_dict()
+    assert updated_result["description"] == "added_description"
