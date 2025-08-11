@@ -42,7 +42,7 @@ class Configuration:
 
     # Or with explicit parameters
     config = Configuration(
-        server_url='http://localhost:8080/api',
+        host='http://localhost:8080/api',
         auth_key='your_key',
         auth_secret='your_secret'
     )
@@ -51,7 +51,7 @@ class Configuration:
 
     def __init__(
         self,
-        server_url: Optional[str] = None,
+        host: Optional[str] = None,
         auth_key: Optional[str] = None,
         auth_secret: Optional[str] = None,
         debug: bool = False,
@@ -79,7 +79,7 @@ class Configuration:
 
         Parameters:
         -----------
-        server_url : str, optional
+        host : str, optional
             Conductor server URL. If not provided, reads from CONDUCTOR_SERVER_URL env var.
         auth_key : str, optional
             Authentication key ID. If not provided, reads from CONDUCTOR_AUTH_KEY env var.
@@ -96,13 +96,13 @@ class Configuration:
         """
 
         # Resolve server URL from parameter or environment variable
-        if server_url is not None:
-            self.server_url = server_url
+        if host is not None:
+            self.host = host
         else:
-            self.server_url = os.getenv("CONDUCTOR_SERVER_URL")
+            self.host = os.getenv("CONDUCTOR_SERVER_URL")
 
-        if self.server_url is None or self.server_url == "":
-            self.server_url = "http://localhost:8080/api"
+        if self.host is None or self.host == "":
+            self.host = "http://localhost:8080/api"
 
         # Resolve authentication from parameters or environment variables
         if auth_key is not None:
@@ -134,7 +134,7 @@ class Configuration:
 
         # Create the underlying HTTP configuration
         self._http_config = HttpConfiguration(
-            host=self.server_url,
+            host=self.host,
             api_key=api_key,
             api_key_prefix=api_key_prefix,
             username=username,
@@ -317,7 +317,7 @@ class Configuration:
     def host(self, value: str) -> None:
         """Set server host URL."""
         self._http_config.host = value
-        self.server_url = value
+        self.host = value
 
     @property
     def debug(self) -> bool:
