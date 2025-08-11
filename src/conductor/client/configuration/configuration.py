@@ -4,7 +4,7 @@ import os
 import time
 from typing import Optional
 
-from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
+from conductor.shared.configuration.settings.authentication_settings import AuthenticationSettings
 
 
 class Configuration:

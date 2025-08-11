@@ -99,13 +99,14 @@ def python_annotated_task(input) -> object:
 Now you can run your workers by calling a `TaskHandler`, example:
 
 ```python
-from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
+from conductor.shared.configuration.settings.authentication_settings import AuthenticationSettings
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.worker.worker import Worker
 
 #### Add these lines if running on a mac####
 from multiprocessing import set_start_method
+
 set_start_method('fork')
 ############################################
 

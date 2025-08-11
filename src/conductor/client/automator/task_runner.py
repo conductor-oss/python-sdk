@@ -5,7 +5,7 @@ import time
 import traceback
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.configuration.settings.metrics_settings import MetricsSettings
+from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api_client import ApiClient
 from conductor.client.http.models.task import Task

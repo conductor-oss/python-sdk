@@ -3,9 +3,10 @@
 ## Secret Client
 
 ### Initialization
+
 ```python
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
+from conductor.shared.configuration.settings.authentication_settings import AuthenticationSettings
 from conductor.client.orkes.orkes_secret_client import OrkesSecretClient
 
 configuration = Configuration(
