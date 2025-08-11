@@ -25,7 +25,8 @@ class EventHandler:
         'condition': 'str',
         'actions': 'list[Action]',
         'active': 'bool',
-        'evaluator_type': 'str'
+        'evaluator_type': 'str',
+        'description': 'str'
     }
 
     attribute_map = {
@@ -34,7 +35,8 @@ class EventHandler:
         'condition': 'condition',
         'actions': 'actions',
         'active': 'active',
-        'evaluator_type': 'evaluatorType'
+        'evaluator_type': 'evaluatorType',
+        'description': 'description'
     }
 
     name: str = field(default=None)
@@ -43,6 +45,7 @@ class EventHandler:
     actions: List[Any] = field(default=None)
     active: Optional[bool] = field(default=None)
     evaluator_type: Optional[str] = field(default=None)
+    description: Optional[str] = field(default=None)
     
     # Private backing fields for properties
     _name: str = field(init=False, repr=False, default=None)
@@ -51,12 +54,13 @@ class EventHandler:
     _actions: List[Any] = field(init=False, repr=False, default=None)
     _active: Optional[bool] = field(init=False, repr=False, default=None)
     _evaluator_type: Optional[str] = field(init=False, repr=False, default=None)
-    
+    _description: Optional[str] = field(init=False, repr=False, default=None)
+
     # For backward compatibility
     discriminator: InitVar[Any] = None
 
     def __init__(self, name=None, event=None, condition=None, actions=None, active=None,
-                 evaluator_type=None):  # noqa: E501
+                 evaluator_type=None, description=None):  # noqa: E501
         """EventHandler - a model defined in Swagger"""  # noqa: E501
         self._name = None
         self._event = None
@@ -67,6 +71,7 @@ class EventHandler:
         self.discriminator = None
         self.name = name
         self.event = event
+        self.description = None
         if condition is not None:
             self.condition = condition
         self.actions = actions
@@ -74,6 +79,8 @@ class EventHandler:
             self.active = active
         if evaluator_type is not None:
             self.evaluator_type = evaluator_type
+        if description is not None:
+            self.description = description
 
     def __post_init__(self, discriminator):
         # Initialize properties from dataclass fields if not already set by __init__
@@ -89,6 +96,8 @@ class EventHandler:
             self._active = self.active
         if self._evaluator_type is None and self.evaluator_type is not None:
             self._evaluator_type = self.evaluator_type
+        if self._description is None and self.description is not None:
+            self._description = self.description
 
     @property
     def name(self):
@@ -212,6 +221,27 @@ class EventHandler:
         """
 
         self._evaluator_type = evaluator_type
+
+    @property
+    def description(self):
+        """Gets the description of this EventHandler.  # noqa: E501
+
+
+        :return: The description of this EventHandler.  # noqa: E501
+        :rtype: str
+        """
+        return self._description
+
+    @description.setter
+    def description(self, description):
+        """Sets the description of this EventHandler.
+
+
+        :param description: The description of this EventHandler.  # noqa: E501
+        :type: str
+        """
+
+        self._description = description
 
     def to_dict(self):
         """Returns the model properties as a dict"""
