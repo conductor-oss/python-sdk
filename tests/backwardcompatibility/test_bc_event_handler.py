@@ -136,6 +136,7 @@ def test_to_dict_method_exists_and_works():
         actions=[],
         active=True,
         evaluator_type="javascript",
+        description="test_description",
     )
     # Verify method exists
     assert hasattr(handler, "to_dict")
@@ -151,6 +152,7 @@ def test_to_dict_method_exists_and_works():
         "actions",
         "active",
         "evaluator_type",
+        "description",
     }
     assert set(result.keys()) == expected_keys
     # Verify values
@@ -160,6 +162,7 @@ def test_to_dict_method_exists_and_works():
     assert result["actions"] == []
     assert result["active"]
     assert result["evaluator_type"] == "javascript"
+    assert result["description"] == "test_description"
 
 
 def test_to_str_method_exists_and_works():
