@@ -1,7 +1,7 @@
 import pytest
 
 from conductor.client.http.models import SubjectRef
-from conductor.client.http.models.subject_ref import SubjectType
+from conductor.shared.http.enums.subject_type import SubjectType
 
 
 def test_constructor_signature_compatibility():

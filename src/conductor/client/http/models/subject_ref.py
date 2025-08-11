@@ -1,18 +1,9 @@
 import pprint
 import re  # noqa: F401
-from enum import Enum
 from dataclasses import dataclass, field, InitVar
-from typing import Dict, List, Optional, Any
-from deprecated import deprecated
+from typing import Optional
 
 import six
-
-
-class SubjectType(str, Enum):
-    USER = "USER",
-    ROLE = "ROLE",
-    GROUP = "GROUP",
-    TAG = "TAG"
 
 
 @dataclass
