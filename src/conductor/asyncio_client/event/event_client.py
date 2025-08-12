@@ -4,7 +4,7 @@ from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.shared.event.configuration import QueueConfiguration
 
 
-class EventClient:
+class AsyncEventClient:
     def __init__(self, api_client: ApiClient):
         self.client = EventResourceApiAdapter(api_client)
 
