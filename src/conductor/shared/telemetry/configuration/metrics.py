@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import logging
 import os
 from pathlib import Path
@@ -14,19 +15,20 @@ def get_default_temporary_folder() -> str:
 class MetricsSettings:
     """
     Async metrics settings adapter for Orkes Conductor Asyncio Client.
-    
+
     This adapter provides configuration for metrics collection in async environments,
     following the same pattern as other async adapters in the asyncio client.
     """
-    
+
     def __init__(
-            self,
-            directory: Optional[str] = None,
-            file_name: str = "metrics.log",
-            update_interval: float = 0.1):
+        self,
+        directory: Optional[str] = None,
+        file_name: str = "metrics.log",
+        update_interval: float = 0.1,
+    ):
         """
         Initialize metrics settings.
-        
+
         Parameters:
         -----------
         directory : str, optional
@@ -49,6 +51,7 @@ class MetricsSettings:
                 os.makedirs(dir, exist_ok=True)
             except Exception as e:
                 logger.warning(
-                    "Failed to create metrics temporary folder, reason: %s", e)
+                    "Failed to create metrics temporary folder, reason: %s", e
+                )
 
-        self.directory = dir 
+        self.directory = dir

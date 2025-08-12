@@ -1,7 +1,8 @@
 from typing import Any, Dict
 
-from conductor.client.event.queue.queue_configuration import QueueConfiguration
-from conductor.client.event.queue.queue_worker_configuration import QueueWorkerConfiguration
+from conductor.shared.event.configuration.queue import QueueConfiguration
+from conductor.shared.event.configuration.queue_worker import \
+    QueueWorkerConfiguration
 
 
 class KafkaQueueConfiguration(QueueConfiguration):
@@ -22,8 +23,7 @@ class KafkaConsumerConfiguration(QueueWorkerConfiguration):
     def __init__(self, bootstrap_servers_config: str):
         super().__init__()
         super().add_configuration(
-            key="bootstrap.servers",
-            value=bootstrap_servers_config
+            key="bootstrap.servers", value=bootstrap_servers_config
         )
 
 
@@ -31,6 +31,5 @@ class KafkaProducerConfiguration(QueueWorkerConfiguration):
     def __init__(self, bootstrap_servers_config: str):
         super().__init__()
         super().add_configuration(
-            key="bootstrap.servers",
-            value=bootstrap_servers_config
+            key="bootstrap.servers", value=bootstrap_servers_config
         )
