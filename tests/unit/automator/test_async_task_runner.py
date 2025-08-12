@@ -1,17 +1,19 @@
 import logging
+from datetime import datetime
 import time
 
 import pytest
 from requests.structures import CaseInsensitiveDict
 
-from conductor.client.automator.task_runner import TaskRunner
-from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.api.task_resource_api import TaskResourceApi
-from conductor.client.http.models.task import Task
-from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
-from conductor.client.worker.worker_interface import DEFAULT_POLLING_INTERVAL
-from tests.unit.resources.workers import ClassWorker, OldFaultyExecutionWorker
+from conductor.asyncio_client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
+from conductor.asyncio_client.automator.task_runner import AsyncTaskRunner
+from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.adapters.api.task_resource_api import TaskResourceApiAdapter
+from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
+from conductor.asyncio_client.adapters.models.task_result_adapter import TaskResultAdapter
+from conductor.shared.http.enums import TaskResultStatus
+from conductor.asyncio_client.worker.worker_interface import DEFAULT_POLLING_INTERVAL
+from tests.unit.resources.workers import ClassWorker2, FaultyExecutionWorker
 
 
 @pytest.fixture(autouse=True)
@@ -22,40 +24,40 @@ def disable_logging():
 
 
 def get_valid_task_runner_with_worker_config(worker_config=None):
-    return TaskRunner(configuration=Configuration(), worker=get_valid_worker())
+    return AsyncTaskRunner(configuration=Configuration(), worker=get_valid_worker())
 
 
 def get_valid_task_runner_with_worker_config_and_domain(domain):
-    return TaskRunner(
+    return AsyncTaskRunner(
         configuration=Configuration(), worker=get_valid_worker(domain=domain)
     )
 
 
 def get_valid_task_runner_with_worker_config_and_poll_interval(poll_interval):
-    return TaskRunner(
+    return AsyncTaskRunner(
         configuration=Configuration(),
         worker=get_valid_worker(poll_interval=poll_interval),
     )
 
 
 def get_valid_task_runner():
-    return TaskRunner(configuration=Configuration(), worker=get_valid_worker())
+    return AsyncTaskRunner(configuration=Configuration(), worker=get_valid_worker())
 
 
 def get_valid_roundrobin_task_runner():
-    return TaskRunner(
+    return AsyncTaskRunner(
         configuration=Configuration(), worker=get_valid_multi_task_worker()
     )
 
 
 def get_valid_task():
-    return Task(
+    return TaskAdapter(
         task_id="VALID_TASK_ID", workflow_instance_id="VALID_WORKFLOW_INSTANCE_ID"
     )
 
 
 def get_valid_task_result():
-    return TaskResult(
+    return TaskResultAdapter(
         task_id="VALID_TASK_ID",
         workflow_instance_id="VALID_WORKFLOW_INSTANCE_ID",
         worker_id=get_valid_worker().get_identity(),
@@ -73,11 +75,11 @@ def get_valid_task_result():
 
 
 def get_valid_multi_task_worker():
-    return ClassWorker(["task1", "task2", "task3", "task4", "task5", "task6"])
+    return ClassWorker2(["task1", "task2", "task3", "task4", "task5", "task6"])
 
 
 def get_valid_worker(domain=None, poll_interval=None):
-    cw = ClassWorker("task")
+    cw = ClassWorker2("task")
     cw.domain = domain
     cw.poll_interval = poll_interval
     return cw
@@ -85,7 +87,7 @@ def get_valid_worker(domain=None, poll_interval=None):
 
 def test_initialization_with_invalid_worker():
     with pytest.raises(Exception, match="Invalid worker"):
-        TaskRunner(
+        AsyncTaskRunner(
             configuration=Configuration("http://localhost:8080/api"), worker=None
         )
 
@@ -178,123 +180,141 @@ def test_initialization_with_specific_polling_interval_in_env_var(monkeypatch):
     )
 
 
-def test_run_once(mocker):
+@pytest.mark.asyncio
+async def test_run_once(mocker):
     expected_time = get_valid_worker().get_polling_interval_in_seconds()
-    mocker.patch.object(TaskResourceApi, "poll", return_value=get_valid_task())
+    mocker.patch.object(TaskResourceApiAdapter, "poll", return_value=get_valid_task())
     mocker.patch.object(
-        TaskResourceApi, "update_task", return_value="VALID_UPDATE_TASK_RESPONSE"
+        TaskResourceApiAdapter, "update_task", return_value="VALID_UPDATE_TASK_RESPONSE"
     )
     task_runner = get_valid_task_runner()
     start_time = time.time()
-    task_runner.run_once()
+    await task_runner.run_once()
     finish_time = time.time()
     spent_time = finish_time - start_time
     assert spent_time > expected_time
 
 
-def test_run_once_roundrobin(mocker):
-    mocker.patch.object(TaskResourceApi, "poll", return_value=get_valid_task())
-    mock_update_task = mocker.patch.object(TaskResourceApi, "update_task")
+@pytest.mark.asyncio
+async def test_run_once_roundrobin(mocker):
+    mocker.patch.object(TaskResourceApiAdapter, "poll", return_value=get_valid_task())
+    mock_update_task = mocker.patch.object(TaskResourceApiAdapter, "update_task")
     mock_update_task.return_value = "VALID_UPDATE_TASK_RESPONSE"
     task_runner = get_valid_roundrobin_task_runner()
     for i in range(6):
         current_task_name = task_runner.worker.get_task_definition_name()
-        task_runner.run_once()
+        await task_runner.run_once()
         assert (
             current_task_name
             == ["task1", "task2", "task3", "task4", "task5", "task6"][i]
         )
 
 
-def test_poll_task(mocker):
+@pytest.mark.asyncio
+async def test_poll_task(mocker):
     expected_task = get_valid_task()
-    mocker.patch.object(TaskResourceApi, "poll", return_value=get_valid_task())
+    mocker.patch.object(TaskResourceApiAdapter, "poll", return_value=get_valid_task())
     task_runner = get_valid_task_runner()
-    task = task_runner._TaskRunner__poll_task()
+    task = await task_runner._AsyncTaskRunner__poll_task()
     assert task == expected_task
 
 
-def test_poll_task_with_faulty_task_api(mocker):
+@pytest.mark.asyncio
+async def test_poll_task_with_faulty_task_api(mocker):
     expected_task = None
-    mocker.patch.object(TaskResourceApi, "poll", side_effect=Exception())
+    mocker.patch.object(TaskResourceApiAdapter, "poll", side_effect=Exception())
     task_runner = get_valid_task_runner()
-    task = task_runner._TaskRunner__poll_task()
+    task = await task_runner._AsyncTaskRunner__poll_task()
     assert task == expected_task
 
 
-def test_execute_task_with_invalid_task():
+@pytest.mark.asyncio
+async def test_execute_task_with_invalid_task():
     task_runner = get_valid_task_runner()
-    task_result = task_runner._TaskRunner__execute_task(None)
+    task_result = await task_runner._AsyncTaskRunner__execute_task(None)
     assert task_result is None
 
 
-def test_execute_task_with_faulty_execution_worker(mocker):
-    worker = OldFaultyExecutionWorker("task")
-    expected_task_result = TaskResult(
-        task_id="VALID_TASK_ID",
-        workflow_instance_id="VALID_WORKFLOW_INSTANCE_ID",
-        worker_id=worker.get_identity(),
-        status=TaskResultStatus.FAILED,
-        reason_for_incompletion="faulty execution",
-        logs=mocker.ANY,
-    )
-    task_runner = TaskRunner(configuration=Configuration(), worker=worker)
+@pytest.mark.asyncio
+async def test_execute_task_with_faulty_execution_worker(mocker):
+    worker = FaultyExecutionWorker("task")
+    task_runner = AsyncTaskRunner(configuration=Configuration(), worker=worker)
     task = get_valid_task()
-    task_result = task_runner._TaskRunner__execute_task(task)
-    assert task_result == expected_task_result
+    task_result = await task_runner._AsyncTaskRunner__execute_task(task)
+    
+    # Check the task result properties
+    assert task_result.task_id == "VALID_TASK_ID"
+    assert task_result.workflow_instance_id == "VALID_WORKFLOW_INSTANCE_ID"
+    assert task_result.worker_id == worker.get_identity()
+    assert task_result.status == TaskResultStatus.FAILED
+    assert task_result.reason_for_incompletion == "faulty execution"
     assert task_result.logs is not None
+    assert len(task_result.logs) == 1
+    
+    # Check the log entry
+    log_entry = task_result.logs[0]
+    assert log_entry.task_id == "VALID_TASK_ID"
+    assert log_entry.log is not None
+    assert "faulty execution" in log_entry.log
+    assert log_entry.created_time is not None
 
 
-def test_execute_task():
+@pytest.mark.asyncio
+async def test_execute_task():
     expected_task_result = get_valid_task_result()
     worker = get_valid_worker()
-    task_runner = TaskRunner(configuration=Configuration(), worker=worker)
+    task_runner = AsyncTaskRunner(configuration=Configuration(), worker=worker)
     task = get_valid_task()
-    task_result = task_runner._TaskRunner__execute_task(task)
+    task_result = await task_runner._AsyncTaskRunner__execute_task(task)
     assert task_result == expected_task_result
 
 
-def test_update_task_with_invalid_task_result():
+@pytest.mark.asyncio
+async def test_update_task_with_invalid_task_result():
     expected_response = None
     task_runner = get_valid_task_runner()
-    response = task_runner._TaskRunner__update_task(None)
+    response = await task_runner._AsyncTaskRunner__update_task(None)
     assert response == expected_response
 
 
-def test_update_task_with_faulty_task_api(mocker):
+@pytest.mark.asyncio
+async def test_update_task_with_faulty_task_api(mocker):
     mocker.patch("time.sleep", return_value=None)
-    mocker.patch.object(TaskResourceApi, "update_task", side_effect=Exception())
+    mocker.patch.object(TaskResourceApiAdapter, "update_task", side_effect=Exception())
     task_runner = get_valid_task_runner()
     task_result = get_valid_task_result()
-    response = task_runner._TaskRunner__update_task(task_result)
+    response = await task_runner._AsyncTaskRunner__update_task(task_result)
     assert response is None
 
 
-def test_update_task(mocker):
+@pytest.mark.asyncio
+async def test_update_task(mocker):
     mocker.patch.object(
-        TaskResourceApi, "update_task", return_value="VALID_UPDATE_TASK_RESPONSE"
+        TaskResourceApiAdapter, "update_task", return_value="VALID_UPDATE_TASK_RESPONSE"
     )
     task_runner = get_valid_task_runner()
     task_result = get_valid_task_result()
-    response = task_runner._TaskRunner__update_task(task_result)
+    response = await task_runner._AsyncTaskRunner__update_task(task_result)
     assert response == "VALID_UPDATE_TASK_RESPONSE"
 
 
-def test_wait_for_polling_interval_with_faulty_worker(mocker):
+@pytest.mark.asyncio
+async def test_wait_for_polling_interval_with_faulty_worker(mocker):
     expected_exception = Exception("Failed to get polling interval")
     mocker.patch.object(
-        ClassWorker, "get_polling_interval_in_seconds", side_effect=expected_exception
+        ClassWorker2, "get_polling_interval_in_seconds", side_effect=expected_exception
     )
     task_runner = get_valid_task_runner()
     with pytest.raises(Exception, match="Failed to get polling interval"):
-        task_runner._TaskRunner__wait_for_polling_interval()
+        await task_runner._AsyncTaskRunner__wait_for_polling_interval()
 
 
-def test_wait_for_polling_interval():
+@pytest.mark.asyncio
+async def test_wait_for_polling_interval():
     expected_time = get_valid_worker().get_polling_interval_in_seconds()
     task_runner = get_valid_task_runner()
     start_time = time.time()
-    task_runner._TaskRunner__wait_for_polling_interval()
+    await task_runner._AsyncTaskRunner__wait_for_polling_interval()
     finish_time = time.time()
     spent_time = finish_time - start_time
     assert spent_time > expected_time

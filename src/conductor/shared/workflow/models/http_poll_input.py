@@ -23,7 +23,7 @@ class HttpPollInput(BaseModel):
     polling_strategy: str = Field("FIXED", alias="pollingStrategy")
 
     class Config:
-        allow_population_by_field_name = True
+        validate_by_name = True
         use_enum_values = True
         arbitrary_types_allowed = True
         json_encoders: ClassVar[Dict[Type[Any], Callable[[Any], Any]]] = {

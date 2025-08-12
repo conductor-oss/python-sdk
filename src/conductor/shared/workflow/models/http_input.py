@@ -18,6 +18,6 @@ class HttpInput(BaseModel):
     body: Optional[Any] = Field(None, alias="body")
 
     class Config:
-        allow_population_by_field_name = True
+        validate_by_name = True
         use_enum_values = True
         arbitrary_types_allowed = True

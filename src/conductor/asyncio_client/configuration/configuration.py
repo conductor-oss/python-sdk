@@ -154,6 +154,15 @@ class Configuration:
             **kwargs,
         )
 
+        # Debug switch and logging setup
+        self.__debug = debug
+        if self.__debug:
+            self.__log_level = logging.DEBUG
+        else:
+            self.__log_level = logging.INFO
+        # Log format
+        self.__logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
+        
         # Setup logging
         self.logger = logging.getLogger(__name__)
         if debug:
@@ -336,8 +345,10 @@ class Configuration:
         self._http_config.debug = value
         if value:
             self.logger.setLevel(logging.DEBUG)
+            self.__log_level = logging.DEBUG
         else:
             self.logger.setLevel(logging.WARNING)
+            self.__log_level = logging.INFO
 
     @property
     def api_key(self) -> Dict[str, str]:
@@ -419,6 +430,21 @@ class Configuration:
     def retries(self, value: Optional[int]) -> None:
         """Set number of retries."""
         self._http_config.retries = value
+
+    @property
+    def logger_format(self) -> str:
+        """Get logger format."""
+        return self.__logger_format
+
+    @logger_format.setter
+    def logger_format(self, value: str) -> None:
+        """Set logger format."""
+        self.__logger_format = value
+
+    @property
+    def log_level(self) -> int:
+        """Get log level."""
+        return self.__log_level
 
     def apply_logging_config(self, log_format : Optional[str] = None, level = None):
         """Apply logging configuration for the application."""

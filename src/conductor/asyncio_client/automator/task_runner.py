@@ -14,7 +14,7 @@ from conductor.asyncio_client.adapters.models.task_exec_log_adapter import \
 from conductor.asyncio_client.adapters.models.task_result_adapter import \
     TaskResultAdapter
 from conductor.asyncio_client.configuration import Configuration
-from conductor.asyncio_client.http.api.task_resource_api import TaskResourceApi
+from conductor.asyncio_client.adapters.api.task_resource_api import TaskResourceApiAdapter
 from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.http.exceptions import UnauthorizedException
 from conductor.asyncio_client.telemetry.metrics_collector import \
@@ -43,7 +43,7 @@ class AsyncTaskRunner:
         self.metrics_collector = None
         if metrics_settings is not None:
             self.metrics_collector = MetricsCollector(metrics_settings)
-        self.task_client = TaskResourceApi(ApiClient(configuration=self.configuration))
+        self.task_client = TaskResourceApiAdapter(ApiClient(configuration=self.configuration))
 
     async def run(self) -> None:
         if self.configuration is not None:
