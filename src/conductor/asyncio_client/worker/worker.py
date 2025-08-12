@@ -41,10 +41,9 @@ def is_callable_input_parameter_a_task(
         return False
     parameter = parameters[next(iter(parameters.keys()))]
     return (
-        parameter.annotation == object_type
-        or parameter.annotation == parameter.empty
+        parameter.annotation in {object_type, parameter.empty}
         or parameter.annotation is object
-    )  # noqa: PLR1714
+    )
 
 
 def is_callable_return_value_of_type(

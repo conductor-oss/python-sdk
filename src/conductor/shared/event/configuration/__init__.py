@@ -6,9 +6,9 @@ from conductor.shared.event.configuration.queue_worker import \
     QueueWorkerConfiguration
 
 __all__ = [
-    "KafkaQueueConfiguration",
     "KafkaConsumerConfiguration",
     "KafkaProducerConfiguration",
+    "KafkaQueueConfiguration",
     "QueueConfiguration",
     "QueueWorkerConfiguration",
 ]

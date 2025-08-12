@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 class MetricsCollector:
     """
     Async metrics collector for Orkes Conductor Asyncio Client.
-    
+
     This collector provides async metrics collection capabilities using Prometheus
     and follows the async pattern used throughout the asyncio client.
     """
-    
+
     counters: ClassVar[Dict[str, Counter]] = {}
     gauges: ClassVar[Dict[str, Gauge]] = {}
     registry = CollectorRegistry()
@@ -31,7 +31,7 @@ class MetricsCollector:
     def __init__(self, settings: MetricsSettings):
         """
         Initialize the async metrics collector.
-        
+
         Parameters:
         -----------
         settings : MetricsSettings
@@ -47,10 +47,10 @@ class MetricsCollector:
     async def provide_metrics(settings: MetricsSettings) -> None:
         """
         Async method to provide metrics collection.
-        
+
         This method runs continuously in the background, writing metrics
         to a file at regular intervals.
-        
+
         Parameters:
         -----------
         settings : MetricsSettings
@@ -58,14 +58,14 @@ class MetricsCollector:
         """
         if settings is None:
             return
-            
+
         OUTPUT_FILE_PATH: str = os.path.join(
             settings.directory,
             settings.file_name
         )
         registry = CollectorRegistry()
         MultiProcessCollector(registry)
-        
+
         while True:
             try:
                 write_to_textfile(
@@ -73,8 +73,8 @@ class MetricsCollector:
                     registry
                 )
                 await asyncio.sleep(settings.update_interval)
-            except Exception as e:
-                logger.error(f"Error writing metrics to file: {e}")
+            except Exception as e:  # noqa: PERF203
+                logger.error("Error writing metrics to file: %s", e)
                 await asyncio.sleep(settings.update_interval)
 
     async def increment_task_poll(self, task_type: str) -> None:

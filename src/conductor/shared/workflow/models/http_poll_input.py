@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional, Type, Callable
 
 from pydantic import BaseModel, Field
 
@@ -26,7 +26,7 @@ class HttpPollInput(BaseModel):
         allow_population_by_field_name = True
         use_enum_values = True
         arbitrary_types_allowed = True
-        json_encoders = {HttpMethod: lambda v: v.value}
+        json_encoders: ClassVar[Dict[Type[Any], Callable[[Any], Any]]] = {HttpMethod: lambda v: v.value}
 
     def deep_copy(self) -> HttpPollInput:
         """Mimics deepcopy behavior in your original __init__."""

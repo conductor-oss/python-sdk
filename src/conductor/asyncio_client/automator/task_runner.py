@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import os
 import sys
 import time
 import traceback
+from typing import Optional
 
 from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
 from conductor.asyncio_client.adapters.models.task_exec_log_adapter import (
@@ -70,7 +73,7 @@ class AsyncTaskRunner:
         except Exception:
             pass
 
-    async def __poll_task(self) -> TaskAdapter | None:
+    async def __poll_task(self) -> Optional[TaskAdapter]:
         task_definition_name = self.worker.get_task_definition_name()
         if self.worker.paused():
             logger.debug("Stop polling task for: %s", task_definition_name)
@@ -120,7 +123,7 @@ class AsyncTaskRunner:
             )
         return task
 
-    async def __execute_task(self, task: TaskAdapter) -> TaskResultAdapter | None:
+    async def __execute_task(self, task: TaskAdapter) -> Optional[TaskResultAdapter]:
         if not isinstance(task, TaskAdapter):
             return None
         task_definition_name = self.worker.get_task_definition_name()

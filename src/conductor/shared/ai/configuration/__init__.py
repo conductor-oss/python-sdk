@@ -4,8 +4,8 @@ from conductor.shared.ai.configuration.pinecone_config import PineconeConfig
 from conductor.shared.ai.configuration.azure_openai_config import AzureOpenAIConfig
 
 __all__ = [
-    "OpenAIConfig",
-    "WeaviateConfig",
-    "PineconeConfig",
     "AzureOpenAIConfig",
+    "OpenAIConfig",
+    "PineconeConfig",
+    "WeaviateConfig",
 ]

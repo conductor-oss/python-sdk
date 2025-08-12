@@ -324,7 +324,7 @@ class AsyncConductorWorkflow:
 
         updated_task_list = []
         for current, next_task in zip(
-            workflow_task_list, workflow_task_list[1:] + [None]
+            workflow_task_list, [*workflow_task_list[1:], None]
         ):
             updated_task_list.append(current)
 
