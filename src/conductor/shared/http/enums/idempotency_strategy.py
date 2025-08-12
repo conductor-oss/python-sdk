@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class IdempotencyStrategy(str, Enum):
-    FAIL = "FAIL",
+    FAIL = ("FAIL",)
     RETURN_EXISTING = "RETURN_EXISTING"
 
     def __str__(self) -> str:

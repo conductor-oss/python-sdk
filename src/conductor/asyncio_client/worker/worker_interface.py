@@ -5,9 +5,8 @@ import socket
 from typing import Union
 
 from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
-from conductor.asyncio_client.adapters.models.task_result_adapter import (
-    TaskResultAdapter,
-)
+from conductor.asyncio_client.adapters.models.task_result_adapter import \
+    TaskResultAdapter
 
 DEFAULT_POLLING_INTERVAL = 100  # ms
 

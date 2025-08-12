@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from conductor.shared.ai.configuration.interfaces.integration_config import IntegrationConfig
+from conductor.shared.ai.configuration.interfaces.integration_config import \
+    IntegrationConfig
 
 
 class AzureOpenAIConfig(IntegrationConfig):
@@ -10,7 +11,4 @@ class AzureOpenAIConfig(IntegrationConfig):
         self.endpoint = endpoint
 
     def to_dict(self) -> dict:
-        return {
-            "api_key": self.api_key,
-            "endpoint": self.endpoint
-        }
+        return {"api_key": self.api_key, "endpoint": self.endpoint}

@@ -1,27 +1,22 @@
 from __future__ import annotations
 
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 from uuid import uuid4
 
-from conductor.asyncio_client.adapters.models.integration_api_update_adapter import (
-    IntegrationApiUpdateAdapter,
-)
-from conductor.asyncio_client.adapters.models.integration_update_adapter import (
-    IntegrationUpdateAdapter,
-)
+from conductor.asyncio_client.adapters.models.integration_api_update_adapter import \
+    IntegrationApiUpdateAdapter
+from conductor.asyncio_client.adapters.models.integration_update_adapter import \
+    IntegrationUpdateAdapter
 from conductor.asyncio_client.http.exceptions import NotFoundException
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 
 if TYPE_CHECKING:
-    from conductor.asyncio_client.adapters.models.message_template_adapter import (
-        MessageTemplateAdapter,
-    )
+    from conductor.asyncio_client.adapters.models.message_template_adapter import \
+        MessageTemplateAdapter
     from conductor.asyncio_client.configuration import Configuration
-    from conductor.shared.ai.configuration.interfaces.integration_config import (
-        IntegrationConfig,
-    )
-    from conductor.shared.ai.enums import VectorDB
-    from conductor.shared.ai.enums import LLMProvider
+    from conductor.shared.ai.configuration.interfaces.integration_config import \
+        IntegrationConfig
+    from conductor.shared.ai.enums import LLMProvider, VectorDB
 
 NOT_FOUND_STATUS = 404
 

@@ -12,21 +12,11 @@ from requests.structures import CaseInsensitiveDict
 
 from conductor.client.configuration.configuration import Configuration
 
-logger = logging.getLogger(
-    Configuration.get_logging_formatted_name(
-        __name__
-    )
-)
+logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
-simple_types = {
-    int, float, str, bool, datetime.date, datetime.datetime, object
-}
-dict_types = {
-    dict, typing.Dict, CaseInsensitiveDict
-}
-collection_types = {
-    list, List, typing.Set
-}
+simple_types = {int, float, str, bool, datetime.date, datetime.datetime, object}
+dict_types = {dict, typing.Dict, CaseInsensitiveDict}
+collection_types = {list, List, typing.Set}
 
 
 def convert_from_dict_or_list(cls: type, data: typing.Union[dict, list]) -> object:
@@ -52,10 +42,15 @@ def convert_from_dict(cls: type, data: dict) -> object:
         return from_dict(data_class=cls, data=data)
 
     typ = type(data)
-    if not ((str(typ).startswith("dict[") or
-             str(typ).startswith("typing.Dict[") or
-             str(typ).startswith("requests.structures.CaseInsensitiveDict[") or
-             typ is dict or str(typ).startswith("OrderedDict["))):
+    if not (
+        (
+            str(typ).startswith("dict[")
+            or str(typ).startswith("typing.Dict[")
+            or str(typ).startswith("requests.structures.CaseInsensitiveDict[")
+            or typ is dict
+            or str(typ).startswith("OrderedDict[")
+        )
+    ):
         data = {}
 
     members = inspect.signature(cls.__init__).parameters
@@ -72,7 +67,11 @@ def convert_from_dict(cls: type, data: dict) -> object:
                 kwargs[member] = data[member]
             else:
                 kwargs[member] = members[member].default
-        elif str(typ).startswith("typing.List[") or str(typ).startswith("typing.Set[") or str(typ).startswith("list["):
+        elif (
+            str(typ).startswith("typing.List[")
+            or str(typ).startswith("typing.Set[")
+            or str(typ).startswith("list[")
+        ):
             values = []
 
             generic_type = object
@@ -80,10 +79,13 @@ def convert_from_dict(cls: type, data: dict) -> object:
                 generic_type = generic_types[0]
             values = [get_value(generic_type, item) for item in data[member]]
             kwargs[member] = values
-        elif (str(typ).startswith("dict[") or
-              str(typ).startswith("typing.Dict[") or
-              str(typ).startswith("requests.structures.CaseInsensitiveDict[") or
-              typ is dict or str(typ).startswith("OrderedDict[")):
+        elif (
+            str(typ).startswith("dict[")
+            or str(typ).startswith("typing.Dict[")
+            or str(typ).startswith("requests.structures.CaseInsensitiveDict[")
+            or typ is dict
+            or str(typ).startswith("OrderedDict[")
+        ):
 
             values = {}
             generic_type = object
@@ -111,11 +113,19 @@ def convert_from_dict(cls: type, data: dict) -> object:
 def get_value(typ: type, val: object) -> object:
     if typ in simple_types:
         return val
-    elif str(typ).startswith("typing.List[") or str(typ).startswith("typing.Set[") or str(typ).startswith("list["):
+    elif (
+        str(typ).startswith("typing.List[")
+        or str(typ).startswith("typing.Set[")
+        or str(typ).startswith("list[")
+    ):
         values = [get_value(type(item), item) for item in val]
         return values
-    elif str(typ).startswith("dict[") or str(typ).startswith(
-            "typing.Dict[") or str(typ).startswith("requests.structures.CaseInsensitiveDict[") or typ is dict:
+    elif (
+        str(typ).startswith("dict[")
+        or str(typ).startswith("typing.Dict[")
+        or str(typ).startswith("requests.structures.CaseInsensitiveDict[")
+        or typ is dict
+    ):
         values = {}
         for k in val:
             v = val[k]

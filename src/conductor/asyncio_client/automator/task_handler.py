@@ -10,10 +10,12 @@ from typing import List, Optional
 
 from conductor.asyncio_client.automator.task_runner import AsyncTaskRunner
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.telemetry.metrics_collector import MetricsCollector
+from conductor.asyncio_client.telemetry.metrics_collector import \
+    MetricsCollector
 from conductor.asyncio_client.worker.worker import Worker
 from conductor.asyncio_client.worker.worker_interface import WorkerInterface
-from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
+from conductor.shared.configuration.settings.metrics_settings import \
+    MetricsSettings
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 

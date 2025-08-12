@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from conductor.shared.ai.configuration.interfaces.integration_config import IntegrationConfig
+from conductor.shared.ai.configuration.interfaces.integration_config import \
+    IntegrationConfig
 
 
 class WeaviateConfig(IntegrationConfig):
@@ -11,7 +12,4 @@ class WeaviateConfig(IntegrationConfig):
         self.classname = classname
 
     def to_dict(self) -> dict:
-        return {
-            "api_key": self.api_key,
-            "endpoint": self.endpoint
-        }
+        return {"api_key": self.api_key, "endpoint": self.endpoint}

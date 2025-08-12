@@ -3,7 +3,8 @@ from __future__ import annotations
 import os
 from typing import Optional
 
-from conductor.shared.ai.configuration.interfaces.integration_config import IntegrationConfig
+from conductor.shared.ai.configuration.interfaces.integration_config import \
+    IntegrationConfig
 
 
 class OpenAIConfig(IntegrationConfig):
@@ -14,6 +15,4 @@ class OpenAIConfig(IntegrationConfig):
         self.api_key = api_key
 
     def to_dict(self) -> dict:
-        return {
-            "api_key": self.api_key
-        }
+        return {"api_key": self.api_key}

@@ -9,19 +9,19 @@ import traceback
 from typing import Optional
 
 from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
-from conductor.asyncio_client.adapters.models.task_exec_log_adapter import (
-    TaskExecLogAdapter,
-)
-from conductor.asyncio_client.adapters.models.task_result_adapter import (
-    TaskResultAdapter,
-)
+from conductor.asyncio_client.adapters.models.task_exec_log_adapter import \
+    TaskExecLogAdapter
+from conductor.asyncio_client.adapters.models.task_result_adapter import \
+    TaskResultAdapter
 from conductor.asyncio_client.configuration import Configuration
 from conductor.asyncio_client.http.api.task_resource_api import TaskResourceApi
 from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.http.exceptions import UnauthorizedException
-from conductor.asyncio_client.telemetry.metrics_collector import MetricsCollector
+from conductor.asyncio_client.telemetry.metrics_collector import \
+    MetricsCollector
 from conductor.asyncio_client.worker.worker_interface import WorkerInterface
-from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
+from conductor.shared.configuration.settings.metrics_settings import \
+    MetricsSettings
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 

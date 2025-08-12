@@ -24,9 +24,7 @@ class HttpTask(TaskInterface):
         if json_path is None:
             return "${" + f"{self.task_reference_name}.output.response.headers" + "}"
         return (
-            "${"
-             f"{self.task_reference_name}.output.response.headers.{json_path}"
-             "}"
+            "${" + f"{self.task_reference_name}.output.response.headers.{json_path}" + "}"
         )
 
     def body(self, json_path: Optional[str] = None) -> str:
