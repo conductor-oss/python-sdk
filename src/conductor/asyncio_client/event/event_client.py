@@ -1,4 +1,4 @@
-from conductor.shared.event.configuration.queue import QueueConfiguration
+from conductor.shared.event.configuration import QueueConfiguration
 from conductor.asyncio_client.adapters.api.event_resource_api import EventResourceApiAdapter
 from conductor.asyncio_client.http.api_client import ApiClient
 

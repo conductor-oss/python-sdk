@@ -10,9 +10,7 @@ from prometheus_client import write_to_textfile
 from prometheus_client.multiprocess import MultiProcessCollector
 
 from conductor.shared.telemetry.configuration.metrics import MetricsSettings
-from conductor.shared.telemetry.enums.metric_documentation import MetricDocumentation
-from conductor.shared.telemetry.enums.metric_label import MetricLabel
-from conductor.shared.telemetry.enums.metric_name import MetricName
+from conductor.shared.telemetry.enums import MetricDocumentation, MetricLabel, MetricName
 
 logger = logging.getLogger(__name__)
 
