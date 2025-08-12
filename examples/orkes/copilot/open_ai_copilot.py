@@ -1,16 +1,14 @@
 import json
-import os
 import random
 import string
 from typing import List, Dict
 
-from conductor.client.ai.configuration import LLMProvider
-from conductor.client.ai.integrations import OpenAIConfig
+from conductor.shared.ai.configuration import OpenAIConfig
 from conductor.client.ai.orchestrator import AIOrchestrator
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models import TaskDef, TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums.task_result_status import TaskResultStatus
 from conductor.client.http.models.workflow_state_update import WorkflowStateUpdate
 from conductor.client.orkes_clients import OrkesClients
 from conductor.client.worker.worker_task import worker_task

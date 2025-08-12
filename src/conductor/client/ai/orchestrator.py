@@ -13,8 +13,9 @@ from conductor.client.orkes_clients import OrkesClients
 if TYPE_CHECKING:
     from conductor.client.http.models.prompt_template import PromptTemplate
     from conductor.client.configuration.configuration import Configuration
-    from conductor.client.ai.integrations import IntegrationConfig
-    from conductor.client.ai.configuration import LLMProvider, VectorDB
+    from conductor.shared.ai.configuration.interfaces.integration_config import IntegrationConfig
+    from conductor.shared.ai.enums import VectorDB
+    from conductor.shared.ai.enums import LLMProvider
 
 NOT_FOUND_STATUS = 404
 

@@ -11,6 +11,7 @@ from conductor.asyncio_client.adapters.models.integration_def_adapter import Int
 from conductor.asyncio_client.adapters.models.integration_update_adapter import IntegrationUpdateAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.adapters.models.event_log_adapter import EventLogAdapter
+from conductor.asyncio_client.http.exceptions import NotFoundException
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
@@ -26,9 +27,18 @@ class OrkesIntegrationClient(OrkesBaseClient):
         """Create or update an integration provider"""
         await self.integration_api.save_integration_provider(name, integration_update)
 
+    async def save_integration(self, integration_name, integration_details: IntegrationUpdateAdapter) -> None:
+        await self.integration_api.save_integration_provider(integration_details, integration_name)
+
     async def get_integration_provider(self, name: str) -> IntegrationDefAdapter:
         """Get integration provider by name"""
         return await self.integration_api.get_integration_provider(name)
+
+    async def get_integration(self, integration_name: str) -> IntegrationDefAdapter | None:
+        try:
+            return await self.get_integration_provider(integration_name)
+        except NotFoundException:
+            return None
 
     async def delete_integration_provider(self, name: str) -> None:
         """Delete an integration provider"""

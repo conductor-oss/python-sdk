@@ -414,6 +414,20 @@ class Configuration:
         """Set number of retries."""
         self._http_config.retries = value
 
+    def apply_logging_config(self, log_format : Optional[str] = None, level = None):
+        if log_format is None:
+            log_format = self.logger_format
+        if level is None:
+            level = self.__log_level
+        logging.basicConfig(
+            format=log_format,
+            level=level
+        )
+
+    @staticmethod
+    def get_logging_formatted_name(name):
+        return f"[{os.getpid()}] {name}"
+
     # For any other attributes, delegate to the HTTP configuration
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to underlying HTTP configuration."""

@@ -38,7 +38,8 @@ Quick example below:
 
 ```python
 from conductor.client.http.models import Task, TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums.task_result_status import TaskResultStatus
+
 
 def execute(task: Task) -> TaskResult:
     task_result = TaskResult(

@@ -20,6 +20,7 @@ from conductor.asyncio_client.orkes.orkes_secret_client import \
 from conductor.asyncio_client.orkes.orkes_task_client import OrkesTaskClient
 from conductor.asyncio_client.orkes.orkes_workflow_client import \
     OrkesWorkflowClient
+from conductor.asyncio_client.workflow.executor.workflow_executor import AsyncWorkflowExecutor
 
 
 class OrkesClients:
@@ -269,3 +270,23 @@ class OrkesClients:
             - Managing schema metadata and documentation
         """
         return OrkesSchemaClient(self.configuration)
+
+    def get_workflow_executor(self) -> AsyncWorkflowExecutor:
+        """
+        Create and return an asynchronous workflow executor.
+
+        The workflow executor provides high-level functionality for executing and
+        managing workflows programmatically in an asynchronous environment. It is
+        designed for running workflows end-to-end without manually managing
+        individual client interactions.
+
+        Returns:
+        --------
+        AsyncWorkflowExecutor
+            Executor for asynchronous workflow operations including:
+            - Starting workflows with input parameters
+            - Waiting for workflow completion
+            - Retrieving workflow output and status
+            - Handling execution asynchronously for integration in async applications
+        """
+        return AsyncWorkflowExecutor(self.configuration)
