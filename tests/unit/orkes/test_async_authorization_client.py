@@ -56,7 +56,7 @@ WF_NAME = "workflow_name"
 
 @pytest.fixture(scope="module")
 def authorization_client():
-    configuration = Configuration("http://localhost:8080/api")
+    configuration = Configuration(host="http://localhost:8080/api")
     return OrkesAuthorizationClient(configuration)
 
 

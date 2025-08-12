@@ -2,7 +2,7 @@ from ctypes import cdll
 
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.worker.worker_interface import WorkerInterface
 
 

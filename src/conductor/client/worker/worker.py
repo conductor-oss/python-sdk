@@ -16,7 +16,7 @@ from conductor.client.http.api_client import ApiClient
 from conductor.client.http.models import TaskExecLog
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 from conductor.shared.worker.exception import NonRetryableException
 from conductor.client.worker.worker_interface import WorkerInterface, DEFAULT_POLLING_INTERVAL
 

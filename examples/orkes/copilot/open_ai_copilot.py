@@ -8,7 +8,7 @@ from conductor.client.ai.orchestrator import AIOrchestrator
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models import TaskDef, TaskResult
-from conductor.shared.http.enums.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.http.models.workflow_state_update import WorkflowStateUpdate
 from conductor.client.orkes_clients import OrkesClients
 from conductor.client.worker.worker_task import worker_task

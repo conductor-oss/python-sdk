@@ -132,6 +132,8 @@ class Configuration:
             # Use the auth_key as the API key for X-Authorization header
             api_key["api_key"] = self.auth_key
 
+        self.logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
+
         # Create the underlying HTTP configuration
         self._http_config = HttpConfiguration(
             host=self.host,
@@ -311,13 +313,16 @@ class Configuration:
     @property
     def host(self) -> str:
         """Get server host URL."""
-        return self._http_config.host
+        if getattr(self, "_http_config", None) is not None:
+            return self._http_config.host
+        return getattr(self, "_host", None)
 
     @host.setter
     def host(self, value: str) -> None:
         """Set server host URL."""
-        self._http_config.host = value
-        self.host = value
+        if getattr(self, "_http_config", None) is not None:
+            self._http_config.host = value
+        self._host = value
 
     @property
     def debug(self) -> bool:
@@ -415,6 +420,7 @@ class Configuration:
         self._http_config.retries = value
 
     def apply_logging_config(self, log_format : Optional[str] = None, level = None):
+        """Apply logging configuration for the application."""
         if log_format is None:
             log_format = self.logger_format
         if level is None:
@@ -426,9 +432,12 @@ class Configuration:
 
     @staticmethod
     def get_logging_formatted_name(name):
+        """Format a logger name with the current process ID."""
         return f"[{os.getpid()}] {name}"
 
     # For any other attributes, delegate to the HTTP configuration
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to underlying HTTP configuration."""
+        if "_http_config" not in self.__dict__ or self._http_config is None:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
         return getattr(self._http_config, name)

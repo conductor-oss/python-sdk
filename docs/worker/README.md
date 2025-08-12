@@ -38,7 +38,7 @@ Quick example below:
 
 ```python
 from conductor.client.http.models import Task, TaskResult
-from conductor.shared.http.enums.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 
 
 def execute(task: Task) -> TaskResult:
@@ -60,7 +60,7 @@ The class must implement `WorkerInterface` class, which requires an `execute` me
 
 ```python
 from conductor.client.http.models import Task, TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.worker.worker_interface import WorkerInterface
 
 class SimplePythonWorker(WorkerInterface):
@@ -349,7 +349,7 @@ and [simple_cpp_worker.py](src/example/worker/cpp/simple_cpp_worker.py) for comp
 ```python
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.worker.worker_interface import WorkerInterface
 from ctypes import cdll
 

@@ -1,7 +1,7 @@
 import pytest
 
 from conductor.client.http.models import Task, TaskResult, WorkflowTask
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 
 
 @pytest.fixture
