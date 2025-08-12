@@ -14,7 +14,7 @@ from conductor.shared.telemetry.enums import (MetricDocumentation, MetricLabel,
 logger = logging.getLogger(__name__)
 
 
-class MetricsCollector:
+class AsyncMetricsCollector:
     """
     Async metrics collector for Orkes Conductor Asyncio Client.
 
