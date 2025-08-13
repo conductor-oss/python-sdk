@@ -11,7 +11,7 @@ from typing import List, Optional
 from conductor.asyncio_client.automator.task_runner import AsyncTaskRunner
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.telemetry.metrics_collector import \
-    MetricsCollector
+    AsyncMetricsCollector
 from conductor.asyncio_client.worker.worker import Worker
 from conductor.asyncio_client.worker.worker_interface import WorkerInterface
 from conductor.shared.configuration.settings.metrics_settings import \
@@ -135,7 +135,7 @@ class TaskHandler:
             return
         self.metrics_provider_process = Process(
             target=self.coroutine_as_process_target,
-            args=(MetricsCollector.provide_metrics, metrics_settings),
+            args=(AsyncMetricsCollector.provide_metrics, metrics_settings),
         )
         logger.info("Created MetricsProvider process")
 
