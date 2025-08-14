@@ -5,24 +5,18 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.byte_string_adapter import \
-    ByteStringAdapter
-from conductor.asyncio_client.adapters.models.descriptor_adapter import \
-    DescriptorAdapter
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
-    UnknownFieldSetAdapter
 from conductor.asyncio_client.http.models import EditionDefault
 
 
 class EditionDefaultAdapter(EditionDefault):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional[EditionDefaultAdapter] = Field(
+    default_instance_for_type: Optional["EditionDefaultAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional[DescriptorAdapter] = Field(
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="descriptorForType"
     )
-    unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
         default=None, alias="unknownFields"
     )
 
@@ -34,6 +28,13 @@ class EditionDefaultAdapter(EditionDefault):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.byte_string_adapter import \
+            ByteStringAdapter
+        from conductor.asyncio_client.adapters.models.descriptor_adapter import \
+            DescriptorAdapter
+        from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
+            UnknownFieldSetAdapter
 
         _obj = cls.model_validate(
             {

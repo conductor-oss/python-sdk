@@ -5,41 +5,29 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.descriptor_adapter import \
-    DescriptorAdapter
-from conductor.asyncio_client.adapters.models.feature_set_adapter import \
-    FeatureSetAdapter
-from conductor.asyncio_client.adapters.models.feature_set_or_builder_adapter import \
-    FeatureSetOrBuilderAdapter
-from conductor.asyncio_client.adapters.models.uninterpreted_option_adapter import \
-    UninterpretedOptionAdapter
-from conductor.asyncio_client.adapters.models.uninterpreted_option_or_builder_adapter import \
-    UninterpretedOptionOrBuilderAdapter
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
-    UnknownFieldSetAdapter
 from conductor.asyncio_client.http.models import EnumValueOptions
 
 
 class EnumValueOptionsAdapter(EnumValueOptions):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
     all_fields_raw: Optional[Dict[str, Any]] = Field(default=None, alias="allFieldsRaw")
-    default_instance_for_type: Optional[EnumValueOptionsAdapter] = Field(
+    default_instance_for_type: Optional["EnumValueOptionsAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional[DescriptorAdapter] = Field(
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="descriptorForType"
     )
-    features: Optional[FeatureSetAdapter] = None
-    features_or_builder: Optional[FeatureSetOrBuilderAdapter] = Field(
+    features: Optional["FeatureSetAdapter"] = None
+    features_or_builder: Optional["FeatureSetOrBuilderAdapter"] = Field(
         default=None, alias="featuresOrBuilder"
     )
-    uninterpreted_option_list: Optional[List[UninterpretedOptionAdapter]] = Field(
+    uninterpreted_option_list: Optional[List["UninterpretedOptionAdapter"]] = Field(
         default=None, alias="uninterpretedOptionList"
     )
     uninterpreted_option_or_builder_list: Optional[
-        List[UninterpretedOptionOrBuilderAdapter]
+        List["UninterpretedOptionOrBuilderAdapter"]
     ] = Field(default=None, alias="uninterpretedOptionOrBuilderList")
-    unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
         default=None, alias="unknownFields"
     )
 
@@ -51,6 +39,19 @@ class EnumValueOptionsAdapter(EnumValueOptions):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.descriptor_adapter import \
+            DescriptorAdapter
+        from conductor.asyncio_client.adapters.models.feature_set_adapter import \
+            FeatureSetAdapter
+        from conductor.asyncio_client.adapters.models.feature_set_or_builder_adapter import \
+            FeatureSetOrBuilderAdapter
+        from conductor.asyncio_client.adapters.models.uninterpreted_option_adapter import \
+            UninterpretedOptionAdapter
+        from conductor.asyncio_client.adapters.models.uninterpreted_option_or_builder_adapter import \
+            UninterpretedOptionOrBuilderAdapter
+        from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
+            UnknownFieldSetAdapter
 
         _obj = cls.model_validate(
             {

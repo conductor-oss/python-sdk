@@ -4,22 +4,14 @@ from typing import Any, Dict, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import \
-    EnumDescriptorAdapter
-from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_adapter import \
-    EnumValueDescriptorProtoAdapter
-from conductor.asyncio_client.adapters.models.enum_value_options_adapter import \
-    EnumValueOptionsAdapter
-from conductor.asyncio_client.adapters.models.file_descriptor_adapter import \
-    FileDescriptorAdapter
 from conductor.asyncio_client.http.models import EnumValueDescriptor
 
 
 class EnumValueDescriptorAdapter(EnumValueDescriptor):
-    file: Optional[FileDescriptorAdapter] = None
-    options: Optional[EnumValueOptionsAdapter] = None
-    proto: Optional[EnumValueDescriptorProtoAdapter] = None
-    type: Optional[EnumDescriptorAdapter] = None
+    file: Optional["FileDescriptorAdapter"] = None
+    options: Optional["EnumValueOptionsAdapter"] = None
+    proto: Optional["EnumValueDescriptorProtoAdapter"] = None
+    type: Optional["EnumDescriptorAdapter"] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -29,6 +21,15 @@ class EnumValueDescriptorAdapter(EnumValueDescriptor):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import \
+            EnumDescriptorAdapter
+        from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_adapter import \
+            EnumValueDescriptorProtoAdapter
+        from conductor.asyncio_client.adapters.models.enum_value_options_adapter import \
+            EnumValueOptionsAdapter
+        from conductor.asyncio_client.adapters.models.file_descriptor_adapter import \
+            FileDescriptorAdapter
 
         _obj = cls.model_validate(
             {

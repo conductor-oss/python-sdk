@@ -4,14 +4,12 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter
-from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter
 from conductor.asyncio_client.http.models import ConductorUser
 
 
 class ConductorUserAdapter(ConductorUser):
-    groups: Optional[List[GroupAdapter]] = None
-    roles: Optional[List[RoleAdapter]] = None
+    groups: Optional[List["GroupAdapter"]] = None
+    roles: Optional[List["RoleAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -22,6 +20,8 @@ class ConductorUserAdapter(ConductorUser):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
+        from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter
+        from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter
         _obj = cls.model_validate(
             {
                 "applicationUser": obj.get("applicationUser"),
