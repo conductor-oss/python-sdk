@@ -13,13 +13,14 @@ from conductor.asyncio_client.adapters.models.workflow_schedule_adapter import \
     WorkflowScheduleAdapter
 from conductor.asyncio_client.adapters.models.workflow_schedule_model_adapter import \
     WorkflowScheduleModelAdapter
+from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesSchedulerClient(OrkesBaseClient):
-    def __init__(self, configuration: Configuration):
-        super(OrkesSchedulerClient, self).__init__(configuration)
+    def __init__(self, configuration: Configuration, api_client: ApiClient):
+        super().__init__(configuration, api_client)
 
     # Core Schedule Operations
     async def save_schedule(

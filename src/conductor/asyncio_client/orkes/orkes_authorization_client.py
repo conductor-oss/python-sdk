@@ -13,13 +13,14 @@ from conductor.asyncio_client.adapters.models.upsert_group_request_adapter impor
     UpsertGroupRequestAdapter
 from conductor.asyncio_client.adapters.models.upsert_user_request_adapter import \
     UpsertUserRequestAdapter
+from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesAuthorizationClient(OrkesBaseClient):
-    def __init__(self, configuration: Configuration):
-        super(OrkesAuthorizationClient, self).__init__(configuration)
+    def __init__(self, configuration: Configuration, api_client: ApiClient):
+        super().__init__(configuration, api_client)
 
     # User Operations
     async def create_user(

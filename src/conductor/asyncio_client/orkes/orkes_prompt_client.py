@@ -9,13 +9,14 @@ from conductor.asyncio_client.adapters.models.prompt_template_test_request_adapt
     PromptTemplateTestRequestAdapter,
 )
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesPromptClient(OrkesBaseClient):
-    def __init__(self, configuration: Configuration):
-        super(OrkesPromptClient, self).__init__(configuration)
+    def __init__(self, configuration: Configuration, api_client: ApiClient):
+        super().__init__(configuration, api_client)
 
     # Message Template Operations
     async def save_message_template(

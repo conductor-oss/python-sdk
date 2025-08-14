@@ -11,13 +11,14 @@ from conductor.asyncio_client.adapters.models.task_exec_log_adapter import \
     TaskExecLogAdapter
 from conductor.asyncio_client.adapters.models.task_result_adapter import \
     TaskResultAdapter
+from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesTaskClient(OrkesBaseClient):
-    def __init__(self, configuration: Configuration):
-        super(OrkesTaskClient, self).__init__(configuration)
+    def __init__(self, configuration: Configuration, api_client: ApiClient):
+        super().__init__(configuration, api_client)
 
     # Task Polling Operations
     async def poll_for_task(

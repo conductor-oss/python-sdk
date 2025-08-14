@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Optional, List, Dict
 
+from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.adapters.models.integration_adapter import IntegrationAdapter
 from conductor.asyncio_client.adapters.models.integration_api_adapter import \
@@ -18,9 +19,10 @@ from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 class OrkesIntegrationClient(OrkesBaseClient):
     def __init__(
             self,
-            configuration: Configuration
+            configuration: Configuration,
+            api_client: ApiClient
     ):
-        super(OrkesIntegrationClient, self).__init__(configuration)
+        super().__init__(configuration, api_client)
 
     # Integration Provider Operations
     async def save_integration_provider(self, name: str, integration_update: IntegrationUpdateAdapter) -> None:
