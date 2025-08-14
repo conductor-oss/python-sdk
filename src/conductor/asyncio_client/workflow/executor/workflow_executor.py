@@ -34,11 +34,10 @@ from conductor.asyncio_client.orkes.orkes_workflow_client import \
 
 
 class AsyncWorkflowExecutor:
-    def __init__(self, configuration: Configuration):
-        api_client = ApiClient(configuration)
+    def __init__(self, configuration: Configuration, api_client: ApiClient):
         self.metadata_client = MetadataResourceApiAdapter(api_client)
         self.task_client = TaskResourceApiAdapter(api_client)
-        self.workflow_client = OrkesWorkflowClient(configuration)
+        self.workflow_client = OrkesWorkflowClient(configuration, api_client)
 
     async def register_workflow(
         self, workflow: ExtendedWorkflowDefAdapter, overwrite: Optional[bool] = None

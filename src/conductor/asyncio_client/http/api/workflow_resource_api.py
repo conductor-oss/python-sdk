@@ -19,7 +19,6 @@ from typing_extensions import Annotated
 from pydantic import StrictBool, StrictInt, StrictStr, field_validator
 from typing import Any, Dict, List, Optional
 
-from conductor.asyncio_client.adapters.models.workflow_run_adapter import WorkflowRunAdapter
 from conductor.asyncio_client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
 from conductor.asyncio_client.http.models.rerun_workflow_request import RerunWorkflowRequest
 from conductor.asyncio_client.http.models.scrollable_search_result_workflow_summary import ScrollableSearchResultWorkflowSummary
@@ -591,7 +590,7 @@ class WorkflowResourceApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> WorkflowRunAdapter:
+    ) -> WorkflowRun:
         """Execute a workflow synchronously
 
 
@@ -643,7 +642,7 @@ class WorkflowResourceApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "WorkflowRunAdapter",
+            '200': "WorkflowRun",
         }
         response_data = await self.api_client.call_api(
             *_param,
@@ -677,7 +676,7 @@ class WorkflowResourceApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[WorkflowRunAdapter]:
+    ) -> ApiResponse[WorkflowRun]:
         """Execute a workflow synchronously
 
 
@@ -729,7 +728,7 @@ class WorkflowResourceApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "WorkflowRunAdapter",
+            '200': "WorkflowRun",
         }
         response_data = await self.api_client.call_api(
             *_param,

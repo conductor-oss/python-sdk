@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.orkes.orkes_authorization_client import \
     OrkesAuthorizationClient
 from conductor.asyncio_client.orkes.orkes_integration_client import \
@@ -82,7 +83,7 @@ class OrkesClients:
         The configuration adapter with environment variable support
     """
 
-    def __init__(self, configuration: Optional[Configuration] = None):
+    def __init__(self, api_client: ApiClient, configuration: Optional[Configuration] = None):
         """
         Initialize the OrkesClients factory with the provided configuration.
 
@@ -97,6 +98,7 @@ class OrkesClients:
         if configuration is None:
             configuration = Configuration()
         self.configuration = configuration
+        self.api_client = api_client
 
     def get_workflow_client(self) -> OrkesWorkflowClient:
         """
@@ -115,7 +117,7 @@ class OrkesClients:
             - Querying workflow status and execution history
             - Managing workflow state and variables
         """
-        return OrkesWorkflowClient(self.configuration)
+        return OrkesWorkflowClient(self.configuration, self.api_client)
 
     def get_authorization_client(self) -> OrkesAuthorizationClient:
         """
@@ -289,4 +291,4 @@ class OrkesClients:
             - Retrieving workflow output and status
             - Handling execution asynchronously for integration in async applications
         """
-        return AsyncWorkflowExecutor(self.configuration)
+        return AsyncWorkflowExecutor(self.configuration, self.api_client)

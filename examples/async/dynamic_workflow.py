@@ -9,6 +9,7 @@ import asyncio
 
 from conductor.asyncio_client.automator.task_handler import TaskHandler
 from conductor.asyncio_client.configuration import Configuration
+from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 from conductor.asyncio_client.worker.worker_task import worker_task
 from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
@@ -34,7 +35,9 @@ async def main():
     task_handler = TaskHandler(configuration=api_config)
     task_handler.start_processes()
 
-    clients = OrkesClients(configuration=api_config)
+    api_client = ApiClient(configuration=api_config._http_config)
+
+    clients = OrkesClients(configuration=api_config, api_client=api_client)
     workflow_executor = clients.get_workflow_executor()
     workflow = AsyncConductorWorkflow(
         name="dynamic_workflow", version=1, executor=workflow_executor
@@ -58,6 +61,7 @@ async def main():
     print(
         f"check the workflow execution here: {api_config.ui_host}/execution/{workflow_run.workflow_id}"
     )
+    await api_client.close()
     task_handler.stop_processes()
 
 
