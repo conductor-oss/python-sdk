@@ -137,8 +137,8 @@ class TaskInterface():
 
     def to_workflow_task(self) -> WorkflowTask:
         cache_config = None
-        if self._cache_ttl_second > 0 and self._cache_key is not None:
-            cache_config = CacheConfig(key=self._cache_key, ttl_in_second=self._cache_ttl_second)
+        if self.cache_ttl_second > 0 and self.cache_key is not None:
+            cache_config = CacheConfig(key=self.cache_key, ttl_in_second=self.cache_ttl_second)
         return WorkflowTask(
             name=self._name,
             task_reference_name=self._task_reference_name,

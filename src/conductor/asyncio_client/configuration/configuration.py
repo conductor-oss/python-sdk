@@ -132,6 +132,10 @@ class Configuration:
             # Use the auth_key as the API key for X-Authorization header
             api_key["api_key"] = self.auth_key
 
+        self.__ui_host = os.getenv("CONDUCTOR_UI_SERVER_URL")
+        if self.__ui_host is None:
+            self.__ui_host = self.server_url.replace("/api", "")
+
         self.logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 
         # Create the underlying HTTP configuration
@@ -461,6 +465,10 @@ class Configuration:
     def get_logging_formatted_name(name):
         """Format a logger name with the current process ID."""
         return f"[{os.getpid()}] {name}"
+
+    @property
+    def ui_host(self):
+        return self.__ui_host
 
     # For any other attributes, delegate to the HTTP configuration
     def __getattr__(self, name: str) -> Any:

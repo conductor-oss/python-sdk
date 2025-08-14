@@ -5,18 +5,24 @@ from typing import Any, Dict, List, Optional, Union
 
 from shortuuid import uuid
 
-from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import \
-    StartWorkflowRequestAdapter
-from conductor.asyncio_client.adapters.models.sub_workflow_params_adapter import \
-    SubWorkflowParamsAdapter
-from conductor.asyncio_client.adapters.models.workflow_def_adapter import \
-    WorkflowDefAdapter
-from conductor.asyncio_client.adapters.models.workflow_run_adapter import \
-    WorkflowRunAdapter
-from conductor.asyncio_client.adapters.models.workflow_task_adapter import \
-    WorkflowTaskAdapter
-from conductor.asyncio_client.workflow.executor.workflow_executor import \
-    AsyncWorkflowExecutor
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
+    StartWorkflowRequestAdapter,
+)
+from conductor.asyncio_client.adapters.models.sub_workflow_params_adapter import (
+    SubWorkflowParamsAdapter,
+)
+from conductor.asyncio_client.adapters.models.workflow_def_adapter import (
+    WorkflowDefAdapter,
+)
+from conductor.asyncio_client.adapters.models.workflow_run_adapter import (
+    WorkflowRunAdapter,
+)
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
+    WorkflowTaskAdapter,
+)
+from conductor.asyncio_client.workflow.executor.workflow_executor import (
+    AsyncWorkflowExecutor,
+)
 from conductor.asyncio_client.workflow.task.fork_task import ForkTask
 from conductor.asyncio_client.workflow.task.join_task import JoinTask
 from conductor.asyncio_client.workflow.task.task import TaskInterface
@@ -265,11 +271,13 @@ class AsyncConductorWorkflow:
         when the call completed.
         """
         workflow_input = workflow_input or {}
-        request = StartWorkflowRequestAdapter()
-        request.workflow_def = self.to_workflow_def()
-        request.input = workflow_input
-        request.name = request.workflow_def.name
-        request.version = 1
+        workflow_def = self.to_workflow_def()
+        request = StartWorkflowRequestAdapter(
+            workflow_def=workflow_def,
+            input=workflow_input,
+            name=workflow_def.name,
+            version=1,
+        )
         if idempotency_key is not None:
             request.idempotency_key = idempotency_key
             request.idempotency_strategy = idempotency_strategy
