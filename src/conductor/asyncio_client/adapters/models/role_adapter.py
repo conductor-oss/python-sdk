@@ -4,13 +4,11 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.permission_adapter import \
-    PermissionAdapter
 from conductor.asyncio_client.http.models import Role
 
 
 class RoleAdapter(Role):
-    permissions: Optional[List[PermissionAdapter]] = None
+    permissions: Optional[List["PermissionAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -20,6 +18,10 @@ class RoleAdapter(Role):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.permission_adapter import (
+            PermissionAdapter,
+        )
 
         _obj = cls.model_validate(
             {

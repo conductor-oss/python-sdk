@@ -5,34 +5,24 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.descriptor_adapter import \
-    DescriptorAdapter
-from conductor.asyncio_client.adapters.models.location_adapter import \
-    LocationAdapter
-from conductor.asyncio_client.adapters.models.location_or_builder_adapter import \
-    LocationOrBuilderAdapter
-from conductor.asyncio_client.adapters.models.message_adapter import \
-    MessageAdapter
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
-    UnknownFieldSetAdapter
 from conductor.asyncio_client.http.models import SourceCodeInfoOrBuilder
 
 
 class SourceCodeInfoOrBuilderAdapter(SourceCodeInfoOrBuilder):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional[MessageAdapter] = Field(
+    default_instance_for_type: Optional["MessageAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional[DescriptorAdapter] = Field(
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="descriptorForType"
     )
-    location_list: Optional[List[LocationAdapter]] = Field(
+    location_list: Optional[List["LocationAdapter"]] = Field(
         default=None, alias="locationList"
     )
-    location_or_builder_list: Optional[List[LocationOrBuilderAdapter]] = Field(
+    location_or_builder_list: Optional[List["LocationOrBuilderAdapter"]] = Field(
         default=None, alias="locationOrBuilderList"
     )
-    unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
         default=None, alias="unknownFields"
     )
 
@@ -44,6 +34,22 @@ class SourceCodeInfoOrBuilderAdapter(SourceCodeInfoOrBuilder):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+            DescriptorAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.location_adapter import (
+            LocationAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.location_or_builder_adapter import (
+            LocationOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.message_adapter import (
+            MessageAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+            UnknownFieldSetAdapter,
+        )
 
         _obj = cls.model_validate(
             {

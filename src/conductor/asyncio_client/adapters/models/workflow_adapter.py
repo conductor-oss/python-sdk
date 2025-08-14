@@ -5,9 +5,6 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
-from conductor.asyncio_client.adapters.models.workflow_def_adapter import \
-    WorkflowDefAdapter
 from conductor.asyncio_client.http.models import Workflow
 
 
@@ -15,11 +12,11 @@ class WorkflowAdapter(Workflow):
     input: Optional[Dict[str, Any]] = None
     output: Optional[Dict[str, Any]] = None
     variables: Optional[Dict[str, Any]] = None
-    workflow_definition: Optional[WorkflowDefAdapter] = Field(
+    workflow_definition: Optional["WorkflowDefAdapter"] = Field(
         default=None, alias="workflowDefinition"
     )
-    tasks: Optional[List[TaskAdapter]] = None
-    history: Optional[List[WorkflowAdapter]] = None
+    tasks: Optional[List["TaskAdapter"]] = None
+    history: Optional[List["WorkflowAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -29,6 +26,11 @@ class WorkflowAdapter(Workflow):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
+        from conductor.asyncio_client.adapters.models.workflow_def_adapter import (
+            WorkflowDefAdapter,
+        )
 
         _obj = cls.model_validate(
             {

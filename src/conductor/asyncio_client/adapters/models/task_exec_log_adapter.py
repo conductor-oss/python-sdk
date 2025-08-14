@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from conductor.asyncio_client.http.models import TaskExecLog
-from typing import Optional, Any
+from typing import Any, Optional
+
 from pydantic import Field
+
+from conductor.asyncio_client.http.models import TaskExecLog
 
 
 class TaskExecLogAdapter(TaskExecLog):

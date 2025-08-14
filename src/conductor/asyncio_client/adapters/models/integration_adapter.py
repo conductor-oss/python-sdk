@@ -4,16 +4,13 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.integration_api_adapter import \
-    IntegrationApiAdapter
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.http.models import Integration
 
 
 class IntegrationAdapter(Integration):
-    apis: Optional[List[IntegrationApiAdapter]] = None
+    apis: Optional[List["IntegrationApiAdapter"]] = None
     configuration: Optional[Dict[str, Any]] = None
-    tags: Optional[List[TagAdapter]] = None
+    tags: Optional[List["TagAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -23,6 +20,11 @@ class IntegrationAdapter(Integration):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.integration_api_adapter import (
+            IntegrationApiAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 
         _obj = cls.model_validate(
             {

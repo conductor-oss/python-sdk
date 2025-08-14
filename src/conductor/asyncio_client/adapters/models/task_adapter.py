@@ -5,20 +5,16 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.task_def_adapter import \
-    TaskDefAdapter
-from conductor.asyncio_client.adapters.models.workflow_task_adapter import \
-    WorkflowTaskAdapter
 from conductor.asyncio_client.http.models import Task
 
 
 class TaskAdapter(Task):
     input_data: Optional[Dict[str, Any]] = Field(default=None, alias="inputData")
     output_data: Optional[Dict[str, Any]] = Field(default=None, alias="outputData")
-    task_definition: Optional[TaskDefAdapter] = Field(
+    task_definition: Optional["TaskDefAdapter"] = Field(
         default=None, alias="taskDefinition"
     )
-    workflow_task: Optional[WorkflowTaskAdapter] = Field(
+    workflow_task: Optional["WorkflowTaskAdapter"] = Field(
         default=None, alias="workflowTask"
     )
 
@@ -30,6 +26,13 @@ class TaskAdapter(Task):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.task_def_adapter import (
+            TaskDefAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
+            WorkflowTaskAdapter,
+        )
 
         _obj = cls.model_validate(
             {

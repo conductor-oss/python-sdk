@@ -4,13 +4,11 @@ from typing import Any, Dict, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.target_ref_adapter import \
-    TargetRefAdapter
 from conductor.asyncio_client.http.models import GrantedAccess
 
 
 class GrantedAccessAdapter(GrantedAccess):
-    target: Optional[TargetRefAdapter] = None
+    target: Optional["TargetRefAdapter"] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -20,6 +18,10 @@ class GrantedAccessAdapter(GrantedAccess):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.target_ref_adapter import (
+            TargetRefAdapter,
+        )
 
         _obj = cls.model_validate(
             {

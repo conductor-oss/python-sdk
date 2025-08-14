@@ -5,12 +5,11 @@ from typing import Any, Dict, List, Optional
 from pydantic import field_validator
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter
 from conductor.asyncio_client.http.models import Group
 
 
 class GroupAdapter(Group):
-    roles: Optional[List[RoleAdapter]] = None
+    roles: Optional[List["RoleAdapter"]] = None
 
     @field_validator("default_access")
     def default_access_validate_enum(cls, value):
@@ -24,6 +23,8 @@ class GroupAdapter(Group):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter
 
         _obj = cls.model_validate(
             {

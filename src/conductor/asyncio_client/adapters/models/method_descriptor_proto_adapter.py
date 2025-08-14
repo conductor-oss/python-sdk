@@ -5,33 +5,30 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.byte_string_adapter import \
-    ByteStringAdapter
-from conductor.asyncio_client.adapters.models.descriptor_adapter import \
-    DescriptorAdapter
-from conductor.asyncio_client.adapters.models.method_options_adapter import \
-    MethodOptionsAdapter
-from conductor.asyncio_client.adapters.models.method_options_or_builder_adapter import \
-    MethodOptionsOrBuilderAdapter
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
-    UnknownFieldSetAdapter
 from conductor.asyncio_client.http.models import MethodDescriptorProto
 
 
 class MethodDescriptorProtoAdapter(MethodDescriptorProto):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional[MethodDescriptorProtoAdapter] = Field(
+    default_instance_for_type: Optional["MethodDescriptorProtoAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional[DescriptorAdapter] = Field(
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="descriptorForType"
     )
-    options: Optional[MethodOptionsAdapter] = None
-    options_or_builder: Optional[MethodOptionsOrBuilderAdapter] = Field(
+    options: Optional["MethodOptionsAdapter"] = None
+    options_or_builder: Optional["MethodOptionsOrBuilderAdapter"] = Field(
         default=None, alias="optionsOrBuilder"
     )
-    unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
         default=None, alias="unknownFields"
+    )
+    input_type_bytes: Optional["ByteStringAdapter"] = Field(
+        default=None, alias="inputTypeBytes"
+    )
+    name_bytes: Optional["ByteStringAdapter"] = Field(default=None, alias="nameBytes")
+    output_type_bytes: Optional["ByteStringAdapter"] = Field(
+        default=None, alias="outputTypeBytes"
     )
 
     @classmethod
@@ -43,12 +40,30 @@ class MethodDescriptorProtoAdapter(MethodDescriptorProto):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
+        from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+            ByteStringAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+            DescriptorAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.method_options_adapter import (
+            MethodOptionsAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.method_options_or_builder_adapter import (
+            MethodOptionsOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+            UnknownFieldSetAdapter,
+        )
+
         _obj = cls.model_validate(
             {
                 "allFields": obj.get("allFields"),
                 "clientStreaming": obj.get("clientStreaming"),
                 "defaultInstanceForType": (
-                    MethodDescriptorProto.from_dict(obj["defaultInstanceForType"])
+                    MethodDescriptorProtoAdapter.from_dict(
+                        obj["defaultInstanceForType"]
+                    )
                     if obj.get("defaultInstanceForType") is not None
                     else None
                 ),

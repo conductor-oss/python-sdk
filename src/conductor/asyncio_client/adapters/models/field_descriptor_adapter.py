@@ -20,7 +20,9 @@ class FieldDescriptorAdapter(FieldDescriptor):
         default=None, alias="extensionScope"
     )
     file: Optional["FileDescriptorAdapter"] = None
-    message_type: Optional["DescriptorAdapter"] = Field(default=None, alias="messageType")
+    message_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="messageType"
+    )
     options: Optional["FieldOptionsAdapter"] = None
     proto: Optional["FieldDescriptorProtoAdapter"] = None
     real_containing_oneof: Optional["OneofDescriptorAdapter"] = Field(
@@ -36,18 +38,24 @@ class FieldDescriptorAdapter(FieldDescriptor):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.descriptor_adapter import \
-            DescriptorAdapter
-        from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import \
-            EnumDescriptorAdapter
-        from conductor.asyncio_client.adapters.models.field_descriptor_proto_adapter import \
-            FieldDescriptorProtoAdapter
-        from conductor.asyncio_client.adapters.models.field_options_adapter import \
-            FieldOptionsAdapter
-        from conductor.asyncio_client.adapters.models.file_descriptor_adapter import \
-            FileDescriptorAdapter
-        from conductor.asyncio_client.adapters.models.oneof_descriptor_adapter import \
-            OneofDescriptorAdapter
+        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+            DescriptorAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import (
+            EnumDescriptorAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.field_descriptor_proto_adapter import (
+            FieldDescriptorProtoAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.field_options_adapter import (
+            FieldOptionsAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
+            FileDescriptorAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.oneof_descriptor_adapter import (
+            OneofDescriptorAdapter,
+        )
 
         _obj = cls.model_validate(
             {

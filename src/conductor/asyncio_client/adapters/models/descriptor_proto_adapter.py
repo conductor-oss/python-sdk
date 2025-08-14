@@ -27,20 +27,20 @@ class DescriptorProtoAdapter(DescriptorProto):
     extension_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(
         default=None, alias="extensionList"
     )
-    extension_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = (
-        Field(default=None, alias="extensionOrBuilderList")
-    )
+    extension_or_builder_list: Optional[
+        List["FieldDescriptorProtoOrBuilderAdapter"]
+    ] = Field(default=None, alias="extensionOrBuilderList")
     extension_range_list: Optional[List["ExtensionRangeAdapter"]] = Field(
         default=None, alias="extensionRangeList"
     )
-    extension_range_or_builder_list: Optional[List["ExtensionRangeOrBuilderAdapter"]] = (
-        Field(default=None, alias="extensionRangeOrBuilderList")
-    )
+    extension_range_or_builder_list: Optional[
+        List["ExtensionRangeOrBuilderAdapter"]
+    ] = Field(default=None, alias="extensionRangeOrBuilderList")
     field_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(
         default=None, alias="fieldList"
     )
-    field_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = Field(
-        default=None, alias="fieldOrBuilderList"
+    field_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = (
+        Field(default=None, alias="fieldOrBuilderList")
     )
     nested_type_list: Optional[List["DescriptorProtoAdapter"]] = Field(
         default=None, alias="nestedTypeList"
@@ -51,9 +51,9 @@ class DescriptorProtoAdapter(DescriptorProto):
     oneof_decl_list: Optional[List["OneofDescriptorProtoAdapter"]] = Field(
         default=None, alias="oneofDeclList"
     )
-    oneof_decl_or_builder_list: Optional[List["OneofDescriptorProtoOrBuilderAdapter"]] = (
-        Field(default=None, alias="oneofDeclOrBuilderList")
-    )
+    oneof_decl_or_builder_list: Optional[
+        List["OneofDescriptorProtoOrBuilderAdapter"]
+    ] = Field(default=None, alias="oneofDeclOrBuilderList")
     options: Optional["MessageOptionsAdapter"] = None
     options_or_builder: Optional["MessageOptionsOrBuilderAdapter"] = Field(
         default=None, alias="optionsOrBuilder"
@@ -77,38 +77,54 @@ class DescriptorProtoAdapter(DescriptorProto):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.byte_string_adapter import \
-            ByteStringAdapter
-        from conductor.asyncio_client.adapters.models.descriptor_adapter import \
-            DescriptorAdapter
-        from conductor.asyncio_client.adapters.models.descriptor_proto_or_builder_adapter import \
-            DescriptorProtoOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.enum_descriptor_proto_adapter import \
-            EnumDescriptorProtoAdapter
-        from conductor.asyncio_client.adapters.models.enum_descriptor_proto_or_builder_adapter import \
-            EnumDescriptorProtoOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.extension_range_adapter import \
-            ExtensionRangeAdapter
-        from conductor.asyncio_client.adapters.models.extension_range_or_builder_adapter import \
-            ExtensionRangeOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.field_descriptor_proto_adapter import \
-            FieldDescriptorProtoAdapter
-        from conductor.asyncio_client.adapters.models.field_descriptor_proto_or_builder_adapter import \
-            FieldDescriptorProtoOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.message_options_adapter import \
-            MessageOptionsAdapter
-        from conductor.asyncio_client.adapters.models.message_options_or_builder_adapter import \
-            MessageOptionsOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.oneof_descriptor_proto_adapter import \
-            OneofDescriptorProtoAdapter
-        from conductor.asyncio_client.adapters.models.oneof_descriptor_proto_or_builder_adapter import \
-            OneofDescriptorProtoOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.reserved_range_adapter import \
-            ReservedRangeAdapter
-        from conductor.asyncio_client.adapters.models.reserved_range_or_builder_adapter import \
-            ReservedRangeOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
-            UnknownFieldSetAdapter
+        from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+            ByteStringAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+            DescriptorAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.descriptor_proto_or_builder_adapter import (
+            DescriptorProtoOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.enum_descriptor_proto_adapter import (
+            EnumDescriptorProtoAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.enum_descriptor_proto_or_builder_adapter import (
+            EnumDescriptorProtoOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.extension_range_adapter import (
+            ExtensionRangeAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.extension_range_or_builder_adapter import (
+            ExtensionRangeOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.field_descriptor_proto_adapter import (
+            FieldDescriptorProtoAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.field_descriptor_proto_or_builder_adapter import (
+            FieldDescriptorProtoOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.message_options_adapter import (
+            MessageOptionsAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.message_options_or_builder_adapter import (
+            MessageOptionsOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.oneof_descriptor_proto_adapter import (
+            OneofDescriptorProtoAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.oneof_descriptor_proto_or_builder_adapter import (
+            OneofDescriptorProtoOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.reserved_range_adapter import (
+            ReservedRangeAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.reserved_range_or_builder_adapter import (
+            ReservedRangeOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+            UnknownFieldSetAdapter,
+        )
 
         _obj = cls.model_validate(
             {

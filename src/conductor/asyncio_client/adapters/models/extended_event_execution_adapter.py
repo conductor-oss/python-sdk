@@ -27,8 +27,9 @@ class ExtendedEventExecutionAdapter(ExtendedEventExecution):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.event_handler_adapter import \
-            EventHandlerAdapter
+        from conductor.asyncio_client.adapters.models.event_handler_adapter import (
+            EventHandlerAdapter,
+        )
 
         _obj = cls.model_validate(
             {

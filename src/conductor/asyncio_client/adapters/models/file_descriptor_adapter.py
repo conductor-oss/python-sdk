@@ -34,18 +34,24 @@ class FileDescriptorAdapter(FileDescriptor):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.descriptor_adapter import \
-            DescriptorAdapter
-        from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import \
-            EnumDescriptorAdapter
-        from conductor.asyncio_client.adapters.models.field_descriptor_adapter import \
-            FieldDescriptorAdapter
-        from conductor.asyncio_client.adapters.models.file_descriptor_proto_adapter import \
-            FileDescriptorProtoAdapter
-        from conductor.asyncio_client.adapters.models.file_options_adapter import \
-            FileOptionsAdapter
-        from conductor.asyncio_client.adapters.models.service_descriptor_adapter import \
-            ServiceDescriptorAdapter
+        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+            DescriptorAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import (
+            EnumDescriptorAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.field_descriptor_adapter import (
+            FieldDescriptorAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.file_descriptor_proto_adapter import (
+            FileDescriptorProtoAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.file_options_adapter import (
+            FileOptionsAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.service_descriptor_adapter import (
+            ServiceDescriptorAdapter,
+        )
 
         _obj = cls.model_validate(
             {

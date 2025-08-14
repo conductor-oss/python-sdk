@@ -4,13 +4,11 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.task_summary_adapter import \
-    TaskSummaryAdapter
 from conductor.asyncio_client.http.models import SearchResultTaskSummary
 
 
 class SearchResultTaskSummaryAdapter(SearchResultTaskSummary):
-    results: Optional[List[TaskSummaryAdapter]] = None
+    results: Optional[List["TaskSummaryAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -20,6 +18,10 @@ class SearchResultTaskSummaryAdapter(SearchResultTaskSummary):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.task_summary_adapter import (
+            TaskSummaryAdapter,
+        )
 
         _obj = cls.model_validate(
             {

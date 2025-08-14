@@ -5,12 +5,6 @@ from typing import Any, ClassVar, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.rate_limit_config_adapter import \
-    RateLimitConfigAdapter
-from conductor.asyncio_client.adapters.models.schema_def_adapter import \
-    SchemaDefAdapter
-from conductor.asyncio_client.adapters.models.workflow_task_adapter import \
-    WorkflowTaskAdapter
 from conductor.asyncio_client.http.models import WorkflowDef
 
 
@@ -23,13 +17,15 @@ class WorkflowDefAdapter(WorkflowDef):
     )
     variables: Optional[Dict[str, Any]] = None
     metadata: Optional[Dict[str, Any]] = None
-    tasks: List[WorkflowTaskAdapter]
+    tasks: List["WorkflowTaskAdapter"]
     schema_version: Optional[int] = Field(default=None, alias="schemaVersion")
-    output_schema: Optional[SchemaDefAdapter] = Field(
+    output_schema: Optional["SchemaDefAdapter"] = Field(
         default=None, alias="outputSchema"
     )
-    input_schema: Optional[SchemaDefAdapter] = Field(default=None, alias="inputSchema")
-    rate_limit_config: Optional[RateLimitConfigAdapter] = Field(
+    input_schema: Optional["SchemaDefAdapter"] = Field(
+        default=None, alias="inputSchema"
+    )
+    rate_limit_config: Optional["RateLimitConfigAdapter"] = Field(
         default=None, alias="rateLimitConfig"
     )
     __properties: ClassVar[List[str]] = [
@@ -69,6 +65,16 @@ class WorkflowDefAdapter(WorkflowDef):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.rate_limit_config_adapter import (
+            RateLimitConfigAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.schema_def_adapter import (
+            SchemaDefAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
+            WorkflowTaskAdapter,
+        )
 
         _obj = cls.model_validate(
             {

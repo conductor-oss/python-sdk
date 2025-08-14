@@ -5,13 +5,11 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.granted_access_adapter import \
-    GrantedAccessAdapter
 from conductor.asyncio_client.http.models import GrantedAccessResponse
 
 
 class GrantedAccessResponseAdapter(GrantedAccessResponse):
-    granted_access: Optional[List[GrantedAccessAdapter]] = Field(
+    granted_access: Optional[List["GrantedAccessAdapter"]] = Field(
         default=None, alias="grantedAccess"
     )
 
@@ -23,6 +21,10 @@ class GrantedAccessResponseAdapter(GrantedAccessResponse):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.granted_access_adapter import (
+            GrantedAccessAdapter,
+        )
 
         _obj = cls.model_validate(
             {

@@ -25,9 +25,9 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
     extension_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(
         default=None, alias="extensionList"
     )
-    extension_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = (
-        Field(default=None, alias="extensionOrBuilderList")
-    )
+    extension_or_builder_list: Optional[
+        List["FieldDescriptorProtoOrBuilderAdapter"]
+    ] = Field(default=None, alias="extensionOrBuilderList")
     message_type_list: Optional[List["DescriptorProtoAdapter"]] = Field(
         default=None, alias="messageTypeList"
     )
@@ -41,9 +41,9 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
     service_list: Optional[List["ServiceDescriptorProtoAdapter"]] = Field(
         default=None, alias="serviceList"
     )
-    service_or_builder_list: Optional[List["ServiceDescriptorProtoOrBuilderAdapter"]] = (
-        Field(default=None, alias="serviceOrBuilderList")
-    )
+    service_or_builder_list: Optional[
+        List["ServiceDescriptorProtoOrBuilderAdapter"]
+    ] = Field(default=None, alias="serviceOrBuilderList")
     source_code_info: Optional["SourceCodeInfoAdapter"] = Field(
         default=None, alias="sourceCodeInfo"
     )
@@ -63,36 +63,51 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.byte_string_adapter import \
-            ByteStringAdapter
-        from conductor.asyncio_client.adapters.models.descriptor_adapter import \
-            DescriptorAdapter
-        from conductor.asyncio_client.adapters.models.descriptor_proto_adapter import \
-            DescriptorProtoAdapter
-        from conductor.asyncio_client.adapters.models.descriptor_proto_or_builder_adapter import \
-            DescriptorProtoOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.enum_descriptor_proto_adapter import \
-            EnumDescriptorProtoAdapter
-        from conductor.asyncio_client.adapters.models.enum_descriptor_proto_or_builder_adapter import \
-            EnumDescriptorProtoOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.field_descriptor_proto_adapter import \
-            FieldDescriptorProtoAdapter
-        from conductor.asyncio_client.adapters.models.field_descriptor_proto_or_builder_adapter import \
-            FieldDescriptorProtoOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.file_options_adapter import \
-            FileOptionsAdapter
-        from conductor.asyncio_client.adapters.models.file_options_or_builder_adapter import \
-            FileOptionsOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.service_descriptor_proto_adapter import \
-            ServiceDescriptorProtoAdapter
-        from conductor.asyncio_client.adapters.models.service_descriptor_proto_or_builder_adapter import \
-            ServiceDescriptorProtoOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.source_code_info_adapter import \
-            SourceCodeInfoAdapter
-        from conductor.asyncio_client.adapters.models.source_code_info_or_builder_adapter import \
-            SourceCodeInfoOrBuilderAdapter
-        from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
-            UnknownFieldSetAdapter
+        from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+            ByteStringAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+            DescriptorAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.descriptor_proto_adapter import (
+            DescriptorProtoAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.descriptor_proto_or_builder_adapter import (
+            DescriptorProtoOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.enum_descriptor_proto_adapter import (
+            EnumDescriptorProtoAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.enum_descriptor_proto_or_builder_adapter import (
+            EnumDescriptorProtoOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.field_descriptor_proto_adapter import (
+            FieldDescriptorProtoAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.field_descriptor_proto_or_builder_adapter import (
+            FieldDescriptorProtoOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.file_options_adapter import (
+            FileOptionsAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.file_options_or_builder_adapter import (
+            FileOptionsOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.service_descriptor_proto_adapter import (
+            ServiceDescriptorProtoAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.service_descriptor_proto_or_builder_adapter import (
+            ServiceDescriptorProtoOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.source_code_info_adapter import (
+            SourceCodeInfoAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.source_code_info_or_builder_adapter import (
+            SourceCodeInfoOrBuilderAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+            UnknownFieldSetAdapter,
+        )
 
         _obj = cls.model_validate(
             {

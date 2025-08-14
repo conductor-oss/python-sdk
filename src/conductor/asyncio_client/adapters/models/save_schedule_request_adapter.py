@@ -5,13 +5,11 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import \
-    StartWorkflowRequestAdapter
 from conductor.asyncio_client.http.models import SaveScheduleRequest
 
 
 class SaveScheduleRequestAdapter(SaveScheduleRequest):
-    start_workflow_request: StartWorkflowRequestAdapter = Field(
+    start_workflow_request: "StartWorkflowRequestAdapter" = Field(
         alias="startWorkflowRequest"
     )
 
@@ -23,6 +21,10 @@ class SaveScheduleRequestAdapter(SaveScheduleRequest):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
+            StartWorkflowRequestAdapter,
+        )
 
         _obj = cls.model_validate(
             {

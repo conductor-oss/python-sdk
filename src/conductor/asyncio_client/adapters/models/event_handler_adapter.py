@@ -20,8 +20,9 @@ class EventHandlerAdapter(EventHandler):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.action_adapter import \
-            ActionAdapter
+        from conductor.asyncio_client.adapters.models.action_adapter import (
+            ActionAdapter,
+        )
         from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 
         _obj = cls.model_validate(

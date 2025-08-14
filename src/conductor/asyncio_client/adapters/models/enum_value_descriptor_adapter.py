@@ -22,14 +22,18 @@ class EnumValueDescriptorAdapter(EnumValueDescriptor):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import \
-            EnumDescriptorAdapter
-        from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_adapter import \
-            EnumValueDescriptorProtoAdapter
-        from conductor.asyncio_client.adapters.models.enum_value_options_adapter import \
-            EnumValueOptionsAdapter
-        from conductor.asyncio_client.adapters.models.file_descriptor_adapter import \
-            FileDescriptorAdapter
+        from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import (
+            EnumDescriptorAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_adapter import (
+            EnumValueDescriptorProtoAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.enum_value_options_adapter import (
+            EnumValueOptionsAdapter,
+        )
+        from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
+            FileDescriptorAdapter,
+        )
 
         _obj = cls.model_validate(
             {

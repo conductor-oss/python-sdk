@@ -22,6 +22,7 @@ class ConductorUserAdapter(ConductorUser):
 
         from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter
         from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter
+
         _obj = cls.model_validate(
             {
                 "applicationUser": obj.get("applicationUser"),

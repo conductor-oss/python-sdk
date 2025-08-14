@@ -5,17 +5,17 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.schema_def_adapter import \
-    SchemaDefAdapter
 from conductor.asyncio_client.http.models import TaskDef
 
 
 class TaskDefAdapter(TaskDef):
-    input_schema: Optional[SchemaDefAdapter] = Field(default=None, alias="inputSchema")
+    input_schema: Optional["SchemaDefAdapter"] = Field(
+        default=None, alias="inputSchema"
+    )
     input_template: Optional[Dict[str, Any]] = Field(
         default=None, alias="inputTemplate"
     )
-    output_schema: Optional[SchemaDefAdapter] = Field(
+    output_schema: Optional["SchemaDefAdapter"] = Field(
         default=None, alias="outputSchema"
     )
 
@@ -27,6 +27,10 @@ class TaskDefAdapter(TaskDef):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.schema_def_adapter import (
+            SchemaDefAdapter,
+        )
 
         _obj = cls.model_validate(
             {

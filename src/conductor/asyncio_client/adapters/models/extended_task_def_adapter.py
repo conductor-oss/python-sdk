@@ -9,7 +9,9 @@ from conductor.asyncio_client.http.models import ExtendedTaskDef
 
 
 class ExtendedTaskDefAdapter(ExtendedTaskDef):
-    input_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="inputSchema")
+    input_schema: Optional["SchemaDefAdapter"] = Field(
+        default=None, alias="inputSchema"
+    )
     input_template: Optional[Dict[str, Any]] = Field(
         default=None, alias="inputTemplate"
     )
@@ -27,8 +29,9 @@ class ExtendedTaskDefAdapter(ExtendedTaskDef):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.schema_def_adapter import \
-            SchemaDefAdapter
+        from conductor.asyncio_client.adapters.models.schema_def_adapter import (
+            SchemaDefAdapter,
+        )
         from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 
         _obj = cls.model_validate(

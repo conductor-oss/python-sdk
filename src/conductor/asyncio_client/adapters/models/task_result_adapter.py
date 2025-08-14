@@ -4,13 +4,11 @@ from typing import Any, Dict, List, Optional, Self
 
 from pydantic import Field
 
-from conductor.asyncio_client.adapters.models.task_exec_log_adapter import \
-    TaskExecLogAdapter
 from conductor.asyncio_client.http.models import TaskResult
 
 
 class TaskResultAdapter(TaskResult):
-    logs: Optional[List[TaskExecLogAdapter]] = None
+    logs: Optional[List["TaskExecLogAdapter"]] = None
     output_data: Optional[Dict[str, Any]] = Field(default=None, alias="outputData")
 
     @classmethod
@@ -21,6 +19,10 @@ class TaskResultAdapter(TaskResult):
 
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
+
+        from conductor.asyncio_client.adapters.models.task_exec_log_adapter import (
+            TaskExecLogAdapter,
+        )
 
         _obj = cls.model_validate(
             {
