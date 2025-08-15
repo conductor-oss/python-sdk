@@ -25,19 +25,6 @@ class OneofDescriptorAdapter(OneofDescriptor):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
-            DescriptorAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
-            FileDescriptorAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.oneof_descriptor_proto_adapter import (
-            OneofDescriptorProtoAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.oneof_options_adapter import (
-            OneofOptionsAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "containingType": (
@@ -68,3 +55,19 @@ class OneofDescriptorAdapter(OneofDescriptor):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+    DescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
+    FileDescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.oneof_descriptor_proto_adapter import (
+    OneofDescriptorProtoAdapter,
+)
+from conductor.asyncio_client.adapters.models.oneof_options_adapter import (
+    OneofOptionsAdapter,
+)
+
+OneofDescriptorAdapter.model_rebuild(raise_errors=False)

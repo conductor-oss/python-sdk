@@ -37,17 +37,6 @@ class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.rate_limit_config_adapter import (
-            RateLimitConfigAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.schema_def_adapter import (
-            SchemaDefAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-        from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
-            WorkflowTaskAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "createTime": obj.get("createTime"),
@@ -102,3 +91,17 @@ class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.rate_limit_config_adapter import (
+    RateLimitConfigAdapter,
+)
+from conductor.asyncio_client.adapters.models.schema_def_adapter import (
+    SchemaDefAdapter,
+)
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
+    WorkflowTaskAdapter,
+)
+
+ExtendedWorkflowDefAdapter.model_rebuild(raise_errors=False)

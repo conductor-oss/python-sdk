@@ -21,10 +21,6 @@ class ScrollableSearchResultWorkflowSummaryAdapter(
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.workflow_summary_adapter import (
-            WorkflowSummaryAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "queryId": obj.get("queryId"),
@@ -40,3 +36,10 @@ class ScrollableSearchResultWorkflowSummaryAdapter(
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.workflow_summary_adapter import (
+    WorkflowSummaryAdapter,
+)
+
+ScrollableSearchResultWorkflowSummaryAdapter.model_rebuild(raise_errors=False)

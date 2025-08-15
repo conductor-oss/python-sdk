@@ -20,19 +20,6 @@ class ServiceDescriptorAdapter(ServiceDescriptor):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
-            FileDescriptorAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.method_descriptor_adapter import (
-            MethodDescriptorAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.service_descriptor_proto_adapter import (
-            ServiceDescriptorProtoAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.service_options_adapter import (
-            ServiceOptionsAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "file": (
@@ -64,3 +51,19 @@ class ServiceDescriptorAdapter(ServiceDescriptor):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
+    FileDescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.method_descriptor_adapter import (
+    MethodDescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.service_descriptor_proto_adapter import (
+    ServiceDescriptorProtoAdapter,
+)
+from conductor.asyncio_client.adapters.models.service_options_adapter import (
+    ServiceOptionsAdapter,
+)
+
+ServiceDescriptorAdapter.model_rebuild(raise_errors=False)

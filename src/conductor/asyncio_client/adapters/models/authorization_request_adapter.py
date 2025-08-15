@@ -20,13 +20,6 @@ class AuthorizationRequestAdapter(AuthorizationRequest):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.subject_ref_adapter import (
-            SubjectRefAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.target_ref_adapter import (
-            TargetRefAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "access": obj.get("access"),
@@ -43,3 +36,13 @@ class AuthorizationRequestAdapter(AuthorizationRequest):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.subject_ref_adapter import (
+    SubjectRefAdapter,
+)
+from conductor.asyncio_client.adapters.models.target_ref_adapter import (
+    TargetRefAdapter,
+)
+
+AuthorizationRequestAdapter.model_rebuild(raise_errors=False)

@@ -19,8 +19,6 @@ class EnvironmentVariableAdapter(EnvironmentVariable):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-
         _obj = cls.model_validate(
             {
                 "name": obj.get("name"),
@@ -33,3 +31,8 @@ class EnvironmentVariableAdapter(EnvironmentVariable):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+
+EnvironmentVariableAdapter.model_rebuild(raise_errors=False)

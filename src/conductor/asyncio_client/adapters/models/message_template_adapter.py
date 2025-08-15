@@ -19,8 +19,6 @@ class MessageTemplateAdapter(MessageTemplate):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-
         _obj = cls.model_validate(
             {
                 "createTime": obj.get("createTime"),
@@ -41,3 +39,8 @@ class MessageTemplateAdapter(MessageTemplate):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+
+MessageTemplateAdapter.model_rebuild(raise_errors=False)

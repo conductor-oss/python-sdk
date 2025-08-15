@@ -33,19 +33,6 @@ class ExtensionRangeAdapter(ExtensionRange):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
-            DescriptorAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.extension_range_options_adapter import (
-            ExtensionRangeOptionsAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.extension_range_options_or_builder_adapter import (
-            ExtensionRangeOptionsOrBuilderAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
-            UnknownFieldSetAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "allFields": obj.get("allFields"),
@@ -86,3 +73,19 @@ class ExtensionRangeAdapter(ExtensionRange):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+    DescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.extension_range_options_adapter import (
+    ExtensionRangeOptionsAdapter,
+)
+from conductor.asyncio_client.adapters.models.extension_range_options_or_builder_adapter import (
+    ExtensionRangeOptionsOrBuilderAdapter,
+)
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+    UnknownFieldSetAdapter,
+)
+
+ExtensionRangeAdapter.model_rebuild(raise_errors=False)

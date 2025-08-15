@@ -27,13 +27,6 @@ class TaskAdapter(Task):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.task_def_adapter import (
-            TaskDefAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
-            WorkflowTaskAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "callbackAfterSeconds": obj.get("callbackAfterSeconds"),
@@ -94,3 +87,13 @@ class TaskAdapter(Task):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.task_def_adapter import (
+    TaskDefAdapter,
+)
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
+    WorkflowTaskAdapter,
+)
+
+TaskAdapter.model_rebuild(raise_errors=False)

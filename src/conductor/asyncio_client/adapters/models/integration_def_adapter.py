@@ -19,10 +19,6 @@ class IntegrationDefAdapter(IntegrationDef):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.integration_def_form_field_adapter import (
-            IntegrationDefFormFieldAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "category": obj.get("category"),
@@ -44,3 +40,10 @@ class IntegrationDefAdapter(IntegrationDef):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.integration_def_form_field_adapter import (
+    IntegrationDefFormFieldAdapter,
+)
+
+IntegrationDefAdapter.model_rebuild(raise_errors=False)

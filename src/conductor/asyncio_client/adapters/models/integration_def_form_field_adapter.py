@@ -36,10 +36,6 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.option_adapter import (
-            OptionAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "defaultValue": obj.get("defaultValue"),
@@ -65,3 +61,10 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.option_adapter import (
+    OptionAdapter,
+)
+
+IntegrationDefFormFieldAdapter.model_rebuild(raise_errors=False)

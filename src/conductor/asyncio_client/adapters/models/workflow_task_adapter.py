@@ -46,19 +46,6 @@ class WorkflowTaskAdapter(WorkflowTask):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.cache_config_adapter import (
-            CacheConfigAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.state_change_event_adapter import (
-            StateChangeEventAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.sub_workflow_params_adapter import (
-            SubWorkflowParamsAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.task_def_adapter import (
-            TaskDefAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "asyncComplete": obj.get("asyncComplete"),
@@ -147,3 +134,19 @@ class WorkflowTaskAdapter(WorkflowTask):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.cache_config_adapter import (
+    CacheConfigAdapter,
+)
+from conductor.asyncio_client.adapters.models.state_change_event_adapter import (
+    StateChangeEventAdapter,
+)
+from conductor.asyncio_client.adapters.models.sub_workflow_params_adapter import (
+    SubWorkflowParamsAdapter,
+)
+from conductor.asyncio_client.adapters.models.task_def_adapter import (
+    TaskDefAdapter,
+)
+
+WorkflowTaskAdapter.model_rebuild(raise_errors=False)

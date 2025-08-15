@@ -19,10 +19,6 @@ class SearchResultHandledEventResponseAdapter(SearchResultHandledEventResponse):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.handled_event_response_adapter import (
-            HandledEventResponseAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "results": (
@@ -37,3 +33,10 @@ class SearchResultHandledEventResponseAdapter(SearchResultHandledEventResponse):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.handled_event_response_adapter import (
+    HandledEventResponseAdapter,
+)
+
+SearchResultHandledEventResponseAdapter.model_rebuild(raise_errors=False)

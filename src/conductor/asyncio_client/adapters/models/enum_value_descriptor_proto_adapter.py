@@ -33,22 +33,6 @@ class EnumValueDescriptorProtoAdapter(EnumValueDescriptorProto):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.byte_string_adapter import (
-            ByteStringAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
-            DescriptorAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.enum_value_options_adapter import (
-            EnumValueOptionsAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.enum_value_options_or_builder_adapter import (
-            EnumValueOptionsOrBuilderAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
-            UnknownFieldSetAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "allFields": obj.get("allFields"),
@@ -92,3 +76,22 @@ class EnumValueDescriptorProtoAdapter(EnumValueDescriptorProto):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+    ByteStringAdapter,
+)
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+    DescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_value_options_adapter import (
+    EnumValueOptionsAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_value_options_or_builder_adapter import (
+    EnumValueOptionsOrBuilderAdapter,
+)
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+    UnknownFieldSetAdapter,
+)
+
+EnumValueDescriptorProtoAdapter.model_rebuild(raise_errors=False)

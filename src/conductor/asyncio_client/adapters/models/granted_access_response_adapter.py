@@ -22,10 +22,6 @@ class GrantedAccessResponseAdapter(GrantedAccessResponse):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.granted_access_adapter import (
-            GrantedAccessAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "grantedAccess": (
@@ -39,3 +35,10 @@ class GrantedAccessResponseAdapter(GrantedAccessResponse):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.granted_access_adapter import (
+    GrantedAccessAdapter,
+)
+
+GrantedAccessResponseAdapter.model_rebuild(raise_errors=False)

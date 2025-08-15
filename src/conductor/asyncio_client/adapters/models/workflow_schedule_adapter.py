@@ -23,11 +23,6 @@ class WorkflowScheduleAdapter(WorkflowSchedule):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
-            StartWorkflowRequestAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-
         _obj = cls.model_validate(
             {
                 "createTime": obj.get("createTime"),
@@ -56,3 +51,11 @@ class WorkflowScheduleAdapter(WorkflowSchedule):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
+    StartWorkflowRequestAdapter,
+)
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+
+WorkflowScheduleAdapter.model_rebuild(raise_errors=False)

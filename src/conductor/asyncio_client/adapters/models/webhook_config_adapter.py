@@ -26,11 +26,6 @@ class WebhookConfigAdapter(WebhookConfig):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-        from conductor.asyncio_client.adapters.models.webhook_execution_history_adapter import (
-            WebhookExecutionHistoryAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "createdBy": obj.get("createdBy"),
@@ -63,3 +58,11 @@ class WebhookConfigAdapter(WebhookConfig):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.adapters.models.webhook_execution_history_adapter import (
+    WebhookExecutionHistoryAdapter,
+)
+
+WebhookConfigAdapter.model_rebuild(raise_errors=False)

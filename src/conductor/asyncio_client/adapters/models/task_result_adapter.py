@@ -20,10 +20,6 @@ class TaskResultAdapter(TaskResult):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.task_exec_log_adapter import (
-            TaskExecLogAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "callbackAfterSeconds": obj.get("callbackAfterSeconds"),
@@ -46,3 +42,10 @@ class TaskResultAdapter(TaskResult):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.task_exec_log_adapter import (
+    TaskExecLogAdapter,
+)
+
+TaskResultAdapter.model_rebuild(raise_errors=False)

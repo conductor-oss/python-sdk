@@ -19,8 +19,6 @@ class ExtendedSecretAdapter(ExtendedSecret):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-
         _obj = cls.model_validate(
             {
                 "name": obj.get("name"),
@@ -32,3 +30,8 @@ class ExtendedSecretAdapter(ExtendedSecret):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+
+ExtendedSecretAdapter.model_rebuild(raise_errors=False)

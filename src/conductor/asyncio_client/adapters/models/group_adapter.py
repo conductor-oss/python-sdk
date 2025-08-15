@@ -24,8 +24,6 @@ class GroupAdapter(Group):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter
-
         _obj = cls.model_validate(
             {
                 "defaultAccess": obj.get("defaultAccess"),
@@ -39,3 +37,8 @@ class GroupAdapter(Group):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter
+
+GroupAdapter.model_rebuild(raise_errors=False)

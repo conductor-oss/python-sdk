@@ -20,9 +20,6 @@ class ConductorUserAdapter(ConductorUser):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter
-        from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter
-
         _obj = cls.model_validate(
             {
                 "applicationUser": obj.get("applicationUser"),
@@ -45,3 +42,9 @@ class ConductorUserAdapter(ConductorUser):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter
+from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter
+
+ConductorUserAdapter.model_rebuild(raise_errors=False)

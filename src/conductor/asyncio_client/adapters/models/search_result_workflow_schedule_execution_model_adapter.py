@@ -23,10 +23,6 @@ class SearchResultWorkflowScheduleExecutionModelAdapter(
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.workflow_schedule_execution_model_adapter import (
-            WorkflowScheduleExecutionModelAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "results": (
@@ -41,3 +37,10 @@ class SearchResultWorkflowScheduleExecutionModelAdapter(
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.workflow_schedule_execution_model_adapter import (
+    WorkflowScheduleExecutionModelAdapter,
+)
+
+SearchResultWorkflowScheduleExecutionModelAdapter.model_rebuild(raise_errors=False)

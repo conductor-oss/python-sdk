@@ -45,37 +45,6 @@ class EnumDescriptorProtoOrBuilderAdapter(EnumDescriptorProtoOrBuilder):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.byte_string_adapter import (
-            ByteStringAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
-            DescriptorAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.enum_options_adapter import (
-            EnumOptionsAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.enum_options_or_builder_adapter import (
-            EnumOptionsOrBuilderAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.enum_reserved_range_adapter import (
-            EnumReservedRangeAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.enum_reserved_range_or_builder_adapter import (
-            EnumReservedRangeOrBuilderAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_adapter import (
-            EnumValueDescriptorProtoAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_or_builder_adapter import (
-            EnumValueDescriptorProtoOrBuilderAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.message_adapter import (
-            MessageAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
-            UnknownFieldSetAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "allFields": obj.get("allFields"),
@@ -151,3 +120,37 @@ class EnumDescriptorProtoOrBuilderAdapter(EnumDescriptorProtoOrBuilder):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+    ByteStringAdapter,
+)
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+    DescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_options_adapter import (
+    EnumOptionsAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_options_or_builder_adapter import (
+    EnumOptionsOrBuilderAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_reserved_range_adapter import (
+    EnumReservedRangeAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_reserved_range_or_builder_adapter import (
+    EnumReservedRangeOrBuilderAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_adapter import (
+    EnumValueDescriptorProtoAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_or_builder_adapter import (
+    EnumValueDescriptorProtoOrBuilderAdapter,
+)
+from conductor.asyncio_client.adapters.models.message_adapter import (
+    MessageAdapter,
+)
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+    UnknownFieldSetAdapter,
+)
+
+EnumDescriptorProtoOrBuilderAdapter.model_rebuild(raise_errors=False)

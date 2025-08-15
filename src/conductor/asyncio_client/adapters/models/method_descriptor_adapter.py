@@ -25,22 +25,6 @@ class MethodDescriptorAdapter(MethodDescriptor):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
-            DescriptorAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
-            FileDescriptorAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.method_descriptor_proto_adapter import (
-            MethodDescriptorProtoAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.method_options_adapter import (
-            MethodOptionsAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.service_descriptor_adapter import (
-            ServiceDescriptorAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "clientStreaming": obj.get("clientStreaming"),
@@ -81,3 +65,22 @@ class MethodDescriptorAdapter(MethodDescriptor):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+    DescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
+    FileDescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.method_descriptor_proto_adapter import (
+    MethodDescriptorProtoAdapter,
+)
+from conductor.asyncio_client.adapters.models.method_options_adapter import (
+    MethodOptionsAdapter,
+)
+from conductor.asyncio_client.adapters.models.service_descriptor_adapter import (
+    ServiceDescriptorAdapter,
+)
+
+MethodDescriptorAdapter.model_rebuild(raise_errors=False)

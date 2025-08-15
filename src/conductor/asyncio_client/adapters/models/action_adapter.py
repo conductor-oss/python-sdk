@@ -21,19 +21,6 @@ class ActionAdapter(Action):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
-            StartWorkflowRequestAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.task_details_adapter import (
-            TaskDetailsAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.terminate_workflow_adapter import (
-            TerminateWorkflowAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.update_workflow_variables_adapter import (
-            UpdateWorkflowVariablesAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "action": obj.get("action"),
@@ -68,3 +55,19 @@ class ActionAdapter(Action):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
+    StartWorkflowRequestAdapter,
+)
+from conductor.asyncio_client.adapters.models.task_details_adapter import (
+    TaskDetailsAdapter,
+)
+from conductor.asyncio_client.adapters.models.terminate_workflow_adapter import (
+    TerminateWorkflowAdapter,
+)
+from conductor.asyncio_client.adapters.models.update_workflow_variables_adapter import (
+    UpdateWorkflowVariablesAdapter,
+)
+
+ActionAdapter.model_rebuild(raise_errors=False)

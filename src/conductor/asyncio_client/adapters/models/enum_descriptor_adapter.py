@@ -26,22 +26,6 @@ class EnumDescriptorAdapter(EnumDescriptor):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
-            DescriptorAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.enum_descriptor_proto_adapter import (
-            EnumDescriptorProtoAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.enum_options_adapter import (
-            EnumOptionsAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.enum_value_descriptor_adapter import (
-            EnumValueDescriptorAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
-            FileDescriptorAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "closed": obj.get("closed"),
@@ -79,3 +63,22 @@ class EnumDescriptorAdapter(EnumDescriptor):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+    DescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_descriptor_proto_adapter import (
+    EnumDescriptorProtoAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_options_adapter import (
+    EnumOptionsAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_value_descriptor_adapter import (
+    EnumValueDescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
+    FileDescriptorAdapter,
+)
+
+EnumDescriptorAdapter.model_rebuild(raise_errors=False)

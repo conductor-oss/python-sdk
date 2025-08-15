@@ -19,10 +19,6 @@ class SearchResultTaskSummaryAdapter(SearchResultTaskSummary):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.task_summary_adapter import (
-            TaskSummaryAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "results": (
@@ -34,3 +30,10 @@ class SearchResultTaskSummaryAdapter(SearchResultTaskSummary):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.task_summary_adapter import (
+    TaskSummaryAdapter,
+)
+
+SearchResultTaskSummaryAdapter.model_rebuild(raise_errors=False)

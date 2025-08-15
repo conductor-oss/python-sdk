@@ -27,11 +27,6 @@ class WorkflowAdapter(Workflow):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
-        from conductor.asyncio_client.adapters.models.workflow_def_adapter import (
-            WorkflowDefAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "correlationId": obj.get("correlationId"),
@@ -86,3 +81,11 @@ class WorkflowAdapter(Workflow):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
+from conductor.asyncio_client.adapters.models.workflow_def_adapter import (
+    WorkflowDefAdapter,
+)
+
+WorkflowAdapter.model_rebuild(raise_errors=False)

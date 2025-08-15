@@ -28,10 +28,6 @@ class TaskDefAdapter(TaskDef):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.schema_def_adapter import (
-            SchemaDefAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "backoffScaleFactor": obj.get("backoffScaleFactor"),
@@ -74,3 +70,10 @@ class TaskDefAdapter(TaskDef):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.schema_def_adapter import (
+    SchemaDefAdapter,
+)
+
+TaskDefAdapter.model_rebuild(raise_errors=False)

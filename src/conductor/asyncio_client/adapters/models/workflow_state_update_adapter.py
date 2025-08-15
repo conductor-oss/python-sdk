@@ -21,10 +21,6 @@ class WorkflowStateUpdateAdapter(WorkflowStateUpdate):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.task_result_adapter import (
-            TaskResultAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "taskReferenceName": obj.get("taskReferenceName"),
@@ -37,3 +33,8 @@ class WorkflowStateUpdateAdapter(WorkflowStateUpdate):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.task_result_adapter import (
+    TaskResultAdapter,
+)

@@ -45,34 +45,6 @@ class FieldOptionsOrBuilderAdapter(FieldOptionsOrBuilder):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.descriptor_adapter import (
-            DescriptorAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.edition_default_adapter import (
-            EditionDefaultAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.edition_default_or_builder_adapter import (
-            EditionDefaultOrBuilderAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.feature_set_adapter import (
-            FeatureSetAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.feature_set_or_builder_adapter import (
-            FeatureSetOrBuilderAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.message_adapter import (
-            MessageAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.uninterpreted_option_adapter import (
-            UninterpretedOptionAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.uninterpreted_option_or_builder_adapter import (
-            UninterpretedOptionOrBuilderAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
-            UnknownFieldSetAdapter,
-        )
-
         _obj = cls.model_validate(
             {
                 "allFields": obj.get("allFields"),
@@ -151,3 +123,34 @@ class FieldOptionsOrBuilderAdapter(FieldOptionsOrBuilder):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+    DescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.edition_default_adapter import (
+    EditionDefaultAdapter,
+)
+from conductor.asyncio_client.adapters.models.edition_default_or_builder_adapter import (
+    EditionDefaultOrBuilderAdapter,
+)
+from conductor.asyncio_client.adapters.models.feature_set_adapter import (
+    FeatureSetAdapter,
+)
+from conductor.asyncio_client.adapters.models.feature_set_or_builder_adapter import (
+    FeatureSetOrBuilderAdapter,
+)
+from conductor.asyncio_client.adapters.models.message_adapter import (
+    MessageAdapter,
+)
+from conductor.asyncio_client.adapters.models.uninterpreted_option_adapter import (
+    UninterpretedOptionAdapter,
+)
+from conductor.asyncio_client.adapters.models.uninterpreted_option_or_builder_adapter import (
+    UninterpretedOptionOrBuilderAdapter,
+)
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+    UnknownFieldSetAdapter,
+)
+
+FieldOptionsOrBuilderAdapter.model_rebuild(raise_errors=False)

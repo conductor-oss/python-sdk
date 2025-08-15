@@ -21,11 +21,6 @@ class IntegrationAdapter(Integration):
         if not isinstance(obj, dict):
             return cls.model_validate(obj)
 
-        from conductor.asyncio_client.adapters.models.integration_api_adapter import (
-            IntegrationApiAdapter,
-        )
-        from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-
         _obj = cls.model_validate(
             {
                 "apis": (
@@ -53,3 +48,11 @@ class IntegrationAdapter(Integration):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.integration_api_adapter import (
+    IntegrationApiAdapter,
+)
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+
+IntegrationAdapter.model_rebuild(raise_errors=False)

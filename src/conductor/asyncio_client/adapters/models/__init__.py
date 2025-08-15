@@ -23,11 +23,11 @@ from conductor.asyncio_client.adapters.models.connectivity_test_input_adapter im
 from conductor.asyncio_client.adapters.models.connectivity_test_result_adapter import (
     ConnectivityTestResultAdapter as ConnectivityTestResult,
 )
-from conductor.asyncio_client.adapters.models.correlation_ids_search_request_adapter import (
-    CorrelationIdsSearchRequestAdapter as CorrelationIdsSearchRequest,
-)
 from conductor.asyncio_client.adapters.models.create_or_update_application_request_adapter import (
     CreateOrUpdateApplicationRequestAdapter as CreateOrUpdateApplicationRequest,
+)
+from conductor.asyncio_client.adapters.models.correlation_ids_search_request_adapter import (
+    CorrelationIdsSearchRequestAdapter as CorrelationIdsSearchRequest,
 )
 from conductor.asyncio_client.adapters.models.declaration_adapter import (
     DeclarationAdapter as Declaration,
@@ -84,7 +84,7 @@ from conductor.asyncio_client.adapters.models.enum_value_options_adapter import 
     EnumValueOptionsAdapter as EnumValueOptions,
 )
 from conductor.asyncio_client.adapters.models.enum_value_options_or_builder_adapter import (
-    EnumValueOptionsOrBuilderAdapter as EnumValueOptions,
+    EnumValueOptionsOrBuilderAdapter as EnumValueOptionsOrBuilder,
 )
 from conductor.asyncio_client.adapters.models.environment_variable_adapter import (
     EnvironmentVariableAdapter as EnvironmentVariable,
@@ -116,6 +116,9 @@ from conductor.asyncio_client.adapters.models.extension_range_adapter import (
 from conductor.asyncio_client.adapters.models.extension_range_options_adapter import (
     ExtensionRangeOptionsAdapter as ExtensionRangeOptions,
 )
+from conductor.asyncio_client.adapters.models.extension_range_options_or_builder_adapter import (
+    ExtensionRangeOptionsOrBuilderAdapter as ExtensionRangeOptionsOrBuilder,
+)
 from conductor.asyncio_client.adapters.models.extension_range_or_builder_adapter import (
     ExtensionRangeOrBuilderAdapter as ExtensionRangeOrBuilder,
 )
@@ -123,7 +126,7 @@ from conductor.asyncio_client.adapters.models.feature_set_adapter import (
     FeatureSetAdapter as FeatureSet,
 )
 from conductor.asyncio_client.adapters.models.feature_set_or_builder_adapter import (
-    FeatureSetOrBuilderAdapter as FeatureSet,
+    FeatureSetOrBuilderAdapter as FeatureSetOrBuilder,
 )
 from conductor.asyncio_client.adapters.models.field_descriptor_adapter import (
     FieldDescriptorAdapter as FieldDescriptor,
@@ -370,7 +373,7 @@ from conductor.asyncio_client.adapters.models.upsert_group_request_adapter impor
     UpsertGroupRequestAdapter as UpsertGroupRequest,
 )
 from conductor.asyncio_client.adapters.models.upsert_user_request_adapter import (
-    UpsertUserRequestAdapter as UpsertUserRequest,
+    UpsertUserRequestAdapter,
 )
 from conductor.asyncio_client.adapters.models.webhook_config_adapter import (
     WebhookConfigAdapter as WebhookConfig,
@@ -411,6 +414,7 @@ from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
 from conductor.asyncio_client.adapters.models.workflow_test_request_adapter import (
     WorkflowTestRequestAdapter as WorkflowTestRequest,
 )
+
 
 __all__ = [
     "Action",
@@ -553,4 +557,9 @@ __all__ = [
     "WorkflowSummary",
     "WorkflowTask",
     "WorkflowTestRequest",
+    "EnumValueOptionsOrBuilder",
+    "ExtensionRangeOptionsOrBuilder",
+    "FeatureSetOrBuilder",
+    "SubWorkflowParams",
+    "UpsertUserRequestAdapter",
 ]
