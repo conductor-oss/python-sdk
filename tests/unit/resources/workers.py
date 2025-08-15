@@ -2,8 +2,9 @@ from requests.structures import CaseInsensitiveDict
 
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
-from conductor.client.worker.worker_interface import WorkerInterface
+from conductor.shared.http.enums import TaskResultStatus
+from conductor.client.worker.worker_interface import WorkerInterface as OldWorkerInterface
+from conductor.asyncio_client.worker.worker_interface import WorkerInterface
 
 
 class UserInfo:
@@ -18,7 +19,7 @@ class UserInfo:
         return self.name + ":" + str(self.id)
 
 
-class FaultyExecutionWorker(WorkerInterface):
+class OldFaultyExecutionWorker(OldWorkerInterface):
     def execute(self, task: Task) -> TaskResult:
         raise Exception("faulty execution")
 
@@ -47,7 +48,7 @@ class SimplePythonWorker(WorkerInterface):
         return "simple_python_worker"
 
 
-class ClassWorker(WorkerInterface):
+class ClassWorker(OldWorkerInterface):
     def __init__(self, task_definition_name: str):
         super().__init__(task_definition_name)
         self.poll_interval = 50.0
@@ -66,3 +67,26 @@ class ClassWorker(WorkerInterface):
         )
         task_result.status = TaskResultStatus.COMPLETED
         return task_result
+
+
+class ClassWorker2(WorkerInterface):
+    def __init__(self, task_definition_name: str):
+        super().__init__(task_definition_name)
+        self.poll_interval = 50.0
+
+    def execute(self, task: Task) -> TaskResult:
+        task_result = self.get_task_result_from_task(task)
+        task_result.output_data = {
+            "worker_style": "class",
+            "secret_number": 1234,
+            "is_it_true": False,
+            "dictionary_ojb": {"name": "sdk_worker", "idx": 465},
+            "case_insensitive_dictionary_ojb": {"NaMe": "sdk_worker", "iDX": 465},
+        }
+        task_result.status = TaskResultStatus.COMPLETED
+        return task_result
+
+
+class FaultyExecutionWorker(WorkerInterface):
+    def execute(self, task: Task) -> TaskResult:
+        raise Exception("faulty execution")

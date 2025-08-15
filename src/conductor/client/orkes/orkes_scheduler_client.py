@@ -9,7 +9,7 @@ from conductor.client.http.models.workflow_schedule import WorkflowSchedule
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.scheduler_client import SchedulerClient
-
+from asyncio import run_until_complete
 
 class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
     def __init__(self, configuration: Configuration):

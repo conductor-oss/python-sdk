@@ -5,7 +5,7 @@ from dataclasses import dataclass, field, InitVar
 from typing import Dict, List, Optional, Any, Union
 from deprecated import deprecated
 
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.http.models.task_exec_log import TaskExecLog
 
 

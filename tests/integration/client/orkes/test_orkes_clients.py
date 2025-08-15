@@ -14,7 +14,7 @@ from conductor.client.http.models.target_ref import TargetRef
 from conductor.shared.http.enums.target_type import TargetType
 from conductor.client.http.models.task_def import TaskDef
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
 from conductor.client.http.models.upsert_user_request import UpsertUserRequest
 from conductor.client.http.models.workflow_def import WorkflowDef

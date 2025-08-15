@@ -37,7 +37,6 @@ from conductor.client.http.models.task_def import TaskDef
 from conductor.client.http.models.task_details import TaskDetails
 from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.http.models.task_summary import TaskSummary
 from conductor.client.http.models.token import Token
 from conductor.client.http.models.upsert_group_request import UpsertGroupRequest

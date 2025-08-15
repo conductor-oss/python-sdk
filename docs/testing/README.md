@@ -14,7 +14,7 @@ A sample unit test code snippet is provided below.
 
 ```python
 import json
-from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
+from conductor.shared.configuration.settings.authentication_settings import AuthenticationSettings
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.workflow_test_request import WorkflowTestRequest
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient

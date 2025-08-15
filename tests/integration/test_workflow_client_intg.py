@@ -1,10 +1,8 @@
 import logging
-import os
 import unittest
 
 from tests.integration.client.orkes.test_orkes_clients import TestOrkesClients
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from tests.integration.metadata.test_workflow_definition import run_workflow_definition_tests

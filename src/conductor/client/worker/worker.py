@@ -9,15 +9,15 @@ from typing import Any, Callable, Union, Optional
 
 from typing_extensions import Self
 
-from conductor.client.automator import utils
-from conductor.client.automator.utils import convert_from_dict_or_list
+from conductor.shared.automator import utils
+from conductor.shared.automator.utils import convert_from_dict_or_list
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api_client import ApiClient
 from conductor.client.http.models import TaskExecLog
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
-from conductor.client.worker.exception import NonRetryableException
+from conductor.shared.http.enums import TaskResultStatus
+from conductor.shared.worker.exception import NonRetryableException
 from conductor.client.worker.worker_interface import WorkerInterface, DEFAULT_POLLING_INTERVAL
 
 ExecuteTaskFunction = Callable[

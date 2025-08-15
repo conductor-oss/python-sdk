@@ -4,13 +4,14 @@ from typing import List, Optional
 
 from conductor.asyncio_client.adapters.models.schema_def_adapter import \
     SchemaDefAdapter
+from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesSchemaClient(OrkesBaseClient):
-    def __init__(self, configuration: Configuration):
-        super(OrkesSchemaClient, self).__init__(configuration)
+    def __init__(self, configuration: Configuration, api_client: ApiClient):
+        super().__init__(configuration, api_client)
 
     # Core Schema Operations
     async def save_schemas(

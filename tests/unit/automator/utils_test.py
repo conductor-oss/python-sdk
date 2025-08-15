@@ -5,7 +5,7 @@ from typing import List
 import pytest
 from requests.structures import CaseInsensitiveDict
 
-from conductor.client.automator.utils import convert_from_dict
+from conductor.shared.automator.utils import convert_from_dict
 from tests.unit.resources.workers import UserInfo
 
 

@@ -4,7 +4,7 @@ import pytest
 
 from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

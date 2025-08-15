@@ -8,7 +8,7 @@ from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.http.models.workflow import Workflow
 from conductor.client.http.rest import ApiException
 from conductor.client.orkes.orkes_task_client import OrkesTaskClient

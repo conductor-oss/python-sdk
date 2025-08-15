@@ -5,9 +5,9 @@ import pytest
 from conductor.client.http.models import (
     TaskExecLog,
     TaskResult,
-    TaskResultStatus,
     WorkflowStateUpdate,
 )
+from conductor.shared.http.enums import TaskResultStatus
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
