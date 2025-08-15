@@ -136,7 +136,7 @@ class OrkesClients:
             - Application management and access control
             - Permission granting and revocation
         """
-        return OrkesAuthorizationClient(self.configuration)
+        return OrkesAuthorizationClient(self.configuration, self.api_client)
 
     def get_metadata_client(self) -> OrkesMetadataClient:
         """
@@ -155,7 +155,7 @@ class OrkesClients:
             - Schema validation and versioning
             - Metadata querying and retrieval
         """
-        return OrkesMetadataClient(self.configuration)
+        return OrkesMetadataClient(self.configuration, self.api_client)
 
     def get_scheduler_client(self) -> OrkesSchedulerClient:
         """
@@ -174,7 +174,7 @@ class OrkesClients:
             - Managing schedule policies and triggers
             - Querying schedule execution history
         """
-        return OrkesSchedulerClient(self.configuration)
+        return OrkesSchedulerClient(self.configuration, self.api_client)
 
     def get_secret_client(self) -> OrkesSecretClient:
         """
@@ -193,7 +193,7 @@ class OrkesClients:
             - Controlling access to sensitive information
             - Organizing secrets with tags and metadata
         """
-        return OrkesSecretClient(self.configuration)
+        return OrkesSecretClient(self.configuration, self.api_client)
 
     def get_task_client(self) -> OrkesTaskClient:
         """
@@ -214,7 +214,7 @@ class OrkesClients:
             - Managing task queues and worker assignments
             - Retrieving task execution history and logs
         """
-        return OrkesTaskClient(self.configuration)
+        return OrkesTaskClient(self.configuration, self.api_client)
 
     def get_integration_client(self) -> OrkesIntegrationClient:
         """
@@ -233,7 +233,7 @@ class OrkesClients:
             - Controlling integration authentication
             - Managing integration providers and APIs
         """
-        return OrkesIntegrationClient(self.configuration)
+        return OrkesIntegrationClient(self.configuration, self.api_client)
 
     def get_prompt_client(self) -> OrkesPromptClient:
         """
@@ -252,7 +252,7 @@ class OrkesClients:
             - Versioning and organizing prompts
             - Managing prompt template metadata and tags
         """
-        return OrkesPromptClient(self.configuration)
+        return OrkesPromptClient(self.configuration, self.api_client)
 
     def get_schema_client(self) -> OrkesSchemaClient:
         """
@@ -271,7 +271,7 @@ class OrkesClients:
             - Versioning schema definitions
             - Managing schema metadata and documentation
         """
-        return OrkesSchemaClient(self.configuration)
+        return OrkesSchemaClient(self.configuration, self.api_client)
 
     def get_workflow_executor(self) -> AsyncWorkflowExecutor:
         """
