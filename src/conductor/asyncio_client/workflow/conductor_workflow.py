@@ -5,6 +5,9 @@ from typing import Any, Dict, List, Optional, Union
 
 from shortuuid import uuid
 
+from conductor.asyncio_client.adapters.models.extended_workflow_def_adapter import (
+    ExtendedWorkflowDefAdapter,
+)
 from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
     StartWorkflowRequestAdapter,
 )
@@ -200,7 +203,7 @@ class AsyncConductorWorkflow:
     async def register(self, overwrite: bool):
         return await self._executor.register_workflow(
             overwrite=overwrite,
-            workflow=self.to_workflow_def(),
+            workflow=self.to_extended_workflow_def(),
         )
 
     async def start_workflow(
@@ -305,6 +308,25 @@ class AsyncConductorWorkflow:
             owner_email=self._owner_email,
             timeout_policy=self._timeout_policy,
             timeout_seconds=self._timeout_seconds,
+            variables=self._variables,
+            input_template=self._input_template,
+            workflow_status_listener_enabled=self._workflow_status_listener_enabled,
+            workflow_status_listener_sink=self._workflow_status_listener_sink,
+        )
+
+    def to_extended_workflow_def(self) -> ExtendedWorkflowDefAdapter:
+        return ExtendedWorkflowDefAdapter(
+            name=self._name,
+            description=self._description,
+            version=self._version,
+            tasks=self.__get_workflow_task_list(),
+            input_parameters=self._input_parameters,
+            output_parameters=self._output_parameters,
+            failure_workflow=self._failure_workflow,
+            schema_version=AsyncConductorWorkflow.SCHEMA_VERSION,
+            owner_email=self._owner_email,
+            timeout_policy=self._timeout_policy,
+            timeout_seconds=1,
             variables=self._variables,
             input_template=self._input_template,
             workflow_status_listener_enabled=self._workflow_status_listener_enabled,

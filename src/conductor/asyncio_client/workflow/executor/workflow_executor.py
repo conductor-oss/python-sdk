@@ -122,12 +122,7 @@ class AsyncWorkflowExecutor:
         if request_id is None:
             request_id = str(uuid.uuid4())
 
-        request = StartWorkflowRequestAdapter()
-        request.name = name
-        if version:
-            request.version = version
-        request.input = workflow_input
-        request.correlation_id = correlation_id
+        request = StartWorkflowRequestAdapter(name=name, version=version, input=workflow_input)
         if domain is not None:
             request.task_to_domain = {"*": domain}
 

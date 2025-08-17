@@ -33,12 +33,12 @@ class TaskInterface():
                  cache_ttl_second: int = 0) -> Self:
         self.task_reference_name = task_reference_name
         self.task_type = task_type
-        self.task_name = task_name if task_name is not None else task_type.value
+        self.name = task_name or task_reference_name
         self.description = description
         self.optional = optional
-        self.input_parameters = input_parameters if input_parameters is not None else {}
-        self.cache_key = cache_key
-        self.cache_ttl_second = cache_ttl_second
+        self.input_parameters = input_parameters
+        self._cache_key = cache_key
+        self._cache_ttl_second = cache_ttl_second
         self._expression = None
         self._evaluator_type = None
 
@@ -137,8 +137,8 @@ class TaskInterface():
 
     def to_workflow_task(self) -> WorkflowTask:
         cache_config = None
-        if self.cache_ttl_second > 0 and self.cache_key is not None:
-            cache_config = CacheConfig(key=self.cache_key, ttl_in_second=self.cache_ttl_second)
+        if self._cache_ttl_second > 0 and self._cache_key is not None:
+            cache_config = CacheConfig(key=self._cache_key, ttl_in_second=self._cache_ttl_second)
         return WorkflowTask(
             name=self._name,
             task_reference_name=self._task_reference_name,
@@ -175,7 +175,7 @@ class TaskInterface():
             else:
                 return "${" + f"{self.task_reference_name}.input.{json_path}" + "}"
 
-    def __getattribute__(self, __name: str, /) -> Any:
+    def __getattribute__(self, __name: str) -> Any:
         try:
             val = super().__getattribute__(__name)
             return val
