@@ -195,7 +195,7 @@ class AsyncTaskRunner:
                 # Wait for [10s, 20s, 30s] before next attempt
                 await asyncio.sleep(attempt * 10)
             try:
-                response = await self.task_client.update_task(body=task_result)
+                response = await self.task_client.update_task(task_result=task_result)
                 logger.debug(
                     "Updated task, id: %s, workflow_instance_id: %s, task_definition_name: %s, response: %s",
                     task_result.task_id,

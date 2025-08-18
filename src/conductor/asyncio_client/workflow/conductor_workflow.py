@@ -280,6 +280,7 @@ class AsyncConductorWorkflow:
             input=workflow_input,
             name=workflow_def.name,
             version=1,
+            timeout_seconds=self._timeout_seconds,
         )
         if idempotency_key is not None:
             request.idempotency_key = idempotency_key

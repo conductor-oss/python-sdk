@@ -22,7 +22,7 @@ class OrkesMetadataClient(OrkesBaseClient):
     # Task Definition Operations
     async def register_task_def(self, task_def: ExtendedTaskDefAdapter) -> None:
         """Register a new task definition"""
-        await self.metadata_api.register_task_def(task_def)
+        await self.metadata_api.register_task_def([task_def])
 
     async def update_task_def(self, task_def: ExtendedTaskDefAdapter) -> None:
         """Update an existing task definition"""

@@ -6,10 +6,9 @@ For detailed explanation, https://github.com/conductor-sdk/conductor-python/blob
 """
 
 import asyncio
-
-from conductor.asyncio_client.automator.task_handler import TaskHandler
-from conductor.asyncio_client.configuration import Configuration
 from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.automator.task_handler import TaskHandler
+from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 from conductor.asyncio_client.worker.worker_task import worker_task
 from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
@@ -31,37 +30,38 @@ async def main():
     # CONDUCTOR_AUTH_KEY : API Authentication Key
     # CONDUCTOR_AUTH_SECRET: API Auth Secret
     api_config = Configuration()
-
     task_handler = TaskHandler(configuration=api_config)
     task_handler.start_processes()
 
-    api_client = ApiClient(configuration=api_config._http_config)
+    async with ApiClient(api_config) as api_client:
+        clients = OrkesClients(api_client=api_client, configuration=api_config)
+        workflow_executor = clients.get_workflow_executor()
+        workflow = AsyncConductorWorkflow(
+            name="dynamic_workflow", version=1, executor=workflow_executor
+        )
+        get_email = get_user_email(
+            task_ref_name="get_user_email_ref", userid=workflow.input("userid")
+        )
+        sendmail = send_email(
+            task_ref_name="send_email_ref",
+            email=get_email.output("result"),
+            subject="Hello from Orkes",
+            body="Test Email",
+        )
 
-    clients = OrkesClients(configuration=api_config, api_client=api_client)
-    workflow_executor = clients.get_workflow_executor()
-    workflow = AsyncConductorWorkflow(
-        name="dynamic_workflow", version=1, executor=workflow_executor
-    )
-    get_email = get_user_email(
-        task_ref_name="get_user_email_ref", userid=workflow.input("userid")
-    )
-    sendmail = send_email(
-        task_ref_name="send_email_ref",
-        email=get_email,
-        subject="Hello from Orkes",
-        body="Test Email",
-    )
-    workflow >> get_email >> sendmail
+        workflow >> get_email >> sendmail
 
-    # Configure the output of the workflow
-    workflow.output_parameters(output_parameters={"email": get_email})
+        # Configure the output of the workflow
+        workflow.output_parameters(
+            output_parameters={"email": get_email.output("result")}
+        )
 
-    workflow_run = await workflow.execute(workflow_input={"userid": "user_a"})
-    print(f"\nworkflow output:  {workflow_run.output}\n")
-    print(
-        f"check the workflow execution here: {api_config.ui_host}/execution/{workflow_run.workflow_id}"
-    )
-    await api_client.close()
+        workflow_run = await workflow.execute(workflow_input={"userid": "user_a"})
+        print(f"\nworkflow output:  {workflow_run.output}\n")
+        print(
+            f"check the workflow execution here: {api_config.ui_host}/execution/{workflow_run.workflow_id}"
+        )
+
     task_handler.stop_processes()
 
 

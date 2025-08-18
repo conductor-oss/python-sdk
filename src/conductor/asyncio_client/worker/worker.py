@@ -104,7 +104,7 @@ class Worker(WorkerInterface):
                 return task_output
             else:
                 task_result.status = TaskResultStatus.COMPLETED
-                task_result.output_data = task_output
+                task_result.output_data = {"result": task_output}
 
         except NonRetryableException as ne:
             task_result.status = TaskResultStatus.FAILED_WITH_TERMINAL_ERROR

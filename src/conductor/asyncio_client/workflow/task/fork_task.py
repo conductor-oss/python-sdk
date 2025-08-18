@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from copy import deepcopy
 from typing import List, Optional, Union
 
 from conductor.asyncio_client.adapters.models.workflow_task_adapter import \
@@ -25,7 +24,7 @@ class ForkTask(TaskInterface):
             task_reference_name=task_ref_name,
             task_type=TaskType.FORK_JOIN,
         )
-        self._forked_tasks = deepcopy(forked_tasks)
+        self._forked_tasks = forked_tasks
         self._join_on = join_on
 
     def to_workflow_task(

@@ -8,7 +8,10 @@ from conductor.shared.workflow.models import HttpInput
 
 
 class HttpTask(TaskInterface):
-    def __init__(self, task_ref_name: str, http_input: HttpInput):
+    def __init__(self, task_ref_name: str, http_input: HttpInput | dict):
+        if isinstance(http_input, dict):
+            http_input = HttpInput.model_validate(http_input)
+
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.HTTP,
