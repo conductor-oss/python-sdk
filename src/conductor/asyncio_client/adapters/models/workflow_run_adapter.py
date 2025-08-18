@@ -13,6 +13,26 @@ class WorkflowRunAdapter(WorkflowRun):
     tasks: Optional[List["TaskAdapter"]] = None
     variables: Optional[Dict[str, Any]] = None
 
+    @property
+    def current_task(self) -> TaskAdapter:
+        current = None
+        for task in self.tasks:
+            if task.status == 'SCHEDULED' or task.status == 'IN_PROGRESS':
+                current = task
+        return current
+
+    def get_task(self, name: str = None, task_reference_name: str = None) -> TaskAdapter:
+        if name is None and task_reference_name is None:
+            raise Exception('ONLY one of name or task_reference_name MUST be provided.  None were provided')
+        if name is not None and not task_reference_name is None:
+            raise Exception('ONLY one of name or task_reference_name MUST be provided.  both were provided')
+
+        current = None
+        for task in self.tasks:
+            if task.task_def_name == name or task.workflow_task.task_reference_name == task_reference_name:
+                current = task
+        return current
+
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
         """Create an instance of WorkflowRun from a dict"""

@@ -5,10 +5,10 @@ from conductor.asyncio_client.automator.task_handler import TaskHandler
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.worker.worker_task import worker_task
-from conductor.asyncio_client.workflow.conductor_workflow import \
-    AsyncConductorWorkflow
-from conductor.asyncio_client.workflow.task.llm_tasks.llm_text_complete import \
-    LlmTextComplete
+from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
+from conductor.asyncio_client.workflow.task.llm_tasks.llm_text_complete import (
+    LlmTextComplete,
+)
 from conductor.shared.ai.configuration import OpenAIConfig
 from conductor.shared.ai.enums import LLMProvider
 

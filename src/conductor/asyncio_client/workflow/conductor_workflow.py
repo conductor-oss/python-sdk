@@ -237,16 +237,17 @@ class AsyncConductorWorkflow:
         Starts the workflow with given inputs and parameters and returns the id of the started workflow
         """
         workflow_input = workflow_input or {}
-        start_workflow_request = StartWorkflowRequestAdapter()
-        start_workflow_request.workflow_def = self.to_workflow_def()
-        start_workflow_request.name = self.name
-        start_workflow_request.version = self.version
-        start_workflow_request.input = workflow_input
-        start_workflow_request.correlation_id = correlation_id
-        start_workflow_request.idempotency_key = idempotency_key
-        start_workflow_request.idempotency_strategy = idempotency_strategy
-        start_workflow_request.priority = priority
-        start_workflow_request.task_to_domain = task_to_domain
+        start_workflow_request = StartWorkflowRequestAdapter(
+            workflow_def=self.to_workflow_def(),
+            name=self.name,
+            version=self.version,
+            input=workflow_input,
+            correlation_id=correlation_id,
+            task_to_domain=task_to_domain,
+            priority=priority,
+            idempotency_key=idempotency_key,
+            idempotency_strategy=idempotency_strategy,
+        )
 
         return await self._executor.start_workflow(start_workflow_request)
 

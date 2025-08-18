@@ -18,6 +18,14 @@ class WorkflowAdapter(Workflow):
     tasks: Optional[List["TaskAdapter"]] = None
     history: Optional[List["WorkflowAdapter"]] = None
 
+    @property
+    def current_task(self) -> TaskAdapter:
+        current = None
+        for task in self.tasks:
+            if task.status == 'SCHEDULED' or task.status == 'IN_PROGRESS':
+                current = task
+        return current
+
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
         """Create an instance of Workflow from a dict"""

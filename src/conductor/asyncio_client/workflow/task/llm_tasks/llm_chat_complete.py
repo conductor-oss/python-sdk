@@ -24,12 +24,6 @@ class LlmChatComplete(TaskInterface):
         template_variables = template_variables or {}
         stop_words = stop_words or []
 
-        # Ensure all messages are ChatMessage models
-        validated_messages = [
-            msg if isinstance(msg, ChatMessage) else ChatMessage(**msg)
-            for msg in messages
-        ]
-
         input_params = {
             "llmProvider": llm_provider,
             "model": model,
@@ -37,7 +31,7 @@ class LlmChatComplete(TaskInterface):
             "temperature": temperature,
             "topP": top_p,
             "instructions": instructions_template,
-            "messages": [m.model_dump(exclude_none=True) for m in validated_messages],
+            "messages": messages,
         }
 
         if stop_words:

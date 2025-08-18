@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from typing import Any, Dict, List, Optional
 
 from conductor.asyncio_client.adapters.models.correlation_ids_search_request_adapter import \
@@ -266,8 +267,8 @@ class OrkesWorkflowClient(OrkesBaseClient):
     async def update_workflow_and_task_state(
         self,
         workflow_id: str,
-        request_id: str,
         workflow_state_update: WorkflowStateUpdateAdapter,
+        request_id: str = uuid.uuid4(),
         wait_until_task_ref_names: Optional[List[str]] = None,
         wait_for_seconds: Optional[int] = None,
     ) -> WorkflowRunAdapter:
@@ -387,7 +388,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         update_request: WorkflowStateUpdateAdapter,
     ) -> WorkflowRunAdapter:
         """Alias for update_workflow_state"""
-        return await self.update_workflow_state(
+        return await self.update_workflow_and_task_state(
             workflow_id=workflow_id, workflow_state_update=update_request
         )
 

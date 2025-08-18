@@ -22,7 +22,7 @@ async def register_workflow(
 async def main():
     # points to http://localhost:8080/api by default
     api_config = Configuration()
-    async with ApiClient(api_config._http_config) as api_client:
+    async with ApiClient(api_config) as api_client:
         workflow_executor = AsyncWorkflowExecutor(
             configuration=api_config, api_client=api_client
         )
@@ -38,7 +38,7 @@ async def main():
             workflow_input={"name": "World"},
         )
 
-    print(f'\nworkflow result: {workflow_run.output}\n')
+    print(f"\nworkflow result: {workflow_run.output}\n")
     print(
         f"see the workflow execution here: {api_config.ui_host}/execution/{workflow_run.workflow_id}\n"
     )

@@ -1,17 +1,17 @@
+import asyncio
 import datetime
 from dataclasses import dataclass
 from random import randint
-import asyncio
 
-from conductor.asyncio_client.adapters.models import TaskResult, Task
-from conductor.shared.http.enums import TaskResultStatus
-from conductor.shared.worker.exception import NonRetryableException
-from conductor.asyncio_client.worker.worker_task import worker_task
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters.models import Task, TaskResult
 from conductor.asyncio_client.automator.task_handler import TaskHandler
 from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
+from conductor.asyncio_client.worker.worker_task import worker_task
 from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
+from conductor.shared.http.enums import TaskResultStatus
+from conductor.shared.worker.exception import NonRetryableException
 
 
 class UserDetails:
@@ -20,22 +20,24 @@ class UserDetails:
     """
 
     swagger_types = {
-        '_name': 'str',
-        '_user_id': 'str',
-        '_phone': 'str',
-        '_email': 'str',
-        '_addresses': 'object',
+        "_name": "str",
+        "_user_id": "str",
+        "_phone": "str",
+        "_email": "str",
+        "_addresses": "object",
     }
 
     attribute_map = {
-        '_name': 'name',
-        '_user_id': 'user_id',
-        '_phone': 'phone',
-        '_email': 'email',
-        '_addresses': 'addresses'
+        "_name": "name",
+        "_user_id": "user_id",
+        "_phone": "phone",
+        "_email": "email",
+        "_addresses": "addresses",
     }
 
-    def __init__(self, name: str, user_id: int, phone: str, email: str, addresses: list[object]) -> None:
+    def __init__(
+        self, name: str, user_id: int, phone: str, email: str, addresses: list[object]
+    ) -> None:
         self._name = name
         self._user_id = user_id
         self._phone = phone
@@ -139,65 +141,62 @@ async def main():
     """
     # Configuration - defaults to reading from environment variables:
     # CONDUCTOR_SERVER_URL : conductor server e.g. https://play.orkes.io/api
-    # CONDUCTOR_AUTH_KEY : API Authentication Key  
+    # CONDUCTOR_AUTH_KEY : API Authentication Key
     # CONDUCTOR_AUTH_SECRET: API Auth Secret
     api_config = Configuration()
-    
+
     task_handler = TaskHandler(configuration=api_config)
     task_handler.start_processes()
-    
+
     async with ApiClient(api_config) as api_client:
         clients = OrkesClients(api_client=api_client, configuration=api_config)
         workflow_executor = clients.get_workflow_executor()
-        
+
         # Create a workflow that demonstrates the tasks
         workflow = AsyncConductorWorkflow(
-            name="task_worker_demo", 
-            version=1, 
-            executor=workflow_executor
+            name="task_worker_demo", version=1, executor=workflow_executor
         )
-        
+
         # Create task instances
         user_info_task = get_user_info(
-            task_ref_name="get_user_info_ref", 
-            user_id=workflow.input("user_id")
+            task_ref_name="get_user_info_ref", user_id=workflow.input("user_id")
         )
-        
+
         # Create an order for processing
         order_info = OrderInfo(
-            order_id=12345,
-            sku="PROD-001",
-            quantity=2,
-            sku_price=29.99
+            order_id=12345, sku="PROD-001", quantity=2, sku_price=29.99
         )
-        
+
         save_order_task = save_order(
-            task_ref_name="save_order_ref",
-            order_details=order_info
+            task_ref_name="save_order_ref", order_details=order_info
         )
-        
+
         # Add a task that might fail but can retry
         retry_task = fail_but_retry(task_ref_name="retry_task_ref")
-        
+
         # Define workflow execution order
         workflow >> user_info_task >> save_order_task >> retry_task
-        
+
         # Configure workflow output
-        workflow.output_parameters(output_parameters={
-            "user_details": user_info_task.output("result"),
-            "order_info": save_order_task.output("result"),
-            "retry_result": retry_task.output("result")
-        })
-        
+        workflow.output_parameters(
+            output_parameters={
+                "user_details": user_info_task.output("result"),
+                "order_info": save_order_task.output("result"),
+                "retry_result": retry_task.output("result"),
+            }
+        )
+
         # Execute the workflow
         print("Starting workflow execution...")
         workflow_run = await workflow.execute(workflow_input={"user_id": "user_123"})
-        
+
         print(f"\nWorkflow completed successfully!")
         print(f"Workflow ID: {workflow_run.workflow_id}")
         print(f"Workflow output: {workflow_run.output}")
-        print(f"View execution details at: {api_config.ui_host}/execution/{workflow_run.workflow_id}")
-            
+        print(
+            f"View execution details at: {api_config.ui_host}/execution/{workflow_run.workflow_id}"
+        )
+
         task_handler.stop_processes()
 
 

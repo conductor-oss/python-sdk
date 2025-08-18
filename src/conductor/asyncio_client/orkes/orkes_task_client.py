@@ -77,7 +77,7 @@ class OrkesTaskClient(OrkesBaseClient):
         workflow_id: str,
         task_ref_name: str,
         status: str,
-        request_body: Dict[str, Dict[str, Any]],
+        request_body: Dict[str, Any],
         worker_id: Optional[str] = None,
     ) -> str:
         """Update task synchronously by workflow ID and task reference name"""

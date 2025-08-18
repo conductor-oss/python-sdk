@@ -7,10 +7,10 @@ from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 from conductor.asyncio_client.worker.worker_task import worker_task
-from conductor.asyncio_client.workflow.conductor_workflow import \
-    AsyncConductorWorkflow
-from conductor.asyncio_client.workflow.task.wait_for_webhook_task import \
-    wait_for_webhook
+from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
+from conductor.asyncio_client.workflow.task.wait_for_webhook_task import (
+    wait_for_webhook,
+)
 
 
 @worker_task(task_definition_name="get_user_email")

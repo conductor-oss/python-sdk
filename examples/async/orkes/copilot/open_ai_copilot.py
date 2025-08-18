@@ -5,24 +5,24 @@ import string
 from dataclasses import dataclass
 from typing import Dict, List
 
-from conductor.asyncio_client.adapters.models import (ExtendedTaskDef,
-                                                      TaskResult)
+from conductor.asyncio_client.adapters.models import ExtendedTaskDef, TaskResult
 from conductor.asyncio_client.ai.orchestrator import AsyncAIOrchestrator
 from conductor.asyncio_client.automator.task_handler import TaskHandler
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.http.api_client import ApiClient
-from conductor.asyncio_client.http.models.workflow_state_update import \
-    WorkflowStateUpdate
+from conductor.asyncio_client.http.models.workflow_state_update import (
+    WorkflowStateUpdate,
+)
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 from conductor.asyncio_client.worker.worker_task import worker_task
-from conductor.asyncio_client.workflow.conductor_workflow import \
-    AsyncConductorWorkflow
+from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
 from conductor.asyncio_client.workflow.task.dynamic_task import DynamicTask
 from conductor.asyncio_client.workflow.task.llm_tasks.llm_chat_complete import (
-    ChatMessage, LlmChatComplete)
+    ChatMessage,
+    LlmChatComplete,
+)
 from conductor.asyncio_client.workflow.task.simple_task import SimpleTask
-from conductor.asyncio_client.workflow.task.sub_workflow_task import \
-    SubWorkflowTask
+from conductor.asyncio_client.workflow.task.sub_workflow_task import SubWorkflowTask
 from conductor.asyncio_client.workflow.task.switch_task import SwitchTask
 from conductor.asyncio_client.workflow.task.wait_task import WaitTask
 from conductor.shared.ai.configuration import OpenAIConfig

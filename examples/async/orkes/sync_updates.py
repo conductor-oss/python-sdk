@@ -1,14 +1,11 @@
 import asyncio
 
-from conductor.asyncio_client.adapters.models import (TaskResult,
-                                                      WorkflowStateUpdate)
+from conductor.asyncio_client.adapters.models import TaskResult, WorkflowStateUpdate
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
-from conductor.asyncio_client.workflow.conductor_workflow import \
-    AsyncConductorWorkflow
-from conductor.asyncio_client.workflow.task.http_task import (HttpInput,
-                                                              HttpTask)
+from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
+from conductor.asyncio_client.workflow.task.http_task import HttpInput, HttpTask
 from conductor.asyncio_client.workflow.task.switch_task import SwitchTask
 from conductor.asyncio_client.workflow.task.wait_task import WaitTask
 from conductor.shared.http.enums import TaskResultStatus

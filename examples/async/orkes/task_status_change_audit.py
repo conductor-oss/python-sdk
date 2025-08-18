@@ -1,10 +1,14 @@
 import asyncio
 
-from conductor.asyncio_client.adapters.models import (ExtendedWorkflowDef,
-                                                      StartWorkflowRequest,
-                                                      StateChangeEvent, Task,
-                                                      TaskDef, TaskResult,
-                                                      WorkflowTask)
+from conductor.asyncio_client.adapters.models import (
+    ExtendedWorkflowDef,
+    StartWorkflowRequest,
+    StateChangeEvent,
+    Task,
+    TaskDef,
+    TaskResult,
+    WorkflowTask,
+)
 from conductor.asyncio_client.automator.task_handler import TaskHandler
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.http.api_client import ApiClient
