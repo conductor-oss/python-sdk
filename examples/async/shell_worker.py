@@ -1,6 +1,7 @@
-import subprocess
 import asyncio
+from typing import Dict
 
+from conductor.shared.worker.exception import NonRetryableException
 from conductor.asyncio_client.worker.worker_task import worker_task
 from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.automator.task_handler import TaskHandler
@@ -9,10 +10,53 @@ from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
 
 
-@worker_task(task_definition_name='get_system_info')
-def get_system_info() -> str:
-    system_info = subprocess.run(['uname', '-a'], stdout=subprocess.PIPE, text=True)
-    return system_info.stdout
+@worker_task(task_definition_name='file_operation')
+def file_operation(operation: str, source: str, destination: str = None) -> Dict[str, str]:
+    try:
+        import shutil
+        import os
+        
+        if operation == 'copy':
+            if not destination:
+                raise NonRetryableException("Destination required for copy operation")
+            shutil.copy2(source, destination)
+            result = f"Copied {source} to {destination}"
+            
+        elif operation == 'move':
+            if not destination:
+                raise NonRetryableException("Destination required for move operation")
+            shutil.move(source, destination)
+            result = f"Moved {source} to {destination}"
+            
+        elif operation == 'delete':
+            if os.path.isfile(source):
+                os.remove(source)
+            elif os.path.isdir(source):
+                shutil.rmtree(source)
+            else:
+                raise NonRetryableException(f"Path does not exist: {source}")
+            result = f"Deleted {source}"
+            
+        elif operation == 'mkdir':
+            os.makedirs(source, exist_ok=True)
+            result = f"Created directory {source}"
+            
+        elif operation == 'exists':
+            result = f"Path {source} exists: {os.path.exists(source)}"
+            
+        else:
+            raise NonRetryableException(f"Unsupported operation: {operation}")
+            
+        return {
+            'operation': operation,
+            'source': source,
+            'destination': destination,
+            'result': result,
+            'success': True
+        }
+        
+    except Exception as e:
+        raise NonRetryableException(f"File operation failed: {str(e)}")
 
 
 async def create_shell_workflow(workflow_executor) -> AsyncConductorWorkflow:
@@ -22,15 +66,21 @@ async def create_shell_workflow(workflow_executor) -> AsyncConductorWorkflow:
         executor=workflow_executor
     )
     
-    system_info_task = get_system_info(task_ref_name='get_system_info')
+    create_dir = file_operation(
+        task_ref_name='create_temp_dir',
+        operation='mkdir',
+        source='./temp_workflow_dir'
+    )
     
     
-    workflow >> system_info_task
+    cleanup = file_operation(
+        task_ref_name='cleanup_temp_dir',
+        operation='delete',
+        source='./temp_workflow_dir'
+    )
     
-    workflow.output_parameters(output_parameters={
-        'system_info': system_info_task.output('result'),
-    })
-    
+    workflow >> create_dir >> cleanup
+
     return workflow
 
 
@@ -64,11 +114,6 @@ async def main():
         print(f"Workflow ID: {workflow_run.workflow_id}")
         print(f"Status: {workflow_run.status}")
         print(f"Execution URL: {api_config.ui_host}/execution/{workflow_run.workflow_id}")
-        
-        # Display workflow output
-        if workflow_run.output:
-            print(f"\nWorkflow Output:")
-            print(f"System Info: {workflow_run.output.get('system_info', 'N/A')}")
 
         task_handler.stop_processes()
 

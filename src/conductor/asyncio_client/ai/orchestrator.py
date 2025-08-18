@@ -17,15 +17,16 @@ if TYPE_CHECKING:
     from conductor.shared.ai.configuration.interfaces.integration_config import \
         IntegrationConfig
     from conductor.shared.ai.enums import LLMProvider, VectorDB
+    from conductor.asyncio_client.http.api_client import ApiClient
 
 NOT_FOUND_STATUS = 404
 
 
 class AsyncAIOrchestrator:
     def __init__(
-        self, api_configuration: Configuration, prompt_test_workflow_name: str = ""
+        self, api_client: ApiClient, api_configuration: Configuration, prompt_test_workflow_name: str = ""
     ):
-        orkes_clients = OrkesClients(api_configuration)
+        orkes_clients = OrkesClients(api_client, api_configuration)
 
         self.integration_client = orkes_clients.get_integration_client()
         self.workflow_client = orkes_clients.get_integration_client()

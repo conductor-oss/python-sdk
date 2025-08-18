@@ -30,7 +30,7 @@ class OrkesIntegrationClient(OrkesBaseClient):
         await self.integration_api.save_integration_provider(name, integration_update)
 
     async def save_integration(self, integration_name, integration_details: IntegrationUpdateAdapter) -> None:
-        await self.integration_api.save_integration_provider(integration_details, integration_name)
+        await self.integration_api.save_integration_provider(integration_name, integration_details)
 
     async def get_integration_provider(self, name: str) -> IntegrationDefAdapter:
         """Get integration provider by name"""

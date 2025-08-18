@@ -24,4 +24,4 @@ class DynamicTask(TaskInterface):
     def to_workflow_task(self) -> WorkflowTaskAdapter:
         wf_task = super().to_workflow_task()
         wf_task.dynamic_task_name_param = self._dynamic_task_param
-        return
+        return wf_task

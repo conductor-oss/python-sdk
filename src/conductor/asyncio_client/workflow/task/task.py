@@ -17,7 +17,7 @@ def get_task_interface_list_as_workflow_task_list(*tasks) -> List[WorkflowTaskAd
         if isinstance(wf_task, list):
             converted_tasks.extend(wf_task)
         else:
-            converted_tasks.append(task.to_workflow_task())
+            converted_tasks.append(wf_task)
     return converted_tasks
 
 

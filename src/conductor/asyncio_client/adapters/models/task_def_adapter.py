@@ -46,7 +46,7 @@ class TaskDefAdapter(TaskDef):
                 ),
                 "inputTemplate": obj.get("inputTemplate"),
                 "isolationGroupId": obj.get("isolationGroupId"),
-                "name": obj.get("name"),
+                "name": obj.get("name", "default_task_def"),
                 "outputKeys": obj.get("outputKeys"),
                 "outputSchema": (
                     SchemaDefAdapter.from_dict(obj["outputSchema"])
@@ -58,7 +58,7 @@ class TaskDefAdapter(TaskDef):
                 "pollTimeoutSeconds": obj.get("pollTimeoutSeconds"),
                 "rateLimitFrequencyInSeconds": obj.get("rateLimitFrequencyInSeconds"),
                 "rateLimitPerFrequency": obj.get("rateLimitPerFrequency"),
-                "responseTimeoutSeconds": obj.get("responseTimeoutSeconds"),
+                "responseTimeoutSeconds": obj.get("responseTimeoutSeconds") if obj.get("responseTimeoutSeconds") is not None and obj.get("responseTimeoutSeconds") != 0 else 600, # default to 10 minutes
                 "retryCount": obj.get("retryCount"),
                 "retryDelaySeconds": obj.get("retryDelaySeconds"),
                 "retryLogic": obj.get("retryLogic"),
