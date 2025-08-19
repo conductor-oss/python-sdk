@@ -117,13 +117,13 @@ class WorkflowDefAdapter(WorkflowDef):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.rate_limit_config_adapter import (
+from conductor.asyncio_client.adapters.models.rate_limit_config_adapter import (  # noqa: E402
     RateLimitConfigAdapter,
 )
-from conductor.asyncio_client.adapters.models.schema_def_adapter import (
+from conductor.asyncio_client.adapters.models.schema_def_adapter import (  # noqa: E402
     SchemaDefAdapter,
 )
-from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import (  # noqa: E402
     WorkflowTaskAdapter,
 )
 

@@ -32,7 +32,7 @@ class RoleAdapter(Role):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.permission_adapter import (
+from conductor.asyncio_client.adapters.models.permission_adapter import (  # noqa: E402
     PermissionAdapter,
 )
 

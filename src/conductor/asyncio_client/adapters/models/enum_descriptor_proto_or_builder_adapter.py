@@ -122,34 +122,34 @@ class EnumDescriptorProtoOrBuilderAdapter(EnumDescriptorProtoOrBuilder):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+from conductor.asyncio_client.adapters.models.byte_string_adapter import (  # noqa: E402
     ByteStringAdapter,
 )
-from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (  # noqa: E402
     DescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.enum_options_adapter import (
+from conductor.asyncio_client.adapters.models.enum_options_adapter import (  # noqa: E402
     EnumOptionsAdapter,
 )
-from conductor.asyncio_client.adapters.models.enum_options_or_builder_adapter import (
+from conductor.asyncio_client.adapters.models.enum_options_or_builder_adapter import (  # noqa: E402
     EnumOptionsOrBuilderAdapter,
 )
-from conductor.asyncio_client.adapters.models.enum_reserved_range_adapter import (
+from conductor.asyncio_client.adapters.models.enum_reserved_range_adapter import (  # noqa: E402
     EnumReservedRangeAdapter,
 )
-from conductor.asyncio_client.adapters.models.enum_reserved_range_or_builder_adapter import (
+from conductor.asyncio_client.adapters.models.enum_reserved_range_or_builder_adapter import (  # noqa: E402
     EnumReservedRangeOrBuilderAdapter,
 )
-from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_adapter import (
+from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_adapter import (  # noqa: E402
     EnumValueDescriptorProtoAdapter,
 )
-from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_or_builder_adapter import (
+from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_or_builder_adapter import (  # noqa: E402
     EnumValueDescriptorProtoOrBuilderAdapter,
 )
-from conductor.asyncio_client.adapters.models.message_adapter import (
+from conductor.asyncio_client.adapters.models.message_adapter import (  # noqa: E402
     MessageAdapter,
 )
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (  # noqa: E402
     UnknownFieldSetAdapter,
 )
 

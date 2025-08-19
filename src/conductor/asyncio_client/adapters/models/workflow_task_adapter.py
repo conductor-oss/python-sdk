@@ -136,16 +136,16 @@ class WorkflowTaskAdapter(WorkflowTask):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.cache_config_adapter import (
+from conductor.asyncio_client.adapters.models.cache_config_adapter import (  # noqa: E402
     CacheConfigAdapter,
 )
-from conductor.asyncio_client.adapters.models.state_change_event_adapter import (
+from conductor.asyncio_client.adapters.models.state_change_event_adapter import (  # noqa: E402
     StateChangeEventAdapter,
 )
-from conductor.asyncio_client.adapters.models.sub_workflow_params_adapter import (
+from conductor.asyncio_client.adapters.models.sub_workflow_params_adapter import (  # noqa: E402
     SubWorkflowParamsAdapter,
 )
-from conductor.asyncio_client.adapters.models.task_def_adapter import (
+from conductor.asyncio_client.adapters.models.task_def_adapter import (  # noqa: E402
     TaskDefAdapter,
 )
 

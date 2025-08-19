@@ -67,19 +67,19 @@ class MethodDescriptorAdapter(MethodDescriptor):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (  # noqa: E402
     DescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (  # noqa: E402
     FileDescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.method_descriptor_proto_adapter import (
+from conductor.asyncio_client.adapters.models.method_descriptor_proto_adapter import (  # noqa: E402
     MethodDescriptorProtoAdapter,
 )
-from conductor.asyncio_client.adapters.models.method_options_adapter import (
+from conductor.asyncio_client.adapters.models.method_options_adapter import (  # noqa: E402
     MethodOptionsAdapter,
 )
-from conductor.asyncio_client.adapters.models.service_descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.service_descriptor_adapter import (  # noqa: E402
     ServiceDescriptorAdapter,
 )
 

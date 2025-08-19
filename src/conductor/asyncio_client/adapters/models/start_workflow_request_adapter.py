@@ -48,7 +48,7 @@ class StartWorkflowRequestAdapter(StartWorkflowRequest):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.workflow_def_adapter import (
+from conductor.asyncio_client.adapters.models.workflow_def_adapter import (  # noqa: E402
     WorkflowDefAdapter,
 )
 

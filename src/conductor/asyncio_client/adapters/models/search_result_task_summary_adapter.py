@@ -32,7 +32,7 @@ class SearchResultTaskSummaryAdapter(SearchResultTaskSummary):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.task_summary_adapter import (
+from conductor.asyncio_client.adapters.models.task_summary_adapter import (  # noqa: E402
     TaskSummaryAdapter,
 )
 

@@ -72,19 +72,19 @@ class ExtensionRangeOrBuilderAdapter(ExtensionRangeOrBuilder):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (  # noqa: E402
     DescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.extension_range_options_adapter import (
+from conductor.asyncio_client.adapters.models.extension_range_options_adapter import (  # noqa: E402
     ExtensionRangeOptionsAdapter,
 )
-from conductor.asyncio_client.adapters.models.extension_range_options_or_builder_adapter import (
+from conductor.asyncio_client.adapters.models.extension_range_options_or_builder_adapter import (  # noqa: E402
     ExtensionRangeOptionsOrBuilderAdapter,
 )
-from conductor.asyncio_client.adapters.models.message_adapter import (
+from conductor.asyncio_client.adapters.models.message_adapter import (  # noqa: E402
     MessageAdapter,
 )
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (  # noqa: E402
     UnknownFieldSetAdapter,
 )
 

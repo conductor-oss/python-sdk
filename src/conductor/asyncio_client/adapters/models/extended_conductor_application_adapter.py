@@ -37,6 +37,6 @@ class ExtendedConductorApplicationAdapter(ExtendedConductorApplication):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter  # noqa: E402
 
 ExtendedConductorApplicationAdapter.model_rebuild(raise_errors=False)

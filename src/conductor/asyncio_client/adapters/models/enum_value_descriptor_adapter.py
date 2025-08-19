@@ -53,16 +53,16 @@ class EnumValueDescriptorAdapter(EnumValueDescriptor):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import (  # noqa: E402
     EnumDescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_adapter import (
+from conductor.asyncio_client.adapters.models.enum_value_descriptor_proto_adapter import (  # noqa: E402
     EnumValueDescriptorProtoAdapter,
 )
-from conductor.asyncio_client.adapters.models.enum_value_options_adapter import (
+from conductor.asyncio_client.adapters.models.enum_value_options_adapter import (  # noqa: E402
     EnumValueOptionsAdapter,
 )
-from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (  # noqa: E402
     FileDescriptorAdapter,
 )
 

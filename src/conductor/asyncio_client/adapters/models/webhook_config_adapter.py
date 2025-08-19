@@ -60,8 +60,8 @@ class WebhookConfigAdapter(WebhookConfig):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.adapters.models.webhook_execution_history_adapter import (
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter  # noqa: E402
+from conductor.asyncio_client.adapters.models.webhook_execution_history_adapter import (  # noqa: E402
     WebhookExecutionHistoryAdapter,
 )
 

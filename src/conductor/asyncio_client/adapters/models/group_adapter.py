@@ -39,6 +39,6 @@ class GroupAdapter(Group):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter
+from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter  # noqa: E402
 
 GroupAdapter.model_rebuild(raise_errors=False)

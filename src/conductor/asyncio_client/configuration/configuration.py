@@ -166,7 +166,7 @@ class Configuration:
             self.__log_level = logging.INFO
         # Log format
         self.__logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
-        
+
         # Setup logging
         self.logger = logging.getLogger(__name__)
         if debug:

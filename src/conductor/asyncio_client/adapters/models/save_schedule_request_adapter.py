@@ -44,7 +44,7 @@ class SaveScheduleRequestAdapter(SaveScheduleRequest):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (  # noqa: E402
     StartWorkflowRequestAdapter,
 )
 

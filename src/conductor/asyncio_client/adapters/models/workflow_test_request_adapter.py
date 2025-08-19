@@ -70,10 +70,10 @@ class WorkflowTestRequestAdapter(WorkflowTestRequest):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.task_mock_adapter import (
+from conductor.asyncio_client.adapters.models.task_mock_adapter import (  # noqa: E402
     TaskMockAdapter,
 )
-from conductor.asyncio_client.adapters.models.workflow_def_adapter import (
+from conductor.asyncio_client.adapters.models.workflow_def_adapter import (  # noqa: E402
     WorkflowDefAdapter,
 )
 

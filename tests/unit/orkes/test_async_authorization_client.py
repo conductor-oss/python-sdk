@@ -42,7 +42,9 @@ from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_authorization_client import (
     OrkesAuthorizationClient,
 )
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.shared.http.enums import SubjectType, TargetType
+
 
 APP_ID = "5d860b70-a429-4b20-8d28-6b5198155882"
 APP_NAME = "ut_application_name"
@@ -57,7 +59,8 @@ WF_NAME = "workflow_name"
 @pytest.fixture(scope="module")
 def authorization_client():
     configuration = Configuration("http://localhost:8080/api")
-    return OrkesAuthorizationClient(configuration)
+    api_client = ApiClient(configuration)
+    return OrkesAuthorizationClient(configuration, api_client=api_client)
 
 
 @pytest.fixture(scope="module")

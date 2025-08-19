@@ -100,25 +100,25 @@ class ServiceDescriptorProtoAdapter(ServiceDescriptorProto):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+from conductor.asyncio_client.adapters.models.byte_string_adapter import (  # noqa: E402
     ByteStringAdapter,
 )
-from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (  # noqa: E402
     DescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.method_descriptor_proto_adapter import (
+from conductor.asyncio_client.adapters.models.method_descriptor_proto_adapter import (  # noqa: E402
     MethodDescriptorProtoAdapter,
 )
-from conductor.asyncio_client.adapters.models.method_descriptor_proto_or_builder_adapter import (
+from conductor.asyncio_client.adapters.models.method_descriptor_proto_or_builder_adapter import (  # noqa: E402
     MethodDescriptorProtoOrBuilderAdapter,
 )
-from conductor.asyncio_client.adapters.models.service_options_adapter import (
+from conductor.asyncio_client.adapters.models.service_options_adapter import (  # noqa: E402
     ServiceOptionsAdapter,
 )
-from conductor.asyncio_client.adapters.models.service_options_or_builder_adapter import (
+from conductor.asyncio_client.adapters.models.service_options_or_builder_adapter import (  # noqa: E402
     ServiceOptionsOrBuilderAdapter,
 )
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (  # noqa: E402
     UnknownFieldSetAdapter,
 )
 

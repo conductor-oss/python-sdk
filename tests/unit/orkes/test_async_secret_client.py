@@ -9,6 +9,7 @@ from conductor.asyncio_client.adapters.models.extended_secret_adapter import (
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.http.rest import ApiException
 from conductor.asyncio_client.orkes.orkes_secret_client import OrkesSecretClient
+from conductor.asyncio_client.adapters import ApiClient
 
 SECRET_KEY = "ut_secret_key"
 SECRET_VALUE = "ut_secret_value"
@@ -18,7 +19,8 @@ ERROR_BODY = '{"message":"No such secret found by key"}'
 @pytest.fixture(scope="module")
 def secret_client():
     configuration = Configuration("http://localhost:8080/api")
-    return OrkesSecretClient(configuration)
+    api_client = ApiClient(configuration)
+    return OrkesSecretClient(configuration, api_client=api_client)
 
 
 @pytest.fixture(autouse=True)

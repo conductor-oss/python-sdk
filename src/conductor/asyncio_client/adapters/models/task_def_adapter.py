@@ -72,7 +72,7 @@ class TaskDefAdapter(TaskDef):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.schema_def_adapter import (
+from conductor.asyncio_client.adapters.models.schema_def_adapter import (  # noqa: E402
     SchemaDefAdapter,
 )
 

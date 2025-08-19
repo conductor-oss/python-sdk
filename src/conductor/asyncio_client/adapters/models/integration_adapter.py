@@ -50,9 +50,9 @@ class IntegrationAdapter(Integration):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.integration_api_adapter import (
+from conductor.asyncio_client.adapters.models.integration_api_adapter import (  # noqa: E402
     IntegrationApiAdapter,
 )
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter  # noqa: E402
 
 IntegrationAdapter.model_rebuild(raise_errors=False)

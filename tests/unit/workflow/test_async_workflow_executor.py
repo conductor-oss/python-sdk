@@ -13,6 +13,7 @@ from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAd
 from conductor.asyncio_client.adapters.models.workflow_run_adapter import WorkflowRunAdapter
 from conductor.asyncio_client.adapters.models.workflow_status_adapter import WorkflowStatusAdapter
 from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.workflow.executor.workflow_executor import AsyncWorkflowExecutor
 
 
@@ -50,7 +51,8 @@ def workflow_executor(mock_configuration, mock_metadata_client, mock_task_client
          patch('conductor.asyncio_client.workflow.executor.workflow_executor.TaskResourceApiAdapter', return_value=mock_task_client), \
          patch('conductor.asyncio_client.workflow.executor.workflow_executor.OrkesWorkflowClient', return_value=mock_workflow_client):
         
-        executor = AsyncWorkflowExecutor(mock_configuration)
+        api_client = ApiClient(mock_configuration)
+        executor = AsyncWorkflowExecutor(mock_configuration, api_client=api_client)
         executor.metadata_client = mock_metadata_client
         executor.task_client = mock_task_client
         executor.workflow_client = mock_workflow_client

@@ -38,10 +38,10 @@ class AuthorizationRequestAdapter(AuthorizationRequest):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.subject_ref_adapter import (
+from conductor.asyncio_client.adapters.models.subject_ref_adapter import (  # noqa: E402
     SubjectRefAdapter,
 )
-from conductor.asyncio_client.adapters.models.target_ref_adapter import (
+from conductor.asyncio_client.adapters.models.target_ref_adapter import (  # noqa: E402
     TargetRefAdapter,
 )
 

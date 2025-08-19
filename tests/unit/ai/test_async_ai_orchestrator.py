@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from conductor.asyncio_client.ai.orchestrator import AsyncAIOrchestrator
+from conductor.asyncio_client.adapters import ApiClient
 
 from conductor.asyncio_client.adapters.models.message_template_adapter import (
     MessageTemplateAdapter,
@@ -29,6 +30,10 @@ def mock_configuration():
     return Configuration("http://localhost:8080/api")
 
 @pytest.fixture
+def mock_api_client():
+    return MagicMock(spec=ApiClient)
+
+@pytest.fixture
 def mock_orkes_clients():
     return MagicMock(spec=OrkesClients)
 
@@ -51,21 +56,21 @@ def mock_integration_config():
     return config
 
 @pytest.fixture
-def orchestrator(mock_configuration, mock_orkes_clients, 
+def orchestrator(mock_configuration, mock_api_client, mock_orkes_clients, 
                     mock_integration_client, mock_prompt_client, mock_workflow_executor):
     with patch('conductor.asyncio_client.ai.orchestrator.OrkesClients', return_value=mock_orkes_clients):
         mock_orkes_clients.get_integration_client.return_value = mock_integration_client
         mock_orkes_clients.get_prompt_client.return_value = mock_prompt_client
         mock_orkes_clients.get_workflow_executor.return_value = mock_workflow_executor
         
-        orchestrator = AsyncAIOrchestrator(mock_configuration)
+        orchestrator = AsyncAIOrchestrator(api_configuration=mock_configuration, api_client=mock_api_client)
         orchestrator.integration_client = mock_integration_client
         orchestrator.prompt_client = mock_prompt_client
         orchestrator.workflow_executor = mock_workflow_executor
         
         return orchestrator
 
-def test_init_with_default_prompt_test_workflow_name(mock_configuration, mock_orkes_clients,
+def test_init_with_default_prompt_test_workflow_name(mock_configuration, mock_api_client, mock_orkes_clients,
                                                     mock_integration_client, mock_prompt_client, 
                                                     mock_workflow_executor):
     with patch('conductor.asyncio_client.ai.orchestrator.OrkesClients', return_value=mock_orkes_clients):
@@ -73,14 +78,14 @@ def test_init_with_default_prompt_test_workflow_name(mock_configuration, mock_or
         mock_orkes_clients.get_prompt_client.return_value = mock_prompt_client
         mock_orkes_clients.get_workflow_executor.return_value = mock_workflow_executor
         
-        orchestrator = AsyncAIOrchestrator(mock_configuration)
+        orchestrator = AsyncAIOrchestrator(api_configuration=mock_configuration, api_client=mock_api_client)
         
         assert orchestrator.integration_client == mock_integration_client
         assert orchestrator.prompt_client == mock_prompt_client
         assert orchestrator.workflow_executor == mock_workflow_executor
         assert orchestrator.prompt_test_workflow_name.startswith("prompt_test_")
 
-def test_init_with_custom_prompt_test_workflow_name(mock_configuration, mock_orkes_clients,
+def test_init_with_custom_prompt_test_workflow_name(mock_configuration, mock_api_client, mock_orkes_clients,
                                                     mock_integration_client, mock_prompt_client, 
                                                     mock_workflow_executor):
     custom_name = "custom_test_workflow"
@@ -90,7 +95,7 @@ def test_init_with_custom_prompt_test_workflow_name(mock_configuration, mock_ork
         mock_orkes_clients.get_prompt_client.return_value = mock_prompt_client
         mock_orkes_clients.get_workflow_executor.return_value = mock_workflow_executor
         
-        orchestrator = AsyncAIOrchestrator(mock_configuration, custom_name)
+        orchestrator = AsyncAIOrchestrator(api_configuration=mock_configuration, api_client=mock_api_client, prompt_test_workflow_name=custom_name)
         
         assert orchestrator.prompt_test_workflow_name == custom_name
 
@@ -358,7 +363,7 @@ def test_prompt_test_workflow_name_generation(mock_configuration, mock_orkes_cli
         mock_orkes_clients.get_prompt_client.return_value = mock_prompt_client
         mock_orkes_clients.get_workflow_executor.return_value = mock_workflow_executor
         
-        orchestrator = AsyncAIOrchestrator(mock_configuration)
+        orchestrator = AsyncAIOrchestrator(api_configuration=mock_configuration, api_client=mock_api_client)
         
         assert orchestrator.prompt_test_workflow_name.startswith("prompt_test_")
         uuid_part = orchestrator.prompt_test_workflow_name[len("prompt_test_"):]

@@ -53,7 +53,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
                             in the spec for a single request.
         :type _host_index: int, optional
         :return: Returns the result object.
-        """  # noqa: E501
+        """
 
         _param = self._update_workflow_state_serialize(
             workflow_id=workflow_id,

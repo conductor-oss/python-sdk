@@ -14,6 +14,7 @@ from conductor.asyncio_client.adapters.models.start_workflow_request_adapter imp
 from conductor.asyncio_client.http.rest import ApiException
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.orkes.orkes_scheduler_client import OrkesSchedulerClient
+from conductor.asyncio_client.adapters import ApiClient
 
 SCHEDULE_NAME = "ut_schedule"
 WORKFLOW_NAME = "ut_wf"
@@ -23,7 +24,8 @@ ERROR_BODY = '{"message":"No such schedule found by name"}'
 @pytest.fixture(scope="module")
 def scheduler_client():
     configuration = Configuration("http://localhost:8080/api")
-    return OrkesSchedulerClient(configuration)
+    api_client = ApiClient(configuration)
+    return OrkesSchedulerClient(configuration, api_client=api_client)
 
 
 @pytest.fixture(autouse=True)

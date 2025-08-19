@@ -106,19 +106,19 @@ class FieldDescriptorProtoAdapter(FieldDescriptorProto):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.byte_string_adapter import (
+from conductor.asyncio_client.adapters.models.byte_string_adapter import (  # noqa: E402
     ByteStringAdapter,
 )
-from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (  # noqa: E402
     DescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.field_options_adapter import (
+from conductor.asyncio_client.adapters.models.field_options_adapter import (  # noqa: E402
     FieldOptionsAdapter,
 )
-from conductor.asyncio_client.adapters.models.field_options_or_builder_adapter import (
+from conductor.asyncio_client.adapters.models.field_options_or_builder_adapter import (  # noqa: E402
     FieldOptionsOrBuilderAdapter,
 )
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (  # noqa: E402
     UnknownFieldSetAdapter,
 )
 

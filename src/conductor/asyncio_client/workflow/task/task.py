@@ -178,7 +178,7 @@ class TaskInterface:
             else:
                 return "${" + f"{self.task_reference_name}.input.{json_path}" + "}"
 
-    def __getattribute__(self, __name: str) -> Any:
+    def __getattribute__(self, __name: str, /) -> Any:
         try:
             val = super().__getattribute__(__name)
             return val

@@ -107,22 +107,22 @@ class DescriptorAdapter(Descriptor):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.descriptor_proto_adapter import (
+from conductor.asyncio_client.adapters.models.descriptor_proto_adapter import (  # noqa: E402
     DescriptorProtoAdapter,
 )
-from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import (  # noqa: E402
     EnumDescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.field_descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.field_descriptor_adapter import (  # noqa: E402
     FieldDescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (  # noqa: E402
     FileDescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.message_options_adapter import (
+from conductor.asyncio_client.adapters.models.message_options_adapter import (  # noqa: E402
     MessageOptionsAdapter,
 )
-from conductor.asyncio_client.adapters.models.oneof_descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.oneof_descriptor_adapter import (  # noqa: E402
     OneofDescriptorAdapter,
 )
 

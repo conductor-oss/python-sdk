@@ -63,7 +63,7 @@ class TaskResourceApiAdapter(TaskResourceApi):
                             in the spec for a single request.
         :type _host_index: int, optional
         :return: Returns the result object.
-        """  # noqa: E501
+        """
 
         _param = self._update_task_sync_serialize(
             workflow_id=workflow_id,
@@ -78,7 +78,7 @@ class TaskResourceApiAdapter(TaskResourceApi):
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "Workflow",
+            "200": "Workflow",
         }
         response_data = await self.api_client.call_api(
             *_param,

@@ -24,6 +24,7 @@ from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.http.rest import ApiException
 from conductor.asyncio_client.orkes.orkes_metadata_client import OrkesMetadataClient
+from conductor.asyncio_client.adapters import ApiClient
 
 WORKFLOW_NAME = "ut_wf"
 WORKFLOW_TASK_REF = "ut_wf_ref"
@@ -33,7 +34,8 @@ TASK_NAME = "ut_task"
 @pytest.fixture(scope="module")
 def metadata_client():
     configuration = Configuration("http://localhost:8080/api")
-    return OrkesMetadataClient(configuration)
+    api_client = ApiClient(configuration)
+    return OrkesMetadataClient(configuration, api_client=api_client)
 
 
 @pytest.fixture(autouse=True)
@@ -190,7 +192,7 @@ async def test_register_task_def(mocker, metadata_client, extended_task_def):
     mock = mocker.patch.object(MetadataResourceApiAdapter, "register_task_def")
     await metadata_client.register_task_def(extended_task_def)
     assert mock.called
-    mock.assert_called_with(extended_task_def)
+    mock.assert_called_with([extended_task_def])
 
 
 @pytest.mark.asyncio

@@ -57,16 +57,16 @@ class ActionAdapter(Action):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (  # noqa: E402
     StartWorkflowRequestAdapter,
 )
-from conductor.asyncio_client.adapters.models.task_details_adapter import (
+from conductor.asyncio_client.adapters.models.task_details_adapter import (  # noqa: E402
     TaskDetailsAdapter,
 )
-from conductor.asyncio_client.adapters.models.terminate_workflow_adapter import (
+from conductor.asyncio_client.adapters.models.terminate_workflow_adapter import (  # noqa: E402
     TerminateWorkflowAdapter,
 )
-from conductor.asyncio_client.adapters.models.update_workflow_variables_adapter import (
+from conductor.asyncio_client.adapters.models.update_workflow_variables_adapter import (  # noqa: E402
     UpdateWorkflowVariablesAdapter,
 )
 

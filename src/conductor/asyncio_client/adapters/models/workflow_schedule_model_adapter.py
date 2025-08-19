@@ -55,9 +55,9 @@ class WorkflowScheduleModelAdapter(WorkflowScheduleModel):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (  # noqa: E402
     StartWorkflowRequestAdapter,
 )
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter  # noqa: E402
 
 WorkflowScheduleModelAdapter.model_rebuild(raise_errors=False)

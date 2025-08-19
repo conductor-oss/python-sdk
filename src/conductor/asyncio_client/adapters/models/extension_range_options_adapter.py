@@ -119,28 +119,28 @@ class ExtensionRangeOptionsAdapter(ExtensionRangeOptions):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.declaration_adapter import (
+from conductor.asyncio_client.adapters.models.declaration_adapter import (  # noqa: E402
     DeclarationAdapter,
 )
-from conductor.asyncio_client.adapters.models.declaration_or_builder_adapter import (
+from conductor.asyncio_client.adapters.models.declaration_or_builder_adapter import (  # noqa: E402
     DeclarationOrBuilderAdapter,
 )
-from conductor.asyncio_client.adapters.models.descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (  # noqa: E402
     DescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.feature_set_adapter import (
+from conductor.asyncio_client.adapters.models.feature_set_adapter import (  # noqa: E402
     FeatureSetAdapter,
 )
-from conductor.asyncio_client.adapters.models.feature_set_or_builder_adapter import (
+from conductor.asyncio_client.adapters.models.feature_set_or_builder_adapter import (  # noqa: E402
     FeatureSetOrBuilderAdapter,
 )
-from conductor.asyncio_client.adapters.models.uninterpreted_option_adapter import (
+from conductor.asyncio_client.adapters.models.uninterpreted_option_adapter import (  # noqa: E402
     UninterpretedOptionAdapter,
 )
-from conductor.asyncio_client.adapters.models.uninterpreted_option_or_builder_adapter import (
+from conductor.asyncio_client.adapters.models.uninterpreted_option_or_builder_adapter import (  # noqa: E402
     UninterpretedOptionOrBuilderAdapter,
 )
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (  # noqa: E402
     UnknownFieldSetAdapter,
 )
 

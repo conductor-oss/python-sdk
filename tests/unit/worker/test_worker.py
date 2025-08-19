@@ -106,7 +106,7 @@ def test_execute_success_with_simple_function(worker, mock_task):
     assert result.task_id == "test_task_id"
     assert result.workflow_instance_id == "test_workflow_id"
     assert result.status == TaskResultStatus.COMPLETED
-    assert result.output_data == {"result": "value1_42"}
+    assert result.output_data == {"result": {"result": "value1_42"}}
 
 
 def test_execute_success_with_task_input_function(task_input_execute_function, mock_task):
@@ -121,7 +121,7 @@ def test_execute_success_with_task_input_function(task_input_execute_function, m
     assert result.task_id == "test_task_id"
     assert result.workflow_instance_id == "test_workflow_id"
     assert result.status == TaskResultStatus.COMPLETED
-    assert result.output_data == {"result": "processed_test_task_id"}
+    assert result.output_data == {"result": {"result": "processed_test_task_id"}}
 
 
 def test_execute_success_with_task_result_function(task_result_execute_function, mock_task):
@@ -145,7 +145,7 @@ def test_execute_with_missing_parameters(worker, mock_task):
     result = worker.execute(mock_task)
     
     assert result.status == TaskResultStatus.COMPLETED
-    assert result.output_data == {"result": "value1_10"}
+    assert result.output_data == {"result": {"result": "value1_10"}}
 
 
 def test_execute_with_none_parameters(worker, mock_task):
@@ -154,7 +154,7 @@ def test_execute_with_none_parameters(worker, mock_task):
     result = worker.execute(mock_task)
     
     assert result.status == TaskResultStatus.COMPLETED
-    assert result.output_data == {"result": "value1_None"}
+    assert result.output_data == {"result": {"result": "value1_None"}}
 
 
 def test_execute_with_non_retryable_exception(worker, mock_task):
@@ -284,7 +284,7 @@ def test_execute_with_empty_input_data(worker, mock_task):
     result = worker.execute(mock_task)
     
     assert result.status == TaskResultStatus.COMPLETED
-    assert result.output_data == {"result": "None_10"}
+    assert result.output_data == {"result": {"result": "None_10"}}
 
 
 def test_execute_with_exception_no_args(worker, mock_task):

@@ -14,6 +14,7 @@ from conductor.asyncio_client.adapters.models.workflow_run_adapter import Workfl
 from conductor.asyncio_client.adapters.models.workflow_test_request_adapter import WorkflowTestRequestAdapter
 from conductor.asyncio_client.http.rest import ApiException
 from conductor.asyncio_client.orkes.orkes_workflow_client import OrkesWorkflowClient
+from conductor.asyncio_client.adapters import ApiClient
 
 WORKFLOW_NAME = "ut_wf"
 WORKFLOW_UUID = "ut_wf_uuid"
@@ -24,7 +25,8 @@ CORRELATION_ID = "correlation_id"
 @pytest.fixture(scope="module")
 def workflow_client():
     configuration = Configuration("http://localhost:8080/api")
-    return OrkesWorkflowClient(configuration)
+    api_client = ApiClient(configuration)
+    return OrkesWorkflowClient(configuration, api_client=api_client)
 
 
 @pytest.fixture(autouse=True)

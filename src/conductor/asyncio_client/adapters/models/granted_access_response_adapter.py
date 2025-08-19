@@ -37,7 +37,7 @@ class GrantedAccessResponseAdapter(GrantedAccessResponse):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.granted_access_adapter import (
+from conductor.asyncio_client.adapters.models.granted_access_adapter import (  # noqa: E402
     GrantedAccessAdapter,
 )
 

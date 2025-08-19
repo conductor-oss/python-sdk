@@ -44,7 +44,7 @@ class TaskResultAdapter(TaskResult):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.task_exec_log_adapter import (
+from conductor.asyncio_client.adapters.models.task_exec_log_adapter import (  # noqa: E402
     TaskExecLogAdapter,
 )
 

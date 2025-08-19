@@ -39,7 +39,7 @@ class SearchResultWorkflowScheduleExecutionModelAdapter(
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.workflow_schedule_execution_model_adapter import (
+from conductor.asyncio_client.adapters.models.workflow_schedule_execution_model_adapter import (  # noqa: E402
     WorkflowScheduleExecutionModelAdapter,
 )
 

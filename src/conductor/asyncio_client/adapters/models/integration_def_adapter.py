@@ -42,7 +42,7 @@ class IntegrationDefAdapter(IntegrationDef):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.integration_def_form_field_adapter import (
+from conductor.asyncio_client.adapters.models.integration_def_form_field_adapter import (  # noqa: E402
     IntegrationDefFormFieldAdapter,
 )
 

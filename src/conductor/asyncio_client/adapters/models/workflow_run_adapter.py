@@ -17,15 +17,15 @@ class WorkflowRunAdapter(WorkflowRun):
     def current_task(self) -> TaskAdapter:
         current = None
         for task in self.tasks:
-            if task.status == 'SCHEDULED' or task.status == 'IN_PROGRESS':
+            if task.status in ("SCHEDULED", "IN_PROGRESS"):
                 current = task
         return current
 
-    def get_task(self, name: str = None, task_reference_name: str = None) -> TaskAdapter:
+    def get_task(self, name: Optional[str] = None, task_reference_name: Optional[str] = None) -> TaskAdapter:
         if name is None and task_reference_name is None:
-            raise Exception('ONLY one of name or task_reference_name MUST be provided.  None were provided')
-        if name is not None and not task_reference_name is None:
-            raise Exception('ONLY one of name or task_reference_name MUST be provided.  both were provided')
+            raise Exception("ONLY one of name or task_reference_name MUST be provided.  None were provided")
+        if name is not None and task_reference_name is not None:
+            raise Exception("ONLY one of name or task_reference_name MUST be provided.  both were provided")
 
         current = None
         for task in self.tasks:
@@ -65,6 +65,6 @@ class WorkflowRunAdapter(WorkflowRun):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
+from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter  # noqa: E402
 
 WorkflowRunAdapter.model_rebuild(raise_errors=False)

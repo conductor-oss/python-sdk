@@ -44,7 +44,7 @@ class ConductorUserAdapter(ConductorUser):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter
-from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter
+from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter  # noqa: E402
+from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter  # noqa: E402
 
 ConductorUserAdapter.model_rebuild(raise_errors=False)

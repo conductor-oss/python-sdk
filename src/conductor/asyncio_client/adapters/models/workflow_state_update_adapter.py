@@ -35,6 +35,6 @@ class WorkflowStateUpdateAdapter(WorkflowStateUpdate):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.task_result_adapter import (
+from conductor.asyncio_client.adapters.models.task_result_adapter import (  # noqa: E402
     TaskResultAdapter,
 )

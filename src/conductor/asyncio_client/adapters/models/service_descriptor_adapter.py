@@ -53,16 +53,16 @@ class ServiceDescriptorAdapter(ServiceDescriptor):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (  # noqa: E402
     FileDescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.method_descriptor_adapter import (
+from conductor.asyncio_client.adapters.models.method_descriptor_adapter import (  # noqa: E402
     MethodDescriptorAdapter,
 )
-from conductor.asyncio_client.adapters.models.service_descriptor_proto_adapter import (
+from conductor.asyncio_client.adapters.models.service_descriptor_proto_adapter import (  # noqa: E402
     ServiceDescriptorProtoAdapter,
 )
-from conductor.asyncio_client.adapters.models.service_options_adapter import (
+from conductor.asyncio_client.adapters.models.service_options_adapter import (  # noqa: E402
     ServiceOptionsAdapter,
 )
 

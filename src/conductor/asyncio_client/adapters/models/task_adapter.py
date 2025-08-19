@@ -89,10 +89,10 @@ class TaskAdapter(Task):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.task_def_adapter import (
+from conductor.asyncio_client.adapters.models.task_def_adapter import (  # noqa: E402
     TaskDefAdapter,
 )
-from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import (  # noqa: E402
     WorkflowTaskAdapter,
 )
 

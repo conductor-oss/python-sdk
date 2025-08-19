@@ -35,7 +35,7 @@ class SearchResultHandledEventResponseAdapter(SearchResultHandledEventResponse):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.handled_event_response_adapter import (
+from conductor.asyncio_client.adapters.models.handled_event_response_adapter import (  # noqa: E402
     HandledEventResponseAdapter,
 )
 

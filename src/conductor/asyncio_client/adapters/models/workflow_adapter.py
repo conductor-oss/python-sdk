@@ -21,8 +21,8 @@ class WorkflowAdapter(Workflow):
     @property
     def current_task(self) -> TaskAdapter:
         current = None
-        for task in self.tasks:
-            if task.status == 'SCHEDULED' or task.status == 'IN_PROGRESS':
+        for task in self.tasks or []:
+            if task.status in ("SCHEDULED", "IN_PROGRESS"):
                 current = task
         return current
 
@@ -91,8 +91,8 @@ class WorkflowAdapter(Workflow):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
-from conductor.asyncio_client.adapters.models.workflow_def_adapter import (
+from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter  # noqa: E402
+from conductor.asyncio_client.adapters.models.workflow_def_adapter import (  # noqa: E402
     WorkflowDefAdapter,
 )
 

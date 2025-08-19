@@ -79,9 +79,9 @@ class ExtendedTaskDefAdapter(ExtendedTaskDef):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.schema_def_adapter import (
+from conductor.asyncio_client.adapters.models.schema_def_adapter import (  # noqa: E402
     SchemaDefAdapter,
 )
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter  # noqa: E402
 
 ExtendedTaskDefAdapter.model_rebuild(raise_errors=False)

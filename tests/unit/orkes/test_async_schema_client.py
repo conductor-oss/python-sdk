@@ -7,6 +7,7 @@ from conductor.asyncio_client.adapters.api.schema_resource_api import SchemaReso
 from conductor.asyncio_client.adapters.models.schema_def_adapter import SchemaDefAdapter
 from conductor.asyncio_client.http.rest import ApiException
 from conductor.asyncio_client.orkes.orkes_schema_client import OrkesSchemaClient
+from conductor.asyncio_client.adapters import ApiClient
 
 SCHEMA_NAME = "ut_schema"
 SCHEMA_VERSION = 1
@@ -15,7 +16,8 @@ SCHEMA_VERSION = 1
 @pytest.fixture(scope="module")
 def schema_client():
     configuration = Configuration("http://localhost:8080/api")
-    return OrkesSchemaClient(configuration)
+    api_client = ApiClient(configuration)
+    return OrkesSchemaClient(configuration, api_client=api_client)
 
 
 @pytest.fixture(autouse=True)

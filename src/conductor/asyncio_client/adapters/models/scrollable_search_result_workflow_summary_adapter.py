@@ -38,7 +38,7 @@ class ScrollableSearchResultWorkflowSummaryAdapter(
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.workflow_summary_adapter import (
+from conductor.asyncio_client.adapters.models.workflow_summary_adapter import (  # noqa: E402
     WorkflowSummaryAdapter,
 )
 

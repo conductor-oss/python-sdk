@@ -63,7 +63,7 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.option_adapter import (
+from conductor.asyncio_client.adapters.models.option_adapter import (  # noqa: E402
     OptionAdapter,
 )
 

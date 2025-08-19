@@ -40,7 +40,7 @@ class ApiClientAdapter(ApiClient):
                 post_params=post_params,
                 _request_timeout=_request_timeout,
             )
-            if response_data.status == 401:
+            if response_data.status == 401:  # noqa: PLR2004 (Unauthorized status code)
                 token = await self.refresh_authorization_token()
                 header_params["X-Authorization"] = token
                 response_data = await self.rest_client.request(
@@ -81,11 +81,9 @@ class ApiClientAdapter(ApiClient):
     @classmethod
     def get_default(cls):
         """Return new instance of ApiClient.
-
         This method returns newly created, based on default constructor,
         object of ApiClient class or returns a copy of default
         ApiClient.
-
         :return: The ApiClient object.
         """
         if cls._default is None:
