@@ -1,53 +1,93 @@
-import datetime
-import decimal
-import re
-from enum import Enum
+import json
+import logging
 
+from conductor.asyncio_client.adapters.models import GenerateTokenRequest
+from conductor.asyncio_client.http import rest
 from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.http.exceptions import ApiException
+
+logger = logging.getLogger(__name__)
 
 
 class ApiClientAdapter(ApiClient):
-    def __deserialize(self, data, klass):
-        """Deserializes dict, list, str into an object.
-
-        :param data: dict, list or str.
-        :param klass: class literal, or string of class name.
-
-        :return: object.
+    async def call_api(
+        self,
+        method,
+        url,
+        header_params=None,
+        body=None,
+        post_params=None,
+        _request_timeout=None,
+    ) -> rest.RESTResponse:
+        """Makes the HTTP request (synchronous)
+        :param method: Method to call.
+        :param url: Path to method endpoint.
+        :param header_params: Header parameters to be
+            placed in the request header.
+        :param body: Request body.
+        :param post_params dict: Request post form parameters,
+            for `application/x-www-form-urlencoded`, `multipart/form-data`.
+        :param _request_timeout: timeout setting for this request.
+        :return: RESTResponse
         """
-        if data is None:
-            return None
 
-        if isinstance(klass, str):
-            if klass.startswith("List["):
-                m = re.match(r"List\[(.*)]", klass)
-                assert m is not None, "Malformed List type definition"
-                sub_kls = m.group(1)
-                return [self.__deserialize(sub_data, sub_kls) for sub_data in data]
+        try:
+            response_data = await self.rest_client.request(
+                method,
+                url,
+                headers=header_params,
+                body=body,
+                post_params=post_params,
+                _request_timeout=_request_timeout,
+            )
+            if response_data.status == 401:
+                token = await self.refresh_authorization_token()
+                header_params["X-Authorization"] = token
+                response_data = await self.rest_client.request(
+                    method,
+                    url,
+                    headers=header_params,
+                    body=body,
+                    post_params=post_params,
+                    _request_timeout=_request_timeout,
+                )
+        except ApiException as e:
+            raise e
 
-            if klass.startswith("Dict["):
-                m = re.match(r"Dict\[([^,]*), (.*)]", klass)
-                assert m is not None, "Malformed Dict type definition"
-                sub_kls = m.group(2)
-                return {k: self.__deserialize(v, sub_kls) for k, v in data.items()}
+        return response_data
 
-            # convert str to class
-            if klass in self.NATIVE_TYPES_MAPPING:
-                klass = self.NATIVE_TYPES_MAPPING[klass]
-            else:
-                klass = getattr(conductor.asyncio_client.adapters.models, klass)
+    async def refresh_authorization_token(self):
+        obtain_new_token_response = await self.obtain_new_token()
+        token = obtain_new_token_response.get("token")
+        self.configuration.api_key["api_key"] = token
+        return token
 
-        if klass in self.PRIMITIVE_TYPES:
-            return self.__deserialize_primitive(data, klass)
-        elif klass == object:
-            return self.__deserialize_object(data)
-        elif klass == datetime.date:
-            return self.__deserialize_date(data)
-        elif klass == datetime.datetime:
-            return self.__deserialize_datetime(data)
-        elif klass == decimal.Decimal:
-            return decimal.Decimal(data)
-        elif issubclass(klass, Enum):
-            return self.__deserialize_enum(data, klass)
-        else:
-            return self.__deserialize_model(data, klass)
+    async def obtain_new_token(self):
+        body = GenerateTokenRequest(
+            key_id=self.configuration.auth_key,
+            key_secret=self.configuration.auth_secret,
+        )
+        _param = self.param_serialize(
+            method="POST",
+            resource_path="/token",
+            body=body.to_dict(),
+        )
+        response = await self.call_api(
+            *_param,
+        )
+        await response.read()
+        return json.loads(response.data)
+
+    @classmethod
+    def get_default(cls):
+        """Return new instance of ApiClient.
+
+        This method returns newly created, based on default constructor,
+        object of ApiClient class or returns a copy of default
+        ApiClient.
+
+        :return: The ApiClient object.
+        """
+        if cls._default is None:
+            cls._default = ApiClientAdapter()
+        return cls._default
