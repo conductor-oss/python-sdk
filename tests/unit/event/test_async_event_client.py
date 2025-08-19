@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from conductor.asyncio_client.event.event_client import AsyncEventClient
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.shared.event.configuration import QueueConfiguration
 from conductor.shared.event.configuration.kafka_queue import KafkaQueueConfiguration, KafkaConsumerConfiguration, KafkaProducerConfiguration
 

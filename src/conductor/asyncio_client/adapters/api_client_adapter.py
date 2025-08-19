@@ -1,0 +1,3 @@
+from conductor.asyncio_client.http.api_client import ApiClient
+
+class ApiClientAdapter(ApiClient): ...

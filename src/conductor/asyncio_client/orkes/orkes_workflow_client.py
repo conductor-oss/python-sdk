@@ -23,7 +23,7 @@ from conductor.asyncio_client.adapters.models.workflow_status_adapter import \
     WorkflowStatusAdapter
 from conductor.asyncio_client.adapters.models.workflow_test_request_adapter import \
     WorkflowTestRequestAdapter
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 

@@ -26,7 +26,7 @@ from conductor.asyncio_client.adapters.api.user_resource_api import \
 from conductor.asyncio_client.adapters.api.workflow_resource_api import \
     WorkflowResourceApiAdapter
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 
 
 class OrkesBaseClient:

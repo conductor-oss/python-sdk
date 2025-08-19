@@ -23,7 +23,8 @@ from conductor.asyncio_client.http.models.connectivity_test_result import Connec
 from conductor.asyncio_client.http.models.event_handler import EventHandler
 from conductor.asyncio_client.http.models.tag import Tag
 
-from conductor.asyncio_client.http.api_client import ApiClient, RequestSerialized
+from conductor.asyncio_client.http.api_client import RequestSerialized
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.api_response import ApiResponse
 from conductor.asyncio_client.http.rest import RESTResponseType
 

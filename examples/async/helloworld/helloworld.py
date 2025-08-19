@@ -4,7 +4,7 @@ from greetings_workflow import greetings_workflow
 
 from conductor.asyncio_client.automator.task_handler import TaskHandler
 from conductor.asyncio_client.configuration import Configuration
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
 from conductor.asyncio_client.workflow.executor.workflow_executor import (
     AsyncWorkflowExecutor,

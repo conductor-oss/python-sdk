@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.orkes.orkes_authorization_client import \
     OrkesAuthorizationClient
 from conductor.asyncio_client.orkes.orkes_integration_client import \

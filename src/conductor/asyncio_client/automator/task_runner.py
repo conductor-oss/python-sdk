@@ -15,7 +15,7 @@ from conductor.asyncio_client.adapters.models.task_result_adapter import \
     TaskResultAdapter
 from conductor.asyncio_client.configuration import Configuration
 from conductor.asyncio_client.adapters.api.task_resource_api import TaskResourceApiAdapter
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.exceptions import UnauthorizedException
 from conductor.asyncio_client.telemetry.metrics_collector import \
     AsyncMetricsCollector

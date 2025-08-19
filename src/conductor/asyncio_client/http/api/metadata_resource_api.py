@@ -23,7 +23,8 @@ from conductor.asyncio_client.http.models.extended_workflow_def import ExtendedW
 from conductor.asyncio_client.http.models.task_def import TaskDef
 from conductor.asyncio_client.http.models.workflow_def import WorkflowDef
 
-from conductor.asyncio_client.http.api_client import ApiClient, RequestSerialized
+from conductor.asyncio_client.http.api_client import RequestSerialized
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.api_response import ApiResponse
 from conductor.asyncio_client.http.rest import RESTResponseType
 

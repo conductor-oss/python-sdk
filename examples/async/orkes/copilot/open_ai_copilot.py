@@ -9,7 +9,7 @@ from conductor.asyncio_client.adapters.models import ExtendedTaskDef, TaskResult
 from conductor.asyncio_client.ai.orchestrator import AsyncAIOrchestrator
 from conductor.asyncio_client.automator.task_handler import TaskHandler
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.models.workflow_state_update import (
     WorkflowStateUpdate,
 )

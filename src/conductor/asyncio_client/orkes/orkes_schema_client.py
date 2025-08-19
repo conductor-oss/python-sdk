@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from conductor.asyncio_client.adapters.models.schema_def_adapter import \
     SchemaDefAdapter
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 

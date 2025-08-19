@@ -22,7 +22,8 @@ from conductor.asyncio_client.http.models.granted_access_response import Granted
 from conductor.asyncio_client.http.models.group import Group
 from conductor.asyncio_client.http.models.upsert_group_request import UpsertGroupRequest
 
-from conductor.asyncio_client.http.api_client import ApiClient, RequestSerialized
+from conductor.asyncio_client.http.api_client import RequestSerialized
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.api_response import ApiResponse
 from conductor.asyncio_client.http.rest import RESTResponseType
 

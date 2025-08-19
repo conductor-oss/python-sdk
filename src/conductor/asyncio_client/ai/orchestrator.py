@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from conductor.shared.ai.configuration.interfaces.integration_config import \
         IntegrationConfig
     from conductor.shared.ai.enums import LLMProvider, VectorDB
-    from conductor.asyncio_client.http.api_client import ApiClient
+    from conductor.asyncio_client.adapters import ApiClient
 
 NOT_FOUND_STATUS = 404
 

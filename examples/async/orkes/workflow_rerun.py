@@ -11,7 +11,7 @@ from conductor.asyncio_client.adapters.models import (
     WorkflowStateUpdate,
 )
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 from conductor.asyncio_client.orkes.orkes_workflow_client import OrkesWorkflowClient
 from conductor.shared.http.enums import TaskResultStatus

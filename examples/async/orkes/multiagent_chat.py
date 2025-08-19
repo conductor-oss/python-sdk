@@ -2,7 +2,7 @@ import asyncio
 
 from conductor.asyncio_client.ai.orchestrator import AsyncAIOrchestrator
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
 from conductor.asyncio_client.workflow.task.do_while_task import LoopTask

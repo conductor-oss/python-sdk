@@ -20,7 +20,8 @@ from pydantic import StrictBool
 from typing import Any, Dict, Optional
 from conductor.asyncio_client.http.models.generate_token_request import GenerateTokenRequest
 
-from conductor.asyncio_client.http.api_client import ApiClient, RequestSerialized
+from conductor.asyncio_client.http.api_client import RequestSerialized
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.api_response import ApiResponse
 from conductor.asyncio_client.http.rest import RESTResponseType
 

@@ -14,7 +14,7 @@ from conductor.asyncio_client.adapters.models.task_exec_log_adapter import \
 from conductor.asyncio_client.adapters.models.task_result_adapter import \
     TaskResultAdapter
 from conductor.asyncio_client.configuration import Configuration
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.worker.worker_interface import (
     DEFAULT_POLLING_INTERVAL, WorkerInterface)
 from conductor.shared.automator import utils

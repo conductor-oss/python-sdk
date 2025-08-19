@@ -21,7 +21,8 @@ from typing import Any, Dict, List, Optional
 from conductor.asyncio_client.http.models.conductor_user import ConductorUser
 from conductor.asyncio_client.http.models.upsert_user_request import UpsertUserRequest
 
-from conductor.asyncio_client.http.api_client import ApiClient, RequestSerialized
+from conductor.asyncio_client.http.api_client import RequestSerialized
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.api_response import ApiResponse
 from conductor.asyncio_client.http.rest import RESTResponseType
 

@@ -9,7 +9,7 @@ from conductor.asyncio_client.adapters.models.prompt_template_test_request_adapt
     PromptTemplateTestRequestAdapter,
 )
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
