@@ -29,8 +29,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str application_id: (required)
-        :param str role: (required)
+        :param object application_id: (required)
+        :param object role: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -51,8 +51,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str application_id: (required)
-        :param str role: (required)
+        :param object application_id: (required)
+        :param object role: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -76,13 +76,11 @@ class ApplicationResourceApi(object):
         # verify the required parameter 'application_id' is set
         if ('application_id' not in params or
                 params['application_id'] is None):
-            raise ValueError(
-                "Missing the required parameter `application_id` when calling `add_role_to_application_user`")  # noqa: E501
+            raise ValueError("Missing the required parameter `application_id` when calling `add_role_to_application_user`")  # noqa: E501
         # verify the required parameter 'role' is set
         if ('role' not in params or
                 params['role'] is None):
-            raise ValueError(
-                "Missing the required parameter `role` when calling `add_role_to_application_user`")  # noqa: E501
+            raise ValueError("Missing the required parameter `role` when calling `add_role_to_application_user`")  # noqa: E501
 
         collection_formats = {}
 
@@ -105,7 +103,7 @@ class ApplicationResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/applications/{applicationId}/roles/{role}', 'POST',
@@ -132,7 +130,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str id: (required)
+        :param object id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -153,7 +151,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str id: (required)
+        :param object id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -198,7 +196,7 @@ class ApplicationResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/applications/{id}/accessKeys', 'POST',
@@ -295,7 +293,7 @@ class ApplicationResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/applications', 'POST',
@@ -322,8 +320,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str application_id: (required)
-        :param str key_id: (required)
+        :param object application_id: (required)
+        :param object key_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -344,8 +342,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str application_id: (required)
-        :param str key_id: (required)
+        :param object application_id: (required)
+        :param object key_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -369,8 +367,7 @@ class ApplicationResourceApi(object):
         # verify the required parameter 'application_id' is set
         if ('application_id' not in params or
                 params['application_id'] is None):
-            raise ValueError(
-                "Missing the required parameter `application_id` when calling `delete_access_key`")  # noqa: E501
+            raise ValueError("Missing the required parameter `application_id` when calling `delete_access_key`")  # noqa: E501
         # verify the required parameter 'key_id' is set
         if ('key_id' not in params or
                 params['key_id'] is None):
@@ -397,7 +394,7 @@ class ApplicationResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/applications/{applicationId}/accessKeys/{keyId}', 'DELETE',
@@ -424,7 +421,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str id: (required)
+        :param object id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -445,7 +442,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str id: (required)
+        :param object id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -490,7 +487,7 @@ class ApplicationResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/applications/{id}', 'DELETE',
@@ -508,6 +505,107 @@ class ApplicationResourceApi(object):
             _request_timeout=params.get('_request_timeout'),
             collection_formats=collection_formats)
 
+    def delete_tag_for_application(self, body, id, **kwargs):  # noqa: E501
+        """Delete a tag for application  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+        >>> thread = api.delete_tag_for_application(body, id, async_req=True)
+        >>> result = thread.get()
+
+        :param async_req bool
+        :param object body: (required)
+        :param object id: (required)
+        :return: None
+                 If the method is called asynchronously,
+                 returns the request thread.
+        """
+        kwargs['_return_http_data_only'] = True
+        if kwargs.get('async_req'):
+            return self.delete_tag_for_application_with_http_info(body, id, **kwargs)  # noqa: E501
+        else:
+            (data) = self.delete_tag_for_application_with_http_info(body, id, **kwargs)  # noqa: E501
+            return data
+
+    def delete_tag_for_application_with_http_info(self, body, id, **kwargs):  # noqa: E501
+        """Delete a tag for application  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+        >>> thread = api.delete_tag_for_application_with_http_info(body, id, async_req=True)
+        >>> result = thread.get()
+
+        :param async_req bool
+        :param object body: (required)
+        :param object id: (required)
+        :return: None
+                 If the method is called asynchronously,
+                 returns the request thread.
+        """
+
+        all_params = ['body', 'id']  # noqa: E501
+        all_params.append('async_req')
+        all_params.append('_return_http_data_only')
+        all_params.append('_preload_content')
+        all_params.append('_request_timeout')
+
+        params = locals()
+        for key, val in six.iteritems(params['kwargs']):
+            if key not in all_params:
+                raise TypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method delete_tag_for_application" % key
+                )
+            params[key] = val
+        del params['kwargs']
+        # verify the required parameter 'body' is set
+        if ('body' not in params or
+                params['body'] is None):
+            raise ValueError("Missing the required parameter `body` when calling `delete_tag_for_application`")  # noqa: E501
+        # verify the required parameter 'id' is set
+        if ('id' not in params or
+                params['id'] is None):
+            raise ValueError("Missing the required parameter `id` when calling `delete_tag_for_application`")  # noqa: E501
+
+        collection_formats = {}
+
+        path_params = {}
+        if 'id' in params:
+            path_params['id'] = params['id']  # noqa: E501
+
+        query_params = []
+
+        header_params = {}
+
+        form_params = []
+        local_var_files = {}
+
+        body_params = None
+        if 'body' in params:
+            body_params = params['body']
+        # HTTP header `Content-Type`
+        header_params['Content-Type'] = self.api_client.select_header_content_type(  # noqa: E501
+            ['application/json'])  # noqa: E501
+
+        # Authentication setting
+        auth_settings = ['api_key']  # noqa: E501
+
+        return self.api_client.call_api(
+            '/applications/{id}/tags', 'DELETE',
+            path_params,
+            query_params,
+            header_params,
+            body=body_params,
+            post_params=form_params,
+            files=local_var_files,
+            response_type=None,  # noqa: E501
+            auth_settings=auth_settings,
+            async_req=params.get('async_req'),
+            _return_http_data_only=params.get('_return_http_data_only'),
+            _preload_content=params.get('_preload_content', True),
+            _request_timeout=params.get('_request_timeout'),
+            collection_formats=collection_formats)
+
     def get_access_keys(self, id, **kwargs):  # noqa: E501
         """Get application's access keys  # noqa: E501
 
@@ -517,7 +615,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str id: (required)
+        :param object id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -538,7 +636,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str id: (required)
+        :param object id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -583,10 +681,103 @@ class ApplicationResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/applications/{id}/accessKeys', 'GET',
+            path_params,
+            query_params,
+            header_params,
+            body=body_params,
+            post_params=form_params,
+            files=local_var_files,
+            response_type='object',  # noqa: E501
+            auth_settings=auth_settings,
+            async_req=params.get('async_req'),
+            _return_http_data_only=params.get('_return_http_data_only'),
+            _preload_content=params.get('_preload_content', True),
+            _request_timeout=params.get('_request_timeout'),
+            collection_formats=collection_formats)
+
+    def get_app_by_access_key_id(self, access_key_id, **kwargs):  # noqa: E501
+        """Get application id by access key id  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+        >>> thread = api.get_app_by_access_key_id(access_key_id, async_req=True)
+        >>> result = thread.get()
+
+        :param async_req bool
+        :param object access_key_id: (required)
+        :return: object
+                 If the method is called asynchronously,
+                 returns the request thread.
+        """
+        kwargs['_return_http_data_only'] = True
+        if kwargs.get('async_req'):
+            return self.get_app_by_access_key_id_with_http_info(access_key_id, **kwargs)  # noqa: E501
+        else:
+            (data) = self.get_app_by_access_key_id_with_http_info(access_key_id, **kwargs)  # noqa: E501
+            return data
+
+    def get_app_by_access_key_id_with_http_info(self, access_key_id, **kwargs):  # noqa: E501
+        """Get application id by access key id  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+        >>> thread = api.get_app_by_access_key_id_with_http_info(access_key_id, async_req=True)
+        >>> result = thread.get()
+
+        :param async_req bool
+        :param object access_key_id: (required)
+        :return: object
+                 If the method is called asynchronously,
+                 returns the request thread.
+        """
+
+        all_params = ['access_key_id']  # noqa: E501
+        all_params.append('async_req')
+        all_params.append('_return_http_data_only')
+        all_params.append('_preload_content')
+        all_params.append('_request_timeout')
+
+        params = locals()
+        for key, val in six.iteritems(params['kwargs']):
+            if key not in all_params:
+                raise TypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method get_app_by_access_key_id" % key
+                )
+            params[key] = val
+        del params['kwargs']
+        # verify the required parameter 'access_key_id' is set
+        if ('access_key_id' not in params or
+                params['access_key_id'] is None):
+            raise ValueError("Missing the required parameter `access_key_id` when calling `get_app_by_access_key_id`")  # noqa: E501
+
+        collection_formats = {}
+
+        path_params = {}
+        if 'access_key_id' in params:
+            path_params['accessKeyId'] = params['access_key_id']  # noqa: E501
+
+        query_params = []
+
+        header_params = {}
+
+        form_params = []
+        local_var_files = {}
+
+        body_params = None
+        # HTTP header `Accept`
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
+
+        # Authentication setting
+        auth_settings = ['api_key']  # noqa: E501
+
+        return self.api_client.call_api(
+            '/applications/key/{accessKeyId}', 'GET',
             path_params,
             query_params,
             header_params,
@@ -610,7 +801,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str id: (required)
+        :param object id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -631,7 +822,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str id: (required)
+        :param object id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -676,10 +867,103 @@ class ApplicationResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/applications/{id}', 'GET',
+            path_params,
+            query_params,
+            header_params,
+            body=body_params,
+            post_params=form_params,
+            files=local_var_files,
+            response_type='object',  # noqa: E501
+            auth_settings=auth_settings,
+            async_req=params.get('async_req'),
+            _return_http_data_only=params.get('_return_http_data_only'),
+            _preload_content=params.get('_preload_content', True),
+            _request_timeout=params.get('_request_timeout'),
+            collection_formats=collection_formats)
+
+    def get_tags_for_application(self, id, **kwargs):  # noqa: E501
+        """Get tags by application  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+        >>> thread = api.get_tags_for_application(id, async_req=True)
+        >>> result = thread.get()
+
+        :param async_req bool
+        :param object id: (required)
+        :return: object
+                 If the method is called asynchronously,
+                 returns the request thread.
+        """
+        kwargs['_return_http_data_only'] = True
+        if kwargs.get('async_req'):
+            return self.get_tags_for_application_with_http_info(id, **kwargs)  # noqa: E501
+        else:
+            (data) = self.get_tags_for_application_with_http_info(id, **kwargs)  # noqa: E501
+            return data
+
+    def get_tags_for_application_with_http_info(self, id, **kwargs):  # noqa: E501
+        """Get tags by application  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+        >>> thread = api.get_tags_for_application_with_http_info(id, async_req=True)
+        >>> result = thread.get()
+
+        :param async_req bool
+        :param object id: (required)
+        :return: object
+                 If the method is called asynchronously,
+                 returns the request thread.
+        """
+
+        all_params = ['id']  # noqa: E501
+        all_params.append('async_req')
+        all_params.append('_return_http_data_only')
+        all_params.append('_preload_content')
+        all_params.append('_request_timeout')
+
+        params = locals()
+        for key, val in six.iteritems(params['kwargs']):
+            if key not in all_params:
+                raise TypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method get_tags_for_application" % key
+                )
+            params[key] = val
+        del params['kwargs']
+        # verify the required parameter 'id' is set
+        if ('id' not in params or
+                params['id'] is None):
+            raise ValueError("Missing the required parameter `id` when calling `get_tags_for_application`")  # noqa: E501
+
+        collection_formats = {}
+
+        path_params = {}
+        if 'id' in params:
+            path_params['id'] = params['id']  # noqa: E501
+
+        query_params = []
+
+        header_params = {}
+
+        form_params = []
+        local_var_files = {}
+
+        body_params = None
+        # HTTP header `Accept`
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
+
+        # Authentication setting
+        auth_settings = ['api_key']  # noqa: E501
+
+        return self.api_client.call_api(
+            '/applications/{id}/tags', 'GET',
             path_params,
             query_params,
             header_params,
@@ -703,7 +987,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: list[ConductorApplication]
+        :return: object
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -723,7 +1007,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: list[ConductorApplication]
+        :return: object
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -761,7 +1045,7 @@ class ApplicationResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/applications', 'GET',
@@ -771,7 +1055,108 @@ class ApplicationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='list[ConductorApplication]',  # noqa: E501
+            response_type='object',  # noqa: E501
+            auth_settings=auth_settings,
+            async_req=params.get('async_req'),
+            _return_http_data_only=params.get('_return_http_data_only'),
+            _preload_content=params.get('_preload_content', True),
+            _request_timeout=params.get('_request_timeout'),
+            collection_formats=collection_formats)
+
+    def put_tag_for_application(self, body, id, **kwargs):  # noqa: E501
+        """Put a tag to application  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+        >>> thread = api.put_tag_for_application(body, id, async_req=True)
+        >>> result = thread.get()
+
+        :param async_req bool
+        :param object body: (required)
+        :param object id: (required)
+        :return: None
+                 If the method is called asynchronously,
+                 returns the request thread.
+        """
+        kwargs['_return_http_data_only'] = True
+        if kwargs.get('async_req'):
+            return self.put_tag_for_application_with_http_info(body, id, **kwargs)  # noqa: E501
+        else:
+            (data) = self.put_tag_for_application_with_http_info(body, id, **kwargs)  # noqa: E501
+            return data
+
+    def put_tag_for_application_with_http_info(self, body, id, **kwargs):  # noqa: E501
+        """Put a tag to application  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+        >>> thread = api.put_tag_for_application_with_http_info(body, id, async_req=True)
+        >>> result = thread.get()
+
+        :param async_req bool
+        :param object body: (required)
+        :param object id: (required)
+        :return: None
+                 If the method is called asynchronously,
+                 returns the request thread.
+        """
+
+        all_params = ['body', 'id']  # noqa: E501
+        all_params.append('async_req')
+        all_params.append('_return_http_data_only')
+        all_params.append('_preload_content')
+        all_params.append('_request_timeout')
+
+        params = locals()
+        for key, val in six.iteritems(params['kwargs']):
+            if key not in all_params:
+                raise TypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method put_tag_for_application" % key
+                )
+            params[key] = val
+        del params['kwargs']
+        # verify the required parameter 'body' is set
+        if ('body' not in params or
+                params['body'] is None):
+            raise ValueError("Missing the required parameter `body` when calling `put_tag_for_application`")  # noqa: E501
+        # verify the required parameter 'id' is set
+        if ('id' not in params or
+                params['id'] is None):
+            raise ValueError("Missing the required parameter `id` when calling `put_tag_for_application`")  # noqa: E501
+
+        collection_formats = {}
+
+        path_params = {}
+        if 'id' in params:
+            path_params['id'] = params['id']  # noqa: E501
+
+        query_params = []
+
+        header_params = {}
+
+        form_params = []
+        local_var_files = {}
+
+        body_params = None
+        if 'body' in params:
+            body_params = params['body']
+        # HTTP header `Content-Type`
+        header_params['Content-Type'] = self.api_client.select_header_content_type(  # noqa: E501
+            ['application/json'])  # noqa: E501
+
+        # Authentication setting
+        auth_settings = ['api_key']  # noqa: E501
+
+        return self.api_client.call_api(
+            '/applications/{id}/tags', 'PUT',
+            path_params,
+            query_params,
+            header_params,
+            body=body_params,
+            post_params=form_params,
+            files=local_var_files,
+            response_type=None,  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -788,8 +1173,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str application_id: (required)
-        :param str role: (required)
+        :param object application_id: (required)
+        :param object role: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -810,8 +1195,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str application_id: (required)
-        :param str role: (required)
+        :param object application_id: (required)
+        :param object role: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -835,13 +1220,11 @@ class ApplicationResourceApi(object):
         # verify the required parameter 'application_id' is set
         if ('application_id' not in params or
                 params['application_id'] is None):
-            raise ValueError(
-                "Missing the required parameter `application_id` when calling `remove_role_from_application_user`")  # noqa: E501
+            raise ValueError("Missing the required parameter `application_id` when calling `remove_role_from_application_user`")  # noqa: E501
         # verify the required parameter 'role' is set
         if ('role' not in params or
                 params['role'] is None):
-            raise ValueError(
-                "Missing the required parameter `role` when calling `remove_role_from_application_user`")  # noqa: E501
+            raise ValueError("Missing the required parameter `role` when calling `remove_role_from_application_user`")  # noqa: E501
 
         collection_formats = {}
 
@@ -864,7 +1247,7 @@ class ApplicationResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/applications/{applicationId}/roles/{role}', 'DELETE',
@@ -891,8 +1274,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str application_id: (required)
-        :param str key_id: (required)
+        :param object application_id: (required)
+        :param object key_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -913,8 +1296,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str application_id: (required)
-        :param str key_id: (required)
+        :param object application_id: (required)
+        :param object key_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -938,13 +1321,11 @@ class ApplicationResourceApi(object):
         # verify the required parameter 'application_id' is set
         if ('application_id' not in params or
                 params['application_id'] is None):
-            raise ValueError(
-                "Missing the required parameter `application_id` when calling `toggle_access_key_status`")  # noqa: E501
+            raise ValueError("Missing the required parameter `application_id` when calling `toggle_access_key_status`")  # noqa: E501
         # verify the required parameter 'key_id' is set
         if ('key_id' not in params or
                 params['key_id'] is None):
-            raise ValueError(
-                "Missing the required parameter `key_id` when calling `toggle_access_key_status`")  # noqa: E501
+            raise ValueError("Missing the required parameter `key_id` when calling `toggle_access_key_status`")  # noqa: E501
 
         collection_formats = {}
 
@@ -967,7 +1348,7 @@ class ApplicationResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/applications/{applicationId}/accessKeys/{keyId}/status', 'POST',
@@ -995,7 +1376,7 @@ class ApplicationResourceApi(object):
 
         :param async_req bool
         :param CreateOrUpdateApplicationRequest body: (required)
-        :param str id: (required)
+        :param object id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1017,7 +1398,7 @@ class ApplicationResourceApi(object):
 
         :param async_req bool
         :param CreateOrUpdateApplicationRequest body: (required)
-        :param str id: (required)
+        :param object id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1072,7 +1453,7 @@ class ApplicationResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/applications/{id}', 'PUT',
@@ -1083,305 +1464,6 @@ class ApplicationResourceApi(object):
             post_params=form_params,
             files=local_var_files,
             response_type='object',  # noqa: E501
-            auth_settings=auth_settings,
-            async_req=params.get('async_req'),
-            _return_http_data_only=params.get('_return_http_data_only'),
-            _preload_content=params.get('_preload_content', True),
-            _request_timeout=params.get('_request_timeout'),
-            collection_formats=collection_formats)
-
-    def put_tags_for_application(self, body, id, **kwargs):  # noqa: E501
-        """Put a tag to application  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.put_tag_for_application(body, id, async_req=True)
-        >>> result = thread.get()
-
-        :param async_req bool
-        :param list[TagObject] body: (required)
-        :param str id: (required)
-        :return: None
-                 If the method is called asynchronously,
-                 returns the request thread.
-        """
-        kwargs['_return_http_data_only'] = True
-        if kwargs.get('async_req'):
-            return self.put_tags_for_application_with_http_info(body, id, **kwargs)  # noqa: E501
-        else:
-            (data) = self.put_tags_for_application_with_http_info(body, id, **kwargs)  # noqa: E501
-            return data
-
-    def put_tags_for_application_with_http_info(self, body, id, **kwargs):  # noqa: E501
-        """Put a tag to application  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.put_tag_for_application_with_http_info(body, id, async_req=True)
-        >>> result = thread.get()
-
-        :param async_req bool
-        :param list[TagObject] body: (required)
-        :param str id: (required)
-        :return: None
-                 If the method is called asynchronously,
-                 returns the request thread.
-        """
-
-        all_params = ['body', 'id']  # noqa: E501
-        all_params.append('async_req')
-        all_params.append('_return_http_data_only')
-        all_params.append('_preload_content')
-        all_params.append('_request_timeout')
-
-        params = locals()
-        for key, val in six.iteritems(params['kwargs']):
-            if key not in all_params:
-                raise TypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method put_tag_for_application" % key
-                )
-            params[key] = val
-        del params['kwargs']
-        # verify the required parameter 'body' is set
-        if ('body' not in params or
-                params['body'] is None):
-            raise ValueError(
-                "Missing the required parameter `body` when calling `put_tag_for_application`")  # noqa: E501
-        # verify the required parameter 'id' is set
-        if ('id' not in params or
-                params['id'] is None):
-            raise ValueError("Missing the required parameter `id` when calling `put_tag_for_application`")  # noqa: E501
-
-        collection_formats = {}
-
-        path_params = {}
-        if 'id' in params:
-            path_params['id'] = params['id']  # noqa: E501
-
-        query_params = []
-
-        header_params = {}
-
-        form_params = []
-        local_var_files = {}
-
-        body_params = None
-        if 'body' in params:
-            body_params = params['body']
-        # HTTP header `Content-Type`
-        header_params['Content-Type'] = self.api_client.select_header_content_type(  # noqa: E501
-            ['application/json'])  # noqa: E501
-
-        # Authentication setting
-        auth_settings = ['api_key']  # noqa: E501
-
-        return self.api_client.call_api(
-            '/applications/{id}/tags', 'PUT',
-            path_params,
-            query_params,
-            header_params,
-            body=body_params,
-            post_params=form_params,
-            files=local_var_files,
-            response_type=None,  # noqa: E501
-            auth_settings=auth_settings,
-            async_req=params.get('async_req'),
-            _return_http_data_only=params.get('_return_http_data_only'),
-            _preload_content=params.get('_preload_content', True),
-            _request_timeout=params.get('_request_timeout'),
-            collection_formats=collection_formats)
-
-    def get_tags_for_application(self, id, **kwargs):  # noqa: E501
-        """Get tags by application  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.get_tags_for_application(id, async_req=True)
-        >>> result = thread.get()
-
-        :param async_req bool
-        :param str id: (required)
-        :return: list[TagObject]
-                 If the method is called asynchronously,
-                 returns the request thread.
-        """
-        kwargs['_return_http_data_only'] = True
-        if kwargs.get('async_req'):
-            return self.get_tags_for_application_with_http_info(id, **kwargs)  # noqa: E501
-        else:
-            (data) = self.get_tags_for_application_with_http_info(id, **kwargs)  # noqa: E501
-            return data
-
-    def get_tags_for_application_with_http_info(self, id, **kwargs):  # noqa: E501
-        """Get tags by application  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.get_tags_for_application_with_http_info(id, async_req=True)
-        >>> result = thread.get()
-
-        :param async_req bool
-        :param str id: (required)
-        :return: list[TagObject]
-                 If the method is called asynchronously,
-                 returns the request thread.
-        """
-
-        all_params = ['id']  # noqa: E501
-        all_params.append('async_req')
-        all_params.append('_return_http_data_only')
-        all_params.append('_preload_content')
-        all_params.append('_request_timeout')
-
-        params = locals()
-        for key, val in six.iteritems(params['kwargs']):
-            if key not in all_params:
-                raise TypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_tags_for_application" % key
-                )
-            params[key] = val
-        del params['kwargs']
-        # verify the required parameter 'id' is set
-        if ('id' not in params or
-                params['id'] is None):
-            raise ValueError(
-                "Missing the required parameter `id` when calling `get_tags_for_application`")  # noqa: E501
-
-        collection_formats = {}
-
-        path_params = {}
-        if 'id' in params:
-            path_params['id'] = params['id']  # noqa: E501
-
-        query_params = []
-
-        header_params = {}
-
-        form_params = []
-        local_var_files = {}
-
-        body_params = None
-        # HTTP header `Accept`
-        header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # Authentication setting
-        auth_settings = ['api_key']  # noqa: E501
-
-        return self.api_client.call_api(
-            '/applications/{id}/tags', 'GET',
-            path_params,
-            query_params,
-            header_params,
-            body=body_params,
-            post_params=form_params,
-            files=local_var_files,
-            response_type='list[TagObject]',  # noqa: E501
-            auth_settings=auth_settings,
-            async_req=params.get('async_req'),
-            _return_http_data_only=params.get('_return_http_data_only'),
-            _preload_content=params.get('_preload_content', True),
-            _request_timeout=params.get('_request_timeout'),
-            collection_formats=collection_formats)
-
-    def delete_tags_for_application(self, body, id, **kwargs):  # noqa: E501
-        """Delete a tag for application  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.delete_tag_for_application(body, id, async_req=True)
-        >>> result = thread.get()
-
-        :param async_req bool
-        :param list[TagObject] body: (required)
-        :param str id: (required)
-        :return: None
-                 If the method is called asynchronously,
-                 returns the request thread.
-        """
-        kwargs['_return_http_data_only'] = True
-        if kwargs.get('async_req'):
-            return self.delete_tags_for_application_with_http_info(body, id, **kwargs)  # noqa: E501
-        else:
-            (data) = self.delete_tags_for_application_with_http_info(body, id, **kwargs)  # noqa: E501
-            return data
-
-    def delete_tags_for_application_with_http_info(self, body, id, **kwargs):  # noqa: E501
-        """Delete a tag for application  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.delete_tag_for_application_with_http_info(body, id, async_req=True)
-        >>> result = thread.get()
-
-        :param async_req bool
-        :param list[TagObject] body: (required)
-        :param str id: (required)
-        :return: None
-                 If the method is called asynchronously,
-                 returns the request thread.
-        """
-
-        all_params = ['body', 'id']  # noqa: E501
-        all_params.append('async_req')
-        all_params.append('_return_http_data_only')
-        all_params.append('_preload_content')
-        all_params.append('_request_timeout')
-
-        params = locals()
-        for key, val in six.iteritems(params['kwargs']):
-            if key not in all_params:
-                raise TypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method delete_tag_for_application" % key
-                )
-            params[key] = val
-        del params['kwargs']
-        # verify the required parameter 'body' is set
-        if ('body' not in params or
-                params['body'] is None):
-            raise ValueError(
-                "Missing the required parameter `body` when calling `delete_tag_for_application`")  # noqa: E501
-        # verify the required parameter 'id' is set
-        if ('id' not in params or
-                params['id'] is None):
-            raise ValueError(
-                "Missing the required parameter `id` when calling `delete_tag_for_application`")  # noqa: E501
-
-        collection_formats = {}
-
-        path_params = {}
-        if 'id' in params:
-            path_params['id'] = params['id']  # noqa: E501
-
-        query_params = []
-
-        header_params = {}
-
-        form_params = []
-        local_var_files = {}
-
-        body_params = None
-        if 'body' in params:
-            body_params = params['body']
-        # HTTP header `Content-Type`
-        header_params['Content-Type'] = self.api_client.select_header_content_type(  # noqa: E501
-            ['application/json'])  # noqa: E501
-
-        # Authentication setting
-        auth_settings = ['api_key']  # noqa: E501
-
-        return self.api_client.call_api(
-            '/applications/{id}/tags', 'DELETE',
-            path_params,
-            query_params,
-            header_params,
-            body=body_params,
-            post_params=form_params,
-            files=local_var_files,
-            response_type=None,  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),

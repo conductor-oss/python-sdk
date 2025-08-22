@@ -20,37 +20,37 @@ class WorkflowBulkResourceApi(object):
             api_client = ApiClient()
         self.api_client = api_client
 
-    def pause_workflow(self, body, **kwargs):  # noqa: E501
-        """Pause the list of workflows  # noqa: E501
+    def delete(self, body, **kwargs):  # noqa: E501
+        """Permanently remove workflows from the system  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.pause_workflow(body, async_req=True)
+        >>> thread = api.delete(body, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[str] body: (required)
+        :param object body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
         """
         kwargs['_return_http_data_only'] = True
         if kwargs.get('async_req'):
-            return self.pause_workflow_with_http_info(body, **kwargs)  # noqa: E501
+            return self.delete_with_http_info(body, **kwargs)  # noqa: E501
         else:
-            (data) = self.pause_workflow_with_http_info(body, **kwargs)  # noqa: E501
+            (data) = self.delete_with_http_info(body, **kwargs)  # noqa: E501
             return data
 
-    def pause_workflow_with_http_info(self, body, **kwargs):  # noqa: E501
-        """Pause the list of workflows  # noqa: E501
+    def delete_with_http_info(self, body, **kwargs):  # noqa: E501
+        """Permanently remove workflows from the system  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.pause_workflow_with_http_info(body, async_req=True)
+        >>> thread = api.delete_with_http_info(body, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[str] body: (required)
+        :param object body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -67,14 +67,14 @@ class WorkflowBulkResourceApi(object):
             if key not in all_params:
                 raise TypeError(
                     "Got an unexpected keyword argument '%s'"
-                    " to method pause_workflow" % key
+                    " to method delete" % key
                 )
             params[key] = val
         del params['kwargs']
         # verify the required parameter 'body' is set
         if ('body' not in params or
                 params['body'] is None):
-            raise ValueError("Missing the required parameter `body` when calling `pause_workflow`")  # noqa: E501
+            raise ValueError("Missing the required parameter `body` when calling `delete`")  # noqa: E501
 
         collection_formats = {}
 
@@ -99,7 +99,104 @@ class WorkflowBulkResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
+
+        return self.api_client.call_api(
+            '/workflow/bulk/delete', 'POST',
+            path_params,
+            query_params,
+            header_params,
+            body=body_params,
+            post_params=form_params,
+            files=local_var_files,
+            response_type='BulkResponse',  # noqa: E501
+            auth_settings=auth_settings,
+            async_req=params.get('async_req'),
+            _return_http_data_only=params.get('_return_http_data_only'),
+            _preload_content=params.get('_preload_content', True),
+            _request_timeout=params.get('_request_timeout'),
+            collection_formats=collection_formats)
+
+    def pause_workflow1(self, body, **kwargs):  # noqa: E501
+        """Pause the list of workflows  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+        >>> thread = api.pause_workflow1(body, async_req=True)
+        >>> result = thread.get()
+
+        :param async_req bool
+        :param object body: (required)
+        :return: BulkResponse
+                 If the method is called asynchronously,
+                 returns the request thread.
+        """
+        kwargs['_return_http_data_only'] = True
+        if kwargs.get('async_req'):
+            return self.pause_workflow1_with_http_info(body, **kwargs)  # noqa: E501
+        else:
+            (data) = self.pause_workflow1_with_http_info(body, **kwargs)  # noqa: E501
+            return data
+
+    def pause_workflow1_with_http_info(self, body, **kwargs):  # noqa: E501
+        """Pause the list of workflows  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+        >>> thread = api.pause_workflow1_with_http_info(body, async_req=True)
+        >>> result = thread.get()
+
+        :param async_req bool
+        :param object body: (required)
+        :return: BulkResponse
+                 If the method is called asynchronously,
+                 returns the request thread.
+        """
+
+        all_params = ['body']  # noqa: E501
+        all_params.append('async_req')
+        all_params.append('_return_http_data_only')
+        all_params.append('_preload_content')
+        all_params.append('_request_timeout')
+
+        params = locals()
+        for key, val in six.iteritems(params['kwargs']):
+            if key not in all_params:
+                raise TypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method pause_workflow1" % key
+                )
+            params[key] = val
+        del params['kwargs']
+        # verify the required parameter 'body' is set
+        if ('body' not in params or
+                params['body'] is None):
+            raise ValueError("Missing the required parameter `body` when calling `pause_workflow1`")  # noqa: E501
+
+        collection_formats = {}
+
+        path_params = {}
+
+        query_params = []
+
+        header_params = {}
+
+        form_params = []
+        local_var_files = {}
+
+        body_params = None
+        if 'body' in params:
+            body_params = params['body']
+        # HTTP header `Accept`
+        header_params['Accept'] = self.api_client.select_header_accept(
+            ['*/*'])  # noqa: E501
+
+        # HTTP header `Content-Type`
+        header_params['Content-Type'] = self.api_client.select_header_content_type(  # noqa: E501
+            ['application/json'])  # noqa: E501
+
+        # Authentication setting
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/workflow/bulk/pause', 'PUT',
@@ -117,39 +214,39 @@ class WorkflowBulkResourceApi(object):
             _request_timeout=params.get('_request_timeout'),
             collection_formats=collection_formats)
 
-    def restart(self, body, **kwargs):  # noqa: E501
+    def restart1(self, body, **kwargs):  # noqa: E501
         """Restart the list of completed workflow  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.restart(body, async_req=True)
+        >>> thread = api.restart1(body, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[str] body: (required)
-        :param bool use_latest_definitions:
+        :param object body: (required)
+        :param object use_latest_definitions:
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
         """
         kwargs['_return_http_data_only'] = True
         if kwargs.get('async_req'):
-            return self.restart_with_http_info(body, **kwargs)  # noqa: E501
+            return self.restart1_with_http_info(body, **kwargs)  # noqa: E501
         else:
-            (data) = self.restart_with_http_info(body, **kwargs)  # noqa: E501
+            (data) = self.restart1_with_http_info(body, **kwargs)  # noqa: E501
             return data
 
-    def restart_with_http_info(self, body, **kwargs):  # noqa: E501
+    def restart1_with_http_info(self, body, **kwargs):  # noqa: E501
         """Restart the list of completed workflow  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.restart_with_http_info(body, async_req=True)
+        >>> thread = api.restart1_with_http_info(body, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[str] body: (required)
-        :param bool use_latest_definitions:
+        :param object body: (required)
+        :param object use_latest_definitions:
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -166,14 +263,14 @@ class WorkflowBulkResourceApi(object):
             if key not in all_params:
                 raise TypeError(
                     "Got an unexpected keyword argument '%s'"
-                    " to method restart" % key
+                    " to method restart1" % key
                 )
             params[key] = val
         del params['kwargs']
         # verify the required parameter 'body' is set
         if ('body' not in params or
                 params['body'] is None):
-            raise ValueError("Missing the required parameter `body` when calling `restart`")  # noqa: E501
+            raise ValueError("Missing the required parameter `body` when calling `restart1`")  # noqa: E501
 
         collection_formats = {}
 
@@ -200,7 +297,7 @@ class WorkflowBulkResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/workflow/bulk/restart', 'POST',
@@ -218,37 +315,37 @@ class WorkflowBulkResourceApi(object):
             _request_timeout=params.get('_request_timeout'),
             collection_formats=collection_formats)
 
-    def resume_workflow(self, body, **kwargs):  # noqa: E501
+    def resume_workflow1(self, body, **kwargs):  # noqa: E501
         """Resume the list of workflows  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.resume_workflow(body, async_req=True)
+        >>> thread = api.resume_workflow1(body, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[str] body: (required)
+        :param object body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
         """
         kwargs['_return_http_data_only'] = True
         if kwargs.get('async_req'):
-            return self.resume_workflow_with_http_info(body, **kwargs)  # noqa: E501
+            return self.resume_workflow1_with_http_info(body, **kwargs)  # noqa: E501
         else:
-            (data) = self.resume_workflow_with_http_info(body, **kwargs)  # noqa: E501
+            (data) = self.resume_workflow1_with_http_info(body, **kwargs)  # noqa: E501
             return data
 
-    def resume_workflow_with_http_info(self, body, **kwargs):  # noqa: E501
+    def resume_workflow1_with_http_info(self, body, **kwargs):  # noqa: E501
         """Resume the list of workflows  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.resume_workflow_with_http_info(body, async_req=True)
+        >>> thread = api.resume_workflow1_with_http_info(body, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[str] body: (required)
+        :param object body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -265,14 +362,14 @@ class WorkflowBulkResourceApi(object):
             if key not in all_params:
                 raise TypeError(
                     "Got an unexpected keyword argument '%s'"
-                    " to method resume_workflow" % key
+                    " to method resume_workflow1" % key
                 )
             params[key] = val
         del params['kwargs']
         # verify the required parameter 'body' is set
         if ('body' not in params or
                 params['body'] is None):
-            raise ValueError("Missing the required parameter `body` when calling `resume_workflow`")  # noqa: E501
+            raise ValueError("Missing the required parameter `body` when calling `resume_workflow1`")  # noqa: E501
 
         collection_formats = {}
 
@@ -297,7 +394,7 @@ class WorkflowBulkResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/workflow/bulk/resume', 'PUT',
@@ -315,37 +412,37 @@ class WorkflowBulkResourceApi(object):
             _request_timeout=params.get('_request_timeout'),
             collection_formats=collection_formats)
 
-    def retry(self, body, **kwargs):  # noqa: E501
+    def retry1(self, body, **kwargs):  # noqa: E501
         """Retry the last failed task for each workflow from the list  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.retry(body, async_req=True)
+        >>> thread = api.retry1(body, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[str] body: (required)
+        :param object body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
         """
         kwargs['_return_http_data_only'] = True
         if kwargs.get('async_req'):
-            return self.retry_with_http_info(body, **kwargs)  # noqa: E501
+            return self.retry1_with_http_info(body, **kwargs)  # noqa: E501
         else:
-            (data) = self.retry_with_http_info(body, **kwargs)  # noqa: E501
+            (data) = self.retry1_with_http_info(body, **kwargs)  # noqa: E501
             return data
 
-    def retry_with_http_info(self, body, **kwargs):  # noqa: E501
+    def retry1_with_http_info(self, body, **kwargs):  # noqa: E501
         """Retry the last failed task for each workflow from the list  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.retry_with_http_info(body, async_req=True)
+        >>> thread = api.retry1_with_http_info(body, async_req=True)
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[str] body: (required)
+        :param object body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -362,14 +459,14 @@ class WorkflowBulkResourceApi(object):
             if key not in all_params:
                 raise TypeError(
                     "Got an unexpected keyword argument '%s'"
-                    " to method retry" % key
+                    " to method retry1" % key
                 )
             params[key] = val
         del params['kwargs']
         # verify the required parameter 'body' is set
         if ('body' not in params or
                 params['body'] is None):
-            raise ValueError("Missing the required parameter `body` when calling `retry`")  # noqa: E501
+            raise ValueError("Missing the required parameter `body` when calling `retry1`")  # noqa: E501
 
         collection_formats = {}
 
@@ -394,7 +491,7 @@ class WorkflowBulkResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/workflow/bulk/retry', 'POST',
@@ -421,9 +518,9 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[str] body: (required)
-        :param str reason:
-        :param bool trigger_failure_workflow:
+        :param object body: (required)
+        :param object reason:
+        :param object trigger_failure_workflow:
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -444,15 +541,15 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[str] body: (required)
-        :param str reason:
-        :param bool trigger_failure_workflow:
+        :param object body: (required)
+        :param object reason:
+        :param object trigger_failure_workflow:
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
         """
 
-        all_params = ['body', 'reason', 'triggerFailureWorkflow']  # noqa: E501
+        all_params = ['body', 'reason', 'trigger_failure_workflow']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -479,9 +576,8 @@ class WorkflowBulkResourceApi(object):
         query_params = []
         if 'reason' in params:
             query_params.append(('reason', params['reason']))  # noqa: E501
-
-        if 'triggerFailureWorkflow' in params:
-            query_params.append(('triggerFailureWorkflow', params['triggerFailureWorkflow']))  # noqa: E501
+        if 'trigger_failure_workflow' in params:
+            query_params.append(('triggerFailureWorkflow', params['trigger_failure_workflow']))  # noqa: E501
 
         header_params = {}
 
@@ -500,7 +596,7 @@ class WorkflowBulkResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/workflow/bulk/terminate', 'POST',
