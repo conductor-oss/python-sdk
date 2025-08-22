@@ -1,0 +1,107 @@
+{
+    "name": "rerun_test",
+    "description": "rerun_test",
+    "version": 1,
+    "tasks": [
+        {
+            "name": "http_task",
+            "taskReferenceName": "http_task_ref",
+            "inputParameters": {
+                "http_request": {
+                    "uri": "https://orkes-api-tester.orkesconductor.com/api",
+                    "method": "GET",
+                    "accept": "application/json",
+                    "contentType": "application/json"
+                }
+            },
+            "type": "HTTP"
+        },
+        {
+            "name": "switch_task_1",
+            "taskReferenceName": "switch_task_ref_1",
+            "inputParameters": {
+                "switchCaseValue": "${workflow.input.case}"
+            },
+            "type": "SWITCH",
+            "decisionCases": {
+                "case1": [
+                    {
+                        "name": "simple_task",
+                        "taskReferenceName": "simple_task_ref1_case1_1",
+                        "inputParameters": {},
+                        "type": "SIMPLE"
+                    },
+                    {
+                        "name": "simple_task",
+                        "taskReferenceName": "simple_task_ref1_case1_2",
+                        "inputParameters": {},
+                        "type": "SIMPLE"
+                    }
+                ],
+                "case2": [
+                    {
+                        "name": "simple_task",
+                        "taskReferenceName": "simple_task_ref1_case2_1",
+                        "inputParameters": {},
+                        "type": "SIMPLE"
+                    },
+                    {
+                        "name": "simple_task",
+                        "taskReferenceName": "simple_task_ref1_case2_2",
+                        "inputParameters": {},
+                        "type": "SIMPLE"
+                    }
+                ]
+            },
+            "evaluatorType": "value-param",
+            "expression": "switchCaseValue"
+        },
+        {
+            "name": "switch_task_2",
+            "taskReferenceName": "switch_task_ref_2",
+            "inputParameters": {
+                "switchCaseValue": "${workflow.input.case}"
+            },
+            "type": "SWITCH",
+            "decisionCases": {
+                "case1": [
+                    {
+                        "name": "simple_task",
+                        "taskReferenceName": "simple_task_ref2_case1_1",
+                        "inputParameters": {},
+                        "type": "SIMPLE"
+                    },
+                    {
+                        "name": "simple_task",
+                        "taskReferenceName": "simple_task_ref2_case1_2",
+                        "inputParameters": {},
+                        "type": "SIMPLE"
+                    }
+                ],
+                "case2": [
+                    {
+                        "name": "simple_task",
+                        "taskReferenceName": "simple_task_ref2_case2_1",
+                        "inputParameters": {},
+                        "type": "SIMPLE"
+                    },
+                    {
+                        "name": "simple_task",
+                        "taskReferenceName": "simple_task_ref2_case2_2",
+                        "inputParameters": {},
+                        "type": "SIMPLE"
+                    }
+                ]
+            },
+            "evaluatorType": "value-param",
+            "expression": "switchCaseValue"
+        }
+    ],
+    "schemaVersion": 2,
+    "restartable": true,
+    "workflowStatusListenerEnabled": false,
+    "timeoutPolicy": "ALERT_ONLY",
+    "timeoutSeconds": 0,
+    "variables": {},
+    "inputTemplate": {}
+}

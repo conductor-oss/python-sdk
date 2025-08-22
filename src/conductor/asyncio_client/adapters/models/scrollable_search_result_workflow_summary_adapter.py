@@ -4,16 +4,13 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.workflow_summary_adapter import \
-    WorkflowSummaryAdapter
-from conductor.asyncio_client.http.models import \
-    ScrollableSearchResultWorkflowSummary
+from conductor.asyncio_client.http.models import ScrollableSearchResultWorkflowSummary
 
 
 class ScrollableSearchResultWorkflowSummaryAdapter(
     ScrollableSearchResultWorkflowSummary
 ):
-    results: Optional[List[WorkflowSummaryAdapter]] = None
+    results: Optional[List["WorkflowSummaryAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -39,3 +36,10 @@ class ScrollableSearchResultWorkflowSummaryAdapter(
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.workflow_summary_adapter import (  # noqa: E402
+    WorkflowSummaryAdapter,
+)
+
+ScrollableSearchResultWorkflowSummaryAdapter.model_rebuild(raise_errors=False)

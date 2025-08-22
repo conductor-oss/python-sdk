@@ -18,7 +18,8 @@ from typing_extensions import Annotated
 
 from conductor.asyncio_client.http.models.metrics_token import MetricsToken
 
-from conductor.asyncio_client.http.api_client import ApiClient, RequestSerialized
+from conductor.asyncio_client.http.api_client import RequestSerialized
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.api_response import ApiResponse
 from conductor.asyncio_client.http.rest import RESTResponseType
 

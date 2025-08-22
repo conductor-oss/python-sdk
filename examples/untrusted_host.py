@@ -2,8 +2,6 @@ import urllib3
 
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
-from conductor.client.http.api_client import ApiClient
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.client.orkes.orkes_task_client import OrkesTaskClient
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient

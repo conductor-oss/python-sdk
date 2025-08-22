@@ -5,15 +5,12 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.adapters.models.webhook_execution_history_adapter import \
-    WebhookExecutionHistoryAdapter
 from conductor.asyncio_client.http.models import WebhookConfig
 
 
 class WebhookConfigAdapter(WebhookConfig):
-    tags: Optional[List[TagAdapter]] = None
-    webhook_execution_history: Optional[List[WebhookExecutionHistoryAdapter]] = Field(
+    tags: Optional[List["TagAdapter"]] = None
+    webhook_execution_history: Optional[List["WebhookExecutionHistoryAdapter"]] = Field(
         default=None, alias="webhookExecutionHistory"
     )
     workflows_to_start: Optional[Dict[str, Any]] = Field(
@@ -61,3 +58,11 @@ class WebhookConfigAdapter(WebhookConfig):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter  # noqa: E402
+from conductor.asyncio_client.adapters.models.webhook_execution_history_adapter import (  # noqa: E402
+    WebhookExecutionHistoryAdapter,
+)
+
+WebhookConfigAdapter.model_rebuild(raise_errors=False)

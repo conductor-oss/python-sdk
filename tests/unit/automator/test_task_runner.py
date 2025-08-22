@@ -11,7 +11,7 @@ from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.worker.worker_interface import DEFAULT_POLLING_INTERVAL
-from tests.unit.resources.workers import ClassWorker, FaultyExecutionWorker
+from tests.unit.resources.workers import ClassWorker, OldFaultyExecutionWorker
 
 
 @pytest.fixture(autouse=True)
@@ -229,7 +229,7 @@ def test_execute_task_with_invalid_task():
 
 
 def test_execute_task_with_faulty_execution_worker(mocker):
-    worker = FaultyExecutionWorker("task")
+    worker = OldFaultyExecutionWorker("task")
     expected_task_result = TaskResult(
         task_id="VALID_TASK_ID",
         workflow_instance_id="VALID_WORKFLOW_INSTANCE_ID",

@@ -21,7 +21,8 @@ from typing import List
 from conductor.asyncio_client.http.models.extended_event_execution import ExtendedEventExecution
 from conductor.asyncio_client.http.models.search_result_handled_event_response import SearchResultHandledEventResponse
 
-from conductor.asyncio_client.http.api_client import ApiClient, RequestSerialized
+from conductor.asyncio_client.http.api_client import RequestSerialized
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.api_response import ApiResponse
 from conductor.asyncio_client.http.rest import RESTResponseType
 

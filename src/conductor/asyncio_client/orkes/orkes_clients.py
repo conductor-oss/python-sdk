@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.orkes.orkes_authorization_client import \
     OrkesAuthorizationClient
 from conductor.asyncio_client.orkes.orkes_integration_client import \
@@ -20,6 +21,7 @@ from conductor.asyncio_client.orkes.orkes_secret_client import \
 from conductor.asyncio_client.orkes.orkes_task_client import OrkesTaskClient
 from conductor.asyncio_client.orkes.orkes_workflow_client import \
     OrkesWorkflowClient
+from conductor.asyncio_client.workflow.executor.workflow_executor import AsyncWorkflowExecutor
 
 
 class OrkesClients:
@@ -81,7 +83,7 @@ class OrkesClients:
         The configuration adapter with environment variable support
     """
 
-    def __init__(self, configuration: Optional[Configuration] = None):
+    def __init__(self, api_client: ApiClient, configuration: Optional[Configuration] = None):
         """
         Initialize the OrkesClients factory with the provided configuration.
 
@@ -96,6 +98,7 @@ class OrkesClients:
         if configuration is None:
             configuration = Configuration()
         self.configuration = configuration
+        self.api_client = api_client
 
     def get_workflow_client(self) -> OrkesWorkflowClient:
         """
@@ -114,7 +117,7 @@ class OrkesClients:
             - Querying workflow status and execution history
             - Managing workflow state and variables
         """
-        return OrkesWorkflowClient(self.configuration)
+        return OrkesWorkflowClient(self.configuration, self.api_client)
 
     def get_authorization_client(self) -> OrkesAuthorizationClient:
         """
@@ -133,7 +136,7 @@ class OrkesClients:
             - Application management and access control
             - Permission granting and revocation
         """
-        return OrkesAuthorizationClient(self.configuration)
+        return OrkesAuthorizationClient(self.configuration, self.api_client)
 
     def get_metadata_client(self) -> OrkesMetadataClient:
         """
@@ -152,7 +155,7 @@ class OrkesClients:
             - Schema validation and versioning
             - Metadata querying and retrieval
         """
-        return OrkesMetadataClient(self.configuration)
+        return OrkesMetadataClient(self.configuration, self.api_client)
 
     def get_scheduler_client(self) -> OrkesSchedulerClient:
         """
@@ -171,7 +174,7 @@ class OrkesClients:
             - Managing schedule policies and triggers
             - Querying schedule execution history
         """
-        return OrkesSchedulerClient(self.configuration)
+        return OrkesSchedulerClient(self.configuration, self.api_client)
 
     def get_secret_client(self) -> OrkesSecretClient:
         """
@@ -190,7 +193,7 @@ class OrkesClients:
             - Controlling access to sensitive information
             - Organizing secrets with tags and metadata
         """
-        return OrkesSecretClient(self.configuration)
+        return OrkesSecretClient(self.configuration, self.api_client)
 
     def get_task_client(self) -> OrkesTaskClient:
         """
@@ -211,7 +214,7 @@ class OrkesClients:
             - Managing task queues and worker assignments
             - Retrieving task execution history and logs
         """
-        return OrkesTaskClient(self.configuration)
+        return OrkesTaskClient(self.configuration, self.api_client)
 
     def get_integration_client(self) -> OrkesIntegrationClient:
         """
@@ -230,7 +233,7 @@ class OrkesClients:
             - Controlling integration authentication
             - Managing integration providers and APIs
         """
-        return OrkesIntegrationClient(self.configuration)
+        return OrkesIntegrationClient(self.configuration, self.api_client)
 
     def get_prompt_client(self) -> OrkesPromptClient:
         """
@@ -249,7 +252,7 @@ class OrkesClients:
             - Versioning and organizing prompts
             - Managing prompt template metadata and tags
         """
-        return OrkesPromptClient(self.configuration)
+        return OrkesPromptClient(self.configuration, self.api_client)
 
     def get_schema_client(self) -> OrkesSchemaClient:
         """
@@ -268,4 +271,24 @@ class OrkesClients:
             - Versioning schema definitions
             - Managing schema metadata and documentation
         """
-        return OrkesSchemaClient(self.configuration)
+        return OrkesSchemaClient(self.configuration, self.api_client)
+
+    def get_workflow_executor(self) -> AsyncWorkflowExecutor:
+        """
+        Create and return an asynchronous workflow executor.
+
+        The workflow executor provides high-level functionality for executing and
+        managing workflows programmatically in an asynchronous environment. It is
+        designed for running workflows end-to-end without manually managing
+        individual client interactions.
+
+        Returns:
+        --------
+        AsyncWorkflowExecutor
+            Executor for asynchronous workflow operations including:
+            - Starting workflows with input parameters
+            - Waiting for workflow completion
+            - Retrieving workflow output and status
+            - Handling execution asynchronously for integration in async applications
+        """
+        return AsyncWorkflowExecutor(self.configuration, self.api_client)

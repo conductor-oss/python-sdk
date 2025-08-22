@@ -5,27 +5,17 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.descriptor_adapter import \
-    DescriptorAdapter
-from conductor.asyncio_client.adapters.models.enum_descriptor_proto_adapter import \
-    EnumDescriptorProtoAdapter
-from conductor.asyncio_client.adapters.models.enum_options_adapter import \
-    EnumOptionsAdapter
-from conductor.asyncio_client.adapters.models.enum_value_descriptor_adapter import \
-    EnumValueDescriptorAdapter
-from conductor.asyncio_client.adapters.models.file_descriptor_adapter import \
-    FileDescriptorAdapter
 from conductor.asyncio_client.http.models import EnumDescriptor
 
 
 class EnumDescriptorAdapter(EnumDescriptor):
-    containing_type: Optional[DescriptorAdapter] = Field(
+    containing_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="containingType"
     )
-    file: Optional[FileDescriptorAdapter] = None
-    options: Optional[EnumOptionsAdapter] = None
-    proto: Optional[EnumDescriptorProtoAdapter] = None
-    values: Optional[List[EnumValueDescriptorAdapter]] = None
+    file: Optional["FileDescriptorAdapter"] = None
+    options: Optional["EnumOptionsAdapter"] = None
+    proto: Optional["EnumDescriptorProtoAdapter"] = None
+    values: Optional[List["EnumValueDescriptorAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -73,3 +63,22 @@ class EnumDescriptorAdapter(EnumDescriptor):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (  # noqa: E402
+    DescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_descriptor_proto_adapter import (  # noqa: E402
+    EnumDescriptorProtoAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_options_adapter import (  # noqa: E402
+    EnumOptionsAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_value_descriptor_adapter import (  # noqa: E402
+    EnumValueDescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (  # noqa: E402
+    FileDescriptorAdapter,
+)
+
+EnumDescriptorAdapter.model_rebuild(raise_errors=False)

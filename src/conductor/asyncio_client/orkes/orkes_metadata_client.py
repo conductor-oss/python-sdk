@@ -10,18 +10,19 @@ from conductor.asyncio_client.adapters.models.task_def_adapter import \
     TaskDefAdapter
 from conductor.asyncio_client.adapters.models.workflow_def_adapter import \
     WorkflowDefAdapter
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesMetadataClient(OrkesBaseClient):
-    def __init__(self, configuration: Configuration):
-        super(OrkesMetadataClient, self).__init__(configuration)
+    def __init__(self, configuration: Configuration, api_client: ApiClient):
+        super().__init__(configuration, api_client)
 
     # Task Definition Operations
     async def register_task_def(self, task_def: ExtendedTaskDefAdapter) -> None:
         """Register a new task definition"""
-        await self.metadata_api.register_task_def(task_def)
+        await self.metadata_api.register_task_def([task_def])
 
     async def update_task_def(self, task_def: ExtendedTaskDefAdapter) -> None:
         """Update an existing task definition"""

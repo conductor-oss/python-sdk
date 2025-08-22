@@ -132,6 +132,12 @@ class Configuration:
             # Use the auth_key as the API key for X-Authorization header
             api_key["api_key"] = self.auth_key
 
+        self.__ui_host = os.getenv("CONDUCTOR_UI_SERVER_URL")
+        if self.__ui_host is None:
+            self.__ui_host = self.server_url.replace("/api", "")
+
+        self.logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
+
         # Create the underlying HTTP configuration
         self._http_config = HttpConfiguration(
             host=self.server_url,
@@ -151,6 +157,15 @@ class Configuration:
             debug=debug,
             **kwargs,
         )
+
+        # Debug switch and logging setup
+        self.__debug = debug
+        if self.__debug:
+            self.__log_level = logging.DEBUG
+        else:
+            self.__log_level = logging.INFO
+        # Log format
+        self.__logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 
         # Setup logging
         self.logger = logging.getLogger(__name__)
@@ -311,13 +326,17 @@ class Configuration:
     @property
     def host(self) -> str:
         """Get server host URL."""
-        return self._http_config.host
+        if getattr(self, "_http_config", None) is not None:
+            return self._http_config.host
+        return getattr(self, "_host", None)
 
     @host.setter
     def host(self, value: str) -> None:
         """Set server host URL."""
-        self._http_config.host = value
-        self.server_url = value
+
+        if getattr(self, "_http_config", None) is not None:
+            self._http_config.host = value
+        self._host = value
 
     @property
     def debug(self) -> bool:
@@ -330,8 +349,10 @@ class Configuration:
         self._http_config.debug = value
         if value:
             self.logger.setLevel(logging.DEBUG)
+            self.__log_level = logging.DEBUG
         else:
             self.logger.setLevel(logging.WARNING)
+            self.__log_level = logging.INFO
 
     @property
     def api_key(self) -> Dict[str, str]:
@@ -414,7 +435,44 @@ class Configuration:
         """Set number of retries."""
         self._http_config.retries = value
 
+    @property
+    def logger_format(self) -> str:
+        """Get logger format."""
+        return self.__logger_format
+
+    @logger_format.setter
+    def logger_format(self, value: str) -> None:
+        """Set logger format."""
+        self.__logger_format = value
+
+    @property
+    def log_level(self) -> int:
+        """Get log level."""
+        return self.__log_level
+
+    def apply_logging_config(self, log_format : Optional[str] = None, level = None):
+        """Apply logging configuration for the application."""
+        if log_format is None:
+            log_format = self.logger_format
+        if level is None:
+            level = self.__log_level
+        logging.basicConfig(
+            format=log_format,
+            level=level
+        )
+
+    @staticmethod
+    def get_logging_formatted_name(name):
+        """Format a logger name with the current process ID."""
+        return f"[{os.getpid()}] {name}"
+
+    @property
+    def ui_host(self):
+        return self.__ui_host
+
     # For any other attributes, delegate to the HTTP configuration
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to underlying HTTP configuration."""
+        if "_http_config" not in self.__dict__ or self._http_config is None:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
         return getattr(self._http_config, name)

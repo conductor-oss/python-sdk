@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from conductor.client.configuration.settings.metrics_settings import MetricsSettings
+from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
 
 
 @pytest.fixture(autouse=True)

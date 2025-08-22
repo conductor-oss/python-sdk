@@ -5,22 +5,18 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.descriptor_adapter import \
-    DescriptorAdapter
-from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import \
-    UnknownFieldSetAdapter
 from conductor.asyncio_client.http.models import EnumReservedRange
 
 
 class EnumReservedRangeAdapter(EnumReservedRange):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional[EnumReservedRangeAdapter] = Field(
+    default_instance_for_type: Optional["EnumReservedRangeAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional[DescriptorAdapter] = Field(
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="descriptorForType"
     )
-    unknown_fields: Optional[UnknownFieldSetAdapter] = Field(
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
         default=None, alias="unknownFields"
     )
 
@@ -61,3 +57,13 @@ class EnumReservedRangeAdapter(EnumReservedRange):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (  # noqa: E402
+    DescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (  # noqa: E402
+    UnknownFieldSetAdapter,
+)
+
+EnumReservedRangeAdapter.model_rebuild(raise_errors=False)

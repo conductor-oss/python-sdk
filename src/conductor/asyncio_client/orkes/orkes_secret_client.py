@@ -5,13 +5,14 @@ from typing import Dict, List
 from conductor.asyncio_client.adapters.models.extended_secret_adapter import \
     ExtendedSecretAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesSecretClient(OrkesBaseClient):
-    def __init__(self, configuration: Configuration):
-        super(OrkesSecretClient, self).__init__(configuration)
+    def __init__(self, configuration: Configuration, api_client: ApiClient):
+        super().__init__(configuration, api_client)
 
     # Core Secret Operations
     async def put_secret(self, key: str, secret: str) -> object:

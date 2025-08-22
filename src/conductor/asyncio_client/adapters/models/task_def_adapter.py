@@ -5,17 +5,17 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.schema_def_adapter import \
-    SchemaDefAdapter
 from conductor.asyncio_client.http.models import TaskDef
 
 
 class TaskDefAdapter(TaskDef):
-    input_schema: Optional[SchemaDefAdapter] = Field(default=None, alias="inputSchema")
+    input_schema: Optional["SchemaDefAdapter"] = Field(
+        default=None, alias="inputSchema"
+    )
     input_template: Optional[Dict[str, Any]] = Field(
         default=None, alias="inputTemplate"
     )
-    output_schema: Optional[SchemaDefAdapter] = Field(
+    output_schema: Optional["SchemaDefAdapter"] = Field(
         default=None, alias="outputSchema"
     )
 
@@ -46,7 +46,7 @@ class TaskDefAdapter(TaskDef):
                 ),
                 "inputTemplate": obj.get("inputTemplate"),
                 "isolationGroupId": obj.get("isolationGroupId"),
-                "name": obj.get("name"),
+                "name": obj.get("name", "default_task_def"),
                 "outputKeys": obj.get("outputKeys"),
                 "outputSchema": (
                     SchemaDefAdapter.from_dict(obj["outputSchema"])
@@ -58,7 +58,7 @@ class TaskDefAdapter(TaskDef):
                 "pollTimeoutSeconds": obj.get("pollTimeoutSeconds"),
                 "rateLimitFrequencyInSeconds": obj.get("rateLimitFrequencyInSeconds"),
                 "rateLimitPerFrequency": obj.get("rateLimitPerFrequency"),
-                "responseTimeoutSeconds": obj.get("responseTimeoutSeconds"),
+                "responseTimeoutSeconds": obj.get("responseTimeoutSeconds") if obj.get("responseTimeoutSeconds") is not None and obj.get("responseTimeoutSeconds") != 0 else 600, # default to 10 minutes
                 "retryCount": obj.get("retryCount"),
                 "retryDelaySeconds": obj.get("retryDelaySeconds"),
                 "retryLogic": obj.get("retryLogic"),
@@ -70,3 +70,10 @@ class TaskDefAdapter(TaskDef):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.schema_def_adapter import (  # noqa: E402
+    SchemaDefAdapter,
+)
+
+TaskDefAdapter.model_rebuild(raise_errors=False)

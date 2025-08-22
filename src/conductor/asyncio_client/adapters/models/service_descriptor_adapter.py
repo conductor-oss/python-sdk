@@ -2,22 +2,14 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Self
 
-from conductor.asyncio_client.adapters.models.file_descriptor_adapter import \
-    FileDescriptorAdapter
-from conductor.asyncio_client.adapters.models.method_descriptor_adapter import \
-    MethodDescriptorAdapter
-from conductor.asyncio_client.adapters.models.service_descriptor_proto_adapter import \
-    ServiceDescriptorProtoAdapter
-from conductor.asyncio_client.adapters.models.service_options_adapter import \
-    ServiceOptionsAdapter
 from conductor.asyncio_client.http.models import ServiceDescriptor
 
 
 class ServiceDescriptorAdapter(ServiceDescriptor):
-    file: Optional[FileDescriptorAdapter] = None
-    methods: Optional[List[MethodDescriptorAdapter]] = None
-    options: Optional[ServiceOptionsAdapter] = None
-    proto: Optional[ServiceDescriptorProtoAdapter] = None
+    file: Optional["FileDescriptorAdapter"] = None
+    methods: Optional[List["MethodDescriptorAdapter"]] = None
+    options: Optional["ServiceOptionsAdapter"] = None
+    proto: Optional["ServiceDescriptorProtoAdapter"] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -59,3 +51,19 @@ class ServiceDescriptorAdapter(ServiceDescriptor):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (  # noqa: E402
+    FileDescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.method_descriptor_adapter import (  # noqa: E402
+    MethodDescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.service_descriptor_proto_adapter import (  # noqa: E402
+    ServiceDescriptorProtoAdapter,
+)
+from conductor.asyncio_client.adapters.models.service_options_adapter import (  # noqa: E402
+    ServiceOptionsAdapter,
+)
+
+ServiceDescriptorAdapter.model_rebuild(raise_errors=False)

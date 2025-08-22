@@ -11,13 +11,14 @@ from conductor.asyncio_client.adapters.models.task_exec_log_adapter import \
     TaskExecLogAdapter
 from conductor.asyncio_client.adapters.models.task_result_adapter import \
     TaskResultAdapter
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesTaskClient(OrkesBaseClient):
-    def __init__(self, configuration: Configuration):
-        super(OrkesTaskClient, self).__init__(configuration)
+    def __init__(self, configuration: Configuration, api_client: ApiClient):
+        super().__init__(configuration, api_client)
 
     # Task Polling Operations
     async def poll_for_task(
@@ -76,7 +77,7 @@ class OrkesTaskClient(OrkesBaseClient):
         workflow_id: str,
         task_ref_name: str,
         status: str,
-        request_body: Dict[str, Dict[str, Any]],
+        request_body: Dict[str, Any],
         worker_id: Optional[str] = None,
     ) -> str:
         """Update task synchronously by workflow ID and task reference name"""

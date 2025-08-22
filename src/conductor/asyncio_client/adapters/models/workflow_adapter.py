@@ -5,9 +5,6 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
-from conductor.asyncio_client.adapters.models.workflow_def_adapter import \
-    WorkflowDefAdapter
 from conductor.asyncio_client.http.models import Workflow
 
 
@@ -15,11 +12,19 @@ class WorkflowAdapter(Workflow):
     input: Optional[Dict[str, Any]] = None
     output: Optional[Dict[str, Any]] = None
     variables: Optional[Dict[str, Any]] = None
-    workflow_definition: Optional[WorkflowDefAdapter] = Field(
+    workflow_definition: Optional["WorkflowDefAdapter"] = Field(
         default=None, alias="workflowDefinition"
     )
-    tasks: Optional[List[TaskAdapter]] = None
-    history: Optional[List[WorkflowAdapter]] = None
+    tasks: Optional[List["TaskAdapter"]] = None
+    history: Optional[List["WorkflowAdapter"]] = None
+
+    @property
+    def current_task(self) -> TaskAdapter:
+        current = None
+        for task in self.tasks or []:
+            if task.status in ("SCHEDULED", "IN_PROGRESS"):
+                current = task
+        return current
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -84,3 +89,11 @@ class WorkflowAdapter(Workflow):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter  # noqa: E402
+from conductor.asyncio_client.adapters.models.workflow_def_adapter import (  # noqa: E402
+    WorkflowDefAdapter,
+)
+
+WorkflowAdapter.model_rebuild(raise_errors=False)

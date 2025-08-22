@@ -25,7 +25,8 @@ from conductor.asyncio_client.http.models.task_exec_log import TaskExecLog
 from conductor.asyncio_client.http.models.task_result import TaskResult
 from conductor.asyncio_client.http.models.workflow import Workflow
 
-from conductor.asyncio_client.http.api_client import ApiClient, RequestSerialized
+from conductor.asyncio_client.http.api_client import RequestSerialized
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.api_response import ApiResponse
 from conductor.asyncio_client.http.rest import RESTResponseType
 

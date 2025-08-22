@@ -4,12 +4,11 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.http.models import ExtendedSecret
 
 
 class ExtendedSecretAdapter(ExtendedSecret):
-    tags: Optional[List[TagAdapter]] = None
+    tags: Optional[List["TagAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -31,3 +30,8 @@ class ExtendedSecretAdapter(ExtendedSecret):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter  # noqa: E402
+
+ExtendedSecretAdapter.model_rebuild(raise_errors=False)

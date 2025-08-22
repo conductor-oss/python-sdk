@@ -4,16 +4,15 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.workflow_schedule_execution_model_adapter import \
-    WorkflowScheduleExecutionModelAdapter
-from conductor.asyncio_client.http.models import \
-    SearchResultWorkflowScheduleExecutionModel
+from conductor.asyncio_client.http.models import (
+    SearchResultWorkflowScheduleExecutionModel,
+)
 
 
 class SearchResultWorkflowScheduleExecutionModelAdapter(
     SearchResultWorkflowScheduleExecutionModel
 ):
-    results: Optional[List[WorkflowScheduleExecutionModelAdapter]] = None
+    results: Optional[List["WorkflowScheduleExecutionModelAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -38,3 +37,10 @@ class SearchResultWorkflowScheduleExecutionModelAdapter(
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.workflow_schedule_execution_model_adapter import (  # noqa: E402
+    WorkflowScheduleExecutionModelAdapter,
+)
+
+SearchResultWorkflowScheduleExecutionModelAdapter.model_rebuild(raise_errors=False)

@@ -5,16 +5,14 @@ from typing import Any, ClassVar, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.option_adapter import \
-    OptionAdapter
 from conductor.asyncio_client.http.models import IntegrationDefFormField
 
 
 class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
-    value_options: Optional[List[OptionAdapter]] = Field(
+    value_options: Optional[List["OptionAdapter"]] = Field(
         default=None, alias="valueOptions"
     )
-    depends_on: Optional[List[IntegrationDefFormFieldAdapter]] = Field(
+    depends_on: Optional[List["IntegrationDefFormFieldAdapter"]] = Field(
         default=None, alias="dependsOn"
     )
     __properties: ClassVar[List[str]] = [
@@ -63,3 +61,10 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.option_adapter import (  # noqa: E402
+    OptionAdapter,
+)
+
+IntegrationDefFormFieldAdapter.model_rebuild(raise_errors=False)

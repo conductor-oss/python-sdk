@@ -15,6 +15,7 @@ from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.http.rest import ApiException
 from conductor.asyncio_client.orkes.orkes_prompt_client import OrkesPromptClient
+from conductor.asyncio_client.adapters import ApiClient
 
 TEMPLATE_NAME = "test_template"
 TEMPLATE_DESCRIPTION = "Test template description"
@@ -28,7 +29,8 @@ TEST_INPUT = {"name": "John", "platform": "Conductor"}
 @pytest.fixture(scope="module")
 def prompt_client():
     configuration = Configuration("http://localhost:8080/api")
-    return OrkesPromptClient(configuration)
+    api_client = ApiClient(configuration)
+    return OrkesPromptClient(configuration, api_client=api_client)
 
 
 @pytest.fixture(autouse=True)

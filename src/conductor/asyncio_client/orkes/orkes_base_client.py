@@ -26,7 +26,7 @@ from conductor.asyncio_client.adapters.api.user_resource_api import \
 from conductor.asyncio_client.adapters.api.workflow_resource_api import \
     WorkflowResourceApiAdapter
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.adapters import ApiClient
 
 
 class OrkesBaseClient:
@@ -38,7 +38,7 @@ class OrkesBaseClient:
     worker properties configuration.
     """
 
-    def __init__(self, configuration: Configuration):
+    def __init__(self, configuration: Configuration, api_client: ApiClient):
         """
         Initialize the base client with configuration.
 
@@ -48,7 +48,7 @@ class OrkesBaseClient:
             Configuration adapter with environment variable support
         """
         # Access the underlying HTTP configuration for API client initialization
-        self.api_client = ApiClient(configuration._http_config)
+        self.api_client = api_client
         self.configuration = configuration
 
         self.logger = logging.getLogger(__name__)

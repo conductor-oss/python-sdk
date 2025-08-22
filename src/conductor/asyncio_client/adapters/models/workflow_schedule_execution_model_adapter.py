@@ -5,13 +5,11 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import \
-    StartWorkflowRequestAdapter
 from conductor.asyncio_client.http.models import WorkflowScheduleExecutionModel
 
 
 class WorkflowScheduleExecutionModelAdapter(WorkflowScheduleExecutionModel):
-    start_workflow_request: Optional[StartWorkflowRequestAdapter] = Field(
+    start_workflow_request: Optional["StartWorkflowRequestAdapter"] = Field(
         default=None, alias="startWorkflowRequest"
     )
 
@@ -46,3 +44,10 @@ class WorkflowScheduleExecutionModelAdapter(WorkflowScheduleExecutionModel):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (  # noqa: E402
+    StartWorkflowRequestAdapter,
+)
+
+WorkflowScheduleExecutionModelAdapter.model_rebuild(raise_errors=False)

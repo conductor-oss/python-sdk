@@ -4,13 +4,11 @@ from typing import Any, Dict, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.target_ref_adapter import \
-    TargetRefAdapter
 from conductor.asyncio_client.http.models import GrantedAccess
 
 
 class GrantedAccessAdapter(GrantedAccess):
-    target: Optional[TargetRefAdapter] = None
+    target: Optional["TargetRefAdapter"] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -33,3 +31,10 @@ class GrantedAccessAdapter(GrantedAccess):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.target_ref_adapter import (  # noqa: E402
+    TargetRefAdapter,
+)
+
+GrantedAccessAdapter.model_rebuild(raise_errors=False)

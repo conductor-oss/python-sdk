@@ -2,18 +2,21 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from conductor.asyncio_client.adapters.models.message_template_adapter import \
-    MessageTemplateAdapter
-from conductor.asyncio_client.adapters.models.prompt_template_test_request_adapter import \
-    PromptTemplateTestRequestAdapter
+from conductor.asyncio_client.adapters.models.message_template_adapter import (
+    MessageTemplateAdapter,
+)
+from conductor.asyncio_client.adapters.models.prompt_template_test_request_adapter import (
+    PromptTemplateTestRequestAdapter,
+)
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesPromptClient(OrkesBaseClient):
-    def __init__(self, configuration: Configuration):
-        super(OrkesPromptClient, self).__init__(configuration)
+    def __init__(self, configuration: Configuration, api_client: ApiClient):
+        super().__init__(configuration, api_client)
 
     # Message Template Operations
     async def save_message_template(
@@ -176,10 +179,32 @@ class OrkesPromptClient(OrkesBaseClient):
         matching_templates = []
 
         matching_templates = [
-            template for template in all_templates
+            template
+            for template in all_templates
             if hasattr(template, "models")
             and template.models
             and model_name in template.models
         ]
 
         return matching_templates
+
+    async def test_prompt(
+        self,
+        prompt_text: str,
+        variables: dict,
+        ai_integration: str,
+        text_complete_model: str,
+        temperature: float = 0.1,
+        top_p: float = 0.9,
+        stop_words: Optional[List[str]] = None,
+    ) -> str:
+        request = PromptTemplateTestRequestAdapter(
+            prompt=prompt_text,
+            llm_provider=ai_integration,
+            model=text_complete_model,
+            prompt_variables=variables,
+            temperature=temperature,
+            stop_words=stop_words,
+            top_p=top_p,
+        )
+        return await self.prompt_api.test_message_template(request)

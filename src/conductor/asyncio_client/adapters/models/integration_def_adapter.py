@@ -4,13 +4,11 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.integration_def_form_field_adapter import \
-    IntegrationDefFormFieldAdapter
 from conductor.asyncio_client.http.models import IntegrationDef
 
 
 class IntegrationDefAdapter(IntegrationDef):
-    configuration: Optional[List[IntegrationDefFormFieldAdapter]] = None
+    configuration: Optional[List["IntegrationDefFormFieldAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -42,3 +40,10 @@ class IntegrationDefAdapter(IntegrationDef):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.integration_def_form_field_adapter import (  # noqa: E402
+    IntegrationDefFormFieldAdapter,
+)
+
+IntegrationDefAdapter.model_rebuild(raise_errors=False)

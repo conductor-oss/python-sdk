@@ -5,14 +5,12 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.workflow_def_adapter import \
-    WorkflowDefAdapter
 from conductor.asyncio_client.http.models import StartWorkflowRequest
 
 
 class StartWorkflowRequestAdapter(StartWorkflowRequest):
     input: Optional[Dict[str, Any]] = None
-    workflow_def: Optional[WorkflowDefAdapter] = Field(
+    workflow_def: Optional["WorkflowDefAdapter"] = Field(
         default=None, alias="workflowDef"
     )
     priority: Optional[int] = None
@@ -48,3 +46,10 @@ class StartWorkflowRequestAdapter(StartWorkflowRequest):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.workflow_def_adapter import (  # noqa: E402
+    WorkflowDefAdapter,
+)
+
+StartWorkflowRequestAdapter.model_rebuild(raise_errors=False)

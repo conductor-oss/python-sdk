@@ -13,6 +13,7 @@ from conductor.asyncio_client.adapters.models.search_result_task_summary_adapter
 from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
 from conductor.asyncio_client.http.rest import ApiException
 from conductor.asyncio_client.orkes.orkes_task_client import OrkesTaskClient
+from conductor.asyncio_client.adapters import ApiClient
 
 TASK_NAME = "ut_task"
 TASK_ID = "task_id_1"
@@ -24,7 +25,8 @@ DOMAIN = "test_domain"
 @pytest.fixture(scope="module")
 def task_client():
     configuration = Configuration("http://localhost:8080/api")
-    return OrkesTaskClient(configuration)
+    api_client = ApiClient(configuration)
+    return OrkesTaskClient(configuration, api_client=api_client)
 
 
 @pytest.fixture(autouse=True)

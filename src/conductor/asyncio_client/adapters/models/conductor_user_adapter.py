@@ -4,14 +4,12 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter
-from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter
 from conductor.asyncio_client.http.models import ConductorUser
 
 
 class ConductorUserAdapter(ConductorUser):
-    groups: Optional[List[GroupAdapter]] = None
-    roles: Optional[List[RoleAdapter]] = None
+    groups: Optional[List["GroupAdapter"]] = None
+    roles: Optional[List["RoleAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -44,3 +42,9 @@ class ConductorUserAdapter(ConductorUser):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter  # noqa: E402
+from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter  # noqa: E402
+
+ConductorUserAdapter.model_rebuild(raise_errors=False)

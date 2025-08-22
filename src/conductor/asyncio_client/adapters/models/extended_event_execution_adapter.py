@@ -5,13 +5,11 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.event_handler_adapter import \
-    EventHandlerAdapter
 from conductor.asyncio_client.http.models import ExtendedEventExecution
 
 
 class ExtendedEventExecutionAdapter(ExtendedEventExecution):
-    event_handler: Optional[EventHandlerAdapter] = Field(
+    event_handler: Optional["EventHandlerAdapter"] = Field(
         default=None, alias="eventHandler"
     )
     full_message_payload: Optional[Dict[str, Any]] = Field(
@@ -51,3 +49,10 @@ class ExtendedEventExecutionAdapter(ExtendedEventExecution):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.event_handler_adapter import (  # noqa: E402
+    EventHandlerAdapter,
+)
+
+ExtendedEventExecutionAdapter.model_rebuild(raise_errors=False)

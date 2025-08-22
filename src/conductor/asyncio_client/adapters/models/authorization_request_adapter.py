@@ -4,16 +4,12 @@ from typing import Any, Dict, Optional
 
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.subject_ref_adapter import \
-    SubjectRefAdapter
-from conductor.asyncio_client.adapters.models.target_ref_adapter import \
-    TargetRefAdapter
 from conductor.asyncio_client.http.models import AuthorizationRequest
 
 
 class AuthorizationRequestAdapter(AuthorizationRequest):
-    subject: SubjectRefAdapter
-    target: TargetRefAdapter
+    subject: "SubjectRefAdapter"
+    target: "TargetRefAdapter"
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -40,3 +36,13 @@ class AuthorizationRequestAdapter(AuthorizationRequest):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.subject_ref_adapter import (  # noqa: E402
+    SubjectRefAdapter,
+)
+from conductor.asyncio_client.adapters.models.target_ref_adapter import (  # noqa: E402
+    TargetRefAdapter,
+)
+
+AuthorizationRequestAdapter.model_rebuild(raise_errors=False)

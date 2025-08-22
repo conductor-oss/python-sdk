@@ -10,7 +10,7 @@ from prometheus_client import write_to_textfile
 from prometheus_client.multiprocess import MultiProcessCollector
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.configuration.settings.metrics_settings import MetricsSettings
+from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.telemetry.model.metric_documentation import MetricDocumentation
 from conductor.client.telemetry.model.metric_label import MetricLabel
 from conductor.client.telemetry.model.metric_name import MetricName

@@ -5,37 +5,27 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.descriptor_adapter import \
-    DescriptorAdapter
-from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import \
-    EnumDescriptorAdapter
-from conductor.asyncio_client.adapters.models.field_descriptor_proto_adapter import \
-    FieldDescriptorProtoAdapter
-from conductor.asyncio_client.adapters.models.field_options_adapter import \
-    FieldOptionsAdapter
-from conductor.asyncio_client.adapters.models.file_descriptor_adapter import \
-    FileDescriptorAdapter
-from conductor.asyncio_client.adapters.models.oneof_descriptor_adapter import \
-    OneofDescriptorAdapter
 from conductor.asyncio_client.http.models import FieldDescriptor
 
 
 class FieldDescriptorAdapter(FieldDescriptor):
-    containing_oneof: Optional[OneofDescriptorAdapter] = Field(
+    containing_oneof: Optional["OneofDescriptorAdapter"] = Field(
         default=None, alias="containingOneof"
     )
-    containing_type: Optional[DescriptorAdapter] = Field(
+    containing_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="containingType"
     )
-    enum_type: Optional[EnumDescriptorAdapter] = Field(default=None, alias="enumType")
-    extension_scope: Optional[DescriptorAdapter] = Field(
+    enum_type: Optional["EnumDescriptorAdapter"] = Field(default=None, alias="enumType")
+    extension_scope: Optional["DescriptorAdapter"] = Field(
         default=None, alias="extensionScope"
     )
-    file: Optional[FileDescriptorAdapter] = None
-    message_type: Optional[DescriptorAdapter] = Field(default=None, alias="messageType")
-    options: Optional[FieldOptionsAdapter] = None
-    proto: Optional[FieldDescriptorProtoAdapter] = None
-    real_containing_oneof: Optional[OneofDescriptorAdapter] = Field(
+    file: Optional["FileDescriptorAdapter"] = None
+    message_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="messageType"
+    )
+    options: Optional["FieldOptionsAdapter"] = None
+    proto: Optional["FieldDescriptorProtoAdapter"] = None
+    real_containing_oneof: Optional["OneofDescriptorAdapter"] = Field(
         default=None, alias="realContainingOneof"
     )
 
@@ -115,3 +105,25 @@ class FieldDescriptorAdapter(FieldDescriptor):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.descriptor_adapter import (  # noqa: E402
+    DescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.enum_descriptor_adapter import (  # noqa: E402
+    EnumDescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.field_descriptor_proto_adapter import (  # noqa: E402
+    FieldDescriptorProtoAdapter,
+)
+from conductor.asyncio_client.adapters.models.field_options_adapter import (  # noqa: E402
+    FieldOptionsAdapter,
+)
+from conductor.asyncio_client.adapters.models.file_descriptor_adapter import (  # noqa: E402
+    FileDescriptorAdapter,
+)
+from conductor.asyncio_client.adapters.models.oneof_descriptor_adapter import (  # noqa: E402
+    OneofDescriptorAdapter,
+)
+
+FieldDescriptorAdapter.model_rebuild(raise_errors=False)

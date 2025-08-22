@@ -29,6 +29,8 @@ from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_integration_client import (
     OrkesIntegrationClient,
 )
+from conductor.asyncio_client.adapters import ApiClient
+
 
 INTEGRATION_NAME = "test_integration"
 INTEGRATION_API_NAME = "test_api"
@@ -41,7 +43,8 @@ EVENT_TYPE = "SEND"
 @pytest.fixture(scope="module")
 def integration_client():
     configuration = Configuration("http://localhost:8080/api")
-    return OrkesIntegrationClient(configuration)
+    api_client = ApiClient(configuration)
+    return OrkesIntegrationClient(configuration, api_client=api_client)
 
 
 @pytest.fixture(autouse=True)

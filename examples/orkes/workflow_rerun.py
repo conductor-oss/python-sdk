@@ -3,7 +3,7 @@ import json
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models import StartWorkflowRequest, RerunWorkflowRequest, TaskResult, WorkflowRun, \
     WorkflowDef
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.http.models.workflow_def import to_workflow_def
 from conductor.client.http.models.workflow_state_update import WorkflowStateUpdate
 from conductor.client.orkes_clients import OrkesClients

@@ -5,14 +5,12 @@ from typing import Any, Dict, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from conductor.asyncio_client.adapters.models.task_result_adapter import \
-    TaskResultAdapter
 from conductor.asyncio_client.http.models import WorkflowStateUpdate
 
 
 class WorkflowStateUpdateAdapter(WorkflowStateUpdate):
     variables: Optional[Dict[str, Any]] = None
-    task_result: Optional[TaskResultAdapter] = Field(default=None, alias="taskResult")
+    task_result: Optional["TaskResultAdapter"] = Field(default=None, alias="taskResult")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -35,3 +33,8 @@ class WorkflowStateUpdateAdapter(WorkflowStateUpdate):
             }
         )
         return _obj
+
+
+from conductor.asyncio_client.adapters.models.task_result_adapter import (  # noqa: E402
+    TaskResultAdapter,
+)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Optional, List, Dict
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.adapters.models.integration_adapter import IntegrationAdapter
 from conductor.asyncio_client.adapters.models.integration_api_adapter import \
@@ -11,24 +12,35 @@ from conductor.asyncio_client.adapters.models.integration_def_adapter import Int
 from conductor.asyncio_client.adapters.models.integration_update_adapter import IntegrationUpdateAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.adapters.models.event_log_adapter import EventLogAdapter
+from conductor.asyncio_client.http.exceptions import NotFoundException
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesIntegrationClient(OrkesBaseClient):
     def __init__(
             self,
-            configuration: Configuration
+            configuration: Configuration,
+            api_client: ApiClient
     ):
-        super(OrkesIntegrationClient, self).__init__(configuration)
+        super().__init__(configuration, api_client)
 
     # Integration Provider Operations
     async def save_integration_provider(self, name: str, integration_update: IntegrationUpdateAdapter) -> None:
         """Create or update an integration provider"""
         await self.integration_api.save_integration_provider(name, integration_update)
 
+    async def save_integration(self, integration_name, integration_details: IntegrationUpdateAdapter) -> None:
+        await self.integration_api.save_integration_provider(integration_name, integration_details)
+
     async def get_integration_provider(self, name: str) -> IntegrationDefAdapter:
         """Get integration provider by name"""
         return await self.integration_api.get_integration_provider(name)
+
+    async def get_integration(self, integration_name: str) -> IntegrationDefAdapter | None:
+        try:
+            return await self.get_integration_provider(integration_name)
+        except NotFoundException:
+            return None
 
     async def delete_integration_provider(self, name: str) -> None:
         """Delete an integration provider"""
