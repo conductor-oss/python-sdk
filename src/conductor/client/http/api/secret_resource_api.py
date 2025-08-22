@@ -29,7 +29,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: dict(str, str)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -49,7 +49,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: dict(str, str)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -97,7 +97,7 @@ class SecretResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, str)',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -114,7 +114,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: dict(str, str)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -134,7 +134,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: dict(str, str)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -182,7 +182,7 @@ class SecretResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, str)',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -199,7 +199,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object key: (required)
+        :param str key: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -220,7 +220,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object key: (required)
+        :param str key: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -292,8 +292,8 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object key: (required)
+        :param list[Tag] body: (required)
+        :param str key: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -314,8 +314,8 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object key: (required)
+        :param list[Tag] body: (required)
+        :param str key: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -393,8 +393,8 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object key: (required)
-        :return: object
+        :param str key: (required)
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -414,8 +414,8 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object key: (required)
-        :return: object
+        :param str key: (required)
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -469,7 +469,7 @@ class SecretResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='str',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -486,8 +486,8 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object key: (required)
-        :return: object
+        :param str key: (required)
+        :return: list[Tag]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -507,8 +507,8 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object key: (required)
-        :return: object
+        :param str key: (required)
+        :return: list[Tag]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -562,7 +562,7 @@ class SecretResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[Tag]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -579,7 +579,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[str]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -599,7 +599,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[str]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -647,7 +647,7 @@ class SecretResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[str]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -664,7 +664,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[str]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -684,7 +684,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[str]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -732,7 +732,7 @@ class SecretResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[str]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -749,7 +749,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[ExtendedSecret]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -769,7 +769,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[ExtendedSecret]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -817,7 +817,7 @@ class SecretResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[ExtendedSecret]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -834,8 +834,8 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object key: (required)
+        :param str body: (required)
+        :param str key: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -856,8 +856,8 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object key: (required)
+        :param str body: (required)
+        :param str key: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -939,8 +939,8 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object key: (required)
+        :param list[Tag] body: (required)
+        :param str key: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -961,8 +961,8 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object key: (required)
+        :param list[Tag] body: (required)
+        :param str key: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1040,7 +1040,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object key: (required)
+        :param str key: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1061,7 +1061,7 @@ class SecretResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object key: (required)
+        :param str key: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.

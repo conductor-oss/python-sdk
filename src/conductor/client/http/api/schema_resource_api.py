@@ -29,7 +29,7 @@ class SchemaResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -50,7 +50,7 @@ class SchemaResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -118,8 +118,8 @@ class SchemaResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object version: (required)
+        :param str name: (required)
+        :param int version: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -140,8 +140,8 @@ class SchemaResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object version: (required)
+        :param str name: (required)
+        :param int version: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -215,7 +215,7 @@ class SchemaResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[SchemaDef]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -235,7 +235,7 @@ class SchemaResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[SchemaDef]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -283,7 +283,7 @@ class SchemaResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[SchemaDef]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -300,8 +300,8 @@ class SchemaResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object version: (required)
+        :param str name: (required)
+        :param int version: (required)
         :return: SchemaDef
                  If the method is called asynchronously,
                  returns the request thread.
@@ -322,8 +322,8 @@ class SchemaResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object version: (required)
+        :param str name: (required)
+        :param int version: (required)
         :return: SchemaDef
                  If the method is called asynchronously,
                  returns the request thread.
@@ -401,8 +401,8 @@ class SchemaResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object new_version:
+        :param list[SchemaDef] body: (required)
+        :param bool new_version:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -423,8 +423,8 @@ class SchemaResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object new_version:
+        :param list[SchemaDef] body: (required)
+        :param bool new_version:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.

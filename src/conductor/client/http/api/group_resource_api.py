@@ -29,8 +29,8 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object group_id: (required)
-        :param object user_id: (required)
+        :param str group_id: (required)
+        :param str user_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -51,8 +51,8 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object group_id: (required)
-        :param object user_id: (required)
+        :param str group_id: (required)
+        :param str user_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -130,8 +130,8 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object group_id: (required)
+        :param list[str] body: (required)
+        :param str group_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -152,8 +152,8 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object group_id: (required)
+        :param list[str] body: (required)
+        :param str group_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -231,7 +231,7 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: Response
                  If the method is called asynchronously,
                  returns the request thread.
@@ -252,7 +252,7 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: Response
                  If the method is called asynchronously,
                  returns the request thread.
@@ -324,7 +324,7 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object group_id: (required)
+        :param str group_id: (required)
         :return: GrantedAccessResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -345,7 +345,7 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object group_id: (required)
+        :param str group_id: (required)
         :return: GrantedAccessResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -417,7 +417,7 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -438,7 +438,7 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -510,7 +510,7 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -531,7 +531,7 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -603,7 +603,7 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[Group]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -623,7 +623,7 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[Group]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -671,7 +671,7 @@ class GroupResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[Group]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -688,8 +688,8 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object group_id: (required)
-        :param object user_id: (required)
+        :param str group_id: (required)
+        :param str user_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -710,8 +710,8 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object group_id: (required)
-        :param object user_id: (required)
+        :param str group_id: (required)
+        :param str user_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -789,8 +789,8 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object group_id: (required)
+        :param list[str] body: (required)
+        :param str group_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -811,8 +811,8 @@ class GroupResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object group_id: (required)
+        :param list[str] body: (required)
+        :param str group_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -891,7 +891,7 @@ class GroupResourceApi(object):
 
         :param async_req bool
         :param UpsertGroupRequest body: (required)
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -913,7 +913,7 @@ class GroupResourceApi(object):
 
         :param async_req bool
         :param UpsertGroupRequest body: (required)
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.

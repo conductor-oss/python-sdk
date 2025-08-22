@@ -29,9 +29,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object integration_provider: (required)
-        :param object integration_name: (required)
-        :param object prompt_name: (required)
+        :param str integration_provider: (required)
+        :param str integration_name: (required)
+        :param str prompt_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -52,9 +52,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object integration_provider: (required)
-        :param object integration_name: (required)
-        :param object prompt_name: (required)
+        :param str integration_provider: (required)
+        :param str integration_name: (required)
+        :param str prompt_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -134,8 +134,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object integration_name: (required)
+        :param str name: (required)
+        :param str integration_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -156,8 +156,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object integration_name: (required)
+        :param str name: (required)
+        :param str integration_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -231,7 +231,7 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -252,7 +252,7 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -320,9 +320,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
-        :param object integration_name: (required)
+        :param list[Tag] body: (required)
+        :param str name: (required)
+        :param str integration_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -343,9 +343,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
-        :param object integration_name: (required)
+        :param list[Tag] body: (required)
+        :param str name: (required)
+        :param str integration_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -429,8 +429,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
+        :param list[Tag] body: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -451,8 +451,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
+        :param list[Tag] body: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -530,9 +530,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object category:
-        :param object active_only:
-        :return: object
+        :param str category:
+        :param bool active_only:
+        :return: list[Integration]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -552,9 +552,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object category:
-        :param object active_only:
-        :return: object
+        :param str category:
+        :param bool active_only:
+        :return: list[Integration]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -606,7 +606,7 @@ class IntegrationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[Integration]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -623,8 +623,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object integration_name: (required)
+        :param str name: (required)
+        :param str integration_name: (required)
         :return: IntegrationApi
                  If the method is called asynchronously,
                  returns the request thread.
@@ -645,8 +645,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object integration_name: (required)
+        :param str name: (required)
+        :param str integration_name: (required)
         :return: IntegrationApi
                  If the method is called asynchronously,
                  returns the request thread.
@@ -724,9 +724,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object active_only:
-        :return: object
+        :param str name: (required)
+        :param bool active_only:
+        :return: list[IntegrationApi]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -746,9 +746,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object active_only:
-        :return: object
+        :param str name: (required)
+        :param bool active_only:
+        :return: list[IntegrationApi]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -804,7 +804,7 @@ class IntegrationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[IntegrationApi]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -821,8 +821,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :return: object
+        :param str name: (required)
+        :return: list[str]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -842,8 +842,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :return: object
+        :param str name: (required)
+        :return: list[str]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -897,7 +897,7 @@ class IntegrationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[str]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -914,7 +914,7 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
+        :param str name: (required)
         :return: Integration
                  If the method is called asynchronously,
                  returns the request thread.
@@ -935,7 +935,7 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
+        :param str name: (required)
         :return: Integration
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1007,7 +1007,7 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[IntegrationDef]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1027,7 +1027,7 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[IntegrationDef]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1075,7 +1075,7 @@ class IntegrationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[IntegrationDef]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1092,9 +1092,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object category:
-        :param object active_only:
-        :return: object
+        :param str category:
+        :param bool active_only:
+        :return: list[Integration]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1114,9 +1114,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object category:
-        :param object active_only:
-        :return: object
+        :param str category:
+        :param bool active_only:
+        :return: list[Integration]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1168,7 +1168,7 @@ class IntegrationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[Integration]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1185,9 +1185,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object integration_provider: (required)
-        :param object integration_name: (required)
-        :return: object
+        :param str integration_provider: (required)
+        :param str integration_name: (required)
+        :return: list[MessageTemplate]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1207,9 +1207,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object integration_provider: (required)
-        :param object integration_name: (required)
-        :return: object
+        :param str integration_provider: (required)
+        :param str integration_name: (required)
+        :return: list[MessageTemplate]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1269,7 +1269,7 @@ class IntegrationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[MessageTemplate]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1286,9 +1286,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object type:
-        :param object active_only:
-        :return: object
+        :param str type:
+        :param bool active_only:
+        :return: list[str]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1308,9 +1308,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object type:
-        :param object active_only:
-        :return: object
+        :param str type:
+        :param bool active_only:
+        :return: list[str]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1362,7 +1362,7 @@ class IntegrationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[str]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1379,9 +1379,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object integration_name: (required)
-        :return: object
+        :param str name: (required)
+        :param str integration_name: (required)
+        :return: list[Tag]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1401,9 +1401,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object integration_name: (required)
-        :return: object
+        :param str name: (required)
+        :param str integration_name: (required)
+        :return: list[Tag]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1463,7 +1463,7 @@ class IntegrationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[Tag]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1480,8 +1480,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :return: object
+        :param str name: (required)
+        :return: list[Tag]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1501,8 +1501,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :return: object
+        :param str name: (required)
+        :return: list[Tag]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1556,7 +1556,7 @@ class IntegrationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[Tag]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1573,9 +1573,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object integration_name: (required)
-        :return: object
+        :param str name: (required)
+        :param str integration_name: (required)
+        :return: int
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1595,9 +1595,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object integration_name: (required)
-        :return: object
+        :param str name: (required)
+        :param str integration_name: (required)
+        :return: int
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1657,7 +1657,7 @@ class IntegrationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='int',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1674,8 +1674,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :return: object
+        :param str name: (required)
+        :return: dict(str, str)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1695,8 +1695,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :return: object
+        :param str name: (required)
+        :return: dict(str, str)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1750,7 +1750,7 @@ class IntegrationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, str)',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1767,9 +1767,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
-        :param object integration_name: (required)
+        :param list[Tag] body: (required)
+        :param str name: (required)
+        :param str integration_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1790,9 +1790,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
-        :param object integration_name: (required)
+        :param list[Tag] body: (required)
+        :param str name: (required)
+        :param str integration_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1876,8 +1876,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
+        :param list[Tag] body: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1898,8 +1898,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
+        :param list[Tag] body: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1977,8 +1977,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object type: (required)
+        :param list[EventLog] body: (required)
+        :param str type: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1999,8 +1999,8 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object type: (required)
+        :param list[EventLog] body: (required)
+        :param str type: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2078,9 +2078,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
-        :param object integration_name: (required)
+        :param int body: (required)
+        :param str name: (required)
+        :param str integration_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2101,9 +2101,9 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
-        :param object integration_name: (required)
+        :param int body: (required)
+        :param str name: (required)
+        :param str integration_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2187,7 +2187,7 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[Integration] body: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2208,7 +2208,7 @@ class IntegrationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[Integration] body: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2281,8 +2281,8 @@ class IntegrationResourceApi(object):
 
         :param async_req bool
         :param IntegrationApiUpdate body: (required)
-        :param object name: (required)
-        :param object integration_name: (required)
+        :param str name: (required)
+        :param str integration_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2304,8 +2304,8 @@ class IntegrationResourceApi(object):
 
         :param async_req bool
         :param IntegrationApiUpdate body: (required)
-        :param object name: (required)
-        :param object integration_name: (required)
+        :param str name: (required)
+        :param str integration_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2390,7 +2390,7 @@ class IntegrationResourceApi(object):
 
         :param async_req bool
         :param IntegrationUpdate body: (required)
-        :param object name: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2412,7 +2412,7 @@ class IntegrationResourceApi(object):
 
         :param async_req bool
         :param IntegrationUpdate body: (required)
-        :param object name: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.

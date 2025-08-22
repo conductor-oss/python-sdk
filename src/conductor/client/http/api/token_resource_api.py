@@ -126,7 +126,7 @@ class TokenResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object claims:
+        :param bool claims:
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -147,7 +147,7 @@ class TokenResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object claims:
+        :param bool claims:
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.

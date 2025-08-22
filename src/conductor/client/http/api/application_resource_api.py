@@ -5,7 +5,7 @@ import re  # noqa: F401
 # python 2 and python 3 compatibility library
 import six
 
-from conductor.client.http.api_client import ApiClient
+from swagger_client.api_client import ApiClient
 
 
 class ApplicationResourceApi(object):
@@ -29,8 +29,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object application_id: (required)
-        :param object role: (required)
+        :param str application_id: (required)
+        :param str role: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -51,8 +51,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object application_id: (required)
-        :param object role: (required)
+        :param str application_id: (required)
+        :param str role: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -130,7 +130,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -151,7 +151,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -320,8 +320,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object application_id: (required)
-        :param object key_id: (required)
+        :param str application_id: (required)
+        :param str key_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -342,8 +342,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object application_id: (required)
-        :param object key_id: (required)
+        :param str application_id: (required)
+        :param str key_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -421,7 +421,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -442,7 +442,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -514,8 +514,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object id: (required)
+        :param list[Tag] body: (required)
+        :param str id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -536,8 +536,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object id: (required)
+        :param list[Tag] body: (required)
+        :param str id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -615,7 +615,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -636,7 +636,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -708,7 +708,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object access_key_id: (required)
+        :param str access_key_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -729,7 +729,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object access_key_id: (required)
+        :param str access_key_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -801,7 +801,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -822,7 +822,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -894,8 +894,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
-        :return: object
+        :param str id: (required)
+        :return: list[Tag]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -915,8 +915,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
-        :return: object
+        :param str id: (required)
+        :return: list[Tag]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -970,7 +970,7 @@ class ApplicationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[Tag]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -987,7 +987,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[ExtendedConductorApplication]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1007,7 +1007,7 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[ExtendedConductorApplication]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1055,7 +1055,7 @@ class ApplicationResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[ExtendedConductorApplication]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1072,8 +1072,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object id: (required)
+        :param list[Tag] body: (required)
+        :param str id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1094,8 +1094,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object id: (required)
+        :param list[Tag] body: (required)
+        :param str id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1173,8 +1173,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object application_id: (required)
-        :param object role: (required)
+        :param str application_id: (required)
+        :param str role: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1195,8 +1195,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object application_id: (required)
-        :param object role: (required)
+        :param str application_id: (required)
+        :param str role: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1274,8 +1274,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object application_id: (required)
-        :param object key_id: (required)
+        :param str application_id: (required)
+        :param str key_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1296,8 +1296,8 @@ class ApplicationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object application_id: (required)
-        :param object key_id: (required)
+        :param str application_id: (required)
+        :param str key_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1376,7 +1376,7 @@ class ApplicationResourceApi(object):
 
         :param async_req bool
         :param CreateOrUpdateApplicationRequest body: (required)
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1398,7 +1398,7 @@ class ApplicationResourceApi(object):
 
         :param async_req bool
         :param CreateOrUpdateApplicationRequest body: (required)
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.

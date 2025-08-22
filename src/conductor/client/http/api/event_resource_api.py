@@ -29,7 +29,7 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[EventHandler] body: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -50,7 +50,7 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[EventHandler] body: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -122,8 +122,8 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object queue_type: (required)
-        :param object queue_name: (required)
+        :param str queue_type: (required)
+        :param str queue_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -144,8 +144,8 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object queue_type: (required)
-        :param object queue_name: (required)
+        :param str queue_type: (required)
+        :param str queue_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -219,8 +219,8 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
+        :param list[Tag] body: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -241,8 +241,8 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
+        :param list[Tag] body: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -320,7 +320,7 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
+        :param str name: (required)
         :return: EventHandler
                  If the method is called asynchronously,
                  returns the request thread.
@@ -341,7 +341,7 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
+        :param str name: (required)
         :return: EventHandler
                  If the method is called asynchronously,
                  returns the request thread.
@@ -413,7 +413,7 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[EventHandler]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -433,7 +433,7 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: list[EventHandler]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -481,7 +481,7 @@ class EventResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[EventHandler]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -498,9 +498,9 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object event: (required)
-        :param object active_only:
-        :return: object
+        :param str event: (required)
+        :param bool active_only:
+        :return: list[EventHandler]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -520,9 +520,9 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object event: (required)
-        :param object active_only:
-        :return: object
+        :param str event: (required)
+        :param bool active_only:
+        :return: list[EventHandler]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -578,7 +578,7 @@ class EventResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[EventHandler]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -595,9 +595,9 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object queue_type: (required)
-        :param object queue_name: (required)
-        :return: object
+        :param str queue_type: (required)
+        :param str queue_name: (required)
+        :return: dict(str, object)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -617,9 +617,9 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object queue_type: (required)
-        :param object queue_name: (required)
-        :return: object
+        :param str queue_type: (required)
+        :param str queue_name: (required)
+        :return: dict(str, object)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -679,7 +679,7 @@ class EventResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, object)',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -696,7 +696,7 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: dict(str, str)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -716,7 +716,7 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: dict(str, str)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -764,7 +764,7 @@ class EventResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, str)',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -781,8 +781,8 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :return: object
+        :param str name: (required)
+        :return: list[Tag]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -802,8 +802,8 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :return: object
+        :param str name: (required)
+        :return: list[Tag]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -857,7 +857,7 @@ class EventResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[Tag]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -874,7 +874,7 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param dict(str, object) body: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -895,7 +895,7 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param dict(str, object) body: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -967,9 +967,9 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object queue_type: (required)
-        :param object queue_name: (required)
+        :param str body: (required)
+        :param str queue_type: (required)
+        :param str queue_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -990,9 +990,9 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object queue_type: (required)
-        :param object queue_name: (required)
+        :param str body: (required)
+        :param str queue_type: (required)
+        :param str queue_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1076,8 +1076,8 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
+        :param list[Tag] body: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1098,8 +1098,8 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
+        :param list[Tag] body: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1177,7 +1177,7 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1198,7 +1198,7 @@ class EventResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
+        :param str name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.

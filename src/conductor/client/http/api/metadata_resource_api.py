@@ -30,8 +30,8 @@ class MetadataResourceApi(object):
 
         :param async_req bool
         :param ExtendedWorkflowDef body: (required)
-        :param object overwrite:
-        :param object new_version:
+        :param bool overwrite:
+        :param bool new_version:
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -53,8 +53,8 @@ class MetadataResourceApi(object):
 
         :param async_req bool
         :param ExtendedWorkflowDef body: (required)
-        :param object overwrite:
-        :param object new_version:
+        :param bool overwrite:
+        :param bool new_version:
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -134,9 +134,9 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object version:
-        :param object metadata:
+        :param str name: (required)
+        :param int version:
+        :param bool metadata:
         :return: WorkflowDef
                  If the method is called asynchronously,
                  returns the request thread.
@@ -157,9 +157,9 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object version:
-        :param object metadata:
+        :param str name: (required)
+        :param int version:
+        :param bool metadata:
         :return: WorkflowDef
                  If the method is called asynchronously,
                  returns the request thread.
@@ -235,8 +235,8 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object tasktype: (required)
-        :param object metadata:
+        :param str tasktype: (required)
+        :param bool metadata:
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -257,8 +257,8 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object tasktype: (required)
-        :param object metadata:
+        :param str tasktype: (required)
+        :param bool metadata:
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -332,11 +332,11 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object access:
-        :param object metadata:
-        :param object tag_key:
-        :param object tag_value:
-        :return: object
+        :param str access:
+        :param bool metadata:
+        :param str tag_key:
+        :param str tag_value:
+        :return: list[TaskDef]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -356,11 +356,11 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object access:
-        :param object metadata:
-        :param object tag_key:
-        :param object tag_value:
-        :return: object
+        :param str access:
+        :param bool metadata:
+        :param str tag_key:
+        :param str tag_value:
+        :return: list[TaskDef]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -416,7 +416,7 @@ class MetadataResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[TaskDef]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -433,13 +433,13 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object access:
-        :param object metadata:
-        :param object tag_key:
-        :param object tag_value:
-        :param object name:
-        :param object short:
-        :return: object
+        :param str access:
+        :param bool metadata:
+        :param str tag_key:
+        :param str tag_value:
+        :param str name:
+        :param bool short:
+        :return: list[WorkflowDef]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -459,13 +459,13 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object access:
-        :param object metadata:
-        :param object tag_key:
-        :param object tag_value:
-        :param object name:
-        :param object short:
-        :return: object
+        :param str access:
+        :param bool metadata:
+        :param str tag_key:
+        :param str tag_value:
+        :param str name:
+        :param bool short:
+        :return: list[WorkflowDef]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -525,7 +525,7 @@ class MetadataResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[WorkflowDef]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -542,7 +542,7 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[ExtendedTaskDef] body: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -563,7 +563,7 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[ExtendedTaskDef] body: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -639,7 +639,7 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object tasktype: (required)
+        :param str tasktype: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -660,7 +660,7 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object tasktype: (required)
+        :param str tasktype: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -728,8 +728,8 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object version: (required)
+        :param str name: (required)
+        :param int version: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -750,8 +750,8 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object version: (required)
+        :param str name: (required)
+        :param int version: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -825,9 +825,9 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object overwrite:
-        :param object new_version:
+        :param list[ExtendedWorkflowDef] body: (required)
+        :param bool overwrite:
+        :param bool new_version:
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -848,9 +848,9 @@ class MetadataResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object overwrite:
-        :param object new_version:
+        :param list[ExtendedWorkflowDef] body: (required)
+        :param bool overwrite:
+        :param bool new_version:
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1028,8 +1028,8 @@ class MetadataResourceApi(object):
 
         :param async_req bool
         :param IncomingBpmnFile body: (required)
-        :param object overwrite:
-        :return: object
+        :param bool overwrite:
+        :return: list[ExtendedWorkflowDef]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1050,8 +1050,8 @@ class MetadataResourceApi(object):
 
         :param async_req bool
         :param IncomingBpmnFile body: (required)
-        :param object overwrite:
-        :return: object
+        :param bool overwrite:
+        :return: list[ExtendedWorkflowDef]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1111,7 +1111,7 @@ class MetadataResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[ExtendedWorkflowDef]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),

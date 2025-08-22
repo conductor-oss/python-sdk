@@ -29,9 +29,9 @@ class UserResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object user_id: (required)
-        :param object type: (required)
-        :param object id: (required)
+        :param str user_id: (required)
+        :param str type: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -52,9 +52,9 @@ class UserResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object user_id: (required)
-        :param object type: (required)
-        :param object id: (required)
+        :param str user_id: (required)
+        :param str type: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -138,7 +138,7 @@ class UserResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: Response
                  If the method is called asynchronously,
                  returns the request thread.
@@ -159,7 +159,7 @@ class UserResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: Response
                  If the method is called asynchronously,
                  returns the request thread.
@@ -231,7 +231,7 @@ class UserResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object user_id: (required)
+        :param str user_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -252,7 +252,7 @@ class UserResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object user_id: (required)
+        :param str user_id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -324,7 +324,7 @@ class UserResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -345,7 +345,7 @@ class UserResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -417,8 +417,8 @@ class UserResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object apps:
-        :return: object
+        :param bool apps:
+        :return: list[ConductorUser]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -438,8 +438,8 @@ class UserResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object apps:
-        :return: object
+        :param bool apps:
+        :return: list[ConductorUser]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -489,7 +489,7 @@ class UserResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[ConductorUser]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -507,7 +507,7 @@ class UserResourceApi(object):
 
         :param async_req bool
         :param UpsertUserRequest body: (required)
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -529,7 +529,7 @@ class UserResourceApi(object):
 
         :param async_req bool
         :param UpsertUserRequest body: (required)
-        :param object id: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.

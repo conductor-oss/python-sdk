@@ -29,7 +29,7 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[str] body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -50,7 +50,7 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[str] body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -126,7 +126,7 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[str] body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -147,7 +147,7 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[str] body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -223,8 +223,8 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object use_latest_definitions:
+        :param list[str] body: (required)
+        :param bool use_latest_definitions:
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -245,8 +245,8 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object use_latest_definitions:
+        :param list[str] body: (required)
+        :param bool use_latest_definitions:
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -324,7 +324,7 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[str] body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -345,7 +345,7 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[str] body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -421,7 +421,7 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[str] body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -442,7 +442,7 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
+        :param list[str] body: (required)
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -518,9 +518,9 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object reason:
-        :param object trigger_failure_workflow:
+        :param list[str] body: (required)
+        :param str reason:
+        :param bool trigger_failure_workflow:
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.
@@ -541,9 +541,9 @@ class WorkflowBulkResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object reason:
-        :param object trigger_failure_workflow:
+        :param list[str] body: (required)
+        :param str reason:
+        :param bool trigger_failure_workflow:
         :return: BulkResponse
                  If the method is called asynchronously,
                  returns the request thread.

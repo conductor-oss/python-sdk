@@ -29,8 +29,8 @@ class AuthorizationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object type: (required)
-        :param object id: (required)
+        :param str type: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -51,8 +51,8 @@ class AuthorizationResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object type: (required)
-        :param object id: (required)
+        :param str type: (required)
+        :param str id: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.

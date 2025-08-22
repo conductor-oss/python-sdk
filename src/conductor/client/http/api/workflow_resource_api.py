@@ -29,7 +29,7 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
+        :param str workflow_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -50,7 +50,7 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
+        :param str workflow_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -118,8 +118,8 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object archive_workflow:
+        :param str workflow_id: (required)
+        :param bool archive_workflow:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -140,8 +140,8 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object archive_workflow:
+        :param str workflow_id: (required)
+        :param bool archive_workflow:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -212,11 +212,11 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param StartWorkflowRequest body: (required)
-        :param object request_id: (required)
-        :param object name: (required)
-        :param object version: (required)
-        :param object wait_until_task_ref:
-        :param object wait_for_seconds:
+        :param str request_id: (required)
+        :param str name: (required)
+        :param int version: (required)
+        :param str wait_until_task_ref:
+        :param int wait_for_seconds:
         :return: WorkflowRun
                  If the method is called asynchronously,
                  returns the request thread.
@@ -238,11 +238,11 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param StartWorkflowRequest body: (required)
-        :param object request_id: (required)
-        :param object name: (required)
-        :param object version: (required)
-        :param object wait_until_task_ref:
-        :param object wait_for_seconds:
+        :param str request_id: (required)
+        :param str name: (required)
+        :param int version: (required)
+        :param str wait_until_task_ref:
+        :param int wait_for_seconds:
         :return: WorkflowRun
                  If the method is called asynchronously,
                  returns the request thread.
@@ -340,15 +340,15 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
-        :param object request_id:
-        :param object wait_until_task_ref:
-        :param object wait_for_seconds:
-        :param object x_idempotency_key:
-        :param object x_on_conflict:
-        :param object version:
-        :return: object
+        :param dict(str, object) body: (required)
+        :param str name: (required)
+        :param str request_id:
+        :param str wait_until_task_ref:
+        :param int wait_for_seconds:
+        :param str x_idempotency_key:
+        :param str x_on_conflict:
+        :param int version:
+        :return: dict(str, object)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -368,15 +368,15 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
-        :param object request_id:
-        :param object wait_until_task_ref:
-        :param object wait_for_seconds:
-        :param object x_idempotency_key:
-        :param object x_on_conflict:
-        :param object version:
-        :return: object
+        :param dict(str, object) body: (required)
+        :param str name: (required)
+        :param str request_id:
+        :param str wait_until_task_ref:
+        :param int wait_for_seconds:
+        :param str x_idempotency_key:
+        :param str x_on_conflict:
+        :param int version:
+        :return: dict(str, object)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -452,7 +452,7 @@ class WorkflowResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, object)',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -469,14 +469,14 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object version:
-        :param object request_id:
-        :param object wait_until_task_ref:
-        :param object wait_for_seconds:
-        :param object x_idempotency_key:
-        :param object x_on_conflict:
-        :return: object
+        :param str name: (required)
+        :param int version:
+        :param str request_id:
+        :param str wait_until_task_ref:
+        :param int wait_for_seconds:
+        :param str x_idempotency_key:
+        :param str x_on_conflict:
+        :return: dict(str, object)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -496,14 +496,14 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object version:
-        :param object request_id:
-        :param object wait_until_task_ref:
-        :param object wait_for_seconds:
-        :param object x_idempotency_key:
-        :param object x_on_conflict:
-        :return: object
+        :param str name: (required)
+        :param int version:
+        :param str request_id:
+        :param str wait_until_task_ref:
+        :param int wait_for_seconds:
+        :param str x_idempotency_key:
+        :param str x_on_conflict:
+        :return: dict(str, object)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -569,7 +569,7 @@ class WorkflowResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, object)',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -586,9 +586,9 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object include_tasks:
-        :param object summarize:
+        :param str workflow_id: (required)
+        :param bool include_tasks:
+        :param bool summarize:
         :return: Workflow
                  If the method is called asynchronously,
                  returns the request thread.
@@ -609,9 +609,9 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object include_tasks:
-        :param object summarize:
+        :param str workflow_id: (required)
+        :param bool include_tasks:
+        :param bool summarize:
         :return: Workflow
                  If the method is called asynchronously,
                  returns the request thread.
@@ -687,10 +687,10 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object start:
-        :param object count:
-        :param object status:
+        :param str workflow_id: (required)
+        :param int start:
+        :param int count:
+        :param list[str] status:
         :return: TaskListSearchResultSummary
                  If the method is called asynchronously,
                  returns the request thread.
@@ -711,10 +711,10 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object start:
-        :param object count:
-        :param object status:
+        :param str workflow_id: (required)
+        :param int start:
+        :param int count:
+        :param list[str] status:
         :return: TaskListSearchResultSummary
                  If the method is called asynchronously,
                  returns the request thread.
@@ -753,6 +753,7 @@ class WorkflowResourceApi(object):
             query_params.append(('count', params['count']))  # noqa: E501
         if 'status' in params:
             query_params.append(('status', params['status']))  # noqa: E501
+            collection_formats['status'] = 'multi'  # noqa: E501
 
         header_params = {}
 
@@ -792,11 +793,11 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object version:
-        :param object start_time:
-        :param object end_time:
-        :return: object
+        :param str name: (required)
+        :param int version:
+        :param int start_time:
+        :param int end_time:
+        :return: list[str]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -816,11 +817,11 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object version:
-        :param object start_time:
-        :param object end_time:
-        :return: object
+        :param str name: (required)
+        :param int version:
+        :param int start_time:
+        :param int end_time:
+        :return: list[str]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -880,7 +881,7 @@ class WorkflowResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[str]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -897,9 +898,9 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object include_output:
-        :param object include_variables:
+        :param str workflow_id: (required)
+        :param bool include_output:
+        :param bool include_variables:
         :return: WorkflowStatus
                  If the method is called asynchronously,
                  returns the request thread.
@@ -920,9 +921,9 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object include_output:
-        :param object include_variables:
+        :param str workflow_id: (required)
+        :param bool include_output:
+        :param bool include_variables:
         :return: WorkflowStatus
                  If the method is called asynchronously,
                  returns the request thread.
@@ -998,11 +999,11 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
-        :param object include_closed:
-        :param object include_tasks:
-        :return: object
+        :param list[str] body: (required)
+        :param str name: (required)
+        :param bool include_closed:
+        :param bool include_tasks:
+        :return: dict(str, list[Workflow])
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1022,11 +1023,11 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
-        :param object include_closed:
-        :param object include_tasks:
-        :return: object
+        :param list[str] body: (required)
+        :param str name: (required)
+        :param bool include_closed:
+        :param bool include_tasks:
+        :return: dict(str, list[Workflow])
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1094,7 +1095,7 @@ class WorkflowResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, list[Workflow])',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1112,9 +1113,9 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param CorrelationIdsSearchRequest body: (required)
-        :param object include_closed:
-        :param object include_tasks:
-        :return: object
+        :param bool include_closed:
+        :param bool include_tasks:
+        :return: dict(str, list[Workflow])
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1135,9 +1136,9 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param CorrelationIdsSearchRequest body: (required)
-        :param object include_closed:
-        :param object include_tasks:
-        :return: object
+        :param bool include_closed:
+        :param bool include_tasks:
+        :return: dict(str, list[Workflow])
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1199,7 +1200,7 @@ class WorkflowResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, list[Workflow])',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1216,11 +1217,11 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object correlation_id: (required)
-        :param object include_closed:
-        :param object include_tasks:
-        :return: object
+        :param str name: (required)
+        :param str correlation_id: (required)
+        :param bool include_closed:
+        :param bool include_tasks:
+        :return: list[Workflow]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1240,11 +1241,11 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object name: (required)
-        :param object correlation_id: (required)
-        :param object include_closed:
-        :param object include_tasks:
-        :return: object
+        :param str name: (required)
+        :param str correlation_id: (required)
+        :param bool include_closed:
+        :param bool include_tasks:
+        :return: list[Workflow]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1308,7 +1309,7 @@ class WorkflowResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[Workflow]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1326,9 +1327,9 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object workflow_id: (required)
-        :param object task_reference_name:
+        :param dict(str, object) body: (required)
+        :param str workflow_id: (required)
+        :param str task_reference_name:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1350,9 +1351,9 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object workflow_id: (required)
-        :param object task_reference_name:
+        :param dict(str, object) body: (required)
+        :param str workflow_id: (required)
+        :param str task_reference_name:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1432,7 +1433,7 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
+        :param str workflow_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1453,7 +1454,7 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
+        :param str workflow_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1522,8 +1523,8 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param RerunWorkflowRequest body: (required)
-        :param object workflow_id: (required)
-        :return: object
+        :param str workflow_id: (required)
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1544,8 +1545,8 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param RerunWorkflowRequest body: (required)
-        :param object workflow_id: (required)
-        :return: object
+        :param str workflow_id: (required)
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1609,7 +1610,7 @@ class WorkflowResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='str',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1626,7 +1627,7 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
+        :param str workflow_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1647,7 +1648,7 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
+        :param str workflow_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1715,8 +1716,8 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object use_latest_definitions:
+        :param str workflow_id: (required)
+        :param bool use_latest_definitions:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1737,8 +1738,8 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object use_latest_definitions:
+        :param str workflow_id: (required)
+        :param bool use_latest_definitions:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1808,7 +1809,7 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
+        :param str workflow_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1829,7 +1830,7 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
+        :param str workflow_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1897,9 +1898,9 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object resume_subworkflow_tasks:
-        :param object retry_if_retried_by_parent:
+        :param str workflow_id: (required)
+        :param bool resume_subworkflow_tasks:
+        :param bool retry_if_retried_by_parent:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1920,9 +1921,9 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object resume_subworkflow_tasks:
-        :param object retry_if_retried_by_parent:
+        :param str workflow_id: (required)
+        :param bool resume_subworkflow_tasks:
+        :param bool retry_if_retried_by_parent:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1995,12 +1996,12 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object start:
-        :param object size:
-        :param object sort:
-        :param object free_text:
-        :param object query:
-        :param object skip_cache:
+        :param int start:
+        :param int size:
+        :param str sort:
+        :param str free_text:
+        :param str query:
+        :param bool skip_cache:
         :return: ScrollableSearchResultWorkflowSummary
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2022,12 +2023,12 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object start:
-        :param object size:
-        :param object sort:
-        :param object free_text:
-        :param object query:
-        :param object skip_cache:
+        :param int start:
+        :param int size:
+        :param str sort:
+        :param str free_text:
+        :param str query:
+        :param bool skip_cache:
         :return: ScrollableSearchResultWorkflowSummary
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2106,8 +2107,8 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param SkipTaskRequest body: (required)
-        :param object workflow_id: (required)
-        :param object task_reference_name: (required)
+        :param str workflow_id: (required)
+        :param str task_reference_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2129,8 +2130,8 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param SkipTaskRequest body: (required)
-        :param object workflow_id: (required)
-        :param object task_reference_name: (required)
+        :param str workflow_id: (required)
+        :param str task_reference_name: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2215,7 +2216,7 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param StartWorkflowRequest body: (required)
-        :return: object
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -2236,7 +2237,7 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param StartWorkflowRequest body: (required)
-        :return: object
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -2294,7 +2295,7 @@ class WorkflowResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='str',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -2311,14 +2312,14 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
-        :param object x_idempotency_key:
-        :param object x_on_conflict:
-        :param object version:
-        :param object correlation_id:
-        :param object priority:
-        :return: object
+        :param dict(str, object) body: (required)
+        :param str name: (required)
+        :param str x_idempotency_key:
+        :param str x_on_conflict:
+        :param int version:
+        :param str correlation_id:
+        :param int priority:
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -2338,14 +2339,14 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object name: (required)
-        :param object x_idempotency_key:
-        :param object x_on_conflict:
-        :param object version:
-        :param object correlation_id:
-        :param object priority:
-        :return: object
+        :param dict(str, object) body: (required)
+        :param str name: (required)
+        :param str x_idempotency_key:
+        :param str x_on_conflict:
+        :param int version:
+        :param str correlation_id:
+        :param int priority:
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -2419,7 +2420,7 @@ class WorkflowResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='str',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -2436,9 +2437,9 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object reason:
-        :param object trigger_failure_workflow:
+        :param str workflow_id: (required)
+        :param str reason:
+        :param bool trigger_failure_workflow:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2459,9 +2460,9 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object workflow_id: (required)
-        :param object reason:
-        :param object trigger_failure_workflow:
+        :param str workflow_id: (required)
+        :param str reason:
+        :param bool trigger_failure_workflow:
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2632,10 +2633,10 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param WorkflowStateUpdate body: (required)
-        :param object request_id: (required)
-        :param object workflow_id: (required)
-        :param object wait_until_task_ref:
-        :param object wait_for_seconds:
+        :param str request_id: (required)
+        :param str workflow_id: (required)
+        :param str wait_until_task_ref:
+        :param int wait_for_seconds:
         :return: WorkflowRun
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2658,10 +2659,10 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param WorkflowStateUpdate body: (required)
-        :param object request_id: (required)
-        :param object workflow_id: (required)
-        :param object wait_until_task_ref:
-        :param object wait_for_seconds:
+        :param str request_id: (required)
+        :param str workflow_id: (required)
+        :param str wait_until_task_ref:
+        :param int wait_for_seconds:
         :return: WorkflowRun
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2754,8 +2755,8 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object workflow_id: (required)
+        :param dict(str, object) body: (required)
+        :param str workflow_id: (required)
         :return: Workflow
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2777,8 +2778,8 @@ class WorkflowResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object workflow_id: (required)
+        :param dict(str, object) body: (required)
+        :param str workflow_id: (required)
         :return: Workflow
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2862,7 +2863,7 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param UpgradeWorkflowRequest body: (required)
-        :param object workflow_id: (required)
+        :param str workflow_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -2885,7 +2886,7 @@ class WorkflowResourceApi(object):
 
         :param async_req bool
         :param UpgradeWorkflowRequest body: (required)
-        :param object workflow_id: (required)
+        :param str workflow_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.

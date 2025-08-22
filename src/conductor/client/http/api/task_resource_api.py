@@ -29,7 +29,7 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: dict(str, int)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -49,7 +49,7 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: dict(str, int)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -97,7 +97,7 @@ class TaskResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, int)',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -114,7 +114,7 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: dict(str, dict(str, dict(str, int)))
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -134,7 +134,7 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: object
+        :return: dict(str, dict(str, dict(str, int)))
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -182,7 +182,7 @@ class TaskResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, dict(str, dict(str, int)))',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -199,12 +199,12 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object tasktype: (required)
-        :param object workerid:
-        :param object domain:
-        :param object count:
-        :param object timeout:
-        :return: object
+        :param str tasktype: (required)
+        :param str workerid:
+        :param str domain:
+        :param int count:
+        :param int timeout:
+        :return: list[Task]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -224,12 +224,12 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object tasktype: (required)
-        :param object workerid:
-        :param object domain:
-        :param object count:
-        :param object timeout:
-        :return: object
+        :param str tasktype: (required)
+        :param str workerid:
+        :param str domain:
+        :param int count:
+        :param int timeout:
+        :return: list[Task]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -291,7 +291,7 @@ class TaskResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[Task]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -308,13 +308,13 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object worker_size:
-        :param object worker_opt:
-        :param object queue_size:
-        :param object queue_opt:
-        :param object last_poll_time_size:
-        :param object last_poll_time_opt:
-        :return: object
+        :param int worker_size:
+        :param str worker_opt:
+        :param int queue_size:
+        :param str queue_opt:
+        :param int last_poll_time_size:
+        :param str last_poll_time_opt:
+        :return: dict(str, object)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -334,13 +334,13 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object worker_size:
-        :param object worker_opt:
-        :param object queue_size:
-        :param object queue_opt:
-        :param object last_poll_time_size:
-        :param object last_poll_time_opt:
-        :return: object
+        :param int worker_size:
+        :param str worker_opt:
+        :param int queue_size:
+        :param str queue_opt:
+        :param int last_poll_time_size:
+        :param str last_poll_time_opt:
+        :return: dict(str, object)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -400,7 +400,7 @@ class TaskResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, object)',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -417,8 +417,8 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object task_type: (required)
-        :return: object
+        :param str task_type: (required)
+        :return: list[PollData]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -438,8 +438,8 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object task_type: (required)
-        :return: object
+        :param str task_type: (required)
+        :return: list[PollData]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -493,7 +493,7 @@ class TaskResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[PollData]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -510,7 +510,7 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object task_id: (required)
+        :param str task_id: (required)
         :return: Task
                  If the method is called asynchronously,
                  returns the request thread.
@@ -531,7 +531,7 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object task_id: (required)
+        :param str task_id: (required)
         :return: Task
                  If the method is called asynchronously,
                  returns the request thread.
@@ -603,8 +603,8 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object task_id: (required)
-        :return: object
+        :param str task_id: (required)
+        :return: list[TaskExecLog]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -624,8 +624,8 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object task_id: (required)
-        :return: object
+        :param str task_id: (required)
+        :return: list[TaskExecLog]
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -679,7 +679,7 @@ class TaskResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='list[TaskExecLog]',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -696,8 +696,8 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object task_id: (required)
+        :param str body: (required)
+        :param str task_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -718,8 +718,8 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object task_id: (required)
+        :param str body: (required)
+        :param str task_id: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -797,9 +797,9 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object tasktype: (required)
-        :param object workerid:
-        :param object domain:
+        :param str tasktype: (required)
+        :param str workerid:
+        :param str domain:
         :return: Task
                  If the method is called asynchronously,
                  returns the request thread.
@@ -820,9 +820,9 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object tasktype: (required)
-        :param object workerid:
-        :param object domain:
+        :param str tasktype: (required)
+        :param str workerid:
+        :param str domain:
         :return: Task
                  If the method is called asynchronously,
                  returns the request thread.
@@ -898,8 +898,8 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object task_type: (required)
-        :return: object
+        :param str task_type: (required)
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -919,8 +919,8 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object task_type: (required)
-        :return: object
+        :param str task_type: (required)
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -974,7 +974,7 @@ class TaskResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='str',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -992,11 +992,11 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object start:
-        :param object size:
-        :param object sort:
-        :param object free_text:
-        :param object query:
+        :param int start:
+        :param int size:
+        :param str sort:
+        :param str free_text:
+        :param str query:
         :return: SearchResultTaskSummary
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1018,11 +1018,11 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object start:
-        :param object size:
-        :param object sort:
-        :param object free_text:
-        :param object query:
+        :param int start:
+        :param int size:
+        :param str sort:
+        :param str free_text:
+        :param str query:
         :return: SearchResultTaskSummary
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1205,8 +1205,8 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object task_type:
-        :return: object
+        :param list[str] task_type:
+        :return: dict(str, int)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1226,8 +1226,8 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object task_type:
-        :return: object
+        :param list[str] task_type:
+        :return: dict(str, int)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1255,6 +1255,7 @@ class TaskResourceApi(object):
         query_params = []
         if 'task_type' in params:
             query_params.append(('taskType', params['task_type']))  # noqa: E501
+            collection_formats['taskType'] = 'multi'  # noqa: E501
 
         header_params = {}
 
@@ -1277,7 +1278,7 @@ class TaskResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='dict(str, int)',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1295,7 +1296,7 @@ class TaskResourceApi(object):
 
         :param async_req bool
         :param TaskResult body: (required)
-        :return: object
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1316,7 +1317,7 @@ class TaskResourceApi(object):
 
         :param async_req bool
         :param TaskResult body: (required)
-        :return: object
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1374,7 +1375,7 @@ class TaskResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='str',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1391,12 +1392,12 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object workflow_id: (required)
-        :param object task_ref_name: (required)
-        :param object status: (required)
-        :param object workerid:
-        :return: object
+        :param dict(str, object) body: (required)
+        :param str workflow_id: (required)
+        :param str task_ref_name: (required)
+        :param str status: (required)
+        :param str workerid:
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1416,12 +1417,12 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object workflow_id: (required)
-        :param object task_ref_name: (required)
-        :param object status: (required)
-        :param object workerid:
-        :return: object
+        :param dict(str, object) body: (required)
+        :param str workflow_id: (required)
+        :param str task_ref_name: (required)
+        :param str status: (required)
+        :param str workerid:
+        :return: str
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -1499,7 +1500,7 @@ class TaskResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            response_type='str',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -1516,11 +1517,11 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object workflow_id: (required)
-        :param object task_ref_name: (required)
-        :param object status: (required)
-        :param object workerid:
+        :param dict(str, object) body: (required)
+        :param str workflow_id: (required)
+        :param str task_ref_name: (required)
+        :param str status: (required)
+        :param str workerid:
         :return: Workflow
                  If the method is called asynchronously,
                  returns the request thread.
@@ -1541,11 +1542,11 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param object body: (required)
-        :param object workflow_id: (required)
-        :param object task_ref_name: (required)
-        :param object status: (required)
-        :param object workerid:
+        :param dict(str, object) body: (required)
+        :param str workflow_id: (required)
+        :param str task_ref_name: (required)
+        :param str status: (required)
+        :param str workerid:
         :return: Workflow
                  If the method is called asynchronously,
                  returns the request thread.
