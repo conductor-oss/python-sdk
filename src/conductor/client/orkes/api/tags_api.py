@@ -41,8 +41,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param TagObject body: (required)
-        :param str task_name: (required)
+        :param Tag body: (required)
+        :param object task_name: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -63,8 +63,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param TagObject body: (required)
-        :param str task_name: (required)
+        :param Tag body: (required)
+        :param object task_name: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -146,8 +146,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param TagObject body: (required)
-        :param str name: (required)
+        :param Tag body: (required)
+        :param object name: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -168,8 +168,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param TagObject body: (required)
-        :param str name: (required)
+        :param Tag body: (required)
+        :param object name: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -251,8 +251,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param TagString body: (required)
-        :param str task_name: (required)
+        :param Tag body: (required)
+        :param object task_name: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -273,8 +273,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param TagString body: (required)
-        :param str task_name: (required)
+        :param Tag body: (required)
+        :param object task_name: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -356,8 +356,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param TagObject body: (required)
-        :param str name: (required)
+        :param Tag body: (required)
+        :param object name: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -378,8 +378,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param TagObject body: (required)
-        :param str name: (required)
+        :param Tag body: (required)
+        :param object name: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -461,7 +461,7 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: list[TagObject]
+        :return: object
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -481,7 +481,7 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: list[TagObject]
+        :return: object
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -529,7 +529,7 @@ class TagsApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='list[TagObject]',  # noqa: E501
+            response_type='object',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -546,8 +546,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str task_name: (required)
-        :return: list[TagObject]
+        :param object task_name: (required)
+        :return: object
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -567,8 +567,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str task_name: (required)
-        :return: list[TagObject]
+        :param object task_name: (required)
+        :return: object
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -622,7 +622,7 @@ class TagsApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='list[TagObject]',  # noqa: E501
+            response_type='object',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -639,8 +639,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str name: (required)
-        :return: list[TagObject]
+        :param object name: (required)
+        :return: object
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -660,8 +660,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param str name: (required)
-        :return: list[TagObject]
+        :param object name: (required)
+        :return: object
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -715,7 +715,7 @@ class TagsApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='list[TagObject]',  # noqa: E501
+            response_type='object',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -724,7 +724,7 @@ class TagsApi(object):
             collection_formats=collection_formats)
 
     def set_task_tags(self, body, task_name, **kwargs):  # noqa: E501
-        """Adds the tag to the task  # noqa: E501
+        """Sets (replaces existing) the tags to the task  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
@@ -732,8 +732,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[TagObject] body: (required)
-        :param str task_name: (required)
+        :param object body: (required)
+        :param object task_name: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -746,7 +746,7 @@ class TagsApi(object):
             return data
 
     def set_task_tags_with_http_info(self, body, task_name, **kwargs):  # noqa: E501
-        """Adds the tag to the task  # noqa: E501
+        """Sets (replaces existing) the tags to the task  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
@@ -754,8 +754,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[TagObject] body: (required)
-        :param str task_name: (required)
+        :param object body: (required)
+        :param object task_name: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -829,7 +829,7 @@ class TagsApi(object):
             collection_formats=collection_formats)
 
     def set_workflow_tags(self, body, name, **kwargs):  # noqa: E501
-        """Set the tags of the workflow  # noqa: E501
+        """Set (replaces all existing) the tags of the workflow  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
@@ -837,8 +837,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[TagObject] body: (required)
-        :param str name: (required)
+        :param object body: (required)
+        :param object name: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
@@ -851,7 +851,7 @@ class TagsApi(object):
             return data
 
     def set_workflow_tags_with_http_info(self, body, name, **kwargs):  # noqa: E501
-        """Set the tags of the workflow  # noqa: E501
+        """Set (replaces all existing) the tags of the workflow  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
@@ -859,8 +859,8 @@ class TagsApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :param list[TagObject] body: (required)
-        :param str name: (required)
+        :param object body: (required)
+        :param object name: (required)
         :return: object
                  If the method is called asynchronously,
                  returns the request thread.
