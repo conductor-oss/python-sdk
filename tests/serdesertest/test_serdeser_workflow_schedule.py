@@ -2,9 +2,9 @@ import json
 
 import pytest
 
-from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
-from conductor.client.http.models.tag_object import TagObject
-from conductor.client.http.models.workflow_schedule import WorkflowSchedule
+from conductor.client.adapters.models.start_workflow_request_adapter import StartWorkflowRequestAdapter
+from conductor.client.adapters.models.tag_object_adapter import TagObjectAdapter
+from conductor.client.adapters.models.workflow_schedule_adapter import WorkflowScheduleAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -16,7 +16,7 @@ def server_json():
 
 def test_workflow_schedule_serialization(server_json):
     # 1. Test deserialization from server JSON to SDK model
-    schedule = WorkflowSchedule(
+    schedule = WorkflowScheduleAdapter(
         name=server_json.get("name"),
         cron_expression=server_json.get("cronExpression"),
         run_catchup_schedule_instances=server_json.get("runCatchupScheduleInstances"),
@@ -35,7 +35,7 @@ def test_workflow_schedule_serialization(server_json):
     if "startWorkflowRequest" in server_json:
         start_req_json = server_json.get("startWorkflowRequest")
         if start_req_json:
-            start_req = StartWorkflowRequest(
+            start_req = StartWorkflowRequestAdapter(
                 name=start_req_json.get("name"),
                 version=start_req_json.get("version"),
                 correlation_id=start_req_json.get("correlationId"),
@@ -47,7 +47,7 @@ def test_workflow_schedule_serialization(server_json):
         if tags_json:
             tags = []
             for tag_json in tags_json:
-                tag = TagObject(key=tag_json.get("key"), value=tag_json.get("value"))
+                tag = TagObjectAdapter(key=tag_json.get("key"), value=tag_json.get("value"))
                 tags.append(tag)
             schedule.tags = tags
     # 2. Verify all fields are properly populated

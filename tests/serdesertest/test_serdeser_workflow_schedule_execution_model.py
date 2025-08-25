@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from conductor.client.http.models.workflow_schedule_execution_model import (
-    WorkflowScheduleExecutionModel,
+from conductor.client.adapters.models.workflow_schedule_execution_model_adapter import (
+    WorkflowScheduleExecutionModelAdapter,
 )
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
@@ -18,7 +18,7 @@ def server_json():
 
 def test_workflow_schedule_execution_model_serdes(server_json):
     # 1. Deserialize JSON into model object
-    model = WorkflowScheduleExecutionModel(
+    model = WorkflowScheduleExecutionModelAdapter(
         execution_id=server_json.get("executionId"),
         schedule_name=server_json.get("scheduleName"),
         scheduled_time=server_json.get("scheduledTime"),

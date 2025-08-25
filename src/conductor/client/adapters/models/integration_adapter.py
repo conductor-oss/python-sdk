@@ -2,6 +2,52 @@ from conductor.client.http.models import Integration
 
 
 class IntegrationAdapter(Integration):
+    def __init__(self, apis=None, category=None, configuration=None, created_on=None, created_by=None, description=None, enabled=None, models_count=None, name=None, owner_app=None, tags=None, type=None, updated_on=None, updated_by=None):  # noqa: E501
+        """Integration - a model defined in Swagger"""  # noqa: E501
+        self._apis = None
+        self._category = None
+        self._configuration = None
+        self._create_time = None
+        self._created_by = None
+        self._description = None
+        self._enabled = None
+        self._models_count = None
+        self._name = None
+        self._owner_app = None
+        self._tags = None
+        self._type = None
+        self._update_time = None
+        self._updated_by = None
+        self.discriminator = None
+        if apis is not None:
+            self.apis = apis
+        if category is not None:
+            self.category = category
+        if configuration is not None:
+            self.configuration = configuration
+        if created_on is not None:
+            self.create_time = created_on
+        if created_by is not None:
+            self.created_by = created_by
+        if description is not None:
+            self.description = description
+        if enabled is not None:
+            self.enabled = enabled
+        if models_count is not None:
+            self.models_count = models_count
+        if name is not None:
+            self.name = name
+        if owner_app is not None:
+            self.owner_app = owner_app
+        if tags is not None:
+            self.tags = tags
+        if type is not None:
+            self.type = type
+        if updated_on is not None:
+            self.update_time = updated_on
+        if updated_by is not None:
+            self.updated_by = updated_by
+
     @property
     def created_on(self):
         return self._create_time

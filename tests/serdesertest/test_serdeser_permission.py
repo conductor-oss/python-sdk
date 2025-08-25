@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.permission import Permission
+from conductor.client.adapters.models.permission_adapter import PermissionAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -12,7 +12,7 @@ def server_json():
 
 
 def test_permission_serde(server_json):
-    permission_obj = Permission(name=server_json.get("name"))
+    permission_obj = PermissionAdapter(name=server_json.get("name"))
     assert permission_obj.name == server_json.get("name")
     serialized_json = permission_obj.to_dict()
     assert serialized_json.get("name") == server_json.get("name")

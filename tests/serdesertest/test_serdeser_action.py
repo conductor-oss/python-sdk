@@ -3,12 +3,12 @@ import re
 
 import pytest
 
-from conductor.client.http.models.action import Action
-from conductor.client.http.models.start_workflow import StartWorkflow
-from conductor.client.http.models.task_details import TaskDetails
-from conductor.client.http.models.terminate_workflow import TerminateWorkflow
-from conductor.client.http.models.update_workflow_variables import (
-    UpdateWorkflowVariables,
+from conductor.client.adapters.models.action_adapter import ActionAdapter
+from conductor.client.adapters.models.start_workflow_adapter import StartWorkflowAdapter
+from conductor.client.adapters.models.task_details_adapter import TaskDetailsAdapter
+from conductor.client.adapters.models.terminate_workflow_adapter import TerminateWorkflowAdapter
+from conductor.client.adapters.models.update_workflow_variables_adapter import (
+    UpdateWorkflowVariablesAdapter,
 )
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
@@ -35,21 +35,21 @@ def server_json():
 
 
 def test_action_serdes(server_json):
-    action_obj = Action(
+    action_obj = ActionAdapter(
         action=server_json.get("action"),
         start_workflow=create_model_object(
-            StartWorkflow, server_json.get("start_workflow")
+            StartWorkflowAdapter, server_json.get("start_workflow")
         ),
         complete_task=create_model_object(
-            TaskDetails, server_json.get("complete_task")
+            TaskDetailsAdapter, server_json.get("complete_task")
         ),
-        fail_task=create_model_object(TaskDetails, server_json.get("fail_task")),
+        fail_task=create_model_object(TaskDetailsAdapter, server_json.get("fail_task")),
         expand_inline_json=server_json.get("expandInlineJSON"),
         terminate_workflow=create_model_object(
-            TerminateWorkflow, server_json.get("terminate_workflow")
+            TerminateWorkflowAdapter, server_json.get("terminate_workflow")
         ),
         update_workflow_variables=create_model_object(
-            UpdateWorkflowVariables, server_json.get("update_workflow_variables")
+            UpdateWorkflowVariablesAdapter, server_json.get("update_workflow_variables")
         ),
     )
     assert server_json.get("action") == action_obj.action

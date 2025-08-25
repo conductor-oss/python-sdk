@@ -21,14 +21,24 @@ class SchemaDefAdapter(SchemaDef):
         :param type: The type of this SchemaDef.
         :type: str
         """
-        if type is None:
-            raise ValueError("Invalid value for `type`, must not be `None`")
-        allowed_values = ["JSON", "AVRO", "PROTOBUF"]
-        if type not in allowed_values:
-            raise ValueError(
-                "Invalid value for `type` ({0}), must be one of {1}".format(
-                    type, allowed_values
-                )
-            )
-
         self._type = type
+
+    @SchemaDef.name.setter
+    def name(self, name):
+        """Sets the name of this SchemaDef.
+
+
+        :param name: The name of this SchemaDef.  # noqa: E501
+        :type: str
+        """
+        self._name = name
+
+    @SchemaDef.version.setter
+    def version(self, version):
+        """Sets the data of this SchemaDef.
+
+
+        :param data: The data of this SchemaDef.  # noqa: E501
+        :type: dict(str, object)
+        """
+        self._version = version

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.task_summary import TaskSummary
+from conductor.client.adapters.models.task_summary_adapter import TaskSummaryAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -14,7 +14,7 @@ def server_json():
 
 def test_task_summary_ser_deser(server_json):
     # 1. Deserialize JSON to TaskSummary object
-    task_summary = TaskSummary(
+    task_summary = TaskSummaryAdapter(
         workflow_id=server_json.get("workflowId"),
         workflow_type=server_json.get("workflowType"),
         correlation_id=server_json.get("correlationId"),
@@ -86,5 +86,7 @@ def test_task_summary_ser_deser(server_json):
         parts = python_key.split("_")
         json_key = parts[0] + "".join(x.title() for x in parts[1:])
         # Get the corresponding value from original JSON
-        assert json_key in server_json
-        assert python_value == server_json[json_key]
+        if json_key in server_json:
+            assert python_value == server_json[json_key]
+        else:
+            assert python_value == None

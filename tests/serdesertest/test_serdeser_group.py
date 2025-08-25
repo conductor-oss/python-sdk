@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from conductor.client.http.models.group import Group
-from conductor.client.http.models.role import Role
+from conductor.client.adapters.models.group_adapter import GroupAdapter
+from conductor.client.adapters.models.role_adapter import RoleAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -13,10 +13,10 @@ def server_json():
 
 
 def test_group_serde(server_json):
-    group = Group(
+    group = GroupAdapter(
         id=server_json.get("id"),
         description=server_json.get("description"),
-        roles=[Role(**role) for role in server_json.get("roles", [])],
+        roles=[RoleAdapter(**role) for role in server_json.get("roles", [])],
         default_access=server_json.get("defaultAccess"),
     )
     assert server_json.get("id") == group.id
@@ -25,7 +25,7 @@ def test_group_serde(server_json):
         assert group.roles is not None
         assert len(server_json.get("roles")) == len(group.roles)
         for i, role in enumerate(group.roles):
-            assert isinstance(role, Role)
+            assert isinstance(role, RoleAdapter)
             assert server_json.get("roles")[i].get("name") == role.name
     if server_json.get("defaultAccess"):
         assert group.default_access is not None
@@ -35,7 +35,7 @@ def test_group_serde(server_json):
     result_dict = group.to_dict()
     camel_case_dict = {}
     for key, value in result_dict.items():
-        json_key = Group.attribute_map.get(key, key)
+        json_key = GroupAdapter.attribute_map.get(key, key)
         camel_case_dict[json_key] = value
     for key in server_json.keys():
         if key == "roles":
@@ -48,7 +48,7 @@ def test_group_serde(server_json):
                         assert server_json.get("roles")[i].get(
                             role_key
                         ) == role_dict.get(
-                            Role.attribute_map.get(
+                            RoleAdapter.attribute_map.get(
                                 role_key.replace("camelCase", "snake_case"), role_key
                             )
                         )

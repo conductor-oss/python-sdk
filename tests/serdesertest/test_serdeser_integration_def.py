@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.integration_def import IntegrationDef
+from conductor.client.adapters.models.integration_def_adapter import IntegrationDefAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -12,7 +12,7 @@ def server_json():
 
 
 def test_serialization_deserialization(server_json):
-    integration_def = IntegrationDef(
+    integration_def = IntegrationDefAdapter(
         category=server_json["category"],
         category_label=server_json["categoryLabel"],
         configuration=server_json["configuration"],

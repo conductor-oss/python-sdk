@@ -2,12 +2,11 @@ import json
 
 import pytest
 
-from conductor.client.http.models import (
-    TaskExecLog,
-    TaskResult,
-    WorkflowStateUpdate,
-)
+from conductor.client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
+from conductor.client.adapters.models.task_result_adapter import TaskResultAdapter
+from conductor.client.adapters.models.workflow_state_update_adapter import WorkflowStateUpdateAdapter
 from conductor.shared.http.enums import TaskResultStatus
+
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -26,7 +25,7 @@ def test_serialization_deserialization(server_json):  # noqa: PLR0915
         # Create TaskExecLog objects if logs are present
         logs = (
             [
-                TaskExecLog(
+                TaskExecLogAdapter(
                     log=log_entry.get("log"),
                     created_time=log_entry.get("createdTime"),
                     task_id=log_entry.get("taskId"),
@@ -38,7 +37,7 @@ def test_serialization_deserialization(server_json):  # noqa: PLR0915
         )
 
         # Create TaskResult object with proper field mappings
-        task_result = TaskResult(
+        task_result = TaskResultAdapter(
             workflow_instance_id=task_result_json.get("workflowInstanceId"),
             task_id=task_result_json.get("taskId"),
             reason_for_incompletion=task_result_json.get("reasonForIncompletion"),
@@ -54,7 +53,7 @@ def test_serialization_deserialization(server_json):  # noqa: PLR0915
             extend_lease=task_result_json.get("extendLease"),
         )
     # Now create the WorkflowStateUpdate object
-    model_object = WorkflowStateUpdate(
+    model_object = WorkflowStateUpdateAdapter(
         task_reference_name=server_json.get("taskReferenceName"),
         task_result=task_result,
         variables=server_json.get("variables"),
@@ -65,11 +64,11 @@ def test_serialization_deserialization(server_json):  # noqa: PLR0915
         # Verify TaskResult fields
         assert model_object.task_result is not None
         # Check each field that exists in the JSON
-        for json_key, python_attr in TaskResult.attribute_map.items():
+        for json_key, python_attr in TaskResultAdapter.attribute_map.items():
             if python_attr in task_result_json:
                 # Special handling for status field which is converted to enum
                 if json_key == "status" and task_result_json.get("status"):
-                    assert model_object.task_result.status.name == task_result_json.get(
+                    assert model_object.task_result.status == task_result_json.get(
                         "status"
                     )
                 # Special handling for logs which are objects
@@ -97,14 +96,14 @@ def test_serialization_deserialization(server_json):  # noqa: PLR0915
     # Step 4: Convert result_dict to match the original JSON structure
     serialized_json = {}
     # Map snake_case keys to camelCase based on attribute_map
-    for snake_key, camel_key in WorkflowStateUpdate.attribute_map.items():
+    for snake_key, camel_key in WorkflowStateUpdateAdapter.attribute_map.items():
         if snake_key in result_dict and result_dict[snake_key] is not None:
             if snake_key == "task_result" and result_dict[snake_key]:
                 # Handle TaskResult conversion
                 task_result_dict = result_dict[snake_key]
                 serialized_task_result = {}
                 # Map TaskResult fields using its attribute_map
-                for tr_snake_key, tr_camel_key in TaskResult.attribute_map.items():
+                for tr_snake_key, tr_camel_key in TaskResultAdapter.attribute_map.items():
                     if (
                         tr_snake_key in task_result_dict
                         and task_result_dict[tr_snake_key] is not None
@@ -126,11 +125,11 @@ def test_serialization_deserialization(server_json):  # noqa: PLR0915
                                     serialized_log = {}
                                     for log_key, log_value in log_dict.items():
                                         if (
-                                            hasattr(TaskExecLog, "attribute_map")
-                                            and log_key in TaskExecLog.attribute_map
+                                            hasattr(TaskExecLogAdapter, "attribute_map")
+                                            and log_key in TaskExecLogAdapter.attribute_map
                                         ):
                                             serialized_log[
-                                                TaskExecLog.attribute_map[log_key]
+                                                TaskExecLogAdapter.attribute_map[log_key]
                                             ] = log_value
                                         else:
                                             serialized_log[log_key] = log_value
@@ -195,11 +194,11 @@ def test_serialization_deserialization(server_json):  # noqa: PLR0915
                                     # Check if this is a field that has a different name in snake_case
                                     # Find the snake_case equivalent for the log_key
                                     snake_case_found = False
-                                    if hasattr(TaskExecLog, "attribute_map"):
+                                    if hasattr(TaskExecLogAdapter, "attribute_map"):
                                         for (
                                             snake_key,
                                             camel_key,
-                                        ) in TaskExecLog.attribute_map.items():
+                                        ) in TaskExecLogAdapter.attribute_map.items():
                                             if camel_key == log_key:
                                                 # Found the snake_case key corresponding to this camel_case key
                                                 if snake_key in serialized_log:

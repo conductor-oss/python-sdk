@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from conductor.client.http.models.integration_api import IntegrationApi
-from conductor.client.http.models.tag_object import TagObject
+from conductor.client.adapters.models.integration_api_adapter import IntegrationApiAdapter
+from conductor.client.adapters.models.tag_object_adapter import TagObjectAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -13,7 +13,7 @@ def server_json():
 
 
 def test_integration_api_serialization_deserialization(server_json):
-    integration_api = IntegrationApi(
+    integration_api = IntegrationApiAdapter(
         api=server_json.get("api"),
         configuration=server_json.get("configuration"),
         created_by=server_json.get("createdBy"),
@@ -23,7 +23,7 @@ def test_integration_api_serialization_deserialization(server_json):
         integration_name=server_json.get("integrationName"),
         tags=(
             [
-                TagObject(key=tag.get("key"), value=tag.get("value"))
+                TagObjectAdapter(key=tag.get("key"), value=tag.get("value"))
                 for tag in server_json.get("tags", [])
             ]
             if server_json.get("tags")
@@ -44,14 +44,14 @@ def test_integration_api_serialization_deserialization(server_json):
     if server_json.get("tags"):
         assert len(server_json.get("tags")) == len(integration_api.tags)
         for i, tag in enumerate(integration_api.tags):
-            assert isinstance(tag, TagObject)
+            assert isinstance(tag, TagObjectAdapter)
             assert server_json.get("tags")[i].get("key") == tag.key
             assert server_json.get("tags")[i].get("value") == tag.value
     serialized_json = integration_api.to_dict()
     for field in ["api", "description", "enabled"]:
         json_field = field
-        if field in IntegrationApi.attribute_map:
-            json_field = IntegrationApi.attribute_map[field]
+        if field in IntegrationApiAdapter.attribute_map:
+            json_field = IntegrationApiAdapter.attribute_map[field]
         assert server_json.get(json_field) == serialized_json.get(field)
     assert server_json.get("createdBy") == serialized_json.get("created_by")
     assert server_json.get("createdOn") == serialized_json.get("created_on")

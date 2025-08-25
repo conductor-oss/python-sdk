@@ -1,9 +1,9 @@
 import json
 
 import pytest
-from conductor.client.http.models.start_workflow_request import (
+from conductor.client.adapters.models.start_workflow_request_adapter import (
     IdempotencyStrategy,
-    StartWorkflowRequest,
+    StartWorkflowRequestAdapter,
 )
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
@@ -14,7 +14,7 @@ def server_json():
 
 
 def test_deserialize_serialize_start_workflow_request(server_json):
-    workflow_request = StartWorkflowRequest(
+    workflow_request = StartWorkflowRequestAdapter(
         name=server_json.get("name"),
         version=server_json.get("version"),
         correlation_id=server_json.get("correlationId"),

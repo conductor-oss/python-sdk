@@ -13,7 +13,7 @@ import urllib3
 from requests.structures import CaseInsensitiveDict
 from six.moves.urllib.parse import quote
 
-import conductor.client.http.models as http_models
+import conductor.client.adapters.models as http_models
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http import rest
 from conductor.client.http.rest import AuthorizationException

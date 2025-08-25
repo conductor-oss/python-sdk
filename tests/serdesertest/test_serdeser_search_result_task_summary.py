@@ -2,10 +2,10 @@ import json
 
 import pytest
 
-from conductor.client.http.models.search_result_task_summary import (
-    SearchResultTaskSummary,
+from conductor.client.adapters.models.search_result_task_summary_adapter import (
+    SearchResultTaskSummaryAdapter,
 )
-from conductor.client.http.models.task_summary import TaskSummary
+from conductor.client.adapters.models.task_summary_adapter import TaskSummaryAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -17,9 +17,9 @@ def server_json():
 
 def test_search_result_task_summary_serdeser(server_json):
     """Test serialization and deserialization of SearchResultTaskSummary"""
-    task_summary = TaskSummary()
+    task_summary = TaskSummaryAdapter()
     # 1. Test deserialization of server JSON into SDK model
-    model = SearchResultTaskSummary(
+    model = SearchResultTaskSummaryAdapter(
         total_hits=server_json.get("totalHits"),
         results=[task_summary] if server_json.get("results") else None,
     )
@@ -30,7 +30,7 @@ def test_search_result_task_summary_serdeser(server_json):
     for i, task_summary in enumerate(model.results):
         # Assuming TaskSummary has properties that correspond to the JSON fields
         # Add specific assertions for TaskSummary fields here
-        assert isinstance(task_summary, TaskSummary)
+        assert isinstance(task_summary, TaskSummaryAdapter)
     # 3. Test serialization back to JSON
     model_dict = model.to_dict()
     # 4. Verify the resulting JSON matches the original

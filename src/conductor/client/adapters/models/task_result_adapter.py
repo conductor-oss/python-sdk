@@ -1,4 +1,4 @@
-from conductor.client.http.models.task_exec_log import TaskExecLog
+from conductor.client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
 from conductor.client.http.models.task_result import TaskResult
 
 
@@ -19,7 +19,7 @@ class TaskResultAdapter(TaskResult):
         """
         if self.logs is None:
             self.logs = []
-        self.logs.append(TaskExecLog(log))
+        self.logs.append(TaskExecLogAdapter(log=log))
         return self
 
     @staticmethod

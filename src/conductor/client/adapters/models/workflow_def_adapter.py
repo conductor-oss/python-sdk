@@ -130,6 +130,25 @@ class WorkflowDefAdapter(WorkflowDef):
 
         self._updated_by = updated_by
 
+    @WorkflowDef.tasks.setter
+    def tasks(self, tasks):
+        """Sets the tasks of this WorkflowDef.
+
+
+        :param tasks: The tasks of this WorkflowDef.  # noqa: E501
+        :type: list[WorkflowTask]
+        """
+        self._tasks = tasks
+
+    @WorkflowDef.timeout_seconds.setter
+    def timeout_seconds(self, timeout_seconds):
+        """Sets the timeout_seconds of this WorkflowDef.
+
+
+        :param timeout_seconds: The timeout_seconds of this WorkflowDef.  # noqa: E501
+        :type: int
+        """
+        self._timeout_seconds = timeout_seconds
 
 def to_workflow_def(
     data: Optional[str] = None, json_data: Optional[dict] = None

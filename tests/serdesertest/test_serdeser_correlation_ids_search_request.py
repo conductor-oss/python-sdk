@@ -2,9 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.correlation_ids_search_request import (
-    CorrelationIdsSearchRequest,
-)
+from conductor.client.adapters.models.correlation_ids_search_request_adapter import CorrelationIdsSearchRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -21,13 +19,13 @@ def test_serdeser_correlation_ids_search_request(server_json):
         python_key = next(
             (
                 k
-                for k, v in CorrelationIdsSearchRequest.attribute_map.items()
+                for k, v in CorrelationIdsSearchRequestAdapter.attribute_map.items()
                 if v == key
             ),
             key,
         )
         python_format_json[python_key] = value
-    model_obj = CorrelationIdsSearchRequest(**python_format_json)
+    model_obj = CorrelationIdsSearchRequestAdapter(**python_format_json)
     assert model_obj.correlation_ids is not None
     assert isinstance(model_obj.correlation_ids, list)
     for item in model_obj.correlation_ids:
