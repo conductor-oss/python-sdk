@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import WorkflowTag
+from conductor.client.adapters.models.workflow_tag_adapter import WorkflowTagAdapter
 
 
 @pytest.fixture
@@ -12,35 +12,35 @@ def mock_rate_limit(mocker):
 
 
 def test_constructor_with_no_parameters():
-    """Test that WorkflowTag can be created with no parameters (current behavior)."""
-    workflow_tag = WorkflowTag()
+    """Test that WorkflowTagAdapter can be created with no parameters (current behavior)."""
+    workflow_tag = WorkflowTagAdapter()
 
     # Verify object is created successfully
-    assert isinstance(workflow_tag, WorkflowTag)
+    assert isinstance(workflow_tag, WorkflowTagAdapter)
     assert workflow_tag.rate_limit is None
     assert workflow_tag._rate_limit is None
 
 
 def test_constructor_with_rate_limit_parameter(mock_rate_limit):
     """Test constructor with rate_limit parameter."""
-    workflow_tag = WorkflowTag(rate_limit=mock_rate_limit)
+    workflow_tag = WorkflowTagAdapter(rate_limit=mock_rate_limit)
 
-    assert isinstance(workflow_tag, WorkflowTag)
+    assert isinstance(workflow_tag, WorkflowTagAdapter)
     assert workflow_tag.rate_limit == mock_rate_limit
     assert workflow_tag._rate_limit == mock_rate_limit
 
 
 def test_constructor_with_none_rate_limit():
     """Test constructor explicitly passing None for rate_limit."""
-    workflow_tag = WorkflowTag(rate_limit=None)
+    workflow_tag = WorkflowTagAdapter(rate_limit=None)
 
-    assert isinstance(workflow_tag, WorkflowTag)
+    assert isinstance(workflow_tag, WorkflowTagAdapter)
     assert workflow_tag.rate_limit is None
 
 
 def test_required_fields_exist():
     """Test that all expected fields exist in the model."""
-    workflow_tag = WorkflowTag()
+    workflow_tag = WorkflowTagAdapter()
 
     # Verify discriminator field exists (part of Swagger model pattern)
     assert hasattr(workflow_tag, "discriminator")
@@ -54,16 +54,16 @@ def test_swagger_metadata_unchanged():
     """Test that Swagger metadata structure remains unchanged."""
     # Verify swagger_types structure
     expected_swagger_types = {"rate_limit": "RateLimit"}
-    assert WorkflowTag.swagger_types == expected_swagger_types
+    assert WorkflowTagAdapter.swagger_types == expected_swagger_types
 
     # Verify attribute_map structure
     expected_attribute_map = {"rate_limit": "rateLimit"}
-    assert WorkflowTag.attribute_map == expected_attribute_map
+    assert WorkflowTagAdapter.attribute_map == expected_attribute_map
 
 
 def test_rate_limit_property_getter(mock_rate_limit):
     """Test rate_limit property getter functionality."""
-    workflow_tag = WorkflowTag()
+    workflow_tag = WorkflowTagAdapter()
 
     # Test getter when None
     assert workflow_tag.rate_limit is None
@@ -75,7 +75,7 @@ def test_rate_limit_property_getter(mock_rate_limit):
 
 def test_rate_limit_property_setter(mock_rate_limit):
     """Test rate_limit property setter functionality."""
-    workflow_tag = WorkflowTag()
+    workflow_tag = WorkflowTagAdapter()
 
     # Test setting valid value
     workflow_tag.rate_limit = mock_rate_limit
@@ -90,7 +90,7 @@ def test_rate_limit_property_setter(mock_rate_limit):
 
 def test_rate_limit_field_type_consistency(mock_rate_limit):
     """Test that rate_limit field accepts expected types."""
-    workflow_tag = WorkflowTag()
+    workflow_tag = WorkflowTagAdapter()
 
     # Should accept RateLimit-like objects
     workflow_tag.rate_limit = mock_rate_limit
@@ -103,7 +103,7 @@ def test_rate_limit_field_type_consistency(mock_rate_limit):
 
 def test_to_dict_method_exists_and_works(mock_rate_limit):
     """Test that to_dict method exists and produces expected output."""
-    workflow_tag = WorkflowTag(rate_limit=mock_rate_limit)
+    workflow_tag = WorkflowTagAdapter(rate_limit=mock_rate_limit)
 
     result = workflow_tag.to_dict()
 
@@ -120,7 +120,7 @@ def test_to_dict_method_exists_and_works(mock_rate_limit):
 
 def test_to_dict_with_none_rate_limit():
     """Test to_dict when rate_limit is None."""
-    workflow_tag = WorkflowTag(rate_limit=None)
+    workflow_tag = WorkflowTagAdapter(rate_limit=None)
 
     result = workflow_tag.to_dict()
 
@@ -131,7 +131,7 @@ def test_to_dict_with_none_rate_limit():
 
 def test_to_str_method_exists():
     """Test that to_str method exists and returns string."""
-    workflow_tag = WorkflowTag()
+    workflow_tag = WorkflowTagAdapter()
 
     result = workflow_tag.to_str()
     assert isinstance(result, str)
@@ -139,7 +139,7 @@ def test_to_str_method_exists():
 
 def test_repr_method_exists():
     """Test that __repr__ method exists and returns string."""
-    workflow_tag = WorkflowTag()
+    workflow_tag = WorkflowTagAdapter()
 
     result = repr(workflow_tag)
     assert isinstance(result, str)
@@ -147,9 +147,9 @@ def test_repr_method_exists():
 
 def test_equality_comparison(mock_rate_limit):
     """Test equality comparison functionality."""
-    workflow_tag1 = WorkflowTag(rate_limit=mock_rate_limit)
-    workflow_tag2 = WorkflowTag(rate_limit=mock_rate_limit)
-    workflow_tag3 = WorkflowTag(rate_limit=None)
+    workflow_tag1 = WorkflowTagAdapter(rate_limit=mock_rate_limit)
+    workflow_tag2 = WorkflowTagAdapter(rate_limit=mock_rate_limit)
+    workflow_tag3 = WorkflowTagAdapter(rate_limit=None)
 
     # Test equality
     assert workflow_tag1 == workflow_tag2
@@ -163,8 +163,8 @@ def test_equality_comparison(mock_rate_limit):
 
 def test_inequality_comparison(mock_rate_limit):
     """Test inequality comparison functionality."""
-    workflow_tag1 = WorkflowTag(rate_limit=mock_rate_limit)
-    workflow_tag2 = WorkflowTag(rate_limit=None)
+    workflow_tag1 = WorkflowTagAdapter(rate_limit=mock_rate_limit)
+    workflow_tag2 = WorkflowTagAdapter(rate_limit=None)
 
     # Test __ne__ method
     assert workflow_tag1 != workflow_tag2
@@ -176,8 +176,8 @@ def test_forward_compatibility_constructor_ignores_unknown_params(mock_rate_limi
     # the constructor won't break when called with old code
     try:
         # This should not raise an error even if new_field doesn't exist yet
-        workflow_tag = WorkflowTag(rate_limit=mock_rate_limit)
-        assert isinstance(workflow_tag, WorkflowTag)
+        workflow_tag = WorkflowTagAdapter(rate_limit=mock_rate_limit)
+        assert isinstance(workflow_tag, WorkflowTagAdapter)
     except TypeError as e:
         # If it fails, it should only be due to unexpected keyword arguments
         # This test will pass as long as known parameters work
@@ -187,7 +187,7 @@ def test_forward_compatibility_constructor_ignores_unknown_params(mock_rate_limi
 
 def test_all_current_methods_exist():
     """Test that all current public methods continue to exist."""
-    workflow_tag = WorkflowTag()
+    workflow_tag = WorkflowTagAdapter()
 
     # Verify all expected methods exist
     expected_methods = ["to_dict", "to_str", "__repr__", "__eq__", "__ne__"]
@@ -202,8 +202,8 @@ def test_all_current_methods_exist():
 def test_property_exists_and_is_property():
     """Test that rate_limit is properly defined as a property."""
     # Verify rate_limit is a property descriptor
-    assert isinstance(WorkflowTag.rate_limit, property)
+    assert isinstance(WorkflowTagAdapter.rate_limit, property)
 
     # Verify it has getter and setter
-    assert WorkflowTag.rate_limit.fget is not None
-    assert WorkflowTag.rate_limit.fset is not None
+    assert WorkflowTagAdapter.rate_limit.fget is not None
+    assert WorkflowTagAdapter.rate_limit.fset is not None

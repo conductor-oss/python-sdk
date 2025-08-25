@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.task_details import TaskDetails
+from conductor.client.adapters.models.task_details_adapter import TaskDetailsAdapter
 
 
 @pytest.fixture
@@ -15,9 +15,9 @@ def valid_data():
 
 
 def test_constructor_with_no_args_succeeds():
-    """Test that TaskDetails can be instantiated with no arguments (all fields optional)."""
-    task_details = TaskDetails()
-    assert isinstance(task_details, TaskDetails)
+    """Test that TaskDetailsAdapter can be instantiated with no arguments (all fields optional)."""
+    task_details = TaskDetailsAdapter()
+    assert isinstance(task_details, TaskDetailsAdapter)
 
     # All fields should be None initially
     assert task_details.workflow_id is None
@@ -27,8 +27,8 @@ def test_constructor_with_no_args_succeeds():
 
 
 def test_constructor_with_all_args_succeeds(valid_data):
-    """Test that TaskDetails can be instantiated with all arguments."""
-    task_details = TaskDetails(**valid_data)
+    """Test that TaskDetailsAdapter can be instantiated with all arguments."""
+    task_details = TaskDetailsAdapter(**valid_data)
 
     assert task_details.workflow_id == valid_data["workflow_id"]
     assert task_details.task_ref_name == valid_data["task_ref_name"]
@@ -37,13 +37,13 @@ def test_constructor_with_all_args_succeeds(valid_data):
 
 
 def test_constructor_with_partial_args_succeeds():
-    """Test that TaskDetails can be instantiated with partial arguments."""
+    """Test that TaskDetailsAdapter can be instantiated with partial arguments."""
     partial_data = {
         "workflow_id": "test-workflow",
         "task_id": "test-task",
     }
 
-    task_details = TaskDetails(**partial_data)
+    task_details = TaskDetailsAdapter(**partial_data)
 
     assert task_details.workflow_id == partial_data["workflow_id"]
     assert task_details.task_id == partial_data["task_id"]
@@ -53,7 +53,7 @@ def test_constructor_with_partial_args_succeeds():
 
 def test_all_expected_fields_exist():
     """Test that all expected fields exist and are accessible."""
-    task_details = TaskDetails()
+    task_details = TaskDetailsAdapter()
 
     # Test that all expected properties exist
     expected_fields = ["workflow_id", "task_ref_name", "output", "task_id"]
@@ -67,7 +67,7 @@ def test_all_expected_fields_exist():
 
 def test_field_types_unchanged(valid_data):
     """Test that field types haven't changed from expected types."""
-    task_details = TaskDetails(**valid_data)
+    task_details = TaskDetailsAdapter(**valid_data)
 
     # Test workflow_id type
     assert isinstance(task_details.workflow_id, str)
@@ -84,7 +84,7 @@ def test_field_types_unchanged(valid_data):
 
 def test_property_setters_work():
     """Test that all property setters work as expected."""
-    task_details = TaskDetails()
+    task_details = TaskDetailsAdapter()
 
     # Test workflow_id setter
     task_details.workflow_id = "new-workflow"
@@ -106,7 +106,7 @@ def test_property_setters_work():
 
 def test_setters_accept_none_values(valid_data):
     """Test that setters accept None values (fields are optional)."""
-    task_details = TaskDetails(**valid_data)
+    task_details = TaskDetailsAdapter(**valid_data)
 
     # All setters should accept None
     task_details.workflow_id = None
@@ -124,8 +124,8 @@ def test_setters_accept_none_values(valid_data):
 
 def test_swagger_types_attribute_exists():
     """Test that swagger_types class attribute exists and has expected structure."""
-    assert hasattr(TaskDetails, "swagger_types")
-    swagger_types = TaskDetails.swagger_types
+    assert hasattr(TaskDetailsAdapter, "swagger_types")
+    swagger_types = TaskDetailsAdapter.swagger_types
 
     expected_types = {
         "workflow_id": "str",
@@ -143,8 +143,8 @@ def test_swagger_types_attribute_exists():
 
 def test_attribute_map_exists():
     """Test that attribute_map class attribute exists and has expected structure."""
-    assert hasattr(TaskDetails, "attribute_map")
-    attribute_map = TaskDetails.attribute_map
+    assert hasattr(TaskDetailsAdapter, "attribute_map")
+    attribute_map = TaskDetailsAdapter.attribute_map
 
     expected_mappings = {
         "workflow_id": "workflowId",
@@ -162,7 +162,7 @@ def test_attribute_map_exists():
 
 def test_to_dict_method_exists_and_works(valid_data):
     """Test that to_dict method exists and returns expected structure."""
-    task_details = TaskDetails(**valid_data)
+    task_details = TaskDetailsAdapter(**valid_data)
 
     result_dict = task_details.to_dict()
 
@@ -177,7 +177,7 @@ def test_to_dict_method_exists_and_works(valid_data):
 
 def test_to_str_method_exists(valid_data):
     """Test that to_str method exists and returns a string."""
-    task_details = TaskDetails(**valid_data)
+    task_details = TaskDetailsAdapter(**valid_data)
 
     result_str = task_details.to_str()
     assert isinstance(result_str, str)
@@ -186,7 +186,7 @@ def test_to_str_method_exists(valid_data):
 
 def test_repr_method_exists(valid_data):
     """Test that __repr__ method exists and returns a string."""
-    task_details = TaskDetails(**valid_data)
+    task_details = TaskDetailsAdapter(**valid_data)
 
     repr_str = repr(task_details)
     assert isinstance(repr_str, str)
@@ -195,9 +195,9 @@ def test_repr_method_exists(valid_data):
 
 def test_equality_methods_exist_and_work(valid_data):
     """Test that __eq__ and __ne__ methods exist and work correctly."""
-    task_details1 = TaskDetails(**valid_data)
-    task_details2 = TaskDetails(**valid_data)
-    task_details3 = TaskDetails(workflow_id="different")
+    task_details1 = TaskDetailsAdapter(**valid_data)
+    task_details2 = TaskDetailsAdapter(**valid_data)
+    task_details3 = TaskDetailsAdapter(workflow_id="different")
 
     # Test equality
     assert task_details1 == task_details2
@@ -207,21 +207,21 @@ def test_equality_methods_exist_and_work(valid_data):
     assert not (task_details1 != task_details2)
     assert task_details1 != task_details3
 
-    # Test comparison with non-TaskDetails object
+    # Test comparison with non-TaskDetailsAdapter object
     assert task_details1 != "not a task details"
     assert task_details1 != "not a task details"
 
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists and is set to None."""
-    task_details = TaskDetails()
+    task_details = TaskDetailsAdapter()
     assert hasattr(task_details, "discriminator")
     assert task_details.discriminator is None
 
 
 def test_output_dict_type_flexibility():
     """Test that output field accepts various dict structures."""
-    task_details = TaskDetails()
+    task_details = TaskDetailsAdapter()
 
     # Empty dict
     task_details.output = {}
@@ -248,14 +248,14 @@ def test_backward_compatibility_with_unknown_constructor_args():
     try:
         # Try to create with valid arguments only - the current constructor
         # should work with known arguments
-        task_details = TaskDetails(workflow_id="test", task_id="test")
+        task_details = TaskDetailsAdapter(workflow_id="test", task_id="test")
         # Should not raise an exception
-        assert isinstance(task_details, TaskDetails)
+        assert isinstance(task_details, TaskDetailsAdapter)
 
         # Test that unknown arguments would cause TypeError (expected behavior)
         # This documents current behavior for future reference
         with pytest.raises(TypeError):
-            TaskDetails(
+            TaskDetailsAdapter(
                 workflow_id="test",
                 unknown_future_field="value",  # This should fail
             )
@@ -266,7 +266,7 @@ def test_backward_compatibility_with_unknown_constructor_args():
 
 def test_field_assignment_after_construction(valid_data):
     """Test that fields can be assigned after object construction."""
-    task_details = TaskDetails()
+    task_details = TaskDetailsAdapter()
 
     # Test assignment of all fields after construction
     task_details.workflow_id = valid_data["workflow_id"]

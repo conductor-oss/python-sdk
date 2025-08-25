@@ -1,7 +1,9 @@
 import pytest
 
-from conductor.client.http.models import Task, TaskResult, WorkflowTask
-from conductor.shared.http.enums import TaskResultStatus
+from conductor.client.adapters.models.task_adapter import TaskAdapter
+from conductor.client.adapters.models.task_result_adapter import TaskResultAdapter
+from conductor.client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
+from conductor.shared.http.enums.task_result_status import TaskResultStatus
 
 
 @pytest.fixture
@@ -53,19 +55,19 @@ def valid_task_data():
 def test_constructor_accepts_all_existing_parameters(valid_task_data):
     """Test that constructor accepts all existing parameters without error."""
     # Test constructor with all parameters
-    task = Task(**valid_task_data)
+    task = TaskAdapter(**valid_task_data)
 
     # Verify task was created successfully
-    assert isinstance(task, Task)
+    assert isinstance(task, TaskAdapter)
 
     # Test constructor with no parameters (should work)
-    empty_task = Task()
-    assert isinstance(empty_task, Task)
+    empty_task = TaskAdapter()
+    assert isinstance(empty_task, TaskAdapter)
 
 
 def test_all_existing_properties_exist_and_accessible(valid_task_data):
     """Test that all existing properties exist and are accessible."""
-    task = Task(**valid_task_data)
+    task = TaskAdapter(**valid_task_data)
 
     # Test all string properties
     string_properties = [
@@ -141,7 +143,7 @@ def test_all_existing_properties_exist_and_accessible(valid_task_data):
 
 def test_all_existing_setters_work(valid_task_data):
     """Test that all existing property setters work correctly."""
-    task = Task()
+    task = TaskAdapter()
 
     # Test setting each property individually
     for key, value in valid_task_data.items():
@@ -153,7 +155,7 @@ def test_all_existing_setters_work(valid_task_data):
 
 def test_status_validation_unchanged():
     """Test that status validation rules remain unchanged."""
-    task = Task()
+    task = TaskAdapter()
 
     # Valid status values should work
     valid_statuses = [
@@ -179,20 +181,20 @@ def test_status_validation_unchanged():
 
 def test_workflow_task_property_exists(mocker):
     """Test that workflow_task property exists and has correct type."""
-    task = Task()
+    task = TaskAdapter()
 
     # Should have workflow_task property
     assert hasattr(task, "workflow_task")
 
-    # Should accept WorkflowTask objects
-    mock_workflow_task = mocker.MagicMock(spec=WorkflowTask)
+    # Should accept WorkflowTaskAdapter objects
+    mock_workflow_task = mocker.MagicMock(spec=WorkflowTaskAdapter)
     task.workflow_task = mock_workflow_task
     assert task.workflow_task == mock_workflow_task
 
 
 def test_task_definition_property_exists(mocker):
     """Test that task_definition property exists."""
-    task = Task()
+    task = TaskAdapter()
 
     # Should have task_definition property
     assert hasattr(task, "task_definition")
@@ -205,7 +207,7 @@ def test_task_definition_property_exists(mocker):
 
 def test_to_dict_method_exists_and_works(valid_task_data):
     """Test that to_dict method exists and returns expected structure."""
-    task = Task(**valid_task_data)
+    task = TaskAdapter(**valid_task_data)
 
     # Method should exist
     assert hasattr(task, "to_dict")
@@ -222,7 +224,7 @@ def test_to_dict_method_exists_and_works(valid_task_data):
 
 def test_to_str_method_exists_and_works(valid_task_data):
     """Test that to_str method exists and returns string."""
-    task = Task(**valid_task_data)
+    task = TaskAdapter(**valid_task_data)
 
     # Method should exist
     assert hasattr(task, "to_str")
@@ -235,7 +237,7 @@ def test_to_str_method_exists_and_works(valid_task_data):
 
 def test_repr_method_exists_and_works(valid_task_data):
     """Test that __repr__ method exists and returns string."""
-    task = Task(**valid_task_data)
+    task = TaskAdapter(**valid_task_data)
 
     # Method should exist and work
     result = repr(task)
@@ -244,9 +246,9 @@ def test_repr_method_exists_and_works(valid_task_data):
 
 def test_equality_methods_exist_and_work(valid_task_data):
     """Test that __eq__ and __ne__ methods exist and work."""
-    task1 = Task(**valid_task_data)
-    task2 = Task(**valid_task_data)
-    task3 = Task(task_type="DIFFERENT")
+    task1 = TaskAdapter(**valid_task_data)
+    task2 = TaskAdapter(**valid_task_data)
+    task3 = TaskAdapter(task_type="DIFFERENT")
 
     # Equal tasks should be equal
     assert task1 == task2
@@ -256,7 +258,7 @@ def test_equality_methods_exist_and_work(valid_task_data):
     assert task1 != task3
     assert task1 != task3
 
-    # Should handle comparison with non-Task objects
+    # Should handle comparison with non-TaskAdapter objects
     assert task1 != "not a task"
     assert task1 != "not a task"
 
@@ -268,7 +270,7 @@ def test_to_task_result_method_exists_and_works():
         "workflow_instance_id": "workflow_123",
         "worker_id": "worker_123",
     }
-    task = Task(**task_data)
+    task = TaskAdapter(**task_data)
 
     # Method should exist
     assert hasattr(task, "to_task_result")
@@ -276,7 +278,7 @@ def test_to_task_result_method_exists_and_works():
 
     # Should work with default status
     result = task.to_task_result()
-    assert isinstance(result, TaskResult)
+    assert isinstance(result, TaskResultAdapter)
     assert result.task_id == "test_123"
     assert result.workflow_instance_id == "workflow_123"
     assert result.worker_id == "worker_123"
@@ -289,8 +291,8 @@ def test_to_task_result_method_exists_and_works():
 
 def test_swagger_types_attribute_exists():
     """Test that swagger_types class attribute exists and has expected structure."""
-    assert hasattr(Task, "swagger_types")
-    assert isinstance(Task.swagger_types, dict)
+    assert hasattr(TaskAdapter, "swagger_types")
+    assert isinstance(TaskAdapter.swagger_types, dict)
 
     # Check for some key attributes
     expected_types = {
@@ -303,16 +305,16 @@ def test_swagger_types_attribute_exists():
     }
 
     for key, expected_type in expected_types.items():
-        assert key in Task.swagger_types, f"swagger_types should contain {key}"
+        assert key in TaskAdapter.swagger_types, f"swagger_types should contain {key}"
         assert (
-            Task.swagger_types[key] == expected_type
+            TaskAdapter.swagger_types[key] == expected_type
         ), f"swagger_types[{key}] should be {expected_type}"
 
 
 def test_attribute_map_exists():
     """Test that attribute_map class attribute exists and has expected structure."""
-    assert hasattr(Task, "attribute_map")
-    assert isinstance(Task.attribute_map, dict)
+    assert hasattr(TaskAdapter, "attribute_map")
+    assert isinstance(TaskAdapter.attribute_map, dict)
 
     # Check for some key mappings
     expected_mappings = {
@@ -324,18 +326,18 @@ def test_attribute_map_exists():
     }
 
     for key, expected_json_key in expected_mappings.items():
-        assert key in Task.attribute_map, f"attribute_map should contain {key}"
+        assert key in TaskAdapter.attribute_map, f"attribute_map should contain {key}"
         assert (
-            Task.attribute_map[key] == expected_json_key
+            TaskAdapter.attribute_map[key] == expected_json_key
         ), f"attribute_map[{key}] should be {expected_json_key}"
 
 
 def test_private_attributes_initialized():
     """Test that all private attributes are properly initialized."""
-    task = Task()
+    task = TaskAdapter()
 
     # All properties should have corresponding private attributes
-    for attr_name in Task.swagger_types.keys():
+    for attr_name in TaskAdapter.swagger_types.keys():
         private_attr = f"_{attr_name}"
         assert hasattr(
             task, private_attr
@@ -344,17 +346,17 @@ def test_private_attributes_initialized():
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists."""
-    task = Task()
+    task = TaskAdapter()
     assert hasattr(task, "discriminator")
     assert task.discriminator is None
 
 
 def test_backward_compatibility_with_none_values():
     """Test that setting None values works for optional fields."""
-    task = Task()
+    task = TaskAdapter()
 
     # All fields should accept None (since they're optional in constructor)
-    for attr_name in Task.swagger_types.keys():
+    for attr_name in TaskAdapter.swagger_types.keys():
         if attr_name != "status":  # Status has validation
             setattr(task, attr_name, None)
             assert (

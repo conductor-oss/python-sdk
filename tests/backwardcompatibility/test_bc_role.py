@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.role import Role
+from conductor.client.adapters.models.role_adapter import RoleAdapter
 
 
 @pytest.fixture
@@ -28,25 +28,25 @@ def test_permissions(mock_permission1, mock_permission2):
 def test_constructor_exists_with_expected_signature(test_permissions):
     """Test that constructor exists and accepts expected parameters"""
     # Should work with no parameters (all optional)
-    role = Role()
+    role = RoleAdapter()
     assert role is not None
 
     # Should work with name only
-    role = Role(name="admin")
+    role = RoleAdapter(name="admin")
     assert role is not None
 
     # Should work with permissions only
-    role = Role(permissions=test_permissions)
+    role = RoleAdapter(permissions=test_permissions)
     assert role is not None
 
     # Should work with both parameters
-    role = Role(name="admin", permissions=test_permissions)
+    role = RoleAdapter(name="admin", permissions=test_permissions)
     assert role is not None
 
 
 def test_required_fields_exist():
     """Test that all expected fields exist and are accessible"""
-    role = Role()
+    role = RoleAdapter()
 
     # Test field existence through property access
     assert hasattr(role, "name")
@@ -64,35 +64,35 @@ def test_field_types_unchanged():
     """Test that field types remain consistent with original specification"""
 
     # Verify swagger_types dictionary exists and contains expected types
-    assert hasattr(Role, "swagger_types")
+    assert hasattr(RoleAdapter, "swagger_types")
     expected_types = {"name": "str", "permissions": "list[Permission]"}
 
     for field, expected_type in expected_types.items():
         assert (
-            field in Role.swagger_types
+            field in RoleAdapter.swagger_types
         ), f"Field '{field}' missing from swagger_types"
         assert (
-            Role.swagger_types[field] == expected_type
-        ), f"Type for field '{field}' changed from '{expected_type}' to '{Role.swagger_types[field]}'"
+            RoleAdapter.swagger_types[field] == expected_type
+        ), f"Type for field '{field}' changed from '{expected_type}' to '{RoleAdapter.swagger_types[field]}'"
 
 
 def test_attribute_map_unchanged():
     """Test that attribute mapping remains consistent"""
-    assert hasattr(Role, "attribute_map")
+    assert hasattr(RoleAdapter, "attribute_map")
     expected_mappings = {"name": "name", "permissions": "permissions"}
 
     for attr, json_key in expected_mappings.items():
         assert (
-            attr in Role.attribute_map
+            attr in RoleAdapter.attribute_map
         ), f"Attribute '{attr}' missing from attribute_map"
         assert (
-            Role.attribute_map[attr] == json_key
-        ), f"JSON mapping for '{attr}' changed from '{json_key}' to '{Role.attribute_map[attr]}'"
+            RoleAdapter.attribute_map[attr] == json_key
+        ), f"JSON mapping for '{attr}' changed from '{json_key}' to '{RoleAdapter.attribute_map[attr]}'"
 
 
 def test_name_field_behavior():
     """Test name field getter and setter behavior"""
-    role = Role()
+    role = RoleAdapter()
 
     # Test initial state
     assert role.name is None
@@ -113,7 +113,7 @@ def test_name_field_behavior():
 
 def test_permissions_field_behavior(test_permissions):
     """Test permissions field getter and setter behavior"""
-    role = Role()
+    role = RoleAdapter()
 
     # Test initial state
     assert role.permissions is None
@@ -136,22 +136,22 @@ def test_constructor_parameter_assignment(test_permissions):
     test_name = "test_role"
 
     # Test name parameter
-    role = Role(name=test_name)
+    role = RoleAdapter(name=test_name)
     assert role.name == test_name
 
     # Test permissions parameter
-    role = Role(permissions=test_permissions)
+    role = RoleAdapter(permissions=test_permissions)
     assert role.permissions == test_permissions
 
     # Test both parameters
-    role = Role(name=test_name, permissions=test_permissions)
+    role = RoleAdapter(name=test_name, permissions=test_permissions)
     assert role.name == test_name
     assert role.permissions == test_permissions
 
 
 def test_to_dict_method_exists_and_works(test_permissions):
     """Test that to_dict method exists and produces expected output"""
-    role = Role(name="admin", permissions=test_permissions)
+    role = RoleAdapter(name="admin", permissions=test_permissions)
 
     assert hasattr(role, "to_dict")
     result = role.to_dict()
@@ -164,7 +164,7 @@ def test_to_dict_method_exists_and_works(test_permissions):
 
 def test_to_str_method_exists():
     """Test that to_str method exists"""
-    role = Role()
+    role = RoleAdapter()
     assert hasattr(role, "to_str")
 
     # Should not raise exception
@@ -174,7 +174,7 @@ def test_to_str_method_exists():
 
 def test_repr_method_exists():
     """Test that __repr__ method exists"""
-    role = Role()
+    role = RoleAdapter()
     # Should not raise exception
     repr_result = repr(role)
     assert isinstance(repr_result, str)
@@ -182,9 +182,9 @@ def test_repr_method_exists():
 
 def test_equality_methods_exist():
     """Test that equality methods exist and work"""
-    role1 = Role(name="admin")
-    role2 = Role(name="admin")
-    role3 = Role(name="user")
+    role1 = RoleAdapter(name="admin")
+    role2 = RoleAdapter(name="admin")
+    role3 = RoleAdapter(name="user")
 
     # Test __eq__
     assert hasattr(role1, "__eq__")
@@ -199,7 +199,7 @@ def test_equality_methods_exist():
 
 def test_private_attributes_exist():
     """Test that private attributes are properly initialized"""
-    role = Role()
+    role = RoleAdapter()
 
     # These should exist as they're used internally
     assert hasattr(role, "_name")
@@ -215,7 +215,7 @@ def test_private_attributes_exist():
 def test_backward_compatibility_with_none_values():
     """Test that None values are handled consistently"""
     # Constructor with None values (explicit)
-    role = Role(name=None, permissions=None)
+    role = RoleAdapter(name=None, permissions=None)
     assert role.name is None
     assert role.permissions is None
 
@@ -226,7 +226,7 @@ def test_backward_compatibility_with_none_values():
 
 def test_field_assignment_after_construction(test_permissions):
     """Test that fields can be modified after object creation"""
-    role = Role()
+    role = RoleAdapter()
 
     # Should be able to assign values after construction
     role.name = "new_role"

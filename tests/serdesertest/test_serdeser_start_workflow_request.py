@@ -1,10 +1,8 @@
 import json
 
 import pytest
-from conductor.client.adapters.models.start_workflow_request_adapter import (
-    IdempotencyStrategy,
-    StartWorkflowRequestAdapter,
-)
+from conductor.client.adapters.models.start_workflow_request_adapter import StartWorkflowRequestAdapter
+from conductor.shared.http.enums import IdempotencyStrategy
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

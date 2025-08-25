@@ -1,30 +1,30 @@
-from conductor.client.http.models import RateLimit
+from conductor.client.adapters.models.rate_limit_adapter import RateLimitAdapter
 
 
 def test_constructor_signature_compatibility():
     """Test that constructor accepts expected parameters and maintains backward compatibility."""
     # Test default constructor (no parameters)
-    rate_limit = RateLimit()
+    rate_limit = RateLimitAdapter()
     assert rate_limit is not None
 
     # Test constructor with all original parameters
-    rate_limit = RateLimit(tag="test-tag", concurrent_execution_limit=5)
+    rate_limit = RateLimitAdapter(tag="test-tag", concurrent_execution_limit=5)
     assert rate_limit.tag == "test-tag"
     assert rate_limit.concurrent_execution_limit == 5
 
     # Test constructor with partial parameters (original behavior)
-    rate_limit = RateLimit(tag="partial-tag")
+    rate_limit = RateLimitAdapter(tag="partial-tag")
     assert rate_limit.tag == "partial-tag"
     assert rate_limit.concurrent_execution_limit is None
 
-    rate_limit = RateLimit(concurrent_execution_limit=10)
+    rate_limit = RateLimitAdapter(concurrent_execution_limit=10)
     assert rate_limit.tag is None
     assert rate_limit.concurrent_execution_limit == 10
 
 
 def test_required_fields_exist():
     """Test that all original fields still exist and are accessible."""
-    rate_limit = RateLimit()
+    rate_limit = RateLimitAdapter()
 
     # Verify original fields exist as properties
     assert hasattr(rate_limit, "tag")
@@ -41,7 +41,7 @@ def test_required_fields_exist():
 
 def test_field_types_unchanged():
     """Test that original field types are preserved."""
-    rate_limit = RateLimit()
+    rate_limit = RateLimitAdapter()
 
     # Test string field type
     rate_limit.tag = "test-string"
@@ -54,7 +54,7 @@ def test_field_types_unchanged():
 
 def test_field_assignment_compatibility():
     """Test that field assignment works as expected (setter functionality)."""
-    rate_limit = RateLimit()
+    rate_limit = RateLimitAdapter()
 
     # Test tag assignment
     rate_limit.tag = "assigned-tag"
@@ -75,8 +75,8 @@ def test_field_assignment_compatibility():
 def test_swagger_metadata_compatibility():
     """Test that swagger-related metadata is preserved."""
     # Test swagger_types class attribute exists
-    assert hasattr(RateLimit, "swagger_types")
-    swagger_types = RateLimit.swagger_types
+    assert hasattr(RateLimitAdapter, "swagger_types")
+    swagger_types = RateLimitAdapter.swagger_types
 
     # Verify original field type definitions
     assert "tag" in swagger_types
@@ -86,8 +86,8 @@ def test_swagger_metadata_compatibility():
     assert swagger_types["concurrent_execution_limit"] == "int"
 
     # Test attribute_map class attribute exists
-    assert hasattr(RateLimit, "attribute_map")
-    attribute_map = RateLimit.attribute_map
+    assert hasattr(RateLimitAdapter, "attribute_map")
+    attribute_map = RateLimitAdapter.attribute_map
 
     # Verify original attribute mappings
     assert "tag" in attribute_map
@@ -99,7 +99,7 @@ def test_swagger_metadata_compatibility():
 
 def test_internal_attributes_exist():
     """Test that internal attributes are properly initialized."""
-    rate_limit = RateLimit()
+    rate_limit = RateLimitAdapter()
 
     # Verify internal private attributes exist (original implementation detail)
     assert hasattr(rate_limit, "_tag")
@@ -114,7 +114,7 @@ def test_internal_attributes_exist():
 
 def test_to_dict_method_compatibility():
     """Test that to_dict method works and produces expected structure."""
-    rate_limit = RateLimit(tag="dict-tag", concurrent_execution_limit=25)
+    rate_limit = RateLimitAdapter(tag="dict-tag", concurrent_execution_limit=25)
 
     # Method should exist
     assert hasattr(rate_limit, "to_dict")
@@ -134,7 +134,7 @@ def test_to_dict_method_compatibility():
 
 def test_to_str_method_compatibility():
     """Test that to_str method exists and works."""
-    rate_limit = RateLimit(tag="str-tag", concurrent_execution_limit=15)
+    rate_limit = RateLimitAdapter(tag="str-tag", concurrent_execution_limit=15)
 
     # Method should exist
     assert hasattr(rate_limit, "to_str")
@@ -151,7 +151,7 @@ def test_to_str_method_compatibility():
 
 def test_repr_method_compatibility():
     """Test that __repr__ method works."""
-    rate_limit = RateLimit(tag="repr-tag", concurrent_execution_limit=30)
+    rate_limit = RateLimitAdapter(tag="repr-tag", concurrent_execution_limit=30)
 
     # Should be able to get string representation
     repr_str = repr(rate_limit)
@@ -164,9 +164,9 @@ def test_repr_method_compatibility():
 
 def test_equality_methods_compatibility():
     """Test that equality comparison methods work."""
-    rate_limit1 = RateLimit(tag="equal-tag", concurrent_execution_limit=50)
-    rate_limit2 = RateLimit(tag="equal-tag", concurrent_execution_limit=50)
-    rate_limit3 = RateLimit(tag="different-tag", concurrent_execution_limit=50)
+    rate_limit1 = RateLimitAdapter(tag="equal-tag", concurrent_execution_limit=50)
+    rate_limit2 = RateLimitAdapter(tag="equal-tag", concurrent_execution_limit=50)
+    rate_limit3 = RateLimitAdapter(tag="different-tag", concurrent_execution_limit=50)
 
     # Test equality
     assert rate_limit1 == rate_limit2
@@ -183,7 +183,7 @@ def test_equality_methods_compatibility():
 
 def test_field_modification_after_construction():
     """Test that fields can be modified after object construction."""
-    rate_limit = RateLimit(tag="initial-tag", concurrent_execution_limit=1)
+    rate_limit = RateLimitAdapter(tag="initial-tag", concurrent_execution_limit=1)
 
     # Modify fields
     rate_limit.tag = "modified-tag"
@@ -202,12 +202,12 @@ def test_field_modification_after_construction():
 def test_none_values_handling():
     """Test that None values are handled properly (original behavior)."""
     # Constructor with None values
-    rate_limit = RateLimit(tag=None, concurrent_execution_limit=None)
+    rate_limit = RateLimitAdapter(tag=None, concurrent_execution_limit=None)
     assert rate_limit.tag is None
     assert rate_limit.concurrent_execution_limit is None
 
     # Assignment of None values
-    rate_limit = RateLimit(tag="some-tag", concurrent_execution_limit=10)
+    rate_limit = RateLimitAdapter(tag="some-tag", concurrent_execution_limit=10)
     rate_limit.tag = None
     rate_limit.concurrent_execution_limit = None
 

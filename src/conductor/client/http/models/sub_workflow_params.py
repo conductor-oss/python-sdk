@@ -31,10 +31,10 @@ class SubWorkflowParams(object):
         'idempotency_key': 'str',
         'idempotency_strategy': 'str',
         'name': 'str',
-        'priority': 'object',
+        'priority': 'int',
         'task_to_domain': 'dict(str, str)',
         'version': 'int',
-        'workflow_definition': 'object'
+        'workflow_definition': 'WorkflowDef'
     }
 
     attribute_map = {

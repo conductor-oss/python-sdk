@@ -2,9 +2,9 @@ from __future__ import annotations
 from typing import Optional, List
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.models.tag_string import TagString
-from conductor.client.http.models.task_def import TaskDef
-from conductor.client.http.models.workflow_def import WorkflowDef
+from conductor.client.adapters.models.tag_string_adapter import TagStringAdapter as TagString
+from conductor.client.adapters.models.task_def_adapter import TaskDefAdapter as TaskDef
+from conductor.client.adapters.models.workflow_def_adapter import WorkflowDefAdapter as WorkflowDef
 from conductor.client.metadata_client import MetadataClient
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.models.ratelimit_tag import RateLimitTag
@@ -19,7 +19,7 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
         self.metadataResourceApi.create(workflow_def, overwrite=overwrite)
 
     def update_workflow_def(self, workflow_def: WorkflowDef, overwrite: Optional[bool] = True):
-        self.metadataResourceApi.update1([workflow_def], overwrite=overwrite)
+        self.metadataResourceApi.update([workflow_def], overwrite=overwrite)
 
     def unregister_workflow_def(self, name: str, version: int):
         self.metadataResourceApi.unregister_workflow_def(name, version)
@@ -27,14 +27,14 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
     def get_workflow_def(self, name: str, version: Optional[int] = None) -> WorkflowDef:
         workflow = None
         if version:
-            workflow = self.metadataResourceApi.get(name, version=version)
+            workflow = self.metadataResourceApi.get1(name, version=version)
         else:
-            workflow = self.metadataResourceApi.get(name)
+            workflow = self.metadataResourceApi.get1(name)
 
         return workflow
 
     def get_all_workflow_defs(self) -> List[WorkflowDef]:
-        return self.metadataResourceApi.get_all_workflows()
+        return self.metadataResourceApi.get_workflow_defs()
 
     def register_task_def(self, task_def: TaskDef):
         self.metadataResourceApi.register_task_def([task_def])

@@ -2,15 +2,17 @@ from __future__ import annotations
 from typing import Optional, List, Dict
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.models import SkipTaskRequest, WorkflowStatus, \
-    ScrollableSearchResultWorkflowSummary, SignalResponse
-from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
-from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
-from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
-from conductor.client.http.models.workflow import Workflow
-from conductor.client.http.models.workflow_run import WorkflowRun
-from conductor.client.http.models.workflow_state_update import WorkflowStateUpdate
-from conductor.client.http.models.workflow_test_request import WorkflowTestRequest
+from conductor.client.adapters.models.skip_task_request_adapter import SkipTaskRequestAdapter as SkipTaskRequest
+from conductor.client.adapters.models.workflow_status_adapter import WorkflowStatusAdapter as WorkflowStatus
+from conductor.client.adapters.models.scrollable_search_result_workflow_summary_adapter import ScrollableSearchResultWorkflowSummaryAdapter as ScrollableSearchResultWorkflowSummary
+from conductor.client.adapters.models.signal_response_adapter import SignalResponseAdapter as SignalResponse
+from conductor.client.adapters.models.correlation_ids_search_request_adapter import CorrelationIdsSearchRequestAdapter as CorrelationIdsSearchRequest
+from conductor.client.adapters.models.rerun_workflow_request_adapter import RerunWorkflowRequestAdapter as RerunWorkflowRequest
+from conductor.client.adapters.models.start_workflow_request_adapter import StartWorkflowRequestAdapter as StartWorkflowRequest
+from conductor.client.adapters.models.workflow_adapter import WorkflowAdapter as Workflow
+from conductor.client.adapters.models.workflow_run_adapter import WorkflowRunAdapter as WorkflowRun
+from conductor.client.adapters.models.workflow_state_update_adapter import WorkflowStateUpdateAdapter as WorkflowStateUpdate
+from conductor.client.adapters.models.workflow_test_request_adapter import WorkflowTestRequestAdapter as WorkflowTestRequest
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.workflow_client import WorkflowClient
 
@@ -123,7 +125,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
             kwargs["reason"] = reason
         if trigger_failure_workflow:
             kwargs["trigger_failure_workflow"] = trigger_failure_workflow
-        self.workflowResourceApi.terminate(workflow_id, **kwargs)
+        self.workflowResourceApi.terminate1(workflow_id, **kwargs)
 
     def get_workflow(self, workflow_id: str, include_tasks: Optional[bool] = True) -> Workflow:
         kwargs = {}
@@ -141,7 +143,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         return self.workflowResourceApi.get_workflow_status_summary(workflow_id, **kwargs)
 
     def delete_workflow(self, workflow_id: str, archive_workflow: Optional[bool] = True):
-        self.workflowResourceApi.delete(workflow_id, archive_workflow=archive_workflow)
+        self.workflowResourceApi.delete1(workflow_id, archive_workflow=archive_workflow)
 
     def skip_task_from_workflow(self, workflow_id: str, task_reference_name: str, request: SkipTaskRequest):
         self.workflowResourceApi.skip_task_from_workflow(workflow_id, task_reference_name, request)
@@ -177,7 +179,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
             kwargs["include_tasks"] = include_tasks
         if include_completed:
             kwargs["include_closed"] = include_completed
-        return self.workflowResourceApi.get_workflows_by_correlation_id_in_batch(**kwargs)
+        return self.workflowResourceApi.get_workflows1(**kwargs)
 
     def get_by_correlation_ids(
             self,
@@ -200,7 +202,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         )
 
     def remove_workflow(self, workflow_id: str):
-        self.workflowResourceApi.delete(workflow_id)
+        self.workflowResourceApi.delete1(workflow_id)
 
     def update_variables(self, workflow_id: str, variables: Optional[Dict[str, object]] = None) -> None:
         variables = variables or {}

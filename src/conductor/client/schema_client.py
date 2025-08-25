@@ -5,7 +5,7 @@ from typing import List
 
 # python 2 and python 3 compatibility library
 
-from conductor.client.http.models.schema_def import SchemaDef
+from conductor.client.adapters.models.schema_def_adapter import SchemaDefAdapter as SchemaDef
 
 
 class SchemaClient(ABC):

@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.integration_update import IntegrationUpdate
+from conductor.client.adapters.models.integration_update_adapter import IntegrationUpdateAdapter
 
 
 @pytest.fixture
@@ -42,23 +42,23 @@ def test_constructor_exists_and_accepts_all_known_parameters(
 ):
     """Test that constructor exists and accepts all known parameters."""
     # Test default constructor (all None)
-    model = IntegrationUpdate()
-    assert isinstance(model, IntegrationUpdate)
+    model = IntegrationUpdateAdapter()
+    assert isinstance(model, IntegrationUpdateAdapter)
 
     # Test constructor with all known parameters
-    model = IntegrationUpdate(
+    model = IntegrationUpdateAdapter(
         category=valid_category_values[0],
         configuration=valid_configuration,
         description=valid_description,
         enabled=valid_enabled,
         type=valid_type,
     )
-    assert isinstance(model, IntegrationUpdate)
+    assert isinstance(model, IntegrationUpdateAdapter)
 
 
 def test_all_required_fields_exist():
     """Test that all expected fields exist as properties."""
-    model = IntegrationUpdate()
+    model = IntegrationUpdateAdapter()
 
     # Verify all known fields exist
     required_fields = ["category", "configuration", "description", "enabled", "type"]
@@ -80,7 +80,7 @@ def test_field_types_unchanged(
     valid_type,
 ):
     """Test that field types remain consistent."""
-    model = IntegrationUpdate()
+    model = IntegrationUpdateAdapter()
 
     # Test category (str)
     model.category = valid_category_values[0]
@@ -105,7 +105,7 @@ def test_field_types_unchanged(
 
 def test_category_enum_validation_unchanged(valid_category_values):
     """Test that category enum validation rules remain the same."""
-    model = IntegrationUpdate()
+    model = IntegrationUpdateAdapter()
 
     # Test all known valid values still work
     for valid_value in valid_category_values:
@@ -121,7 +121,7 @@ def test_category_enum_validation_unchanged(valid_category_values):
 
 def test_category_enum_all_original_values_supported():
     """Test that all original enum values are still supported."""
-    model = IntegrationUpdate()
+    model = IntegrationUpdateAdapter()
 
     # These specific values must always work (backward compatibility)
     original_values = ["API", "AI_MODEL", "VECTOR_DB", "RELATIONAL_DB"]
@@ -133,7 +133,7 @@ def test_category_enum_all_original_values_supported():
 
 def test_field_assignment_behavior_unchanged():
     """Test that field assignment behavior remains consistent."""
-    model = IntegrationUpdate()
+    model = IntegrationUpdateAdapter()
 
     # Test None assignment for fields that allow it
     model.configuration = None
@@ -156,7 +156,7 @@ def test_field_assignment_behavior_unchanged():
 def test_constructor_parameter_names_unchanged():
     """Test that constructor parameter names haven't changed."""
     # This should work without TypeError
-    model = IntegrationUpdate(
+    model = IntegrationUpdateAdapter(
         category="API",
         configuration={"test": "value"},
         description="test desc",
@@ -169,11 +169,11 @@ def test_constructor_parameter_names_unchanged():
 def test_swagger_metadata_exists():
     """Test that required swagger metadata still exists."""
     # These class attributes must exist for backward compatibility
-    assert hasattr(IntegrationUpdate, "swagger_types")
-    assert hasattr(IntegrationUpdate, "attribute_map")
+    assert hasattr(IntegrationUpdateAdapter, "swagger_types")
+    assert hasattr(IntegrationUpdateAdapter, "attribute_map")
 
     # Verify known fields are in swagger_types
-    swagger_types = IntegrationUpdate.swagger_types
+    swagger_types = IntegrationUpdateAdapter.swagger_types
     expected_fields = ["category", "configuration", "description", "enabled", "type"]
 
     for field in expected_fields:
@@ -182,7 +182,7 @@ def test_swagger_metadata_exists():
 
 def test_object_methods_exist():
     """Test that required object methods still exist."""
-    model = IntegrationUpdate()
+    model = IntegrationUpdateAdapter()
 
     # These methods must exist for backward compatibility
     required_methods = ["to_dict", "to_str", "__repr__", "__eq__", "__ne__"]
@@ -194,7 +194,7 @@ def test_object_methods_exist():
 
 def test_to_dict_method_behavior():
     """Test that to_dict method behavior is preserved."""
-    model = IntegrationUpdate(
+    model = IntegrationUpdateAdapter(
         category="API",
         configuration={"test": "value"},
         description="test desc",
@@ -216,7 +216,7 @@ def test_to_dict_method_behavior():
 def test_constructor_with_none_values():
     """Test that constructor accepts None for all parameters."""
     # Constructor should accept None for all parameters (no validation during init)
-    model = IntegrationUpdate(
+    model = IntegrationUpdateAdapter(
         category=None, configuration=None, description=None, enabled=None, type=None
     )
 
@@ -230,9 +230,9 @@ def test_constructor_with_none_values():
 
 def test_equality_comparison():
     """Test that object equality comparison still works."""
-    model1 = IntegrationUpdate(category="API", enabled=True)
-    model2 = IntegrationUpdate(category="API", enabled=True)
-    model3 = IntegrationUpdate(category="AI_MODEL", enabled=True)
+    model1 = IntegrationUpdateAdapter(category="API", enabled=True)
+    model2 = IntegrationUpdateAdapter(category="API", enabled=True)
+    model3 = IntegrationUpdateAdapter(category="AI_MODEL", enabled=True)
 
     # Equal objects should be equal
     assert model1 == model2
@@ -245,7 +245,7 @@ def test_equality_comparison():
 
 def test_configuration_dict_type_handling():
     """Test that configuration field properly handles dict types."""
-    model = IntegrationUpdate()
+    model = IntegrationUpdateAdapter()
 
     # Test various dict configurations
     test_configs = [
@@ -263,7 +263,7 @@ def test_configuration_dict_type_handling():
 
 def test_boolean_field_handling():
     """Test that enabled field properly handles boolean values."""
-    model = IntegrationUpdate()
+    model = IntegrationUpdateAdapter()
 
     # Test boolean values
     model.enabled = True

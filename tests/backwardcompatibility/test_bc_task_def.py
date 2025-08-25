@@ -1,13 +1,13 @@
 import pytest
 
-from conductor.client.http.models.schema_def import SchemaDef
-from conductor.client.http.models.task_def import TaskDef
+from conductor.client.adapters.models.schema_def_adapter import SchemaDefAdapter
+from conductor.client.adapters.models.task_def_adapter import TaskDefAdapter
 
 
 @pytest.fixture
 def valid_schema_def(mocker):
     """Set up test fixture with valid schema definition."""
-    return mocker.Mock(spec=SchemaDef)
+    return mocker.Mock(spec=SchemaDefAdapter)
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def valid_retry_logics():
 def test_constructor_with_minimal_required_fields():
     """Test that constructor works with minimal required fields."""
     # Based on analysis: name and timeout_seconds appear to be required
-    task_def = TaskDef(name="test_task", timeout_seconds=60)
+    task_def = TaskDefAdapter(name="test_task", timeout_seconds=60)
 
     assert task_def.name == "test_task"
     assert task_def.timeout_seconds == 60
@@ -33,7 +33,7 @@ def test_constructor_with_minimal_required_fields():
 
 def test_constructor_with_all_existing_fields(valid_schema_def):
     """Test constructor with all existing fields to ensure they still work."""
-    task_def = TaskDef(
+    task_def = TaskDefAdapter(
         owner_app="test_app",
         create_time=1234567890,
         update_time=1234567891,
@@ -95,7 +95,7 @@ def test_constructor_with_all_existing_fields(valid_schema_def):
 
 def test_all_existing_properties_exist():
     """Verify all existing properties still exist and are accessible."""
-    task_def = TaskDef(name="test", timeout_seconds=60)
+    task_def = TaskDefAdapter(name="test", timeout_seconds=60)
 
     # Test that all existing properties exist (both getters and setters)
     existing_properties = [
@@ -162,14 +162,14 @@ def test_existing_field_types_unchanged():
         "owner_email": str,
         "poll_timeout_seconds": int,
         "backoff_scale_factor": int,
-        "input_schema": SchemaDef,
-        "output_schema": SchemaDef,
+        "input_schema": SchemaDefAdapter,
+        "output_schema": SchemaDefAdapter,
         "enforce_schema": bool,
     }
 
     # Check that all expected fields exist in swagger_types
     for field in expected_types.keys():
-        assert field in TaskDef.swagger_types, f"Missing field {field} in swagger_types"
+        assert field in TaskDefAdapter.swagger_types, f"Missing field {field} in swagger_types"
 
         # This would need additional logic to check type compatibility properly
         # For now, just ensure the field exists
@@ -177,7 +177,7 @@ def test_existing_field_types_unchanged():
 
 def test_timeout_policy_enum_values_preserved(valid_timeout_policies):
     """Test that existing timeout_policy enum values still work."""
-    task_def = TaskDef(name="test", timeout_seconds=60)
+    task_def = TaskDefAdapter(name="test", timeout_seconds=60)
 
     for valid_value in valid_timeout_policies:
         # Test setter validation
@@ -187,7 +187,7 @@ def test_timeout_policy_enum_values_preserved(valid_timeout_policies):
 
 def test_timeout_policy_invalid_values_rejected():
     """Test that invalid timeout_policy values are still rejected."""
-    task_def = TaskDef(name="test", timeout_seconds=60)
+    task_def = TaskDefAdapter(name="test", timeout_seconds=60)
 
     invalid_values = ["INVALID", "invalid", "", None, 123]
     for invalid_value in invalid_values:
@@ -197,7 +197,7 @@ def test_timeout_policy_invalid_values_rejected():
 
 def test_retry_logic_enum_values_preserved(valid_retry_logics):
     """Test that existing retry_logic enum values still work."""
-    task_def = TaskDef(name="test", timeout_seconds=60)
+    task_def = TaskDefAdapter(name="test", timeout_seconds=60)
 
     for valid_value in valid_retry_logics:
         # Test setter validation
@@ -207,7 +207,7 @@ def test_retry_logic_enum_values_preserved(valid_retry_logics):
 
 def test_retry_logic_invalid_values_rejected():
     """Test that invalid retry_logic values are still rejected."""
-    task_def = TaskDef(name="test", timeout_seconds=60)
+    task_def = TaskDefAdapter(name="test", timeout_seconds=60)
 
     invalid_values = ["INVALID", "invalid", "", None, 123]
     for invalid_value in invalid_values:
@@ -249,16 +249,16 @@ def test_attribute_map_unchanged():
 
     for python_name, json_name in expected_attribute_map.items():
         assert (
-            python_name in TaskDef.attribute_map
+            python_name in TaskDefAdapter.attribute_map
         ), f"Missing attribute mapping for {python_name}"
         assert (
-            TaskDef.attribute_map[python_name] == json_name
+            TaskDefAdapter.attribute_map[python_name] == json_name
         ), f"Changed attribute mapping for {python_name}"
 
 
 def test_to_dict_method_exists_and_works(valid_schema_def):
     """Test that to_dict method exists and produces expected structure."""
-    task_def = TaskDef(
+    task_def = TaskDefAdapter(
         name="test_task",
         timeout_seconds=60,
         description="Test description",
@@ -279,7 +279,7 @@ def test_to_dict_method_exists_and_works(valid_schema_def):
 
 def test_to_str_method_exists_and_works():
     """Test that to_str method exists and works."""
-    task_def = TaskDef(name="test", timeout_seconds=60)
+    task_def = TaskDefAdapter(name="test", timeout_seconds=60)
 
     result = task_def.to_str()
     assert isinstance(result, str)
@@ -288,9 +288,9 @@ def test_to_str_method_exists_and_works():
 
 def test_equality_methods_exist_and_work():
     """Test that __eq__ and __ne__ methods exist and work correctly."""
-    task_def1 = TaskDef(name="test", timeout_seconds=60)
-    task_def2 = TaskDef(name="test", timeout_seconds=60)
-    task_def3 = TaskDef(name="different", timeout_seconds=60)
+    task_def1 = TaskDefAdapter(name="test", timeout_seconds=60)
+    task_def2 = TaskDefAdapter(name="test", timeout_seconds=60)
+    task_def3 = TaskDefAdapter(name="different", timeout_seconds=60)
 
     # Test equality
     assert task_def1 == task_def2
@@ -303,7 +303,7 @@ def test_equality_methods_exist_and_work():
 
 def test_repr_method_exists_and_works():
     """Test that __repr__ method exists and works."""
-    task_def = TaskDef(name="test", timeout_seconds=60)
+    task_def = TaskDefAdapter(name="test", timeout_seconds=60)
 
     result = repr(task_def)
     assert isinstance(result, str)
@@ -311,7 +311,7 @@ def test_repr_method_exists_and_works():
 
 def test_schema_properties_behavior(valid_schema_def):
     """Test that schema-related properties work as expected."""
-    task_def = TaskDef(name="test", timeout_seconds=60)
+    task_def = TaskDefAdapter(name="test", timeout_seconds=60)
 
     # Test input_schema
     task_def.input_schema = valid_schema_def
@@ -331,7 +331,7 @@ def test_schema_properties_behavior(valid_schema_def):
 
 def test_list_and_dict_field_types():
     """Test that list and dict fields accept correct types."""
-    task_def = TaskDef(name="test", timeout_seconds=60)
+    task_def = TaskDefAdapter(name="test", timeout_seconds=60)
 
     # Test list fields
     task_def.input_keys = ["key1", "key2"]
@@ -348,7 +348,7 @@ def test_list_and_dict_field_types():
 
 def test_numeric_field_types():
     """Test that numeric fields accept correct types."""
-    task_def = TaskDef(name="test", timeout_seconds=60)
+    task_def = TaskDefAdapter(name="test", timeout_seconds=60)
 
     numeric_fields = [
         "create_time",
@@ -371,7 +371,7 @@ def test_numeric_field_types():
 
 def test_string_field_types():
     """Test that string fields accept correct types."""
-    task_def = TaskDef(name="test", timeout_seconds=60)
+    task_def = TaskDefAdapter(name="test", timeout_seconds=60)
 
     string_fields = [
         "owner_app",

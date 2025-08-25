@@ -96,4 +96,24 @@ class StateChangeConfig:
         return not self == other
 
 
-class StateChangeEventAdapter(StateChangeEvent): ...
+class StateChangeEventAdapter(StateChangeEvent):
+    def __init__(self, payload=None, type=None):  # noqa: E501
+        """StateChangeEvent - a model defined in Swagger"""  # noqa: E501
+        self._payload = None
+        self._type = None
+        self.discriminator = None
+        self.payload = payload
+        self.type = type
+
+    @StateChangeEvent.payload.setter
+    def payload(self, payload):
+        """Sets the payload of this StateChangeEvent.
+
+
+        :param payload: The payload of this StateChangeEvent.  # noqa: E501
+        :type: dict(str, object)
+        """
+        if payload is None:
+            raise ValueError("Invalid value for `payload`, must not be `None`")  # noqa: E501
+
+        self._payload = payload

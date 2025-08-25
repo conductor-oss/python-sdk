@@ -3,7 +3,7 @@ import json
 import pytest
 
 # Import the model - adjust path as needed
-from conductor.client.http.models.tag_object import TagObject
+from conductor.client.adapters.models.tag_object_adapter import TagObjectAdapter
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def valid_rate_limit_tag():
 
 def test_constructor_all_fields_none_should_work():
     """Test that constructor works with all None values (current behavior)."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
     assert tag.key is None
     assert tag.type is None
     assert tag.value is None
@@ -36,7 +36,7 @@ def test_constructor_all_fields_none_should_work():
 
 def test_constructor_with_valid_parameters():
     """Test constructor with valid parameters."""
-    tag = TagObject(key="test_key", type="METADATA", value="test_value")
+    tag = TagObjectAdapter(key="test_key", type="METADATA", value="test_value")
     assert tag.key == "test_key"
     assert tag.type == "METADATA"
     assert tag.value == "test_value"
@@ -45,24 +45,24 @@ def test_constructor_with_valid_parameters():
 def test_constructor_supports_all_existing_parameters():
     """Verify all existing constructor parameters are still supported."""
     # Test that constructor accepts these specific parameter names
-    tag = TagObject(key="k", type="METADATA", value="v")
+    tag = TagObjectAdapter(key="k", type="METADATA", value="v")
     assert tag is not None
 
     # Test each parameter individually
-    tag1 = TagObject(key="test")
+    tag1 = TagObjectAdapter(key="test")
     assert tag1.key == "test"
 
-    tag2 = TagObject(type="RATE_LIMIT")
+    tag2 = TagObjectAdapter(type="RATE_LIMIT")
     assert tag2.type == "RATE_LIMIT"
 
-    tag3 = TagObject(value=42)
+    tag3 = TagObjectAdapter(value=42)
     assert tag3.value == 42
 
 
 # Field Existence Tests
 def test_key_field_exists():
     """Verify 'key' field exists and is accessible."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
     assert hasattr(tag, "key")
     assert hasattr(tag, "_key")
     # Test getter
@@ -74,7 +74,7 @@ def test_key_field_exists():
 
 def test_type_field_exists():
     """Verify 'type' field exists and is accessible."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
     assert hasattr(tag, "type")
     assert hasattr(tag, "_type")
     # Test getter
@@ -86,7 +86,7 @@ def test_type_field_exists():
 
 def test_value_field_exists():
     """Verify 'value' field exists and is accessible."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
     assert hasattr(tag, "value")
     assert hasattr(tag, "_value")
     # Test getter
@@ -99,7 +99,7 @@ def test_value_field_exists():
 # Type Validation Tests
 def test_key_accepts_string_type():
     """Verify key field accepts string values."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
     tag.key = "string_value"
     assert tag.key == "string_value"
     assert isinstance(tag.key, str)
@@ -107,14 +107,14 @@ def test_key_accepts_string_type():
 
 def test_key_accepts_none():
     """Verify key field accepts None."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
     tag.key = None
     assert tag.key is None
 
 
 def test_value_accepts_various_types():
     """Verify value field accepts various object types."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
 
     # String
     tag.value = "string"
@@ -140,21 +140,21 @@ def test_value_accepts_various_types():
 # Enum Validation Tests
 def test_type_accepts_metadata_enum_value():
     """Verify 'METADATA' enum value is still supported."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
     tag.type = "METADATA"
     assert tag.type == "METADATA"
 
 
 def test_type_accepts_rate_limit_enum_value():
     """Verify 'RATE_LIMIT' enum value is still supported."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
     tag.type = "RATE_LIMIT"
     assert tag.type == "RATE_LIMIT"
 
 
 def test_type_rejects_invalid_enum_values():
     """Verify type field validation still works for invalid values."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
     with pytest.raises(ValueError, match="Invalid") as excinfo:
         tag.type = "INVALID_TYPE"
 
@@ -167,7 +167,7 @@ def test_type_rejects_invalid_enum_values():
 
 def test_type_setter_rejects_none():
     """Verify type setter rejects None (current behavior)."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
     with pytest.raises(ValueError, match="Invalid") as excinfo:
         tag.type = None
 
@@ -179,11 +179,11 @@ def test_type_setter_rejects_none():
 def test_type_none_allowed_via_constructor_only():
     """Verify None is allowed via constructor but not setter."""
     # Constructor allows None
-    tag = TagObject(type=None)
+    tag = TagObjectAdapter(type=None)
     assert tag.type is None
 
     # But setter rejects None
-    tag2 = TagObject()
+    tag2 = TagObjectAdapter()
     with pytest.raises(ValueError, match="Invalid"):
         tag2.type = None
 
@@ -191,7 +191,7 @@ def test_type_none_allowed_via_constructor_only():
 # Method Existence Tests
 def test_to_dict_method_exists():
     """Verify to_dict method exists and works."""
-    tag = TagObject(key="test", type="METADATA", value="val")
+    tag = TagObjectAdapter(key="test", type="METADATA", value="val")
     assert hasattr(tag, "to_dict")
     result = tag.to_dict()
     assert isinstance(result, dict)
@@ -202,7 +202,7 @@ def test_to_dict_method_exists():
 
 def test_to_str_method_exists():
     """Verify to_str method exists and works."""
-    tag = TagObject(key="test", type="METADATA", value="val")
+    tag = TagObjectAdapter(key="test", type="METADATA", value="val")
     assert hasattr(tag, "to_str")
     result = tag.to_str()
     assert isinstance(result, str)
@@ -210,16 +210,16 @@ def test_to_str_method_exists():
 
 def test_repr_method_exists():
     """Verify __repr__ method exists and works."""
-    tag = TagObject(key="test", type="METADATA", value="val")
+    tag = TagObjectAdapter(key="test", type="METADATA", value="val")
     result = repr(tag)
     assert isinstance(result, str)
 
 
 def test_eq_method_exists():
     """Verify __eq__ method exists and works."""
-    tag1 = TagObject(key="test", type="METADATA", value="val")
-    tag2 = TagObject(key="test", type="METADATA", value="val")
-    tag3 = TagObject(key="different", type="METADATA", value="val")
+    tag1 = TagObjectAdapter(key="test", type="METADATA", value="val")
+    tag2 = TagObjectAdapter(key="test", type="METADATA", value="val")
+    tag3 = TagObjectAdapter(key="different", type="METADATA", value="val")
 
     assert tag1 == tag2
     assert tag1 != tag3
@@ -227,8 +227,8 @@ def test_eq_method_exists():
 
 def test_ne_method_exists():
     """Verify __ne__ method exists and works."""
-    tag1 = TagObject(key="test", type="METADATA", value="val")
-    tag2 = TagObject(key="different", type="METADATA", value="val")
+    tag1 = TagObjectAdapter(key="test", type="METADATA", value="val")
+    tag2 = TagObjectAdapter(key="different", type="METADATA", value="val")
 
     assert tag1 != tag2
     assert tag1 != tag2
@@ -237,8 +237,8 @@ def test_ne_method_exists():
 # Class Attributes Tests
 def test_swagger_types_attribute_exists():
     """Verify swagger_types class attribute exists with expected structure."""
-    assert hasattr(TagObject, "swagger_types")
-    swagger_types = TagObject.swagger_types
+    assert hasattr(TagObjectAdapter, "swagger_types")
+    swagger_types = TagObjectAdapter.swagger_types
 
     # Verify existing type mappings
     assert "key" in swagger_types
@@ -253,8 +253,8 @@ def test_swagger_types_attribute_exists():
 
 def test_attribute_map_exists():
     """Verify attribute_map class attribute exists with expected structure."""
-    assert hasattr(TagObject, "attribute_map")
-    attribute_map = TagObject.attribute_map
+    assert hasattr(TagObjectAdapter, "attribute_map")
+    attribute_map = TagObjectAdapter.attribute_map
 
     # Verify existing attribute mappings
     assert "key" in attribute_map
@@ -271,7 +271,7 @@ def test_attribute_map_exists():
 def test_complete_workflow_metadata_tag():
     """Test complete workflow with METADATA tag type."""
     # Create
-    tag = TagObject()
+    tag = TagObjectAdapter()
 
     # Set values
     tag.key = "environment"
@@ -296,7 +296,7 @@ def test_complete_workflow_metadata_tag():
 def test_complete_workflow_rate_limit_tag():
     """Test complete workflow with RATE_LIMIT tag type."""
     # Create with constructor
-    tag = TagObject(key="max_requests", type="RATE_LIMIT", value=1000)
+    tag = TagObjectAdapter(key="max_requests", type="RATE_LIMIT", value=1000)
 
     # Verify
     assert tag.key == "max_requests"
@@ -313,14 +313,14 @@ def test_complete_workflow_rate_limit_tag():
 
 def test_discriminator_attribute_exists():
     """Verify discriminator attribute exists and is properly initialized."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
     assert hasattr(tag, "discriminator")
     assert tag.discriminator is None
 
 
 def test_private_attributes_exist():
     """Verify private attributes are properly initialized."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
     assert hasattr(tag, "_key")
     assert hasattr(tag, "_type")
     assert hasattr(tag, "_value")
@@ -335,7 +335,7 @@ def test_private_attributes_exist():
 def test_json_serialization_compatibility():
     """Test that to_dict output is JSON serializable."""
 
-    tag = TagObject(
+    tag = TagObjectAdapter(
         key="test_key", type="METADATA", value={"nested": "data", "number": 42}
     )
 
@@ -353,10 +353,10 @@ def test_json_serialization_compatibility():
 
 def test_copy_and_modify_pattern():
     """Test common pattern of copying and modifying objects."""
-    original = TagObject(key="orig", type="METADATA", value="orig_val")
+    original = TagObjectAdapter(key="orig", type="METADATA", value="orig_val")
 
     # Create new instance with modified values
-    modified = TagObject(
+    modified = TagObjectAdapter(
         key=original.key + "_modified",
         type=original.type,
         value=original.value + "_modified",
@@ -373,7 +373,7 @@ def test_copy_and_modify_pattern():
 
 def test_edge_case_empty_string_values():
     """Test edge cases with empty string values."""
-    tag = TagObject()
+    tag = TagObjectAdapter()
 
     # Empty string key
     tag.key = ""

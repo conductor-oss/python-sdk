@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import SkipTaskRequest
+from conductor.client.adapters.models.skip_task_request_adapter import SkipTaskRequestAdapter
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def valid_task_output():
 
 def test_constructor_with_no_parameters():
     """Test that constructor works with no parameters (backward compatibility)."""
-    request = SkipTaskRequest()
+    request = SkipTaskRequestAdapter()
 
     # Verify default state
     assert request.task_input is None
@@ -34,7 +34,7 @@ def test_constructor_with_no_parameters():
 
 def test_constructor_with_task_input_only(valid_task_input):
     """Test constructor with only task_input parameter."""
-    request = SkipTaskRequest(task_input=valid_task_input)
+    request = SkipTaskRequestAdapter(task_input=valid_task_input)
 
     assert request.task_input == valid_task_input
     assert request.task_output is None
@@ -42,7 +42,7 @@ def test_constructor_with_task_input_only(valid_task_input):
 
 def test_constructor_with_task_output_only(valid_task_output):
     """Test constructor with only task_output parameter."""
-    request = SkipTaskRequest(task_output=valid_task_output)
+    request = SkipTaskRequestAdapter(task_output=valid_task_output)
 
     assert request.task_input is None
     assert request.task_output == valid_task_output
@@ -50,7 +50,7 @@ def test_constructor_with_task_output_only(valid_task_output):
 
 def test_constructor_with_both_parameters(valid_task_input, valid_task_output):
     """Test constructor with both parameters."""
-    request = SkipTaskRequest(
+    request = SkipTaskRequestAdapter(
         task_input=valid_task_input, task_output=valid_task_output
     )
 
@@ -60,7 +60,7 @@ def test_constructor_with_both_parameters(valid_task_input, valid_task_output):
 
 def test_task_input_property_exists():
     """Test that task_input property exists and is accessible."""
-    request = SkipTaskRequest()
+    request = SkipTaskRequestAdapter()
 
     # Property should exist and be gettable
     assert hasattr(request, "task_input")
@@ -69,7 +69,7 @@ def test_task_input_property_exists():
 
 def test_task_output_property_exists():
     """Test that task_output property exists and is accessible."""
-    request = SkipTaskRequest()
+    request = SkipTaskRequestAdapter()
 
     # Property should exist and be gettable
     assert hasattr(request, "task_output")
@@ -78,7 +78,7 @@ def test_task_output_property_exists():
 
 def test_task_input_setter_functionality(valid_task_input):
     """Test that task_input setter works correctly."""
-    request = SkipTaskRequest()
+    request = SkipTaskRequestAdapter()
 
     # Test setting valid dict
     request.task_input = valid_task_input
@@ -95,7 +95,7 @@ def test_task_input_setter_functionality(valid_task_input):
 
 def test_task_output_setter_functionality(valid_task_output):
     """Test that task_output setter works correctly."""
-    request = SkipTaskRequest()
+    request = SkipTaskRequestAdapter()
 
     # Test setting valid dict
     request.task_output = valid_task_output
@@ -112,7 +112,7 @@ def test_task_output_setter_functionality(valid_task_output):
 
 def test_task_input_type_compatibility():
     """Test that task_input accepts dict types as expected."""
-    request = SkipTaskRequest()
+    request = SkipTaskRequestAdapter()
 
     # Test various dict types that should be compatible
     test_inputs = [
@@ -129,7 +129,7 @@ def test_task_input_type_compatibility():
 
 def test_task_output_type_compatibility():
     """Test that task_output accepts dict types as expected."""
-    request = SkipTaskRequest()
+    request = SkipTaskRequestAdapter()
 
     # Test various dict types that should be compatible
     test_outputs = [
@@ -146,8 +146,8 @@ def test_task_output_type_compatibility():
 
 def test_swagger_types_attribute_exists():
     """Test that swagger_types class attribute exists and has expected structure."""
-    assert hasattr(SkipTaskRequest, "swagger_types")
-    swagger_types = SkipTaskRequest.swagger_types
+    assert hasattr(SkipTaskRequestAdapter, "swagger_types")
+    swagger_types = SkipTaskRequestAdapter.swagger_types
 
     # Verify expected fields exist in swagger_types
     assert "task_input" in swagger_types
@@ -160,8 +160,8 @@ def test_swagger_types_attribute_exists():
 
 def test_attribute_map_exists():
     """Test that attribute_map class attribute exists and has expected structure."""
-    assert hasattr(SkipTaskRequest, "attribute_map")
-    attribute_map = SkipTaskRequest.attribute_map
+    assert hasattr(SkipTaskRequestAdapter, "attribute_map")
+    attribute_map = SkipTaskRequestAdapter.attribute_map
 
     # Verify expected mappings exist
     assert "task_input" in attribute_map
@@ -174,7 +174,7 @@ def test_attribute_map_exists():
 
 def test_to_dict_method_exists_and_works(valid_task_input, valid_task_output):
     """Test that to_dict method exists and produces expected output."""
-    request = SkipTaskRequest(
+    request = SkipTaskRequestAdapter(
         task_input=valid_task_input, task_output=valid_task_output
     )
 
@@ -195,7 +195,7 @@ def test_to_dict_method_exists_and_works(valid_task_input, valid_task_output):
 
 def test_to_str_method_exists():
     """Test that to_str method exists and returns string."""
-    request = SkipTaskRequest()
+    request = SkipTaskRequestAdapter()
 
     assert hasattr(request, "to_str")
     result = request.to_str()
@@ -204,7 +204,7 @@ def test_to_str_method_exists():
 
 def test_repr_method_exists():
     """Test that __repr__ method exists and returns string."""
-    request = SkipTaskRequest()
+    request = SkipTaskRequestAdapter()
 
     result = repr(request)
     assert isinstance(result, str)
@@ -212,9 +212,9 @@ def test_repr_method_exists():
 
 def test_equality_methods_exist_and_work(valid_task_input, valid_task_output):
     """Test that equality methods exist and work correctly."""
-    request1 = SkipTaskRequest(task_input=valid_task_input)
-    request2 = SkipTaskRequest(task_input=valid_task_input)
-    request3 = SkipTaskRequest(task_output=valid_task_output)
+    request1 = SkipTaskRequestAdapter(task_input=valid_task_input)
+    request2 = SkipTaskRequestAdapter(task_input=valid_task_input)
+    request3 = SkipTaskRequestAdapter(task_output=valid_task_output)
 
     # Test equality
     assert request1 == request2
@@ -227,14 +227,14 @@ def test_equality_methods_exist_and_work(valid_task_input, valid_task_output):
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists (Swagger requirement)."""
-    request = SkipTaskRequest()
+    request = SkipTaskRequestAdapter()
     assert hasattr(request, "discriminator")
     assert request.discriminator is None
 
 
 def test_private_attributes_exist():
     """Test that private attributes exist (internal implementation)."""
-    request = SkipTaskRequest()
+    request = SkipTaskRequestAdapter()
 
     # These private attributes should exist for internal implementation
     assert hasattr(request, "_task_input")
@@ -243,7 +243,7 @@ def test_private_attributes_exist():
 
 def test_backward_compatible_dict_assignment():
     """Test assignment of various dict-like objects for backward compatibility."""
-    request = SkipTaskRequest()
+    request = SkipTaskRequestAdapter()
 
     # Test that we can assign different dict-like structures
     # that might have been valid in previous versions
@@ -269,7 +269,7 @@ def test_backward_compatible_dict_assignment():
 
 def test_none_assignment_preserved(valid_task_input, valid_task_output):
     """Test that None assignment behavior is preserved."""
-    request = SkipTaskRequest(
+    request = SkipTaskRequestAdapter(
         task_input=valid_task_input, task_output=valid_task_output
     )
 

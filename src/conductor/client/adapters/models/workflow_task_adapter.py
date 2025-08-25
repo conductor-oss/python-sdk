@@ -6,10 +6,30 @@ from conductor.client.http.models.workflow_task import WorkflowTask
 
 
 class WorkflowTaskAdapter(WorkflowTask):
-    pass
+    @WorkflowTask.workflow_task_type.setter
+    def workflow_task_type(self, workflow_task_type):
+        """Sets the workflow_task_type of this WorkflowTask.
 
 
-class CacheConfig:  # shared
+        :param workflow_task_type: The workflow_task_type of this WorkflowTask.  # noqa: E501
+        :type: str
+        """
+        self._workflow_task_type = workflow_task_type
+
+    @WorkflowTask.on_state_change.setter
+    def on_state_change(self, state_change):
+        """Sets the on_state_change of this WorkflowTask.
+
+
+        :param state_change: The on_state_change of this WorkflowTask.  # noqa: E501
+        :type: StateChangeConfig
+        """
+        self._on_state_change = {
+            state_change.type: state_change.events
+        }
+
+
+class CacheConfig:
     swagger_types: ClassVar[Dict[str, str]] = {"key": "str", "ttl_in_second": "int"}
 
     attribute_map: ClassVar[Dict[str, str]] = {

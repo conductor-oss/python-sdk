@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.action import Action
+from conductor.client.adapters.models.action_adapter import ActionAdapter
 
 
 @pytest.fixture
@@ -8,7 +8,7 @@ def baseline_swagger_types():
     """Baseline swagger types for backward compatibility testing."""
     return {
         "action": "str",
-        "start_workflow": "StartWorkflow",
+        "start_workflow": "StartWorkflowRequest",
         "complete_task": "TaskDetails",
         "fail_task": "TaskDetails",
         "expand_inline_json": "bool",
@@ -35,7 +35,7 @@ def baseline_allowed_action_values():
 
 def test_required_fields_exist(baseline_swagger_types):
     """Verify all baseline fields still exist in the model."""
-    action = Action()
+    action = ActionAdapter()
 
     # Check that all baseline swagger_types fields exist
     for field_name in baseline_swagger_types.keys():
@@ -47,7 +47,7 @@ def test_required_fields_exist(baseline_swagger_types):
 
 def test_swagger_types_compatibility(baseline_swagger_types):
     """Verify existing swagger_types haven't changed."""
-    current_swagger_types = Action.swagger_types
+    current_swagger_types = ActionAdapter.swagger_types
 
     # Check all baseline types are preserved
     for field_name, expected_type in baseline_swagger_types.items():
@@ -61,7 +61,7 @@ def test_swagger_types_compatibility(baseline_swagger_types):
 
 def test_attribute_map_compatibility(baseline_attribute_map):
     """Verify existing attribute_map hasn't changed."""
-    current_attribute_map = Action.attribute_map
+    current_attribute_map = ActionAdapter.attribute_map
 
     # Check all baseline mappings are preserved
     for field_name, expected_json_key in baseline_attribute_map.items():
@@ -77,14 +77,14 @@ def test_constructor_parameters_compatibility():
     """Verify constructor accepts all baseline parameters."""
     # Should be able to create Action with all baseline parameters
     try:
-        action = Action(
+        action = ActionAdapter(
             action="start_workflow",
             start_workflow=None,
             complete_task=None,
             fail_task=None,
             expand_inline_json=True,
         )
-        assert isinstance(action, Action)
+        assert isinstance(action, ActionAdapter)
     except TypeError as e:
         pytest.fail(
             f"Constructor signature changed - baseline parameters rejected: {e}"
@@ -95,10 +95,10 @@ def test_property_getters_exist(baseline_swagger_types):
     """Verify all baseline property getters still exist."""
     for field_name in baseline_swagger_types.keys():
         # Check getter property exists
-        assert hasattr(Action, field_name), f"Missing property getter: {field_name}"
+        assert hasattr(ActionAdapter, field_name), f"Missing property getter: {field_name}"
         # Check it's actually a property
         assert isinstance(
-            getattr(Action, field_name), property
+            getattr(ActionAdapter, field_name), property
         ), f"{field_name} is not a property"
 
 
@@ -106,13 +106,13 @@ def test_property_setters_exist(baseline_swagger_types):
     """Verify all baseline property setters still exist."""
     for field_name in baseline_swagger_types.keys():
         # Check setter exists by trying to access it
-        prop = getattr(Action, field_name)
+        prop = getattr(ActionAdapter, field_name)
         assert prop.fset is not None, f"Missing property setter: {field_name}"
 
 
 def test_action_enum_validation_compatibility(baseline_allowed_action_values):
     """Verify action field validation rules are preserved."""
-    action = Action()
+    action = ActionAdapter()
 
     # Test that baseline allowed values still work
     for allowed_value in baseline_allowed_action_values:
@@ -131,7 +131,7 @@ def test_action_enum_validation_compatibility(baseline_allowed_action_values):
 
 def test_field_type_assignments():
     """Verify baseline field types can still be assigned."""
-    action = Action()
+    action = ActionAdapter()
 
     # Test string assignment to action
     action.action = "start_workflow"
@@ -147,7 +147,7 @@ def test_field_type_assignments():
 
 def test_to_dict_method_compatibility(baseline_swagger_types):
     """Verify to_dict method still works and includes baseline fields."""
-    action = Action(action="complete_task", expand_inline_json=True)
+    action = ActionAdapter(action="complete_task", expand_inline_json=True)
 
     result_dict = action.to_dict()
 
@@ -165,7 +165,7 @@ def test_to_dict_method_compatibility(baseline_swagger_types):
 
 def test_to_str_method_compatibility():
     """Verify to_str method still works."""
-    action = Action(action="fail_task")
+    action = ActionAdapter(action="fail_task")
 
     try:
         str_result = action.to_str()
@@ -176,9 +176,9 @@ def test_to_str_method_compatibility():
 
 def test_equality_methods_compatibility():
     """Verify __eq__ and __ne__ methods still work."""
-    action1 = Action(action="start_workflow", expand_inline_json=True)
-    action2 = Action(action="start_workflow", expand_inline_json=True)
-    action3 = Action(action="complete_task", expand_inline_json=False)
+    action1 = ActionAdapter(action="start_workflow", expand_inline_json=True)
+    action2 = ActionAdapter(action="start_workflow", expand_inline_json=True)
+    action3 = ActionAdapter(action="complete_task", expand_inline_json=False)
 
     try:
         # Test equality
@@ -194,7 +194,7 @@ def test_equality_methods_compatibility():
 
 def test_repr_method_compatibility():
     """Verify __repr__ method still works."""
-    action = Action(action="start_workflow")
+    action = ActionAdapter(action="start_workflow")
 
     try:
         repr_result = repr(action)

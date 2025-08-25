@@ -4,14 +4,14 @@ import logging
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.api.workflow_resource_api import WorkflowResourceApi
-from conductor.client.http.models import SkipTaskRequest
-from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
-from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
-from conductor.client.http.models.workflow import Workflow
-from conductor.client.http.models.workflow_def import WorkflowDef
-from conductor.client.http.models.workflow_run import WorkflowRun
-from conductor.client.http.models.workflow_test_request import WorkflowTestRequest
+from conductor.client.adapters.api import WorkflowResourceApi
+from conductor.client.adapters.models.skip_task_request_adapter import SkipTaskRequestAdapter as SkipTaskRequest
+from conductor.client.adapters.models.rerun_workflow_request_adapter import RerunWorkflowRequestAdapter as RerunWorkflowRequest
+from conductor.client.adapters.models.start_workflow_request_adapter import StartWorkflowRequestAdapter as StartWorkflowRequest
+from conductor.client.adapters.models.workflow_adapter import WorkflowAdapter as Workflow
+from conductor.client.adapters.models.workflow_def_adapter import WorkflowDefAdapter as WorkflowDef
+from conductor.client.adapters.models.workflow_run_adapter import WorkflowRunAdapter as WorkflowRun
+from conductor.client.adapters.models.workflow_test_request_adapter import WorkflowTestRequestAdapter as WorkflowTestRequest
 from conductor.client.http.rest import ApiException
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 
@@ -162,13 +162,13 @@ def test_retry_workflow_with_resume_subworkflow_tasks(mocker, workflow_client):
 
 
 def test_terminate_workflow(mocker, workflow_client):
-    mock = mocker.patch.object(WorkflowResourceApi, "terminate")
+    mock = mocker.patch.object(WorkflowResourceApi, "terminate1")
     workflow_client.terminate_workflow(WORKFLOW_UUID)
     mock.assert_called_with(WORKFLOW_UUID)
 
 
 def test_terminate_workflow_with_reason(mocker, workflow_client):
-    mock = mocker.patch.object(WorkflowResourceApi, "terminate")
+    mock = mocker.patch.object(WorkflowResourceApi, "terminate1")
     reason = "Unit test failed"
     workflow_client.terminate_workflow(WORKFLOW_UUID, reason)
     mock.assert_called_with(WORKFLOW_UUID, reason=reason)
@@ -201,13 +201,13 @@ def test_get_workflow_non_existent(mocker, workflow_client):
 
 
 def test_delete_workflow(mocker, workflow_client):
-    mock = mocker.patch.object(WorkflowResourceApi, "delete")
+    mock = mocker.patch.object(WorkflowResourceApi, "delete1")
     workflow_client.delete_workflow(WORKFLOW_UUID)
     mock.assert_called_with(WORKFLOW_UUID, archive_workflow=True)
 
 
 def test_delete_workflow_without_archival(mocker, workflow_client):
-    mock = mocker.patch.object(WorkflowResourceApi, "delete")
+    mock = mocker.patch.object(WorkflowResourceApi, "delete1")
     workflow_client.delete_workflow(WORKFLOW_UUID, False)
     mock.assert_called_with(WORKFLOW_UUID, archive_workflow=False)
 

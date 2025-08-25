@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.task_summary import TaskSummary
+from conductor.client.adapters.models.task_summary_adapter import TaskSummaryAdapter
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def valid_data():
 
 def test_constructor_accepts_all_current_fields(valid_data):
     """Test that constructor accepts all current fields without error."""
-    task_summary = TaskSummary(**valid_data)
+    task_summary = TaskSummaryAdapter(**valid_data)
 
     # Verify all fields are set correctly
     assert task_summary.workflow_id == "wf_123"
@@ -57,7 +57,7 @@ def test_constructor_accepts_all_current_fields(valid_data):
 
 def test_constructor_with_no_arguments():
     """Test that constructor works with no arguments (all fields optional)."""
-    task_summary = TaskSummary()
+    task_summary = TaskSummaryAdapter()
 
     # All fields should be None initially
     assert task_summary.workflow_id is None
@@ -83,7 +83,7 @@ def test_constructor_with_no_arguments():
 
 def test_all_property_getters_exist(valid_data):
     """Test that all property getters exist and return correct types."""
-    task_summary = TaskSummary(**valid_data)
+    task_summary = TaskSummaryAdapter(**valid_data)
 
     # String properties
     assert isinstance(task_summary.workflow_id, str)
@@ -113,7 +113,7 @@ def test_all_property_getters_exist(valid_data):
 
 def test_all_property_setters_exist():
     """Test that all property setters exist and work correctly."""
-    task_summary = TaskSummary()
+    task_summary = TaskSummaryAdapter()
 
     # Test string setters
     task_summary.workflow_id = "new_wf_id"
@@ -174,7 +174,7 @@ def test_all_property_setters_exist():
 
 def test_status_enum_validation_all_allowed_values():
     """Test that status setter accepts all currently allowed enum values."""
-    task_summary = TaskSummary()
+    task_summary = TaskSummaryAdapter()
 
     allowed_statuses = [
         "IN_PROGRESS",
@@ -195,7 +195,7 @@ def test_status_enum_validation_all_allowed_values():
 
 def test_status_enum_validation_rejects_invalid_values():
     """Test that status setter rejects invalid enum values."""
-    task_summary = TaskSummary()
+    task_summary = TaskSummaryAdapter()
 
     invalid_statuses = [
         "INVALID_STATUS",
@@ -214,12 +214,12 @@ def test_status_enum_validation_rejects_invalid_values():
 def test_status_validation_in_constructor():
     """Test that status validation works in constructor."""
     # Valid status in constructor
-    task_summary = TaskSummary(status="COMPLETED")
+    task_summary = TaskSummaryAdapter(status="COMPLETED")
     assert task_summary.status == "COMPLETED"
 
     # Invalid status in constructor should raise ValueError
     with pytest.raises(ValueError, match="Invalid"):
-        TaskSummary(status="INVALID_STATUS")
+        TaskSummaryAdapter(status="INVALID_STATUS")
 
 
 def test_swagger_types_contains_minimum_required_fields():
@@ -250,11 +250,11 @@ def test_swagger_types_contains_minimum_required_fields():
     # Check that all required fields exist with correct types
     for field, expected_type in minimum_required_swagger_types.items():
         assert (
-            field in TaskSummary.swagger_types
+            field in TaskSummaryAdapter.swagger_types
         ), f"Required field '{field}' missing from swagger_types"
         assert (
-            TaskSummary.swagger_types[field] == expected_type
-        ), f"Field '{field}' has type '{TaskSummary.swagger_types[field]}', expected '{expected_type}'"
+            TaskSummaryAdapter.swagger_types[field] == expected_type
+        ), f"Field '{field}' has type '{TaskSummaryAdapter.swagger_types[field]}', expected '{expected_type}'"
 
 
 def test_attribute_map_contains_minimum_required_mappings():
@@ -285,16 +285,16 @@ def test_attribute_map_contains_minimum_required_mappings():
     # Check that all required mappings exist with correct values
     for field, expected_mapping in minimum_required_attribute_map.items():
         assert (
-            field in TaskSummary.attribute_map
+            field in TaskSummaryAdapter.attribute_map
         ), f"Required field '{field}' missing from attribute_map"
         assert (
-            TaskSummary.attribute_map[field] == expected_mapping
-        ), f"Field '{field}' maps to '{TaskSummary.attribute_map[field]}', expected '{expected_mapping}'"
+            TaskSummaryAdapter.attribute_map[field] == expected_mapping
+        ), f"Field '{field}' maps to '{TaskSummaryAdapter.attribute_map[field]}', expected '{expected_mapping}'"
 
 
 def test_to_dict_method_exists_and_works(valid_data):
     """Test that to_dict method exists and returns expected structure."""
-    task_summary = TaskSummary(**valid_data)
+    task_summary = TaskSummaryAdapter(**valid_data)
     result_dict = task_summary.to_dict()
 
     assert isinstance(result_dict, dict)
@@ -330,23 +330,23 @@ def test_to_dict_method_exists_and_works(valid_data):
 
 def test_to_str_method_exists(valid_data):
     """Test that to_str method exists."""
-    task_summary = TaskSummary(**valid_data)
+    task_summary = TaskSummaryAdapter(**valid_data)
     str_result = task_summary.to_str()
     assert isinstance(str_result, str)
 
 
 def test_repr_method_exists(valid_data):
     """Test that __repr__ method exists."""
-    task_summary = TaskSummary(**valid_data)
+    task_summary = TaskSummaryAdapter(**valid_data)
     repr_result = repr(task_summary)
     assert isinstance(repr_result, str)
 
 
 def test_equality_methods_exist(valid_data):
     """Test that __eq__ and __ne__ methods exist and work correctly."""
-    task_summary1 = TaskSummary(**valid_data)
-    task_summary2 = TaskSummary(**valid_data)
-    task_summary3 = TaskSummary(workflow_id="different_id")
+    task_summary1 = TaskSummaryAdapter(**valid_data)
+    task_summary2 = TaskSummaryAdapter(**valid_data)
+    task_summary3 = TaskSummaryAdapter(workflow_id="different_id")
 
     # Test equality
     assert task_summary1 == task_summary2
@@ -359,7 +359,7 @@ def test_equality_methods_exist(valid_data):
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists and is None."""
-    task_summary = TaskSummary()
+    task_summary = TaskSummaryAdapter()
     assert task_summary.discriminator is None
 
 
@@ -367,7 +367,7 @@ def test_backward_compatibility_field_count():
     """Test that the model has at least the expected number of fields."""
     # This test ensures no fields are removed
     expected_minimum_field_count = 19
-    actual_field_count = len(TaskSummary.swagger_types)
+    actual_field_count = len(TaskSummaryAdapter.swagger_types)
 
     assert actual_field_count >= expected_minimum_field_count, (
         f"Model has {actual_field_count} fields, expected at least {expected_minimum_field_count}. "
@@ -390,7 +390,7 @@ def test_backward_compatibility_status_enum_values():
         "SKIPPED",
     }
 
-    task_summary = TaskSummary()
+    task_summary = TaskSummaryAdapter()
 
     # Test that all expected values are still accepted
     for status in expected_minimum_status_values:
@@ -406,7 +406,7 @@ def test_backward_compatibility_status_enum_values():
 def test_new_fields_are_optional_and_backward_compatible(valid_data):
     """Test that any new fields added don't break existing functionality."""
     # Test that old code can still create instances without new fields
-    task_summary = TaskSummary(**valid_data)
+    task_summary = TaskSummaryAdapter(**valid_data)
 
     # Verify the object was created successfully
     assert task_summary is not None

@@ -3,8 +3,8 @@ import logging
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.api.schema_resource_api import SchemaResourceApi
-from conductor.client.http.models.schema_def import SchemaDef
+from conductor.client.adapters.api import SchemaResourceApi
+from conductor.client.adapters.models.schema_def_adapter import SchemaDefAdapter as SchemaDef
 from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
 
 SCHEMA_NAME = "ut_schema"

@@ -176,6 +176,27 @@ from conductor.client.adapters.models.poll_data_adapter import \
     PollDataAdapter as PollData
 from conductor.client.adapters.models.prompt_template_test_request_adapter import \
     PromptTemplateTestRequestAdapter as PromptTemplateTestRequest
+from conductor.client.adapters.models.rate_limit_adapter import \
+    RateLimitAdapter as RateLimit
+from conductor.client.adapters.models.rerun_workflow_request_adapter import \
+    RerunWorkflowRequestAdapter as RerunWorkflowRequest
+from conductor.client.adapters.models.response_adapter import \
+    ResponseAdapter as Response
+from conductor.client.adapters.models.task_adapter import TaskAdapter as Task
+from conductor.client.adapters.models.task_result_adapter import \
+    TaskResultAdapter as TaskResult
+from conductor.client.adapters.models.workflow_task_adapter import \
+    WorkflowTaskAdapter as WorkflowTask
+from conductor.client.adapters.models.upsert_user_request_adapter import \
+    UpsertUserRequestAdapter as UpsertUserRequest
+from conductor.client.adapters.models.prompt_template_adapter import \
+    PromptTemplateAdapter as PromptTemplate
+from conductor.client.adapters.models.workflow_schedule_adapter import \
+    WorkflowScheduleAdapter as WorkflowSchedule
+from conductor.client.adapters.models.workflow_tag_adapter import \
+    WorkflowTagAdapter as WorkflowTag
+from conductor.client.adapters.models.role_adapter import \
+    RoleAdapter as Role
 
 __all__ = [  # noqa: RUF022
     "Action",
@@ -269,4 +290,15 @@ __all__ = [  # noqa: RUF022
     "Permission",
     "PollData",
     "PromptTemplateTestRequest",
+    "RateLimit",
+    "RerunWorkflowRequest",
+    "Response",
+    "Task",
+    "TaskResult",
+    "WorkflowTask",
+    "UpsertUserRequest",
+    "PromptTemplate",
+    "WorkflowSchedule",
+    "WorkflowTag",
+    "Role",
 ]

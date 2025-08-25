@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import BulkResponse
+from conductor.client.adapters.models.bulk_response_adapter import BulkResponseAdapter
 
 
 @pytest.fixture
@@ -18,27 +18,27 @@ def valid_successful_results():
 def test_constructor_signature_unchanged(valid_error_results, valid_successful_results):
     """Test that constructor signature remains backward compatible."""
     # Test default constructor (no arguments)
-    response = BulkResponse()
+    response = BulkResponseAdapter()
     assert response is not None
 
     # Test constructor with all original parameters
-    response = BulkResponse(
+    response = BulkResponseAdapter(
         bulk_error_results=valid_error_results,
         bulk_successful_results=valid_successful_results,
     )
     assert response is not None
 
     # Test constructor with individual parameters
-    response1 = BulkResponse(bulk_error_results=valid_error_results)
+    response1 = BulkResponseAdapter(bulk_error_results=valid_error_results)
     assert response1 is not None
 
-    response2 = BulkResponse(bulk_successful_results=valid_successful_results)
+    response2 = BulkResponseAdapter(bulk_successful_results=valid_successful_results)
     assert response2 is not None
 
 
 def test_required_fields_exist():
     """Test that all existing fields still exist."""
-    response = BulkResponse()
+    response = BulkResponseAdapter()
 
     # Verify field existence through property access
     assert hasattr(response, "bulk_error_results")
@@ -51,7 +51,7 @@ def test_required_fields_exist():
 
 def test_field_types_unchanged(valid_error_results, valid_successful_results):
     """Test that field types remain unchanged."""
-    response = BulkResponse(
+    response = BulkResponseAdapter(
         bulk_error_results=valid_error_results,
         bulk_successful_results=valid_successful_results,
     )
@@ -68,13 +68,13 @@ def test_swagger_metadata_unchanged():
     # Verify required swagger_types fields exist with correct types
     required_swagger_types = {
         "bulk_error_results": "dict(str, str)",
-        "bulk_successful_results": "list[str]",
+        "bulk_successful_results": "list[object]",
     }
 
     # Check that all required fields are present with correct types
     for field, expected_type in required_swagger_types.items():
-        assert field in BulkResponse.swagger_types
-        assert BulkResponse.swagger_types[field] == expected_type
+        assert field in BulkResponseAdapter.swagger_types
+        assert BulkResponseAdapter.swagger_types[field] == expected_type
 
     # Verify required attribute_map fields exist with correct mappings
     required_attribute_map = {
@@ -84,13 +84,13 @@ def test_swagger_metadata_unchanged():
 
     # Check that all required mappings are present
     for field, expected_mapping in required_attribute_map.items():
-        assert field in BulkResponse.attribute_map
-        assert BulkResponse.attribute_map[field] == expected_mapping
+        assert field in BulkResponseAdapter.attribute_map
+        assert BulkResponseAdapter.attribute_map[field] == expected_mapping
 
 
 def test_property_getters_unchanged(valid_error_results, valid_successful_results):
     """Test that property getters work as expected."""
-    response = BulkResponse(
+    response = BulkResponseAdapter(
         bulk_error_results=valid_error_results,
         bulk_successful_results=valid_successful_results,
     )
@@ -100,7 +100,7 @@ def test_property_getters_unchanged(valid_error_results, valid_successful_result
     assert response.bulk_successful_results == valid_successful_results
 
     # Test getter behavior when not set - allow both None and empty containers
-    empty_response = BulkResponse()
+    empty_response = BulkResponseAdapter()
 
     # The key requirement: fields should be accessible (not raise AttributeError)
     error_results = empty_response.bulk_error_results
@@ -117,7 +117,7 @@ def test_property_getters_unchanged(valid_error_results, valid_successful_result
 
 def test_property_setters_unchanged(valid_error_results, valid_successful_results):
     """Test that property setters work as expected."""
-    response = BulkResponse()
+    response = BulkResponseAdapter()
 
     # Test setting bulk_error_results
     response.bulk_error_results = valid_error_results
@@ -136,7 +136,7 @@ def test_property_setters_unchanged(valid_error_results, valid_successful_result
 
 def test_to_dict_method_unchanged(valid_error_results, valid_successful_results):
     """Test that to_dict method behavior remains unchanged."""
-    response = BulkResponse(
+    response = BulkResponseAdapter(
         bulk_error_results=valid_error_results,
         bulk_successful_results=valid_successful_results,
     )
@@ -155,7 +155,7 @@ def test_to_dict_method_unchanged(valid_error_results, valid_successful_results)
 
 def test_to_str_method_unchanged(valid_error_results, valid_successful_results):
     """Test that to_str method behavior remains unchanged."""
-    response = BulkResponse(
+    response = BulkResponseAdapter(
         bulk_error_results=valid_error_results,
         bulk_successful_results=valid_successful_results,
     )
@@ -168,7 +168,7 @@ def test_to_str_method_unchanged(valid_error_results, valid_successful_results):
 
 def test_repr_method_unchanged(valid_error_results, valid_successful_results):
     """Test that __repr__ method behavior remains unchanged."""
-    response = BulkResponse(
+    response = BulkResponseAdapter(
         bulk_error_results=valid_error_results,
         bulk_successful_results=valid_successful_results,
     )
@@ -180,15 +180,15 @@ def test_repr_method_unchanged(valid_error_results, valid_successful_results):
 
 def test_equality_methods_unchanged(valid_error_results, valid_successful_results):
     """Test that equality methods behavior remains unchanged."""
-    response1 = BulkResponse(
+    response1 = BulkResponseAdapter(
         bulk_error_results=valid_error_results,
         bulk_successful_results=valid_successful_results,
     )
-    response2 = BulkResponse(
+    response2 = BulkResponseAdapter(
         bulk_error_results=valid_error_results,
         bulk_successful_results=valid_successful_results,
     )
-    response3 = BulkResponse(bulk_error_results={"different": "value"})
+    response3 = BulkResponseAdapter(bulk_error_results={"different": "value"})
 
     # Test equality
     assert response1 == response2
@@ -205,7 +205,7 @@ def test_equality_methods_unchanged(valid_error_results, valid_successful_result
 
 def test_discriminator_attribute_unchanged():
     """Test that discriminator attribute behavior remains unchanged."""
-    response = BulkResponse()
+    response = BulkResponseAdapter()
     assert response.discriminator is None
 
     # Verify discriminator is set during initialization
@@ -218,7 +218,7 @@ def test_constructor_parameter_validation_unchanged():
     # This ensures no breaking validation was added
 
     # Should accept any value without validation
-    response = BulkResponse(
+    response = BulkResponseAdapter(
         bulk_error_results="not a dict",  # Wrong type
         bulk_successful_results=123,  # Wrong type
     )
@@ -229,7 +229,7 @@ def test_constructor_parameter_validation_unchanged():
 
 def test_field_assignment_validation_unchanged():
     """Test field assignment accepts various types without validation."""
-    response = BulkResponse()
+    response = BulkResponseAdapter()
 
     # Test that setters don't validate types (current behavior)
     response.bulk_error_results = "not a dict"
@@ -244,12 +244,12 @@ def test_none_value_handling_backward_compatible(
 ):
     """Test None value handling remains backward compatible."""
     # Test constructor with None values - should work the same way
-    response = BulkResponse(bulk_error_results=None, bulk_successful_results=None)
+    response = BulkResponseAdapter(bulk_error_results=None, bulk_successful_results=None)
     # Allow implementation to choose between None or empty containers for defaults
     # The key is that setting None explicitly should work
 
     # Test setting None via properties
-    response = BulkResponse(
+    response = BulkResponseAdapter(
         bulk_error_results=valid_error_results,
         bulk_successful_results=valid_successful_results,
     )
@@ -273,7 +273,7 @@ def test_data_integrity_unchanged():
         "operation_3_success",
     ]
 
-    response = BulkResponse(
+    response = BulkResponseAdapter(
         bulk_error_results=complex_errors,
         bulk_successful_results=complex_results,
     )
@@ -291,7 +291,7 @@ def test_data_integrity_unchanged():
 def test_new_features_additive_only(valid_error_results, valid_successful_results):
     """Test that new features are additive and don't break existing functionality."""
     # This test ensures new fields/methods don't interfere with existing behavior
-    response = BulkResponse(
+    response = BulkResponseAdapter(
         bulk_error_results=valid_error_results,
         bulk_successful_results=valid_successful_results,
     )

@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import AuthorizationRequest
+from conductor.client.adapters.models.authorization_request_adapter import AuthorizationRequestAdapter
 
 
 @pytest.fixture
@@ -22,20 +22,20 @@ def mock_target(mocker):
 def test_class_exists_and_instantiable(mock_subject, mock_target):
     """Test that the AuthorizationRequest class exists and can be instantiated."""
     # Test constructor with valid access values (None causes validation error)
-    auth_request = AuthorizationRequest(
+    auth_request = AuthorizationRequestAdapter(
         subject=mock_subject, target=mock_target, access=["READ", "CREATE"]
     )
-    assert isinstance(auth_request, AuthorizationRequest)
+    assert isinstance(auth_request, AuthorizationRequestAdapter)
 
     # Test constructor with None for subject/target but valid access
-    auth_request = AuthorizationRequest(access=["READ"])
-    assert isinstance(auth_request, AuthorizationRequest)
+    auth_request = AuthorizationRequestAdapter(access=["READ"])
+    assert isinstance(auth_request, AuthorizationRequestAdapter)
 
 
 def test_required_attributes_exist():
     """Test that all expected attributes exist on the class."""
     # Create instance with valid access to avoid None validation error
-    auth_request = AuthorizationRequest(access=["READ"])
+    auth_request = AuthorizationRequestAdapter(access=["READ"])
 
     # Test core attributes exist
     assert hasattr(auth_request, "subject")
@@ -52,16 +52,16 @@ def test_required_attributes_exist():
 def test_class_metadata_exists():
     """Test that required class metadata exists and is correct."""
     # Test swagger_types exists and contains expected fields
-    assert hasattr(AuthorizationRequest, "swagger_types")
-    swagger_types = AuthorizationRequest.swagger_types
+    assert hasattr(AuthorizationRequestAdapter, "swagger_types")
+    swagger_types = AuthorizationRequestAdapter.swagger_types
 
     assert "subject" in swagger_types
     assert "target" in swagger_types
     assert "access" in swagger_types
 
     # Test attribute_map exists and contains expected mappings
-    assert hasattr(AuthorizationRequest, "attribute_map")
-    attribute_map = AuthorizationRequest.attribute_map
+    assert hasattr(AuthorizationRequestAdapter, "attribute_map")
+    attribute_map = AuthorizationRequestAdapter.attribute_map
 
     assert "subject" in attribute_map
     assert "target" in attribute_map
@@ -70,7 +70,7 @@ def test_class_metadata_exists():
 
 def test_field_types_unchanged():
     """Test that field types haven't changed."""
-    swagger_types = AuthorizationRequest.swagger_types
+    swagger_types = AuthorizationRequestAdapter.swagger_types
 
     # Verify exact type specifications
     assert swagger_types["subject"] == "SubjectRef"
@@ -80,7 +80,7 @@ def test_field_types_unchanged():
 
 def test_attribute_mapping_unchanged():
     """Test that attribute mappings haven't changed."""
-    attribute_map = AuthorizationRequest.attribute_map
+    attribute_map = AuthorizationRequestAdapter.attribute_map
 
     # Verify exact mappings
     assert attribute_map["subject"] == "subject"
@@ -91,7 +91,7 @@ def test_attribute_mapping_unchanged():
 def test_constructor_signature_compatibility(mock_subject, mock_target):
     """Test that constructor signature remains backward compatible."""
     # Test that constructor accepts all expected parameters
-    auth_request = AuthorizationRequest(
+    auth_request = AuthorizationRequestAdapter(
         subject=mock_subject, target=mock_target, access=["READ"]
     )
 
@@ -105,16 +105,16 @@ def test_constructor_optional_parameters(mock_subject):
     """Test constructor behavior with optional parameters."""
     # Test that None access causes validation error (current behavior)
     with pytest.raises(TypeError):
-        AuthorizationRequest()
+        AuthorizationRequestAdapter()
 
     # Test that partial parameters work when access is valid
-    auth_request = AuthorizationRequest(subject=mock_subject, access=["READ"])
+    auth_request = AuthorizationRequestAdapter(subject=mock_subject, access=["READ"])
     assert auth_request.subject == mock_subject
     assert auth_request.target is None
     assert auth_request.access == ["READ"]
 
     # Test with only access parameter
-    auth_request = AuthorizationRequest(access=["CREATE"])
+    auth_request = AuthorizationRequestAdapter(access=["CREATE"])
     assert auth_request.subject is None
     assert auth_request.target is None
     assert auth_request.access == ["CREATE"]
@@ -122,7 +122,7 @@ def test_constructor_optional_parameters(mock_subject):
 
 def test_property_getters_work(mock_subject, mock_target):
     """Test that all property getters work correctly."""
-    auth_request = AuthorizationRequest(
+    auth_request = AuthorizationRequestAdapter(
         subject=mock_subject, target=mock_target, access=["READ", "CREATE"]
     )
 
@@ -134,7 +134,7 @@ def test_property_getters_work(mock_subject, mock_target):
 
 def test_property_setters_work(mock_subject, mock_target):
     """Test that all property setters work correctly."""
-    auth_request = AuthorizationRequest(access=["READ"])
+    auth_request = AuthorizationRequestAdapter(access=["READ"])
 
     # Test setting subject
     auth_request.subject = mock_subject
@@ -151,7 +151,7 @@ def test_property_setters_work(mock_subject, mock_target):
 
 def test_access_validation_rules_preserved():
     """Test that access field validation rules are preserved."""
-    auth_request = AuthorizationRequest(access=["READ"])
+    auth_request = AuthorizationRequestAdapter(access=["READ"])
 
     # Test valid access values work
     valid_access_values = ["CREATE", "READ", "UPDATE", "DELETE", "EXECUTE"]
@@ -166,7 +166,7 @@ def test_access_validation_rules_preserved():
 
 def test_access_validation_rejects_invalid_values():
     """Test that access validation still rejects invalid values."""
-    auth_request = AuthorizationRequest(access=["READ"])
+    auth_request = AuthorizationRequestAdapter(access=["READ"])
 
     # Test invalid single values
     with pytest.raises(ValueError, match="Invalid"):
@@ -183,7 +183,7 @@ def test_access_validation_rejects_invalid_values():
 
 def test_access_validation_error_message_format():
     """Test that access validation error messages are preserved."""
-    auth_request = AuthorizationRequest(access=["READ"])
+    auth_request = AuthorizationRequestAdapter(access=["READ"])
 
     with pytest.raises(ValueError, match="Invalid") as context:
         auth_request.access = ["INVALID"]
@@ -195,7 +195,7 @@ def test_access_validation_error_message_format():
 
 def test_core_methods_exist(mock_subject, mock_target):
     """Test that core model methods exist and work."""
-    auth_request = AuthorizationRequest(
+    auth_request = AuthorizationRequestAdapter(
         subject=mock_subject, target=mock_target, access=["READ"]
     )
 
@@ -216,9 +216,9 @@ def test_core_methods_exist(mock_subject, mock_target):
 
 def test_equality_methods_exist():
     """Test that equality methods exist and work."""
-    auth_request1 = AuthorizationRequest(access=["READ"])
-    auth_request2 = AuthorizationRequest(access=["READ"])
-    auth_request3 = AuthorizationRequest(access=["CREATE"])
+    auth_request1 = AuthorizationRequestAdapter(access=["READ"])
+    auth_request2 = AuthorizationRequestAdapter(access=["READ"])
+    auth_request3 = AuthorizationRequestAdapter(access=["CREATE"])
 
     # Test equality
     assert hasattr(auth_request1, "__eq__")
@@ -233,7 +233,7 @@ def test_equality_methods_exist():
 
 def test_to_dict_structure_preserved(mock_subject, mock_target):
     """Test that to_dict output structure is preserved."""
-    auth_request = AuthorizationRequest(
+    auth_request = AuthorizationRequestAdapter(
         subject=mock_subject, target=mock_target, access=["READ", "CREATE"]
     )
 
@@ -250,14 +250,14 @@ def test_to_dict_structure_preserved(mock_subject, mock_target):
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists and is properly initialized."""
-    auth_request = AuthorizationRequest(access=["READ"])
+    auth_request = AuthorizationRequestAdapter(access=["READ"])
     assert hasattr(auth_request, "discriminator")
     assert auth_request.discriminator is None
 
 
 def test_backward_compatibility_with_existing_enum_values():
     """Test that all existing enum values for access field still work."""
-    auth_request = AuthorizationRequest(access=["READ"])
+    auth_request = AuthorizationRequestAdapter(access=["READ"])
 
     # Test each existing enum value individually
     existing_enum_values = ["CREATE", "READ", "UPDATE", "DELETE", "EXECUTE"]
@@ -274,7 +274,7 @@ def test_backward_compatibility_with_existing_enum_values():
 
 def test_field_assignment_behavior_preserved(mock_subject, mock_target):
     """Test that field assignment behavior is preserved."""
-    auth_request = AuthorizationRequest(access=["READ"])
+    auth_request = AuthorizationRequestAdapter(access=["READ"])
 
     # Test that None assignment works for subject/target
     auth_request.subject = None
@@ -301,13 +301,13 @@ def test_none_access_validation_behavior():
     """Test that None access value causes expected validation error."""
     # Test during construction
     with pytest.raises(TypeError) as excinfo:
-        AuthorizationRequest()
+        AuthorizationRequestAdapter()
 
     error_message = str(excinfo.value)
     assert "'NoneType' object is not iterable" in error_message
 
     # Test during assignment
-    auth_request = AuthorizationRequest(access=["READ"])
+    auth_request = AuthorizationRequestAdapter(access=["READ"])
     with pytest.raises(TypeError) as excinfo:
         auth_request.access = None
 

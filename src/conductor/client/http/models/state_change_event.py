@@ -85,6 +85,7 @@ class StateChangeEvent(object):
         :param type: The type of this StateChangeEvent.  # noqa: E501
         :type: str
         """
+        print(f"type: {type}")
         if type is None:
             raise ValueError("Invalid value for `type`, must not be `None`")  # noqa: E501
 

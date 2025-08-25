@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import WorkflowStatus
+from conductor.client.adapters.models.workflow_status_adapter import WorkflowStatusAdapter
 
 
 @pytest.fixture
@@ -38,23 +38,23 @@ def test_constructor_exists_and_accepts_expected_parameters(
 ):
     """Test that constructor exists and accepts all expected parameters"""
     # Should work with no parameters (all optional)
-    workflow_status = WorkflowStatus()
-    assert isinstance(workflow_status, WorkflowStatus)
+    workflow_status = WorkflowStatusAdapter()
+    assert isinstance(workflow_status, WorkflowStatusAdapter)
 
     # Should work with all parameters
-    workflow_status = WorkflowStatus(
+    workflow_status = WorkflowStatusAdapter(
         workflow_id=valid_workflow_id,
         correlation_id=valid_correlation_id,
         output=valid_output,
         variables=valid_variables,
         status="RUNNING",
     )
-    assert isinstance(workflow_status, WorkflowStatus)
+    assert isinstance(workflow_status, WorkflowStatusAdapter)
 
 
 def test_all_expected_fields_exist():
     """Test that all expected fields exist and are accessible"""
-    workflow_status = WorkflowStatus()
+    workflow_status = WorkflowStatusAdapter()
 
     # Test that all expected properties exist
     expected_properties = [
@@ -75,7 +75,7 @@ def test_field_getters_and_setters_work(
     valid_workflow_id, valid_correlation_id, valid_output, valid_variables
 ):
     """Test that field getters and setters work as expected"""
-    workflow_status = WorkflowStatus()
+    workflow_status = WorkflowStatusAdapter()
 
     # Test workflow_id
     workflow_status.workflow_id = valid_workflow_id
@@ -100,7 +100,7 @@ def test_field_getters_and_setters_work(
 
 def test_status_validation_rules_preserved(valid_status_values):
     """Test that status field validation rules are preserved"""
-    workflow_status = WorkflowStatus()
+    workflow_status = WorkflowStatusAdapter()
 
     # Test that all historically valid status values still work
     for status_value in valid_status_values:
@@ -119,17 +119,17 @@ def test_constructor_with_status_validation(valid_status_values):
     """Test that constructor properly validates status when provided"""
     # Valid status should work
     for status_value in valid_status_values:
-        workflow_status = WorkflowStatus(status=status_value)
+        workflow_status = WorkflowStatusAdapter(status=status_value)
         assert workflow_status.status == status_value
 
     # Invalid status should raise ValueError
     with pytest.raises(ValueError, match="Invalid"):
-        WorkflowStatus(status="INVALID_STATUS")
+        WorkflowStatusAdapter(status="INVALID_STATUS")
 
 
 def test_none_values_allowed_for_applicable_fields():
     """Test that None values are allowed for fields that support them"""
-    workflow_status = WorkflowStatus()
+    workflow_status = WorkflowStatusAdapter()
 
     # All fields should default to None
     assert workflow_status.workflow_id is None
@@ -151,7 +151,7 @@ def test_none_values_allowed_for_applicable_fields():
 
 def test_expected_methods_exist(valid_workflow_id):
     """Test that expected methods exist and work"""
-    workflow_status = WorkflowStatus(workflow_id=valid_workflow_id, status="COMPLETED")
+    workflow_status = WorkflowStatusAdapter(workflow_id=valid_workflow_id, status="COMPLETED")
 
     # Test methods exist
     expected_methods = [
@@ -172,7 +172,7 @@ def test_expected_methods_exist(valid_workflow_id):
 
 def test_is_completed_method_behavior():
     """Test that is_completed method works with expected status values"""
-    workflow_status = WorkflowStatus()
+    workflow_status = WorkflowStatusAdapter()
 
     # Test terminal statuses
     terminal_statuses = ["COMPLETED", "FAILED", "TIMED_OUT", "TERMINATED"]
@@ -193,7 +193,7 @@ def test_is_completed_method_behavior():
 
 def test_is_successful_method_behavior():
     """Test that is_successful method works with expected status values"""
-    workflow_status = WorkflowStatus()
+    workflow_status = WorkflowStatusAdapter()
 
     # Test successful statuses
     successful_statuses = ["PAUSED", "COMPLETED"]
@@ -214,7 +214,7 @@ def test_is_successful_method_behavior():
 
 def test_is_running_method_behavior():
     """Test that is_running method works with expected status values"""
-    workflow_status = WorkflowStatus()
+    workflow_status = WorkflowStatusAdapter()
 
     # Test running statuses
     running_statuses = ["RUNNING", "PAUSED"]
@@ -237,7 +237,7 @@ def test_to_dict_method_returns_expected_structure(
     valid_workflow_id, valid_correlation_id, valid_output, valid_variables
 ):
     """Test that to_dict method returns expected structure"""
-    workflow_status = WorkflowStatus(
+    workflow_status = WorkflowStatusAdapter(
         workflow_id=valid_workflow_id,
         correlation_id=valid_correlation_id,
         output=valid_output,
@@ -258,7 +258,7 @@ def test_to_dict_method_returns_expected_structure(
 
 def test_string_representations_work(valid_workflow_id):
     """Test that string representation methods work"""
-    workflow_status = WorkflowStatus(workflow_id=valid_workflow_id)
+    workflow_status = WorkflowStatusAdapter(workflow_id=valid_workflow_id)
 
     # to_str should return a string
     str_repr = workflow_status.to_str()
@@ -271,9 +271,9 @@ def test_string_representations_work(valid_workflow_id):
 
 def test_equality_methods_work(valid_workflow_id):
     """Test that equality methods work as expected"""
-    workflow_status1 = WorkflowStatus(workflow_id=valid_workflow_id, status="RUNNING")
-    workflow_status2 = WorkflowStatus(workflow_id=valid_workflow_id, status="RUNNING")
-    workflow_status3 = WorkflowStatus(workflow_id="different_id", status="RUNNING")
+    workflow_status1 = WorkflowStatusAdapter(workflow_id=valid_workflow_id, status="RUNNING")
+    workflow_status2 = WorkflowStatusAdapter(workflow_id=valid_workflow_id, status="RUNNING")
+    workflow_status3 = WorkflowStatusAdapter(workflow_id="different_id", status="RUNNING")
 
     # Equal objects should be equal
     assert workflow_status1 == workflow_status2
@@ -294,8 +294,8 @@ def test_attribute_map_preserved():
         "status": "status",
     }
 
-    assert hasattr(WorkflowStatus, "attribute_map")
-    assert WorkflowStatus.attribute_map == expected_attribute_map
+    assert hasattr(WorkflowStatusAdapter, "attribute_map")
+    assert WorkflowStatusAdapter.attribute_map == expected_attribute_map
 
 
 def test_swagger_types_preserved():
@@ -308,5 +308,5 @@ def test_swagger_types_preserved():
         "status": "str",
     }
 
-    assert hasattr(WorkflowStatus, "swagger_types")
-    assert WorkflowStatus.swagger_types == expected_swagger_types
+    assert hasattr(WorkflowStatusAdapter, "swagger_types")
+    assert WorkflowStatusAdapter.swagger_types == expected_swagger_types

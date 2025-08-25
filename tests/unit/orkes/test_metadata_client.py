@@ -4,10 +4,10 @@ import logging
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
-from conductor.client.http.models.tag_string import TagString
-from conductor.client.http.models.task_def import TaskDef
-from conductor.client.http.models.workflow_def import WorkflowDef
+from conductor.client.adapters.api import MetadataResourceApi
+from conductor.client.adapters.models.tag_string_adapter import TagStringAdapter as TagString
+from conductor.client.adapters.models.task_def_adapter import TaskDefAdapter as TaskDef
+from conductor.client.adapters.models.workflow_def_adapter import WorkflowDefAdapter as WorkflowDef
 from conductor.client.http.rest import ApiException
 from conductor.client.orkes.api.tags_api import TagsApi
 from conductor.client.orkes.models.metadata_tag import MetadataTag
@@ -66,14 +66,14 @@ def test_register_workflow_def_without_overwrite(mocker, metadata_client, workfl
 
 
 def test_update_workflow_def(mocker, metadata_client, workflow_def):
-    mock = mocker.patch.object(MetadataResourceApi, "update1")
+    mock = mocker.patch.object(MetadataResourceApi, "update")
     metadata_client.update_workflow_def(workflow_def)
     assert mock.called
     mock.assert_called_with([workflow_def], overwrite=True)
 
 
 def test_update_workflow_def_without_overwrite(mocker, metadata_client, workflow_def):
-    mock = mocker.patch.object(MetadataResourceApi, "update1")
+    mock = mocker.patch.object(MetadataResourceApi, "update")
     metadata_client.update_workflow_def(workflow_def, False)
     assert mock.called
     mock.assert_called_with([workflow_def], overwrite=False)
@@ -87,7 +87,7 @@ def test_unregister_workflow_def(mocker, metadata_client):
 
 
 def test_get_workflow_def_without_version(mocker, metadata_client, workflow_def):
-    mock = mocker.patch.object(MetadataResourceApi, "get")
+    mock = mocker.patch.object(MetadataResourceApi, "get1")
     mock.return_value = workflow_def
     wf = metadata_client.get_workflow_def(WORKFLOW_NAME)
     assert wf == workflow_def
@@ -96,7 +96,7 @@ def test_get_workflow_def_without_version(mocker, metadata_client, workflow_def)
 
 
 def test_get_workflow_def_with_version(mocker, metadata_client, workflow_def):
-    mock = mocker.patch.object(MetadataResourceApi, "get")
+    mock = mocker.patch.object(MetadataResourceApi, "get1")
     mock.return_value = workflow_def
     wf = metadata_client.get_workflow_def(WORKFLOW_NAME, 1)
     assert wf == workflow_def
@@ -104,7 +104,7 @@ def test_get_workflow_def_with_version(mocker, metadata_client, workflow_def):
 
 
 def test_get_workflow_def_non_existent(mocker, metadata_client, workflow_def):
-    mock = mocker.patch.object(MetadataResourceApi, "get")
+    mock = mocker.patch.object(MetadataResourceApi, "get1")
     message = f"No such workflow found by name:{WORKFLOW_NAME}, version: null"
     error_body = {"status": 404, "message": message}
     mock.side_effect = mocker.MagicMock(
@@ -115,7 +115,7 @@ def test_get_workflow_def_non_existent(mocker, metadata_client, workflow_def):
 
 
 def test_get_all_workflow_defs(mocker, metadata_client, workflow_def):
-    mock = mocker.patch.object(MetadataResourceApi, "get_all_workflows")
+    mock = mocker.patch.object(MetadataResourceApi, "get_workflow_defs")
     expected_workflow_defs_len = 2
     workflow_def2 = WorkflowDef(name="ut_wf_2", version=1)
     mock.return_value = [workflow_def, workflow_def2]
