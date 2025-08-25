@@ -3,15 +3,15 @@ from typing import Dict, List, Optional
 
 from conductor.client.authorization_client import AuthorizationClient
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.models.authorization_request import AuthorizationRequest
-from conductor.client.http.models.conductor_application import ConductorApplication
-from conductor.client.http.models.conductor_user import ConductorUser
-from conductor.client.http.models.create_or_update_application_request import CreateOrUpdateApplicationRequest
-from conductor.client.http.models.group import Group
-from conductor.client.http.models.subject_ref import SubjectRef
-from conductor.client.http.models.target_ref import TargetRef
-from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
-from conductor.client.http.models.upsert_user_request import UpsertUserRequest
+from conductor.client.adapters.models.authorization_request_adapter import AuthorizationRequestAdapter as AuthorizationRequest
+from conductor.client.adapters.models.conductor_application_adapter import ConductorApplicationAdapter as ConductorApplication
+from conductor.client.adapters.models.conductor_user_adapter import ConductorUserAdapter as ConductorUser
+from conductor.client.adapters.models.create_or_update_application_request_adapter import CreateOrUpdateApplicationRequestAdapter as CreateOrUpdateApplicationRequest
+from conductor.client.adapters.models.group_adapter import GroupAdapter as Group
+from conductor.client.adapters.models.subject_ref_adapter import SubjectRefAdapter as SubjectRef
+from conductor.client.adapters.models.target_ref_adapter import TargetRefAdapter as TargetRef
+from conductor.client.adapters.models.upsert_group_request_adapter import UpsertGroupRequestAdapter as UpsertGroupRequest
+from conductor.client.adapters.models.upsert_user_request_adapter import UpsertUserRequestAdapter as UpsertUserRequest
 from conductor.client.orkes.models.access_key import AccessKey
 from conductor.client.orkes.models.access_type import AccessType
 from conductor.client.orkes.models.created_access_key import CreatedAccessKey
@@ -59,13 +59,13 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
         self.applicationResourceApi.remove_role_from_application_user(application_id, role)
 
     def set_application_tags(self, tags: List[MetadataTag], application_id: str):
-        self.applicationResourceApi.put_tags_for_application(tags, application_id)
+        self.applicationResourceApi.put_tag_for_application(tags, application_id)
 
     def get_application_tags(self, application_id: str) -> List[MetadataTag]:
         return self.applicationResourceApi.get_tags_for_application(application_id)
 
     def delete_application_tags(self, tags: List[MetadataTag], application_id: str):
-        self.applicationResourceApi.delete_tags_for_application(tags, application_id)
+        self.applicationResourceApi.put_tag_for_application(tags, application_id)
 
     def create_access_key(self, application_id: str) -> CreatedAccessKey:
         key_obj = self.applicationResourceApi.create_access_key(application_id)
@@ -147,7 +147,7 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
         resp_obj = self.authorizationResourceApi.get_permissions(target.type.name, target.id)
         permissions = {}
         for access_type, subjects in resp_obj.items():
-            subject_list = [SubjectRef(sub["type"], sub["id"]) for sub in subjects]
+            subject_list = [SubjectRef(sub["id"], sub["type"]) for sub in subjects]
             permissions[access_type] = subject_list
         return permissions
 
@@ -155,7 +155,7 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
         granted_access_obj = self.groupResourceApi.get_granted_permissions1(group_id)
         granted_permissions = []
         for ga in granted_access_obj["grantedAccess"]:
-            target = TargetRef(ga["target"]["type"], ga["target"]["id"])
+            target = TargetRef(ga["target"]["id"], ga["target"]["type"])
             access = ga["access"]
             granted_permissions.append(GrantedPermission(target, access))
         return granted_permissions
@@ -164,7 +164,7 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
         granted_access_obj = self.userResourceApi.get_granted_permissions(user_id)
         granted_permissions = []
         for ga in granted_access_obj["grantedAccess"]:
-            target = TargetRef(ga["target"]["type"], ga["target"]["id"])
+            target = TargetRef(ga["target"]["id"], ga["target"]["type"])
             access = ga["access"]
             granted_permissions.append(GrantedPermission(target, access))
         return granted_permissions

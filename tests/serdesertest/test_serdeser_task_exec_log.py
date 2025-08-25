@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.task_exec_log import TaskExecLog
+from conductor.client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -17,7 +17,7 @@ def test_task_exec_log_serdeser(server_json):
     Test serialization and deserialization of TaskExecLog
     """
     # 1. Deserialize JSON into SDK model object
-    task_exec_log = TaskExecLog(
+    task_exec_log = TaskExecLogAdapter(
         log=server_json.get("log"),
         task_id=server_json.get("taskId"),
         created_time=server_json.get("createdTime"),

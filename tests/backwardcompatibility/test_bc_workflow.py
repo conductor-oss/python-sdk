@@ -1,12 +1,13 @@
 import pytest
 
-from conductor.client.http.models import Task, Workflow
+from conductor.client.adapters.models.task_adapter import TaskAdapter
+from conductor.client.adapters.models.workflow_adapter import WorkflowAdapter
 
 
 @pytest.fixture
 def sample_task(mocker):
     """Set up test fixture with sample task."""
-    task = mocker.Mock(spec=Task)
+    task = mocker.Mock(spec=TaskAdapter)
     task.status = "SCHEDULED"
     task.task_def_name = "test_task"
     task.workflow_task = mocker.Mock()
@@ -17,7 +18,7 @@ def sample_task(mocker):
 def test_constructor_accepts_all_current_parameters(sample_task, mocker):
     """Test that constructor accepts all current parameters without breaking."""
     # Test with all parameters that exist in current model
-    workflow = Workflow(
+    workflow = WorkflowAdapter(
         owner_app="test_app",
         create_time=1234567890,
         update_time=1234567891,
@@ -49,12 +50,12 @@ def test_constructor_accepts_all_current_parameters(sample_task, mocker):
     )
 
     # Should not raise any exceptions
-    assert isinstance(workflow, Workflow)
+    assert isinstance(workflow, WorkflowAdapter)
 
 
 def test_all_required_properties_exist():
     """Test that all expected properties exist and are accessible."""
-    workflow = Workflow()
+    workflow = WorkflowAdapter()
 
     # Core properties that must exist for backward compatibility
     required_properties = [
@@ -100,7 +101,7 @@ def test_all_required_properties_exist():
 
 def test_property_types_unchanged():
     """Test that property types haven't changed from expected types."""
-    workflow = Workflow()
+    workflow = WorkflowAdapter()
 
     # Expected types based on swagger_types
     expected_types = {
@@ -156,7 +157,7 @@ def test_property_types_unchanged():
 
 def test_status_enum_values_preserved():
     """Test that existing status enum values are still valid."""
-    workflow = Workflow()
+    workflow = WorkflowAdapter()
 
     # These status values must remain valid for backward compatibility
     valid_statuses = [
@@ -176,7 +177,7 @@ def test_status_enum_values_preserved():
 
 def test_status_validation_behavior_unchanged():
     """Test that status validation behavior hasn't changed."""
-    workflow = Workflow()
+    workflow = WorkflowAdapter()
 
     # Test if status validation occurs during assignment
     with pytest.raises(ValueError, match="Invalid") as ctx:
@@ -188,7 +189,7 @@ def test_status_validation_behavior_unchanged():
 
 def test_convenience_methods_exist():
     """Test that convenience methods exist and work as expected."""
-    workflow = Workflow()
+    workflow = WorkflowAdapter()
 
     # These methods must exist for backward compatibility
     required_methods = [
@@ -208,7 +209,7 @@ def test_convenience_methods_exist():
 
 def test_is_completed_method_behavior():
     """Test is_completed method behavior for different statuses."""
-    workflow = Workflow()
+    workflow = WorkflowAdapter()
 
     # Terminal statuses should return True
     terminal_statuses = ["COMPLETED", "FAILED", "TERMINATED", "TIMED_OUT"]
@@ -229,7 +230,7 @@ def test_is_completed_method_behavior():
 
 def test_is_successful_method_behavior():
     """Test is_successful method behavior."""
-    workflow = Workflow()
+    workflow = WorkflowAdapter()
 
     # Test what actually makes is_successful return True
     # First, let's test with a workflow that has successful completion
@@ -269,7 +270,7 @@ def test_is_successful_method_behavior():
 
 def test_is_running_method_behavior():
     """Test is_running method behavior."""
-    workflow = Workflow()
+    workflow = WorkflowAdapter()
 
     # Test what actually makes is_running return True
     workflow.status = "RUNNING"
@@ -307,7 +308,7 @@ def test_is_running_method_behavior():
 
 def test_current_task_property_exists(sample_task, mocker):
     """Test that current_task property exists and works."""
-    workflow = Workflow()
+    workflow = WorkflowAdapter()
 
     # Initialize tasks to avoid NoneType error before testing hasattr
     workflow.tasks = []
@@ -321,7 +322,7 @@ def test_current_task_property_exists(sample_task, mocker):
     assert workflow.current_task is None
 
     # Test with scheduled task
-    scheduled_task = mocker.Mock(spec=Task)
+    scheduled_task = mocker.Mock(spec=TaskAdapter)
     scheduled_task.status = "SCHEDULED"
     workflow.tasks = [scheduled_task]
 
@@ -339,9 +340,9 @@ def test_current_task_property_exists(sample_task, mocker):
         ), "current_task property descriptor must exist"
 
     # Test with multiple tasks
-    in_progress_task = mocker.Mock(spec=Task)
+    in_progress_task = mocker.Mock(spec=TaskAdapter)
     in_progress_task.status = "IN_PROGRESS"
-    completed_task = mocker.Mock(spec=Task)
+    completed_task = mocker.Mock(spec=TaskAdapter)
     completed_task.status = "COMPLETED"
 
     workflow.tasks = [completed_task, in_progress_task, scheduled_task]
@@ -360,7 +361,7 @@ def test_current_task_property_exists(sample_task, mocker):
 
 def test_get_task_method_exists_and_works(sample_task, mocker):
     """Test that get_task method exists and works with both parameters."""
-    workflow = Workflow()
+    workflow = WorkflowAdapter()
 
     # Should have get_task method
     assert hasattr(
@@ -368,7 +369,7 @@ def test_get_task_method_exists_and_works(sample_task, mocker):
     ), "get_task method must exist for backward compatibility"
 
     # Create mock task
-    task = mocker.Mock(spec=Task)
+    task = mocker.Mock(spec=TaskAdapter)
     task.task_def_name = "test_task"
     task.workflow_task = mocker.Mock()
     task.workflow_task.task_reference_name = "test_ref"
@@ -392,7 +393,7 @@ def test_get_task_method_exists_and_works(sample_task, mocker):
 
 def test_to_dict_method_works():
     """Test that to_dict method works and returns expected structure."""
-    workflow = Workflow(
+    workflow = WorkflowAdapter(
         workflow_id="test_123",
         workflow_name="test_workflow",
         status="RUNNING",
@@ -419,7 +420,7 @@ def test_to_dict_method_works():
 
 def test_to_str_method_works():
     """Test that to_str method works."""
-    workflow = Workflow(workflow_id="test_123")
+    workflow = WorkflowAdapter(workflow_id="test_123")
 
     try:
         result = workflow.to_str()
@@ -438,9 +439,9 @@ def test_to_str_method_works():
 
 def test_equality_methods_exist():
     """Test that __eq__ and __ne__ methods work."""
-    workflow1 = Workflow(workflow_id="test_123")
-    workflow2 = Workflow(workflow_id="test_123")
-    workflow3 = Workflow(workflow_id="test_456")
+    workflow1 = WorkflowAdapter(workflow_id="test_123")
+    workflow2 = WorkflowAdapter(workflow_id="test_123")
+    workflow3 = WorkflowAdapter(workflow_id="test_456")
 
     # Equal workflows
     assert workflow1 == workflow2
@@ -456,7 +457,7 @@ def test_equality_methods_exist():
 
 def test_attribute_map_structure_preserved():
     """Test that attribute_map structure is preserved for serialization."""
-    workflow = Workflow()
+    workflow = WorkflowAdapter()
 
     # attribute_map must exist for backward compatibility
     assert hasattr(
@@ -483,7 +484,7 @@ def test_attribute_map_structure_preserved():
 
 def test_swagger_types_structure_preserved():
     """Test that swagger_types structure is preserved for type validation."""
-    workflow = Workflow()
+    workflow = WorkflowAdapter()
 
     # swagger_types must exist for backward compatibility
     assert hasattr(

@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from conductor.client.http.models.search_result_workflow import SearchResultWorkflow
+from conductor.client.adapters.models.search_result_workflow_adapter import SearchResultWorkflowAdapter
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def valid_results(mock_workflow_1, mock_workflow_2):
 
 def test_constructor_with_no_parameters():
     """Test that constructor works with no parameters (current behavior)."""
-    model = SearchResultWorkflow()
+    model = SearchResultWorkflowAdapter()
 
     # Verify default values
     assert model.total_hits is None
@@ -46,7 +46,7 @@ def test_constructor_with_all_parameters(valid_results):
     total_hits = 100
     results = valid_results
 
-    model = SearchResultWorkflow(total_hits=total_hits, results=results)
+    model = SearchResultWorkflowAdapter(total_hits=total_hits, results=results)
 
     assert model.total_hits == total_hits
     assert model.results == results
@@ -55,19 +55,19 @@ def test_constructor_with_all_parameters(valid_results):
 def test_constructor_with_partial_parameters(valid_results):
     """Test constructor with partial parameters."""
     # Test with only total_hits
-    model1 = SearchResultWorkflow(total_hits=50)
+    model1 = SearchResultWorkflowAdapter(total_hits=50)
     assert model1.total_hits == 50
     assert model1.results is None
 
     # Test with only results
-    model2 = SearchResultWorkflow(results=valid_results)
+    model2 = SearchResultWorkflowAdapter(results=valid_results)
     assert model2.total_hits is None
     assert model2.results == valid_results
 
 
 def test_total_hits_property_exists():
     """Test that total_hits property exists and works correctly."""
-    model = SearchResultWorkflow()
+    model = SearchResultWorkflowAdapter()
 
     # Test getter
     assert model.total_hits is None
@@ -80,7 +80,7 @@ def test_total_hits_property_exists():
 
 def test_total_hits_type_validation():
     """Test total_hits accepts expected types (int)."""
-    model = SearchResultWorkflow()
+    model = SearchResultWorkflowAdapter()
 
     # Valid int values
     valid_values = [0, 1, 100, 999999, -1]  # Including edge cases
@@ -91,7 +91,7 @@ def test_total_hits_type_validation():
 
 def test_results_property_exists(valid_results):
     """Test that results property exists and works correctly."""
-    model = SearchResultWorkflow()
+    model = SearchResultWorkflowAdapter()
 
     # Test getter
     assert model.results is None
@@ -104,7 +104,7 @@ def test_results_property_exists(valid_results):
 
 def test_results_type_validation(mock_workflow_1, valid_results):
     """Test results accepts expected types (list[Workflow])."""
-    model = SearchResultWorkflow()
+    model = SearchResultWorkflowAdapter()
 
     # Valid list values
     valid_values = [
@@ -122,28 +122,28 @@ def test_swagger_types_attribute_exists():
     """Test that swagger_types class attribute exists with expected structure."""
     expected_swagger_types = {"total_hits": "int", "results": "list[Workflow]"}
 
-    assert hasattr(SearchResultWorkflow, "swagger_types")
-    assert SearchResultWorkflow.swagger_types == expected_swagger_types
+    assert hasattr(SearchResultWorkflowAdapter, "swagger_types")
+    assert SearchResultWorkflowAdapter.swagger_types == expected_swagger_types
 
 
 def test_attribute_map_exists():
     """Test that attribute_map class attribute exists with expected structure."""
     expected_attribute_map = {"total_hits": "totalHits", "results": "results"}
 
-    assert hasattr(SearchResultWorkflow, "attribute_map")
-    assert SearchResultWorkflow.attribute_map == expected_attribute_map
+    assert hasattr(SearchResultWorkflowAdapter, "attribute_map")
+    assert SearchResultWorkflowAdapter.attribute_map == expected_attribute_map
 
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists and is initialized correctly."""
-    model = SearchResultWorkflow()
+    model = SearchResultWorkflowAdapter()
     assert hasattr(model, "discriminator")
     assert model.discriminator is None
 
 
 def test_to_dict_method_exists(valid_results):
     """Test that to_dict method exists and returns expected structure."""
-    model = SearchResultWorkflow(total_hits=10, results=valid_results)
+    model = SearchResultWorkflowAdapter(total_hits=10, results=valid_results)
 
     assert hasattr(model, "to_dict")
     assert callable(model.to_dict)
@@ -158,7 +158,7 @@ def test_to_dict_method_exists(valid_results):
 
 def test_to_dict_with_none_values():
     """Test to_dict method handles None values correctly."""
-    model = SearchResultWorkflow()
+    model = SearchResultWorkflowAdapter()
     result_dict = model.to_dict()
 
     # Should handle None values without error
@@ -168,7 +168,7 @@ def test_to_dict_with_none_values():
 
 def test_to_dict_with_workflow_objects(valid_results):
     """Test to_dict method properly handles Workflow objects with to_dict method."""
-    model = SearchResultWorkflow(total_hits=2, results=valid_results)
+    model = SearchResultWorkflowAdapter(total_hits=2, results=valid_results)
     result_dict = model.to_dict()
 
     # Verify that to_dict was called on workflow objects
@@ -183,7 +183,7 @@ def test_to_dict_with_workflow_objects(valid_results):
 
 def test_to_str_method_exists():
     """Test that to_str method exists and returns string."""
-    model = SearchResultWorkflow(total_hits=5, results=[])
+    model = SearchResultWorkflowAdapter(total_hits=5, results=[])
 
     assert hasattr(model, "to_str")
     assert callable(model.to_str)
@@ -194,7 +194,7 @@ def test_to_str_method_exists():
 
 def test_repr_method_exists():
     """Test that __repr__ method exists and returns string."""
-    model = SearchResultWorkflow()
+    model = SearchResultWorkflowAdapter()
 
     assert hasattr(model, "__repr__")
     assert callable(model.__repr__)
@@ -205,9 +205,9 @@ def test_repr_method_exists():
 
 def test_eq_method_exists(valid_results):
     """Test that __eq__ method exists and works correctly."""
-    model1 = SearchResultWorkflow(total_hits=10, results=valid_results)
-    model2 = SearchResultWorkflow(total_hits=10, results=valid_results)
-    model3 = SearchResultWorkflow(total_hits=20, results=valid_results)
+    model1 = SearchResultWorkflowAdapter(total_hits=10, results=valid_results)
+    model2 = SearchResultWorkflowAdapter(total_hits=10, results=valid_results)
+    model3 = SearchResultWorkflowAdapter(total_hits=20, results=valid_results)
 
     assert hasattr(model1, "__eq__")
     assert callable(model1.__eq__)
@@ -223,8 +223,8 @@ def test_eq_method_exists(valid_results):
 
 def test_ne_method_exists():
     """Test that __ne__ method exists and works correctly."""
-    model1 = SearchResultWorkflow(total_hits=10, results=[])
-    model2 = SearchResultWorkflow(total_hits=20, results=[])
+    model1 = SearchResultWorkflowAdapter(total_hits=10, results=[])
+    model2 = SearchResultWorkflowAdapter(total_hits=20, results=[])
 
     assert hasattr(model1, "__ne__")
     assert callable(model1.__ne__)
@@ -235,7 +235,7 @@ def test_ne_method_exists():
 
 def test_private_attributes_exist():
     """Test that private attributes are properly initialized."""
-    model = SearchResultWorkflow()
+    model = SearchResultWorkflowAdapter()
 
     # Verify private attributes exist
     assert hasattr(model, "_total_hits")
@@ -248,7 +248,7 @@ def test_private_attributes_exist():
 
 def test_property_setter_updates_private_attributes(valid_results):
     """Test that property setters properly update private attributes."""
-    model = SearchResultWorkflow()
+    model = SearchResultWorkflowAdapter()
 
     # Test total_hits setter
     model.total_hits = 100
@@ -261,18 +261,18 @@ def test_property_setter_updates_private_attributes(valid_results):
 
 def test_model_inheritance_structure():
     """Test that the model inherits from expected base class."""
-    model = SearchResultWorkflow()
+    model = SearchResultWorkflowAdapter()
 
     # Verify it's an instance of object (basic inheritance)
     assert isinstance(model, object)
 
     # Verify class name
-    assert model.__class__.__name__ == "SearchResultWorkflow"
+    assert model.__class__.__name__ == "SearchResultWorkflowAdapter"
 
 
 def test_constructor_parameter_names_unchanged():
     """Test that constructor parameter names haven't changed."""
-    sig = inspect.signature(SearchResultWorkflow.__init__)
+    sig = inspect.signature(SearchResultWorkflowAdapter.__init__)
     param_names = list(sig.parameters.keys())
 
     # Expected parameters (excluding 'self')
@@ -282,10 +282,10 @@ def test_constructor_parameter_names_unchanged():
 
 def test_all_required_attributes_accessible():
     """Test that all documented attributes are accessible."""
-    model = SearchResultWorkflow()
+    model = SearchResultWorkflowAdapter()
 
     # All attributes from swagger_types should be accessible
-    for attr_name in SearchResultWorkflow.swagger_types.keys():
+    for attr_name in SearchResultWorkflowAdapter.swagger_types.keys():
         assert hasattr(model, attr_name), f"Attribute {attr_name} should be accessible"
 
         # Should be able to get and set the attribute

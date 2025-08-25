@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.integration_def import IntegrationDef
+from conductor.client.adapters.models.integration_def_adapter import IntegrationDefAdapter
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def valid_data():
 
 def test_constructor_all_parameters_none():
     """Test that constructor works with all parameters as None (current behavior)."""
-    integration = IntegrationDef()
+    integration = IntegrationDefAdapter()
 
     # Verify all fields are initialized to None
     assert integration.category is None
@@ -43,7 +43,7 @@ def test_constructor_all_parameters_none():
 
 def test_constructor_with_valid_parameters(valid_data):
     """Test constructor with all valid parameters."""
-    integration = IntegrationDef(**valid_data)
+    integration = IntegrationDefAdapter(**valid_data)
 
     # Verify all values are set correctly
     assert integration.category == "API"
@@ -59,7 +59,7 @@ def test_constructor_with_valid_parameters(valid_data):
 
 def test_all_expected_fields_exist():
     """Test that all expected fields exist and are accessible."""
-    integration = IntegrationDef()
+    integration = IntegrationDefAdapter()
 
     # Test field existence via property access
     expected_fields = [
@@ -95,10 +95,10 @@ def test_swagger_types_contains_required_fields():
     ]
 
     for field in required_fields:
-        assert field in IntegrationDef.swagger_types
+        assert field in IntegrationDefAdapter.swagger_types
         # Verify it has a type (but don't enforce specific type for compatibility)
-        assert isinstance(IntegrationDef.swagger_types[field], str)
-        assert len(IntegrationDef.swagger_types[field]) > 0
+        assert isinstance(IntegrationDefAdapter.swagger_types[field], str)
+        assert len(IntegrationDefAdapter.swagger_types[field]) > 0
 
 
 def test_attribute_map_structure():
@@ -116,13 +116,13 @@ def test_attribute_map_structure():
     }
 
     for field, expected_json_key in expected_map.items():
-        assert field in IntegrationDef.attribute_map
-        assert IntegrationDef.attribute_map[field] == expected_json_key
+        assert field in IntegrationDefAdapter.attribute_map
+        assert IntegrationDefAdapter.attribute_map[field] == expected_json_key
 
 
 def test_category_enum_validation(valid_category_values):
     """Test that category field validates against expected enum values."""
-    integration = IntegrationDef()
+    integration = IntegrationDefAdapter()
 
     # Test valid enum values
     for valid_value in valid_category_values:
@@ -146,21 +146,21 @@ def test_category_enum_validation(valid_category_values):
 def test_category_constructor_validation():
     """Test category validation during construction."""
     # Valid category in constructor
-    integration = IntegrationDef(category="API")
+    integration = IntegrationDefAdapter(category="API")
     assert integration.category == "API"
 
     # None category in constructor (should work - validation happens on setter)
-    integration_none = IntegrationDef(category=None)
+    integration_none = IntegrationDefAdapter(category=None)
     assert integration_none.category is None
 
     # Invalid category in constructor
     with pytest.raises(ValueError, match="Invalid"):
-        IntegrationDef(category="INVALID_CATEGORY")
+        IntegrationDefAdapter(category="INVALID_CATEGORY")
 
 
 def test_field_type_assignments():
     """Test that fields accept expected types."""
-    integration = IntegrationDef()
+    integration = IntegrationDefAdapter()
 
     # String fields
     string_fields = ["category_label", "description", "icon_name", "name", "type"]
@@ -187,7 +187,7 @@ def test_field_type_assignments():
 
 def test_configuration_backward_compatibility():
     """Test that configuration field maintains backward compatibility with dict input."""
-    integration = IntegrationDef()
+    integration = IntegrationDefAdapter()
 
     # Should accept dictionary (original behavior)
     config_dict = {"api_key": "secret", "timeout": 30}
@@ -195,13 +195,13 @@ def test_configuration_backward_compatibility():
     assert integration.configuration == config_dict
 
     # Should work in constructor
-    integration2 = IntegrationDef(configuration={"host": "localhost"})
+    integration2 = IntegrationDefAdapter(configuration={"host": "localhost"})
     assert integration2.configuration == {"host": "localhost"}
 
 
 def test_to_dict_method_exists(valid_data):
     """Test that to_dict method exists and works."""
-    integration = IntegrationDef(**valid_data)
+    integration = IntegrationDefAdapter(**valid_data)
     result = integration.to_dict()
 
     assert isinstance(result, dict)
@@ -212,7 +212,7 @@ def test_to_dict_method_exists(valid_data):
 
 def test_to_str_method_exists(valid_data):
     """Test that to_str method exists and works."""
-    integration = IntegrationDef(**valid_data)
+    integration = IntegrationDefAdapter(**valid_data)
     result = integration.to_str()
 
     assert isinstance(result, str)
@@ -221,9 +221,9 @@ def test_to_str_method_exists(valid_data):
 
 def test_equality_methods_exist(valid_data):
     """Test that equality methods exist and work."""
-    integration1 = IntegrationDef(**valid_data)
-    integration2 = IntegrationDef(**valid_data)
-    integration3 = IntegrationDef(name="different")
+    integration1 = IntegrationDefAdapter(**valid_data)
+    integration2 = IntegrationDefAdapter(**valid_data)
+    integration3 = IntegrationDefAdapter(name="different")
 
     # Test __eq__
     assert integration1 == integration2
@@ -236,7 +236,7 @@ def test_equality_methods_exist(valid_data):
 
 def test_repr_method_exists(valid_data):
     """Test that __repr__ method exists and works."""
-    integration = IntegrationDef(**valid_data)
+    integration = IntegrationDefAdapter(**valid_data)
     repr_str = repr(integration)
 
     assert isinstance(repr_str, str)
@@ -245,13 +245,13 @@ def test_repr_method_exists(valid_data):
 
 def test_discriminator_field_exists():
     """Test that discriminator field exists (swagger/openapi compatibility)."""
-    integration = IntegrationDef()
+    integration = IntegrationDefAdapter()
     assert integration.discriminator is None
 
 
 def test_private_attributes_exist():
     """Test that private attributes are properly initialized."""
-    integration = IntegrationDef()
+    integration = IntegrationDefAdapter()
 
     # These private attributes should exist
     private_attrs = [
@@ -273,7 +273,7 @@ def test_private_attributes_exist():
 
 def test_partial_construction():
     """Test construction with only some parameters."""
-    integration = IntegrationDef(name="partial-test", category="API", enabled=True)
+    integration = IntegrationDefAdapter(name="partial-test", category="API", enabled=True)
 
     assert integration.name == "partial-test"
     assert integration.category == "API"
@@ -285,7 +285,7 @@ def test_partial_construction():
 
 def test_none_assignments_behavior(valid_data):
     """Test None assignment behavior for different field types."""
-    integration = IntegrationDef(**valid_data)
+    integration = IntegrationDefAdapter(**valid_data)
 
     # Verify initial values are set
     assert integration.category is not None
@@ -320,7 +320,7 @@ def test_none_assignments_behavior(valid_data):
 
 def test_serialization_consistency(valid_data):
     """Test that serialization produces consistent results."""
-    integration = IntegrationDef(**valid_data)
+    integration = IntegrationDefAdapter(**valid_data)
 
     # to_dict should work
     dict_result = integration.to_dict()
@@ -339,7 +339,7 @@ def test_backward_compatible_construction_patterns():
     """Test various construction patterns that existing code might use."""
     # Pattern 1: Positional arguments (if supported)
     try:
-        integration1 = IntegrationDef("API", "API Integration")
+        integration1 = IntegrationDefAdapter("API", "API Integration")
         # If this works, verify it
         assert integration1.category == "API"
     except TypeError:
@@ -347,12 +347,12 @@ def test_backward_compatible_construction_patterns():
         pass
 
     # Pattern 2: Keyword arguments (most common)
-    integration2 = IntegrationDef(category="API", name="test")
+    integration2 = IntegrationDefAdapter(category="API", name="test")
     assert integration2.category == "API"
     assert integration2.name == "test"
 
     # Pattern 3: Mixed with configuration dict
-    integration3 = IntegrationDef(
+    integration3 = IntegrationDefAdapter(
         category="API", configuration={"key": "value"}, enabled=True
     )
     assert integration3.category == "API"
@@ -362,7 +362,7 @@ def test_backward_compatible_construction_patterns():
 
 def test_api_contract_stability():
     """Test that the public API contract remains stable."""
-    integration = IntegrationDef()
+    integration = IntegrationDefAdapter()
 
     # All expected public methods should exist
     public_methods = ["to_dict", "to_str", "__eq__", "__ne__", "__repr__"]

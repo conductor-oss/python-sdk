@@ -1,13 +1,11 @@
 from __future__ import absolute_import
 
 import re  # noqa: F401
-import socket
 
 # python 2 and python 3 compatibility library
 import six
 
 from conductor.client.http.api_client import ApiClient
-from conductor.client.http.models.signal_response import SignalResponse
 
 
 class TaskResourceApi(object):
@@ -89,7 +87,7 @@ class TaskResourceApi(object):
             ['*/*'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/queue/all', 'GET',
@@ -174,7 +172,7 @@ class TaskResourceApi(object):
             ['*/*'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/queue/all/verbose', 'GET',
@@ -283,7 +281,7 @@ class TaskResourceApi(object):
             ['*/*'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/poll/batch/{tasktype}', 'GET',
@@ -310,7 +308,13 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: list[PollData]
+        :param int worker_size:
+        :param str worker_opt:
+        :param int queue_size:
+        :param str queue_opt:
+        :param int last_poll_time_size:
+        :param str last_poll_time_opt:
+        :return: dict(str, object)
                  If the method is called asynchronously,
                  returns the request thread.
         """
@@ -330,12 +334,18 @@ class TaskResourceApi(object):
         >>> result = thread.get()
 
         :param async_req bool
-        :return: list[PollData]
+        :param int worker_size:
+        :param str worker_opt:
+        :param int queue_size:
+        :param str queue_opt:
+        :param int last_poll_time_size:
+        :param str last_poll_time_opt:
+        :return: dict(str, object)
                  If the method is called asynchronously,
                  returns the request thread.
         """
 
-        all_params = []  # noqa: E501
+        all_params = ['worker_size', 'worker_opt', 'queue_size', 'queue_opt', 'last_poll_time_size', 'last_poll_time_opt']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -356,6 +366,18 @@ class TaskResourceApi(object):
         path_params = {}
 
         query_params = []
+        if 'worker_size' in params:
+            query_params.append(('workerSize', params['worker_size']))  # noqa: E501
+        if 'worker_opt' in params:
+            query_params.append(('workerOpt', params['worker_opt']))  # noqa: E501
+        if 'queue_size' in params:
+            query_params.append(('queueSize', params['queue_size']))  # noqa: E501
+        if 'queue_opt' in params:
+            query_params.append(('queueOpt', params['queue_opt']))  # noqa: E501
+        if 'last_poll_time_size' in params:
+            query_params.append(('lastPollTimeSize', params['last_poll_time_size']))  # noqa: E501
+        if 'last_poll_time_opt' in params:
+            query_params.append(('lastPollTimeOpt', params['last_poll_time_opt']))  # noqa: E501
 
         header_params = {}
 
@@ -368,7 +390,7 @@ class TaskResourceApi(object):
             ['*/*'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/queue/polldata/all', 'GET',
@@ -378,121 +400,7 @@ class TaskResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='list[PollData]',  # noqa: E501
-            auth_settings=auth_settings,
-            async_req=params.get('async_req'),
-            _return_http_data_only=params.get('_return_http_data_only'),
-            _preload_content=params.get('_preload_content', True),
-            _request_timeout=params.get('_request_timeout'),
-            collection_formats=collection_formats)
-
-    def get_external_storage_location1(self, path, operation, payload_type, **kwargs):  # noqa: E501
-        """Get the external uri where the task payload is to be stored  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.get_external_storage_location1(path, operation, payload_type, async_req=True)
-        >>> result = thread.get()
-
-        :param async_req bool
-        :param str path: (required)
-        :param str operation: (required)
-        :param str payload_type: (required)
-        :return: ExternalStorageLocation
-                 If the method is called asynchronously,
-                 returns the request thread.
-        """
-        kwargs['_return_http_data_only'] = True
-        if kwargs.get('async_req'):
-            return self.get_external_storage_location1_with_http_info(path, operation, payload_type,
-                                                                      **kwargs)  # noqa: E501
-        else:
-            (data) = self.get_external_storage_location1_with_http_info(path, operation, payload_type,
-                                                                        **kwargs)  # noqa: E501
-            return data
-
-    def get_external_storage_location1_with_http_info(self, path, operation, payload_type, **kwargs):  # noqa: E501
-        """Get the external uri where the task payload is to be stored  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-        >>> thread = api.get_external_storage_location1_with_http_info(path, operation, payload_type, async_req=True)
-        >>> result = thread.get()
-
-        :param async_req bool
-        :param str path: (required)
-        :param str operation: (required)
-        :param str payload_type: (required)
-        :return: ExternalStorageLocation
-                 If the method is called asynchronously,
-                 returns the request thread.
-        """
-
-        all_params = ['path', 'operation', 'payload_type']  # noqa: E501
-        all_params.append('async_req')
-        all_params.append('_return_http_data_only')
-        all_params.append('_preload_content')
-        all_params.append('_request_timeout')
-
-        params = locals()
-        for key, val in six.iteritems(params['kwargs']):
-            if key not in all_params:
-                raise TypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_external_storage_location1" % key
-                )
-            params[key] = val
-        del params['kwargs']
-        # verify the required parameter 'path' is set
-        if ('path' not in params or
-                params['path'] is None):
-            raise ValueError(
-                "Missing the required parameter `path` when calling `get_external_storage_location1`")  # noqa: E501
-        # verify the required parameter 'operation' is set
-        if ('operation' not in params or
-                params['operation'] is None):
-            raise ValueError(
-                "Missing the required parameter `operation` when calling `get_external_storage_location1`")  # noqa: E501
-        # verify the required parameter 'payload_type' is set
-        if ('payload_type' not in params or
-                params['payload_type'] is None):
-            raise ValueError(
-                "Missing the required parameter `payload_type` when calling `get_external_storage_location1`")  # noqa: E501
-
-        collection_formats = {}
-
-        path_params = {}
-
-        query_params = []
-        if 'path' in params:
-            query_params.append(('path', params['path']))  # noqa: E501
-        if 'operation' in params:
-            query_params.append(('operation', params['operation']))  # noqa: E501
-        if 'payload_type' in params:
-            query_params.append(('payloadType', params['payload_type']))  # noqa: E501
-
-        header_params = {}
-
-        form_params = []
-        local_var_files = {}
-
-        body_params = None
-        # HTTP header `Accept`
-        header_params['Accept'] = self.api_client.select_header_accept(
-            ['*/*'])  # noqa: E501
-
-        # Authentication setting
-        auth_settings = []  # noqa: E501
-
-        return self.api_client.call_api(
-            '/tasks/externalstoragelocation', 'GET',
-            path_params,
-            query_params,
-            header_params,
-            body=body_params,
-            post_params=form_params,
-            files=local_var_files,
-            response_type='ExternalStorageLocation',  # noqa: E501
+            response_type='dict(str, object)',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -575,7 +483,7 @@ class TaskResourceApi(object):
             ['*/*'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/queue/polldata', 'GET',
@@ -668,7 +576,7 @@ class TaskResourceApi(object):
             ['*/*'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/{taskId}', 'GET',
@@ -761,7 +669,7 @@ class TaskResourceApi(object):
             ['*/*'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/{taskId}/log', 'GET',
@@ -862,7 +770,7 @@ class TaskResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/{taskId}/log', 'POST',
@@ -963,7 +871,7 @@ class TaskResourceApi(object):
             ['*/*'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/poll/{tasktype}', 'GET',
@@ -1035,8 +943,7 @@ class TaskResourceApi(object):
         # verify the required parameter 'task_type' is set
         if ('task_type' not in params or
                 params['task_type'] is None):
-            raise ValueError(
-                "Missing the required parameter `task_type` when calling `requeue_pending_task`")  # noqa: E501
+            raise ValueError("Missing the required parameter `task_type` when calling `requeue_pending_task`")  # noqa: E501
 
         collection_formats = {}
 
@@ -1057,7 +964,7 @@ class TaskResourceApi(object):
             ['text/plain'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/queue/requeue/{taskType}', 'POST',
@@ -1164,7 +1071,7 @@ class TaskResourceApi(object):
             ['*/*'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/search', 'GET',
@@ -1361,7 +1268,7 @@ class TaskResourceApi(object):
             ['*/*'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/queue/sizes', 'GET',
@@ -1458,7 +1365,7 @@ class TaskResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks', 'POST',
@@ -1477,7 +1384,7 @@ class TaskResourceApi(object):
             collection_formats=collection_formats)
 
     def update_task1(self, body, workflow_id, task_ref_name, status, **kwargs):  # noqa: E501
-        """Update a task By Ref Name  # noqa: E501
+        """Update a task By Ref Name. The output data is merged if data from a previous API call already exists.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
@@ -1502,7 +1409,7 @@ class TaskResourceApi(object):
             return data
 
     def update_task1_with_http_info(self, body, workflow_id, task_ref_name, status, **kwargs):  # noqa: E501
-        """Update a task By Ref Name  # noqa: E501
+        """Update a task By Ref Name. The output data is merged if data from a previous API call already exists.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
@@ -1520,7 +1427,7 @@ class TaskResourceApi(object):
                  returns the request thread.
         """
 
-        all_params = ['body', 'workflow_id', 'task_ref_name', 'status']  # noqa: E501
+        all_params = ['body', 'workflow_id', 'task_ref_name', 'status', 'workerid']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -1563,10 +1470,8 @@ class TaskResourceApi(object):
             path_params['status'] = params['status']  # noqa: E501
 
         query_params = []
-
-        if 'workerid' not in params:
-            params['workerid'] = socket.gethostname()
-        query_params.append(('workerid', params['workerid']))  # noqa: E501
+        if 'workerid' in params:
+            query_params.append(('workerid', params['workerid']))  # noqa: E501
 
         header_params = {}
 
@@ -1585,7 +1490,7 @@ class TaskResourceApi(object):
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/{workflowId}/{taskRefName}/{status}', 'POST',
@@ -1604,7 +1509,7 @@ class TaskResourceApi(object):
             collection_formats=collection_formats)
 
     def update_task_sync(self, body, workflow_id, task_ref_name, status, **kwargs):  # noqa: E501
-        """Update a task By Ref Name  # noqa: E501
+        """Update a task By Ref Name synchronously. The output data is merged if data from a previous API call already exists.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
@@ -1623,15 +1528,13 @@ class TaskResourceApi(object):
         """
         kwargs['_return_http_data_only'] = True
         if kwargs.get('async_req'):
-            return self.update_task_sync_with_http_info(body, workflow_id, task_ref_name, status,
-                                                        **kwargs)  # noqa: E501
+            return self.update_task_sync_with_http_info(body, workflow_id, task_ref_name, status, **kwargs)  # noqa: E501
         else:
-            (data) = self.update_task_sync_with_http_info(body, workflow_id, task_ref_name, status,
-                                                          **kwargs)  # noqa: E501
+            (data) = self.update_task_sync_with_http_info(body, workflow_id, task_ref_name, status, **kwargs)  # noqa: E501
             return data
 
     def update_task_sync_with_http_info(self, body, workflow_id, task_ref_name, status, **kwargs):  # noqa: E501
-        """Update a task By Ref Name  # noqa: E501
+        """Update a task By Ref Name synchronously. The output data is merged if data from a previous API call already exists.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
@@ -1649,7 +1552,7 @@ class TaskResourceApi(object):
                  returns the request thread.
         """
 
-        all_params = ['body', 'workflow_id', 'task_ref_name', 'status']  # noqa: E501
+        all_params = ['body', 'workflow_id', 'task_ref_name', 'status', 'workerid']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -1660,26 +1563,26 @@ class TaskResourceApi(object):
             if key not in all_params:
                 raise TypeError(
                     "Got an unexpected keyword argument '%s'"
-                    " to method update_task1" % key
+                    " to method update_task_sync" % key
                 )
             params[key] = val
         del params['kwargs']
         # verify the required parameter 'body' is set
         if ('body' not in params or
                 params['body'] is None):
-            raise ValueError("Missing the required parameter `body` when calling `update_task1`")  # noqa: E501
+            raise ValueError("Missing the required parameter `body` when calling `update_task_sync`")  # noqa: E501
         # verify the required parameter 'workflow_id' is set
         if ('workflow_id' not in params or
                 params['workflow_id'] is None):
-            raise ValueError("Missing the required parameter `workflow_id` when calling `update_task1`")  # noqa: E501
+            raise ValueError("Missing the required parameter `workflow_id` when calling `update_task_sync`")  # noqa: E501
         # verify the required parameter 'task_ref_name' is set
         if ('task_ref_name' not in params or
                 params['task_ref_name'] is None):
-            raise ValueError("Missing the required parameter `task_ref_name` when calling `update_task1`")  # noqa: E501
+            raise ValueError("Missing the required parameter `task_ref_name` when calling `update_task_sync`")  # noqa: E501
         # verify the required parameter 'status' is set
         if ('status' not in params or
                 params['status'] is None):
-            raise ValueError("Missing the required parameter `status` when calling `update_task1`")  # noqa: E501
+            raise ValueError("Missing the required parameter `status` when calling `update_task_sync`")  # noqa: E501
 
         collection_formats = {}
 
@@ -1692,10 +1595,8 @@ class TaskResourceApi(object):
             path_params['status'] = params['status']  # noqa: E501
 
         query_params = []
-
-        if 'workerid' not in params:
-            params['workerid'] = socket.gethostname()
-        query_params.append(('workerid', params['workerid']))  # noqa: E501
+        if 'workerid' in params:
+            query_params.append(('workerid', params['workerid']))  # noqa: E501
 
         header_params = {}
 
@@ -1707,14 +1608,14 @@ class TaskResourceApi(object):
             body_params = params['body']
         # HTTP header `Accept`
         header_params['Accept'] = self.api_client.select_header_accept(
-            ['text/plain'])  # noqa: E501
+            ['application/json'])  # noqa: E501
 
         # HTTP header `Content-Type`
         header_params['Content-Type'] = self.api_client.select_header_content_type(  # noqa: E501
             ['application/json'])  # noqa: E501
 
         # Authentication setting
-        auth_settings = []  # noqa: E501
+        auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
             '/tasks/{workflowId}/{taskRefName}/{status}/sync', 'POST',

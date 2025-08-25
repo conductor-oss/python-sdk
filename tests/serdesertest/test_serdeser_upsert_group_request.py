@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
+from conductor.client.adapters.models.upsert_group_request_adapter import UpsertGroupRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -14,7 +14,7 @@ def server_json():
 
 def test_serde_upsert_group_request(server_json):
     # 1. Deserialize JSON into model object
-    model_obj = UpsertGroupRequest(
+    model_obj = UpsertGroupRequestAdapter(
         description=server_json.get("description"),
         roles=server_json.get("roles"),
         default_access=server_json.get("defaultAccess"),

@@ -1,9 +1,9 @@
-from conductor.client.http.models.integration_api_update import IntegrationApiUpdate
+from conductor.client.adapters.models.integration_api_update_adapter import IntegrationApiUpdateAdapter
 
 
 def test_constructor_with_no_arguments():
     """Test that model can be instantiated with no arguments (current behavior)."""
-    model = IntegrationApiUpdate()
+    model = IntegrationApiUpdateAdapter()
 
     # Verify original fields are initialized to None (current behavior)
     assert model.configuration is None
@@ -17,7 +17,7 @@ def test_constructor_with_all_original_arguments():
     description = "Test integration"
     enabled = True
 
-    model = IntegrationApiUpdate(
+    model = IntegrationApiUpdateAdapter(
         configuration=config, description=description, enabled=enabled
     )
 
@@ -29,13 +29,13 @@ def test_constructor_with_all_original_arguments():
 def test_constructor_with_partial_arguments():
     """Test that model can be instantiated with partial arguments."""
     # Test with only description
-    model1 = IntegrationApiUpdate(description="Test desc")
+    model1 = IntegrationApiUpdateAdapter(description="Test desc")
     assert model1.description == "Test desc"
     assert model1.configuration is None
     assert model1.enabled is None
 
     # Test with only enabled
-    model2 = IntegrationApiUpdate(enabled=False)
+    model2 = IntegrationApiUpdateAdapter(enabled=False)
     assert model2.enabled is False
     assert model2.configuration is None
     assert model2.description is None
@@ -43,7 +43,7 @@ def test_constructor_with_partial_arguments():
 
 def test_original_required_fields_exist():
     """Test that all original expected fields exist on the model."""
-    model = IntegrationApiUpdate()
+    model = IntegrationApiUpdateAdapter()
 
     # Verify original required attributes exist
     assert hasattr(model, "configuration")
@@ -57,7 +57,7 @@ def test_original_required_fields_exist():
 
 def test_original_field_types_preserved():
     """Test that original field types remain as expected."""
-    model = IntegrationApiUpdate()
+    model = IntegrationApiUpdateAdapter()
 
     # Verify original fields are still present with correct types
     original_expected_types = {
@@ -74,7 +74,7 @@ def test_original_field_types_preserved():
 
 def test_original_attribute_map_preserved():
     """Test that original attribute mapping is preserved."""
-    model = IntegrationApiUpdate()
+    model = IntegrationApiUpdateAdapter()
 
     # Verify original mappings are still present
     original_expected_map = {
@@ -91,7 +91,7 @@ def test_original_attribute_map_preserved():
 
 def test_configuration_field_behavior():
     """Test configuration field accepts dict types and None."""
-    model = IntegrationApiUpdate()
+    model = IntegrationApiUpdateAdapter()
 
     # Test None assignment (default)
     model.configuration = None
@@ -109,7 +109,7 @@ def test_configuration_field_behavior():
 
 def test_description_field_behavior():
     """Test description field accepts string types and None."""
-    model = IntegrationApiUpdate()
+    model = IntegrationApiUpdateAdapter()
 
     # Test None assignment (default)
     model.description = None
@@ -126,7 +126,7 @@ def test_description_field_behavior():
 
 def test_enabled_field_behavior():
     """Test enabled field accepts boolean types and None."""
-    model = IntegrationApiUpdate()
+    model = IntegrationApiUpdateAdapter()
 
     # Test None assignment (default)
     model.enabled = None
@@ -146,7 +146,7 @@ def test_property_getters():
     description = "Test description"
     enabled = True
 
-    model = IntegrationApiUpdate(
+    model = IntegrationApiUpdateAdapter(
         configuration=config, description=description, enabled=enabled
     )
 
@@ -158,7 +158,7 @@ def test_property_getters():
 
 def test_property_setters():
     """Test that all original property setters work correctly."""
-    model = IntegrationApiUpdate()
+    model = IntegrationApiUpdateAdapter()
 
     # Test configuration setter
     config = {"api": "test"}
@@ -181,7 +181,7 @@ def test_to_dict_contains_original_fields():
     description = "Test integration"
     enabled = True
 
-    model = IntegrationApiUpdate(
+    model = IntegrationApiUpdateAdapter(
         configuration=config, description=description, enabled=enabled
     )
 
@@ -195,7 +195,7 @@ def test_to_dict_contains_original_fields():
 
 def test_to_dict_with_none_values_includes_original_fields():
     """Test to_dict method with None values includes original fields."""
-    model = IntegrationApiUpdate()
+    model = IntegrationApiUpdateAdapter()
     result_dict = model.to_dict()
 
     # Verify original fields are present
@@ -211,7 +211,7 @@ def test_to_dict_with_none_values_includes_original_fields():
 
 def test_to_str_method():
     """Test that to_str method works correctly."""
-    model = IntegrationApiUpdate(description="Test")
+    model = IntegrationApiUpdateAdapter(description="Test")
     str_result = model.to_str()
 
     # Should return a formatted string representation
@@ -222,7 +222,7 @@ def test_to_str_method():
 
 def test_repr_method():
     """Test that __repr__ method works correctly."""
-    model = IntegrationApiUpdate(enabled=True)
+    model = IntegrationApiUpdateAdapter(enabled=True)
     repr_result = repr(model)
 
     # Should return same as to_str()
@@ -231,15 +231,15 @@ def test_repr_method():
 
 def test_equality_comparison():
     """Test that equality comparison works correctly."""
-    model1 = IntegrationApiUpdate(
+    model1 = IntegrationApiUpdateAdapter(
         configuration={"key": "value"}, description="Test", enabled=True
     )
 
-    model2 = IntegrationApiUpdate(
+    model2 = IntegrationApiUpdateAdapter(
         configuration={"key": "value"}, description="Test", enabled=True
     )
 
-    model3 = IntegrationApiUpdate(
+    model3 = IntegrationApiUpdateAdapter(
         configuration={"key": "different"}, description="Test", enabled=True
     )
 
@@ -254,22 +254,22 @@ def test_equality_comparison():
 
 def test_inequality_comparison():
     """Test that inequality comparison works correctly."""
-    model1 = IntegrationApiUpdate(description="Test1")
-    model2 = IntegrationApiUpdate(description="Test2")
+    model1 = IntegrationApiUpdateAdapter(description="Test1")
+    model2 = IntegrationApiUpdateAdapter(description="Test2")
 
     assert model1 != model2
 
 
 def test_discriminator_attribute():
     """Test that discriminator attribute exists and is None."""
-    model = IntegrationApiUpdate()
+    model = IntegrationApiUpdateAdapter()
     assert hasattr(model, "discriminator")
     assert model.discriminator is None
 
 
 def test_original_private_attributes_exist():
     """Test that original private attributes are properly initialized."""
-    model = IntegrationApiUpdate()
+    model = IntegrationApiUpdateAdapter()
 
     # Verify original private attributes exist
     assert hasattr(model, "_configuration")
@@ -279,7 +279,7 @@ def test_original_private_attributes_exist():
 
 def test_field_assignment_independence():
     """Test that field assignments are independent."""
-    model = IntegrationApiUpdate()
+    model = IntegrationApiUpdateAdapter()
 
     # Set one field and verify others remain None
     model.description = "Test description"
@@ -297,7 +297,7 @@ def test_field_assignment_independence():
 def test_original_functionality_unchanged():
     """Test that original functionality works exactly as before."""
     # Test that we can still create instances with only original fields
-    model = IntegrationApiUpdate(
+    model = IntegrationApiUpdateAdapter(
         configuration={"test": "value"}, description="Original behavior", enabled=True
     )
 
@@ -307,7 +307,7 @@ def test_original_functionality_unchanged():
     assert model.enabled is True
 
     # Test that original constructor patterns still work
-    model2 = IntegrationApiUpdate()
+    model2 = IntegrationApiUpdateAdapter()
     assert model2.configuration is None
     assert model2.description is None
     assert model2.enabled is None
@@ -316,7 +316,7 @@ def test_original_functionality_unchanged():
 def test_backward_compatible_serialization():
     """Test that serialization maintains compatibility for SDK usage."""
     # Create model with only original fields set
-    model = IntegrationApiUpdate(
+    model = IntegrationApiUpdateAdapter(
         configuration={"api_key": "test"}, description="Test integration", enabled=True
     )
 

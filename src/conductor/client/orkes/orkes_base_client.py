@@ -1,21 +1,21 @@
 import logging
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.api.application_resource_api import ApplicationResourceApi
-from conductor.client.http.api.authorization_resource_api import AuthorizationResourceApi
-from conductor.client.http.api.group_resource_api import GroupResourceApi
-from conductor.client.http.api.integration_resource_api import IntegrationResourceApi
-from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
-from conductor.client.http.api.prompt_resource_api import PromptResourceApi
-from conductor.client.http.api.scheduler_resource_api import SchedulerResourceApi
-from conductor.client.http.api.schema_resource_api import SchemaResourceApi
-from conductor.client.http.api.secret_resource_api import SecretResourceApi
-from conductor.client.http.api.service_registry_resource_api import ServiceRegistryResourceApi
-from conductor.client.http.api.task_resource_api import TaskResourceApi
-from conductor.client.http.api.user_resource_api import UserResourceApi
-from conductor.client.http.api.workflow_resource_api import WorkflowResourceApi
+from conductor.client.adapters.api.application_resource_api_adapter import ApplicationResourceApiAdapter as ApplicationResourceApi
+from conductor.client.adapters.api.authorization_resource_api_adapter import AuthorizationResourceApiAdapter as AuthorizationResourceApi
+from conductor.client.adapters.api.group_resource_api_adapter import GroupResourceApiAdapter as GroupResourceApi
+from conductor.client.adapters.api.integration_resource_api_adapter import IntegrationResourceApiAdapter as IntegrationResourceApi
+from conductor.client.adapters.api.metadata_resource_api_adapter import MetadataResourceApiAdapter as MetadataResourceApi
+from conductor.client.adapters.api.prompt_resource_api_adapter import PromptResourceApiAdapter as PromptResourceApi
+from conductor.client.adapters.api.scheduler_resource_api_adapter import SchedulerResourceApiAdapter as SchedulerResourceApi
+from conductor.client.adapters.api.schema_resource_api_adapter import SchemaResourceApiAdapter as SchemaResourceApi
+from conductor.client.adapters.api.secret_resource_api_adapter import SecretResourceApiAdapter as SecretResourceApi
+from conductor.client.adapters.api.service_registry_resource_api_adapter import ServiceRegistryResourceApiAdapter as ServiceRegistryResourceApi
+from conductor.client.adapters.api.task_resource_api_adapter import TaskResourceApiAdapter as TaskResourceApi
+from conductor.client.adapters.api.user_resource_api_adapter import UserResourceApiAdapter as UserResourceApi
+from conductor.client.adapters.api.workflow_resource_api_adapter import WorkflowResourceApiAdapter as WorkflowResourceApi
 from conductor.client.http.api_client import ApiClient
-from conductor.client.orkes.api.tags_api import TagsApi
+from conductor.client.adapters.api.tags_api_adapter import TagsApiAdapter as TagsApi
 
 
 class OrkesBaseClient(object):

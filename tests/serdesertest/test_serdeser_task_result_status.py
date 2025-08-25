@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.task_result import TaskResult
+from conductor.client.adapters.models.task_result_adapter import TaskResultAdapter
 from conductor.shared.http.enums import TaskResultStatus
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
@@ -13,7 +13,7 @@ def server_json():
 
 
 def test_task_result_serde(server_json):
-    task_result = TaskResult()
+    task_result = TaskResultAdapter()
     task_result.workflow_instance_id = server_json.get("workflowInstanceId")
     task_result.task_id = server_json.get("taskId")
     task_result.reason_for_incompletion = server_json.get("reasonForIncompletion")

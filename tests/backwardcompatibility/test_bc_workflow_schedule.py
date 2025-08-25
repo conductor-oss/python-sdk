@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import WorkflowSchedule
+from conductor.client.adapters.models.workflow_schedule_adapter import WorkflowScheduleAdapter
 
 
 @pytest.fixture
@@ -26,12 +26,16 @@ def valid_data(mock_start_workflow_request):
         "updated_time": 1641081600,
         "created_by": "test_user",
         "updated_by": "test_user_2",
+        "description": "Test schedule description",
+        "paused_reason": "Test pause reason",
+        "tags": [],
+        "zone_id": "UTC",
     }
 
 
 def test_constructor_with_no_parameters():
     """Test that constructor works with no parameters (all defaults to None)."""
-    schedule = WorkflowSchedule()
+    schedule = WorkflowScheduleAdapter()
 
     # All fields should be None initially
     assert schedule.name is None
@@ -45,11 +49,15 @@ def test_constructor_with_no_parameters():
     assert schedule.updated_time is None
     assert schedule.created_by is None
     assert schedule.updated_by is None
+    assert schedule.description is None
+    assert schedule.paused_reason is None
+    assert schedule.tags is None
+    assert schedule.zone_id is None
 
 
 def test_constructor_with_all_parameters(valid_data, mock_start_workflow_request):
     """Test constructor with all existing parameters."""
-    schedule = WorkflowSchedule(**valid_data)
+    schedule = WorkflowScheduleAdapter(**valid_data)
 
     # Verify all fields are set correctly
     assert schedule.name == "test_schedule"
@@ -63,6 +71,10 @@ def test_constructor_with_all_parameters(valid_data, mock_start_workflow_request
     assert schedule.updated_time == 1641081600
     assert schedule.created_by == "test_user"
     assert schedule.updated_by == "test_user_2"
+    assert schedule.description == "Test schedule description"
+    assert schedule.paused_reason == "Test pause reason"
+    assert schedule.tags == []
+    assert schedule.zone_id == "UTC"
 
 
 def test_constructor_with_partial_parameters():
@@ -72,7 +84,7 @@ def test_constructor_with_partial_parameters():
         "cron_expression": "0 12 * * *",
         "paused": True,
     }
-    schedule = WorkflowSchedule(**partial_data)
+    schedule = WorkflowScheduleAdapter(**partial_data)
 
     # Specified fields should be set
     assert schedule.name == "partial_schedule"
@@ -87,7 +99,7 @@ def test_constructor_with_partial_parameters():
 
 def test_all_required_properties_exist():
     """Test that all expected properties exist and are accessible."""
-    schedule = WorkflowSchedule()
+    schedule = WorkflowScheduleAdapter()
 
     # Test that all properties exist (should not raise AttributeError)
     required_properties = [
@@ -102,6 +114,10 @@ def test_all_required_properties_exist():
         "updated_time",
         "created_by",
         "updated_by",
+        "description",
+        "paused_reason",
+        "tags",
+        "zone_id",
     ]
 
     for prop in required_properties:
@@ -113,7 +129,7 @@ def test_all_required_properties_exist():
 
 def test_property_setters_work(mock_start_workflow_request):
     """Test that all property setters work correctly."""
-    schedule = WorkflowSchedule()
+    schedule = WorkflowScheduleAdapter()
 
     # Test string properties
     schedule.name = "new_name"
@@ -127,6 +143,15 @@ def test_property_setters_work(mock_start_workflow_request):
 
     schedule.updated_by = "setter_user_2"
     assert schedule.updated_by == "setter_user_2"
+
+    schedule.description = "New description"
+    assert schedule.description == "New description"
+
+    schedule.paused_reason = "New pause reason"
+    assert schedule.paused_reason == "New pause reason"
+
+    schedule.zone_id = "EST"
+    assert schedule.zone_id == "EST"
 
     # Test boolean properties
     schedule.run_catchup_schedule_instances = False
@@ -152,16 +177,23 @@ def test_property_setters_work(mock_start_workflow_request):
     schedule.start_workflow_request = mock_start_workflow_request
     assert schedule.start_workflow_request == mock_start_workflow_request
 
+    # Test list property
+    schedule.tags = [{"key": "value"}]
+    assert schedule.tags == [{"key": "value"}]
+
 
 def test_property_types_are_preserved(valid_data, mock_start_workflow_request):
     """Test that property types match expected swagger_types."""
-    schedule = WorkflowSchedule(**valid_data)
+    schedule = WorkflowScheduleAdapter(**valid_data)
 
     # String fields
     assert isinstance(schedule.name, str)
     assert isinstance(schedule.cron_expression, str)
     assert isinstance(schedule.created_by, str)
     assert isinstance(schedule.updated_by, str)
+    assert isinstance(schedule.description, str)
+    assert isinstance(schedule.paused_reason, str)
+    assert isinstance(schedule.zone_id, str)
 
     # Boolean fields
     assert isinstance(schedule.run_catchup_schedule_instances, bool)
@@ -176,11 +208,14 @@ def test_property_types_are_preserved(valid_data, mock_start_workflow_request):
     # Object field (StartWorkflowRequest)
     assert schedule.start_workflow_request == mock_start_workflow_request
 
+    # List field
+    assert isinstance(schedule.tags, list)
+
 
 def test_swagger_types_attribute_exists():
     """Test that swagger_types class attribute exists and contains expected fields."""
-    assert hasattr(WorkflowSchedule, "swagger_types")
-    swagger_types = WorkflowSchedule.swagger_types
+    assert hasattr(WorkflowScheduleAdapter, "swagger_types")
+    swagger_types = WorkflowScheduleAdapter.swagger_types
 
     expected_types = {
         "name": "str",
@@ -194,6 +229,10 @@ def test_swagger_types_attribute_exists():
         "updated_time": "int",
         "created_by": "str",
         "updated_by": "str",
+        "description": "str",
+        "paused_reason": "str",
+        "tags": "list[Tag]",
+        "zone_id": "str",
     }
 
     # Check that all expected fields exist with correct types
@@ -206,8 +245,8 @@ def test_swagger_types_attribute_exists():
 
 def test_attribute_map_exists():
     """Test that attribute_map class attribute exists and contains expected mappings."""
-    assert hasattr(WorkflowSchedule, "attribute_map")
-    attribute_map = WorkflowSchedule.attribute_map
+    assert hasattr(WorkflowScheduleAdapter, "attribute_map")
+    attribute_map = WorkflowScheduleAdapter.attribute_map
 
     expected_mappings = {
         "name": "name",
@@ -221,6 +260,10 @@ def test_attribute_map_exists():
         "updated_time": "updatedTime",
         "created_by": "createdBy",
         "updated_by": "updatedBy",
+        "description": "description",
+        "paused_reason": "pausedReason",
+        "tags": "tags",
+        "zone_id": "zoneId",
     }
 
     # Check that all expected mappings exist
@@ -233,7 +276,7 @@ def test_attribute_map_exists():
 
 def test_to_dict_method_exists_and_works(valid_data):
     """Test that to_dict method exists and produces expected output."""
-    schedule = WorkflowSchedule(**valid_data)
+    schedule = WorkflowScheduleAdapter(**valid_data)
 
     # Method should exist
     assert hasattr(schedule, "to_dict")
@@ -249,17 +292,25 @@ def test_to_dict_method_exists_and_works(valid_data):
     assert "run_catchup_schedule_instances" in result
     assert "paused" in result
     assert "start_workflow_request" in result
+    assert "description" in result
+    assert "paused_reason" in result
+    assert "tags" in result
+    assert "zone_id" in result
 
     # Values should match
     assert result["name"] == "test_schedule"
     assert result["cron_expression"] == "0 0 * * *"
     assert result["run_catchup_schedule_instances"]
     assert not result["paused"]
+    assert result["description"] == "Test schedule description"
+    assert result["paused_reason"] == "Test pause reason"
+    assert result["tags"] == []
+    assert result["zone_id"] == "UTC"
 
 
 def test_to_str_method_exists_and_works():
     """Test that to_str method exists and returns string representation."""
-    schedule = WorkflowSchedule(name="test", cron_expression="0 0 * * *")
+    schedule = WorkflowScheduleAdapter(name="test", cron_expression="0 0 * * *")
 
     # Method should exist
     assert hasattr(schedule, "to_str")
@@ -273,7 +324,7 @@ def test_to_str_method_exists_and_works():
 
 def test_repr_method_works():
     """Test that __repr__ method works."""
-    schedule = WorkflowSchedule(name="test")
+    schedule = WorkflowScheduleAdapter(name="test")
 
     # Should return a string representation
     repr_str = repr(schedule)
@@ -283,9 +334,9 @@ def test_repr_method_works():
 
 def test_equality_methods_exist_and_work():
     """Test that __eq__ and __ne__ methods exist and work correctly."""
-    schedule1 = WorkflowSchedule(name="test", paused=True)
-    schedule2 = WorkflowSchedule(name="test", paused=True)
-    schedule3 = WorkflowSchedule(name="different", paused=True)
+    schedule1 = WorkflowScheduleAdapter(name="test", paused=True)
+    schedule2 = WorkflowScheduleAdapter(name="test", paused=True)
+    schedule3 = WorkflowScheduleAdapter(name="different", paused=True)
 
     # Test equality
     assert schedule1 == schedule2
@@ -295,21 +346,21 @@ def test_equality_methods_exist_and_work():
     assert not (schedule1 != schedule2)
     assert schedule1 != schedule3
 
-    # Test with non-WorkflowSchedule object
+    # Test with non-WorkflowScheduleAdapter object
     assert schedule1 != "not a schedule"
     assert schedule1 != "not a schedule"
 
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists and is set to None."""
-    schedule = WorkflowSchedule()
+    schedule = WorkflowScheduleAdapter()
     assert hasattr(schedule, "discriminator")
     assert schedule.discriminator is None
 
 
 def test_private_attributes_exist():
     """Test that all private attributes are properly initialized."""
-    schedule = WorkflowSchedule()
+    schedule = WorkflowScheduleAdapter()
 
     private_attrs = [
         "_name",
@@ -323,6 +374,10 @@ def test_private_attributes_exist():
         "_updated_time",
         "_created_by",
         "_updated_by",
+        "_description",
+        "_paused_reason",
+        "_tags",
+        "_zone_id",
     ]
 
     for attr in private_attrs:
@@ -334,7 +389,7 @@ def test_private_attributes_exist():
 
 def test_none_values_are_handled_correctly(valid_data):
     """Test that None values can be set and retrieved correctly."""
-    schedule = WorkflowSchedule(**valid_data)
+    schedule = WorkflowScheduleAdapter(**valid_data)
 
     # Set all fields to None
     schedule.name = None
@@ -348,6 +403,10 @@ def test_none_values_are_handled_correctly(valid_data):
     schedule.updated_time = None
     schedule.created_by = None
     schedule.updated_by = None
+    schedule.description = None
+    schedule.paused_reason = None
+    schedule.tags = None
+    schedule.zone_id = None
 
     # Verify all are None
     assert schedule.name is None
@@ -361,28 +420,40 @@ def test_none_values_are_handled_correctly(valid_data):
     assert schedule.updated_time is None
     assert schedule.created_by is None
     assert schedule.updated_by is None
+    assert schedule.description is None
+    assert schedule.paused_reason is None
+    assert schedule.tags is None
+    assert schedule.zone_id is None
 
 
 def test_constructor_signature_compatibility(mock_start_workflow_request):
     """Test that constructor signature remains compatible."""
-    # Test positional arguments work (in order)
-    schedule = WorkflowSchedule(
-        "test_name",  # name
-        "0 0 * * *",  # cron_expression
-        True,  # run_catchup_schedule_instances
-        False,  # paused
-        mock_start_workflow_request,  # start_workflow_request
-        1640995200,  # schedule_start_time
-        1672531200,  # schedule_end_time
+    # Test positional arguments work (in order based on WorkflowSchedule model)
+    schedule = WorkflowScheduleAdapter(
         1640995200,  # create_time
-        1641081600,  # updated_time
         "creator",  # created_by
+        "0 0 * * *",  # cron_expression
+        "Test description",  # description
+        "test_name",  # name
+        False,  # paused
+        "Test pause reason",  # paused_reason
+        True,  # run_catchup_schedule_instances
+        1672531200,  # schedule_end_time
+        1640995200,  # schedule_start_time
+        mock_start_workflow_request,  # start_workflow_request
+        [],  # tags
         "updater",  # updated_by
+        1641081600,  # updated_time
+        "UTC",  # zone_id
     )
-
+    print(schedule)
     assert schedule.name == "test_name"
     assert schedule.cron_expression == "0 0 * * *"
     assert schedule.run_catchup_schedule_instances
     assert not schedule.paused
     assert schedule.created_by == "creator"
     assert schedule.updated_by == "updater"
+    assert schedule.description == "Test description"
+    assert schedule.paused_reason == "Test pause reason"
+    assert schedule.tags == []
+    assert schedule.zone_id == "UTC"

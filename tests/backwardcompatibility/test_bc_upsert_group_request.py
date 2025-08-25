@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import UpsertGroupRequest
+from conductor.client.adapters.models import UpsertGroupRequestAdapter
 
 
 @pytest.fixture
@@ -18,22 +18,22 @@ def valid_description():
 def test_constructor_signature_preserved(valid_description, valid_roles):
     """Verify constructor signature hasn't changed - both params optional."""
     # Test all constructor variations that should continue working
-    obj1 = UpsertGroupRequest()
+    obj1 = UpsertGroupRequestAdapter()
     assert obj1 is not None
 
-    obj2 = UpsertGroupRequest(description=valid_description)
+    obj2 = UpsertGroupRequestAdapter(description=valid_description)
     assert obj2 is not None
 
-    obj3 = UpsertGroupRequest(roles=valid_roles)
+    obj3 = UpsertGroupRequestAdapter(roles=valid_roles)
     assert obj3 is not None
 
-    obj4 = UpsertGroupRequest(description=valid_description, roles=valid_roles)
+    obj4 = UpsertGroupRequestAdapter(description=valid_description, roles=valid_roles)
     assert obj4 is not None
 
 
 def test_required_fields_exist():
     """Verify all expected fields still exist."""
-    obj = UpsertGroupRequest()
+    obj = UpsertGroupRequestAdapter()
 
     # These fields must exist for backward compatibility
     assert hasattr(obj, "description")
@@ -46,7 +46,7 @@ def test_required_fields_exist():
 
 def test_field_types_unchanged(valid_description, valid_roles):
     """Verify field types haven't changed."""
-    obj = UpsertGroupRequest(description=valid_description, roles=valid_roles)
+    obj = UpsertGroupRequestAdapter(description=valid_description, roles=valid_roles)
 
     # Description should be string or None
     assert isinstance(obj.description, str)
@@ -60,7 +60,7 @@ def test_field_types_unchanged(valid_description, valid_roles):
 
 def test_description_field_behavior(valid_description):
     """Verify description field behavior unchanged."""
-    obj = UpsertGroupRequest()
+    obj = UpsertGroupRequestAdapter()
 
     # Initially None
     assert obj.description is None
@@ -76,7 +76,7 @@ def test_description_field_behavior(valid_description):
 
 def test_roles_field_behavior(valid_roles):
     """Verify roles field behavior unchanged."""
-    obj = UpsertGroupRequest()
+    obj = UpsertGroupRequestAdapter()
 
     # Initially None
     assert obj.roles is None
@@ -88,7 +88,7 @@ def test_roles_field_behavior(valid_roles):
 
 def test_existing_enum_values_preserved(valid_roles):
     """Verify all existing enum values still work."""
-    obj = UpsertGroupRequest()
+    obj = UpsertGroupRequestAdapter()
 
     # Test each known enum value individually
     for role in valid_roles:
@@ -102,7 +102,7 @@ def test_existing_enum_values_preserved(valid_roles):
 
 def test_roles_validation_behavior_preserved():
     """Verify roles validation still works as expected."""
-    obj = UpsertGroupRequest()
+    obj = UpsertGroupRequestAdapter()
 
     # Invalid role should raise ValueError during assignment
     with pytest.raises(ValueError, match="Invalid values for `roles`") as excinfo:
@@ -119,11 +119,11 @@ def test_roles_validation_behavior_preserved():
 def test_validation_timing_preserved():
     """Verify when validation occurs hasn't changed."""
     # Constructor with valid roles should work
-    obj = UpsertGroupRequest(roles=["ADMIN"])
+    obj = UpsertGroupRequestAdapter(roles=["ADMIN"])
     assert obj.roles == ["ADMIN"]
 
     # Constructor with None roles should work (skips setter validation)
-    obj2 = UpsertGroupRequest(roles=None)
+    obj2 = UpsertGroupRequestAdapter(roles=None)
     assert obj2.roles is None
 
     # But setting invalid role later should raise error
@@ -137,7 +137,7 @@ def test_validation_timing_preserved():
 
 def test_property_accessors_preserved(valid_description, valid_roles):
     """Verify property getters/setters still work."""
-    obj = UpsertGroupRequest()
+    obj = UpsertGroupRequestAdapter()
 
     # Description property
     obj.description = valid_description
@@ -150,7 +150,7 @@ def test_property_accessors_preserved(valid_description, valid_roles):
 
 def test_serialization_methods_preserved(valid_description, valid_roles):
     """Verify serialization methods still exist and work."""
-    obj = UpsertGroupRequest(description=valid_description, roles=valid_roles)
+    obj = UpsertGroupRequestAdapter(description=valid_description, roles=valid_roles)
 
     # to_dict method
     assert hasattr(obj, "to_dict")
@@ -171,9 +171,9 @@ def test_serialization_methods_preserved(valid_description, valid_roles):
 
 def test_equality_methods_preserved(valid_description, valid_roles):
     """Verify equality comparison methods still work."""
-    obj1 = UpsertGroupRequest(description=valid_description, roles=valid_roles)
-    obj2 = UpsertGroupRequest(description=valid_description, roles=valid_roles)
-    obj3 = UpsertGroupRequest(description="Different", roles=valid_roles)
+    obj1 = UpsertGroupRequestAdapter(description=valid_description, roles=valid_roles)
+    obj2 = UpsertGroupRequestAdapter(description=valid_description, roles=valid_roles)
+    obj3 = UpsertGroupRequestAdapter(description="Different", roles=valid_roles)
 
     # __eq__ method
     assert obj1 == obj2
@@ -187,23 +187,23 @@ def test_equality_methods_preserved(valid_description, valid_roles):
 def test_class_attributes_preserved():
     """Verify important class attributes still exist."""
     # swagger_types mapping
-    assert hasattr(UpsertGroupRequest, "swagger_types")
-    swagger_types = UpsertGroupRequest.swagger_types
+    assert hasattr(UpsertGroupRequestAdapter, "swagger_types")
+    swagger_types = UpsertGroupRequestAdapter.swagger_types
     assert "description" in swagger_types
     assert "roles" in swagger_types
     assert swagger_types["description"] == "str"
     assert swagger_types["roles"] == "list[str]"
 
     # attribute_map mapping
-    assert hasattr(UpsertGroupRequest, "attribute_map")
-    attribute_map = UpsertGroupRequest.attribute_map
+    assert hasattr(UpsertGroupRequestAdapter, "attribute_map")
+    attribute_map = UpsertGroupRequestAdapter.attribute_map
     assert "description" in attribute_map
     assert "roles" in attribute_map
 
 
 def test_none_handling_preserved():
     """Verify None value handling hasn't changed."""
-    obj = UpsertGroupRequest()
+    obj = UpsertGroupRequestAdapter()
 
     # None should be acceptable for description
     obj.description = None
@@ -213,7 +213,7 @@ def test_none_handling_preserved():
     assert obj.roles is None
 
     # Constructor with roles=None should work
-    obj2 = UpsertGroupRequest(roles=None)
+    obj2 = UpsertGroupRequestAdapter(roles=None)
     assert obj2.roles is None
 
     # But setting roles = None after creation should fail (current behavior)
@@ -228,7 +228,7 @@ def test_none_handling_preserved():
 
 def test_empty_roles_list_handling():
     """Verify empty roles list handling preserved."""
-    obj = UpsertGroupRequest()
+    obj = UpsertGroupRequestAdapter()
 
     # Empty list should be valid
     obj.roles = []

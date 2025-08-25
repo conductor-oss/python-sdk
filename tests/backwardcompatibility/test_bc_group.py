@@ -1,5 +1,5 @@
 import pytest
-from conductor.client.http.models import Group
+from conductor.client.adapters.models.group_adapter import GroupAdapter
 
 
 @pytest.fixture
@@ -25,11 +25,11 @@ def test_swagger_types_structure_unchanged():
     # All existing fields must be present
     for field, field_type in expected_swagger_types.items():
         assert (
-            field in Group.swagger_types
+            field in GroupAdapter.swagger_types
         ), f"Field '{field}' missing from swagger_types"
         assert (
-            Group.swagger_types[field] == field_type
-        ), f"Field '{field}' type changed from '{field_type}' to '{Group.swagger_types[field]}'"
+            GroupAdapter.swagger_types[field] == field_type
+        ), f"Field '{field}' type changed from '{field_type}' to '{GroupAdapter.swagger_types[field]}'"
 
 
 def test_attribute_map_structure_unchanged():
@@ -43,21 +43,21 @@ def test_attribute_map_structure_unchanged():
     # All existing mappings must be present and unchanged
     for attr, json_key in expected_attribute_map.items():
         assert (
-            attr in Group.attribute_map
+            attr in GroupAdapter.attribute_map
         ), f"Attribute '{attr}' missing from attribute_map"
         assert (
-            Group.attribute_map[attr] == json_key
-        ), f"Attribute mapping for '{attr}' changed from '{json_key}' to '{Group.attribute_map[attr]}'"
+            GroupAdapter.attribute_map[attr] == json_key
+        ), f"Attribute mapping for '{attr}' changed from '{json_key}' to '{GroupAdapter.attribute_map[attr]}'"
 
 
 def test_constructor_signature_compatibility(mock_role1):
     """Verify constructor accepts all expected parameters."""
     # Test constructor with no parameters (all optional)
-    group = Group()
+    group = GroupAdapter()
     assert group is not None
 
     # Test constructor with all original parameters
-    group = Group(id="test-id", description="test description", roles=[mock_role1])
+    group = GroupAdapter(id="test-id", description="test description", roles=[mock_role1])
     assert group.id == "test-id"
     assert group.description == "test description"
     assert group.roles == [mock_role1]
@@ -65,7 +65,7 @@ def test_constructor_signature_compatibility(mock_role1):
 
 def test_property_getters_exist(mock_role1, mock_role2):
     """Verify all expected property getters exist and work."""
-    group = Group(id="test-id", description="test desc", roles=[mock_role1, mock_role2])
+    group = GroupAdapter(id="test-id", description="test desc", roles=[mock_role1, mock_role2])
 
     # Test all property getters
     assert group.id == "test-id"
@@ -75,7 +75,7 @@ def test_property_getters_exist(mock_role1, mock_role2):
 
 def test_property_setters_exist(mock_role1):
     """Verify all expected property setters exist and work."""
-    group = Group()
+    group = GroupAdapter()
 
     # Test all property setters
     group.id = "new-id"
@@ -90,7 +90,7 @@ def test_property_setters_exist(mock_role1):
 
 def test_field_type_enforcement(mock_role1, mock_role2):
     """Verify fields accept expected types (no type validation in current model)."""
-    group = Group()
+    group = GroupAdapter()
 
     # Current model doesn't enforce types, so we test that assignment works
     # This preserves existing behavior
@@ -105,7 +105,7 @@ def test_field_type_enforcement(mock_role1, mock_role2):
 
 def test_none_values_handling():
     """Verify fields can be set to None (backward compatibility)."""
-    group = Group(id="test-id", description="test desc", roles=[])
+    group = GroupAdapter(id="test-id", description="test desc", roles=[])
 
     # Test None assignment
     group.id = None
@@ -119,7 +119,7 @@ def test_none_values_handling():
 
 def test_to_dict_method_exists(mock_role1):
     """Verify to_dict method exists and works correctly."""
-    group = Group(id="test-id", description="test desc", roles=[mock_role1])
+    group = GroupAdapter(id="test-id", description="test desc", roles=[mock_role1])
 
     assert hasattr(group, "to_dict")
     result = group.to_dict()
@@ -136,7 +136,7 @@ def test_to_dict_method_exists(mock_role1):
 
 def test_to_str_method_exists(mock_role1):
     """Verify to_str method exists and works."""
-    group = Group(id="test-id", description="test desc", roles=[mock_role1])
+    group = GroupAdapter(id="test-id", description="test desc", roles=[mock_role1])
 
     assert hasattr(group, "to_str")
     result = group.to_str()
@@ -145,7 +145,7 @@ def test_to_str_method_exists(mock_role1):
 
 def test_repr_method_exists(mock_role1):
     """Verify __repr__ method exists and works."""
-    group = Group(id="test-id", description="test desc", roles=[mock_role1])
+    group = GroupAdapter(id="test-id", description="test desc", roles=[mock_role1])
 
     repr_str = repr(group)
     assert isinstance(repr_str, str)
@@ -153,9 +153,9 @@ def test_repr_method_exists(mock_role1):
 
 def test_equality_methods_exist(mock_role1):
     """Verify equality methods work correctly."""
-    group1 = Group(id="test-id", description="test desc", roles=[mock_role1])
-    group2 = Group(id="test-id", description="test desc", roles=[mock_role1])
-    group3 = Group(id="different-id", description="test desc", roles=[mock_role1])
+    group1 = GroupAdapter(id="test-id", description="test desc", roles=[mock_role1])
+    group2 = GroupAdapter(id="test-id", description="test desc", roles=[mock_role1])
+    group3 = GroupAdapter(id="different-id", description="test desc", roles=[mock_role1])
 
     # Test equality
     assert group1 == group2
@@ -168,7 +168,7 @@ def test_equality_methods_exist(mock_role1):
 
 def test_private_attribute_access():
     """Verify private attributes exist and can be accessed."""
-    group = Group(id="test-id", description="test desc", roles=[])
+    group = GroupAdapter(id="test-id", description="test desc", roles=[])
 
     # Test private attributes exist
     assert hasattr(group, "_id")
@@ -183,14 +183,14 @@ def test_private_attribute_access():
 
 def test_discriminator_attribute_exists():
     """Verify discriminator attribute exists (backward compatibility)."""
-    group = Group()
+    group = GroupAdapter()
     assert hasattr(group, "discriminator")
     assert group.discriminator is None
 
 
 def test_complex_roles_list_handling(mock_role1, mock_role2):
     """Verify complex roles list handling works."""
-    group = Group(id="test-id", description="test desc", roles=[mock_role1, mock_role2])
+    group = GroupAdapter(id="test-id", description="test desc", roles=[mock_role1, mock_role2])
 
     # Test complex list assignment
     new_roles = [mock_role1, mock_role2, mock_role1]
@@ -202,7 +202,7 @@ def test_complex_roles_list_handling(mock_role1, mock_role2):
 
 def test_empty_roles_list_handling():
     """Verify empty roles list handling works."""
-    group = Group(id="test-id", description="test desc", roles=[])
+    group = GroupAdapter(id="test-id", description="test desc", roles=[])
 
     # Test empty list assignment
     group.roles = []

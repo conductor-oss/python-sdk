@@ -2,11 +2,11 @@ import json
 
 import pytest
 
-from conductor.client.http.models.search_result_workflow_schedule_execution_model import (
-    SearchResultWorkflowScheduleExecutionModel,
+from conductor.client.adapters.models.search_result_workflow_schedule_execution_model_adapter import (
+    SearchResultWorkflowScheduleExecutionModelAdapter,
 )
-from conductor.client.http.models.workflow_schedule_execution_model import (
-    WorkflowScheduleExecutionModel,
+from conductor.client.adapters.models.workflow_schedule_execution_model_adapter import (
+    WorkflowScheduleExecutionModelAdapter,
 )
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
@@ -17,8 +17,8 @@ def server_json():
 
 
 def test_search_result_workflow_schedule_execution_model_serde(server_json):
-    work_flow_schedule_execution_model = WorkflowScheduleExecutionModel()
-    model = SearchResultWorkflowScheduleExecutionModel(
+    work_flow_schedule_execution_model = WorkflowScheduleExecutionModelAdapter()
+    model = SearchResultWorkflowScheduleExecutionModelAdapter(
         total_hits=server_json["totalHits"],
         results=(
             [work_flow_schedule_execution_model] if server_json.get("results") else None
@@ -28,7 +28,7 @@ def test_search_result_workflow_schedule_execution_model_serde(server_json):
     assert len(model.results) == len(server_json["results"])
     if model.results and len(model.results) > 0:
         sample_result = model.results[0]
-        assert isinstance(sample_result, WorkflowScheduleExecutionModel)
+        assert isinstance(sample_result, WorkflowScheduleExecutionModelAdapter)
     model_dict = model.to_dict()
     assert model_dict["total_hits"] == server_json["totalHits"]
     assert len(model_dict["results"]) == len(server_json["results"])

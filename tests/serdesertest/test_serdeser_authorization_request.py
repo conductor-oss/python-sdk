@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.authorization_request import AuthorizationRequest
+from conductor.client.adapters.models.authorization_request_adapter import AuthorizationRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -12,7 +12,7 @@ def server_json():
 
 
 def test_serialization_deserialization(server_json):
-    auth_request = AuthorizationRequest(
+    auth_request = AuthorizationRequestAdapter(
         subject=server_json.get("subject"),
         target=server_json.get("target"),
         access=server_json.get("access"),

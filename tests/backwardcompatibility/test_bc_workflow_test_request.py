@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.workflow_test_request import WorkflowTestRequest
+from conductor.client.adapters.models.workflow_test_request_adapter import WorkflowTestRequestAdapter
 
 
 @pytest.fixture
@@ -16,10 +16,10 @@ def mock_task_mock(mocker):
 
 
 def test_class_exists_and_instantiable():
-    """Test that the WorkflowTestRequest class exists and can be instantiated."""
+    """Test that the WorkflowTestRequestAdapter class exists and can be instantiated."""
     # Should be able to create instance with just required field
-    instance = WorkflowTestRequest(name="test_workflow")
-    assert isinstance(instance, WorkflowTestRequest)
+    instance = WorkflowTestRequestAdapter(name="test_workflow")
+    assert isinstance(instance, WorkflowTestRequestAdapter)
     assert instance.name == "test_workflow"
 
 
@@ -42,10 +42,10 @@ def test_swagger_types_structure():
     # Check that all expected fields exist
     for field, expected_type in expected_swagger_types.items():
         assert (
-            field in WorkflowTestRequest.swagger_types
+            field in WorkflowTestRequestAdapter.swagger_types
         ), f"Field '{field}' missing from swagger_types"
         assert (
-            WorkflowTestRequest.swagger_types[field] == expected_type
+            WorkflowTestRequestAdapter.swagger_types[field] == expected_type
         ), f"Field '{field}' has incorrect type in swagger_types"
 
 
@@ -68,16 +68,16 @@ def test_attribute_map_structure():
     # Check that all expected mappings exist
     for field, expected_json_key in expected_attribute_map.items():
         assert (
-            field in WorkflowTestRequest.attribute_map
+            field in WorkflowTestRequestAdapter.attribute_map
         ), f"Field '{field}' missing from attribute_map"
         assert (
-            WorkflowTestRequest.attribute_map[field] == expected_json_key
+            WorkflowTestRequestAdapter.attribute_map[field] == expected_json_key
         ), f"Field '{field}' has incorrect JSON mapping in attribute_map"
 
 
 def test_all_expected_properties_exist():
     """Test that all expected properties exist and are accessible."""
-    instance = WorkflowTestRequest(name="test")
+    instance = WorkflowTestRequestAdapter(name="test")
 
     expected_properties = [
         "correlation_id",
@@ -106,7 +106,7 @@ def test_all_expected_properties_exist():
 
 def test_all_expected_setters_exist():
     """Test that all expected property setters exist and work."""
-    instance = WorkflowTestRequest(name="test")
+    instance = WorkflowTestRequestAdapter(name="test")
 
     # Test string fields
     string_fields = [
@@ -151,7 +151,7 @@ def test_all_expected_setters_exist():
 def test_name_field_validation():
     """Test that name field validation still works as expected."""
     # Name is required - should raise ValueError when set to None
-    instance = WorkflowTestRequest(name="test")
+    instance = WorkflowTestRequestAdapter(name="test")
 
     with pytest.raises(ValueError, match="Invalid"):
         instance.name = None
@@ -161,7 +161,7 @@ def test_constructor_with_all_optional_parameters(mock_workflow_def, mock_task_m
     """Test that constructor accepts all expected optional parameters."""
     # This tests that the constructor signature hasn't changed
     try:
-        instance = WorkflowTestRequest(
+        instance = WorkflowTestRequestAdapter(
             correlation_id="corr_123",
             created_by="user_123",
             external_input_payload_storage_path="/path/to/payload",
@@ -195,7 +195,7 @@ def test_constructor_with_all_optional_parameters(mock_workflow_def, mock_task_m
 def test_constructor_with_minimal_parameters():
     """Test that constructor works with minimal required parameters."""
     try:
-        instance = WorkflowTestRequest(name="minimal_test")
+        instance = WorkflowTestRequestAdapter(name="minimal_test")
         assert instance.name == "minimal_test"
 
         # All other fields should be None (default values)
@@ -216,7 +216,7 @@ def test_constructor_with_minimal_parameters():
 
 def test_to_dict_method_exists():
     """Test that to_dict method exists and returns expected structure."""
-    instance = WorkflowTestRequest(name="test", priority=1)
+    instance = WorkflowTestRequestAdapter(name="test", priority=1)
 
     assert hasattr(instance, "to_dict"), "to_dict method missing"
 
@@ -236,7 +236,7 @@ def test_to_dict_method_exists():
 
 def test_to_str_method_exists():
     """Test that to_str method exists and works."""
-    instance = WorkflowTestRequest(name="test")
+    instance = WorkflowTestRequestAdapter(name="test")
 
     assert hasattr(instance, "to_str"), "to_str method missing"
 
@@ -249,7 +249,7 @@ def test_to_str_method_exists():
 
 def test_repr_method_exists():
     """Test that __repr__ method exists and works."""
-    instance = WorkflowTestRequest(name="test")
+    instance = WorkflowTestRequestAdapter(name="test")
 
     try:
         result = repr(instance)
@@ -260,9 +260,9 @@ def test_repr_method_exists():
 
 def test_equality_methods_exist():
     """Test that __eq__ and __ne__ methods exist and work."""
-    instance1 = WorkflowTestRequest(name="test")
-    instance2 = WorkflowTestRequest(name="test")
-    instance3 = WorkflowTestRequest(name="different")
+    instance1 = WorkflowTestRequestAdapter(name="test")
+    instance2 = WorkflowTestRequestAdapter(name="test")
+    instance3 = WorkflowTestRequestAdapter(name="different")
 
     try:
         # Test equality
@@ -279,7 +279,7 @@ def test_equality_methods_exist():
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists (part of the model structure)."""
-    instance = WorkflowTestRequest(name="test")
+    instance = WorkflowTestRequestAdapter(name="test")
 
     assert hasattr(instance, "discriminator"), "discriminator attribute missing"
     # Should be None by default
@@ -289,7 +289,7 @@ def test_discriminator_attribute_exists():
 def test_backward_compatibility_with_new_fields():
     """Test that the model can handle new fields being added without breaking."""
     # This test simulates what happens when new fields are added to the model
-    instance = WorkflowTestRequest(name="test")
+    instance = WorkflowTestRequestAdapter(name="test")
 
     # The model should still work with all existing functionality
     # even if new fields are added to swagger_types and attribute_map

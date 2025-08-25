@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import SearchResultTaskSummary
+from conductor.client.adapters.models.search_result_task_summary_adapter import SearchResultTaskSummaryAdapter
 
 
 @pytest.fixture
@@ -26,16 +26,16 @@ def sample_results(mock_task_summary_1, mock_task_summary_2):
 
 
 def test_class_exists():
-    """Test that the SearchResultTaskSummary class exists."""
-    assert hasattr(SearchResultTaskSummary, "__init__")
-    assert SearchResultTaskSummary.__name__ == "SearchResultTaskSummary"
+    """Test that the SearchResultTaskSummaryAdapter class exists."""
+    assert hasattr(SearchResultTaskSummaryAdapter, "__init__")
+    assert SearchResultTaskSummaryAdapter.__name__ == "SearchResultTaskSummaryAdapter"
 
 
 def test_required_class_attributes_exist():
     """Test that required class-level attributes exist and haven't changed."""
     # Verify swagger_types exists and contains expected fields
-    assert hasattr(SearchResultTaskSummary, "swagger_types")
-    swagger_types = SearchResultTaskSummary.swagger_types
+    assert hasattr(SearchResultTaskSummaryAdapter, "swagger_types")
+    swagger_types = SearchResultTaskSummaryAdapter.swagger_types
 
     # These fields must exist (backward compatibility)
     required_fields = {"total_hits": "int", "results": "list[TaskSummary]"}
@@ -49,8 +49,8 @@ def test_required_class_attributes_exist():
         ), f"Field '{field_name}' type changed from '{field_type}' to '{swagger_types[field_name]}'"
 
     # Verify attribute_map exists and contains expected mappings
-    assert hasattr(SearchResultTaskSummary, "attribute_map")
-    attribute_map = SearchResultTaskSummary.attribute_map
+    assert hasattr(SearchResultTaskSummaryAdapter, "attribute_map")
+    attribute_map = SearchResultTaskSummaryAdapter.attribute_map
 
     required_mappings = {"total_hits": "totalHits", "results": "results"}
 
@@ -66,30 +66,30 @@ def test_required_class_attributes_exist():
 def test_constructor_signature_compatibility(sample_results):
     """Test that constructor maintains backward compatibility."""
     # Test constructor with no arguments (original behavior)
-    obj = SearchResultTaskSummary()
+    obj = SearchResultTaskSummaryAdapter()
     assert obj is not None
     assert obj.total_hits is None
     assert obj.results is None
 
     # Test constructor with total_hits only
-    obj = SearchResultTaskSummary(total_hits=100)
+    obj = SearchResultTaskSummaryAdapter(total_hits=100)
     assert obj.total_hits == 100
     assert obj.results is None
 
     # Test constructor with results only
-    obj = SearchResultTaskSummary(results=sample_results)
+    obj = SearchResultTaskSummaryAdapter(results=sample_results)
     assert obj.total_hits is None
     assert obj.results == sample_results
 
     # Test constructor with both parameters
-    obj = SearchResultTaskSummary(total_hits=50, results=sample_results)
+    obj = SearchResultTaskSummaryAdapter(total_hits=50, results=sample_results)
     assert obj.total_hits == 50
     assert obj.results == sample_results
 
 
 def test_total_hits_property_compatibility():
     """Test that total_hits property maintains backward compatibility."""
-    obj = SearchResultTaskSummary()
+    obj = SearchResultTaskSummaryAdapter()
 
     # Test property exists
     assert hasattr(obj, "total_hits")
@@ -111,7 +111,7 @@ def test_total_hits_property_compatibility():
 
 def test_results_property_compatibility(sample_results):
     """Test that results property maintains backward compatibility."""
-    obj = SearchResultTaskSummary()
+    obj = SearchResultTaskSummaryAdapter()
 
     # Test property exists
     assert hasattr(obj, "results")
@@ -137,7 +137,7 @@ def test_results_property_compatibility(sample_results):
 
 def test_instance_attributes_exist():
     """Test that expected instance attributes exist after initialization."""
-    obj = SearchResultTaskSummary()
+    obj = SearchResultTaskSummaryAdapter()
 
     # Test private attributes exist
     required_private_attrs = ["_total_hits", "_results"]
@@ -151,7 +151,7 @@ def test_instance_attributes_exist():
 
 def test_required_methods_exist(sample_results):
     """Test that required methods exist and maintain backward compatibility."""
-    obj = SearchResultTaskSummary(total_hits=10, results=sample_results)
+    obj = SearchResultTaskSummaryAdapter(total_hits=10, results=sample_results)
 
     required_methods = ["to_dict", "to_str", "__repr__", "__eq__", "__ne__"]
 
@@ -162,7 +162,7 @@ def test_required_methods_exist(sample_results):
 
 def test_to_dict_method_compatibility(sample_results):
     """Test that to_dict method maintains expected behavior."""
-    obj = SearchResultTaskSummary(total_hits=25, results=sample_results)
+    obj = SearchResultTaskSummaryAdapter(total_hits=25, results=sample_results)
 
     result_dict = obj.to_dict()
 
@@ -181,7 +181,7 @@ def test_to_dict_method_compatibility(sample_results):
 
 def test_to_str_method_compatibility():
     """Test that to_str method maintains expected behavior."""
-    obj = SearchResultTaskSummary(total_hits=15)
+    obj = SearchResultTaskSummaryAdapter(total_hits=15)
 
     result_str = obj.to_str()
 
@@ -193,9 +193,9 @@ def test_to_str_method_compatibility():
 
 def test_equality_methods_compatibility(sample_results):
     """Test that equality methods maintain expected behavior."""
-    obj1 = SearchResultTaskSummary(total_hits=30, results=sample_results)
-    obj2 = SearchResultTaskSummary(total_hits=30, results=sample_results)
-    obj3 = SearchResultTaskSummary(total_hits=40, results=sample_results)
+    obj1 = SearchResultTaskSummaryAdapter(total_hits=30, results=sample_results)
+    obj2 = SearchResultTaskSummaryAdapter(total_hits=30, results=sample_results)
+    obj3 = SearchResultTaskSummaryAdapter(total_hits=40, results=sample_results)
 
     # Test __eq__
     assert obj1 == obj2
@@ -210,7 +210,7 @@ def test_equality_methods_compatibility(sample_results):
 
 def test_field_type_validation_compatibility(mock_task_summary_1, sample_results):
     """Test that field type expectations are maintained."""
-    obj = SearchResultTaskSummary()
+    obj = SearchResultTaskSummaryAdapter()
 
     # total_hits should accept int-like values (current behavior: no validation)
     # Test that setter doesn't break with various inputs
@@ -236,7 +236,7 @@ def test_field_type_validation_compatibility(mock_task_summary_1, sample_results
 
 def test_repr_method_compatibility():
     """Test that __repr__ method maintains expected behavior."""
-    obj = SearchResultTaskSummary(total_hits=5)
+    obj = SearchResultTaskSummaryAdapter(total_hits=5)
 
     repr_str = repr(obj)
 
@@ -248,7 +248,7 @@ def test_repr_method_compatibility():
 
 def test_new_fields_ignored_gracefully():
     """Test that the model can handle new fields being added (forward compatibility)."""
-    obj = SearchResultTaskSummary()
+    obj = SearchResultTaskSummaryAdapter()
 
     # Test that we can add new attributes without breaking existing functionality
     obj.new_field = "new_value"

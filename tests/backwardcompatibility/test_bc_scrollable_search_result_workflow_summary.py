@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import ScrollableSearchResultWorkflowSummary
+from conductor.client.adapters.models.scrollable_search_result_workflow_summary_adapter import ScrollableSearchResultWorkflowSummaryAdapter
 
 
 @pytest.fixture
@@ -14,23 +14,23 @@ def mock_workflow_summary(mocker):
 def test_constructor_signature_backward_compatibility(mock_workflow_summary):
     """Test that constructor signature remains backward compatible."""
     # Should work with no arguments (original behavior)
-    obj = ScrollableSearchResultWorkflowSummary()
+    obj = ScrollableSearchResultWorkflowSummaryAdapter()
     assert obj is not None
 
     # Should work with original parameters
-    obj = ScrollableSearchResultWorkflowSummary(
+    obj = ScrollableSearchResultWorkflowSummaryAdapter(
         results=[mock_workflow_summary], query_id="test_query"
     )
     assert obj is not None
 
     # Should work with keyword arguments (original behavior)
-    obj = ScrollableSearchResultWorkflowSummary(results=None, query_id=None)
+    obj = ScrollableSearchResultWorkflowSummaryAdapter(results=None, query_id=None)
     assert obj is not None
 
 
 def test_required_attributes_exist():
     """Test that all originally required attributes still exist."""
-    obj = ScrollableSearchResultWorkflowSummary()
+    obj = ScrollableSearchResultWorkflowSummaryAdapter()
 
     # Core attributes must exist
     assert hasattr(obj, "results")
@@ -48,24 +48,24 @@ def test_swagger_metadata_backward_compatibility():
     required_swagger_types = {"results": "list[WorkflowSummary]", "query_id": "str"}
 
     for field, field_type in required_swagger_types.items():
-        assert field in ScrollableSearchResultWorkflowSummary.swagger_types
+        assert field in ScrollableSearchResultWorkflowSummaryAdapter.swagger_types
         assert (
-            ScrollableSearchResultWorkflowSummary.swagger_types[field] == field_type
+            ScrollableSearchResultWorkflowSummaryAdapter.swagger_types[field] == field_type
         ), f"Type for field '{field}' changed from '{field_type}'"
 
     # attribute_map must contain original mappings
     required_attribute_map = {"results": "results", "query_id": "queryId"}
 
     for attr, json_key in required_attribute_map.items():
-        assert attr in ScrollableSearchResultWorkflowSummary.attribute_map
+        assert attr in ScrollableSearchResultWorkflowSummaryAdapter.attribute_map
         assert (
-            ScrollableSearchResultWorkflowSummary.attribute_map[attr] == json_key
+            ScrollableSearchResultWorkflowSummaryAdapter.attribute_map[attr] == json_key
         ), f"JSON mapping for '{attr}' changed from '{json_key}'"
 
 
 def test_property_getters_backward_compatibility(mock_workflow_summary):
     """Test that property getters work as expected."""
-    obj = ScrollableSearchResultWorkflowSummary()
+    obj = ScrollableSearchResultWorkflowSummaryAdapter()
 
     # Getters should return None initially
     assert obj.results is None
@@ -84,7 +84,7 @@ def test_property_getters_backward_compatibility(mock_workflow_summary):
 
 def test_property_setters_backward_compatibility(mock_workflow_summary):
     """Test that property setters work as expected."""
-    obj = ScrollableSearchResultWorkflowSummary()
+    obj = ScrollableSearchResultWorkflowSummaryAdapter()
 
     # Test results setter
     test_results = [mock_workflow_summary]
@@ -107,7 +107,7 @@ def test_property_setters_backward_compatibility(mock_workflow_summary):
 
 def test_to_dict_backward_compatibility(mock_workflow_summary):
     """Test that to_dict method maintains backward compatibility."""
-    obj = ScrollableSearchResultWorkflowSummary()
+    obj = ScrollableSearchResultWorkflowSummaryAdapter()
 
     # Empty object should return dict with None values
     result = obj.to_dict()
@@ -127,7 +127,7 @@ def test_to_dict_backward_compatibility(mock_workflow_summary):
 
 def test_to_str_backward_compatibility():
     """Test that to_str method works as expected."""
-    obj = ScrollableSearchResultWorkflowSummary()
+    obj = ScrollableSearchResultWorkflowSummaryAdapter()
     result = obj.to_str()
     assert isinstance(result, str)
 
@@ -139,15 +139,15 @@ def test_to_str_backward_compatibility():
 
 def test_repr_backward_compatibility():
     """Test that __repr__ method works as expected."""
-    obj = ScrollableSearchResultWorkflowSummary()
+    obj = ScrollableSearchResultWorkflowSummaryAdapter()
     result = repr(obj)
     assert isinstance(result, str)
 
 
 def test_equality_backward_compatibility():
     """Test that equality comparison works as expected."""
-    obj1 = ScrollableSearchResultWorkflowSummary()
-    obj2 = ScrollableSearchResultWorkflowSummary()
+    obj1 = ScrollableSearchResultWorkflowSummaryAdapter()
+    obj2 = ScrollableSearchResultWorkflowSummaryAdapter()
 
     # Empty objects should be equal
     assert obj1 == obj2
@@ -170,7 +170,7 @@ def test_initialization_with_values_backward_compatibility(mock_workflow_summary
     test_results = [mock_workflow_summary]
     test_query_id = "test_query_123"
 
-    obj = ScrollableSearchResultWorkflowSummary(
+    obj = ScrollableSearchResultWorkflowSummaryAdapter(
         results=test_results, query_id=test_query_id
     )
 
@@ -183,7 +183,7 @@ def test_initialization_with_values_backward_compatibility(mock_workflow_summary
 
 def test_field_types_not_changed(mock_workflow_summary):
     """Test that field types haven't changed from original specification."""
-    obj = ScrollableSearchResultWorkflowSummary()
+    obj = ScrollableSearchResultWorkflowSummaryAdapter()
 
     # Test with correct types
     obj.results = [mock_workflow_summary]  # Should accept list
@@ -197,33 +197,33 @@ def test_field_types_not_changed(mock_workflow_summary):
 def test_original_behavior_preserved(mock_workflow_summary):
     """Test that original behavior is preserved."""
     # Test 1: Default initialization
-    obj = ScrollableSearchResultWorkflowSummary()
+    obj = ScrollableSearchResultWorkflowSummaryAdapter()
     assert obj.results is None
     assert obj.query_id is None
     assert obj.discriminator is None
 
     # Test 2: Partial initialization
-    obj = ScrollableSearchResultWorkflowSummary(query_id="test")
+    obj = ScrollableSearchResultWorkflowSummaryAdapter(query_id="test")
     assert obj.results is None
     assert obj.query_id == "test"
 
     # Test 3: Full initialization
     test_results = [mock_workflow_summary]
-    obj = ScrollableSearchResultWorkflowSummary(results=test_results, query_id="test")
+    obj = ScrollableSearchResultWorkflowSummaryAdapter(results=test_results, query_id="test")
     assert obj.results == test_results
     assert obj.query_id == "test"
 
 
 def test_discriminator_field_preserved():
     """Test that discriminator field is preserved (swagger requirement)."""
-    obj = ScrollableSearchResultWorkflowSummary()
+    obj = ScrollableSearchResultWorkflowSummaryAdapter()
     assert hasattr(obj, "discriminator")
     assert obj.discriminator is None
 
 
 def test_private_attributes_preserved():
     """Test that private attributes are preserved."""
-    obj = ScrollableSearchResultWorkflowSummary()
+    obj = ScrollableSearchResultWorkflowSummaryAdapter()
 
     # Private attributes should exist and be None initially
     assert hasattr(obj, "_results")

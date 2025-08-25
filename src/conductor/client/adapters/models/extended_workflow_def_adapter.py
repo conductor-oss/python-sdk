@@ -1,0 +1,4 @@
+from conductor.client.http.models import ExtendedWorkflowDef
+
+
+class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef): ...

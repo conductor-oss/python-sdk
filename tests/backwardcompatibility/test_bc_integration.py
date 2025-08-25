@@ -1,5 +1,5 @@
 import pytest
-from conductor.client.http.models import Integration
+from conductor.client.adapters.models.integration_adapter import IntegrationAdapter
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def sample_tags():
 
 
 def test_constructor_accepts_all_existing_parameters(sample_config, sample_tags):
-    integration = Integration(
+    integration = IntegrationAdapter(
         category="API",
         configuration=sample_config,
         created_by="test_user",
@@ -47,7 +47,7 @@ def test_constructor_accepts_all_existing_parameters(sample_config, sample_tags)
 
 
 def test_constructor_with_none_values():
-    integration = Integration()
+    integration = IntegrationAdapter()
     assert integration.category is None
     assert integration.configuration is None
     assert integration.created_by is None
@@ -63,7 +63,7 @@ def test_constructor_with_none_values():
 
 
 def test_all_existing_properties_exist():
-    integration = Integration()
+    integration = IntegrationAdapter()
     expected_properties = [
         "category",
         "configuration",
@@ -84,7 +84,7 @@ def test_all_existing_properties_exist():
 
 
 def test_all_existing_setters_exist_and_work(sample_config, sample_tags):
-    integration = Integration()
+    integration = IntegrationAdapter()
     integration.category = "API"
     integration.configuration = sample_config
     integration.created_by = "test_user"
@@ -113,19 +113,19 @@ def test_all_existing_setters_exist_and_work(sample_config, sample_tags):
 
 def test_category_enum_validation_existing_values(valid_category_values):
     for value in valid_category_values:
-        integration = Integration(category=value)
+        integration = IntegrationAdapter(category=value)
         assert integration.category == value
 
 
 def test_category_enum_validation_rejects_invalid_values():
-    integration = Integration()
+    integration = IntegrationAdapter()
     with pytest.raises(ValueError, match="Invalid"):
         integration.category = "INVALID_CATEGORY"
 
 
 def test_field_types_unchanged():
     """Test that field types haven't changed from expected types."""
-    integration = Integration(
+    integration = IntegrationAdapter(
         category="API",
         configuration={"key": "value"},
         created_by="user",
@@ -156,15 +156,16 @@ def test_field_types_unchanged():
 
 
 def test_swagger_types_mapping_unchanged():
-    assert isinstance(Integration.swagger_types, dict)
+    assert isinstance(IntegrationAdapter.swagger_types, dict)
 
 
 def test_attribute_map_unchanged():
     expected_attribute_map = {
+        "apis": "apis",
         "category": "category",
         "configuration": "configuration",
+        "create_time": "createTime",
         "created_by": "createdBy",
-        "created_on": "createdOn",
         "description": "description",
         "enabled": "enabled",
         "models_count": "modelsCount",
@@ -172,17 +173,18 @@ def test_attribute_map_unchanged():
         "tags": "tags",
         "type": "type",
         "updated_by": "updatedBy",
-        "updated_on": "updatedOn",
+        "update_time": "updateTime",
+        "owner_app": "ownerApp",
     }
     for key, expected_json_key in expected_attribute_map.items():
-        assert key in Integration.attribute_map, f"attribute_map should contain {key}"
+        assert key in IntegrationAdapter.attribute_map, f"attribute_map should contain {key}"
         assert (
-            Integration.attribute_map[key] == expected_json_key
+            IntegrationAdapter.attribute_map[key] == expected_json_key
         ), f"attribute_map[{key}] should be {expected_json_key}"
 
 
 def test_to_dict_method_exists_and_works(sample_config, sample_tags):
-    integration = Integration(
+    integration = IntegrationAdapter(
         category="API",
         configuration=sample_config,
         created_by="test_user",
@@ -201,7 +203,7 @@ def test_to_dict_method_exists_and_works(sample_config, sample_tags):
     assert result["category"] == "API"
     assert result["configuration"] == sample_config
     assert result["created_by"] == "test_user"
-    assert result["created_on"] == 1234567890
+    assert result["create_time"] == 1234567890
     assert result["description"] == "Test integration"
     assert result["enabled"] is True
     assert result["models_count"] == 5
@@ -209,11 +211,11 @@ def test_to_dict_method_exists_and_works(sample_config, sample_tags):
     assert result["tags"] == sample_tags
     assert result["type"] == "webhook"
     assert result["updated_by"] == "test_user2"
-    assert result["updated_on"] == 1234567891
+    assert result["update_time"] == 1234567891
 
 
 def test_to_str_method_exists_and_works(sample_config, sample_tags):
-    integration = Integration(
+    integration = IntegrationAdapter(
         category="API",
         configuration=sample_config,
         created_by="test_user",
@@ -234,7 +236,7 @@ def test_to_str_method_exists_and_works(sample_config, sample_tags):
 
 
 def test_equality_methods_exist_and_work(sample_config, sample_tags):
-    integration1 = Integration(
+    integration1 = IntegrationAdapter(
         category="API",
         configuration=sample_config,
         created_by="test_user",
@@ -248,7 +250,7 @@ def test_equality_methods_exist_and_work(sample_config, sample_tags):
         updated_by="test_user2",
         updated_on=1234567891,
     )
-    integration2 = Integration(
+    integration2 = IntegrationAdapter(
         category="API",
         configuration=sample_config,
         created_by="test_user",
@@ -262,7 +264,7 @@ def test_equality_methods_exist_and_work(sample_config, sample_tags):
         updated_by="test_user2",
         updated_on=1234567891,
     )
-    integration3 = Integration(
+    integration3 = IntegrationAdapter(
         category="AI_MODEL",
         configuration=sample_config,
         created_by="test_user",
@@ -283,7 +285,7 @@ def test_equality_methods_exist_and_work(sample_config, sample_tags):
 
 
 def test_repr_method_exists_and_works(sample_config, sample_tags):
-    integration = Integration(
+    integration = IntegrationAdapter(
         category="API",
         configuration=sample_config,
         created_by="test_user",
@@ -304,7 +306,7 @@ def test_repr_method_exists_and_works(sample_config, sample_tags):
 
 
 def test_none_assignment_behavior():
-    integration = Integration(category="API", name="test")
+    integration = IntegrationAdapter(category="API", name="test")
 
     with pytest.raises(ValueError, match="Invalid"):
         integration.category = None
@@ -335,7 +337,7 @@ def test_none_assignment_behavior():
 
 
 def test_configuration_accepts_dict_with_mixed_types():
-    integration = Integration()
+    integration = IntegrationAdapter()
     config = {"a": 1, "b": "str", "c": [1, 2, 3], "d": {"nested": True}}
     integration.configuration = config
     assert integration.configuration == config

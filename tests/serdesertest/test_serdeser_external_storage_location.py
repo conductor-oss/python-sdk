@@ -2,9 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.external_storage_location import (
-    ExternalStorageLocation,
-)
+from conductor.client.adapters.models.external_storage_location_adapter import ExternalStorageLocationAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -14,7 +12,7 @@ def server_json():
 
 
 def test_external_storage_location_serde(server_json):
-    model = ExternalStorageLocation(
+    model = ExternalStorageLocationAdapter(
         uri=server_json.get("uri"), path=server_json.get("path")
     )
     assert server_json.get("uri") == model.uri

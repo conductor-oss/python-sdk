@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import RerunWorkflowRequest
+from conductor.client.adapters.models.rerun_workflow_request_adapter import RerunWorkflowRequestAdapter
 
 
 @pytest.fixture
@@ -16,15 +16,15 @@ def valid_task_input():
 
 
 def test_class_exists():
-    """Test that the RerunWorkflowRequest class still exists."""
-    assert hasattr(RerunWorkflowRequest, "__init__")
-    assert callable(RerunWorkflowRequest)
+    """Test that the RerunWorkflowRequestAdapter class still exists."""
+    assert hasattr(RerunWorkflowRequestAdapter, "__init__")
+    assert callable(RerunWorkflowRequestAdapter)
 
 
 def test_required_attributes_exist():
     """Test that all expected class attributes exist."""
     # Check swagger_types mapping exists and contains expected fields
-    assert hasattr(RerunWorkflowRequest, "swagger_types")
+    assert hasattr(RerunWorkflowRequestAdapter, "swagger_types")
     expected_swagger_types = {
         "re_run_from_workflow_id": "str",
         "workflow_input": "dict(str, object)",
@@ -34,11 +34,11 @@ def test_required_attributes_exist():
     }
 
     for field, expected_type in expected_swagger_types.items():
-        assert field in RerunWorkflowRequest.swagger_types
-        assert RerunWorkflowRequest.swagger_types[field] == expected_type
+        assert field in RerunWorkflowRequestAdapter.swagger_types
+        assert RerunWorkflowRequestAdapter.swagger_types[field] == expected_type
 
     # Check attribute_map exists and contains expected mappings
-    assert hasattr(RerunWorkflowRequest, "attribute_map")
+    assert hasattr(RerunWorkflowRequestAdapter, "attribute_map")
     expected_attribute_map = {
         "re_run_from_workflow_id": "reRunFromWorkflowId",
         "workflow_input": "workflowInput",
@@ -48,13 +48,13 @@ def test_required_attributes_exist():
     }
 
     for field, expected_json_key in expected_attribute_map.items():
-        assert field in RerunWorkflowRequest.attribute_map
-        assert RerunWorkflowRequest.attribute_map[field] == expected_json_key
+        assert field in RerunWorkflowRequestAdapter.attribute_map
+        assert RerunWorkflowRequestAdapter.attribute_map[field] == expected_json_key
 
 
 def test_constructor_with_no_parameters():
     """Test that constructor works with no parameters (all optional)."""
-    request = RerunWorkflowRequest()
+    request = RerunWorkflowRequestAdapter()
 
     # All fields should be None initially
     assert request.re_run_from_workflow_id is None
@@ -66,7 +66,7 @@ def test_constructor_with_no_parameters():
 
 def test_constructor_with_all_parameters(valid_workflow_input, valid_task_input):
     """Test constructor with all parameters provided."""
-    request = RerunWorkflowRequest(
+    request = RerunWorkflowRequestAdapter(
         re_run_from_workflow_id="workflow_123",
         workflow_input=valid_workflow_input,
         re_run_from_task_id="task_456",
@@ -83,7 +83,7 @@ def test_constructor_with_all_parameters(valid_workflow_input, valid_task_input)
 
 def test_constructor_with_partial_parameters(valid_task_input):
     """Test constructor with only some parameters provided."""
-    request = RerunWorkflowRequest(
+    request = RerunWorkflowRequestAdapter(
         re_run_from_workflow_id="workflow_123", task_input=valid_task_input
     )
 
@@ -96,7 +96,7 @@ def test_constructor_with_partial_parameters(valid_task_input):
 
 def test_property_getters_exist():
     """Test that all property getters still exist and work."""
-    request = RerunWorkflowRequest()
+    request = RerunWorkflowRequestAdapter()
 
     # Test that all getters exist and return None initially
     assert request.re_run_from_workflow_id is None
@@ -108,7 +108,7 @@ def test_property_getters_exist():
 
 def test_property_setters_exist_and_work(valid_workflow_input, valid_task_input):
     """Test that all property setters exist and work correctly."""
-    request = RerunWorkflowRequest()
+    request = RerunWorkflowRequestAdapter()
 
     # Test re_run_from_workflow_id setter
     request.re_run_from_workflow_id = "workflow_123"
@@ -133,7 +133,7 @@ def test_property_setters_exist_and_work(valid_workflow_input, valid_task_input)
 
 def test_setters_accept_none_values():
     """Test that setters accept None values (no required field validation)."""
-    request = RerunWorkflowRequest(
+    request = RerunWorkflowRequestAdapter(
         re_run_from_workflow_id="test",
         workflow_input={"key": "value"},
         re_run_from_task_id="task_test",
@@ -157,7 +157,7 @@ def test_setters_accept_none_values():
 
 def test_string_fields_accept_string_values():
     """Test that string fields accept string values."""
-    request = RerunWorkflowRequest()
+    request = RerunWorkflowRequestAdapter()
 
     # Test string fields with various string values
     request.re_run_from_workflow_id = "workflow_id_123"
@@ -171,7 +171,7 @@ def test_string_fields_accept_string_values():
 
 def test_dict_fields_accept_dict_values():
     """Test that dict fields accept dictionary values."""
-    request = RerunWorkflowRequest()
+    request = RerunWorkflowRequestAdapter()
 
     # Test workflow_input with various dict structures
     workflow_input1 = {"simple": "value"}
@@ -196,7 +196,7 @@ def test_dict_fields_accept_dict_values():
 
 def test_core_methods_exist():
     """Test that core methods still exist and work."""
-    request = RerunWorkflowRequest(
+    request = RerunWorkflowRequestAdapter(
         re_run_from_workflow_id="test_id", workflow_input={"test": "data"}
     )
 
@@ -217,13 +217,13 @@ def test_core_methods_exist():
     assert isinstance(repr_result, str)
 
     # Test __eq__ method exists and works
-    request2 = RerunWorkflowRequest(
+    request2 = RerunWorkflowRequestAdapter(
         re_run_from_workflow_id="test_id", workflow_input={"test": "data"}
     )
     assert request == request2
 
     # Test __ne__ method exists and works
-    request3 = RerunWorkflowRequest(re_run_from_workflow_id="different_id")
+    request3 = RerunWorkflowRequestAdapter(re_run_from_workflow_id="different_id")
     assert request != request3
 
 
@@ -232,7 +232,7 @@ def test_no_unexpected_validation_errors():
     # This test ensures that the current permissive behavior is maintained
     # The model should accept any values without type validation
 
-    request = RerunWorkflowRequest()
+    request = RerunWorkflowRequestAdapter()
 
     # These should not raise any validation errors based on current implementation
     # (though they might not be the intended types, the current model allows them)
@@ -245,6 +245,6 @@ def test_no_unexpected_validation_errors():
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists and is set to None."""
-    request = RerunWorkflowRequest()
+    request = RerunWorkflowRequestAdapter()
     assert hasattr(request, "discriminator")
     assert request.discriminator is None

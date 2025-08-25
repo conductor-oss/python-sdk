@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.integration import Integration
+from conductor.client.adapters.models.integration_adapter import IntegrationAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -12,7 +12,7 @@ def server_json():
 
 
 def test_integration_serdeser(server_json):
-    integration = Integration(
+    integration = IntegrationAdapter(
         category=server_json.get("category"),
         configuration=server_json.get("configuration"),
         created_by=server_json.get("createdBy"),

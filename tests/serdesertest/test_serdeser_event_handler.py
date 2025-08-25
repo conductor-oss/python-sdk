@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from conductor.client.http.models.action import Action
-from conductor.client.http.models.event_handler import EventHandler
+from conductor.client.adapters.models.action_adapter import ActionAdapter
+from conductor.client.adapters.models.event_handler_adapter import EventHandlerAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -20,15 +20,15 @@ def test_deserialize_serialize(server_json):
             converted_action = {}
             for key, value in action_json.items():
                 python_attr = None
-                for attr, json_key in Action.attribute_map.items():
+                for attr, json_key in ActionAdapter.attribute_map.items():
                     if json_key == key:
                         python_attr = attr
                         break
                 if python_attr:
                     converted_action[python_attr] = value
-            action = Action(**converted_action)
+            action = ActionAdapter(**converted_action)
             actions.append(action)
-    model = EventHandler(
+    model = EventHandlerAdapter(
         name=server_json.get("name"),
         event=server_json.get("event"),
         condition=server_json.get("condition"),
@@ -45,7 +45,7 @@ def test_deserialize_serialize(server_json):
     assert len(model.actions) == len(server_json.get("actions", []))
     if server_json.get("actions"):
         for action in model.actions:
-            assert isinstance(action, Action)
+            assert isinstance(action, ActionAdapter)
     result_json = model.to_dict()
     assert result_json.get("name") == server_json.get("name")
     assert result_json.get("event") == server_json.get("event")

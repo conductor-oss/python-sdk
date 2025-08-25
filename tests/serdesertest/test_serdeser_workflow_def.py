@@ -2,8 +2,10 @@ import json
 
 import pytest
 
-from conductor.client.http.models import RateLimit, WorkflowDef, WorkflowTask
-from conductor.client.http.models.schema_def import SchemaDef
+from conductor.client.adapters.models.rate_limit_adapter import RateLimitAdapter
+from conductor.client.adapters.models.workflow_def_adapter import WorkflowDefAdapter
+from conductor.client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
+from conductor.client.adapters.models.schema_def_adapter import SchemaDefAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -40,7 +42,7 @@ def create_workflow_def_from_json(json_dict):
     tasks = []
     if json_dict.get("tasks"):
         for task_json in json_dict["tasks"]:
-            task = WorkflowTask()
+            task = WorkflowTaskAdapter()
             # Map task properties
             if "name" in task_json:
                 task.name = task_json.get("name")
@@ -59,16 +61,17 @@ def create_workflow_def_from_json(json_dict):
     input_schema = None
     if json_dict.get("inputSchema"):
         schema_json = json_dict["inputSchema"]
-        input_schema = SchemaDef()
+        input_schema = SchemaDefAdapter()
         if "name" in schema_json:
             input_schema.name = schema_json.get("name")
         if "version" in schema_json:
             input_schema.version = schema_json.get("version")
+
     # 3. Output Schema
     output_schema = None
     if json_dict.get("outputSchema"):
         schema_json = json_dict["outputSchema"]
-        output_schema = SchemaDef()
+        output_schema = SchemaDefAdapter()
         if "name" in schema_json:
             output_schema.name = schema_json.get("name")
         if "version" in schema_json:
@@ -77,7 +80,7 @@ def create_workflow_def_from_json(json_dict):
     rate_limit_config = None
     if json_dict.get("rateLimitConfig"):
         rate_json = json_dict["rateLimitConfig"]
-        rate_limit_config = RateLimit()
+        rate_limit_config = RateLimitAdapter()
         if "rateLimitKey" in rate_json:
             rate_limit_config.rate_limit_key = rate_json.get("rateLimitKey")
         if "concurrentExecLimit" in rate_json:
@@ -90,8 +93,9 @@ def create_workflow_def_from_json(json_dict):
             rate_limit_config.concurrent_execution_limit = rate_json.get(
                 "concurrentExecutionLimit"
             )
+
     # Create the WorkflowDef with all parameters
-    workflow_def = WorkflowDef(
+    workflow_def = WorkflowDefAdapter(
         name=json_dict.get("name"),
         description=json_dict.get("description"),
         version=json_dict.get("version"),

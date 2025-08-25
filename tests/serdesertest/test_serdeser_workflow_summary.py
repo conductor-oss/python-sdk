@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.workflow_summary import WorkflowSummary
+from conductor.client.adapters.models.workflow_summary_adapter import WorkflowSummaryAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -14,7 +14,7 @@ def server_json():
 
 def test_workflow_summary_serde(server_json):
     # Test deserialization from JSON to SDK model
-    model = WorkflowSummary(
+    model = WorkflowSummaryAdapter(
         workflow_type=server_json.get("workflowType"),
         version=server_json.get("version"),
         workflow_id=server_json.get("workflowId"),
@@ -50,7 +50,7 @@ def test_workflow_summary_serde(server_json):
     _verify_json_matches(json_dict, server_json)
 
 
-def _verify_fields(model: WorkflowSummary, server_json):
+def _verify_fields(model: WorkflowSummaryAdapter, server_json):
     """Verify all fields in the model are correctly populated."""
     assert model.workflow_type == server_json.get("workflowType")
     assert model.version == server_json.get("version")
@@ -84,7 +84,7 @@ def _verify_fields(model: WorkflowSummary, server_json):
 
 def _transform_to_json_format(python_dict):
     """Transform Python dict keys from snake_case to camelCase for JSON comparison."""
-    attribute_map = WorkflowSummary.attribute_map
+    attribute_map = WorkflowSummaryAdapter.attribute_map
     result = {}
     for py_key, value in python_dict.items():
         # Get the corresponding JSON key from attribute_map
