@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from conductor.client.http.models.start_workflow_request import (
     IdempotencyStrategy,
     StartWorkflowRequest,

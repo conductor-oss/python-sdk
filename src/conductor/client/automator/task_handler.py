@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from conductor.client.automator.task_runner import TaskRunner
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.configuration.settings.metrics_settings import MetricsSettings
+from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.worker.worker import Worker
 from conductor.client.worker.worker_interface import WorkerInterface

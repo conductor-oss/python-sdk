@@ -7,7 +7,7 @@ from deprecated import deprecated
 
 from conductor.client.http.models import WorkflowTask
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums import TaskResultStatus
 
 
 @dataclass
