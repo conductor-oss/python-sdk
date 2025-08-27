@@ -54,6 +54,8 @@ class TestOrkesSecretClientIntegration:
     def json_secret_value(self) -> str:
         return '{"username": "admin", "password": "secure_password_123", "role": "administrator"}'
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_secret_lifecycle_simple(
         self,
         secret_client: OrkesSecretClient,
@@ -81,6 +83,8 @@ class TestOrkesSecretClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup secret {test_secret_key}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_secret_lifecycle_complex(
         self,
         secret_client: OrkesSecretClient,
@@ -106,6 +110,8 @@ class TestOrkesSecretClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup secret {secret_key}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_secret_with_tags(
         self,
         secret_client: OrkesSecretClient,
@@ -147,6 +153,8 @@ class TestOrkesSecretClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup secret {secret_key}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_secret_update(
         self,
         secret_client: OrkesSecretClient,
@@ -176,6 +184,8 @@ class TestOrkesSecretClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup secret {secret_key}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_concurrent_secret_operations(
         self,
         secret_client: OrkesSecretClient,
@@ -250,6 +260,8 @@ class TestOrkesSecretClientIntegration:
                 except Exception as e:
                     print(f"Warning: Failed to delete secret {secret_key}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_complex_secret_management_flow(
         self, secret_client: OrkesSecretClient, test_suffix: str
     ):

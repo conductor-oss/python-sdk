@@ -122,6 +122,8 @@ class TestOrkesMetadataClientIntegration:
             output_keys=["output_param"],
         )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_lifecycle_simple(
         self,
         metadata_client: OrkesMetadataClient,
@@ -154,6 +156,8 @@ class TestOrkesMetadataClientIntegration:
                     f"Warning: Failed to cleanup workflow {simple_workflow_def.name}: {str(e)}"
                 )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_lifecycle_complex(
         self,
         metadata_client: OrkesMetadataClient,
@@ -182,6 +186,8 @@ class TestOrkesMetadataClientIntegration:
                     f"Warning: Failed to cleanup workflow {complex_workflow_def.name}: {str(e)}"
                 )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_versioning(
         self,
         metadata_client: OrkesMetadataClient,
@@ -229,6 +235,8 @@ class TestOrkesMetadataClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup workflow {workflow_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_update(
         self,
         metadata_client: OrkesMetadataClient,
@@ -275,6 +283,8 @@ class TestOrkesMetadataClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup workflow {workflow_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_task_lifecycle(
         self,
         metadata_client: OrkesMetadataClient,
@@ -303,6 +313,8 @@ class TestOrkesMetadataClientIntegration:
                     f"Warning: Failed to cleanup task {simple_task_def.name}: {str(e)}"
                 )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_task_update(
         self,
         metadata_client: OrkesMetadataClient,
@@ -357,6 +369,8 @@ class TestOrkesMetadataClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup task {task_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_tags(
         self,
         metadata_client: OrkesMetadataClient,
@@ -418,6 +432,8 @@ class TestOrkesMetadataClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup workflow {workflow_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_task_tags(
         self,
         metadata_client: OrkesMetadataClient,
@@ -480,6 +496,8 @@ class TestOrkesMetadataClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup task {task_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_metadata_not_found(self, metadata_client: OrkesMetadataClient):
         non_existent_workflow = f"non_existent_{str(uuid.uuid4())}"
         non_existent_task = f"non_existent_{str(uuid.uuid4())}"
@@ -500,6 +518,8 @@ class TestOrkesMetadataClientIntegration:
             metadata_client.unregister_task_def(non_existent_task)
         assert exc_info.value.code == 404
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_concurrent_metadata_operations(
         self,
         metadata_client: OrkesMetadataClient,
@@ -675,6 +695,8 @@ class TestOrkesMetadataClientIntegration:
                 f"Warning: {len(remaining_workflows)} workflows and {len(remaining_tasks)} tasks could not be verified as deleted: {remaining_workflows}, {remaining_tasks}"
             )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_complex_metadata_management_flow(
         self, metadata_client: OrkesMetadataClient, test_suffix: str
     ):

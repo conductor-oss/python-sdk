@@ -75,6 +75,8 @@ class TestOrkesAuthorizationClientIntegration:
         """Generate test workflow name."""
         return f"test_workflow_{test_suffix}"
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_application_lifecycle(
         self, auth_client: OrkesAuthorizationClient, test_application_name: str
     ):
@@ -149,6 +151,8 @@ class TestOrkesAuthorizationClientIntegration:
                 auth_client.get_application(created_app.id)
             assert exc_info.value.code == 404
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_user_lifecycle(
         self, auth_client: OrkesAuthorizationClient, test_user_id: str
     ):
@@ -184,6 +188,8 @@ class TestOrkesAuthorizationClientIntegration:
                 auth_client.get_user(test_user_id)
             assert exc_info.value.code == 404
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_group_lifecycle(
         self,
         auth_client: OrkesAuthorizationClient,
@@ -235,6 +241,8 @@ class TestOrkesAuthorizationClientIntegration:
                 auth_client.get_user(test_user_id)
             assert exc_info.value.code == 404
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_permissions_lifecycle(
         self,
         auth_client: OrkesAuthorizationClient,
@@ -348,6 +356,8 @@ class TestOrkesAuthorizationClientIntegration:
                 auth_client.get_user(test_user_id)
             assert exc_info.value.code == 404
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_error_handling(self, auth_client: OrkesAuthorizationClient):
         """Test error handling for non-existent resources."""
         non_existent_id = "non_existent_" + str(uuid.uuid4())
@@ -364,6 +374,8 @@ class TestOrkesAuthorizationClientIntegration:
             auth_client.get_group(non_existent_id)
         assert exc_info.value.code == 404
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_concurrent_operations(
         self, auth_client: OrkesAuthorizationClient, test_suffix: str
     ):
@@ -452,6 +464,8 @@ class TestOrkesAuthorizationClientIntegration:
                     f"Warning: {len(remaining_apps)} applications could not be verified as deleted: {remaining_apps}"
                 )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_complex_user_management_flow(
         self, auth_client: OrkesAuthorizationClient, test_suffix: str
     ):

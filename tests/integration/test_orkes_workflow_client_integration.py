@@ -177,6 +177,8 @@ class TestOrkesWorkflowClientIntegration:
                     f"Warning: Failed to cleanup workflow definition {simple_workflow_def.name}: {str(e)}"
                 )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_start_by_name(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -213,6 +215,8 @@ class TestOrkesWorkflowClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup workflow: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_start_with_request(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -239,6 +243,8 @@ class TestOrkesWorkflowClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_execute_sync(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -259,6 +265,8 @@ class TestOrkesWorkflowClientIntegration:
             print(f"Exception in test_workflow_execute_sync: {str(e)}")
             raise
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_execute_with_return_strategy(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -279,6 +287,8 @@ class TestOrkesWorkflowClientIntegration:
             print(f"Exception in test_workflow_execute_with_return_strategy: {str(e)}")
             raise
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_pause_resume(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -317,6 +327,8 @@ class TestOrkesWorkflowClientIntegration:
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
                     )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_restart(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -355,6 +367,8 @@ class TestOrkesWorkflowClientIntegration:
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
                     )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_rerun(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -405,6 +419,8 @@ class TestOrkesWorkflowClientIntegration:
                     except Exception as e:
                         print(f"Warning: Failed to cleanup workflow {wf_id}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_retry(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -444,6 +460,8 @@ class TestOrkesWorkflowClientIntegration:
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
                     )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_terminate(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -479,6 +497,8 @@ class TestOrkesWorkflowClientIntegration:
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
                     )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_get_with_tasks(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -516,6 +536,8 @@ class TestOrkesWorkflowClientIntegration:
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
                     )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_status_with_options(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -553,6 +575,8 @@ class TestOrkesWorkflowClientIntegration:
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
                     )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_test(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -576,6 +600,8 @@ class TestOrkesWorkflowClientIntegration:
             print(f"Exception in test_workflow_test: {str(e)}")
             raise
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_search(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -622,6 +648,8 @@ class TestOrkesWorkflowClientIntegration:
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
                     )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_correlation_ids_batch(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -668,6 +696,8 @@ class TestOrkesWorkflowClientIntegration:
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
                     )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_correlation_ids_simple(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -710,6 +740,8 @@ class TestOrkesWorkflowClientIntegration:
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
                     )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_update_variables(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -748,6 +780,8 @@ class TestOrkesWorkflowClientIntegration:
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
                     )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_update_state(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -788,6 +822,8 @@ class TestOrkesWorkflowClientIntegration:
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
                     )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_concurrent_workflow_operations(
         self,
         workflow_client: OrkesWorkflowClient,
@@ -870,6 +906,8 @@ class TestOrkesWorkflowClientIntegration:
                 except Exception as e:
                     print(f"Warning: Failed to delete workflow {workflow_id}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_complex_workflow_management_flow(
         self,
         workflow_client: OrkesWorkflowClient,

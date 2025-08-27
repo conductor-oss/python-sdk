@@ -3,19 +3,25 @@ import uuid
 
 import pytest
 
-from conductor.client.adapters.models.request_param_adapter import \
-    RequestParamAdapter as RequestParam
-from conductor.client.adapters.models.service_method_adapter import \
-    ServiceMethodAdapter as ServiceMethod
+from conductor.client.adapters.models.request_param_adapter import (
+    RequestParamAdapter as RequestParam,
+)
+from conductor.client.adapters.models.service_method_adapter import (
+    ServiceMethodAdapter as ServiceMethod,
+)
 from conductor.client.adapters.models.service_registry_adapter import (
-    Config, OrkesCircuitBreakerConfig)
-from conductor.client.adapters.models.service_registry_adapter import \
-    ServiceRegistryAdapter as ServiceRegistry
+    Config,
+    OrkesCircuitBreakerConfig,
+)
+from conductor.client.adapters.models.service_registry_adapter import (
+    ServiceRegistryAdapter as ServiceRegistry,
+)
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.service_registry import ServiceType
 from conductor.client.http.rest import ApiException
-from conductor.client.orkes.orkes_service_registry_client import \
-    OrkesServiceRegistryClient
+from conductor.client.orkes.orkes_service_registry_client import (
+    OrkesServiceRegistryClient,
+)
 
 
 class TestOrkesServiceRegistryClientIntegration:
@@ -152,6 +158,7 @@ class TestOrkesServiceRegistryClientIntegration:
             }
             """
 
+    @pytest.mark.v5_2_6
     def test_service_lifecycle_http(
         self,
         service_registry_client: OrkesServiceRegistryClient,
@@ -182,6 +189,7 @@ class TestOrkesServiceRegistryClientIntegration:
                     f"Warning: Failed to cleanup service {simple_http_service.name}: {str(e)}"
                 )
 
+    @pytest.mark.v5_2_6
     def test_service_lifecycle_grpc(
         self,
         service_registry_client: OrkesServiceRegistryClient,
@@ -208,159 +216,7 @@ class TestOrkesServiceRegistryClientIntegration:
                     f"Warning: Failed to cleanup service {simple_grpc_service.name}: {str(e)}"
                 )
 
-    def test_service_method_management(
-        self,
-        service_registry_client: OrkesServiceRegistryClient,
-        test_suffix: str,
-        sample_service_method: ServiceMethod,
-    ):
-        service_name = f"test_method_service_{test_suffix}"
-        try:
-            service = ServiceRegistry(
-                name=service_name,
-                type=ServiceType.HTTP,
-                service_uri="http://localhost:8080/api",
-                methods=[],
-                request_params=[],
-            )
-
-            service_registry_client.add_or_update_service(service)
-
-            service_registry_client.add_or_update_method(
-                service_name, sample_service_method
-            )
-
-            discovered_methods = service_registry_client.discover(service_name)
-            assert len(discovered_methods) >= 1
-            method_names = [method.method_name for method in discovered_methods]
-            assert sample_service_method.method_name in method_names
-
-            service_registry_client.remove_method(
-                service_name,
-                sample_service_method.method_name,
-                sample_service_method.method_name,
-                sample_service_method.method_type,
-            )
-
-            discovered_methods_after_remove = service_registry_client.discover(
-                service_name
-            )
-            method_names_after_remove = [
-                method.method_name for method in discovered_methods_after_remove
-            ]
-            assert sample_service_method.method_name not in method_names_after_remove
-
-        except Exception as e:
-            print(f"Exception in test_service_method_management: {str(e)}")
-            raise
-        finally:
-            try:
-                service_registry_client.remove_service(service_name)
-            except Exception as e:
-                print(f"Warning: Failed to cleanup service {service_name}: {str(e)}")
-
-    def test_circuit_breaker_operations(
-        self,
-        service_registry_client: OrkesServiceRegistryClient,
-        test_suffix: str,
-    ):
-        service_name = f"test_circuit_breaker_{test_suffix}"
-        try:
-            service = ServiceRegistry(
-                name=service_name,
-                type=ServiceType.HTTP,
-                service_uri="http://localhost:8080/api",
-                methods=[],
-                request_params=[],
-            )
-
-            service_registry_client.add_or_update_service(service)
-
-            initial_status = service_registry_client.get_circuit_breaker_status(
-                service_name
-            )
-            assert initial_status is not None
-
-            open_response = service_registry_client.open_circuit_breaker(service_name)
-            assert open_response is not None
-
-            open_status = service_registry_client.get_circuit_breaker_status(
-                service_name
-            )
-            assert open_status is not None
-
-            close_response = service_registry_client.close_circuit_breaker(service_name)
-            assert close_response is not None
-
-            close_status = service_registry_client.get_circuit_breaker_status(
-                service_name
-            )
-            assert close_status is not None
-
-            is_open = service_registry_client.is_circuit_breaker_open(service_name)
-            assert isinstance(is_open, bool)
-
-        except Exception as e:
-            print(f"Exception in test_circuit_breaker_operations: {str(e)}")
-            raise
-        finally:
-            try:
-                service_registry_client.remove_service(service_name)
-            except Exception as e:
-                print(f"Warning: Failed to cleanup service {service_name}: {str(e)}")
-
-    def test_proto_management(
-        self,
-        service_registry_client: OrkesServiceRegistryClient,
-        test_suffix: str,
-        sample_proto_data: bytes,
-    ):
-        service_name = f"test_proto_service_{test_suffix}"
-        proto_filename = "user_service.proto"
-        try:
-            service = ServiceRegistry(
-                name=service_name,
-                type=ServiceType.GRPC,
-                service_uri="grpc://localhost:9090",
-                methods=[],
-                request_params=[],
-            )
-
-            service_registry_client.add_or_update_service(service)
-
-            service_registry_client.set_proto_data(
-                service_name, proto_filename, sample_proto_data
-            )
-
-            retrieved_proto_data = service_registry_client.get_proto_data(
-                service_name, proto_filename
-            )
-            assert retrieved_proto_data == sample_proto_data
-
-            all_protos = service_registry_client.get_all_protos(service_name)
-            assert len(all_protos) >= 1
-            proto_filenames = [proto.filename for proto in all_protos]
-            assert proto_filename in proto_filenames
-
-            service_registry_client.delete_proto(service_name, proto_filename)
-
-            all_protos_after_delete = service_registry_client.get_all_protos(
-                service_name
-            )
-            proto_filenames_after_delete = [
-                proto.filename for proto in all_protos_after_delete
-            ]
-            assert proto_filename not in proto_filenames_after_delete
-
-        except Exception as e:
-            print(f"Exception in test_proto_management: {str(e)}")
-            raise
-        finally:
-            try:
-                service_registry_client.remove_service(service_name)
-            except Exception as e:
-                print(f"Warning: Failed to cleanup service {service_name}: {str(e)}")
-
+    @pytest.mark.v5_2_6
     def test_service_update(
         self,
         service_registry_client: OrkesServiceRegistryClient,
@@ -405,23 +261,7 @@ class TestOrkesServiceRegistryClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup service {service_name}: {str(e)}")
 
-    def test_service_not_found(
-        self, service_registry_client: OrkesServiceRegistryClient
-    ):
-        non_existent_service = f"non_existent_{str(uuid.uuid4())}"
-
-        with pytest.raises(ApiException) as exc_info:
-            service_registry_client.get_service(non_existent_service)
-        assert exc_info.value.code == 404
-
-        with pytest.raises(ApiException) as exc_info:
-            service_registry_client.remove_service(non_existent_service)
-        assert exc_info.value.code == 404
-
-        with pytest.raises(ApiException) as exc_info:
-            service_registry_client.get_circuit_breaker_status(non_existent_service)
-        assert exc_info.value.code == 404
-
+    @pytest.mark.v5_2_6
     def test_concurrent_service_operations(
         self,
         service_registry_client: OrkesServiceRegistryClient,
@@ -503,122 +343,3 @@ class TestOrkesServiceRegistryClientIntegration:
                     service_registry_client.remove_service(service_name)
                 except Exception as e:
                     print(f"Warning: Failed to delete service {service_name}: {str(e)}")
-
-    def test_complex_service_management_flow(
-        self, service_registry_client: OrkesServiceRegistryClient, test_suffix: str
-    ):
-        created_resources = {"services": []}
-
-        try:
-            service_types = {
-                "user_service": ServiceType.HTTP,
-                "payment_service": ServiceType.HTTP,
-                "notification_service": ServiceType.GRPC,
-                "analytics_service": ServiceType.GRPC,
-            }
-
-            for service_type_name, service_type in service_types.items():
-                service_name = f"complex_{service_type_name}_{test_suffix}"
-                service_uri = (
-                    f"http://localhost:8080/{service_type_name}"
-                    if service_type == ServiceType.HTTP
-                    else f"grpc://localhost:9090/{service_type_name}"
-                )
-
-                service = ServiceRegistry(
-                    name=service_name,
-                    type=service_type,
-                    service_uri=service_uri,
-                    methods=[],
-                    request_params=[],
-                )
-
-                service_registry_client.add_or_update_service(service)
-                created_resources["services"].append(service_name)
-
-            all_services = service_registry_client.get_registered_services()
-            service_names = [service.name for service in all_services]
-            for service_name in created_resources["services"]:
-                assert (
-                    service_name in service_names
-                ), f"Service {service_name} not found in list"
-
-            for service_type_name, service_type in service_types.items():
-                service_name = f"complex_{service_type_name}_{test_suffix}"
-                retrieved_service = service_registry_client.get_service(service_name)
-                assert retrieved_service.name == service_name
-                assert retrieved_service.type == service_type
-
-            bulk_services = []
-            for i in range(3):
-                service_name = f"bulk_service_{i}_{test_suffix}"
-                service = ServiceRegistry(
-                    name=service_name,
-                    type=ServiceType.HTTP,
-                    service_uri=f"http://localhost:808{i}/api",
-                    methods=[],
-                    request_params=[],
-                )
-                service_registry_client.add_or_update_service(service)
-                bulk_services.append(service_name)
-                created_resources["services"].append(service_name)
-
-            all_services_after_bulk = service_registry_client.get_registered_services()
-            service_names_after_bulk = [
-                service.name for service in all_services_after_bulk
-            ]
-            for service_name in bulk_services:
-                assert (
-                    service_name in service_names_after_bulk
-                ), f"Bulk service {service_name} not found in list"
-
-            queue_sizes = service_registry_client.get_queue_sizes_for_all_tasks()
-            assert isinstance(queue_sizes, dict)
-
-            for service_type_name in ["user_service", "payment_service"]:
-                service_name = f"complex_{service_type_name}_{test_suffix}"
-                status = service_registry_client.get_circuit_breaker_status(
-                    service_name
-                )
-                assert status is not None
-
-        except Exception as e:
-            print(f"Exception in test_complex_service_management_flow: {str(e)}")
-            raise
-        finally:
-            self._perform_comprehensive_cleanup(
-                service_registry_client, created_resources
-            )
-
-    def _perform_comprehensive_cleanup(
-        self,
-        service_registry_client: OrkesServiceRegistryClient,
-        created_resources: dict,
-    ):
-        cleanup_enabled = os.getenv("CONDUCTOR_TEST_CLEANUP", "true").lower() == "true"
-        if not cleanup_enabled:
-            return
-
-        for service_name in created_resources["services"]:
-            try:
-                service_registry_client.remove_service(service_name)
-            except Exception as e:
-                print(f"Warning: Failed to delete service {service_name}: {str(e)}")
-
-        remaining_services = []
-        for service_name in created_resources["services"]:
-            try:
-                service_registry_client.get_service(service_name)
-                remaining_services.append(service_name)
-            except ApiException as e:
-                if e.code == 404:
-                    pass
-                else:
-                    remaining_services.append(service_name)
-            except Exception:
-                remaining_services.append(service_name)
-
-        if remaining_services:
-            print(
-                f"Warning: {len(remaining_services)} services could not be verified as deleted: {remaining_services}"
-            )

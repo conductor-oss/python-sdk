@@ -182,6 +182,7 @@ from conductor.client.adapters.models.rerun_workflow_request_adapter import \
     RerunWorkflowRequestAdapter as RerunWorkflowRequest
 from conductor.client.adapters.models.response_adapter import \
     ResponseAdapter as Response
+from conductor.client.adapters.models.service_method_adapter import ServiceMethodAdapter
 from conductor.client.adapters.models.task_adapter import TaskAdapter as Task
 from conductor.client.adapters.models.task_result_adapter import \
     TaskResultAdapter as TaskResult
@@ -241,6 +242,12 @@ from conductor.client.adapters.models.scrollable_search_result_workflow_summary_
     ScrollableSearchResultWorkflowSummaryAdapter as ScrollableSearchResultWorkflowSummary
 from conductor.client.adapters.models.workflow_summary_adapter import \
     WorkflowSummaryAdapter as WorkflowSummary
+from conductor.client.adapters.models.integration_def_api_adapter import \
+    IntegrationDefApi
+from conductor.client.adapters.models.service_registry_adapter import \
+    ServiceRegistryAdapter as ServiceRegistry, ConfigAdapter as Config, OrkesCircuitBreakerConfigAdapter as OrkesCircuitBreakerConfig
+from conductor.client.adapters.models.service_method_adapter import ServiceMethodAdapter as ServiceMethod
+from conductor.client.adapters.models.request_param_adapter import RequestParamAdapter as RequestParam, SchemaAdapter as Schema
 
 __all__ = [  # noqa: RUF022
     "Action",
@@ -367,4 +374,11 @@ __all__ = [  # noqa: RUF022
     "WorkflowStatus",
     "ScrollableSearchResultWorkflowSummary",
     "WorkflowSummary",
+    "IntegrationDefApi",
+    "ServiceRegistry",
+    "Config",
+    "OrkesCircuitBreakerConfig",
+    "ServiceMethod",
+    "RequestParam",
+    "Schema",
 ]

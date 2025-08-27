@@ -81,6 +81,8 @@ class TestOrkesPromptClientIntegration:
             "max_length": "200",
         }
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_prompt_lifecycle_simple(
         self,
         prompt_client: OrkesPromptClient,
@@ -114,6 +116,8 @@ class TestOrkesPromptClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup prompt {test_prompt_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_prompt_lifecycle_complex(
         self,
         prompt_client: OrkesPromptClient,
@@ -142,6 +146,8 @@ class TestOrkesPromptClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup prompt {prompt_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_prompt_with_tags(
         self,
         prompt_client: OrkesPromptClient,
@@ -186,6 +192,8 @@ class TestOrkesPromptClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup prompt {prompt_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_prompt_update(
         self,
         prompt_client: OrkesPromptClient,
@@ -227,6 +235,8 @@ class TestOrkesPromptClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup prompt {prompt_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_concurrent_prompt_operations(
         self,
         prompt_client: OrkesPromptClient,

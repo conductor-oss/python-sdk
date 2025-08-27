@@ -50,6 +50,8 @@ class TestOrkesIntegrationClientIntegration:
             "awsAccountId": "test_account_id",
         }
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_save_and_get_integration_provider(
         self,
         integration_client: OrkesIntegrationClient,
@@ -77,6 +79,8 @@ class TestOrkesIntegrationClientIntegration:
         finally:
             self._cleanup_integration(integration_client, integration_name)
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_save_and_get_integration(
         self,
         integration_client: OrkesIntegrationClient,
@@ -104,6 +108,8 @@ class TestOrkesIntegrationClientIntegration:
         finally:
             self._cleanup_integration(integration_client, integration_name)
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_get_integration_providers(
         self,
         integration_client: OrkesIntegrationClient,
@@ -136,6 +142,7 @@ class TestOrkesIntegrationClientIntegration:
         finally:
             self._cleanup_integration(integration_client, integration_name)
 
+    @pytest.mark.v4_1_73
     def test_get_integration_provider_defs(
         self,
         integration_client: OrkesIntegrationClient,
@@ -143,6 +150,8 @@ class TestOrkesIntegrationClientIntegration:
         provider_defs = integration_client.get_integration_provider_defs()
         assert isinstance(provider_defs, list)
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_get_all_integrations(
         self,
         integration_client: OrkesIntegrationClient,
@@ -176,6 +185,8 @@ class TestOrkesIntegrationClientIntegration:
         finally:
             self._cleanup_integration(integration_client, integration_name)
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_get_providers_and_integrations(
         self,
         integration_client: OrkesIntegrationClient,
@@ -206,6 +217,8 @@ class TestOrkesIntegrationClientIntegration:
         finally:
             self._cleanup_integration(integration_client, integration_name)
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_integration_provider_tags(
         self,
         integration_client: OrkesIntegrationClient,
@@ -243,6 +256,8 @@ class TestOrkesIntegrationClientIntegration:
         finally:
             self._cleanup_integration(integration_client, integration_name)
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_integration_not_found(self, integration_client: OrkesIntegrationClient):
         non_existent_integration = f"non_existent_{str(uuid.uuid4())}"
         non_existent_api = f"non_existent_api_{str(uuid.uuid4())}"
@@ -253,6 +268,8 @@ class TestOrkesIntegrationClientIntegration:
         retrieved_api = integration_client.get_integration_api(non_existent_api, non_existent_integration)
         assert retrieved_api is None
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_concurrent_integration_operations(
         self,
         integration_client: OrkesIntegrationClient,

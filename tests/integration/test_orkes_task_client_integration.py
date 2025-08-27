@@ -84,6 +84,8 @@ class TestOrkesTaskClientIntegration:
         """Generate test domain."""
         return f"test_domain_{test_suffix}"
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_task_definition_lifecycle(
         self, metadata_client: OrkesMetadataClient, test_task_type: str
     ):
@@ -137,6 +139,8 @@ class TestOrkesTaskClientIntegration:
             except Exception:
                 pass
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_workflow_definition_lifecycle(
         self,
         metadata_client: OrkesMetadataClient,
@@ -182,6 +186,8 @@ class TestOrkesTaskClientIntegration:
             except Exception:
                 pass
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_task_polling_lifecycle(
         self,
         task_client: OrkesTaskClient,
@@ -278,6 +284,8 @@ class TestOrkesTaskClientIntegration:
             except Exception:
                 pass
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_task_execution_lifecycle(
         self,
         task_client: OrkesTaskClient,
@@ -379,6 +387,8 @@ class TestOrkesTaskClientIntegration:
             except Exception:
                 pass
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_task_status_transitions(
         self,
         task_client: OrkesTaskClient,
@@ -467,6 +477,8 @@ class TestOrkesTaskClientIntegration:
             except Exception:
                 pass
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_concurrent_task_operations(
         self,
         task_client: OrkesTaskClient,
@@ -573,6 +585,8 @@ class TestOrkesTaskClientIntegration:
                 except Exception:
                     pass
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_complex_task_workflow_scenario(
         self,
         task_client: OrkesTaskClient,

@@ -90,6 +90,8 @@ class TestOrkesSchedulerClientIntegration:
             updated_by="integration_test",
         )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_schedule_lifecycle_simple(
         self,
         scheduler_client: OrkesSchedulerClient,
@@ -126,6 +128,8 @@ class TestOrkesSchedulerClientIntegration:
                     f"Warning: Failed to cleanup schedule {simple_save_schedule_request.name}: {str(e)}"
                 )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_schedule_lifecycle_complex(
         self,
         scheduler_client: OrkesSchedulerClient,
@@ -155,6 +159,8 @@ class TestOrkesSchedulerClientIntegration:
                     f"Warning: Failed to cleanup schedule {complex_save_schedule_request.name}: {str(e)}"
                 )
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_schedule_pause_resume(
         self,
         scheduler_client: OrkesSchedulerClient,
@@ -195,6 +201,8 @@ class TestOrkesSchedulerClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup schedule {schedule_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_schedule_execution_times(
         self,
         scheduler_client: OrkesSchedulerClient,
@@ -231,6 +239,8 @@ class TestOrkesSchedulerClientIntegration:
             print(f"Exception in test_schedule_execution_times: {str(e)}")
             raise
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_schedule_search(
         self,
         scheduler_client: OrkesSchedulerClient,
@@ -274,6 +284,8 @@ class TestOrkesSchedulerClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup schedule {schedule_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_schedule_tags(
         self,
         scheduler_client: OrkesSchedulerClient,
@@ -325,6 +337,8 @@ class TestOrkesSchedulerClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup schedule {schedule_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_schedule_update(
         self,
         scheduler_client: OrkesSchedulerClient,
@@ -369,6 +383,8 @@ class TestOrkesSchedulerClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup schedule {schedule_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_complex_schedule_management_flow(
         self, scheduler_client: OrkesSchedulerClient, test_suffix: str
     ):

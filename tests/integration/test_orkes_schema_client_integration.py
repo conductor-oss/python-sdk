@@ -89,6 +89,8 @@ class TestOrkesSchemaClientIntegration:
             },
         }
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_schema_lifecycle_json(
         self,
         schema_client: OrkesSchemaClient,
@@ -129,6 +131,8 @@ class TestOrkesSchemaClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup schema {test_schema_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_schema_lifecycle_avro(
         self, schema_client: OrkesSchemaClient, test_suffix: str, avro_schema_data: dict
     ):
@@ -159,6 +163,8 @@ class TestOrkesSchemaClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup schema {schema_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_schema_lifecycle_protobuf(
         self,
         schema_client: OrkesSchemaClient,
@@ -192,6 +198,8 @@ class TestOrkesSchemaClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup schema {schema_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_schema_versioning(
         self, schema_client: OrkesSchemaClient, test_suffix: str, json_schema_data: dict
     ):
@@ -235,6 +243,8 @@ class TestOrkesSchemaClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup schema {schema_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_delete_schema_by_name(
         self, schema_client: OrkesSchemaClient, test_suffix: str, json_schema_data: dict
     ):
@@ -265,6 +275,8 @@ class TestOrkesSchemaClientIntegration:
             print(f"Exception in test_delete_schema_by_name: {str(e)}")
             raise
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_concurrent_schema_operations(
         self, schema_client: OrkesSchemaClient, test_suffix: str, json_schema_data: dict
     ):
@@ -342,6 +354,8 @@ class TestOrkesSchemaClientIntegration:
                 except Exception as e:
                     print(f"Warning: Failed to delete schema {schema_name}: {str(e)}")
 
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
     def test_complex_schema_management_flow(
         self, schema_client: OrkesSchemaClient, test_suffix: str
     ):

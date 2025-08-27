@@ -171,7 +171,7 @@ def test_search_schedule_executions(mocker, scheduler_client):
         start=start,
         size=2,
         sort=sort,
-        freeText=free_text,
+        free_text=free_text,
         query=query,
     )
     assert search_result == srw
