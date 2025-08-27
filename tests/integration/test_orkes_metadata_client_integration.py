@@ -120,8 +120,10 @@ class TestOrkesMetadataClientIntegration:
             concurrent_exec_limit=1,
             input_keys=["input_param"],
             output_keys=["output_param"],
+            owner_email="test@example.com",
         )
 
+    @pytest.mark.v3_21_16
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
     def test_workflow_lifecycle_simple(
@@ -156,6 +158,7 @@ class TestOrkesMetadataClientIntegration:
                     f"Warning: Failed to cleanup workflow {simple_workflow_def.name}: {str(e)}"
                 )
 
+    @pytest.mark.v3_21_16
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
     def test_workflow_lifecycle_complex(
@@ -186,6 +189,7 @@ class TestOrkesMetadataClientIntegration:
                     f"Warning: Failed to cleanup workflow {complex_workflow_def.name}: {str(e)}"
                 )
 
+    @pytest.mark.v3_21_16
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
     def test_workflow_versioning(
@@ -203,6 +207,7 @@ class TestOrkesMetadataClientIntegration:
                 tasks=[simple_workflow_task],
                 timeout_seconds=60,
                 timeout_policy="TIME_OUT_WF",
+                owner_email="test@example.com",
             )
 
             workflow_v2 = WorkflowDef(
@@ -212,6 +217,7 @@ class TestOrkesMetadataClientIntegration:
                 tasks=[simple_workflow_task],
                 timeout_seconds=120,
                 timeout_policy="TIME_OUT_WF",
+                owner_email="test@example.com",
             )
 
             metadata_client.register_workflow_def(workflow_v1, overwrite=True)
@@ -235,6 +241,7 @@ class TestOrkesMetadataClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup workflow {workflow_name}: {str(e)}")
 
+    @pytest.mark.v3_21_16
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
     def test_workflow_update(
@@ -252,6 +259,7 @@ class TestOrkesMetadataClientIntegration:
                 tasks=[simple_workflow_task],
                 timeout_seconds=60,
                 timeout_policy="TIME_OUT_WF",
+                owner_email="test@example.com",
             )
 
             metadata_client.register_workflow_def(initial_workflow, overwrite=True)
@@ -266,6 +274,7 @@ class TestOrkesMetadataClientIntegration:
                 tasks=[simple_workflow_task],
                 timeout_seconds=120,
                 timeout_policy="TIME_OUT_WF",
+                owner_email="test@example.com",
             )
 
             metadata_client.update_workflow_def(updated_workflow, overwrite=True)
@@ -283,6 +292,7 @@ class TestOrkesMetadataClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup workflow {workflow_name}: {str(e)}")
 
+    @pytest.mark.v3_21_16
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
     def test_task_lifecycle(
@@ -313,6 +323,7 @@ class TestOrkesMetadataClientIntegration:
                     f"Warning: Failed to cleanup task {simple_task_def.name}: {str(e)}"
                 )
 
+    @pytest.mark.v3_21_16
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
     def test_task_update(
@@ -333,6 +344,7 @@ class TestOrkesMetadataClientIntegration:
                 timeout_policy="TIME_OUT_WF",
                 response_timeout_seconds=30,
                 concurrent_exec_limit=1,
+                owner_email="test@example.com",
             )
 
             metadata_client.register_task_def(initial_task)
@@ -351,6 +363,7 @@ class TestOrkesMetadataClientIntegration:
                 timeout_policy="TIME_OUT_WF",
                 response_timeout_seconds=60,
                 concurrent_exec_limit=2,
+                owner_email="test@example.com",
             )
 
             metadata_client.update_task_def(updated_task)

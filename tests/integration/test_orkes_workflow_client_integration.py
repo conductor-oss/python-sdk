@@ -177,6 +177,7 @@ class TestOrkesWorkflowClientIntegration:
                     f"Warning: Failed to cleanup workflow definition {simple_workflow_def.name}: {str(e)}"
                 )
 
+    @pytest.mark.v3_21_16
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
     def test_workflow_start_by_name(
@@ -215,6 +216,7 @@ class TestOrkesWorkflowClientIntegration:
             except Exception as e:
                 print(f"Warning: Failed to cleanup workflow: {str(e)}")
 
+    @pytest.mark.v3_21_16
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
     def test_workflow_start_with_request(

@@ -1,4 +1,4 @@
-from conductor.client.http.models.health import Health
+from conductor.client.adapters.models import Health
 
 
 def test_constructor_with_no_arguments():

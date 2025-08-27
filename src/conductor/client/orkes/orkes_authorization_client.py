@@ -155,9 +155,9 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
         granted_access_obj = self.groupResourceApi.get_granted_permissions1(group_id)
         granted_permissions = []
 
-        for ga in granted_access_obj["grantedAccess"]:
-            target = TargetRef(ga["target"]["id"], ga["target"]["type"])
-            access = ga["access"]
+        for ga in granted_access_obj.granted_access:
+            target = TargetRef(ga.target.id, ga.target.type)
+            access = ga.access
             granted_permissions.append(GrantedPermission(target, access))
         return granted_permissions
 

@@ -1,9 +1,7 @@
-import json
 import logging
 import unittest
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.api.schema_resource_api import SchemaResourceApi
-from conductor.client.http.models.schema_def import SchemaDef, SchemaType
+from conductor.client.adapters.models import SchemaDef, SchemaType
 from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
 
 SCHEMA_NAME = 'ut_schema'

@@ -183,5 +183,6 @@ exclude_lines = [
 [tool.pytest.ini_options]
 markers = [
     "v4_1_73: mark test to run for version 4.1.73",
-    "v5_2_6: mark test to run for version 5.2.6"
+    "v5_2_6: mark test to run for version 5.2.6",
+    "v3_21_16: mark test to run for version 3.21.16"
 ]

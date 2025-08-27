@@ -1,12 +1,8 @@
-import json
 import logging
 import unittest
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.api.schema_resource_api import SchemaResourceApi
-from conductor.client.http.models import TaskDef, WorkflowDef, WorkflowTask
-from conductor.client.http.models.schema_def import SchemaDef, SchemaType
+from conductor.client.adapters.models import TaskDef, WorkflowDef, WorkflowTask
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
-from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
 
 TASK_NAME = 'task-test-sdk'
 WORKFLOW_NAME = 'sdk-workflow-test-0'

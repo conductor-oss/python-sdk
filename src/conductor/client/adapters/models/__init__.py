@@ -221,7 +221,7 @@ from conductor.client.adapters.models.task_exec_log_adapter import \
 from conductor.client.adapters.models.workflow_adapter import \
     WorkflowAdapter as Workflow
 from conductor.client.adapters.models.schema_def_adapter import \
-    SchemaDefAdapter as SchemaDef
+    SchemaDefAdapter as SchemaDef, SchemaType
 from conductor.client.adapters.models.rate_limit_config_adapter import \
     RateLimitConfigAdapter as RateLimitConfig
 from conductor.client.adapters.models.start_workflow_request_adapter import \
@@ -248,6 +248,8 @@ from conductor.client.adapters.models.service_registry_adapter import \
     ServiceRegistryAdapter as ServiceRegistry, ConfigAdapter as Config, OrkesCircuitBreakerConfigAdapter as OrkesCircuitBreakerConfig
 from conductor.client.adapters.models.service_method_adapter import ServiceMethodAdapter as ServiceMethod
 from conductor.client.adapters.models.request_param_adapter import RequestParamAdapter as RequestParam, SchemaAdapter as Schema
+from conductor.client.adapters.models.health_check_status import HealthCheckStatus
+from conductor.client.adapters.models.health import Health
 
 __all__ = [  # noqa: RUF022
     "Action",
@@ -381,4 +383,7 @@ __all__ = [  # noqa: RUF022
     "ServiceMethod",
     "RequestParam",
     "Schema",
+    "SchemaType",
+    "HealthCheckStatus",
+    "Health",
 ]
