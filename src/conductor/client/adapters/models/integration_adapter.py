@@ -2,12 +2,30 @@ from conductor.client.http.models import Integration
 
 
 class IntegrationAdapter(Integration):
-    def __init__(self, apis=None, category=None, configuration=None, created_on=None, created_by=None, description=None, enabled=None, models_count=None, name=None, owner_app=None, tags=None, type=None, updated_on=None, updated_by=None):  # noqa: E501
+    def __init__(
+        self,
+        apis=None,
+        category=None,
+        configuration=None,
+        create_time=None,
+        created_by=None,
+        description=None,
+        enabled=None,
+        models_count=None,
+        name=None,
+        owner_app=None,
+        tags=None,
+        type=None,
+        update_time=None,
+        updated_by=None,
+        updated_on=None,  # added to handle backwards compatibility
+        created_on=None,  # added to handle backwards compatibility
+    ):  # noqa: E501
         """Integration - a model defined in Swagger"""  # noqa: E501
         self._apis = None
         self._category = None
         self._configuration = None
-        self._create_time = None
+        self._created_on = None
         self._created_by = None
         self._description = None
         self._enabled = None
@@ -16,9 +34,12 @@ class IntegrationAdapter(Integration):
         self._owner_app = None
         self._tags = None
         self._type = None
-        self._update_time = None
+        self._updated_on = None
         self._updated_by = None
         self.discriminator = None
+        self._create_time = None
+        self._update_time = None
+
         if apis is not None:
             self.apis = apis
         if category is not None:
@@ -44,9 +65,13 @@ class IntegrationAdapter(Integration):
         if type is not None:
             self.type = type
         if updated_on is not None:
-            self.update_time = updated_on
+            self.updated_on = updated_on
         if updated_by is not None:
             self.updated_by = updated_by
+        if create_time is not None:
+            self.created_on = create_time
+        if update_time is not None:
+            self.updated_on = update_time
 
     @property
     def created_on(self):

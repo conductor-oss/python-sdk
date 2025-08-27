@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Optional, List, Dict
+import uuid
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.adapters.models.skip_task_request_adapter import SkipTaskRequestAdapter as SkipTaskRequest
@@ -152,13 +153,13 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         return self.workflowResourceApi.test_workflow(test_request)
 
     def search(self, start: int = 0, size: int = 100, free_text: str = "*", query: Optional[str] = None,
-               query_id: Optional[str] = None) -> ScrollableSearchResultWorkflowSummary:
+               query_id: Optional[str] = None, skip_cache: bool = False) -> ScrollableSearchResultWorkflowSummary:
         args = {
             "start": start,
             "size": size,
             "free_text": free_text,
             "query": query,
-            "query_id": query_id
+            "skip_cache": skip_cache
 
         }
         return self.workflowResourceApi.search(**args)
@@ -208,12 +209,13 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         variables = variables or {}
         self.workflowResourceApi.update_workflow_state(variables, workflow_id)
 
-    def update_state(self, workflow_id: str, update_requesst: WorkflowStateUpdate,
+    def update_state(self, workflow_id: str, update_request: WorkflowStateUpdate,
                      wait_until_task_ref_names: Optional[List[str]] = None, wait_for_seconds: Optional[int] = None) -> WorkflowRun:
         kwargs = {}
+        request_id=str(uuid.uuid4())
         if wait_until_task_ref_names is not None:
             kwargs["wait_until_task_ref"] = ",".join(wait_until_task_ref_names)
         if wait_for_seconds is not None:
             kwargs["wait_for_seconds"] = wait_for_seconds
 
-        return self.workflowResourceApi.update_workflow_and_task_state(update_requesst=update_requesst, workflow_id=workflow_id, **kwargs)
+        return self.workflowResourceApi.update_workflow_and_task_state(body=update_request, workflow_id=workflow_id, request_id=request_id, **kwargs)

@@ -22,11 +22,16 @@ class WorkflowTaskAdapter(WorkflowTask):
 
 
         :param state_change: The on_state_change of this WorkflowTask.  # noqa: E501
-        :type: StateChangeConfig
+        :type: StateChangeConfig or dict
         """
-        self._on_state_change = {
-            state_change.type: state_change.events
-        }
+        if isinstance(state_change, dict):
+            # If it's already a dictionary, use it as-is
+            self._on_state_change = state_change
+        else:
+            # If it's a StateChangeConfig object, convert it to the expected format
+            self._on_state_change = {
+                state_change.type: state_change.events
+            }
 
 
 class CacheConfig:

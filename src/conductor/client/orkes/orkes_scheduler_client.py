@@ -73,7 +73,7 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         if sort:
             kwargs.update({"sort": sort})
         if free_text:
-            kwargs.update({"freeText": free_text})
+            kwargs.update({"free_text": free_text})
         if query:
             kwargs.update({"query": query})
         return self.schedulerResourceApi.search_v2(**kwargs)

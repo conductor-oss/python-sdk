@@ -34,7 +34,7 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
         self.promptApi.delete_message_template(prompt_name)
 
     def get_tags_for_prompt_template(self, prompt_name: str) -> List[MetadataTag]:
-        self.promptApi.get_tags_for_prompt_template(prompt_name)
+        return self.promptApi.get_tags_for_prompt_template(prompt_name)
 
     def update_tag_for_prompt_template(self, prompt_name: str, tags: List[MetadataTag]):
         self.promptApi.put_tag_for_prompt_template(tags, prompt_name)

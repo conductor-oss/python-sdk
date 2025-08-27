@@ -2,7 +2,22 @@ from conductor.client.http.models import IntegrationApi
 
 
 class IntegrationApiAdapter(IntegrationApi):
-    def __init__(self, api=None, configuration=None, created_on=None, created_by=None, description=None, enabled=None, integration_name=None, owner_app=None, tags=None, updated_on=None, updated_by=None):
+    def __init__(
+        self,
+        api=None,
+        configuration=None,
+        created_on=None,
+        created_by=None,
+        description=None,
+        enabled=None,
+        integration_name=None,
+        owner_app=None,
+        tags=None,
+        updated_on=None,  # added to handle backwards compatibility
+        updated_by=None,  # added to handle backwards compatibility
+        create_time=None,  
+        update_time=None,
+    ):
         self._api = None
         self._configuration = None
         self._create_time = None
@@ -37,6 +52,10 @@ class IntegrationApiAdapter(IntegrationApi):
             self.update_time = updated_on
         if updated_by is not None:
             self.updated_by = updated_by
+        if create_time is not None:
+            self.created_on = create_time
+        if update_time is not None:
+            self.updated_on = update_time
 
     @property
     def created_on(self):

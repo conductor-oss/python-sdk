@@ -144,7 +144,7 @@ def test_field_types_unchanged():
     assert isinstance(integration.category, str)
     assert isinstance(integration.configuration, dict)
     assert isinstance(integration.created_by, str)
-    assert isinstance(integration.created_on, int)
+    assert isinstance(integration.create_time, int)
     assert isinstance(integration.description, str)
     assert isinstance(integration.enabled, bool)
     assert isinstance(integration.models_count, int)
@@ -152,7 +152,7 @@ def test_field_types_unchanged():
     assert isinstance(integration.tags, list)
     assert isinstance(integration.type, str)
     assert isinstance(integration.updated_by, str)
-    assert isinstance(integration.updated_on, int)
+    assert isinstance(integration.update_time, int)
 
 
 def test_swagger_types_mapping_unchanged():
