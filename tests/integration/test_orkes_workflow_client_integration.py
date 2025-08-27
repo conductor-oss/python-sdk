@@ -8,8 +8,6 @@ from conductor.client.adapters.models.correlation_ids_search_request_adapter imp
     CorrelationIdsSearchRequestAdapter as CorrelationIdsSearchRequest
 from conductor.client.adapters.models.rerun_workflow_request_adapter import \
     RerunWorkflowRequestAdapter as RerunWorkflowRequest
-from conductor.client.adapters.models.skip_task_request_adapter import \
-    SkipTaskRequestAdapter as SkipTaskRequest
 from conductor.client.adapters.models.start_workflow_request_adapter import \
     StartWorkflowRequestAdapter as StartWorkflowRequest
 from conductor.client.adapters.models.workflow_def_adapter import \
@@ -67,11 +65,14 @@ class TestOrkesWorkflowClientIntegration:
         return WorkflowTask(
             name="test_task",
             task_reference_name="test_task_ref",
-            type="HTTP",
+            type="HTTP_POLL",
             input_parameters={
                 "http_request": {
                     "uri": "http://httpbin.org/get",
                     "method": "GET",
+                    "terminationCondition": "(function(){ return $.output.response.body.randomInt > 10;})();",
+                    "pollingInterval": "5",
+                    "pollingStrategy": "FIXED",
                 }
             },
         )
