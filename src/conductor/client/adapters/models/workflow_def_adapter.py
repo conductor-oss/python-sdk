@@ -130,7 +130,13 @@ class WorkflowDefAdapter(WorkflowDef):
 
         self._updated_by = updated_by
 
-    @WorkflowDef.tasks.setter
+    @property
+    def tasks(self):
+        if self._tasks is None:
+            self._tasks = []
+        return self._tasks
+
+    @tasks.setter
     def tasks(self, tasks):
         """Sets the tasks of this WorkflowDef.
 

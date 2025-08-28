@@ -13,6 +13,38 @@ class SchemaType(str, Enum):
 
 
 class SchemaDefAdapter(SchemaDef):
+    def __init__(self, create_time=None, created_by=None, data=None, external_ref=None, name=None, owner_app=None, type=None, update_time=None, updated_by=None, version=1):  # noqa: E501
+        """SchemaDef - a model defined in Swagger"""  # noqa: E501
+        self._create_time = None
+        self._created_by = None
+        self._data = None
+        self._external_ref = None
+        self._name = None
+        self._owner_app = None
+        self._type = None
+        self._update_time = None
+        self._updated_by = None
+        self._version = None
+        self.discriminator = None
+        if create_time is not None:
+            self.create_time = create_time
+        if created_by is not None:
+            self.created_by = created_by
+        if data is not None:
+            self.data = data
+        if external_ref is not None:
+            self.external_ref = external_ref
+        self.name = name
+        if owner_app is not None:
+            self.owner_app = owner_app
+        self.type = type
+        if update_time is not None:
+            self.update_time = update_time
+        if updated_by is not None:
+            self.updated_by = updated_by
+        if version is not None:
+            self.version = version
+
     @SchemaDef.type.setter
     def type(self, type):
         """Sets the type of this SchemaDef.

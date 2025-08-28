@@ -5,6 +5,7 @@ import pytest
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.adapters.api import UserResourceApi, ApplicationResourceApi, GroupResourceApi, AuthorizationResourceApi
 from conductor.client.adapters.models.authorization_request_adapter import AuthorizationRequestAdapter as AuthorizationRequest
+from conductor.client.adapters.models.granted_access_response_adapter import GrantedAccessResponseAdapter as GrantedAccessResponse
 from conductor.client.adapters.models import ExtendedConductorApplication
 from conductor.client.adapters.models.conductor_user_adapter import ConductorUserAdapter as ConductorUser
 from conductor.client.adapters.models.create_or_update_application_request_adapter import (
@@ -397,21 +398,15 @@ def test_remove_user_from_group(mocker, authorization_client):
 
 def test_get_granted_permissions_for_group(mocker, authorization_client):
     mock = mocker.patch.object(GroupResourceApi, "get_granted_permissions1")
-    mock.return_value = {
-        "grantedAccess": [
-            {
-                "target": {
-                    "type": "WORKFLOW_DEF",
-                    "id": WF_NAME,
-                },
-                "access": [
-                    "EXECUTE",
-                    "UPDATE",
-                    "READ",
-                ],
-            }
+    mock.return_value = GrantedAccessResponse(
+        granted_access=[
+            GrantedPermission(
+                target=TargetRef(WF_NAME, TargetType.WORKFLOW_DEF.value),
+                access=["EXECUTE", "UPDATE", "READ"],
+            )
         ]
-    }
+    )
+
     perms = authorization_client.get_granted_permissions_for_group(GROUP_ID)
     mock.assert_called_with(GROUP_ID)
     expected_perm = GrantedPermission(
