@@ -12,9 +12,6 @@ jobs:
     env:
       COVERAGE_FILE: coverage.xml
       COVERAGE_DIR: .coverage-reports
-      CONDUCTOR_AUTH_KEY: ${{ secrets.AUTH_KEY }}
-      CONDUCTOR_AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-      CONDUCTOR_SERVER_URL: ${{ vars.SERVER_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,9 +34,9 @@ jobs:
         continue-on-error: true
         run: |
           docker run --rm \
-            -e CONDUCTOR_AUTH_KEY=${{ env.CONDUCTOR_AUTH_KEY }} \
-            -e CONDUCTOR_AUTH_SECRET=${{ env.CONDUCTOR_AUTH_SECRET }} \
-            -e CONDUCTOR_SERVER_URL=${{ env.CONDUCTOR_SERVER_URL }} \
+            -e CONDUCTOR_AUTH_KEY=${{ secrets.CONDUCTOR_AUTH_KEY }} \
+            -e CONDUCTOR_AUTH_SECRET=${{ secrets.CONDUCTOR_AUTH_SECRET }} \
+            -e CONDUCTOR_SERVER_URL=${{ secrets.CONDUCTOR_SERVER_URL }} \
             -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
             conductor-sdk-test:latest \
             /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.unit coverage run -m pytest tests/unit -v"
@@ -49,9 +46,9 @@ jobs:
         continue-on-error: true
         run: |
           docker run --rm \
-            -e CONDUCTOR_AUTH_KEY=${{ env.CONDUCTOR_AUTH_KEY }} \
-            -e CONDUCTOR_AUTH_SECRET=${{ env.CONDUCTOR_AUTH_SECRET }} \
-            -e CONDUCTOR_SERVER_URL=${{ env.CONDUCTOR_SERVER_URL }} \
+            -e CONDUCTOR_AUTH_KEY=${{ secrets.CONDUCTOR_AUTH_KEY }} \
+            -e CONDUCTOR_AUTH_SECRET=${{ secrets.CONDUCTOR_AUTH_SECRET }} \
+            -e CONDUCTOR_SERVER_URL=${{ secrets.CONDUCTOR_SERVER_URL }} \
             -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
             conductor-sdk-test:latest \
             /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.bc coverage run -m pytest tests/backwardcompatibility -v"
@@ -61,12 +58,24 @@ jobs:
         continue-on-error: true
         run: |
           docker run --rm \
-            -e CONDUCTOR_AUTH_KEY=${{ env.CONDUCTOR_AUTH_KEY }} \
-            -e CONDUCTOR_AUTH_SECRET=${{ env.CONDUCTOR_AUTH_SECRET }} \
-            -e CONDUCTOR_SERVER_URL=${{ env.CONDUCTOR_SERVER_URL }} \
+            -e CONDUCTOR_AUTH_KEY=${{ secrets.CONDUCTOR_AUTH_KEY }} \
+            -e CONDUCTOR_AUTH_SECRET=${{ secrets.CONDUCTOR_AUTH_SECRET }} \
+            -e CONDUCTOR_SERVER_URL=${{ secrets.CONDUCTOR_SERVER_URL }} \
             -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
             conductor-sdk-test:latest \
             /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.serdeser coverage run -m pytest tests/serdesertest -v"
+
+      - name: Run integration tests
+        id: integration_tests
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            -e CONDUCTOR_AUTH_KEY=${{ secrets.CONDUCTOR_AUTH_KEY }} \
+            -e CONDUCTOR_AUTH_SECRET=${{ secrets.CONDUCTOR_AUTH_SECRET }} \
+            -e CONDUCTOR_SERVER_URL=${{ secrets.CONDUCTOR_SERVER_URL }} \
+            -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
+            conductor-sdk-test:latest \
+            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.integration coverage run -m pytest -m v4_1_73 tests/integration -v"
 
       - name: Generate coverage report
         id: coverage_report
