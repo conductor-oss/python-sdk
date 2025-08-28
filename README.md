@@ -636,7 +636,7 @@ workflow_client = clients.get_workflow_client()
 Useful when workflows are long-running.
 
 ```python
-from conductor.client.http.models import StartWorkflowRequest
+from conductor.client.adapters.models import StartWorkflowRequest
 
 request = StartWorkflowRequest()
 request.name = 'hello'
@@ -650,7 +650,7 @@ workflow_id = workflow_client.start_workflow(request)
 Applicable when workflows complete very quickly - usually under 20-30 seconds.
 
 ```python
-from conductor.client.http.models import StartWorkflowRequest
+from conductor.client.adapters.models import StartWorkflowRequest
 
 request = StartWorkflowRequest()
 request.name = 'hello'
@@ -796,7 +796,7 @@ What happens when a task is operating on a critical resource that can only handl
 
 ```python
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.models import TaskDef
+from conductor.client.adapters.models import TaskDef
 from conductor.client.orkes_clients import OrkesClients
 
 
