@@ -27,6 +27,7 @@ class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef):
     tags: Optional[List["TagAdapter"]] = None
     tasks: List["WorkflowTaskAdapter"]
     variables: Optional[Dict[str, Any]] = None
+    timeout_seconds: Optional[int] = Field(default=None, alias="timeoutSeconds")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -99,7 +100,9 @@ from conductor.asyncio_client.adapters.models.rate_limit_config_adapter import (
 from conductor.asyncio_client.adapters.models.schema_def_adapter import (  # noqa: E402
     SchemaDefAdapter,
 )
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter  # noqa: E402
+from conductor.asyncio_client.adapters.models.tag_adapter import (
+    TagAdapter,
+)  # noqa: E402
 from conductor.asyncio_client.adapters.models.workflow_task_adapter import (  # noqa: E402
     WorkflowTaskAdapter,
 )

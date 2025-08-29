@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from pydantic import ConfigDict, field_validator
 from typing_extensions import Self
 
 from conductor.asyncio_client.http.models import IntegrationDef
@@ -9,6 +10,34 @@ from conductor.asyncio_client.http.models import IntegrationDef
 
 class IntegrationDefAdapter(IntegrationDef):
     configuration: Optional[List["IntegrationDefFormFieldAdapter"]] = None
+
+    @field_validator("category")
+    def category_validate_enum(cls, value):
+        if value is None:
+            return value
+
+        if value not in set(
+            [
+                "API",
+                "AI_MODEL",
+                "VECTOR_DB",
+                "RELATIONAL_DB",
+                "MESSAGE_BROKER",
+                "GIT",
+                "EMAIL",
+                "MCP",
+            ]
+        ):
+            raise ValueError(
+                "must be one of enum values ('API', 'AI_MODEL', 'VECTOR_DB', 'RELATIONAL_DB', 'MESSAGE_BROKER', 'GIT', 'EMAIL', 'MCP')"
+            )
+        return value
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        validate_assignment=True,
+        protected_namespaces=(),
+    )
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
