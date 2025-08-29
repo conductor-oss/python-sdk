@@ -1,4 +1,4 @@
-from conductor.client.http.models import ConnectivityTestInput
+from conductor.client.codegen.models import ConnectivityTestInput
 
 
 class ConnectivityTestInputAdapter(ConnectivityTestInput): ...

@@ -1,4 +1,4 @@
-from conductor.client.http.models import EnumValueOptions
+from conductor.client.codegen.models import EnumValueOptions
 
 
 class EnumValueOptionsAdapter(EnumValueOptions): ...

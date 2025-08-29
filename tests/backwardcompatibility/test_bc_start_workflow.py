@@ -1,10 +1,10 @@
-from conductor.client.adapters.models.start_workflow_request_adapter import StartWorkflowRequestAdapter
+from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
 
 
 def test_constructor_accepts_all_current_parameters():
     """Test that constructor accepts all current parameters without errors."""
     # Test with all parameters (current behavior)
-    workflow = StartWorkflowRequestAdapter(
+    workflow = StartWorkflowRequest(
         name="test_workflow",
         version=1,
         correlation_id="test_correlation_123",
@@ -22,7 +22,7 @@ def test_constructor_accepts_all_current_parameters():
 
 def test_constructor_accepts_no_parameters():
     """Test that constructor works with no parameters (all optional)."""
-    workflow = StartWorkflowRequestAdapter()
+    workflow = StartWorkflowRequest()
 
     # All fields should be None initially
     assert workflow.name is None
@@ -34,7 +34,7 @@ def test_constructor_accepts_no_parameters():
 
 def test_constructor_accepts_partial_parameters():
     """Test that constructor works with partial parameters."""
-    workflow = StartWorkflowRequestAdapter(name="partial_test", version=2)
+    workflow = StartWorkflowRequest(name="partial_test", version=2)
 
     assert workflow.name == "partial_test"
     assert workflow.version == 2
@@ -45,7 +45,7 @@ def test_constructor_accepts_partial_parameters():
 
 def test_all_required_fields_exist():
     """Test that all expected fields exist and are accessible."""
-    workflow = StartWorkflowRequestAdapter()
+    workflow = StartWorkflowRequest()
 
     # Test field existence through property access
     assert hasattr(workflow, "name")
@@ -64,7 +64,7 @@ def test_all_required_fields_exist():
 
 def test_field_setters_work():
     """Test that all field setters work correctly."""
-    workflow = StartWorkflowRequestAdapter()
+    workflow = StartWorkflowRequest()
 
     # Test setting each field
     workflow.name = "setter_test"
@@ -83,7 +83,7 @@ def test_field_setters_work():
 
 def test_field_types_preserved():
     """Test that field types match expected types."""
-    workflow = StartWorkflowRequestAdapter(
+    workflow = StartWorkflowRequest(
         name="type_test",
         version=10,
         correlation_id="type_correlation",
@@ -101,7 +101,7 @@ def test_field_types_preserved():
 
 def test_none_values_accepted():
     """Test that None values are accepted for all fields."""
-    workflow = StartWorkflowRequestAdapter()
+    workflow = StartWorkflowRequest()
 
     # Set all fields to None
     workflow.name = None
@@ -120,7 +120,7 @@ def test_none_values_accepted():
 
 def test_to_dict_method_exists_and_works():
     """Test that to_dict method exists and preserves all fields."""
-    workflow = StartWorkflowRequestAdapter(
+    workflow = StartWorkflowRequest(
         name="dict_test",
         version=3,
         correlation_id="dict_correlation",
@@ -143,23 +143,23 @@ def test_to_dict_method_exists_and_works():
 
 def test_to_str_method_exists():
     """Test that to_str method exists and returns string."""
-    workflow = StartWorkflowRequestAdapter(name="str_test")
+    workflow = StartWorkflowRequest(name="str_test")
     result = workflow.to_str()
     assert isinstance(result, str)
 
 
 def test_repr_method_exists():
     """Test that __repr__ method exists and returns string."""
-    workflow = StartWorkflowRequestAdapter(name="repr_test")
+    workflow = StartWorkflowRequest(name="repr_test")
     result = repr(workflow)
     assert isinstance(result, str)
 
 
 def test_equality_methods_exist():
     """Test that equality methods exist and work."""
-    workflow1 = StartWorkflowRequestAdapter(name="eq_test", version=1)
-    workflow2 = StartWorkflowRequestAdapter(name="eq_test", version=1)
-    workflow3 = StartWorkflowRequestAdapter(name="different", version=2)
+    workflow1 = StartWorkflowRequest(name="eq_test", version=1)
+    workflow2 = StartWorkflowRequest(name="eq_test", version=1)
+    workflow3 = StartWorkflowRequest(name="different", version=2)
 
     # Test __eq__
     assert workflow1 == workflow2
@@ -180,13 +180,13 @@ def test_swagger_types_attribute_exists():
         "task_to_domain": "dict(str, str)",
     }
 
-    assert hasattr(StartWorkflowRequestAdapter, "swagger_types")
-    assert isinstance(StartWorkflowRequestAdapter.swagger_types, dict)
+    assert hasattr(StartWorkflowRequest, "swagger_types")
+    assert isinstance(StartWorkflowRequest.swagger_types, dict)
 
     # Verify all expected fields are present in swagger_types
     for field, expected_type in expected_types.items():
-        assert field in StartWorkflowRequestAdapter.swagger_types
-        assert StartWorkflowRequestAdapter.swagger_types[field] == expected_type
+        assert field in StartWorkflowRequest.swagger_types
+        assert StartWorkflowRequest.swagger_types[field] == expected_type
 
 
 def test_attribute_map_exists():
@@ -199,18 +199,18 @@ def test_attribute_map_exists():
         "task_to_domain": "taskToDomain",
     }
 
-    assert hasattr(StartWorkflowRequestAdapter, "attribute_map")
-    assert isinstance(StartWorkflowRequestAdapter.attribute_map, dict)
+    assert hasattr(StartWorkflowRequest, "attribute_map")
+    assert isinstance(StartWorkflowRequest.attribute_map, dict)
 
     # Verify all expected mappings are present
     for attr, json_key in expected_mapping.items():
-        assert attr in StartWorkflowRequestAdapter.attribute_map
-        assert StartWorkflowRequestAdapter.attribute_map[attr] == json_key
+        assert attr in StartWorkflowRequest.attribute_map
+        assert StartWorkflowRequest.attribute_map[attr] == json_key
 
 
 def test_input_dict_accepts_various_value_types():
     """Test that input dict accepts various object types as specified."""
-    workflow = StartWorkflowRequestAdapter()
+    workflow = StartWorkflowRequest()
 
     # Test various value types in input dict
     complex_input = {
@@ -229,7 +229,7 @@ def test_input_dict_accepts_various_value_types():
 
 def test_task_to_domain_dict_string_values():
     """Test that task_to_domain accepts string-to-string mappings."""
-    workflow = StartWorkflowRequestAdapter()
+    workflow = StartWorkflowRequest()
 
     task_mapping = {
         "task1": "domain1",

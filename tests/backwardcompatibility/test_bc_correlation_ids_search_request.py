@@ -1,7 +1,7 @@
 import pytest
 
-from conductor.client.adapters.models.correlation_ids_search_request_adapter import (
-    CorrelationIdsSearchRequestAdapter,
+from conductor.client.http.models.correlation_ids_search_request import (
+    CorrelationIdsSearchRequest,
 )
 
 
@@ -20,16 +20,16 @@ def test_constructor_signature_compatibility(
 ):
     """Test that constructor signature hasn't changed."""
     # Test constructor with no arguments (all optional)
-    request = CorrelationIdsSearchRequestAdapter()
+    request = CorrelationIdsSearchRequest()
     assert request is not None
     # Test constructor with correlation_ids only
-    request = CorrelationIdsSearchRequestAdapter(correlation_ids=valid_correlation_ids)
+    request = CorrelationIdsSearchRequest(correlation_ids=valid_correlation_ids)
     assert request.correlation_ids == valid_correlation_ids
     # Test constructor with workflow_names only
-    request = CorrelationIdsSearchRequestAdapter(workflow_names=valid_workflow_names)
+    request = CorrelationIdsSearchRequest(workflow_names=valid_workflow_names)
     assert request.workflow_names == valid_workflow_names
     # Test constructor with both parameters
-    request = CorrelationIdsSearchRequestAdapter(
+    request = CorrelationIdsSearchRequest(
         correlation_ids=valid_correlation_ids, workflow_names=valid_workflow_names
     )
     assert request.correlation_ids == valid_correlation_ids
@@ -38,7 +38,7 @@ def test_constructor_signature_compatibility(
 
 def test_required_fields_exist():
     """Test that all expected fields still exist."""
-    request = CorrelationIdsSearchRequestAdapter()
+    request = CorrelationIdsSearchRequest()
     # Test that properties exist and are accessible
     assert hasattr(request, "correlation_ids")
     assert hasattr(request, "workflow_names")
@@ -50,8 +50,8 @@ def test_required_fields_exist():
 def test_field_types_unchanged():
     """Test that field types haven't changed."""
     # Check swagger_types dictionary exists and contains expected types
-    assert hasattr(CorrelationIdsSearchRequestAdapter, "swagger_types")
-    swagger_types = CorrelationIdsSearchRequestAdapter.swagger_types
+    assert hasattr(CorrelationIdsSearchRequest, "swagger_types")
+    swagger_types = CorrelationIdsSearchRequest.swagger_types
     assert "correlation_ids" in swagger_types
     assert "workflow_names" in swagger_types
     assert swagger_types["correlation_ids"] == "list[str]"
@@ -61,8 +61,8 @@ def test_field_types_unchanged():
 def test_attribute_mapping_unchanged():
     """Test that attribute mapping hasn't changed."""
     # Check attribute_map dictionary exists and contains expected mappings
-    assert hasattr(CorrelationIdsSearchRequestAdapter, "attribute_map")
-    attribute_map = CorrelationIdsSearchRequestAdapter.attribute_map
+    assert hasattr(CorrelationIdsSearchRequest, "attribute_map")
+    attribute_map = CorrelationIdsSearchRequest.attribute_map
     assert "correlation_ids" in attribute_map
     assert "workflow_names" in attribute_map
     assert attribute_map["correlation_ids"] == "correlationIds"
@@ -71,7 +71,7 @@ def test_attribute_mapping_unchanged():
 
 def test_correlation_ids_property_behavior(valid_correlation_ids):
     """Test correlation_ids property getter/setter behavior."""
-    request = CorrelationIdsSearchRequestAdapter()
+    request = CorrelationIdsSearchRequest()
     # Test initial value
     assert request.correlation_ids is None
     # Test setter with valid list
@@ -87,7 +87,7 @@ def test_correlation_ids_property_behavior(valid_correlation_ids):
 
 def test_workflow_names_property_behavior(valid_workflow_names):
     """Test workflow_names property getter/setter behavior."""
-    request = CorrelationIdsSearchRequestAdapter()
+    request = CorrelationIdsSearchRequest()
     # Test initial value
     assert request.workflow_names is None
     # Test setter with valid list
@@ -103,7 +103,7 @@ def test_workflow_names_property_behavior(valid_workflow_names):
 
 def test_to_dict_method_compatibility(valid_workflow_names, valid_correlation_ids):
     """Test that to_dict method works as expected."""
-    request = CorrelationIdsSearchRequestAdapter(
+    request = CorrelationIdsSearchRequest(
         correlation_ids=valid_correlation_ids, workflow_names=valid_workflow_names
     )
     result_dict = request.to_dict()
@@ -118,7 +118,7 @@ def test_to_dict_method_compatibility(valid_workflow_names, valid_correlation_id
 
 def test_to_str_method_compatibility(valid_workflow_names, valid_correlation_ids):
     """Test that to_str method works as expected."""
-    request = CorrelationIdsSearchRequestAdapter(
+    request = CorrelationIdsSearchRequest(
         correlation_ids=valid_correlation_ids, workflow_names=valid_workflow_names
     )
     result_str = request.to_str()
@@ -129,7 +129,7 @@ def test_to_str_method_compatibility(valid_workflow_names, valid_correlation_ids
 
 def test_repr_method_compatibility(valid_correlation_ids, valid_workflow_names):
     """Test that __repr__ method works as expected."""
-    request = CorrelationIdsSearchRequestAdapter(
+    request = CorrelationIdsSearchRequest(
         correlation_ids=valid_correlation_ids, workflow_names=valid_workflow_names
     )
     repr_str = repr(request)
@@ -140,13 +140,13 @@ def test_repr_method_compatibility(valid_correlation_ids, valid_workflow_names):
 
 def test_equality_methods_compatibility(valid_correlation_ids, valid_workflow_names):
     """Test that equality methods work as expected."""
-    request1 = CorrelationIdsSearchRequestAdapter(
+    request1 = CorrelationIdsSearchRequest(
         correlation_ids=valid_correlation_ids, workflow_names=valid_workflow_names
     )
-    request2 = CorrelationIdsSearchRequestAdapter(
+    request2 = CorrelationIdsSearchRequest(
         correlation_ids=valid_correlation_ids, workflow_names=valid_workflow_names
     )
-    request3 = CorrelationIdsSearchRequestAdapter(
+    request3 = CorrelationIdsSearchRequest(
         correlation_ids=["different"], workflow_names=valid_workflow_names
     )
     # Test equality
@@ -161,7 +161,7 @@ def test_equality_methods_compatibility(valid_correlation_ids, valid_workflow_na
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists and behaves correctly."""
-    request = CorrelationIdsSearchRequestAdapter()
+    request = CorrelationIdsSearchRequest()
     assert hasattr(request, "discriminator")
     assert request.discriminator is None
 
@@ -170,7 +170,7 @@ def test_field_assignment_after_construction(
     valid_correlation_ids, valid_workflow_names
 ):
     """Test that fields can be assigned after construction."""
-    request = CorrelationIdsSearchRequestAdapter()
+    request = CorrelationIdsSearchRequest()
     # Test assignment after construction
     request.correlation_ids = valid_correlation_ids
     request.workflow_names = valid_workflow_names
@@ -181,7 +181,7 @@ def test_field_assignment_after_construction(
 def test_none_values_handling():
     """Test that None values are handled correctly."""
     # Test construction with None values
-    request = CorrelationIdsSearchRequestAdapter(correlation_ids=None, workflow_names=None)
+    request = CorrelationIdsSearchRequest(correlation_ids=None, workflow_names=None)
     assert request.correlation_ids is None
     assert request.workflow_names is None
     # Test to_dict with None values

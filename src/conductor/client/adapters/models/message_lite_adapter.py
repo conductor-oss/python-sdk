@@ -1,4 +1,4 @@
-from conductor.client.http.models import MessageLite
+from conductor.client.codegen.models import MessageLite
 
 
 class MessageLiteAdapter(MessageLite): ...

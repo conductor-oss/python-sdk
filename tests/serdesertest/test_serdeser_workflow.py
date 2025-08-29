@@ -3,9 +3,9 @@ import re
 
 import pytest
 
-from conductor.client.adapters.models.task_adapter import TaskAdapter
-from conductor.client.adapters.models.workflow_adapter import WorkflowAdapter
-from conductor.client.adapters.models.workflow_def_adapter import WorkflowDefAdapter
+from conductor.client.http.models.task import TaskAdapter
+from conductor.client.http.models.workflow import WorkflowAdapter
+from conductor.client.http.models.workflow_def import WorkflowDefAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.correlation_ids_search_request_adapter import CorrelationIdsSearchRequestAdapter
+from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

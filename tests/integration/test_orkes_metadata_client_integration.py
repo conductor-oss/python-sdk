@@ -3,14 +3,14 @@ import uuid
 
 import pytest
 
-from conductor.client.adapters.models.task_def_adapter import \
+from conductor.client.http.models.task_def import \
     TaskDefAdapter as TaskDef
-from conductor.client.adapters.models.workflow_def_adapter import \
+from conductor.client.http.models.workflow_def import \
     WorkflowDefAdapter as WorkflowDef
-from conductor.client.adapters.models.workflow_task_adapter import \
+from conductor.client.http.models.workflow_task import \
     WorkflowTaskAdapter as WorkflowTask
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 

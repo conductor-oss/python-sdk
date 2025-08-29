@@ -1,5 +1,5 @@
 from conductor.client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
-from conductor.client.http.models.task_result import TaskResult
+from conductor.client.codegen.models.task_result import TaskResult
 
 
 class TaskResultAdapter(TaskResult):

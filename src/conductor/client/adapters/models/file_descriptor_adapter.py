@@ -1,4 +1,4 @@
-from conductor.client.http.models import FileDescriptor
+from conductor.client.codegen.models import FileDescriptor
 
 
 class FileDescriptorAdapter(FileDescriptor): ...

@@ -1,4 +1,4 @@
-from conductor.client.http.models import EnumReservedRangeOrBuilder
+from conductor.client.codegen.models import EnumReservedRangeOrBuilder
 
 
 class EnumReservedRangeOrBuilderAdapter(EnumReservedRangeOrBuilder): ...

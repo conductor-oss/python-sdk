@@ -1,4 +1,4 @@
-from conductor.client.http.models.tag_string import TagString
+from conductor.client.codegen.models.tag_string import TagString
 
 
 class TagStringAdapter(TagString):

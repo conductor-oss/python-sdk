@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.authorization_request_adapter import AuthorizationRequestAdapter
+from conductor.client.http.models.authorization_request import AuthorizationRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

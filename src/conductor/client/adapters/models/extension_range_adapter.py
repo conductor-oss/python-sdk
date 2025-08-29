@@ -1,4 +1,4 @@
-from conductor.client.http.models import ExtensionRange
+from conductor.client.codegen.models import ExtensionRange
 
 
 class ExtensionRangeAdapter(ExtensionRange): ...

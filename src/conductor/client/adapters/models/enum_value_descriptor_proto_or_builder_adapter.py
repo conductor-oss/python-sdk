@@ -1,4 +1,4 @@
-from conductor.client.http.models import EnumValueDescriptorProtoOrBuilder
+from conductor.client.codegen.models import EnumValueDescriptorProtoOrBuilder
 
 
 class EnumValueDescriptorProtoOrBuilderAdapter(EnumValueDescriptorProtoOrBuilder): ...

@@ -1,6 +1,6 @@
 from enum import Enum
 
-from conductor.client.http.models.signal_response import SignalResponse
+from conductor.client.codegen.models.signal_response import SignalResponse
 
 
 class WorkflowSignalReturnStrategy(Enum):

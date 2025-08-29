@@ -1,7 +1,7 @@
 import logging
 import unittest
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.adapters.models import TaskDef, WorkflowDef, WorkflowTask
+from conductor.client.http.models import TaskDef, WorkflowDef, WorkflowTask
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 
 TASK_NAME = 'task-test-sdk'

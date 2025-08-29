@@ -1,4 +1,4 @@
-from conductor.client.http.models import MessageTemplate
+from conductor.client.codegen.models import MessageTemplate
 
 
 class MessageTemplateAdapter(MessageTemplate): ...

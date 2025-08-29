@@ -1,4 +1,4 @@
-from conductor.client.http.models import IntegrationApi
+from conductor.client.codegen.models import IntegrationApi
 
 
 class IntegrationApiAdapter(IntegrationApi):

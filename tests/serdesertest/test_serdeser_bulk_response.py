@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.bulk_response_adapter import BulkResponseAdapter
+from conductor.client.http.models.bulk_response import BulkResponseAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

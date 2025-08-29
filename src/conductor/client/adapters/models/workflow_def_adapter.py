@@ -6,7 +6,7 @@ from typing import Optional
 from deprecated import deprecated
 
 from conductor.client.helpers.helper import ObjectMapper
-from conductor.client.http.models.workflow_def import WorkflowDef
+from conductor.client.codegen.models.workflow_def import WorkflowDef
 
 object_mapper = ObjectMapper()
 

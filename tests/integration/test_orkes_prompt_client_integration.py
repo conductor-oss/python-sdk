@@ -4,7 +4,7 @@ import uuid
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_prompt_client import OrkesPromptClient
 

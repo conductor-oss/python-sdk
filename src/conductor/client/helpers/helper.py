@@ -7,9 +7,9 @@ from typing import ClassVar, Dict, Tuple
 import six
 from requests.structures import CaseInsensitiveDict
 
-import conductor.client.adapters.models as http_models
+import conductor.client.http.models as http_models
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http import rest
+from conductor.client.codegen import rest
 
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(

@@ -1,4 +1,4 @@
-from conductor.client.http.models.upsert_group_request import \
+from conductor.client.codegen.models.upsert_group_request import \
     UpsertGroupRequest
 
 

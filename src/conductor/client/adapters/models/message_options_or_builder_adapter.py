@@ -1,4 +1,4 @@
-from conductor.client.http.models import MessageOptionsOrBuilder
+from conductor.client.codegen.models import MessageOptionsOrBuilder
 
 
 class MessageOptionsOrBuilderAdapter(MessageOptionsOrBuilder): ...

@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.adapters.models.target_ref_adapter import TargetRefAdapter
+from conductor.client.http.models.target_ref import TargetRef
 from conductor.shared.http.enums.target_type import TargetType
 
 
@@ -19,9 +19,9 @@ def valid_enum_values():
 
 
 def test_class_exists_and_importable():
-    """Verify TargetRefAdapter class still exists and is importable."""
-    assert hasattr(TargetRefAdapter, "__init__")
-    assert callable(TargetRefAdapter)
+    """Verify TargetRef class still exists and is importable."""
+    assert hasattr(TargetRef, "__init__")
+    assert callable(TargetRef)
 
 
 def test_target_type_enum_exists_and_importable():
@@ -44,7 +44,7 @@ def test_no_parameter_constructor_behavior():
     # Based on the model, constructor with no params should fail
     # because type=None triggers validation
     with pytest.raises(ValueError, match="Invalid") as excinfo:
-        TargetRefAdapter()
+        TargetRef()
 
     # Verify it's the expected validation error
     error_message = str(excinfo.value)
@@ -54,11 +54,11 @@ def test_no_parameter_constructor_behavior():
 def test_constructor_signature_backward_compatible():
     """Verify constructor still accepts the same parameters that work."""
     # Should work with valid type parameter only
-    target_ref = TargetRefAdapter(type="WORKFLOW_DEF")
+    target_ref = TargetRef(type="WORKFLOW_DEF")
     assert target_ref is not None
 
     # Should work with both parameters
-    target_ref = TargetRefAdapter(type="TASK_DEF", id="test-id")
+    target_ref = TargetRef(type="TASK_DEF", id="test-id")
     assert target_ref is not None
 
 
@@ -66,7 +66,7 @@ def test_constructor_with_only_id_parameter():
     """Test constructor behavior when only id is provided."""
     # This should also fail because type defaults to None
     with pytest.raises(ValueError, match="Invalid") as excinfo:
-        TargetRefAdapter(id="test-id")
+        TargetRef(id="test-id")
 
     # Verify it's the expected validation error
     error_message = str(excinfo.value)
@@ -75,7 +75,7 @@ def test_constructor_with_only_id_parameter():
 
 def test_required_attributes_exist():
     """Verify all existing attributes still exist."""
-    target_ref = TargetRefAdapter(type="WORKFLOW_DEF")
+    target_ref = TargetRef(type="WORKFLOW_DEF")
 
     # Core attributes must exist
     assert hasattr(target_ref, "type")
@@ -95,7 +95,7 @@ def test_swagger_types_structure_unchanged():
     """Verify swagger_types contains existing fields with correct types."""
     expected_swagger_types = {"type": "str", "id": "str"}
 
-    target_ref = TargetRefAdapter(type="APPLICATION")
+    target_ref = TargetRef(type="APPLICATION")
 
     # Existing fields must be present with correct types
     for field, expected_type in expected_swagger_types.items():
@@ -107,7 +107,7 @@ def test_attribute_map_structure_unchanged():
     """Verify attribute_map contains existing mappings."""
     expected_attribute_map = {"type": "type", "id": "id"}
 
-    target_ref = TargetRefAdapter(type="USER")
+    target_ref = TargetRef(type="USER")
 
     # Existing mappings must be present
     for attr, expected_json_key in expected_attribute_map.items():
@@ -117,7 +117,7 @@ def test_attribute_map_structure_unchanged():
 
 def test_type_property_getter_behavior():
     """Verify type property getter works as expected."""
-    target_ref = TargetRefAdapter(type="WORKFLOW_DEF")
+    target_ref = TargetRef(type="WORKFLOW_DEF")
 
     # Should return assigned value
     assert target_ref.type == "WORKFLOW_DEF"
@@ -129,7 +129,7 @@ def test_type_property_getter_behavior():
 
 def test_id_setter_behavior_unchanged():
     """Verify id setter accepts any value (no validation)."""
-    target_ref = TargetRefAdapter(type="DOMAIN")  # Start with valid type
+    target_ref = TargetRef(type="DOMAIN")  # Start with valid type
 
     test_values = ["test-id", "", None, 123, [], {}]
 
@@ -143,21 +143,21 @@ def test_id_setter_behavior_unchanged():
 def test_constructor_assignment_triggers_validation():
     """Verify constructor parameter assignment triggers proper validation."""
     # Valid type should work
-    target_ref = TargetRefAdapter(type="WORKFLOW_DEF")
+    target_ref = TargetRef(type="WORKFLOW_DEF")
     assert target_ref.type == "WORKFLOW_DEF"
 
     # Invalid type should raise error during construction
     with pytest.raises(ValueError, match="Invalid"):
-        TargetRefAdapter(type="INVALID_TYPE")
+        TargetRef(type="INVALID_TYPE")
 
     # None type should raise error during construction
     with pytest.raises(ValueError, match="Invalid"):
-        TargetRefAdapter(type=None)
+        TargetRef(type=None)
 
 
 def test_required_methods_exist_with_correct_signatures():
     """Verify all existing methods still exist."""
-    target_ref = TargetRefAdapter(type="APPLICATION")
+    target_ref = TargetRef(type="APPLICATION")
 
     # Core methods must exist and be callable
     assert hasattr(target_ref, "to_dict")
@@ -178,7 +178,7 @@ def test_required_methods_exist_with_correct_signatures():
 
 def test_to_dict_method_behavior():
     """Verify to_dict method returns expected structure."""
-    target_ref = TargetRefAdapter(type="APPLICATION", id="app-123")
+    target_ref = TargetRef(type="APPLICATION", id="app-123")
     result = target_ref.to_dict()
 
     # Should be a dictionary
@@ -195,9 +195,9 @@ def test_to_dict_method_behavior():
 
 def test_equality_comparison_behavior():
     """Verify equality comparison works as expected."""
-    target_ref1 = TargetRefAdapter(type="USER", id="user-123")
-    target_ref2 = TargetRefAdapter(type="USER", id="user-123")
-    target_ref3 = TargetRefAdapter(type="USER", id="user-456")
+    target_ref1 = TargetRef(type="USER", id="user-123")
+    target_ref2 = TargetRef(type="USER", id="user-123")
+    target_ref3 = TargetRef(type="USER", id="user-456")
 
     # Equal objects should be equal
     assert target_ref1 == target_ref2
@@ -207,14 +207,14 @@ def test_equality_comparison_behavior():
     assert target_ref1 != target_ref3
     assert target_ref1 != target_ref3
 
-    # Comparison with non-TargetRefAdapter should return False
+    # Comparison with non-TargetRef should return False
     assert target_ref1 != "not a target ref"
     assert target_ref1 != "not a target ref"
 
 
 def test_string_representation_works():
     """Verify string representation methods work."""
-    target_ref = TargetRefAdapter(type="SECRET_NAME", id="secret-456")
+    target_ref = TargetRef(type="SECRET_NAME", id="secret-456")
 
     # to_str should return a string
     str_result = target_ref.to_str()

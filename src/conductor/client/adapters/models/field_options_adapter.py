@@ -1,4 +1,4 @@
-from conductor.client.http.models import FieldOptions
+from conductor.client.codegen.models import FieldOptions
 
 
 class FieldOptionsAdapter(FieldOptions): ...

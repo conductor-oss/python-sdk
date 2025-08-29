@@ -2,9 +2,9 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.start_workflow_request_adapter import StartWorkflowRequestAdapter
-from conductor.client.adapters.models.tag_object_adapter import TagObjectAdapter
-from conductor.client.adapters.models.workflow_schedule_adapter import WorkflowScheduleAdapter
+from conductor.client.http.models.start_workflow_request import StartWorkflowRequestAdapter
+from conductor.client.http.models.tag_object import TagObjectAdapter
+from conductor.client.http.models.workflow_schedule import WorkflowScheduleAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

@@ -4,11 +4,11 @@ from copy import deepcopy
 
 import pytest
 
-from conductor.client.adapters.models.schema_def_adapter import \
+from conductor.client.http.models.schema_def import \
     SchemaDefAdapter as SchemaDef
-from conductor.client.adapters.models.schema_def_adapter import SchemaType
+from conductor.client.http.models.schema_def import SchemaType
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
 
 

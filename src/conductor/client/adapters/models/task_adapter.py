@@ -1,4 +1,4 @@
-from conductor.client.http.models.task import Task
+from conductor.client.codegen.models.task import Task
 from conductor.client.adapters.models.task_result_adapter import \
     TaskResultAdapter
 from conductor.shared.http.enums import \

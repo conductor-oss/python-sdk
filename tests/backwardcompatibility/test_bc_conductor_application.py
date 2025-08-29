@@ -1,5 +1,5 @@
 import pytest
-from conductor.client.adapters.models import ConductorApplication
+from conductor.client.http.models.conductor_application import ConductorApplication
 
 
 @pytest.fixture

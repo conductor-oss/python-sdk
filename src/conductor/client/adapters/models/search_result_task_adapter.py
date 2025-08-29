@@ -1,4 +1,4 @@
-from conductor.client.http.models.search_result_task import SearchResultTask
+from conductor.client.codegen.models.search_result_task import SearchResultTask
 
 
 class SearchResultTaskAdapter(SearchResultTask):

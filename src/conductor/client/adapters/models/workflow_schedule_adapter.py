@@ -1,4 +1,4 @@
-from conductor.client.http.models.workflow_schedule import WorkflowSchedule
+from conductor.client.codegen.models.workflow_schedule import WorkflowSchedule
 
 
 class WorkflowScheduleAdapter(WorkflowSchedule):

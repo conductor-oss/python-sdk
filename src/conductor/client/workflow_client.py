@@ -2,17 +2,17 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional, List, Dict
 
-from conductor.client.adapters.models.workflow_run_adapter import WorkflowRunAdapter as WorkflowRun
-from conductor.client.adapters.models.skip_task_request_adapter import SkipTaskRequestAdapter as SkipTaskRequest
-from conductor.client.adapters.models.workflow_status_adapter import WorkflowStatusAdapter as WorkflowStatus
-from conductor.client.adapters.models.scrollable_search_result_workflow_summary_adapter import ScrollableSearchResultWorkflowSummaryAdapter as ScrollableSearchResultWorkflowSummary
-from conductor.client.adapters.models.signal_response_adapter import SignalResponseAdapter as SignalResponse
-from conductor.client.adapters.models.correlation_ids_search_request_adapter import CorrelationIdsSearchRequestAdapter as CorrelationIdsSearchRequest
-from conductor.client.adapters.models.rerun_workflow_request_adapter import RerunWorkflowRequestAdapter as RerunWorkflowRequest
-from conductor.client.adapters.models.start_workflow_request_adapter import StartWorkflowRequestAdapter as StartWorkflowRequest
-from conductor.client.adapters.models.workflow_adapter import WorkflowAdapter as Workflow
-from conductor.client.adapters.models.workflow_state_update_adapter import WorkflowStateUpdateAdapter as WorkflowStateUpdate
-from conductor.client.adapters.models.workflow_test_request_adapter import WorkflowTestRequestAdapter as WorkflowTestRequest
+from conductor.client.http.models.workflow_run import WorkflowRun
+from conductor.client.http.models.skip_task_request import SkipTaskRequest
+from conductor.client.http.models.workflow_status import WorkflowStatus
+from conductor.client.http.models.scrollable_search_result_workflow_summary import ScrollableSearchResultWorkflowSummary
+from conductor.client.http.models.signal_response import SignalResponse
+from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
+from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
+from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
+from conductor.client.http.models.workflow import Workflow
+from conductor.client.http.models.workflow_state_update import WorkflowStateUpdate
+from conductor.client.http.models.workflow_test_request import WorkflowTestRequest
 
 
 class WorkflowClient(ABC):

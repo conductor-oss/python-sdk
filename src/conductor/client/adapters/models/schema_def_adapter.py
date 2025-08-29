@@ -1,6 +1,6 @@
 from enum import Enum
 
-from conductor.client.http.models.schema_def import SchemaDef
+from conductor.client.codegen.models.schema_def import SchemaDef
 
 
 class SchemaType(str, Enum):

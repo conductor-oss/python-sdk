@@ -2,11 +2,11 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.workflow_def_adapter import WorkflowDefAdapter
-from conductor.client.adapters.models.workflow_test_request_adapter import (
+from conductor.client.http.models.workflow_def import WorkflowDefAdapter
+from conductor.client.http.models.workflow_test_request import (
     WorkflowTestRequestAdapter,
 )
-from conductor.client.adapters.models.task_mock_adapter import TaskMockAdapter
+from conductor.client.http.models.task_mock import TaskMockAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

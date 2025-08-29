@@ -1,4 +1,4 @@
-from conductor.client.http.models import BulkResponse
+from conductor.client.codegen.models import BulkResponse
 
 
 class BulkResponseAdapter(BulkResponse):

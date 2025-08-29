@@ -1,4 +1,4 @@
-from conductor.client.http.models import GrantedAccessResponse
+from conductor.client.codegen.models import GrantedAccessResponse
 
 
 class GrantedAccessResponseAdapter(GrantedAccessResponse): ...

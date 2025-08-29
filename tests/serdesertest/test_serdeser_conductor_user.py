@@ -2,9 +2,9 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.conductor_user_adapter import ConductorUserAdapter
-from conductor.client.adapters.models.group_adapter import GroupAdapter
-from conductor.client.adapters.models.role_adapter import RoleAdapter
+from conductor.client.http.models.conductor_user import ConductorUserAdapter
+from conductor.client.http.models.group import GroupAdapter
+from conductor.client.http.models.role import RoleAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

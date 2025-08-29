@@ -1,4 +1,4 @@
-from conductor.client.http.models.task_def import TaskDef
+from conductor.client.codegen.models.task_def import TaskDef
 
 
 class TaskDefAdapter(TaskDef):

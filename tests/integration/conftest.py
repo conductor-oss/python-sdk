@@ -5,7 +5,7 @@ from typing import Optional
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.orkes.orkes_authorization_client import OrkesAuthorizationClient
-from conductor.client.adapters.models.upsert_user_request_adapter import (
+from conductor.client.http.models.upsert_user_request import (
     UpsertUserRequestAdapter as UpsertUserRequest,
 )
 

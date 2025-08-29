@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.state_change_event_adapter import (
+from conductor.client.http.models.state_change_event import (
     StateChangeConfig,
     StateChangeEventAdapter,
     StateChangeEventType,

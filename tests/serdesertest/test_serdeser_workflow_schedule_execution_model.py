@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.workflow_schedule_execution_model_adapter import (
+from conductor.client.http.models.workflow_schedule_execution_model import (
     WorkflowScheduleExecutionModelAdapter,
 )
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver

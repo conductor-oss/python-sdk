@@ -1,4 +1,4 @@
-from conductor.client.http.models import NamePart
+from conductor.client.codegen.models import NamePart
 
 
 class NamePartAdapter(NamePart): ...

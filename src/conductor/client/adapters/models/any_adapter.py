@@ -1,4 +1,4 @@
-from conductor.client.http.models import Any
+from conductor.client.codegen.models import Any
 
 
 class AnyAdapter(Any): ...

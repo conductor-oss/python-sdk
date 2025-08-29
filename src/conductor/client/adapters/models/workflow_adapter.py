@@ -5,7 +5,7 @@ from typing import Optional
 from conductor.client.adapters.models.task_adapter import TaskAdapter
 from conductor.client.adapters.models.workflow_run_adapter import (
     running_status, successful_status, terminal_status)
-from conductor.client.http.models.workflow import Workflow
+from conductor.client.codegen.models.workflow import Workflow
 
 
 class WorkflowAdapter(Workflow):

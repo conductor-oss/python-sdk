@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.adapters.models.integration_api_adapter import IntegrationApiAdapter
+from conductor.client.http.models.integration_api import IntegrationApi
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def valid_data(mock_tag):
 
 def test_constructor_with_no_parameters():
     """Test that constructor works with no parameters (current behavior)."""
-    integration = IntegrationApiAdapter()
+    integration = IntegrationApi()
 
     # All fields should be None initially
     assert integration.api is None
@@ -47,7 +47,7 @@ def test_constructor_with_no_parameters():
 
 def test_constructor_with_all_parameters(valid_data, mock_tag):
     """Test constructor with all known parameters."""
-    integration = IntegrationApiAdapter(**valid_data)
+    integration = IntegrationApi(**valid_data)
 
     # Verify all fields are set correctly
     assert integration.api == "test-api"
@@ -70,7 +70,7 @@ def test_constructor_with_partial_parameters():
         "integration_name": "partial-integration",
     }
 
-    integration = IntegrationApiAdapter(**partial_data)
+    integration = IntegrationApi(**partial_data)
 
     # Specified fields should be set
     assert integration.api == "partial-api"
@@ -85,7 +85,7 @@ def test_constructor_with_partial_parameters():
 
 def test_field_existence_and_types(valid_data):
     """Test that all expected fields exist and have correct types."""
-    integration = IntegrationApiAdapter(**valid_data)
+    integration = IntegrationApi(**valid_data)
 
     # Test field existence and types
     assert isinstance(integration.api, str)
@@ -102,7 +102,7 @@ def test_field_existence_and_types(valid_data):
 
 def test_property_getters(valid_data, mock_tag):
     """Test that all property getters work correctly."""
-    integration = IntegrationApiAdapter(**valid_data)
+    integration = IntegrationApi(**valid_data)
 
     # Test getters return expected values
     assert integration.api == "test-api"
@@ -119,7 +119,7 @@ def test_property_getters(valid_data, mock_tag):
 
 def test_property_setters(mock_tag):
     """Test that all property setters work correctly."""
-    integration = IntegrationApiAdapter()
+    integration = IntegrationApi()
 
     # Test setting all properties
     integration.api = "new-api"
@@ -148,7 +148,7 @@ def test_property_setters(mock_tag):
 
 def test_none_value_assignment(valid_data):
     """Test that None can be assigned to all fields."""
-    integration = IntegrationApiAdapter(**valid_data)
+    integration = IntegrationApi(**valid_data)
 
     # Set all fields to None
     integration.api = None
@@ -191,7 +191,7 @@ def test_swagger_types_structure():
         'updated_by': 'str'
     }
 
-    assert IntegrationApiAdapter.swagger_types == expected_swagger_types
+    assert IntegrationApi.swagger_types == expected_swagger_types
 
 
 def test_attribute_map_structure():
@@ -210,12 +210,12 @@ def test_attribute_map_structure():
         'updated_by': 'updatedBy'
     }
 
-    assert IntegrationApiAdapter.attribute_map == expected_attribute_map
+    assert IntegrationApi.attribute_map == expected_attribute_map
 
 
 def test_to_dict_method(valid_data):
     """Test that to_dict method works and returns expected structure."""
-    integration = IntegrationApiAdapter(**valid_data)
+    integration = IntegrationApi(**valid_data)
     result_dict = integration.to_dict()
 
     # Verify dictionary contains expected keys
@@ -243,7 +243,7 @@ def test_to_dict_method(valid_data):
 
 def test_to_str_method():
     """Test that to_str method works."""
-    integration = IntegrationApiAdapter(api="test", enabled=True)
+    integration = IntegrationApi(api="test", enabled=True)
     str_repr = integration.to_str()
 
     # Should return a string representation
@@ -253,7 +253,7 @@ def test_to_str_method():
 
 def test_repr_method():
     """Test that __repr__ method works."""
-    integration = IntegrationApiAdapter(api="test", enabled=True)
+    integration = IntegrationApi(api="test", enabled=True)
     repr_str = repr(integration)
 
     # Should return a string representation
@@ -263,9 +263,9 @@ def test_repr_method():
 
 def test_equality_comparison(valid_data):
     """Test that equality comparison works correctly."""
-    integration1 = IntegrationApiAdapter(**valid_data)
-    integration2 = IntegrationApiAdapter(**valid_data)
-    integration3 = IntegrationApiAdapter(api="different")
+    integration1 = IntegrationApi(**valid_data)
+    integration2 = IntegrationApi(**valid_data)
+    integration3 = IntegrationApi(api="different")
 
     # Same data should be equal
     assert integration1 == integration2
@@ -279,8 +279,8 @@ def test_equality_comparison(valid_data):
 
 def test_inequality_comparison(valid_data):
     """Test that inequality comparison works correctly."""
-    integration1 = IntegrationApiAdapter(**valid_data)
-    integration2 = IntegrationApiAdapter(api="different")
+    integration1 = IntegrationApi(**valid_data)
+    integration2 = IntegrationApi(api="different")
 
     # Different objects should be not equal
     assert integration1 != integration2
@@ -289,7 +289,7 @@ def test_inequality_comparison(valid_data):
 
 def test_discriminator_attribute():
     """Test that discriminator attribute exists and is None."""
-    integration = IntegrationApiAdapter()
+    integration = IntegrationApi()
     assert integration.discriminator is None
 
 
@@ -304,17 +304,17 @@ def test_configuration_dict_flexibility():
     ]
 
     for config in configs:
-        integration = IntegrationApiAdapter(configuration=config)
+        integration = IntegrationApi(configuration=config)
         assert integration.configuration == config
 
 
 def test_tags_list_handling(mocker):
     """Test that tags field properly handles list of objects."""
     # Empty list
-    integration = IntegrationApiAdapter(tags=[])
+    integration = IntegrationApi(tags=[])
     assert integration.tags == []
 
     # List with mock objects
     mock_tags = [mocker.Mock(), mocker.Mock()]
-    integration = IntegrationApiAdapter(tags=mock_tags)
+    integration = IntegrationApi(tags=mock_tags)
     assert integration.tags == mock_tags

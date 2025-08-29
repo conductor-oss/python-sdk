@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import ClassVar, Dict
 
-from conductor.client.http.models import IntegrationDef
+from conductor.client.codegen.models import IntegrationDef
 
 
 class IntegrationDefAdapter(IntegrationDef):

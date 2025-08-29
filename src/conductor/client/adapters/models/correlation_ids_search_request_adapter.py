@@ -1,4 +1,4 @@
-from conductor.client.http.models import CorrelationIdsSearchRequest
+from conductor.client.codegen.models import CorrelationIdsSearchRequest
 
 
 class CorrelationIdsSearchRequestAdapter(CorrelationIdsSearchRequest): ...

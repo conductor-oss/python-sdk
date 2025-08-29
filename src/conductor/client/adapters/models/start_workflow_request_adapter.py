@@ -1,6 +1,6 @@
 from enum import Enum
 
-from conductor.client.http.models.start_workflow_request import \
+from conductor.client.codegen.models.start_workflow_request import \
     StartWorkflowRequest
 
 

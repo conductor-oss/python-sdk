@@ -1,4 +1,4 @@
-from conductor.client.http.models.role import Role
+from conductor.client.codegen.models.role import Role
 
 
 class RoleAdapter(Role):

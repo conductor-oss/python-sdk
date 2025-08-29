@@ -1,4 +1,4 @@
-from conductor.client.http.models.terminate_workflow import TerminateWorkflow
+from conductor.client.codegen.models.terminate_workflow import TerminateWorkflow
 
 
 class TerminateWorkflowAdapter(TerminateWorkflow):

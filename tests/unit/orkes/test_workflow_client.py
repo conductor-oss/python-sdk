@@ -4,15 +4,15 @@ import logging
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.adapters.api import WorkflowResourceApi
-from conductor.client.adapters.models.skip_task_request_adapter import SkipTaskRequestAdapter as SkipTaskRequest
-from conductor.client.adapters.models.rerun_workflow_request_adapter import RerunWorkflowRequestAdapter as RerunWorkflowRequest
-from conductor.client.adapters.models.start_workflow_request_adapter import StartWorkflowRequestAdapter as StartWorkflowRequest
-from conductor.client.adapters.models.workflow_adapter import WorkflowAdapter as Workflow
-from conductor.client.adapters.models.workflow_def_adapter import WorkflowDefAdapter as WorkflowDef
-from conductor.client.adapters.models.workflow_run_adapter import WorkflowRunAdapter as WorkflowRun
-from conductor.client.adapters.models.workflow_test_request_adapter import WorkflowTestRequestAdapter as WorkflowTestRequest
-from conductor.client.http.rest import ApiException
+from conductor.client.http.api import WorkflowResourceApi
+from conductor.client.http.models.skip_task_request import SkipTaskRequestAdapter as SkipTaskRequest
+from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequestAdapter as RerunWorkflowRequest
+from conductor.client.http.models.start_workflow_request import StartWorkflowRequestAdapter as StartWorkflowRequest
+from conductor.client.http.models.workflow import WorkflowAdapter as Workflow
+from conductor.client.http.models.workflow_def import WorkflowDefAdapter as WorkflowDef
+from conductor.client.http.models.workflow_run import WorkflowRunAdapter as WorkflowRun
+from conductor.client.http.models.workflow_test_request import WorkflowTestRequestAdapter as WorkflowTestRequest
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 
 WORKFLOW_NAME = "ut_wf"

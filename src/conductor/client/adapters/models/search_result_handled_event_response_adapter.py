@@ -1,4 +1,4 @@
-from conductor.client.http.models.search_result_handled_event_response import \
+from conductor.client.codegen.models.search_result_handled_event_response import \
     SearchResultHandledEventResponse
 
 

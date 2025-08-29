@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.save_schedule_request_adapter import SaveScheduleRequestAdapter
+from conductor.client.http.models.save_schedule_request import SaveScheduleRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

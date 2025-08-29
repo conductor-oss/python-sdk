@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.adapters.models import SchemaDef, SchemaType
+from conductor.client.http.models.schema_def import SchemaDef, SchemaType
 
 
 @pytest.fixture

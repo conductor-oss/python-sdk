@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.schema_def_adapter import SchemaDefAdapter
-from conductor.client.adapters.models.task_def_adapter import TaskDefAdapter
+from conductor.client.http.models.schema_def import SchemaDefAdapter
+from conductor.client.http.models.task_def import TaskDefAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

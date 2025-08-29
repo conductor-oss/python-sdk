@@ -1,4 +1,4 @@
-from conductor.client.http.api.user_resource_api import UserResourceApi
+from conductor.client.codegen.api.user_resource_api import UserResourceApi
 
 
 class UserResourceApiAdapter(UserResourceApi): ...

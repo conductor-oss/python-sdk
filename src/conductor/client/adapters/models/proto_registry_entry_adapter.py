@@ -1,4 +1,4 @@
-from src.conductor.client.http.models.proto_registry_entry import \
+from src.conductor.client.codegen.models.proto_registry_entry import \
     ProtoRegistryEntry
 
 

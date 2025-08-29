@@ -4,11 +4,11 @@ import logging
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.adapters.api import SchedulerResourceApi
-from conductor.client.adapters.models.save_schedule_request_adapter import SaveScheduleRequestAdapter as SaveScheduleRequest
-from conductor.client.adapters.models.search_result_workflow_schedule_execution_model_adapter import SearchResultWorkflowScheduleExecutionModelAdapter as SearchResultWorkflowScheduleExecutionModel
-from conductor.client.adapters.models.workflow_schedule_adapter import WorkflowScheduleAdapter as WorkflowSchedule
-from conductor.client.http.rest import ApiException
+from conductor.client.http.api import SchedulerResourceApi
+from conductor.client.http.models.save_schedule_request import SaveScheduleRequestAdapter as SaveScheduleRequest
+from conductor.client.http.models.search_result_workflow_schedule_execution_model import SearchResultWorkflowScheduleExecutionModelAdapter as SearchResultWorkflowScheduleExecutionModel
+from conductor.client.http.models.workflow_schedule import WorkflowScheduleAdapter as WorkflowSchedule
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_scheduler_client import OrkesSchedulerClient
 

@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Union, Optional
 
 from typing_extensions import Self
 
-from conductor.client.adapters.models.cache_config_adapter import CacheConfigAdapter as CacheConfig
-from conductor.client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter as WorkflowTask
+from conductor.client.http.models.cache_config import CacheConfigAdapter as CacheConfig
+from conductor.client.http.models.workflow_task import WorkflowTaskAdapter as WorkflowTask
 from conductor.client.workflow.task.task_type import TaskType
 
 

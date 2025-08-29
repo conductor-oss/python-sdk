@@ -1,9 +1,9 @@
-from conductor.client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
+from conductor.client.http.models.task_exec_log import TaskExecLog
 
 
 def test_constructor_with_no_args():
     """Test that constructor works with no arguments (all fields optional)"""
-    log = TaskExecLogAdapter()
+    log = TaskExecLog()
 
     # Verify all fields exist and are None by default
     assert log.log is None
@@ -18,7 +18,7 @@ def test_constructor_with_all_args():
     test_task_id = "task_123"
     test_created_time = 1640995200
 
-    log = TaskExecLogAdapter(
+    log = TaskExecLog(
         log=test_log,
         task_id=test_task_id,
         created_time=test_created_time,
@@ -33,7 +33,7 @@ def test_constructor_with_partial_args():
     """Test constructor with partial arguments"""
     test_log = "Partial test"
 
-    log = TaskExecLogAdapter(log=test_log)
+    log = TaskExecLog(log=test_log)
 
     assert log.log == test_log
     assert log.task_id is None
@@ -42,7 +42,7 @@ def test_constructor_with_partial_args():
 
 def test_existing_fields_exist():
     """Verify all expected fields exist and are accessible"""
-    log = TaskExecLogAdapter()
+    log = TaskExecLog()
 
     # Test field existence via hasattr
     assert hasattr(log, "log")
@@ -53,7 +53,7 @@ def test_existing_fields_exist():
 
 def test_property_getters():
     """Test that all property getters work correctly"""
-    log = TaskExecLogAdapter()
+    log = TaskExecLog()
 
     # Should not raise AttributeError
     _ = log.log
@@ -63,7 +63,7 @@ def test_property_getters():
 
 def test_property_setters():
     """Test that all property setters work correctly"""
-    log = TaskExecLogAdapter()
+    log = TaskExecLog()
 
     # Test log setter
     log.log = "New log message"
@@ -81,7 +81,7 @@ def test_property_setters():
 def test_field_types_unchanged():
     """Verify field types remain as expected (string types in swagger_types)"""
     # Check swagger_types class attribute exists and contains expected types
-    assert hasattr(TaskExecLogAdapter, "swagger_types")
+    assert hasattr(TaskExecLog, "swagger_types")
 
     expected_types = {
         "log": "str",
@@ -90,13 +90,13 @@ def test_field_types_unchanged():
     }
 
     for field, expected_type in expected_types.items():
-        assert field in TaskExecLogAdapter.swagger_types
-        assert TaskExecLogAdapter.swagger_types[field] == expected_type
+        assert field in TaskExecLog.swagger_types
+        assert TaskExecLog.swagger_types[field] == expected_type
 
 
 def test_attribute_map_unchanged():
     """Verify attribute_map remains unchanged for API compatibility"""
-    assert hasattr(TaskExecLogAdapter, "attribute_map")
+    assert hasattr(TaskExecLog, "attribute_map")
 
     expected_map = {
         "log": "log",
@@ -105,13 +105,13 @@ def test_attribute_map_unchanged():
     }
 
     for field, json_key in expected_map.items():
-        assert field in TaskExecLogAdapter.attribute_map
-        assert TaskExecLogAdapter.attribute_map[field] == json_key
+        assert field in TaskExecLog.attribute_map
+        assert TaskExecLog.attribute_map[field] == json_key
 
 
 def test_to_dict_method_exists():
     """Test that to_dict method exists and works"""
-    log = TaskExecLogAdapter(
+    log = TaskExecLog(
         log="Test log",
         task_id="task_789",
         created_time=1641168000,
@@ -127,7 +127,7 @@ def test_to_dict_method_exists():
 
 def test_to_str_method_exists():
     """Test that to_str method exists and works"""
-    log = TaskExecLogAdapter(log="Test")
+    log = TaskExecLog(log="Test")
 
     result = log.to_str()
     assert isinstance(result, str)
@@ -135,7 +135,7 @@ def test_to_str_method_exists():
 
 def test_repr_method_exists():
     """Test that __repr__ method exists and works"""
-    log = TaskExecLogAdapter(log="Test")
+    log = TaskExecLog(log="Test")
 
     result = repr(log)
     assert isinstance(result, str)
@@ -143,9 +143,9 @@ def test_repr_method_exists():
 
 def test_equality_methods_exist():
     """Test that equality methods exist and work correctly"""
-    log1 = TaskExecLogAdapter(log="Test", task_id="123")
-    log2 = TaskExecLogAdapter(log="Test", task_id="123")
-    log3 = TaskExecLogAdapter(log="Different", task_id="456")
+    log1 = TaskExecLog(log="Test", task_id="123")
+    log2 = TaskExecLog(log="Test", task_id="123")
+    log3 = TaskExecLog(log="Different", task_id="456")
 
     # Test __eq__
     assert log1 == log2
@@ -158,7 +158,7 @@ def test_equality_methods_exist():
 
 def test_none_values_handling():
     """Test that None values are handled correctly"""
-    log = TaskExecLogAdapter()
+    log = TaskExecLog()
 
     # Setting None should work
     log.log = None
@@ -172,14 +172,14 @@ def test_none_values_handling():
 
 def test_discriminator_field_exists():
     """Test that discriminator field exists and defaults to None"""
-    log = TaskExecLogAdapter()
+    log = TaskExecLog()
     assert hasattr(log, "discriminator")
     assert log.discriminator is None
 
 
 def test_private_attributes_exist():
     """Test that private attributes are properly initialized"""
-    log = TaskExecLogAdapter()
+    log = TaskExecLog()
 
     # These should exist as they're set in __init__
     assert hasattr(log, "_log")
@@ -190,7 +190,7 @@ def test_private_attributes_exist():
 def test_constructor_parameter_names_unchanged():
     """Test that constructor accepts the expected parameter names"""
     # This should not raise TypeError
-    log = TaskExecLogAdapter(
+    log = TaskExecLog(
         log="test_log",
         task_id="test_task_id",
         created_time=12345,
@@ -203,7 +203,7 @@ def test_constructor_parameter_names_unchanged():
 
 def test_serialization_compatibility():
     """Test that serialization produces expected structure"""
-    log = TaskExecLogAdapter(
+    log = TaskExecLog(
         log="Serialization test",
         task_id="serial_123",
         created_time=1641254400,

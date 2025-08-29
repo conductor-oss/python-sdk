@@ -2,10 +2,10 @@ from __future__ import annotations
 from typing import Optional, List
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.adapters.models.save_schedule_request_adapter import SaveScheduleRequestAdapter as SaveScheduleRequest
-from conductor.client.adapters.models.search_result_workflow_schedule_execution_model_adapter import \
-    SearchResultWorkflowScheduleExecutionModelAdapter as SearchResultWorkflowScheduleExecutionModel
-from conductor.client.adapters.models.workflow_schedule_adapter import WorkflowScheduleAdapter as WorkflowSchedule
+from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
+from conductor.client.http.models.search_result_workflow_schedule_execution_model import \
+    SearchResultWorkflowScheduleExecutionModel
+from conductor.client.http.models.workflow_schedule import WorkflowSchedule
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.scheduler_client import SchedulerClient

@@ -1,4 +1,4 @@
-from conductor.client.http.models.reserved_range import ReservedRange
+from conductor.client.codegen.models.reserved_range import ReservedRange
 
 
 class ReservedRangeAdapter(ReservedRange):

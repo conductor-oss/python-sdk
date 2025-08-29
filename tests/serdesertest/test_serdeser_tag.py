@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.tag_adapter import TagAdapter, TypeEnum
+from conductor.client.http.models.tag import TagAdapter, TypeEnum
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

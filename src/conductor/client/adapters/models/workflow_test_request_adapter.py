@@ -1,4 +1,4 @@
-from conductor.client.http.models.workflow_test_request import \
+from conductor.client.codegen.models.workflow_test_request import \
     WorkflowTestRequest
 
 

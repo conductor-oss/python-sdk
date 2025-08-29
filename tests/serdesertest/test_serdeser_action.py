@@ -3,11 +3,11 @@ import re
 
 import pytest
 
-from conductor.client.adapters.models.action_adapter import ActionAdapter
-from conductor.client.adapters.models.start_workflow_adapter import StartWorkflowAdapter
-from conductor.client.adapters.models.task_details_adapter import TaskDetailsAdapter
-from conductor.client.adapters.models.terminate_workflow_adapter import TerminateWorkflowAdapter
-from conductor.client.adapters.models.update_workflow_variables_adapter import (
+from conductor.client.http.models.action import ActionAdapter
+from conductor.client.http.models.start_workflow import StartWorkflowAdapter
+from conductor.client.http.models.task_details import TaskDetailsAdapter
+from conductor.client.http.models.terminate_workflow import TerminateWorkflowAdapter
+from conductor.client.http.models.update_workflow_variables import (
     UpdateWorkflowVariablesAdapter,
 )
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver

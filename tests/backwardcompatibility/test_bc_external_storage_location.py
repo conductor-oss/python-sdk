@@ -1,11 +1,11 @@
-from conductor.client.adapters.models.external_storage_location_adapter import (
-    ExternalStorageLocationAdapter,
+from conductor.client.http.models.external_storage_location import (
+    ExternalStorageLocation,
 )
 
 
 def test_constructor_with_no_arguments():
     """Test that constructor works without any arguments (current behavior)."""
-    storage_location = ExternalStorageLocationAdapter()
+    storage_location = ExternalStorageLocation()
     assert storage_location is not None
     assert storage_location.uri is None
     assert storage_location.path is None
@@ -15,7 +15,7 @@ def test_constructor_with_all_arguments():
     """Test constructor with all known arguments."""
     uri = "s3://my-bucket"
     path = "/data/files"
-    storage_location = ExternalStorageLocationAdapter(uri=uri, path=path)
+    storage_location = ExternalStorageLocation(uri=uri, path=path)
     assert storage_location.uri == uri
     assert storage_location.path == path
 
@@ -23,18 +23,18 @@ def test_constructor_with_all_arguments():
 def test_constructor_with_partial_arguments():
     """Test constructor with partial arguments."""
     # Test with only uri
-    storage_location1 = ExternalStorageLocationAdapter(uri="s3://bucket1")
+    storage_location1 = ExternalStorageLocation(uri="s3://bucket1")
     assert storage_location1.uri == "s3://bucket1"
     assert storage_location1.path is None
     # Test with only path
-    storage_location2 = ExternalStorageLocationAdapter(path="/data")
+    storage_location2 = ExternalStorageLocation(path="/data")
     assert storage_location2.uri is None
     assert storage_location2.path == "/data"
 
 
 def test_required_fields_exist():
     """Test that all expected fields exist in the model."""
-    storage_location = ExternalStorageLocationAdapter()
+    storage_location = ExternalStorageLocation()
     # These fields must exist for backward compatibility
     required_attributes = ["uri", "path"]
     for attr in required_attributes:
@@ -46,36 +46,36 @@ def test_required_fields_exist():
 def test_field_types_unchanged():
     """Test that field types haven't changed."""
     # Verify swagger_types mapping exists and contains expected types
-    assert hasattr(ExternalStorageLocationAdapter, "swagger_types")
+    assert hasattr(ExternalStorageLocation, "swagger_types")
     expected_types = {"uri": "str", "path": "str"}
     for field, expected_type in expected_types.items():
         assert (
-            field in ExternalStorageLocationAdapter.swagger_types
+            field in ExternalStorageLocation.swagger_types
         ), f"Field '{field}' missing from swagger_types"
 
-        assert ExternalStorageLocationAdapter.swagger_types[field] == expected_type, (
+        assert ExternalStorageLocation.swagger_types[field] == expected_type, (
             f"Field '{field}' type changed from '{expected_type}' to "
-            f"'{ExternalStorageLocationAdapter.swagger_types[field]}'"
+            f"'{ExternalStorageLocation.swagger_types[field]}'"
         )
 
 
 def test_attribute_map_unchanged():
     """Test that attribute mapping hasn't changed."""
-    assert hasattr(ExternalStorageLocationAdapter, "attribute_map")
+    assert hasattr(ExternalStorageLocation, "attribute_map")
     expected_mapping = {"uri": "uri", "path": "path"}
     for attr, json_key in expected_mapping.items():
         assert (
-            attr in ExternalStorageLocationAdapter.attribute_map
+            attr in ExternalStorageLocation.attribute_map
         ), f"Attribute '{attr}' missing from attribute_map"
 
         assert (
-            ExternalStorageLocationAdapter.attribute_map[attr] == json_key
+            ExternalStorageLocation.attribute_map[attr] == json_key
         ), f"Attribute mapping for '{attr}' changed"
 
 
 def test_uri_property_behavior():
     """Test uri property getter and setter behavior."""
-    storage_location = ExternalStorageLocationAdapter()
+    storage_location = ExternalStorageLocation()
     # Test getter when value is None
     assert storage_location.uri is None
     # Test setter with string value
@@ -89,7 +89,7 @@ def test_uri_property_behavior():
 
 def test_path_property_behavior():
     """Test path property getter and setter behavior."""
-    storage_location = ExternalStorageLocationAdapter()
+    storage_location = ExternalStorageLocation()
     # Test getter when value is None
     assert storage_location.path is None
     # Test setter with string value
@@ -103,7 +103,7 @@ def test_path_property_behavior():
 
 def test_to_dict_method_exists_and_works():
     """Test that to_dict method exists and produces expected output."""
-    storage_location = ExternalStorageLocationAdapter(uri="s3://bucket", path="/data")
+    storage_location = ExternalStorageLocation(uri="s3://bucket", path="/data")
     result = storage_location.to_dict()
     assert isinstance(result, dict)
     # Verify expected keys exist in output
@@ -116,36 +116,36 @@ def test_to_dict_method_exists_and_works():
 
 def test_to_str_method_exists():
     """Test that to_str method exists and returns string."""
-    storage_location = ExternalStorageLocationAdapter()
+    storage_location = ExternalStorageLocation()
     result = storage_location.to_str()
     assert isinstance(result, str)
 
 
 def test_repr_method_exists():
     """Test that __repr__ method exists and returns string."""
-    storage_location = ExternalStorageLocationAdapter()
+    storage_location = ExternalStorageLocation()
     result = repr(storage_location)
     assert isinstance(result, str)
 
 
 def test_equality_methods_exist():
     """Test that equality methods exist and work correctly."""
-    storage1 = ExternalStorageLocationAdapter(uri="s3://bucket", path="/data")
-    storage2 = ExternalStorageLocationAdapter(uri="s3://bucket", path="/data")
-    storage3 = ExternalStorageLocationAdapter(uri="s3://other", path="/data")
+    storage1 = ExternalStorageLocation(uri="s3://bucket", path="/data")
+    storage2 = ExternalStorageLocation(uri="s3://bucket", path="/data")
+    storage3 = ExternalStorageLocation(uri="s3://other", path="/data")
     # Test __eq__
     assert storage1 == storage2
     assert storage1 != storage3
     # Test __ne__
     assert not (storage1 != storage2)
     assert storage1 != storage3
-    # Test equality with non-ExternalStorageLocationAdapter object
+    # Test equality with non-ExternalStorageLocation object
     assert storage1 != "not_a_storage_location"
 
 
 def test_private_attributes_exist():
     """Test that private attributes exist (implementation detail preservation)."""
-    storage_location = ExternalStorageLocationAdapter()
+    storage_location = ExternalStorageLocation()
     # These private attributes should exist for backward compatibility
     assert hasattr(storage_location, "_uri")
     assert hasattr(storage_location, "_path")
@@ -154,7 +154,7 @@ def test_private_attributes_exist():
 
 def test_string_type_validation():
     """Test that string fields accept string values without validation errors."""
-    storage_location = ExternalStorageLocationAdapter()
+    storage_location = ExternalStorageLocation()
     # Test various string values
     string_values = [
         "",  # empty string
@@ -177,7 +177,7 @@ def test_string_type_validation():
 
 def test_none_values_accepted():
     """Test that None values are accepted (current behavior)."""
-    storage_location = ExternalStorageLocationAdapter()
+    storage_location = ExternalStorageLocation()
     # Set to None should work
     storage_location.uri = None
     storage_location.path = None
@@ -187,7 +187,7 @@ def test_none_values_accepted():
 
 def test_field_independence():
     """Test that fields can be set independently."""
-    storage_location = ExternalStorageLocationAdapter()
+    storage_location = ExternalStorageLocation()
     # Set uri only
     storage_location.uri = "s3://bucket"
     assert storage_location.uri == "s3://bucket"

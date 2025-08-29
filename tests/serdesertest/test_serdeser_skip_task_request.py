@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.skip_task_request_adapter import SkipTaskRequestAdapter
+from conductor.client.http.models.skip_task_request import SkipTaskRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

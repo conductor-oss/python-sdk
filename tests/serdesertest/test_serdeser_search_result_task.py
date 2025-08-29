@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.search_result_task_adapter import SearchResultTaskAdapter
-from conductor.client.adapters.models.task_adapter import TaskAdapter
+from conductor.client.http.models.search_result_task import SearchResultTaskAdapter
+from conductor.client.http.models.task import TaskAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

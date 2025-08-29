@@ -1,4 +1,4 @@
-from conductor.client.http.models.external_storage_location import ExternalStorageLocation
+from conductor.client.codegen.models.external_storage_location import ExternalStorageLocation
 
 
 class ExternalStorageLocationAdapter(ExternalStorageLocation):

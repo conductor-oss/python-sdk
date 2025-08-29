@@ -1,4 +1,4 @@
-from conductor.client.http.models import Group
+from conductor.client.codegen.models import Group
 
 
 class GroupAdapter(Group):

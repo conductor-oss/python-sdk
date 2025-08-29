@@ -1,4 +1,4 @@
-from conductor.client.http.models.workflow_schedule_execution_model import \
+from conductor.client.codegen.models.workflow_schedule_execution_model import \
     WorkflowScheduleExecutionModel
 
 

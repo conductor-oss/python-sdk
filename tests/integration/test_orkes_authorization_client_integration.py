@@ -3,18 +3,18 @@ import uuid
 
 import pytest
 
-from conductor.client.adapters.models.create_or_update_application_request_adapter import \
+from conductor.client.http.models.create_or_update_application_request import \
     CreateOrUpdateApplicationRequestAdapter as CreateOrUpdateApplicationRequest
-from conductor.client.adapters.models.subject_ref_adapter import \
+from conductor.client.http.models.subject_ref import \
     SubjectRefAdapter as SubjectRef
-from conductor.client.adapters.models.target_ref_adapter import \
+from conductor.client.http.models.target_ref import \
     TargetRefAdapter as TargetRef
-from conductor.client.adapters.models.upsert_group_request_adapter import \
+from conductor.client.http.models.upsert_group_request import \
     UpsertGroupRequestAdapter as UpsertGroupRequest
-from conductor.client.adapters.models.upsert_user_request_adapter import \
+from conductor.client.http.models.upsert_user_request import \
     UpsertUserRequestAdapter as UpsertUserRequest
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.models.access_key_status import AccessKeyStatus
 from conductor.client.orkes.models.access_type import AccessType
 from conductor.client.orkes.models.metadata_tag import MetadataTag

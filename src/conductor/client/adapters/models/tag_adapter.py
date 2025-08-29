@@ -1,5 +1,5 @@
 from enum import Enum
-from conductor.client.http.models.tag import Tag
+from conductor.client.codegen.models.tag import Tag
 
 
 class TypeEnum(str, Enum):

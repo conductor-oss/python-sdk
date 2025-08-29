@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from conductor.client.adapters.models.poll_data_adapter import PollDataAdapter
+from conductor.client.http.models.poll_data import PollData
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def valid_last_poll_time():
 def test_constructor_signature_backward_compatibility():
     """Test that constructor signature remains compatible."""
     # Get constructor signature
-    sig = inspect.signature(PollDataAdapter.__init__)
+    sig = inspect.signature(PollData.__init__)
     params = list(sig.parameters.keys())
 
     # Verify expected parameters exist (excluding 'self')
@@ -52,32 +52,32 @@ def test_constructor_signature_backward_compatibility():
 
 def test_constructor_with_no_arguments():
     """Test that constructor works with no arguments (all defaults)."""
-    poll_data = PollDataAdapter()
-    assert isinstance(poll_data, PollDataAdapter)
+    poll_data = PollData()
+    assert isinstance(poll_data, PollData)
 
 
 def test_constructor_with_all_arguments(
     valid_queue_name, valid_domain, valid_worker_id, valid_last_poll_time
 ):
     """Test that constructor works with all existing arguments."""
-    poll_data = PollDataAdapter(
+    poll_data = PollData(
         queue_name=valid_queue_name,
         domain=valid_domain,
         worker_id=valid_worker_id,
         last_poll_time=valid_last_poll_time,
     )
-    assert isinstance(poll_data, PollDataAdapter)
+    assert isinstance(poll_data, PollData)
 
 
 def test_constructor_with_partial_arguments(valid_queue_name, valid_domain):
     """Test that constructor works with partial arguments."""
-    poll_data = PollDataAdapter(queue_name=valid_queue_name, domain=valid_domain)
-    assert isinstance(poll_data, PollDataAdapter)
+    poll_data = PollData(queue_name=valid_queue_name, domain=valid_domain)
+    assert isinstance(poll_data, PollData)
 
 
 def test_required_properties_exist():
     """Test that all expected properties exist and are accessible."""
-    poll_data = PollDataAdapter()
+    poll_data = PollData()
 
     required_properties = ["queue_name", "domain", "worker_id", "last_poll_time"]
 
@@ -94,7 +94,7 @@ def test_property_setters_work(
     valid_queue_name, valid_domain, valid_worker_id, valid_last_poll_time
 ):
     """Test that all property setters continue to work."""
-    poll_data = PollDataAdapter()
+    poll_data = PollData()
 
     # Test setting each property
     test_values = {
@@ -123,11 +123,11 @@ def test_swagger_types_backward_compatibility():
 
     # Verify swagger_types exists
     assert hasattr(
-        PollDataAdapter, "swagger_types"
+        PollData, "swagger_types"
     ), "swagger_types attribute missing - breaks backward compatibility"
 
     # Verify expected types are present and unchanged
-    swagger_types = PollDataAdapter.swagger_types
+    swagger_types = PollData.swagger_types
     for field, expected_type in expected_types.items():
         assert field in swagger_types, f"Field '{field}' missing from swagger_types"
         assert (
@@ -146,11 +146,11 @@ def test_attribute_map_backward_compatibility():
 
     # Verify attribute_map exists
     assert hasattr(
-        PollDataAdapter, "attribute_map"
+        PollData, "attribute_map"
     ), "attribute_map attribute missing - breaks backward compatibility"
 
     # Verify expected mappings are present and unchanged
-    attribute_map = PollDataAdapter.attribute_map
+    attribute_map = PollData.attribute_map
     for field, expected_json_key in expected_mappings.items():
         assert field in attribute_map, f"Field '{field}' missing from attribute_map"
         assert (
@@ -162,7 +162,7 @@ def test_to_dict_method_exists_and_works(
     valid_queue_name, valid_domain, valid_worker_id, valid_last_poll_time
 ):
     """Test that to_dict method exists and produces expected structure."""
-    poll_data = PollDataAdapter(
+    poll_data = PollData(
         queue_name=valid_queue_name,
         domain=valid_domain,
         worker_id=valid_worker_id,
@@ -186,7 +186,7 @@ def test_to_dict_method_exists_and_works(
 
 def test_to_str_method_exists_and_works():
     """Test that to_str method exists and works."""
-    poll_data = PollDataAdapter()
+    poll_data = PollData()
 
     assert hasattr(
         poll_data, "to_str"
@@ -198,7 +198,7 @@ def test_to_str_method_exists_and_works():
 
 def test_repr_method_works():
     """Test that __repr__ method works."""
-    poll_data = PollDataAdapter()
+    poll_data = PollData()
 
     result = repr(poll_data)
     assert isinstance(result, str)
@@ -206,9 +206,9 @@ def test_repr_method_works():
 
 def test_equality_comparison_works(valid_queue_name):
     """Test that equality comparison (__eq__) works."""
-    poll_data1 = PollDataAdapter(queue_name=valid_queue_name)
-    poll_data2 = PollDataAdapter(queue_name=valid_queue_name)
-    poll_data3 = PollDataAdapter(queue_name="different")
+    poll_data1 = PollData(queue_name=valid_queue_name)
+    poll_data2 = PollData(queue_name=valid_queue_name)
+    poll_data3 = PollData(queue_name="different")
 
     # Test equality
     assert poll_data1 == poll_data2, "Equal objects should be equal"
@@ -219,8 +219,8 @@ def test_equality_comparison_works(valid_queue_name):
 
 def test_inequality_comparison_works(valid_queue_name):
     """Test that inequality comparison (__ne__) works."""
-    poll_data1 = PollDataAdapter(queue_name=valid_queue_name)
-    poll_data2 = PollDataAdapter(queue_name="different")
+    poll_data1 = PollData(queue_name=valid_queue_name)
+    poll_data2 = PollData(queue_name="different")
 
     assert poll_data1 != poll_data2, "Different objects should be not equal"
 
@@ -229,7 +229,7 @@ def test_field_assignment_after_construction(
     valid_queue_name, valid_domain, valid_worker_id, valid_last_poll_time
 ):
     """Test that fields can be assigned after object construction."""
-    poll_data = PollDataAdapter()
+    poll_data = PollData()
 
     # Test that we can assign values after construction
     poll_data.queue_name = valid_queue_name
@@ -246,7 +246,7 @@ def test_field_assignment_after_construction(
 
 def test_none_values_handling(valid_queue_name):
     """Test that None values are handled properly."""
-    poll_data = PollDataAdapter()
+    poll_data = PollData()
 
     # All fields should initially be None
     assert poll_data.queue_name is None
@@ -262,7 +262,7 @@ def test_none_values_handling(valid_queue_name):
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists (Swagger requirement)."""
-    poll_data = PollDataAdapter()
+    poll_data = PollData()
 
     assert hasattr(
         poll_data, "discriminator"

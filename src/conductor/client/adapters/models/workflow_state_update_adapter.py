@@ -1,4 +1,4 @@
-from conductor.client.http.models.workflow_state_update import \
+from conductor.client.codegen.models.workflow_state_update import \
     WorkflowStateUpdate
 
 

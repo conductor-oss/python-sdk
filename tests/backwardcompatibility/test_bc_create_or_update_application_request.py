@@ -1,6 +1,6 @@
 import pytest
 import sys
-from conductor.client.adapters.models.create_or_update_application_request_adapter import CreateOrUpdateApplicationRequestAdapter
+from conductor.client.http.models.create_or_update_application_request import CreateOrUpdateApplicationRequest
 
 
 @pytest.fixture
@@ -10,7 +10,7 @@ def valid_name():
 
 @pytest.fixture
 def model_class():
-    return CreateOrUpdateApplicationRequestAdapter
+    return CreateOrUpdateApplicationRequest
 
 
 def test_class_exists():
@@ -19,7 +19,7 @@ def test_class_exists():
         sys.modules["conductor.client.http.models"],
         "CreateOrUpdateApplicationRequest",
     )
-    assert CreateOrUpdateApplicationRequestAdapter is not None
+    assert CreateOrUpdateApplicationRequest is not None
 
 
 def test_constructor_signature_compatibility(valid_name, model_class):

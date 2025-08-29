@@ -1,4 +1,4 @@
-from conductor.client.http.models.upgrade_workflow_request import \
+from conductor.client.codegen.models.upgrade_workflow_request import \
     UpgradeWorkflowRequest
 
 

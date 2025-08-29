@@ -4,12 +4,12 @@ import uuid
 
 import pytest
 
-from conductor.client.adapters.models.save_schedule_request_adapter import \
+from conductor.client.http.models.save_schedule_request import \
     SaveScheduleRequestAdapter as SaveScheduleRequest
-from conductor.client.adapters.models.start_workflow_request_adapter import \
+from conductor.client.http.models.start_workflow_request import \
     StartWorkflowRequestAdapter as StartWorkflowRequest
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_scheduler_client import OrkesSchedulerClient
 

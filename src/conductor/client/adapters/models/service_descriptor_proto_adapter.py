@@ -1,4 +1,4 @@
-from conductor.client.http.models.service_descriptor_proto import \
+from conductor.client.codegen.models.service_descriptor_proto import \
     ServiceDescriptorProto
 
 

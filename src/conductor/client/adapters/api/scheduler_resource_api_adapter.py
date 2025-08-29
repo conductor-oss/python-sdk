@@ -1,4 +1,4 @@
-from conductor.client.http.api.scheduler_resource_api import SchedulerResourceApi
+from conductor.client.codegen.api.scheduler_resource_api import SchedulerResourceApi
 
 
 class SchedulerResourceApiAdapter(SchedulerResourceApi): ...

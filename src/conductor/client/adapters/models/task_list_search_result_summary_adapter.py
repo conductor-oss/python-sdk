@@ -1,4 +1,4 @@
-from conductor.client.http.models.task_list_search_result_summary import \
+from conductor.client.codegen.models.task_list_search_result_summary import \
     TaskListSearchResultSummary
 
 

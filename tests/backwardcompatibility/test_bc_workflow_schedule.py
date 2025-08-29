@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.adapters.models.workflow_schedule_adapter import WorkflowScheduleAdapter
+from conductor.client.http.models.workflow_schedule import WorkflowSchedule
 
 
 @pytest.fixture
@@ -35,7 +35,7 @@ def valid_data(mock_start_workflow_request):
 
 def test_constructor_with_no_parameters():
     """Test that constructor works with no parameters (all defaults to None)."""
-    schedule = WorkflowScheduleAdapter()
+    schedule = WorkflowSchedule()
 
     # All fields should be None initially
     assert schedule.name is None
@@ -57,7 +57,7 @@ def test_constructor_with_no_parameters():
 
 def test_constructor_with_all_parameters(valid_data, mock_start_workflow_request):
     """Test constructor with all existing parameters."""
-    schedule = WorkflowScheduleAdapter(**valid_data)
+    schedule = WorkflowSchedule(**valid_data)
 
     # Verify all fields are set correctly
     assert schedule.name == "test_schedule"
@@ -84,7 +84,7 @@ def test_constructor_with_partial_parameters():
         "cron_expression": "0 12 * * *",
         "paused": True,
     }
-    schedule = WorkflowScheduleAdapter(**partial_data)
+    schedule = WorkflowSchedule(**partial_data)
 
     # Specified fields should be set
     assert schedule.name == "partial_schedule"
@@ -99,7 +99,7 @@ def test_constructor_with_partial_parameters():
 
 def test_all_required_properties_exist():
     """Test that all expected properties exist and are accessible."""
-    schedule = WorkflowScheduleAdapter()
+    schedule = WorkflowSchedule()
 
     # Test that all properties exist (should not raise AttributeError)
     required_properties = [
@@ -129,7 +129,7 @@ def test_all_required_properties_exist():
 
 def test_property_setters_work(mock_start_workflow_request):
     """Test that all property setters work correctly."""
-    schedule = WorkflowScheduleAdapter()
+    schedule = WorkflowSchedule()
 
     # Test string properties
     schedule.name = "new_name"
@@ -184,7 +184,7 @@ def test_property_setters_work(mock_start_workflow_request):
 
 def test_property_types_are_preserved(valid_data, mock_start_workflow_request):
     """Test that property types match expected swagger_types."""
-    schedule = WorkflowScheduleAdapter(**valid_data)
+    schedule = WorkflowSchedule(**valid_data)
 
     # String fields
     assert isinstance(schedule.name, str)
@@ -214,8 +214,8 @@ def test_property_types_are_preserved(valid_data, mock_start_workflow_request):
 
 def test_swagger_types_attribute_exists():
     """Test that swagger_types class attribute exists and contains expected fields."""
-    assert hasattr(WorkflowScheduleAdapter, "swagger_types")
-    swagger_types = WorkflowScheduleAdapter.swagger_types
+    assert hasattr(WorkflowSchedule, "swagger_types")
+    swagger_types = WorkflowSchedule.swagger_types
 
     expected_types = {
         "name": "str",
@@ -245,8 +245,8 @@ def test_swagger_types_attribute_exists():
 
 def test_attribute_map_exists():
     """Test that attribute_map class attribute exists and contains expected mappings."""
-    assert hasattr(WorkflowScheduleAdapter, "attribute_map")
-    attribute_map = WorkflowScheduleAdapter.attribute_map
+    assert hasattr(WorkflowSchedule, "attribute_map")
+    attribute_map = WorkflowSchedule.attribute_map
 
     expected_mappings = {
         "name": "name",
@@ -276,7 +276,7 @@ def test_attribute_map_exists():
 
 def test_to_dict_method_exists_and_works(valid_data):
     """Test that to_dict method exists and produces expected output."""
-    schedule = WorkflowScheduleAdapter(**valid_data)
+    schedule = WorkflowSchedule(**valid_data)
 
     # Method should exist
     assert hasattr(schedule, "to_dict")
@@ -310,7 +310,7 @@ def test_to_dict_method_exists_and_works(valid_data):
 
 def test_to_str_method_exists_and_works():
     """Test that to_str method exists and returns string representation."""
-    schedule = WorkflowScheduleAdapter(name="test", cron_expression="0 0 * * *")
+    schedule = WorkflowSchedule(name="test", cron_expression="0 0 * * *")
 
     # Method should exist
     assert hasattr(schedule, "to_str")
@@ -324,7 +324,7 @@ def test_to_str_method_exists_and_works():
 
 def test_repr_method_works():
     """Test that __repr__ method works."""
-    schedule = WorkflowScheduleAdapter(name="test")
+    schedule = WorkflowSchedule(name="test")
 
     # Should return a string representation
     repr_str = repr(schedule)
@@ -334,9 +334,9 @@ def test_repr_method_works():
 
 def test_equality_methods_exist_and_work():
     """Test that __eq__ and __ne__ methods exist and work correctly."""
-    schedule1 = WorkflowScheduleAdapter(name="test", paused=True)
-    schedule2 = WorkflowScheduleAdapter(name="test", paused=True)
-    schedule3 = WorkflowScheduleAdapter(name="different", paused=True)
+    schedule1 = WorkflowSchedule(name="test", paused=True)
+    schedule2 = WorkflowSchedule(name="test", paused=True)
+    schedule3 = WorkflowSchedule(name="different", paused=True)
 
     # Test equality
     assert schedule1 == schedule2
@@ -346,21 +346,21 @@ def test_equality_methods_exist_and_work():
     assert not (schedule1 != schedule2)
     assert schedule1 != schedule3
 
-    # Test with non-WorkflowScheduleAdapter object
+    # Test with non-WorkflowSchedule object
     assert schedule1 != "not a schedule"
     assert schedule1 != "not a schedule"
 
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists and is set to None."""
-    schedule = WorkflowScheduleAdapter()
+    schedule = WorkflowSchedule()
     assert hasattr(schedule, "discriminator")
     assert schedule.discriminator is None
 
 
 def test_private_attributes_exist():
     """Test that all private attributes are properly initialized."""
-    schedule = WorkflowScheduleAdapter()
+    schedule = WorkflowSchedule()
 
     private_attrs = [
         "_name",
@@ -389,7 +389,7 @@ def test_private_attributes_exist():
 
 def test_none_values_are_handled_correctly(valid_data):
     """Test that None values can be set and retrieved correctly."""
-    schedule = WorkflowScheduleAdapter(**valid_data)
+    schedule = WorkflowSchedule(**valid_data)
 
     # Set all fields to None
     schedule.name = None
@@ -429,7 +429,7 @@ def test_none_values_are_handled_correctly(valid_data):
 def test_constructor_signature_compatibility(mock_start_workflow_request):
     """Test that constructor signature remains compatible."""
     # Test positional arguments work (in order based on WorkflowSchedule model)
-    schedule = WorkflowScheduleAdapter(
+    schedule = WorkflowSchedule(
         1640995200,  # create_time
         "creator",  # created_by
         "0 0 * * *",  # cron_expression

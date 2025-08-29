@@ -1,9 +1,9 @@
-from conductor.client.adapters.models.conductor_user_adapter import ConductorUserAdapter
+from conductor.client.http.models.conductor_user import ConductorUser
 
 
 def test_constructor_with_no_arguments():
     """Test that constructor works with no arguments (all fields optional)."""
-    user = ConductorUserAdapter()
+    user = ConductorUser()
 
     # All fields should be None by default
     assert user.id is None
@@ -25,7 +25,7 @@ def test_constructor_with_all_arguments(mocker):
     mock_group = mocker.Mock()
     mock_group.to_dict.return_value = {"group": "test_group"}
 
-    user = ConductorUserAdapter(
+    user = ConductorUser(
         id="user123",
         name="Test User",
         roles=[mock_role],
@@ -49,7 +49,7 @@ def test_constructor_with_all_arguments(mocker):
 
 def test_required_fields_exist():
     """Test that all expected fields exist and are accessible."""
-    user = ConductorUserAdapter()
+    user = ConductorUser()
 
     # Test that all expected attributes exist (no AttributeError)
     required_fields = [
@@ -76,7 +76,7 @@ def test_field_types_unchanged(mocker):
     mock_role = mocker.Mock()
     mock_group = mocker.Mock()
 
-    user = ConductorUserAdapter()
+    user = ConductorUser()
 
     # Test string fields
     user.id = "test"
@@ -122,10 +122,10 @@ def test_swagger_types_mapping_unchanged():
     # Check that all expected types are present
     for field, expected_type in expected_swagger_types.items():
         assert (
-            field in ConductorUserAdapter.swagger_types
+            field in ConductorUser.swagger_types
         ), f"Field '{field}' missing from swagger_types"
         assert (
-            ConductorUserAdapter.swagger_types[field] == expected_type
+            ConductorUser.swagger_types[field] == expected_type
         ), f"Type for '{field}' changed from '{expected_type}'"
 
 
@@ -145,16 +145,16 @@ def test_attribute_map_unchanged():
     # Check that all expected mappings are present
     for field, expected_json_key in expected_attribute_map.items():
         assert (
-            field in ConductorUserAdapter.attribute_map
+            field in ConductorUser.attribute_map
         ), f"Field '{field}' missing from attribute_map"
         assert (
-            ConductorUserAdapter.attribute_map[field] == expected_json_key
+            ConductorUser.attribute_map[field] == expected_json_key
         ), f"JSON key for '{field}' changed from '{expected_json_key}'"
 
 
 def test_to_dict_method_exists_and_works():
     """Test that to_dict method exists and produces expected structure."""
-    user = ConductorUserAdapter(id="test123", name="Test User", application_user=True)
+    user = ConductorUser(id="test123", name="Test User", application_user=True)
 
     result = user.to_dict()
 
@@ -176,7 +176,7 @@ def test_to_dict_with_complex_objects(mocker):
     mock_group = mocker.Mock()
     mock_group.to_dict.return_value = {"group": "test_group"}
 
-    user = ConductorUserAdapter(roles=[mock_role], groups=[mock_group])
+    user = ConductorUser(roles=[mock_role], groups=[mock_group])
 
     result = user.to_dict()
 
@@ -187,7 +187,7 @@ def test_to_dict_with_complex_objects(mocker):
 
 def test_string_representation_methods():
     """Test that string representation methods exist and work."""
-    user = ConductorUserAdapter(id="test", name="Test User")
+    user = ConductorUser(id="test", name="Test User")
 
     # to_str method should exist and return string
     str_repr = user.to_str()
@@ -204,9 +204,9 @@ def test_string_representation_methods():
 
 def test_equality_methods():
     """Test that equality comparison methods work correctly."""
-    user1 = ConductorUserAdapter(id="test", name="Test User")
-    user2 = ConductorUserAdapter(id="test", name="Test User")
-    user3 = ConductorUserAdapter(id="different", name="Test User")
+    user1 = ConductorUser(id="test", name="Test User")
+    user2 = ConductorUser(id="test", name="Test User")
+    user3 = ConductorUser(id="different", name="Test User")
 
     # Equal objects
     assert user1 == user2
@@ -227,7 +227,7 @@ def test_property_setters_and_getters(mocker):
     mock_role = mocker.Mock()
     mock_group = mocker.Mock()
 
-    user = ConductorUserAdapter()
+    user = ConductorUser()
 
     # Test that we can set and get all properties without errors
     test_values = {
@@ -250,7 +250,7 @@ def test_property_setters_and_getters(mocker):
 
 def test_none_values_accepted():
     """Test that None values are accepted for all fields (backward compatibility)."""
-    user = ConductorUserAdapter()
+    user = ConductorUser()
 
     # All fields should accept None values
     for field in [
@@ -269,6 +269,6 @@ def test_none_values_accepted():
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists (swagger-generated classes often have this)."""
-    user = ConductorUserAdapter()
+    user = ConductorUser()
     assert hasattr(user, "discriminator")
     assert user.discriminator is None  # Should be None by default

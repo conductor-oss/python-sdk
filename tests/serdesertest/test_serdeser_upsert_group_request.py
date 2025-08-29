@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.upsert_group_request_adapter import UpsertGroupRequestAdapter
+from conductor.client.http.models.upsert_group_request import UpsertGroupRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

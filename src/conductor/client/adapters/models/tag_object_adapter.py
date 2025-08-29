@@ -1,4 +1,4 @@
-from conductor.client.http.models.tag_object import TagObject
+from conductor.client.codegen.models.tag_object import TagObject
 
 
 class TagObjectAdapter(TagObject):

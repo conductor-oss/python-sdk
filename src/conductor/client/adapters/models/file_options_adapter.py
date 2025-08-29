@@ -1,4 +1,4 @@
-from conductor.client.http.models import FileOptions
+from conductor.client.codegen.models import FileOptions
 
 
 class FileOptionsAdapter(FileOptions): ...

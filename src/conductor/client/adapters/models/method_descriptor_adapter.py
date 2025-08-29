@@ -1,4 +1,4 @@
-from conductor.client.http.models import MethodDescriptor
+from conductor.client.codegen.models import MethodDescriptor
 
 
 class MethodDescriptorAdapter(MethodDescriptor): ...

@@ -1,4 +1,4 @@
-from conductor.client.http.models import Declaration
+from conductor.client.codegen.models import Declaration
 
 
 class DeclarationAdapter(Declaration): ...

@@ -2,9 +2,9 @@ from __future__ import annotations
 from typing import Optional, List
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.adapters.models.tag_string_adapter import TagStringAdapter as TagString
-from conductor.client.adapters.models.task_def_adapter import TaskDefAdapter as TaskDef
-from conductor.client.adapters.models.workflow_def_adapter import WorkflowDefAdapter as WorkflowDef
+from conductor.client.http.models.tag_string import TagString
+from conductor.client.http.models.task_def import TaskDef
+from conductor.client.http.models.workflow_def import WorkflowDef
 from conductor.client.metadata_client import MetadataClient
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.models.ratelimit_tag import RateLimitTag

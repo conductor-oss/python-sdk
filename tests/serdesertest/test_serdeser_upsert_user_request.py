@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.upsert_user_request_adapter import (
+from conductor.client.http.models.upsert_user_request import (
     RolesEnum,
     UpsertUserRequestAdapter,
 )

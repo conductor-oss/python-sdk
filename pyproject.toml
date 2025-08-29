@@ -165,7 +165,8 @@ omit = [
     "*/__init__.py",
     "src/conductor/asyncio_client/http/*",
     "src/conductor/client/http/*",
-    "src/conductor/client/orkes/api/*"
+    "src/conductor/client/orkes/api/*",
+    "src/conductor/client/codegen/*"
 ]
 
 [tool.coverage.report]

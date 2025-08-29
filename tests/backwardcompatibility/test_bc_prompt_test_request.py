@@ -1,8 +1,8 @@
 import pytest
 
 
-from conductor.client.adapters.models.prompt_template_test_request_adapter import (
-    PromptTemplateTestRequestAdapter,
+from conductor.client.http.models.prompt_template_test_request import (
+    PromptTemplateTestRequest,
 )
 
 
@@ -22,19 +22,19 @@ def valid_data():
 
 def test_class_exists():
     """Verify the class still exists and is importable."""
-    assert PromptTemplateTestRequestAdapter is not None
-    assert callable(PromptTemplateTestRequestAdapter)
-    assert PromptTemplateTestRequestAdapter.__name__ == "PromptTemplateTestRequestAdapter"
+    assert PromptTemplateTestRequest is not None
+    assert callable(PromptTemplateTestRequest)
+    assert PromptTemplateTestRequest.__name__ == "PromptTemplateTestRequestAdapter"
 
 
 def test_constructor_signature_backward_compatible():
     """Verify constructor accepts all existing parameters with defaults."""
     # Should work with no parameters (all defaults)
-    obj = PromptTemplateTestRequestAdapter()
-    assert isinstance(obj, PromptTemplateTestRequestAdapter)
+    obj = PromptTemplateTestRequest()
+    assert isinstance(obj, PromptTemplateTestRequest)
 
     # Should work with all original parameters
-    obj = PromptTemplateTestRequestAdapter(
+    obj = PromptTemplateTestRequest(
         llm_provider="openai",
         model="gpt-4",
         prompt="test",
@@ -43,12 +43,12 @@ def test_constructor_signature_backward_compatible():
         temperature=0.5,
         top_p=0.8,
     )
-    assert isinstance(obj, PromptTemplateTestRequestAdapter)
+    assert isinstance(obj, PromptTemplateTestRequest)
 
 
 def test_all_existing_properties_exist():
     """Verify all known properties still exist."""
-    obj = PromptTemplateTestRequestAdapter()
+    obj = PromptTemplateTestRequest()
 
     # Test property existence
     expected_properties = [
@@ -70,7 +70,7 @@ def test_all_existing_properties_exist():
 
 def test_property_getters_return_correct_types(valid_data):
     """Verify property getters return expected types."""
-    obj = PromptTemplateTestRequestAdapter(**valid_data)
+    obj = PromptTemplateTestRequest(**valid_data)
 
     # Test each property returns expected type
     type_checks = [
@@ -92,7 +92,7 @@ def test_property_getters_return_correct_types(valid_data):
 
 def test_property_setters_work():
     """Verify all property setters still work."""
-    obj = PromptTemplateTestRequestAdapter()
+    obj = PromptTemplateTestRequest()
 
     # Test setting each property
     test_values = {
@@ -115,8 +115,8 @@ def test_property_setters_work():
 
 def test_swagger_types_dict_exists():
     """Verify swagger_types dict still exists with expected structure."""
-    assert hasattr(PromptTemplateTestRequestAdapter, "swagger_types")
-    swagger_types = PromptTemplateTestRequestAdapter.swagger_types
+    assert hasattr(PromptTemplateTestRequest, "swagger_types")
+    swagger_types = PromptTemplateTestRequest.swagger_types
     assert isinstance(swagger_types, dict)
 
     # Verify all expected fields are present with correct types
@@ -139,8 +139,8 @@ def test_swagger_types_dict_exists():
 
 def test_attribute_map_dict_exists():
     """Verify attribute_map dict still exists with expected structure."""
-    assert hasattr(PromptTemplateTestRequestAdapter, "attribute_map")
-    attribute_map = PromptTemplateTestRequestAdapter.attribute_map
+    assert hasattr(PromptTemplateTestRequest, "attribute_map")
+    attribute_map = PromptTemplateTestRequest.attribute_map
     assert isinstance(attribute_map, dict)
 
     # Verify all expected mappings are present
@@ -163,7 +163,7 @@ def test_attribute_map_dict_exists():
 
 def test_to_dict_method_exists_and_works(valid_data):
     """Verify to_dict method still exists and returns expected structure."""
-    obj = PromptTemplateTestRequestAdapter(**valid_data)
+    obj = PromptTemplateTestRequest(**valid_data)
 
     assert hasattr(obj, "to_dict")
     assert callable(obj.to_dict)
@@ -188,7 +188,7 @@ def test_to_dict_method_exists_and_works(valid_data):
 
 def test_to_str_method_exists_and_works(valid_data):
     """Verify to_str method still exists and returns string."""
-    obj = PromptTemplateTestRequestAdapter(**valid_data)
+    obj = PromptTemplateTestRequest(**valid_data)
 
     assert hasattr(obj, "to_str")
     assert callable(obj.to_str)
@@ -200,7 +200,7 @@ def test_to_str_method_exists_and_works(valid_data):
 
 def test_repr_method_exists_and_works(valid_data):
     """Verify __repr__ method still works."""
-    obj = PromptTemplateTestRequestAdapter(**valid_data)
+    obj = PromptTemplateTestRequest(**valid_data)
 
     result = repr(obj)
     assert isinstance(result, str)
@@ -209,9 +209,9 @@ def test_repr_method_exists_and_works(valid_data):
 
 def test_equality_methods_exist_and_work(valid_data):
     """Verify __eq__ and __ne__ methods still work."""
-    obj1 = PromptTemplateTestRequestAdapter(**valid_data)
-    obj2 = PromptTemplateTestRequestAdapter(**valid_data)
-    obj3 = PromptTemplateTestRequestAdapter(llm_provider="different")
+    obj1 = PromptTemplateTestRequest(**valid_data)
+    obj2 = PromptTemplateTestRequest(**valid_data)
+    obj3 = PromptTemplateTestRequest(llm_provider="different")
 
     # Test equality
     assert hasattr(obj1, "__eq__")
@@ -227,7 +227,7 @@ def test_equality_methods_exist_and_work(valid_data):
 
 def test_none_values_handling():
     """Verify None values are handled correctly (existing behavior)."""
-    obj = PromptTemplateTestRequestAdapter()
+    obj = PromptTemplateTestRequest()
 
     # All properties should be None by default
     expected_none_properties = [
@@ -247,14 +247,14 @@ def test_none_values_handling():
 
 def test_discriminator_attribute_exists():
     """Verify discriminator attribute still exists."""
-    obj = PromptTemplateTestRequestAdapter()
+    obj = PromptTemplateTestRequest()
     assert hasattr(obj, "discriminator")
     assert obj.discriminator is None  # Should be None by default
 
 
 def test_private_attributes_exist():
     """Verify private attributes still exist (internal structure)."""
-    obj = PromptTemplateTestRequestAdapter()
+    obj = PromptTemplateTestRequest()
 
     expected_private_attrs = [
         "_llm_provider",
@@ -272,7 +272,7 @@ def test_private_attributes_exist():
 
 def test_field_type_validation_constraints():
     """Test that existing type constraints are preserved."""
-    obj = PromptTemplateTestRequestAdapter()
+    obj = PromptTemplateTestRequest()
 
     # Test string fields accept strings
     string_fields = ["llm_provider", "model", "prompt"]
@@ -299,7 +299,7 @@ def test_field_type_validation_constraints():
 def test_constructor_parameter_order_preserved():
     """Verify constructor parameter order hasn't changed."""
     # This test ensures positional arguments still work
-    obj = PromptTemplateTestRequestAdapter(
+    obj = PromptTemplateTestRequest(
         "openai",  # llm_provider
         "gpt-4",  # model
         "test prompt",  # prompt

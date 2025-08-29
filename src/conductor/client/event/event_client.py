@@ -1,5 +1,5 @@
 from conductor.client.event.queue.queue_configuration import QueueConfiguration
-from conductor.client.adapters.api import EventResourceApi
+from conductor.client.http.api import EventResourceApi
 from conductor.client.http.api_client import ApiClient
 
 

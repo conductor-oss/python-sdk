@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.adapters.models.search_result_workflow_summary_adapter import SearchResultWorkflowSummaryAdapter
+from conductor.client.http.models.search_result_workflow_summary import SearchResultWorkflowSummary
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def valid_results(mock_workflow_summary1, mock_workflow_summary2):
 
 def test_constructor_with_no_parameters():
     """Test that constructor works with no parameters (current behavior)."""
-    obj = SearchResultWorkflowSummaryAdapter()
+    obj = SearchResultWorkflowSummary()
 
     # Verify all expected attributes exist and are properly initialized
     assert hasattr(obj, "_total_hits")
@@ -45,7 +45,7 @@ def test_constructor_with_all_parameters(valid_results):
     total_hits = 42
     results = valid_results
 
-    obj = SearchResultWorkflowSummaryAdapter(total_hits=total_hits, results=results)
+    obj = SearchResultWorkflowSummary(total_hits=total_hits, results=results)
 
     # Verify attributes are set correctly
     assert obj.total_hits == total_hits
@@ -56,19 +56,19 @@ def test_constructor_with_all_parameters(valid_results):
 def test_constructor_with_partial_parameters(valid_results):
     """Test constructor with partial parameters."""
     # Test with only total_hits
-    obj1 = SearchResultWorkflowSummaryAdapter(total_hits=10)
+    obj1 = SearchResultWorkflowSummary(total_hits=10)
     assert obj1.total_hits == 10
     assert obj1.results is None
 
     # Test with only results
-    obj2 = SearchResultWorkflowSummaryAdapter(results=valid_results)
+    obj2 = SearchResultWorkflowSummary(results=valid_results)
     assert obj2.total_hits is None
     assert obj2.results == valid_results
 
 
 def test_total_hits_property_exists():
     """Test that total_hits property exists and works correctly."""
-    obj = SearchResultWorkflowSummaryAdapter()
+    obj = SearchResultWorkflowSummary()
 
     # Test getter
     assert obj.total_hits is None
@@ -81,7 +81,7 @@ def test_total_hits_property_exists():
 
 def test_total_hits_type_compatibility():
     """Test total_hits accepts expected types."""
-    obj = SearchResultWorkflowSummaryAdapter()
+    obj = SearchResultWorkflowSummary()
 
     # Test with integer
     obj.total_hits = 42
@@ -98,7 +98,7 @@ def test_total_hits_type_compatibility():
 
 def test_results_property_exists(valid_results):
     """Test that results property exists and works correctly."""
-    obj = SearchResultWorkflowSummaryAdapter()
+    obj = SearchResultWorkflowSummary()
 
     # Test getter
     assert obj.results is None
@@ -111,7 +111,7 @@ def test_results_property_exists(valid_results):
 
 def test_results_type_compatibility(valid_results):
     """Test results accepts expected types."""
-    obj = SearchResultWorkflowSummaryAdapter()
+    obj = SearchResultWorkflowSummary()
 
     # Test with list of WorkflowSummary objects
     obj.results = valid_results
@@ -130,21 +130,21 @@ def test_swagger_types_attribute_exists():
     """Test that swagger_types class attribute exists with expected structure."""
     expected_swagger_types = {"total_hits": "int", "results": "list[WorkflowSummary]"}
 
-    assert hasattr(SearchResultWorkflowSummaryAdapter, "swagger_types")
-    assert SearchResultWorkflowSummaryAdapter.swagger_types == expected_swagger_types
+    assert hasattr(SearchResultWorkflowSummary, "swagger_types")
+    assert SearchResultWorkflowSummary.swagger_types == expected_swagger_types
 
 
 def test_attribute_map_exists():
     """Test that attribute_map class attribute exists with expected structure."""
     expected_attribute_map = {"total_hits": "totalHits", "results": "results"}
 
-    assert hasattr(SearchResultWorkflowSummaryAdapter, "attribute_map")
-    assert SearchResultWorkflowSummaryAdapter.attribute_map == expected_attribute_map
+    assert hasattr(SearchResultWorkflowSummary, "attribute_map")
+    assert SearchResultWorkflowSummary.attribute_map == expected_attribute_map
 
 
 def test_to_dict_method_exists(valid_results):
     """Test that to_dict method exists and works correctly."""
-    obj = SearchResultWorkflowSummaryAdapter(total_hits=5, results=valid_results)
+    obj = SearchResultWorkflowSummary(total_hits=5, results=valid_results)
 
     assert hasattr(obj, "to_dict")
     assert callable(obj.to_dict)
@@ -159,7 +159,7 @@ def test_to_dict_method_exists(valid_results):
 
 def test_to_dict_with_none_values():
     """Test to_dict method handles None values correctly."""
-    obj = SearchResultWorkflowSummaryAdapter()
+    obj = SearchResultWorkflowSummary()
 
     result = obj.to_dict()
     assert isinstance(result, dict)
@@ -171,7 +171,7 @@ def test_to_dict_with_none_values():
 
 def test_to_str_method_exists():
     """Test that to_str method exists and works correctly."""
-    obj = SearchResultWorkflowSummaryAdapter(total_hits=3)
+    obj = SearchResultWorkflowSummary(total_hits=3)
 
     assert hasattr(obj, "to_str")
     assert callable(obj.to_str)
@@ -182,7 +182,7 @@ def test_to_str_method_exists():
 
 def test_repr_method_exists():
     """Test that __repr__ method exists and works correctly."""
-    obj = SearchResultWorkflowSummaryAdapter(total_hits=7)
+    obj = SearchResultWorkflowSummary(total_hits=7)
 
     result = repr(obj)
     assert isinstance(result, str)
@@ -190,9 +190,9 @@ def test_repr_method_exists():
 
 def test_equality_methods_exist(valid_results):
     """Test that equality methods exist and work correctly."""
-    obj1 = SearchResultWorkflowSummaryAdapter(total_hits=10, results=valid_results)
-    obj2 = SearchResultWorkflowSummaryAdapter(total_hits=10, results=valid_results)
-    obj3 = SearchResultWorkflowSummaryAdapter(total_hits=20, results=valid_results)
+    obj1 = SearchResultWorkflowSummary(total_hits=10, results=valid_results)
+    obj2 = SearchResultWorkflowSummary(total_hits=10, results=valid_results)
+    obj3 = SearchResultWorkflowSummary(total_hits=20, results=valid_results)
 
     # Test __eq__
     assert hasattr(obj1, "__eq__")
@@ -209,7 +209,7 @@ def test_equality_methods_exist(valid_results):
 
 def test_equality_with_different_types():
     """Test equality comparison with different object types."""
-    obj = SearchResultWorkflowSummaryAdapter(total_hits=5)
+    obj = SearchResultWorkflowSummary(total_hits=5)
 
     # Should not be equal to different types
     assert obj != "string"
@@ -220,7 +220,7 @@ def test_equality_with_different_types():
 
 def test_discriminator_attribute_exists():
     """Test that discriminator attribute exists."""
-    obj = SearchResultWorkflowSummaryAdapter()
+    obj = SearchResultWorkflowSummary()
 
     assert hasattr(obj, "discriminator")
     assert obj.discriminator is None
@@ -228,7 +228,7 @@ def test_discriminator_attribute_exists():
 
 def test_private_attributes_exist():
     """Test that private attributes exist and are accessible."""
-    obj = SearchResultWorkflowSummaryAdapter()
+    obj = SearchResultWorkflowSummary()
 
     # Verify private attributes exist
     assert hasattr(obj, "_total_hits")
@@ -241,7 +241,7 @@ def test_private_attributes_exist():
 
 def test_field_assignment_independence(valid_results):
     """Test that field assignments are independent."""
-    obj = SearchResultWorkflowSummaryAdapter()
+    obj = SearchResultWorkflowSummary()
 
     # Assign total_hits
     obj.total_hits = 15
@@ -259,7 +259,7 @@ def test_constructor_parameter_names(valid_results):
     # This ensures parameter names haven't changed
     try:
         # Test with keyword arguments using expected names
-        obj = SearchResultWorkflowSummaryAdapter(total_hits=100, results=valid_results)
+        obj = SearchResultWorkflowSummary(total_hits=100, results=valid_results)
         assert obj.total_hits == 100
         assert obj.results == valid_results
     except TypeError as e:
@@ -268,7 +268,7 @@ def test_constructor_parameter_names(valid_results):
 
 def test_object_state_consistency(valid_results):
     """Test that object state remains consistent after operations."""
-    obj = SearchResultWorkflowSummaryAdapter(total_hits=25, results=valid_results)
+    obj = SearchResultWorkflowSummary(total_hits=25, results=valid_results)
 
     # Verify initial state
     assert obj.total_hits == 25

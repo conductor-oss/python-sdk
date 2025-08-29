@@ -6,14 +6,14 @@ import time
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.orkes.orkes_integration_client import OrkesIntegrationClient
-from conductor.client.adapters.models.integration_update_adapter import (
+from conductor.client.http.models.integration_update import (
     IntegrationUpdateAdapter as IntegrationUpdate,
 )
-from conductor.client.adapters.models.integration_api_update_adapter import (
+from conductor.client.http.models.integration_api_update import (
     IntegrationApiUpdateAdapter as IntegrationApiUpdate,
 )
 from conductor.client.orkes.models.metadata_tag import MetadataTag
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 
 
 class TestOrkesIntegrationClientIntegration:

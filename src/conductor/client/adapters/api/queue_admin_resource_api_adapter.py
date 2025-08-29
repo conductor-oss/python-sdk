@@ -1,4 +1,4 @@
-from conductor.client.http.api.queue_admin_resource_api import QueueAdminResourceApi
+from conductor.client.codegen.api.queue_admin_resource_api import QueueAdminResourceApi
 
 
 class QueueAdminResourceApiAdapter(QueueAdminResourceApi): ...

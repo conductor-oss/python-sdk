@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import ClassVar, Dict, Optional
 
-from conductor.client.http.models.workflow_task import WorkflowTask
+from conductor.client.codegen.models.workflow_task import WorkflowTask
 
 
 class WorkflowTaskAdapter(WorkflowTask):

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.permission_adapter import PermissionAdapter
+from conductor.client.http.models.permission import PermissionAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

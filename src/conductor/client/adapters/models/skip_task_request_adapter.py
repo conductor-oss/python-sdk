@@ -1,4 +1,4 @@
-from conductor.client.http.models.skip_task_request import SkipTaskRequest
+from conductor.client.codegen.models.skip_task_request import SkipTaskRequest
 
 
 class SkipTaskRequestAdapter(SkipTaskRequest):

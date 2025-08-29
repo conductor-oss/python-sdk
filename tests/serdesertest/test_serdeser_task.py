@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.task_adapter import TaskAdapter
+from conductor.client.http.models.task import TaskAdapter
 from conductor.shared.http.enums import TaskResultStatus
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 

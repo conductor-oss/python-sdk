@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.schema_def_adapter import SchemaDefAdapter, SchemaType
+from conductor.client.http.models.schema_def import SchemaDefAdapter, SchemaType
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

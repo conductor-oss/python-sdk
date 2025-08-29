@@ -1,4 +1,4 @@
-from conductor.client.http.models import ExtendedWorkflowDef
+from conductor.client.codegen.models import ExtendedWorkflowDef
 
 
 class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef): ...

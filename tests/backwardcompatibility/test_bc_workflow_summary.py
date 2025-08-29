@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from conductor.client.adapters.models.workflow_summary_adapter import WorkflowSummaryAdapter
+from conductor.client.http.models.workflow_summary import WorkflowSummary
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ def valid_params():
 
 def test_constructor_with_no_parameters(valid_params):
     """Test that constructor works with no parameters (all optional)."""
-    workflow = WorkflowSummaryAdapter()
+    workflow = WorkflowSummary()
     assert workflow is not None
 
     # All fields should be None initially
@@ -50,7 +50,7 @@ def test_constructor_with_no_parameters(valid_params):
 
 def test_constructor_with_all_parameters(valid_params):
     """Test constructor with all valid parameters."""
-    workflow = WorkflowSummaryAdapter(**valid_params)
+    workflow = WorkflowSummary(**valid_params)
 
     # Verify all values are set correctly
     for field_name, expected_value in valid_params.items():
@@ -59,7 +59,7 @@ def test_constructor_with_all_parameters(valid_params):
 
 def test_all_expected_fields_exist():
     """Test that all expected fields exist as properties."""
-    workflow = WorkflowSummaryAdapter()
+    workflow = WorkflowSummary()
 
     expected_fields = [
         "workflow_type",
@@ -107,7 +107,7 @@ def test_all_expected_fields_exist():
 
 def test_field_types_unchanged():
     """Test that field types haven't changed from expected swagger types."""
-    workflow = WorkflowSummaryAdapter()
+    workflow = WorkflowSummary()
 
     expected_swagger_types = {
         "workflow_type": "str",
@@ -146,7 +146,7 @@ def test_field_types_unchanged():
 
 def test_attribute_map_unchanged():
     """Test that attribute mapping hasn't changed."""
-    workflow = WorkflowSummaryAdapter()
+    workflow = WorkflowSummary()
 
     expected_attribute_map = {
         "workflow_type": "workflowType",
@@ -184,7 +184,7 @@ def test_attribute_map_unchanged():
 
 def test_status_enum_values_preserved(valid_status_values):
     """Test that all existing status enum values are still valid."""
-    workflow = WorkflowSummaryAdapter()
+    workflow = WorkflowSummary()
 
     # Test each known valid status value
     for status_value in valid_status_values:
@@ -199,7 +199,7 @@ def test_status_enum_values_preserved(valid_status_values):
 
 def test_status_validation_still_works():
     """Test that status validation rejects invalid values."""
-    workflow = WorkflowSummaryAdapter()
+    workflow = WorkflowSummary()
 
     invalid_status_values = ["INVALID", "running", "completed", ""]
 
@@ -214,7 +214,7 @@ def test_status_validation_still_works():
 
 def test_string_fields_accept_strings():
     """Test that string fields accept string values."""
-    workflow = WorkflowSummaryAdapter()
+    workflow = WorkflowSummary()
 
     string_fields = [
         "workflow_type",
@@ -240,7 +240,7 @@ def test_string_fields_accept_strings():
 
 def test_integer_fields_accept_integers():
     """Test that integer fields accept integer values."""
-    workflow = WorkflowSummaryAdapter()
+    workflow = WorkflowSummary()
 
     integer_fields = [
         "version",
@@ -257,7 +257,7 @@ def test_integer_fields_accept_integers():
 
 def test_to_dict_method_exists(valid_params):
     """Test that to_dict method exists and works."""
-    workflow = WorkflowSummaryAdapter(**valid_params)
+    workflow = WorkflowSummary(**valid_params)
 
     assert hasattr(workflow, "to_dict")
     result = workflow.to_dict()
@@ -270,7 +270,7 @@ def test_to_dict_method_exists(valid_params):
 
 def test_to_str_method_exists(valid_params):
     """Test that to_str method exists and works."""
-    workflow = WorkflowSummaryAdapter(**valid_params)
+    workflow = WorkflowSummary(**valid_params)
 
     assert hasattr(workflow, "to_str")
     result = workflow.to_str()
@@ -279,9 +279,9 @@ def test_to_str_method_exists(valid_params):
 
 def test_equality_methods_exist(valid_params):
     """Test that equality methods exist and work."""
-    workflow1 = WorkflowSummaryAdapter(**valid_params)
-    workflow2 = WorkflowSummaryAdapter(**valid_params)
-    workflow3 = WorkflowSummaryAdapter()
+    workflow1 = WorkflowSummary(**valid_params)
+    workflow2 = WorkflowSummary(**valid_params)
+    workflow3 = WorkflowSummary()
 
     # Test __eq__
     assert hasattr(workflow1, "__eq__")
@@ -296,7 +296,7 @@ def test_equality_methods_exist(valid_params):
 
 def test_repr_method_exists(valid_params):
     """Test that __repr__ method exists and works."""
-    workflow = WorkflowSummaryAdapter(**valid_params)
+    workflow = WorkflowSummary(**valid_params)
 
     assert hasattr(workflow, "__repr__")
     result = repr(workflow)
@@ -305,7 +305,7 @@ def test_repr_method_exists(valid_params):
 
 def test_constructor_parameter_names_unchanged():
     """Test that constructor parameter names haven't changed."""
-    sig = inspect.signature(WorkflowSummaryAdapter.__init__)
+    sig = inspect.signature(WorkflowSummary.__init__)
     param_names = list(sig.parameters.keys())
 
     # Remove 'self' parameter
@@ -342,7 +342,7 @@ def test_constructor_parameter_names_unchanged():
 
 def test_individual_field_setters_work():
     """Test that individual field setters work for all fields."""
-    workflow = WorkflowSummaryAdapter()
+    workflow = WorkflowSummary()
 
     # Test setting each field individually
     test_values = {

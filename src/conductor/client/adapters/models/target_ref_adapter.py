@@ -1,4 +1,4 @@
-from conductor.client.http.models.target_ref import TargetRef
+from conductor.client.codegen.models.target_ref import TargetRef
 
 
 class TargetRefAdapter(TargetRef):

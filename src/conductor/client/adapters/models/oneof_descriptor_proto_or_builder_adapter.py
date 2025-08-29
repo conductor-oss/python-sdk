@@ -1,4 +1,4 @@
-from conductor.client.http.models import OneofDescriptorProtoOrBuilder
+from conductor.client.codegen.models import OneofDescriptorProtoOrBuilder
 
 
 class OneofDescriptorProtoOrBuilderAdapter(OneofDescriptorProtoOrBuilder): ...

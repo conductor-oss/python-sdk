@@ -1,4 +1,4 @@
-from conductor.client.http.models.task_mock import TaskMock
+from conductor.client.codegen.models.task_mock import TaskMock
 
 
 class TaskMockAdapter(TaskMock):

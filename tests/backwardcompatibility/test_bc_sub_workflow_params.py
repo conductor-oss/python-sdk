@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.adapters.models.sub_workflow_params_adapter import SubWorkflowParamsAdapter
+from conductor.client.http.models.sub_workflow_params import SubWorkflowParams
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def valid_data(mock_workflow_def):
 
 def test_constructor_with_no_parameters():
     """Test that constructor works with no parameters (backward compatibility)."""
-    obj = SubWorkflowParamsAdapter()
+    obj = SubWorkflowParams()
 
     # Verify all existing fields are accessible
     assert obj.name is None
@@ -35,7 +35,7 @@ def test_constructor_with_no_parameters():
 
 def test_constructor_with_all_existing_fields(valid_data):
     """Test constructor with all currently existing fields."""
-    obj = SubWorkflowParamsAdapter(**valid_data)
+    obj = SubWorkflowParams(**valid_data)
 
     # Verify all fields are set correctly
     assert obj.name == "test_workflow"
@@ -46,7 +46,7 @@ def test_constructor_with_all_existing_fields(valid_data):
 
 def test_constructor_with_partial_fields():
     """Test constructor with subset of existing fields."""
-    obj = SubWorkflowParamsAdapter(name="test", version=2)
+    obj = SubWorkflowParams(name="test", version=2)
 
     assert obj.name == "test"
     assert obj.version == 2
@@ -56,19 +56,19 @@ def test_constructor_with_partial_fields():
 
 def test_required_fields_exist():
     """Test that all currently required fields still exist."""
-    obj = SubWorkflowParamsAdapter()
+    obj = SubWorkflowParams()
 
     # Verify all expected attributes exist
     required_attributes = ["name", "version", "task_to_domain", "workflow_definition"]
     for attr in required_attributes:
         assert hasattr(
             obj, attr
-        ), f"Required attribute '{attr}' is missing from SubWorkflowParamsAdapter"
+        ), f"Required attribute '{attr}' is missing from SubWorkflowParams"
 
 
 def test_field_types_unchanged(valid_data):
     """Test that existing field types haven't changed."""
-    obj = SubWorkflowParamsAdapter(**valid_data)
+    obj = SubWorkflowParams(**valid_data)
 
     # Test field type expectations based on swagger_types
     assert isinstance(obj.name, str)
@@ -80,7 +80,7 @@ def test_field_types_unchanged(valid_data):
 
 def test_field_setters_work(mocker):
     """Test that all existing field setters still work."""
-    obj = SubWorkflowParamsAdapter()
+    obj = SubWorkflowParams()
 
     # Test setting each field individually
     obj.name = "new_name"
@@ -100,7 +100,7 @@ def test_field_setters_work(mocker):
 
 def test_field_getters_work(valid_data):
     """Test that all existing field getters still work."""
-    obj = SubWorkflowParamsAdapter(**valid_data)
+    obj = SubWorkflowParams(**valid_data)
 
     # Test getting each field
     assert obj.name == "test_workflow"
@@ -111,7 +111,7 @@ def test_field_getters_work(valid_data):
 
 def test_none_values_allowed():
     """Test that None values are still allowed for optional fields."""
-    obj = SubWorkflowParamsAdapter()
+    obj = SubWorkflowParams()
 
     # Test setting fields to None
     obj.name = None
@@ -137,10 +137,10 @@ def test_swagger_types_unchanged():
     # Verify existing types are preserved
     for field, expected_type in expected_swagger_types.items():
         assert (
-            field in SubWorkflowParamsAdapter.swagger_types
+            field in SubWorkflowParams.swagger_types
         ), f"Field '{field}' missing from swagger_types"
         assert (
-            SubWorkflowParamsAdapter.swagger_types[field] == expected_type
+            SubWorkflowParams.swagger_types[field] == expected_type
         ), f"Type for field '{field}' has changed"
 
 
@@ -156,16 +156,16 @@ def test_attribute_map_unchanged():
     # Verify existing mappings are preserved
     for field, expected_json_key in expected_attribute_map.items():
         assert (
-            field in SubWorkflowParamsAdapter.attribute_map
+            field in SubWorkflowParams.attribute_map
         ), f"Field '{field}' missing from attribute_map"
         assert (
-            SubWorkflowParamsAdapter.attribute_map[field] == expected_json_key
+            SubWorkflowParams.attribute_map[field] == expected_json_key
         ), f"JSON mapping for field '{field}' has changed"
 
 
 def test_to_dict_method_works(valid_data):
     """Test that to_dict method still works with existing fields."""
-    obj = SubWorkflowParamsAdapter(**valid_data)
+    obj = SubWorkflowParams(**valid_data)
     result = obj.to_dict()
 
     assert isinstance(result, dict)
@@ -176,7 +176,7 @@ def test_to_dict_method_works(valid_data):
 
 def test_to_str_method_works(valid_data):
     """Test that to_str method still works."""
-    obj = SubWorkflowParamsAdapter(**valid_data)
+    obj = SubWorkflowParams(**valid_data)
     result = obj.to_str()
 
     assert isinstance(result, str)
@@ -185,9 +185,9 @@ def test_to_str_method_works(valid_data):
 
 def test_equality_comparison_works(valid_data):
     """Test that equality comparison still works with existing fields."""
-    obj1 = SubWorkflowParamsAdapter(**valid_data)
-    obj2 = SubWorkflowParamsAdapter(**valid_data)
-    obj3 = SubWorkflowParamsAdapter(name="different")
+    obj1 = SubWorkflowParams(**valid_data)
+    obj2 = SubWorkflowParams(**valid_data)
+    obj3 = SubWorkflowParams(name="different")
 
     assert obj1 == obj2
     assert obj1 != obj3
@@ -196,7 +196,7 @@ def test_equality_comparison_works(valid_data):
 
 def test_task_to_domain_dict_structure():
     """Test that task_to_domain maintains expected dict(str, str) structure."""
-    obj = SubWorkflowParamsAdapter()
+    obj = SubWorkflowParams()
 
     # Test valid dict assignment
     valid_dict = {"task1": "domain1", "task2": "domain2"}

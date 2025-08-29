@@ -1,4 +1,4 @@
-from conductor.client.http.models import ByteString
+from conductor.client.codegen.models import ByteString
 
 
 class ByteStringAdapter(ByteString): ...

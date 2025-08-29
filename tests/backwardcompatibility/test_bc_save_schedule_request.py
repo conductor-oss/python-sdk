@@ -1,13 +1,13 @@
 import pytest
 
-from conductor.client.adapters.models.save_schedule_request_adapter import SaveScheduleRequestAdapter
-from conductor.client.adapters.models.start_workflow_request_adapter import StartWorkflowRequestAdapter
+from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
+from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
 
 
 @pytest.fixture
 def start_workflow_request():
-    """Set up test fixture with StartWorkflowRequestAdapter instance."""
-    return StartWorkflowRequestAdapter() if StartWorkflowRequestAdapter else None
+    """Set up test fixture with StartWorkflowRequest instance."""
+    return StartWorkflowRequest() if StartWorkflowRequest else None
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def valid_data(start_workflow_request):
 def test_constructor_with_all_existing_fields(valid_data, start_workflow_request):
     """Test that constructor accepts all existing fields without errors."""
     # Test constructor with all fields
-    request = SaveScheduleRequestAdapter(**valid_data)
+    request = SaveScheduleRequest(**valid_data)
 
     # Verify all fields are set correctly
     assert request.name == "test_schedule"
@@ -45,7 +45,7 @@ def test_constructor_with_all_existing_fields(valid_data, start_workflow_request
 
 def test_constructor_with_minimal_required_fields():
     """Test constructor with only required fields (name and cron_expression)."""
-    request = SaveScheduleRequestAdapter(name="test_schedule", cron_expression="0 0 * * *")
+    request = SaveScheduleRequest(name="test_schedule", cron_expression="0 0 * * *")
 
     # Required fields should be set
     assert request.name == "test_schedule"
@@ -75,7 +75,7 @@ def test_all_expected_attributes_exist():
         "schedule_end_time",
     ]
 
-    request = SaveScheduleRequestAdapter(name="test", cron_expression="0 0 * * *")
+    request = SaveScheduleRequest(name="test", cron_expression="0 0 * * *")
 
     for attr in expected_attributes:
         assert hasattr(request, attr), f"Missing expected attribute: {attr}"
@@ -99,10 +99,10 @@ def test_swagger_types_mapping_exists():
 
     for field, expected_type in expected_swagger_types.items():
         assert (
-            field in SaveScheduleRequestAdapter.swagger_types
+            field in SaveScheduleRequest.swagger_types
         ), f"Missing field in swagger_types: {field}"
         assert (
-            SaveScheduleRequestAdapter.swagger_types[field] == expected_type
+            SaveScheduleRequest.swagger_types[field] == expected_type
         ), f"Type mismatch for field {field}"
 
 
@@ -122,16 +122,16 @@ def test_attribute_map_exists():
 
     for field, expected_json_key in expected_attribute_map.items():
         assert (
-            field in SaveScheduleRequestAdapter.attribute_map
+            field in SaveScheduleRequest.attribute_map
         ), f"Missing field in attribute_map: {field}"
         assert (
-            SaveScheduleRequestAdapter.attribute_map[field] == expected_json_key
+            SaveScheduleRequest.attribute_map[field] == expected_json_key
         ), f"JSON key mismatch for field {field}"
 
 
 def test_property_getters_exist(valid_data, start_workflow_request):
     """Verify all property getters exist and work correctly."""
-    request = SaveScheduleRequestAdapter(**valid_data)
+    request = SaveScheduleRequest(**valid_data)
 
     # Test all getters
     assert request.name == "test_schedule"
@@ -147,7 +147,7 @@ def test_property_getters_exist(valid_data, start_workflow_request):
 
 def test_property_setters_exist(start_workflow_request):
     """Verify all property setters exist and work correctly."""
-    request = SaveScheduleRequestAdapter(name="test", cron_expression="0 0 * * *")
+    request = SaveScheduleRequest(name="test", cron_expression="0 0 * * *")
 
     # Test all setters
     request.name = "updated_schedule"
@@ -180,7 +180,7 @@ def test_property_setters_exist(start_workflow_request):
 
 def test_field_type_validation_string_fields():
     """Test that string fields accept string values."""
-    request = SaveScheduleRequestAdapter(name="test", cron_expression="0 0 * * *")
+    request = SaveScheduleRequest(name="test", cron_expression="0 0 * * *")
 
     # String fields should accept string values
     string_fields = ["name", "cron_expression", "created_by", "updated_by"]
@@ -191,7 +191,7 @@ def test_field_type_validation_string_fields():
 
 def test_field_type_validation_boolean_fields():
     """Test that boolean fields accept boolean values."""
-    request = SaveScheduleRequestAdapter(name="test", cron_expression="0 0 * * *")
+    request = SaveScheduleRequest(name="test", cron_expression="0 0 * * *")
 
     # Boolean fields should accept boolean values
     boolean_fields = ["run_catchup_schedule_instances", "paused"]
@@ -204,7 +204,7 @@ def test_field_type_validation_boolean_fields():
 
 def test_field_type_validation_integer_fields():
     """Test that integer fields accept integer values."""
-    request = SaveScheduleRequestAdapter(name="test", cron_expression="0 0 * * *")
+    request = SaveScheduleRequest(name="test", cron_expression="0 0 * * *")
 
     # Integer fields should accept integer values
     integer_fields = ["schedule_start_time", "schedule_end_time"]
@@ -215,7 +215,7 @@ def test_field_type_validation_integer_fields():
 
 def test_to_dict_method_exists(valid_data):
     """Verify to_dict method exists and includes all expected fields."""
-    request = SaveScheduleRequestAdapter(**valid_data)
+    request = SaveScheduleRequest(**valid_data)
     result_dict = request.to_dict()
 
     assert isinstance(result_dict, dict)
@@ -239,7 +239,7 @@ def test_to_dict_method_exists(valid_data):
 
 def test_to_str_method_exists():
     """Verify to_str method exists and returns a string."""
-    request = SaveScheduleRequestAdapter(name="test", cron_expression="0 0 * * *")
+    request = SaveScheduleRequest(name="test", cron_expression="0 0 * * *")
     result = request.to_str()
 
     assert isinstance(result, str)
@@ -247,7 +247,7 @@ def test_to_str_method_exists():
 
 def test_repr_method_exists():
     """Verify __repr__ method exists and returns a string."""
-    request = SaveScheduleRequestAdapter(name="test", cron_expression="0 0 * * *")
+    request = SaveScheduleRequest(name="test", cron_expression="0 0 * * *")
     result = repr(request)
 
     assert isinstance(result, str)
@@ -255,28 +255,28 @@ def test_repr_method_exists():
 
 def test_equality_methods_exist():
     """Verify __eq__ and __ne__ methods exist and work correctly."""
-    request1 = SaveScheduleRequestAdapter(name="test", cron_expression="0 0 * * *")
-    request2 = SaveScheduleRequestAdapter(name="test", cron_expression="0 0 * * *")
-    request3 = SaveScheduleRequestAdapter(name="different", cron_expression="0 0 * * *")
+    request1 = SaveScheduleRequest(name="test", cron_expression="0 0 * * *")
+    request2 = SaveScheduleRequest(name="test", cron_expression="0 0 * * *")
+    request3 = SaveScheduleRequest(name="different", cron_expression="0 0 * * *")
 
     # Test equality
     assert request1 == request2
     assert request1 != request3
 
-    # Test inequality with non-SaveScheduleRequestAdapter object
-    assert request1 != "not a SaveScheduleRequestAdapter"
+    # Test inequality with non-SaveScheduleRequest object
+    assert request1 != "not a SaveScheduleRequest"
 
 
 def test_discriminator_attribute_exists():
     """Verify discriminator attribute exists and is None by default."""
-    request = SaveScheduleRequestAdapter(name="test", cron_expression="0 0 * * *")
+    request = SaveScheduleRequest(name="test", cron_expression="0 0 * * *")
     assert hasattr(request, "discriminator")
     assert request.discriminator is None
 
 
 def test_private_attributes_exist():
     """Verify all private attributes exist."""
-    request = SaveScheduleRequestAdapter(name="test", cron_expression="0 0 * * *")
+    request = SaveScheduleRequest(name="test", cron_expression="0 0 * * *")
 
     expected_private_attrs = [
         "_name",
@@ -296,7 +296,7 @@ def test_private_attributes_exist():
 
 def test_none_values_handling():
     """Test that None values are handled correctly for optional fields."""
-    request = SaveScheduleRequestAdapter(name="test", cron_expression="0 0 * * *")
+    request = SaveScheduleRequest(name="test", cron_expression="0 0 * * *")
 
     # Optional fields should accept None
     optional_fields = [

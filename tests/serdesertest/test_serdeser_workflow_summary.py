@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.workflow_summary_adapter import WorkflowSummaryAdapter
+from conductor.client.http.models.workflow_summary import WorkflowSummaryAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

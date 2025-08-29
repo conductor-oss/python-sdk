@@ -1,4 +1,4 @@
-from conductor.client.http.models import Action
+from conductor.client.codegen.models import Action
 
 
 class ActionAdapter(Action):

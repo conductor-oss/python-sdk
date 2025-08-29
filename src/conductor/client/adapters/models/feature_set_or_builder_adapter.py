@@ -1,4 +1,4 @@
-from conductor.client.http.models import FeatureSetOrBuilder
+from conductor.client.codegen.models import FeatureSetOrBuilder
 
 
 class FeatureSetOrBuilderAdapter(FeatureSetOrBuilder): ...

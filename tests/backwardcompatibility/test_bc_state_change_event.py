@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.adapters.models.state_change_event_adapter import StateChangeEventAdapter as StateChangeEvent, StateChangeEventType, StateChangeConfig
+from conductor.client.http.models.state_change_event import StateChangeEvent, StateChangeEventType, StateChangeConfig
 
 
 def test_state_change_event_type_enum_values_exist():

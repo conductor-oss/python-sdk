@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.action_adapter import ActionAdapter
-from conductor.client.adapters.models.event_handler_adapter import EventHandlerAdapter
+from conductor.client.http.models.action import ActionAdapter
+from conductor.client.http.models.event_handler import EventHandlerAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

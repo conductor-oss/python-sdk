@@ -5,18 +5,18 @@ import uuid
 
 import pytest
 
-from conductor.client.adapters.models.start_workflow_request_adapter import \
+from conductor.client.http.models.start_workflow_request import \
     StartWorkflowRequestAdapter as StartWorkflowRequest
-from conductor.client.adapters.models.task_def_adapter import \
+from conductor.client.http.models.task_def import \
     TaskDefAdapter as TaskDef
-from conductor.client.adapters.models.task_result_adapter import \
+from conductor.client.http.models.task_result import \
     TaskResultAdapter as TaskResult
-from conductor.client.adapters.models.workflow_adapter import \
+from conductor.client.http.models.workflow import \
     WorkflowAdapter as Workflow
-from conductor.client.adapters.models.workflow_def_adapter import \
+from conductor.client.http.models.workflow_def import \
     WorkflowDefAdapter as WorkflowDef
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.client.orkes.orkes_task_client import OrkesTaskClient
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient

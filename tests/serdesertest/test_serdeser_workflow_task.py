@@ -1,6 +1,6 @@
 import json
 
-from conductor.client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
+from conductor.client.http.models.workflow_task import WorkflowTaskAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

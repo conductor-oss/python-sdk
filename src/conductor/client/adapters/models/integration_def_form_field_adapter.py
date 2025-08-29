@@ -1,4 +1,4 @@
-from conductor.client.http.models import IntegrationDefFormField
+from conductor.client.codegen.models import IntegrationDefFormField
 
 
 class IntegrationDefFormFieldAdapter(IntegrationDefFormField):

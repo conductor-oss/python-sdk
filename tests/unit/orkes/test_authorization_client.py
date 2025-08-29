@@ -3,21 +3,21 @@ import logging
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.adapters.api import UserResourceApi, ApplicationResourceApi, GroupResourceApi, AuthorizationResourceApi
-from conductor.client.adapters.models.authorization_request_adapter import AuthorizationRequestAdapter as AuthorizationRequest
-from conductor.client.adapters.models.granted_access_response_adapter import GrantedAccessResponseAdapter as GrantedAccessResponse
-from conductor.client.adapters.models import ExtendedConductorApplication
-from conductor.client.adapters.models.conductor_user_adapter import ConductorUserAdapter as ConductorUser
-from conductor.client.adapters.models.create_or_update_application_request_adapter import (
+from conductor.client.http.api import UserResourceApi, ApplicationResourceApi, GroupResourceApi, AuthorizationResourceApi
+from conductor.client.http.models.authorization_request import AuthorizationRequestAdapter as AuthorizationRequest
+from conductor.client.http.models.granted_access_response import GrantedAccessResponseAdapter as GrantedAccessResponse
+from conductor.client.http.models import ExtendedConductorApplication
+from conductor.client.http.models.conductor_user import ConductorUserAdapter as ConductorUser
+from conductor.client.http.models.create_or_update_application_request import (
     CreateOrUpdateApplicationRequest,
 )
-from conductor.client.adapters.models.group_adapter import GroupAdapter as Group
-from conductor.client.adapters.models.permission_adapter import PermissionAdapter as Permission
-from conductor.client.adapters.models.role_adapter import RoleAdapter as Role
-from conductor.client.adapters.models.subject_ref_adapter import SubjectRefAdapter as SubjectRef
-from conductor.client.adapters.models.target_ref_adapter import TargetRefAdapter as TargetRef
-from conductor.client.adapters.models.upsert_group_request_adapter import UpsertGroupRequestAdapter as UpsertGroupRequest
-from conductor.client.adapters.models.upsert_user_request_adapter import UpsertUserRequestAdapter as UpsertUserRequest
+from conductor.client.http.models.group import GroupAdapter as Group
+from conductor.client.http.models.permission import PermissionAdapter as Permission
+from conductor.client.http.models.role import RoleAdapter as Role
+from conductor.client.http.models.subject_ref import SubjectRefAdapter as SubjectRef
+from conductor.client.http.models.target_ref import TargetRefAdapter as TargetRef
+from conductor.client.http.models.upsert_group_request import UpsertGroupRequestAdapter as UpsertGroupRequest
+from conductor.client.http.models.upsert_user_request import UpsertUserRequestAdapter as UpsertUserRequest
 from conductor.client.orkes.models.access_key import AccessKey
 from conductor.client.orkes.models.access_key_status import AccessKeyStatus
 from conductor.client.orkes.models.access_type import AccessType

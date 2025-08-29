@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.adapters.models.search_result_task_adapter import SearchResultTaskAdapter
+from conductor.client.http.models.search_result_task import SearchResultTask
 
 
 @pytest.fixture
@@ -26,38 +26,38 @@ def mock_tasks(mock_task1, mock_task2):
 
 
 def test_class_exists_and_importable():
-    """Verify the SearchResultTaskAdapter class exists and can be imported."""
-    assert hasattr(SearchResultTaskAdapter, "__init__")
-    assert callable(SearchResultTaskAdapter)
+    """Verify the SearchResultTask class exists and can be imported."""
+    assert hasattr(SearchResultTask, "__init__")
+    assert callable(SearchResultTask)
 
 
 def test_constructor_signature_compatibility(mock_tasks):
     """Verify constructor accepts expected parameters with defaults."""
     # Should work with no arguments (all defaults)
-    obj = SearchResultTaskAdapter()
+    obj = SearchResultTask()
     assert obj is not None
 
     # Should work with positional arguments
-    obj = SearchResultTaskAdapter(100, mock_tasks)
+    obj = SearchResultTask(100, mock_tasks)
     assert obj is not None
 
     # Should work with keyword arguments
-    obj = SearchResultTaskAdapter(total_hits=100, results=mock_tasks)
+    obj = SearchResultTask(total_hits=100, results=mock_tasks)
     assert obj is not None
 
     # Should work with mixed arguments
-    obj = SearchResultTaskAdapter(100, results=mock_tasks)
+    obj = SearchResultTask(100, results=mock_tasks)
     assert obj is not None
 
 
 def test_required_attributes_exist():
     """Verify all expected attributes exist in the class."""
     # Class-level attributes
-    assert hasattr(SearchResultTaskAdapter, "swagger_types")
-    assert hasattr(SearchResultTaskAdapter, "attribute_map")
+    assert hasattr(SearchResultTask, "swagger_types")
+    assert hasattr(SearchResultTask, "attribute_map")
 
     # Instance attributes after initialization
-    obj = SearchResultTaskAdapter()
+    obj = SearchResultTask()
     assert hasattr(obj, "_total_hits")
     assert hasattr(obj, "_results")
     assert hasattr(obj, "discriminator")
@@ -67,29 +67,29 @@ def test_swagger_types_structure():
     """Verify swagger_types dictionary contains expected field type mappings."""
     expected_types = {"total_hits": "int", "results": "list[Task]"}
 
-    assert SearchResultTaskAdapter.swagger_types == expected_types
+    assert SearchResultTask.swagger_types == expected_types
 
     # Verify types haven't changed
     for field, expected_type in expected_types.items():
-        assert field in SearchResultTaskAdapter.swagger_types
-        assert SearchResultTaskAdapter.swagger_types[field] == expected_type
+        assert field in SearchResultTask.swagger_types
+        assert SearchResultTask.swagger_types[field] == expected_type
 
 
 def test_attribute_map_structure():
     """Verify attribute_map dictionary contains expected field name mappings."""
     expected_map = {"total_hits": "totalHits", "results": "results"}
 
-    assert SearchResultTaskAdapter.attribute_map == expected_map
+    assert SearchResultTask.attribute_map == expected_map
 
     # Verify mappings haven't changed
     for field, expected_mapping in expected_map.items():
-        assert field in SearchResultTaskAdapter.attribute_map
-        assert SearchResultTaskAdapter.attribute_map[field] == expected_mapping
+        assert field in SearchResultTask.attribute_map
+        assert SearchResultTask.attribute_map[field] == expected_mapping
 
 
 def test_total_hits_property_compatibility():
     """Verify total_hits property getter/setter behavior."""
-    obj = SearchResultTaskAdapter()
+    obj = SearchResultTask()
 
     # Verify property exists
     assert hasattr(obj, "total_hits")
@@ -112,7 +112,7 @@ def test_total_hits_property_compatibility():
 
 def test_results_property_compatibility(mock_tasks):
     """Verify results property getter/setter behavior."""
-    obj = SearchResultTaskAdapter()
+    obj = SearchResultTask()
 
     # Verify property exists
     assert hasattr(obj, "results")
@@ -139,7 +139,7 @@ def test_results_property_compatibility(mock_tasks):
 
 def test_constructor_parameter_assignment(mock_tasks):
     """Verify constructor properly assigns parameters to properties."""
-    obj = SearchResultTaskAdapter(total_hits=200, results=mock_tasks)
+    obj = SearchResultTask(total_hits=200, results=mock_tasks)
 
     assert obj.total_hits == 200
     assert obj.results == mock_tasks
@@ -149,14 +149,14 @@ def test_constructor_parameter_assignment(mock_tasks):
 
 def test_discriminator_attribute():
     """Verify discriminator attribute exists and is initialized."""
-    obj = SearchResultTaskAdapter()
+    obj = SearchResultTask()
     assert hasattr(obj, "discriminator")
     assert obj.discriminator is None
 
 
 def test_to_dict_method_compatibility(mock_tasks):
     """Verify to_dict method exists and returns expected structure."""
-    obj = SearchResultTaskAdapter(total_hits=100, results=mock_tasks)
+    obj = SearchResultTask(total_hits=100, results=mock_tasks)
 
     # Method should exist
     assert hasattr(obj, "to_dict")
@@ -176,7 +176,7 @@ def test_to_dict_method_compatibility(mock_tasks):
 
 def test_to_str_method_compatibility(mock_tasks):
     """Verify to_str method exists and returns string."""
-    obj = SearchResultTaskAdapter(total_hits=100, results=mock_tasks)
+    obj = SearchResultTask(total_hits=100, results=mock_tasks)
 
     assert hasattr(obj, "to_str")
     assert callable(obj.to_str)
@@ -187,7 +187,7 @@ def test_to_str_method_compatibility(mock_tasks):
 
 def test_repr_method_compatibility(mock_tasks):
     """Verify __repr__ method exists and returns string."""
-    obj = SearchResultTaskAdapter(total_hits=100, results=mock_tasks)
+    obj = SearchResultTask(total_hits=100, results=mock_tasks)
 
     result = repr(obj)
     assert isinstance(result, str)
@@ -195,9 +195,9 @@ def test_repr_method_compatibility(mock_tasks):
 
 def test_equality_methods_compatibility(mock_tasks):
     """Verify __eq__ and __ne__ methods work correctly."""
-    obj1 = SearchResultTaskAdapter(total_hits=100, results=mock_tasks)
-    obj2 = SearchResultTaskAdapter(total_hits=100, results=mock_tasks)
-    obj3 = SearchResultTaskAdapter(total_hits=200, results=mock_tasks)
+    obj1 = SearchResultTask(total_hits=100, results=mock_tasks)
+    obj2 = SearchResultTask(total_hits=100, results=mock_tasks)
+    obj3 = SearchResultTask(total_hits=200, results=mock_tasks)
 
     # Test equality
     assert obj1 == obj2
@@ -211,12 +211,12 @@ def test_equality_methods_compatibility(mock_tasks):
 def test_backward_compatibility_with_none_values():
     """Verify model handles None values correctly (important for backward compatibility)."""
     # Constructor with None values
-    obj = SearchResultTaskAdapter(total_hits=None, results=None)
+    obj = SearchResultTask(total_hits=None, results=None)
     assert obj.total_hits is None
     assert obj.results is None
 
     # Property assignment with None
-    obj = SearchResultTaskAdapter()
+    obj = SearchResultTask()
     obj.total_hits = None
     obj.results = None
     assert obj.total_hits is None
@@ -225,7 +225,7 @@ def test_backward_compatibility_with_none_values():
 
 def test_to_dict_with_none_values():
     """Verify to_dict handles None values correctly."""
-    obj = SearchResultTaskAdapter(total_hits=None, results=None)
+    obj = SearchResultTask(total_hits=None, results=None)
     result = obj.to_dict()
 
     assert isinstance(result, dict)
@@ -240,7 +240,7 @@ def test_field_types_not_changed(mock_tasks):
     # This test ensures that if someone changes field types,
     # the backward compatibility is broken and test will fail
 
-    obj = SearchResultTaskAdapter()
+    obj = SearchResultTask()
 
     # total_hits should accept int or None
     obj.total_hits = 100

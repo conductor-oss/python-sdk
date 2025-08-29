@@ -1,4 +1,4 @@
-from conductor.client.http.models import ExtendedEventExecution
+from conductor.client.codegen.models import ExtendedEventExecution
 
 
 class ExtendedEventExecutionAdapter(ExtendedEventExecution): ...

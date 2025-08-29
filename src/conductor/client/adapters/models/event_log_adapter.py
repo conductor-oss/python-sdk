@@ -1,4 +1,4 @@
-from conductor.client.http.models import EventLog
+from conductor.client.codegen.models import EventLog
 
 
 class EventLogAdapter(EventLog): ...

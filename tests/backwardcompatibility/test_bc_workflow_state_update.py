@@ -1,13 +1,13 @@
 import pytest
 
-from conductor.client.adapters.models.task_result_adapter import TaskResultAdapter
-from conductor.client.adapters.models.workflow_state_update_adapter import WorkflowStateUpdateAdapter
+from conductor.client.http.models.task_result import TaskResult
+from conductor.client.http.models.workflow_state_update import WorkflowStateUpdate
 
 
 @pytest.fixture
 def mock_task_result():
-    """Set up test fixture with mock TaskResultAdapter."""
-    return TaskResultAdapter()
+    """Set up test fixture with mock TaskResult."""
+    return TaskResult()
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def test_variables():
 
 def test_constructor_with_no_arguments():
     """Test that constructor works with no arguments (all fields optional)."""
-    obj = WorkflowStateUpdateAdapter()
+    obj = WorkflowStateUpdate()
 
     # All fields should be None initially
     assert obj.task_reference_name is None
@@ -28,7 +28,7 @@ def test_constructor_with_no_arguments():
 
 def test_constructor_with_all_arguments(mock_task_result, test_variables):
     """Test constructor with all known arguments."""
-    obj = WorkflowStateUpdateAdapter(
+    obj = WorkflowStateUpdate(
         task_reference_name="test_task",
         task_result=mock_task_result,
         variables=test_variables,
@@ -42,19 +42,19 @@ def test_constructor_with_all_arguments(mock_task_result, test_variables):
 def test_constructor_with_partial_arguments(mock_task_result, test_variables):
     """Test constructor with partial arguments."""
     # Test with only task_reference_name
-    obj1 = WorkflowStateUpdateAdapter(task_reference_name="test_task")
+    obj1 = WorkflowStateUpdate(task_reference_name="test_task")
     assert obj1.task_reference_name == "test_task"
     assert obj1.task_result is None
     assert obj1.variables is None
 
     # Test with only task_result
-    obj2 = WorkflowStateUpdateAdapter(task_result=mock_task_result)
+    obj2 = WorkflowStateUpdate(task_result=mock_task_result)
     assert obj2.task_reference_name is None
     assert obj2.task_result == mock_task_result
     assert obj2.variables is None
 
     # Test with only variables
-    obj3 = WorkflowStateUpdateAdapter(variables=test_variables)
+    obj3 = WorkflowStateUpdate(variables=test_variables)
     assert obj3.task_reference_name is None
     assert obj3.task_result is None
     assert obj3.variables == test_variables
@@ -62,7 +62,7 @@ def test_constructor_with_partial_arguments(mock_task_result, test_variables):
 
 def test_field_existence():
     """Test that all expected fields exist and are accessible."""
-    obj = WorkflowStateUpdateAdapter()
+    obj = WorkflowStateUpdate()
 
     # Test field existence via hasattr
     assert hasattr(obj, "task_reference_name")
@@ -77,17 +77,17 @@ def test_field_existence():
 
 def test_field_types_via_assignment(mock_task_result, test_variables):
     """Test field type expectations through assignment."""
-    obj = WorkflowStateUpdateAdapter()
+    obj = WorkflowStateUpdate()
 
     # Test task_reference_name expects string
     obj.task_reference_name = "test_string"
     assert obj.task_reference_name == "test_string"
     assert isinstance(obj.task_reference_name, str)
 
-    # Test task_result expects TaskResultAdapter
+    # Test task_result expects TaskResult
     obj.task_result = mock_task_result
     assert obj.task_result == mock_task_result
-    assert isinstance(obj.task_result, TaskResultAdapter)
+    assert isinstance(obj.task_result, TaskResult)
 
     # Test variables expects dict
     obj.variables = test_variables
@@ -97,7 +97,7 @@ def test_field_types_via_assignment(mock_task_result, test_variables):
 
 def test_property_getters(mock_task_result, test_variables):
     """Test that property getters work correctly."""
-    obj = WorkflowStateUpdateAdapter(
+    obj = WorkflowStateUpdate(
         task_reference_name="test_task",
         task_result=mock_task_result,
         variables=test_variables,
@@ -111,7 +111,7 @@ def test_property_getters(mock_task_result, test_variables):
 
 def test_property_setters(mock_task_result):
     """Test that property setters work correctly."""
-    obj = WorkflowStateUpdateAdapter()
+    obj = WorkflowStateUpdate()
 
     # Test setters
     obj.task_reference_name = "new_task"
@@ -125,7 +125,7 @@ def test_property_setters(mock_task_result):
 
 def test_none_assignment(mock_task_result, test_variables):
     """Test that None can be assigned to all fields."""
-    obj = WorkflowStateUpdateAdapter(
+    obj = WorkflowStateUpdate(
         task_reference_name="test",
         task_result=mock_task_result,
         variables=test_variables,
@@ -144,8 +144,8 @@ def test_none_assignment(mock_task_result, test_variables):
 def test_swagger_metadata_exists():
     """Test that swagger metadata attributes exist."""
     # Test class-level swagger attributes
-    assert hasattr(WorkflowStateUpdateAdapter, "swagger_types")
-    assert hasattr(WorkflowStateUpdateAdapter, "attribute_map")
+    assert hasattr(WorkflowStateUpdate, "swagger_types")
+    assert hasattr(WorkflowStateUpdate, "attribute_map")
 
     # Test swagger_types structure
     expected_swagger_types = {
@@ -153,7 +153,7 @@ def test_swagger_metadata_exists():
         "task_result": "TaskResult",
         "variables": "dict(str, object)",
     }
-    assert WorkflowStateUpdateAdapter.swagger_types == expected_swagger_types
+    assert WorkflowStateUpdate.swagger_types == expected_swagger_types
 
     # Test attribute_map structure
     expected_attribute_map = {
@@ -161,12 +161,12 @@ def test_swagger_metadata_exists():
         "task_result": "taskResult",
         "variables": "variables",
     }
-    assert WorkflowStateUpdateAdapter.attribute_map == expected_attribute_map
+    assert WorkflowStateUpdate.attribute_map == expected_attribute_map
 
 
 def test_to_dict_method(mock_task_result, test_variables):
     """Test that to_dict method works correctly."""
-    obj = WorkflowStateUpdateAdapter(
+    obj = WorkflowStateUpdate(
         task_reference_name="test_task",
         task_result=mock_task_result,
         variables=test_variables,
@@ -182,7 +182,7 @@ def test_to_dict_method(mock_task_result, test_variables):
 
 def test_to_str_method():
     """Test that to_str method works correctly."""
-    obj = WorkflowStateUpdateAdapter(task_reference_name="test_task")
+    obj = WorkflowStateUpdate(task_reference_name="test_task")
 
     str_result = obj.to_str()
     assert isinstance(str_result, str)
@@ -190,7 +190,7 @@ def test_to_str_method():
 
 def test_repr_method():
     """Test that __repr__ method works correctly."""
-    obj = WorkflowStateUpdateAdapter(task_reference_name="test_task")
+    obj = WorkflowStateUpdate(task_reference_name="test_task")
 
     repr_result = repr(obj)
     assert isinstance(repr_result, str)
@@ -198,13 +198,13 @@ def test_repr_method():
 
 def test_equality_methods():
     """Test equality and inequality methods."""
-    obj1 = WorkflowStateUpdateAdapter(
+    obj1 = WorkflowStateUpdate(
         task_reference_name="test_task", variables={"key": "value"}
     )
-    obj2 = WorkflowStateUpdateAdapter(
+    obj2 = WorkflowStateUpdate(
         task_reference_name="test_task", variables={"key": "value"}
     )
-    obj3 = WorkflowStateUpdateAdapter(task_reference_name="different_task")
+    obj3 = WorkflowStateUpdate(task_reference_name="different_task")
 
     # Test equality
     assert obj1 == obj2
@@ -214,13 +214,13 @@ def test_equality_methods():
     assert not (obj1 != obj2)
     assert obj1 != obj3
 
-    # Test equality with non-WorkflowStateUpdateAdapter object
+    # Test equality with non-WorkflowStateUpdate object
     assert obj1 != "not_a_workflow_state_update"
 
 
 def test_variables_dict_type_flexibility():
     """Test that variables field accepts various dict value types."""
-    obj = WorkflowStateUpdateAdapter()
+    obj = WorkflowStateUpdate()
 
     # Test with various value types
     test_variables = {
@@ -239,7 +239,7 @@ def test_variables_dict_type_flexibility():
 
 def test_field_assignment_independence(mock_task_result):
     """Test that field assignments don't affect each other."""
-    obj = WorkflowStateUpdateAdapter()
+    obj = WorkflowStateUpdate()
 
     # Set fields independently
     obj.task_reference_name = "task1"

@@ -2,9 +2,9 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
-from conductor.client.adapters.models.task_result_adapter import TaskResultAdapter
-from conductor.client.adapters.models.workflow_state_update_adapter import WorkflowStateUpdateAdapter
+from conductor.client.http.models.task_exec_log import TaskExecLogAdapter
+from conductor.client.http.models.task_result import TaskResultAdapter
+from conductor.client.http.models.workflow_state_update import WorkflowStateUpdateAdapter
 from conductor.shared.http.enums import TaskResultStatus
 
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver

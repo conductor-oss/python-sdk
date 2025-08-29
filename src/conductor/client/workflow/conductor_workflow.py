@@ -5,11 +5,11 @@ from typing import Any, Dict, List, Union, Optional
 from shortuuid import uuid
 from typing_extensions import Self
 
-from conductor.client.adapters.models.start_workflow_request_adapter import StartWorkflowRequestAdapter as StartWorkflowRequest
-from conductor.client.adapters.models.workflow_def_adapter import WorkflowDefAdapter as WorkflowDef
-from conductor.client.adapters.models.workflow_run_adapter import WorkflowRunAdapter as WorkflowRun
-from conductor.client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter as WorkflowTask
-from conductor.client.adapters.models.sub_workflow_params_adapter import SubWorkflowParamsAdapter as SubWorkflowParams
+from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
+from conductor.client.http.models.workflow_def import WorkflowDef
+from conductor.client.http.models.workflow_run import WorkflowRun
+from conductor.client.http.models.workflow_task import WorkflowTask
+from conductor.client.http.models.sub_workflow_params import SubWorkflowParams
 from conductor.shared.http.enums import IdempotencyStrategy
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.fork_task import ForkTask

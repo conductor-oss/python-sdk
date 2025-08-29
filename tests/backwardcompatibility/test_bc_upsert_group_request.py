@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.adapters.models import UpsertGroupRequest
+from conductor.client.http.models import UpsertGroupRequest
 
 
 @pytest.fixture

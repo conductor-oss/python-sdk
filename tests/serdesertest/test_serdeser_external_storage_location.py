@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.external_storage_location_adapter import ExternalStorageLocationAdapter
+from conductor.client.http.models.external_storage_location import ExternalStorageLocationAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

@@ -1,4 +1,4 @@
-from conductor.client.http.models import PollData
+from conductor.client.codegen.models import PollData
 
 
 class PollDataAdapter(PollData):

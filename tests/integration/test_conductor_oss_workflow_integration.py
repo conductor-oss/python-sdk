@@ -4,22 +4,22 @@ import uuid
 
 import pytest
 
-from conductor.client.adapters.models.rerun_workflow_request_adapter import (
+from conductor.client.http.models.rerun_workflow_request import (
     RerunWorkflowRequestAdapter as RerunWorkflowRequest,
 )
-from conductor.client.adapters.models.start_workflow_request_adapter import (
+from conductor.client.http.models.start_workflow_request import (
     StartWorkflowRequestAdapter as StartWorkflowRequest,
 )
-from conductor.client.adapters.models.workflow_def_adapter import (
+from conductor.client.http.models.workflow_def import (
     WorkflowDefAdapter as WorkflowDef,
 )
-from conductor.client.adapters.models.workflow_task_adapter import (
+from conductor.client.http.models.workflow_task import (
     WorkflowTaskAdapter as WorkflowTask,
 )
-from conductor.client.adapters.models.workflow_test_request_adapter import (
+from conductor.client.http.models.workflow_test_request import (
     WorkflowTestRequestAdapter as WorkflowTestRequest,
 )
-from conductor.client.adapters.models.task_def_adapter import TaskDefAdapter as TaskDef
+from conductor.client.http.models.task_def import TaskDefAdapter as TaskDef
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient

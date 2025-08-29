@@ -1,4 +1,4 @@
-from conductor.client.http.models.response import Response
+from conductor.client.codegen.models.response import Response
 
 
 class ResponseAdapter(Response):

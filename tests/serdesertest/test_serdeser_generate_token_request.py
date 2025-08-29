@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.generate_token_request_adapter import GenerateTokenRequestAdapter
+from conductor.client.http.models.generate_token_request import GenerateTokenRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

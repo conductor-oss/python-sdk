@@ -1,4 +1,4 @@
-from conductor.client.http.models.uninterpreted_option import \
+from conductor.client.codegen.models.uninterpreted_option import \
     UninterpretedOption
 
 

@@ -1,4 +1,4 @@
-from conductor.client.http.models.task_details import TaskDetails
+from conductor.client.codegen.models.task_details import TaskDetails
 
 
 class TaskDetailsAdapter(TaskDetails):

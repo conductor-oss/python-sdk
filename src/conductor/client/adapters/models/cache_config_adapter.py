@@ -1,4 +1,4 @@
-from conductor.client.http.models import CacheConfig
+from conductor.client.codegen.models import CacheConfig
 
 
 class CacheConfigAdapter(CacheConfig): ...

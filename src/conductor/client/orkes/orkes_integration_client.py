@@ -3,25 +3,25 @@ from __future__ import absolute_import
 from typing import List, Optional, Dict
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.adapters.models.integration_adapter import (
-    IntegrationAdapter as Integration,
+from conductor.client.http.models.integration import (
+    Integration
 )
-from conductor.client.adapters.models.integration_api_adapter import (
-    IntegrationApiAdapter as IntegrationApi,
+from conductor.client.http.models.integration_api import (
+    IntegrationApi
 )
-from conductor.client.adapters.models.integration_api_update_adapter import (
-    IntegrationApiUpdateAdapter as IntegrationApiUpdate,
+from conductor.client.http.models.integration_api_update import (
+    IntegrationApiUpdate
 )
-from conductor.client.adapters.models.integration_update_adapter import (
-    IntegrationUpdateAdapter as IntegrationUpdate,
+from conductor.client.http.models.integration_update import (
+    IntegrationUpdate
 )
-from conductor.client.adapters.models.integration_def_adapter import (
-    IntegrationDefAdapter as IntegrationDef,
+from conductor.client.http.models.integration_def import (
+    IntegrationDef
 )
-from conductor.client.adapters.models.prompt_template_adapter import (
-    PromptTemplateAdapter as PromptTemplate,
+from conductor.client.http.models.prompt_template import (
+    PromptTemplate
 )
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 from conductor.client.integration_client import IntegrationClient
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 

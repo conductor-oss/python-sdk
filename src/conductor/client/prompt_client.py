@@ -5,7 +5,7 @@ from typing import List, Optional
 
 # python 2 and python 3 compatibility library
 
-from conductor.client.adapters.models.prompt_template_adapter import PromptTemplateAdapter as PromptTemplate
+from conductor.client.http.models.prompt_template import PromptTemplate
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 
 

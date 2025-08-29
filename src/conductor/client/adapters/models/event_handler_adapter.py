@@ -1,4 +1,4 @@
-from conductor.client.http.models import EventHandler
+from conductor.client.codegen.models import EventHandler
 
 
 class EventHandlerAdapter(EventHandler): ...

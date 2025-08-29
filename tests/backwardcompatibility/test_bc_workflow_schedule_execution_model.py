@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.adapters.models.workflow_schedule_execution_model_adapter import WorkflowScheduleExecutionModelAdapter
+from conductor.client.http.models.workflow_schedule_execution_model import WorkflowScheduleExecutionModel
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def valid_data():
 
 def test_constructor_with_all_none_parameters():
     """Test that constructor accepts all None values (current behavior)."""
-    model = WorkflowScheduleExecutionModelAdapter()
+    model = WorkflowScheduleExecutionModel()
 
     # Verify all fields are None initially
     assert model.execution_id is None
@@ -39,7 +39,7 @@ def test_constructor_with_all_none_parameters():
 
 def test_constructor_with_valid_parameters(valid_data):
     """Test constructor with all valid parameters."""
-    model = WorkflowScheduleExecutionModelAdapter(**valid_data)
+    model = WorkflowScheduleExecutionModel(**valid_data)
 
     # Verify all fields are set correctly
     assert model.execution_id == "exec_123"
@@ -56,7 +56,7 @@ def test_constructor_with_valid_parameters(valid_data):
 
 def test_all_expected_fields_exist():
     """Verify all expected fields still exist and are accessible."""
-    model = WorkflowScheduleExecutionModelAdapter()
+    model = WorkflowScheduleExecutionModel()
 
     expected_fields = [
         "execution_id",
@@ -86,7 +86,7 @@ def test_all_expected_fields_exist():
 
 def test_field_type_consistency():
     """Verify field types haven't changed."""
-    model = WorkflowScheduleExecutionModelAdapter()
+    model = WorkflowScheduleExecutionModel()
 
     # Test string fields (excluding state which has enum validation)
     string_fields = [
@@ -115,7 +115,7 @@ def test_field_type_consistency():
 
 def test_state_enum_validation_preserved():
     """Test that state field validation rules are preserved."""
-    model = WorkflowScheduleExecutionModelAdapter()
+    model = WorkflowScheduleExecutionModel()
 
     # Test valid enum values still work
     valid_states = ["POLLED", "FAILED", "EXECUTED"]
@@ -147,7 +147,7 @@ def test_attribute_map_preserved():
         "state": "state",
     }
 
-    actual_attribute_map = WorkflowScheduleExecutionModelAdapter.attribute_map
+    actual_attribute_map = WorkflowScheduleExecutionModel.attribute_map
 
     # Check that all expected mappings exist and are correct
     for field, expected_mapping in expected_attribute_map.items():
@@ -174,7 +174,7 @@ def test_swagger_types_mapping_preserved():
         "state": "str",
     }
 
-    actual_swagger_types = WorkflowScheduleExecutionModelAdapter.swagger_types
+    actual_swagger_types = WorkflowScheduleExecutionModel.swagger_types
 
     # Check that all expected fields exist with correct types
     for field, expected_type in expected_swagger_types.items():
@@ -188,7 +188,7 @@ def test_swagger_types_mapping_preserved():
 
 def test_to_dict_method_preserved(valid_data):
     """Test that to_dict method works and returns expected structure."""
-    model = WorkflowScheduleExecutionModelAdapter(**valid_data)
+    model = WorkflowScheduleExecutionModel(**valid_data)
     result = model.to_dict()
 
     # Verify it returns a dict
@@ -205,7 +205,7 @@ def test_to_dict_method_preserved(valid_data):
 
 def test_to_str_method_preserved(valid_data):
     """Test that to_str method works."""
-    model = WorkflowScheduleExecutionModelAdapter(**valid_data)
+    model = WorkflowScheduleExecutionModel(**valid_data)
     result = model.to_str()
 
     assert isinstance(result, str)
@@ -214,9 +214,9 @@ def test_to_str_method_preserved(valid_data):
 
 def test_equality_methods_preserved(valid_data):
     """Test that __eq__ and __ne__ methods work correctly."""
-    model1 = WorkflowScheduleExecutionModelAdapter(**valid_data)
-    model2 = WorkflowScheduleExecutionModelAdapter(**valid_data)
-    model3 = WorkflowScheduleExecutionModelAdapter()
+    model1 = WorkflowScheduleExecutionModel(**valid_data)
+    model2 = WorkflowScheduleExecutionModel(**valid_data)
+    model3 = WorkflowScheduleExecutionModel()
 
     # Test equality
     assert model1 == model2
@@ -233,7 +233,7 @@ def test_equality_methods_preserved(valid_data):
 
 def test_repr_method_preserved(valid_data):
     """Test that __repr__ method works."""
-    model = WorkflowScheduleExecutionModelAdapter(**valid_data)
+    model = WorkflowScheduleExecutionModel(**valid_data)
     repr_result = repr(model)
 
     assert isinstance(repr_result, str)
@@ -242,7 +242,7 @@ def test_repr_method_preserved(valid_data):
 
 def test_individual_field_assignment():
     """Test that individual field assignment still works."""
-    model = WorkflowScheduleExecutionModelAdapter()
+    model = WorkflowScheduleExecutionModel()
 
     # Test each field can be set and retrieved
     test_values = {
@@ -265,6 +265,6 @@ def test_individual_field_assignment():
 
 def test_discriminator_attribute_preserved():
     """Test that discriminator attribute exists and is None."""
-    model = WorkflowScheduleExecutionModelAdapter()
+    model = WorkflowScheduleExecutionModel()
     assert hasattr(model, "discriminator")
     assert model.discriminator is None

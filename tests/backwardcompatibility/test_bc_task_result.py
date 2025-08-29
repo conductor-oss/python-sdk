@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.adapters.models.task_result_adapter import TaskResultAdapter
+from conductor.client.http.models.task_result import TaskResult
 from conductor.shared.http.enums.task_result_status import TaskResultStatus
 
 
@@ -30,7 +30,7 @@ def valid_status(valid_status_values):
 
 def test_required_fields_exist_and_accessible(valid_workflow_id, valid_task_id):
     """Test that required fields (workflow_instance_id, task_id) exist and are accessible."""
-    task_result = TaskResultAdapter(
+    task_result = TaskResult(
         workflow_instance_id=valid_workflow_id,
         task_id=valid_task_id,
     )
@@ -59,7 +59,7 @@ def test_all_existing_fields_exist(valid_workflow_id, valid_task_id):
         "sub_workflow_id",
     ]
 
-    task_result = TaskResultAdapter(
+    task_result = TaskResult(
         workflow_instance_id=valid_workflow_id,
         task_id=valid_task_id,
     )
@@ -67,7 +67,7 @@ def test_all_existing_fields_exist(valid_workflow_id, valid_task_id):
     for field in expected_fields:
         assert hasattr(
             task_result, field
-        ), f"Field '{field}' is missing from TaskResultAdapter"
+        ), f"Field '{field}' is missing from TaskResult"
 
 
 def test_field_types_unchanged(valid_workflow_id, valid_task_id, valid_status):
@@ -85,7 +85,7 @@ def test_field_types_unchanged(valid_workflow_id, valid_task_id, valid_status):
         "sub_workflow_id": str,
     }
 
-    task_result = TaskResultAdapter(
+    task_result = TaskResult(
         workflow_instance_id=valid_workflow_id,
         task_id=valid_task_id,
         reason_for_incompletion="test reason",
@@ -129,10 +129,10 @@ def test_swagger_types_structure_unchanged():
 
     for field, type_str in expected_swagger_types.items():
         assert (
-            field in TaskResultAdapter.swagger_types
+            field in TaskResult.swagger_types
         ), f"Field '{field}' missing from swagger_types"
         assert (
-            TaskResultAdapter.swagger_types[field] == type_str
+            TaskResult.swagger_types[field] == type_str
         ), f"swagger_types for '{field}' changed"
 
 
@@ -153,16 +153,16 @@ def test_attribute_map_structure_unchanged():
 
     for field, json_key in expected_attribute_map.items():
         assert (
-            field in TaskResultAdapter.attribute_map
+            field in TaskResult.attribute_map
         ), f"Field '{field}' missing from attribute_map"
         assert (
-            TaskResultAdapter.attribute_map[field] == json_key
+            TaskResult.attribute_map[field] == json_key
         ), f"attribute_map for '{field}' changed"
 
 
 def test_constructor_with_required_fields_only(valid_workflow_id, valid_task_id):
     """Test constructor works with only required fields."""
-    task_result = TaskResultAdapter(
+    task_result = TaskResult(
         workflow_instance_id=valid_workflow_id,
         task_id=valid_task_id,
     )
@@ -196,7 +196,7 @@ def test_constructor_with_all_fields(valid_workflow_id, valid_task_id, valid_sta
         "sub_workflow_id": "sub_workflow_789",
     }
 
-    task_result = TaskResultAdapter(**test_data)
+    task_result = TaskResult(**test_data)
 
     for field, expected_value in test_data.items():
         actual_value = getattr(task_result, field)
@@ -206,7 +206,7 @@ def test_constructor_with_all_fields(valid_workflow_id, valid_task_id, valid_sta
 
 def test_status_validation_unchanged(valid_workflow_id, valid_task_id, valid_status):
     """Test that status validation behavior is preserved."""
-    task_result = TaskResultAdapter(
+    task_result = TaskResult(
         workflow_instance_id=valid_workflow_id,
         task_id=valid_task_id,
     )
@@ -223,7 +223,7 @@ def test_status_validation_unchanged(valid_workflow_id, valid_task_id, valid_sta
 
 def test_property_setters_work(valid_workflow_id, valid_task_id):
     """Test that all property setters still function correctly."""
-    task_result = TaskResultAdapter(
+    task_result = TaskResult(
         workflow_instance_id=valid_workflow_id,
         task_id=valid_task_id,
     )
@@ -249,7 +249,7 @@ def test_property_setters_work(valid_workflow_id, valid_task_id):
 
 def test_utility_methods_exist(valid_workflow_id, valid_task_id):
     """Test that utility methods still exist and work."""
-    task_result = TaskResultAdapter(
+    task_result = TaskResult(
         workflow_instance_id=valid_workflow_id,
         task_id=valid_task_id,
     )
@@ -271,7 +271,7 @@ def test_utility_methods_exist(valid_workflow_id, valid_task_id):
 
 def test_add_output_data_method_exists(valid_workflow_id, valid_task_id):
     """Test that the add_output_data convenience method still works."""
-    task_result = TaskResultAdapter(
+    task_result = TaskResult(
         workflow_instance_id=valid_workflow_id,
         task_id=valid_task_id,
     )
@@ -287,17 +287,17 @@ def test_add_output_data_method_exists(valid_workflow_id, valid_task_id):
 
 def test_equality_methods_work(valid_workflow_id, valid_task_id):
     """Test that equality comparison methods still work."""
-    task_result1 = TaskResultAdapter(
+    task_result1 = TaskResult(
         workflow_instance_id=valid_workflow_id,
         task_id=valid_task_id,
     )
 
-    task_result2 = TaskResultAdapter(
+    task_result2 = TaskResult(
         workflow_instance_id=valid_workflow_id,
         task_id=valid_task_id,
     )
 
-    task_result3 = TaskResultAdapter(
+    task_result3 = TaskResult(
         workflow_instance_id="different_id",
         task_id=valid_task_id,
     )
@@ -313,7 +313,7 @@ def test_equality_methods_work(valid_workflow_id, valid_task_id):
 
 def test_discriminator_attribute_exists(valid_workflow_id, valid_task_id):
     """Test that discriminator attribute is still present."""
-    task_result = TaskResultAdapter(
+    task_result = TaskResult(
         workflow_instance_id=valid_workflow_id,
         task_id=valid_task_id,
     )

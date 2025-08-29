@@ -1,4 +1,4 @@
-from conductor.client.http.models.request_param import RequestParam, Schema
+from conductor.client.codegen.models.request_param import RequestParam, Schema
 
 
 class RequestParamAdapter(RequestParam):

@@ -1,4 +1,4 @@
-from conductor.client.http.models import PromptTemplateTestRequest
+from conductor.client.codegen.models import PromptTemplateTestRequest
 
 
 class PromptTemplateTestRequestAdapter(PromptTemplateTestRequest): ...

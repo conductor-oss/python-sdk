@@ -5,7 +5,7 @@ from typing import Optional
 from deprecated import deprecated
 
 from conductor.client.adapters.models.task_adapter import TaskAdapter
-from conductor.client.http.models.workflow_run import WorkflowRun
+from conductor.client.codegen.models.workflow_run import WorkflowRun
 
 terminal_status = ("COMPLETED", "FAILED", "TIMED_OUT", "TERMINATED")  # shared
 successful_status = ("PAUSED", "COMPLETED")

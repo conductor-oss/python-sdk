@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.integration_adapter import IntegrationAdapter
+from conductor.client.http.models.integration import IntegrationAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

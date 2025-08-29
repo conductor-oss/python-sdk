@@ -1,4 +1,4 @@
-from conductor.client.http.models.subject_ref import SubjectRef
+from conductor.client.codegen.models.subject_ref import SubjectRef
 
 
 class SubjectRefAdapter(SubjectRef): ...

@@ -1,4 +1,4 @@
-from conductor.client.http.models import EditionDefaultOrBuilder
+from conductor.client.codegen.models import EditionDefaultOrBuilder
 
 
 class EditionDefaultOrBuilderAdapter(EditionDefaultOrBuilder): ...

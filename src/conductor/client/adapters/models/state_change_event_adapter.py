@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Dict, List, Union
 from typing_extensions import Self
 
-from conductor.client.http.models.state_change_event import StateChangeEvent
+from conductor.client.codegen.models.state_change_event import StateChangeEvent
 
 
 class StateChangeEventType(Enum):

@@ -1,4 +1,4 @@
-from conductor.client.http.models import MethodOptionsOrBuilder
+from conductor.client.codegen.models import MethodOptionsOrBuilder
 
 
 class MethodOptionsOrBuilderAdapter(MethodOptionsOrBuilder): ...

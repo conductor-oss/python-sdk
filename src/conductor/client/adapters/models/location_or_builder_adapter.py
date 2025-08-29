@@ -1,4 +1,4 @@
-from conductor.client.http.models import LocationOrBuilder
+from conductor.client.codegen.models import LocationOrBuilder
 
 
 class LocationOrBuilderAdapter(LocationOrBuilder): ...

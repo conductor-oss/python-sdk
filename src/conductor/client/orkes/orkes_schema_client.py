@@ -1,7 +1,7 @@
 from typing import List
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.adapters.models.schema_def_adapter import SchemaDefAdapter as SchemaDef
+from conductor.client.http.models.schema_def import SchemaDef
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.schema_client import SchemaClient
 

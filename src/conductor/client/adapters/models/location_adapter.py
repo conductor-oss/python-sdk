@@ -1,4 +1,4 @@
-from conductor.client.http.models import Location
+from conductor.client.codegen.models import Location
 
 
 class LocationAdapter(Location): ...

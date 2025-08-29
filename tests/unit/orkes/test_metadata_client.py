@@ -4,11 +4,11 @@ import logging
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.adapters.api import MetadataResourceApi
-from conductor.client.adapters.models.tag_string_adapter import TagStringAdapter as TagString
-from conductor.client.adapters.models.task_def_adapter import TaskDefAdapter as TaskDef
-from conductor.client.adapters.models.workflow_def_adapter import WorkflowDefAdapter as WorkflowDef
-from conductor.client.http.rest import ApiException
+from conductor.client.http.api import MetadataResourceApi
+from conductor.client.http.models.tag_string import TagStringAdapter as TagString
+from conductor.client.http.models.task_def import TaskDefAdapter as TaskDef
+from conductor.client.http.models.workflow_def import WorkflowDefAdapter as WorkflowDef
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.api.tags_api import TagsApi
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.models.ratelimit_tag import RateLimitTag

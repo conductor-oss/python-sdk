@@ -1,13 +1,13 @@
 import pytest
 
-from conductor.client.adapters.models.task_adapter import TaskAdapter
-from conductor.client.adapters.models.workflow_run_adapter import WorkflowRunAdapter
+from conductor.client.http.models.task import Task
+from conductor.client.http.models.workflow_run import WorkflowRun
 
 
 @pytest.fixture
 def mock_task1(mocker):
     """Set up test fixture with mock task 1."""
-    task = mocker.Mock(spec=TaskAdapter)
+    task = mocker.Mock(spec=Task)
     task.task_def_name = "test_task_1"
     task.status = "COMPLETED"
     task.workflow_task = mocker.Mock()
@@ -18,7 +18,7 @@ def mock_task1(mocker):
 @pytest.fixture
 def mock_task2(mocker):
     """Set up test fixture with mock task 2."""
-    task = mocker.Mock(spec=TaskAdapter)
+    task = mocker.Mock(spec=Task)
     task.task_def_name = "test_task_2"
     task.status = "IN_PROGRESS"
     task.workflow_task = mocker.Mock()
@@ -48,7 +48,7 @@ def valid_data(mock_task1, mock_task2):
 def test_constructor_accepts_all_existing_parameters(valid_data):
     """Test that constructor accepts all documented parameters."""
     # Test with all parameters
-    workflow_run = WorkflowRunAdapter(**valid_data)
+    workflow_run = WorkflowRun(**valid_data)
 
     # Verify all parameters were set
     assert workflow_run.correlation_id == "test_correlation_123"
@@ -67,7 +67,7 @@ def test_constructor_accepts_all_existing_parameters(valid_data):
 
 def test_constructor_accepts_none_values():
     """Test that constructor handles None values for optional parameters."""
-    workflow_run = WorkflowRunAdapter()
+    workflow_run = WorkflowRun()
 
     # All fields should be None initially
     assert workflow_run.correlation_id is None
@@ -86,7 +86,7 @@ def test_constructor_accepts_none_values():
 
 def test_all_existing_properties_accessible(valid_data):
     """Test that all existing properties remain accessible."""
-    workflow_run = WorkflowRunAdapter(**valid_data)
+    workflow_run = WorkflowRun(**valid_data)
 
     # Test getter access
     properties_to_test = [
@@ -113,7 +113,7 @@ def test_all_existing_properties_accessible(valid_data):
 
 def test_all_existing_setters_functional(mock_task1):
     """Test that all existing property setters remain functional."""
-    workflow_run = WorkflowRunAdapter()
+    workflow_run = WorkflowRun()
 
     # Test setter access
     workflow_run.correlation_id = "new_correlation"
@@ -144,7 +144,7 @@ def test_all_existing_setters_functional(mock_task1):
 
 def test_status_validation_rules_unchanged():
     """Test that status validation rules remain the same."""
-    workflow_run = WorkflowRunAdapter()
+    workflow_run = WorkflowRun()
 
     # Valid status values should work
     valid_statuses = [
@@ -168,7 +168,7 @@ def test_status_validation_rules_unchanged():
 
 def test_field_types_unchanged(valid_data):
     """Test that field types haven't changed."""
-    workflow_run = WorkflowRunAdapter(**valid_data)
+    workflow_run = WorkflowRun(**valid_data)
 
     # String fields
     assert isinstance(workflow_run.correlation_id, str)
@@ -193,7 +193,7 @@ def test_field_types_unchanged(valid_data):
 
 def test_status_check_methods_unchanged():
     """Test that status checking methods remain functional and consistent."""
-    workflow_run = WorkflowRunAdapter()
+    workflow_run = WorkflowRun()
 
     # Test is_completed method for terminal statuses
     terminal_statuses = ["COMPLETED", "FAILED", "TIMED_OUT", "TERMINATED"]
@@ -230,7 +230,7 @@ def test_status_check_methods_unchanged():
 
 def test_get_task_method_signature_unchanged(mock_task1, mock_task2):
     """Test that get_task method signature and behavior remain unchanged."""
-    workflow_run = WorkflowRunAdapter(tasks=[mock_task1, mock_task2])
+    workflow_run = WorkflowRun(tasks=[mock_task1, mock_task2])
 
     # Test get_task by name
     task = workflow_run.get_task(name="test_task_1")
@@ -256,30 +256,30 @@ def test_get_task_method_signature_unchanged(mock_task1, mock_task2):
 def test_current_task_property_unchanged(mocker):
     """Test that current_task property behavior remains unchanged."""
     # Create workflow with tasks in different states
-    scheduled_task = mocker.Mock(spec=TaskAdapter)
+    scheduled_task = mocker.Mock(spec=Task)
     scheduled_task.status = "SCHEDULED"
 
-    in_progress_task = mocker.Mock(spec=TaskAdapter)
+    in_progress_task = mocker.Mock(spec=Task)
     in_progress_task.status = "IN_PROGRESS"
 
-    completed_task = mocker.Mock(spec=TaskAdapter)
+    completed_task = mocker.Mock(spec=Task)
     completed_task.status = "COMPLETED"
 
-    workflow_run = WorkflowRunAdapter(tasks=[completed_task, scheduled_task, in_progress_task])
+    workflow_run = WorkflowRun(tasks=[completed_task, scheduled_task, in_progress_task])
 
     # Should return the in_progress_task (last one that matches criteria)
     current = workflow_run.current_task
     assert current == in_progress_task
 
     # Test with no current tasks
-    workflow_run_no_current = WorkflowRunAdapter(tasks=[completed_task])
+    workflow_run_no_current = WorkflowRun(tasks=[completed_task])
     assert workflow_run_no_current.current_task is None
 
 
 def test_utility_methods_unchanged(valid_data):
     """Test that utility methods (to_dict, to_str, __repr__, __eq__, __ne__) remain functional."""
-    workflow_run1 = WorkflowRunAdapter(**valid_data)
-    workflow_run2 = WorkflowRunAdapter(**valid_data)
+    workflow_run1 = WorkflowRun(**valid_data)
+    workflow_run2 = WorkflowRun(**valid_data)
 
     # Test to_dict
     result_dict = workflow_run1.to_dict()
@@ -319,7 +319,7 @@ def test_swagger_metadata_unchanged():
         "workflow_id",
     }
 
-    assert set(WorkflowRunAdapter.swagger_types.keys()) == expected_swagger_keys
+    assert set(WorkflowRun.swagger_types.keys()) == expected_swagger_keys
 
     # Test that attribute_map exists and contains expected keys
     expected_attribute_keys = {
@@ -337,22 +337,22 @@ def test_swagger_metadata_unchanged():
         "workflow_id",
     }
 
-    assert set(WorkflowRunAdapter.attribute_map.keys()) == expected_attribute_keys
+    assert set(WorkflowRun.attribute_map.keys()) == expected_attribute_keys
 
     # Test specific type mappings
-    assert WorkflowRunAdapter.swagger_types["correlation_id"] == "str"
-    assert WorkflowRunAdapter.swagger_types["create_time"] == "int"
-    assert WorkflowRunAdapter.swagger_types["input"] == "dict(str, object)"
-    assert WorkflowRunAdapter.swagger_types["tasks"] == "list[Task]"
+    assert WorkflowRun.swagger_types["correlation_id"] == "str"
+    assert WorkflowRun.swagger_types["create_time"] == "int"
+    assert WorkflowRun.swagger_types["input"] == "dict(str, object)"
+    assert WorkflowRun.swagger_types["tasks"] == "list[Task]"
 
 
 def test_reason_for_incompletion_parameter_handling():
     """Test that reason_for_incompletion parameter is handled correctly."""
     # Test with reason_for_incompletion parameter
-    workflow_run = WorkflowRunAdapter(
+    workflow_run = WorkflowRun(
         status="FAILED",
-        reason_for_incompletion="TaskAdapter timeout",
+        reason_for_incompletion="Task timeout",
     )
 
-    assert workflow_run.reason_for_incompletion == "TaskAdapter timeout"
+    assert workflow_run.reason_for_incompletion == "Task timeout"
     assert workflow_run.status == "FAILED"

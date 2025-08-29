@@ -1,4 +1,4 @@
-from conductor.client.http.models.token import Token
+from conductor.client.codegen.models.token import Token
 
 
 class TokenAdapter(Token):

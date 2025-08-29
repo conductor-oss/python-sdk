@@ -2,12 +2,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional, List
 
-from conductor.client.adapters.models.poll_data_adapter import PollDataAdapter as PollData
-from conductor.client.adapters.models.workflow_adapter import WorkflowAdapter as Workflow
-from conductor.client.adapters.models.task_adapter import TaskAdapter as Task
-from conductor.client.adapters.models.task_result_adapter import TaskResultAdapter as TaskResult
+from conductor.client.http.models.poll_data import PollData
+from conductor.client.http.models.workflow import Workflow
+from conductor.client.http.models.task import Task
+from conductor.client.http.models.task_result import TaskResult
 from conductor.shared.http.enums import TaskResultStatus
-from conductor.client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter as TaskExecLog
+from conductor.client.http.models.task_exec_log import TaskExecLog
 
 
 class TaskClient(ABC):

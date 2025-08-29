@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from conductor.client.adapters.models.rate_limit_adapter import RateLimitAdapter
+from conductor.client.http.models.rate_limit import RateLimitAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

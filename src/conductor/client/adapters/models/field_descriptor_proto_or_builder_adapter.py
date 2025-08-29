@@ -1,4 +1,4 @@
-from conductor.client.http.models import FieldDescriptorProtoOrBuilder
+from conductor.client.codegen.models import FieldDescriptorProtoOrBuilder
 
 
 class FieldDescriptorProtoOrBuilderAdapter(FieldDescriptorProtoOrBuilder): ...

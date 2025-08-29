@@ -1,5 +1,5 @@
 import pytest
-from conductor.client.adapters.models import HealthCheckStatus
+from conductor.client.http.models.health_check_status import HealthCheckStatus
 
 
 @pytest.fixture

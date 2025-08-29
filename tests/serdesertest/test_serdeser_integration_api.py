@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.integration_api_adapter import IntegrationApiAdapter
-from conductor.client.adapters.models.tag_object_adapter import TagObjectAdapter
+from conductor.client.http.models.integration_api import IntegrationApiAdapter
+from conductor.client.http.models.tag_object import TagObjectAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

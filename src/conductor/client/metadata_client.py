@@ -1,8 +1,8 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from conductor.client.adapters.models.workflow_def_adapter import WorkflowDefAdapter as WorkflowDef
-from conductor.client.adapters.models.task_def_adapter import TaskDefAdapter as TaskDef
+from conductor.client.http.models.workflow_def import WorkflowDef
+from conductor.client.http.models.task_def import TaskDef
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 
 

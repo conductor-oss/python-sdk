@@ -16,7 +16,7 @@ A sample unit test code snippet is provided below.
 import json
 from conductor.shared.configuration.settings.authentication_settings import AuthenticationSettings
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.adapters.models import WorkflowTestRequest
+from conductor.client.http.models import WorkflowTestRequest
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 
 TEST_WF_JSON_PATH = 'tests/integration/resources/test_data/calculate_loan_workflow.json'

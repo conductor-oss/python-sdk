@@ -1,6 +1,6 @@
 from deprecated import deprecated
 
-from conductor.client.http.models.workflow_summary import WorkflowSummary
+from conductor.client.codegen.models.workflow_summary import WorkflowSummary
 
 
 class WorkflowSummaryAdapter(WorkflowSummary):

@@ -1,35 +1,35 @@
 import pytest
 
-from conductor.client.adapters.models.subject_ref_adapter import SubjectRefAdapter
+from conductor.client.http.models.subject_ref import SubjectRef
 from conductor.shared.http.enums.subject_type import SubjectType
 
 
 def test_constructor_signature_compatibility():
     """Test that constructor signature remains backward compatible."""
     # Should accept no arguments (all optional)
-    obj1 = SubjectRefAdapter()
+    obj1 = SubjectRef()
     assert obj1.type is None
     assert obj1.id is None
 
     # Should accept type only
-    obj2 = SubjectRefAdapter(type="USER")
+    obj2 = SubjectRef(type="USER")
     assert obj2.type == "USER"
     assert obj2.id is None
 
     # Should accept id only
-    obj3 = SubjectRefAdapter(id="test-id")
+    obj3 = SubjectRef(id="test-id")
     assert obj3.type is None
     assert obj3.id == "test-id"
 
     # Should accept both parameters
-    obj4 = SubjectRefAdapter(type="ROLE", id="admin-role")
+    obj4 = SubjectRef(type="ROLE", id="admin-role")
     assert obj4.type == "ROLE"
     assert obj4.id == "admin-role"
 
 
 def test_required_fields_exist():
     """Test that all existing fields still exist."""
-    obj = SubjectRefAdapter()
+    obj = SubjectRef()
 
     # Core fields must exist
     assert hasattr(obj, "type")
@@ -47,7 +47,7 @@ def test_required_fields_exist():
 
 def test_field_types_unchanged():
     """Test that field types haven't changed."""
-    obj = SubjectRefAdapter(type="USER", id="test-id")
+    obj = SubjectRef(type="USER", id="test-id")
 
     # Type field should be string
     assert isinstance(obj.type, str)
@@ -66,7 +66,7 @@ def test_field_types_unchanged():
 
 def test_type_validation_rules_preserved():
     """Test that existing type validation rules still apply."""
-    obj = SubjectRefAdapter()
+    obj = SubjectRef()
 
     # Valid values should work (existing enum values)
     valid_types = ["USER", "ROLE", "GROUP"]
@@ -86,23 +86,23 @@ def test_type_validation_rules_preserved():
 def test_constructor_validation_behavior():
     """Test that constructor validation behavior is preserved."""
     # Constructor with None type should not validate (current behavior)
-    obj1 = SubjectRefAdapter(type=None, id="test")
+    obj1 = SubjectRef(type=None, id="test")
     assert obj1.type is None
     assert obj1.id == "test"
 
     # Constructor with valid type should work
-    obj2 = SubjectRefAdapter(type="USER", id="test")
+    obj2 = SubjectRef(type="USER", id="test")
     assert obj2.type == "USER"
     assert obj2.id == "test"
 
     # Constructor with invalid type should raise error
     with pytest.raises(ValueError, match="Invalid"):
-        SubjectRefAdapter(type="INVALID", id="test")
+        SubjectRef(type="INVALID", id="test")
 
 
 def test_id_field_no_validation():
     """Test that ID field has no validation (current behavior)."""
-    obj = SubjectRefAdapter()
+    obj = SubjectRef()
 
     # Any value should be acceptable for ID
     test_values = ["test", "", None, 123, [], {}]
@@ -113,7 +113,7 @@ def test_id_field_no_validation():
 
 def test_property_accessors_work():
     """Test that property getters and setters still work."""
-    obj = SubjectRefAdapter()
+    obj = SubjectRef()
 
     # Type property
     obj.type = "USER"
@@ -128,7 +128,7 @@ def test_property_accessors_work():
 
 def test_core_methods_exist():
     """Test that essential methods still exist and work."""
-    obj = SubjectRefAdapter(type="USER", id="test-id")
+    obj = SubjectRef(type="USER", id="test-id")
 
     # to_dict method
     assert hasattr(obj, "to_dict")
@@ -147,11 +147,11 @@ def test_core_methods_exist():
     assert isinstance(repr_str, str)
 
     # __eq__ method
-    obj2 = SubjectRefAdapter(type="USER", id="test-id")
+    obj2 = SubjectRef(type="USER", id="test-id")
     assert obj == obj2
 
     # __ne__ method
-    obj3 = SubjectRefAdapter(type="ROLE", id="test-id")
+    obj3 = SubjectRef(type="ROLE", id="test-id")
     assert obj != obj3
 
 
@@ -166,14 +166,14 @@ def test_subject_type_enum_compatibility():
     assert SubjectType.TAG == "TAG"
 
     # Enum should be usable with the model
-    obj = SubjectRefAdapter()
+    obj = SubjectRef()
     obj.type = SubjectType.USER.value
     assert obj.type == "USER"
 
 
 def test_discriminator_field_preserved():
     """Test that discriminator field behavior is preserved."""
-    obj = SubjectRefAdapter()
+    obj = SubjectRef()
     assert obj.discriminator is None  # Should be None by default
 
     # Should be assignable (if needed for future compatibility)
@@ -183,7 +183,7 @@ def test_discriminator_field_preserved():
 
 def test_serialization_compatibility():
     """Test that serialization format hasn't changed."""
-    obj = SubjectRefAdapter(type="USER", id="user-123")
+    obj = SubjectRef(type="USER", id="user-123")
 
     # to_dict should produce expected structure
     expected_dict = {"type": "USER", "id": "user-123"}
@@ -192,7 +192,7 @@ def test_serialization_compatibility():
 
 def test_existing_validation_error_format():
     """Test that validation error messages haven't changed format."""
-    obj = SubjectRefAdapter()
+    obj = SubjectRef()
 
     with pytest.raises(ValueError, match="Invalid") as excinfo:
         obj.type = "INVALID"
@@ -206,15 +206,15 @@ def test_existing_validation_error_format():
 def test_edge_cases_compatibility():
     """Test edge cases that should maintain backward compatibility."""
     # Empty constructor
-    obj1 = SubjectRefAdapter()
+    obj1 = SubjectRef()
     assert obj1.type is None
     assert obj1.id is None
 
     # Setting type to None after initialization
-    obj2 = SubjectRefAdapter(type="USER")
+    obj2 = SubjectRef(type="USER")
     obj2._type = None  # Direct assignment to bypass setter
     assert obj2.type is None
 
     # Case sensitivity (should fail)
     with pytest.raises(ValueError, match="Invalid"):
-        SubjectRefAdapter(type="user")  # lowercase should fail
+        SubjectRef(type="user")  # lowercase should fail

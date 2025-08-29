@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import ClassVar, Dict
-from conductor.client.http.models.task_summary import TaskSummary
+from conductor.client.codegen.models.task_summary import TaskSummary
 
 
 class TaskSummaryAdapter(TaskSummary):

@@ -21,7 +21,7 @@ scheduler_client = OrkesSchedulerClient(configuration)
 ### Saving Schedule
 
 ```python
-from conductor.client.adapters.models import SaveScheduleRequest, StartWorkflowRequest
+from conductor.client.http.models import SaveScheduleRequest, StartWorkflowRequest
 
 startWorkflowRequest = StartWorkflowRequest(
     name="WORKFLOW_NAME", workflow_def=workflowDef

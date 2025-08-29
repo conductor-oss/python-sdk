@@ -1,4 +1,4 @@
-from conductor.client.http.models import ConductorUser
+from conductor.client.codegen.models import ConductorUser
 
 
 class ConductorUserAdapter(ConductorUser): ...

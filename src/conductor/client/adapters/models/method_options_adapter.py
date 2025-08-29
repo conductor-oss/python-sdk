@@ -1,4 +1,4 @@
-from conductor.client.http.models import MethodOptions
+from conductor.client.codegen.models import MethodOptions
 
 
 class MethodOptionsAdapter(MethodOptions): ...

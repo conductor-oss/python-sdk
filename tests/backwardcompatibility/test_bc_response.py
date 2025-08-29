@@ -2,20 +2,20 @@ import inspect
 
 import pytest
 
-from conductor.client.adapters.models.response_adapter import ResponseAdapter
-from conductor.client.adapters.models import Response as ImportedResponse
+from conductor.client.http.models.response import Response
+from conductor.client.http.models import Response as ImportedResponse
 
 
 @pytest.fixture
 def response():
-    """Set up test fixture with ResponseAdapter instance."""
-    return ResponseAdapter()
+    """Set up test fixture with Response instance."""
+    return Response()
 
 
 def test_constructor_signature_compatibility():
     """Test that constructor signature remains backward compatible."""
     # Verify constructor takes no required parameters
-    sig = inspect.signature(ResponseAdapter.__init__)
+    sig = inspect.signature(Response.__init__)
     params = list(sig.parameters.keys())
 
     # Should only have 'self' parameter
@@ -37,18 +37,18 @@ def test_required_class_attributes_exist():
     """Test that required class-level attributes exist."""
     # Verify swagger_types exists and is a dict
     assert hasattr(
-        ResponseAdapter, "swagger_types"
+        Response, "swagger_types"
     ), "Missing required class attribute: swagger_types"
     assert isinstance(
-        ResponseAdapter.swagger_types, dict
+        Response.swagger_types, dict
     ), "swagger_types should be a dictionary"
 
     # Verify attribute_map exists and is a dict
     assert hasattr(
-        ResponseAdapter, "attribute_map"
+        Response, "attribute_map"
     ), "Missing required class attribute: attribute_map"
     assert isinstance(
-        ResponseAdapter.attribute_map, dict
+        Response.attribute_map, dict
     ), "attribute_map should be a dictionary"
 
 
@@ -81,7 +81,7 @@ def test_to_dict_method_behavior(response):
     # Should return a dictionary
     assert isinstance(result, dict), "to_dict should return a dictionary"
 
-    # For baseline ResponseAdapter with empty swagger_types, should be empty or minimal
+    # For baseline Response with empty swagger_types, should be empty or minimal
     # This allows for new fields to be added without breaking compatibility
     assert isinstance(result, dict), "to_dict return type should remain dict"
 
@@ -104,23 +104,23 @@ def test_repr_method_behavior(response):
 
 def test_equality_methods_behavior(response):
     """Test that equality methods maintain backward compatible behavior."""
-    other_response = ResponseAdapter()
+    other_response = Response()
 
     # Test __eq__
-    assert response == other_response, "Two default ResponseAdapter instances should be equal"
+    assert response == other_response, "Two default Response instances should be equal"
 
     # Test __ne__
     assert not (
         response != other_response
-    ), "Two default ResponseAdapter instances should not be unequal"
+    ), "Two default Response instances should not be unequal"
 
     # Test with different type
     assert not (
         response == "not_a_response"
-    ), "ResponseAdapter should not equal non-ResponseAdapter object"
+    ), "Response should not equal non-Response object"
     assert (
         response != "not_a_response"
-    ), "ResponseAdapter should be unequal to non-ResponseAdapter object"
+    ), "Response should be unequal to non-Response object"
 
 
 def test_attribute_assignment_compatibility(response):
@@ -141,18 +141,18 @@ def test_attribute_assignment_compatibility(response):
 def test_inheritance_compatibility():
     """Test that class inheritance structure is maintained."""
     # Should inherit from object
-    assert issubclass(ResponseAdapter, object), "ResponseAdapter should inherit from object"
+    assert issubclass(Response, object), "Response should inherit from object"
 
     # Check MRO doesn't break
-    mro = ResponseAdapter.__mro__
+    mro = Response.__mro__
     assert object in mro, "object should be in method resolution order"
 
 
 def test_class_docstring_exists():
     """Test that class maintains its docstring."""
-    assert ResponseAdapter.__doc__ is not None, "Class should have a docstring"
+    assert Response.__doc__ is not None, "Class should have a docstring"
     assert (
-        "swagger" in ResponseAdapter.__doc__.lower()
+        "swagger" in Response.__doc__.lower()
     ), "Docstring should reference swagger (indicates auto-generation)"
 
 
@@ -161,23 +161,23 @@ def test_module_imports_compatibility():
     # Test that the class can be imported from the expected location
 
     assert (
-        ResponseAdapter is ImportedResponse
-    ), "ResponseAdapter should be importable from conductor.client.http.models"
+        Response is ImportedResponse
+    ), "Response should be importable from conductor.client.http.models"
 
 
 def test_new_fields_are_ignored_gracefully():
     """Test that new fields added to swagger_types work when attributes exist."""
     # This test simulates forward compatibility - new fields should work when properly initialized
-    original_swagger_types = ResponseAdapter.swagger_types.copy()
-    original_attribute_map = ResponseAdapter.attribute_map.copy()
+    original_swagger_types = Response.swagger_types.copy()
+    original_attribute_map = Response.attribute_map.copy()
 
     try:
         # Simulate adding a new field (this would happen in newer versions)
-        ResponseAdapter.swagger_types["new_field"] = "str"
-        ResponseAdapter.attribute_map["new_field"] = "newField"
+        Response.swagger_types["new_field"] = "str"
+        Response.attribute_map["new_field"] = "newField"
 
         # Create response and set the new field
-        response = ResponseAdapter()
+        response = Response()
         response.new_field = "test_value"  # New versions would initialize this
 
         # Existing functionality should still work
@@ -190,10 +190,10 @@ def test_new_fields_are_ignored_gracefully():
 
     finally:
         # Restore original state
-        ResponseAdapter.swagger_types.clear()
-        ResponseAdapter.swagger_types.update(original_swagger_types)
-        ResponseAdapter.attribute_map.clear()
-        ResponseAdapter.attribute_map.update(original_attribute_map)
+        Response.swagger_types.clear()
+        Response.swagger_types.update(original_swagger_types)
+        Response.attribute_map.clear()
+        Response.attribute_map.update(original_attribute_map)
 
 
 def test_to_dict_handles_missing_attributes_gracefully(response):
@@ -204,15 +204,15 @@ def test_to_dict_handles_missing_attributes_gracefully(response):
 
     # Test that if swagger_types were to have fields, missing attributes would cause AttributeError
     # This documents the current behavior - not necessarily ideal, but what we need to maintain
-    original_swagger_types = ResponseAdapter.swagger_types.copy()
+    original_swagger_types = Response.swagger_types.copy()
 
     try:
-        ResponseAdapter.swagger_types["missing_field"] = "str"
+        Response.swagger_types["missing_field"] = "str"
 
         # This should raise AttributeError - this is the current behavior we're testing
         with pytest.raises(AttributeError):
             response.to_dict()
 
     finally:
-        ResponseAdapter.swagger_types.clear()
-        ResponseAdapter.swagger_types.update(original_swagger_types)
+        Response.swagger_types.clear()
+        Response.swagger_types.update(original_swagger_types)

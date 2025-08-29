@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
+from conductor.client.http.models.task_exec_log import TaskExecLogAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

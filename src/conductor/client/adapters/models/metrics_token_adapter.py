@@ -1,4 +1,4 @@
-from conductor.client.http.models import MetricsToken
+from conductor.client.codegen.models import MetricsToken
 
 
 class MetricsTokenAdapter(MetricsToken): ...

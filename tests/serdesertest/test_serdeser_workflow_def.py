@@ -2,10 +2,10 @@ import json
 
 import pytest
 
-from conductor.client.adapters.models.rate_limit_adapter import RateLimitAdapter
-from conductor.client.adapters.models.workflow_def_adapter import WorkflowDefAdapter
-from conductor.client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
-from conductor.client.adapters.models.schema_def_adapter import SchemaDefAdapter
+from conductor.client.http.models.rate_limit import RateLimitAdapter
+from conductor.client.http.models.workflow_def import WorkflowDefAdapter
+from conductor.client.http.models.workflow_task import WorkflowTaskAdapter
+from conductor.client.http.models.schema_def import SchemaDefAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

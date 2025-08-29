@@ -37,7 +37,7 @@ In other words:
 Quick example below:
 
 ```python
-from conductor.client.adapters.models import Task, TaskResult
+from conductor.client.http.models import Task, TaskResult
 from conductor.shared.http.enums import TaskResultStatus
 
 
@@ -59,7 +59,7 @@ In the case you like more details, you can take a look at all possible combinati
 The class must implement `WorkerInterface` class, which requires an `execute` method. The remaining ones are inherited, but can be easily overridden. Example with a custom polling interval:
 
 ```python
-from conductor.client.adapters.models import Task, TaskResult
+from conductor.client.http.models import Task, TaskResult
 from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.worker.worker_interface import WorkerInterface
 
@@ -347,7 +347,7 @@ See [simple_cpp_lib.cpp](src/example/worker/cpp/simple_cpp_lib.cpp)
 and [simple_cpp_worker.py](src/example/worker/cpp/simple_cpp_worker.py) for complete working example.
 
 ```python
-from conductor.client.adapters.models import Task, TaskResult
+from conductor.client.http.models import Task, TaskResult
 from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.worker.worker_interface import WorkerInterface
 from ctypes import cdll

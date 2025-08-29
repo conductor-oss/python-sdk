@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.adapters.models.start_workflow_request_adapter import StartWorkflowRequestAdapter as StartWorkflowRequest
+from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
 from conductor.shared.http.enums import IdempotencyStrategy
 
 

@@ -1,4 +1,4 @@
-from conductor.client.http.models.start_workflow import StartWorkflow
+from conductor.client.codegen.models.start_workflow import StartWorkflow
 
 
 class StartWorkflowAdapter(StartWorkflow):

@@ -1,4 +1,4 @@
-from conductor.client.http.models import AuthorizationRequest
+from conductor.client.codegen.models import AuthorizationRequest
 
 
 class AuthorizationRequestAdapter(AuthorizationRequest):

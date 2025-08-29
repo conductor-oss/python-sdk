@@ -1,4 +1,4 @@
-from conductor.client.http.models.rerun_workflow_request import \
+from conductor.client.codegen.models.rerun_workflow_request import \
     RerunWorkflowRequest
 
 

@@ -1,4 +1,4 @@
-from conductor.client.http.models.save_schedule_request import \
+from conductor.client.codegen.models.save_schedule_request import \
     SaveScheduleRequest
 
 

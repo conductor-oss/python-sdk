@@ -3,22 +3,22 @@ import uuid
 
 import pytest
 
-from conductor.client.adapters.models.request_param_adapter import (
+from conductor.client.http.models.request_param import (
     RequestParamAdapter as RequestParam,
 )
-from conductor.client.adapters.models.service_method_adapter import (
+from conductor.client.http.models.service_method import (
     ServiceMethodAdapter as ServiceMethod,
 )
-from conductor.client.adapters.models.service_registry_adapter import (
+from conductor.client.http.models.service_registry import (
     Config,
     OrkesCircuitBreakerConfig,
 )
-from conductor.client.adapters.models.service_registry_adapter import (
+from conductor.client.http.models.service_registry import (
     ServiceRegistryAdapter as ServiceRegistry,
 )
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.service_registry import ServiceType
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.orkes_service_registry_client import (
     OrkesServiceRegistryClient,
 )

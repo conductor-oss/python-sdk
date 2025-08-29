@@ -6,14 +6,14 @@ from conductor.client.orkes.models.access_type import AccessType
 from conductor.client.orkes.models.granted_permission import GrantedPermission
 from conductor.client.orkes.models.access_key import AccessKey
 from conductor.client.orkes.models.created_access_key import CreatedAccessKey
-from conductor.client.adapters.models.group_adapter import GroupAdapter as Group
-from conductor.client.adapters.models.target_ref_adapter import TargetRefAdapter as TargetRef
-from conductor.client.adapters.models.subject_ref_adapter import SubjectRefAdapter as SubjectRef
-from conductor.client.adapters.models.conductor_user_adapter import ConductorUserAdapter as ConductorUser
-from conductor.client.adapters.models.conductor_application_adapter import ConductorApplicationAdapter as ConductorApplication
-from conductor.client.adapters.models.upsert_user_request_adapter import UpsertUserRequestAdapter as UpsertUserRequest
-from conductor.client.adapters.models.upsert_group_request_adapter import UpsertGroupRequestAdapter as UpsertGroupRequest
-from conductor.client.adapters.models.create_or_update_application_request_adapter import CreateOrUpdateApplicationRequestAdapter as CreateOrUpdateApplicationRequest
+from conductor.client.http.models.group import Group
+from conductor.client.http.models.target_ref import TargetRef
+from conductor.client.http.models.subject_ref import SubjectRef
+from conductor.client.http.models.conductor_user import ConductorUser
+from conductor.client.http.models.conductor_application import ConductorApplication
+from conductor.client.http.models.upsert_user_request import UpsertUserRequest
+from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
+from conductor.client.http.models.create_or_update_application_request import CreateOrUpdateApplicationRequest
 
 
 class AuthorizationClient(ABC):
