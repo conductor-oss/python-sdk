@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models import RerunWorkflowRequest
+from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -13,7 +13,7 @@ def request_json():
 
 @pytest.fixture
 def request_obj(request_json):
-    obj = RerunWorkflowRequest()
+    obj = RerunWorkflowRequestAdapter()
     obj.re_run_from_workflow_id = request_json["reRunFromWorkflowId"]
     obj.workflow_input = request_json["workflowInput"]
     obj.re_run_from_task_id = request_json["reRunFromTaskId"]

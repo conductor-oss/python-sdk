@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import SearchResultTaskSummary
+from conductor.client.http.models.search_result_task_summary import SearchResultTaskSummary
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def sample_results(mock_task_summary_1, mock_task_summary_2):
 def test_class_exists():
     """Test that the SearchResultTaskSummary class exists."""
     assert hasattr(SearchResultTaskSummary, "__init__")
-    assert SearchResultTaskSummary.__name__ == "SearchResultTaskSummary"
+    assert SearchResultTaskSummary.__name__ == "SearchResultTaskSummaryAdapter"
 
 
 def test_required_class_attributes_exist():

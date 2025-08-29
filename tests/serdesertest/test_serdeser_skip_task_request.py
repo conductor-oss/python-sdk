@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.skip_task_request import SkipTaskRequest
+from conductor.client.http.models.skip_task_request import SkipTaskRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -14,7 +14,7 @@ def server_json():
 
 def test_skip_task_request_serde(server_json):
     # 1. Deserialize server JSON to model using constructor
-    model = SkipTaskRequest(
+    model = SkipTaskRequestAdapter(
         task_input=server_json.get("taskInput"),
         task_output=server_json.get("taskOutput"),
     )

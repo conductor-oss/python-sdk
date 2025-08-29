@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import SearchResultWorkflowSummary
+from conductor.client.http.models.search_result_workflow_summary import SearchResultWorkflowSummary
 
 
 @pytest.fixture

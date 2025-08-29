@@ -1,4 +1,4 @@
-from conductor.client.http.models import RateLimit
+from conductor.client.http.models.rate_limit import RateLimit
 
 
 def test_constructor_signature_compatibility():

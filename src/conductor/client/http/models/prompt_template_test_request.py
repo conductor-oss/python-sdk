@@ -1,0 +1,5 @@
+from conductor.client.adapters.models.prompt_template_test_request_adapter import PromptTemplateTestRequestAdapter
+
+PromptTemplateTestRequest = PromptTemplateTestRequestAdapter
+
+__all__ = ["PromptTemplateTestRequest"]

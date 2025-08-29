@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.generate_token_request import GenerateTokenRequest
+from conductor.client.http.models.generate_token_request import GenerateTokenRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -12,7 +12,7 @@ def server_json():
 
 
 def test_generate_token_request_ser_des(server_json):
-    model_obj = GenerateTokenRequest(
+    model_obj = GenerateTokenRequestAdapter(
         key_id=server_json["keyId"], key_secret=server_json["keySecret"]
     )
     assert model_obj.key_id == server_json["keyId"]
@@ -24,8 +24,8 @@ def test_generate_token_request_ser_des(server_json):
     }
     assert serialized_json["keyId"] == server_json["keyId"]
     assert serialized_json["keySecret"] == server_json["keySecret"]
-    duplicate_obj = GenerateTokenRequest(
+    duplicate_obj = GenerateTokenRequestAdapter(
         key_id=server_json["keyId"], key_secret=server_json["keySecret"]
     )
     assert model_obj == duplicate_obj
-    assert model_obj != GenerateTokenRequest(key_id="different", key_secret="values")
+    assert model_obj != GenerateTokenRequestAdapter(key_id="different", key_secret="values")

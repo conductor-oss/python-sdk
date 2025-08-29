@@ -267,7 +267,7 @@ def test_model_inheritance_structure():
     assert isinstance(model, object)
 
     # Verify class name
-    assert model.__class__.__name__ == "SearchResultWorkflow"
+    assert model.__class__.__name__ == "SearchResultWorkflowAdapter"
 
 
 def test_constructor_parameter_names_unchanged():

@@ -1,6 +1,7 @@
 import pytest
 
-from conductor.client.http.models import SaveScheduleRequest, StartWorkflowRequest
+from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
+from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
 
 
 @pytest.fixture
@@ -92,6 +93,8 @@ def test_swagger_types_mapping_exists():
         "updated_by": "str",
         "schedule_start_time": "int",
         "schedule_end_time": "int",
+        'zone_id': 'str',
+        'description': 'str',
     }
 
     for field, expected_type in expected_swagger_types.items():

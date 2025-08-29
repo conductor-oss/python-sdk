@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import RerunWorkflowRequest
+from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
 
 
 @pytest.fixture

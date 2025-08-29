@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.poll_data import PollData
+from conductor.client.http.models.poll_data import PollDataAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -14,7 +14,7 @@ def server_json():
 
 def test_poll_data_serdes(server_json):
     # 1. Test deserialization from JSON to PollData object
-    poll_data = PollData(
+    poll_data = PollDataAdapter(
         queue_name=server_json.get("queueName"),
         domain=server_json.get("domain"),
         worker_id=server_json.get("workerId"),

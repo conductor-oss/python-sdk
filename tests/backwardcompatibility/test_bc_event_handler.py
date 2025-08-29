@@ -1,4 +1,4 @@
-from conductor.client.http.models import EventHandler
+from conductor.client.http.models.event_handler import EventHandler
 
 
 def test_required_fields_exist_and_accessible():
@@ -152,6 +152,9 @@ def test_to_dict_method_exists_and_works():
         "actions",
         "active",
         "evaluator_type",
+        "org_id",
+        "tags",
+        "created_by",
         "description",
     }
     assert set(result.keys()) == expected_keys

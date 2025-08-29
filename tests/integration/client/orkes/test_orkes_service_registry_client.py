@@ -11,7 +11,7 @@ from conductor.client.http.models.service_registry import ServiceRegistry, Servi
 from conductor.client.http.models.service_method import ServiceMethod
 from conductor.client.http.models.proto_registry_entry import ProtoRegistryEntry
 from conductor.client.orkes.orkes_service_registry_client import OrkesServiceRegistryClient
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 
 SUFFIX = str(uuid())
 HTTP_SERVICE_NAME = 'IntegrationTestServiceRegistryHttp_' + SUFFIX

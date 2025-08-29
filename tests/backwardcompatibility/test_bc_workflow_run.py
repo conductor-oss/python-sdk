@@ -1,6 +1,7 @@
 import pytest
 
-from conductor.client.http.models import Task, WorkflowRun
+from conductor.client.http.models.task import Task
+from conductor.client.http.models.workflow_run import WorkflowRun
 
 
 @pytest.fixture

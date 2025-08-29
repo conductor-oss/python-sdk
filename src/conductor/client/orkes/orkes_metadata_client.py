@@ -19,7 +19,7 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
         self.metadataResourceApi.create(workflow_def, overwrite=overwrite)
 
     def update_workflow_def(self, workflow_def: WorkflowDef, overwrite: Optional[bool] = True):
-        self.metadataResourceApi.update1([workflow_def], overwrite=overwrite)
+        self.metadataResourceApi.update([workflow_def], overwrite=overwrite)
 
     def unregister_workflow_def(self, name: str, version: int):
         self.metadataResourceApi.unregister_workflow_def(name, version)
@@ -27,14 +27,14 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
     def get_workflow_def(self, name: str, version: Optional[int] = None) -> WorkflowDef:
         workflow = None
         if version:
-            workflow = self.metadataResourceApi.get(name, version=version)
+            workflow = self.metadataResourceApi.get1(name, version=version)
         else:
-            workflow = self.metadataResourceApi.get(name)
+            workflow = self.metadataResourceApi.get1(name)
 
         return workflow
 
     def get_all_workflow_defs(self) -> List[WorkflowDef]:
-        return self.metadataResourceApi.get_all_workflows()
+        return self.metadataResourceApi.get_workflow_defs()
 
     def register_task_def(self, task_def: TaskDef):
         self.metadataResourceApi.register_task_def([task_def])

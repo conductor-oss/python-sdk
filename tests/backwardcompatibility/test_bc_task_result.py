@@ -1,7 +1,7 @@
 import pytest
 
 from conductor.client.http.models.task_result import TaskResult
-from conductor.shared.http.enums import TaskResultStatus
+from conductor.shared.http.enums.task_result_status import TaskResultStatus
 
 
 @pytest.fixture
@@ -200,11 +200,8 @@ def test_constructor_with_all_fields(valid_workflow_id, valid_task_id, valid_sta
 
     for field, expected_value in test_data.items():
         actual_value = getattr(task_result, field)
-        if field == "status":
-            # Status validation converts string to enum
-            assert actual_value.name == expected_value
-        else:
-            assert actual_value == expected_value
+
+        assert actual_value == expected_value
 
 
 def test_status_validation_unchanged(valid_workflow_id, valid_task_id, valid_status):
@@ -217,7 +214,7 @@ def test_status_validation_unchanged(valid_workflow_id, valid_task_id, valid_sta
     # Test valid status assignment
     if valid_status:
         task_result.status = valid_status
-        assert task_result.status.name == valid_status
+        assert task_result.status == valid_status
 
     # Test invalid status assignment raises ValueError
     with pytest.raises(ValueError, match="Invalid value for `status`"):

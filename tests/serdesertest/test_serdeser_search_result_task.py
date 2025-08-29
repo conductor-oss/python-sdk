@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from conductor.client.http.models.search_result_task import SearchResultTask
-from conductor.client.http.models.task import Task
+from conductor.client.http.models.search_result_task import SearchResultTaskAdapter
+from conductor.client.http.models.task import TaskAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -13,8 +13,8 @@ def server_json():
 
 
 def test_search_result_task_ser_des(server_json):
-    task = Task()
-    search_result = SearchResultTask(
+    task = TaskAdapter()
+    search_result = SearchResultTaskAdapter(
         total_hits=server_json.get("totalHits"),
         results=[task] if server_json.get("results") else None,
     )

@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models import BulkResponse
+from conductor.client.http.models.bulk_response import BulkResponse
 
 
 @pytest.fixture
@@ -68,7 +68,7 @@ def test_swagger_metadata_unchanged():
     # Verify required swagger_types fields exist with correct types
     required_swagger_types = {
         "bulk_error_results": "dict(str, str)",
-        "bulk_successful_results": "list[str]",
+        "bulk_successful_results": "list[object]",
     }
 
     # Check that all required fields are present with correct types

@@ -13,7 +13,7 @@ from conductor.shared.automator import utils
 from conductor.shared.automator.utils import convert_from_dict_or_list
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api_client import ApiClient
-from conductor.client.http.models import TaskExecLog
+from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
 from conductor.shared.http.enums import TaskResultStatus

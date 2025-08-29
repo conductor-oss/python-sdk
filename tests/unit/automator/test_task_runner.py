@@ -9,7 +9,7 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums.task_result_status import TaskResultStatus
 from conductor.client.worker.worker_interface import DEFAULT_POLLING_INTERVAL
 from tests.unit.resources.workers import ClassWorker, OldFaultyExecutionWorker
 

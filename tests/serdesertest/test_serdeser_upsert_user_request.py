@@ -4,7 +4,7 @@ import pytest
 
 from conductor.client.http.models.upsert_user_request import (
     RolesEnum,
-    UpsertUserRequest,
+    UpsertUserRequestAdapter,
 )
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
@@ -17,7 +17,7 @@ def server_json():
 
 def test_upsert_user_request_serdeser(server_json):
     # 1. Deserialize JSON into model object
-    model_obj = UpsertUserRequest(
+    model_obj = UpsertUserRequestAdapter(
         name=server_json.get("name"),
         roles=server_json.get("roles"),
         groups=server_json.get("groups"),

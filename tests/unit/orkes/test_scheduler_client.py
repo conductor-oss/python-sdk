@@ -4,13 +4,11 @@ import logging
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.api.scheduler_resource_api import SchedulerResourceApi
-from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
-from conductor.client.http.models.search_result_workflow_schedule_execution_model import (
-    SearchResultWorkflowScheduleExecutionModel,
-)
-from conductor.client.http.models.workflow_schedule import WorkflowSchedule
-from conductor.client.http.rest import ApiException
+from conductor.client.http.api import SchedulerResourceApi
+from conductor.client.http.models.save_schedule_request import SaveScheduleRequestAdapter as SaveScheduleRequest
+from conductor.client.http.models.search_result_workflow_schedule_execution_model import SearchResultWorkflowScheduleExecutionModelAdapter as SearchResultWorkflowScheduleExecutionModel
+from conductor.client.http.models.workflow_schedule import WorkflowScheduleAdapter as WorkflowSchedule
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_scheduler_client import OrkesSchedulerClient
 
@@ -159,7 +157,7 @@ def test_requeue_all_execution_records(mocker, scheduler_client):
 
 
 def test_search_schedule_executions(mocker, scheduler_client):
-    mock = mocker.patch.object(SchedulerResourceApi, "search_v21")
+    mock = mocker.patch.object(SchedulerResourceApi, "search_v2")
     srw = SearchResultWorkflowScheduleExecutionModel(total_hits=2)
     mock.return_value = srw
     start = 1698093300000
@@ -173,7 +171,7 @@ def test_search_schedule_executions(mocker, scheduler_client):
         start=start,
         size=2,
         sort=sort,
-        freeText=free_text,
+        free_text=free_text,
         query=query,
     )
     assert search_result == srw

@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from conductor.client.http.models import WorkflowSummary
+from conductor.client.http.models.workflow_summary import WorkflowSummary
 
 
 @pytest.fixture

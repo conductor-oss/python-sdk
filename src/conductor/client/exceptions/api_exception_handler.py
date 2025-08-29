@@ -1,7 +1,7 @@
 import json
 
 from conductor.client.exceptions.api_error import APIError, APIErrorCode
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 
 BAD_REQUEST_STATUS = 400
 FORBIDDEN_STATUS = 403
