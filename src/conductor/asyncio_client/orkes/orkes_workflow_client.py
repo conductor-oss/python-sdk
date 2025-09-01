@@ -44,21 +44,14 @@ class OrkesWorkflowClient(OrkesBaseClient):
         x_on_conflict: Optional[str] = None,
     ) -> str:
         """Start a workflow by name with input data"""
-        kwargs = {}
-        if version:
-            kwargs.update({"version": version})
-        if correlation_id:
-            kwargs.update({"correlation_id": correlation_id})
-        if priority:
-            kwargs.update({"priority": priority})
-        if x_idempotency_key:
-            kwargs.update({"x_idempotency_key": x_idempotency_key})
-        if x_on_conflict:
-            kwargs.update({"x_on_conflict": x_on_conflict})
         return await self.workflow_api.start_workflow1(
             name=name,
             request_body=input_data,
-            **kwargs,
+            version=version,
+            correlation_id=correlation_id,
+            priority=priority,
+            x_idempotency_key=x_idempotency_key,
+            x_on_conflict=x_on_conflict,
         )
 
     async def start_workflow(

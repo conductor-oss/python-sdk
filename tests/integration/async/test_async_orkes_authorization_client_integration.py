@@ -19,9 +19,11 @@ from conductor.asyncio_client.adapters.models.upsert_group_request_adapter impor
 from conductor.asyncio_client.adapters.models.upsert_user_request_adapter import \
     UpsertUserRequestAdapter as UpsertUserRequest
 from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.http.models import tag
 from conductor.asyncio_client.http.rest import ApiException
 from conductor.asyncio_client.orkes.orkes_authorization_client import \
     OrkesAuthorizationClient
+from conductor.asyncio_client.adapters.models.authorization_request_adapter import AuthorizationRequestAdapter as AuthorizationRequest
 from conductor.client.orkes.models.access_key_status import AccessKeyStatus
 from conductor.client.orkes.models.access_type import AccessType
 from conductor.shared.http.enums.subject_type import SubjectType
@@ -111,7 +113,7 @@ class TestOrkesAuthorizationClientIntegration:
             updated_name = f"{test_application_name}_updated"
             update_request = CreateOrUpdateApplicationRequest(name=updated_name)
             updated_app = await auth_client.update_application(
-                update_request, created_app.id
+                created_app.id,update_request
             )
             assert updated_app.name == updated_name
 
@@ -174,7 +176,7 @@ class TestOrkesAuthorizationClientIntegration:
         """Test complete user lifecycle: create, read, update, delete."""
         try:
             create_request = UpsertUserRequest(name="Test User", roles=["USER"])
-            created_user = await auth_client.upsert_user(create_request, test_user_id)
+            created_user = await auth_client.upsert_user(test_user_id, create_request)
 
             assert created_user.id == test_user_id
             assert created_user.name == "Test User"
@@ -190,7 +192,7 @@ class TestOrkesAuthorizationClientIntegration:
             update_request = UpsertUserRequest(
                 name="Updated Test User", roles=["USER", "ADMIN"]
             )
-            updated_user = await auth_client.upsert_user(update_request, test_user_id)
+            updated_user = await auth_client.upsert_user(test_user_id, update_request)
             assert updated_user.name == "Updated Test User"
             user_roles = [role.name for role in updated_user.roles]
             assert "USER" in user_roles
@@ -216,7 +218,7 @@ class TestOrkesAuthorizationClientIntegration:
         try:
             user_create_request = UpsertUserRequest(name="Test User", roles=["USER"])
             created_user = await auth_client.upsert_user(
-                user_create_request, test_user_id
+                test_user_id, user_create_request
             )
             assert created_user.id == test_user_id
             assert created_user.name == "Test User"
@@ -225,7 +227,7 @@ class TestOrkesAuthorizationClientIntegration:
                 description="Test Group", roles=["USER"]
             )
             created_group = await auth_client.upsert_group(
-                create_request, test_group_id
+                test_group_id, create_request 
             )
 
             assert created_group.id == test_group_id
@@ -241,12 +243,12 @@ class TestOrkesAuthorizationClientIntegration:
 
             await auth_client.add_user_to_group(test_group_id, test_user_id)
             group_users = await auth_client.get_users_in_group(test_group_id)
-            user_ids = [user.id for user in group_users]
+            user_ids = [user["id"] for user in group_users]
             assert test_user_id in user_ids
 
             await auth_client.remove_user_from_group(test_group_id, test_user_id)
             group_users = await auth_client.get_users_in_group(test_group_id)
-            user_ids = [user.id for user in group_users]
+            user_ids = [user["id"] for user in group_users]
             assert test_user_id not in user_ids
 
         finally:
@@ -275,7 +277,7 @@ class TestOrkesAuthorizationClientIntegration:
         try:
             user_create_request = UpsertUserRequest(name="Test User", roles=["USER"])
             created_user = await auth_client.upsert_user(
-                user_create_request, test_user_id
+                test_user_id, user_create_request
             )
             assert created_user.id == test_user_id
             assert created_user.name == "Test User"
@@ -284,7 +286,7 @@ class TestOrkesAuthorizationClientIntegration:
                 description="Test Group", roles=["USER"]
             )
             created_group = await auth_client.upsert_group(
-                create_request, test_group_id
+                test_group_id, create_request
             )
 
             assert created_group.id == test_group_id
@@ -296,29 +298,29 @@ class TestOrkesAuthorizationClientIntegration:
             group_subject = SubjectRef(id=test_group_id, type=SubjectType.GROUP)
 
             user_access = [AccessType.EXECUTE, AccessType.READ]
-            await auth_client.grant_permissions(user_subject, target, user_access)
+            await auth_client.grant_permissions(AuthorizationRequest(subject=user_subject, target=target, access=user_access))
 
             group_access = [AccessType.READ]
-            await auth_client.grant_permissions(group_subject, target, group_access)
+            await auth_client.grant_permissions(AuthorizationRequest(subject=group_subject, target=target, access=group_access))
 
-            target_permissions = await auth_client.get_permissions(target)
+            target_permissions = await auth_client.get_permissions(target.type, target.id)
 
             assert AccessType.EXECUTE in target_permissions
             assert AccessType.READ in target_permissions
 
             user_perms = target_permissions[AccessType.EXECUTE]
             assert any(
-                subject.id == test_user_id and subject.type == SubjectType.USER
+                subject["id"] == test_user_id and subject["type"] == SubjectType.USER
                 for subject in user_perms
             )
 
             read_perms = target_permissions[AccessType.READ]
             assert any(
-                subject.id == test_user_id and subject.type == SubjectType.USER
+                subject["id"] == test_user_id and subject["type"] == SubjectType.USER
                 for subject in read_perms
             )
             assert any(
-                subject.id == test_group_id and subject.type == SubjectType.GROUP
+                subject["id"] == test_group_id and subject["type"] == SubjectType.GROUP
                 for subject in read_perms
             )
 
@@ -347,25 +349,25 @@ class TestOrkesAuthorizationClientIntegration:
             assert len(group_target_perms) >= 1
             assert AccessType.READ in group_target_perms[0].access
 
-            await auth_client.remove_permissions(user_subject, target, user_access)
-            await auth_client.remove_permissions(group_subject, target, group_access)
+            await auth_client.remove_permissions(AuthorizationRequest(subject=user_subject, target=target, access=user_access))
+            await auth_client.remove_permissions(AuthorizationRequest(subject=group_subject, target=target, access=group_access))
 
-            target_permissions_after = await auth_client.get_permissions(target)
+            target_permissions_after = await auth_client.get_permissions(target.type, target.id)
             if AccessType.EXECUTE in target_permissions_after:
                 user_perms_after = target_permissions_after[AccessType.EXECUTE]
                 assert not any(
-                    subject.id == test_user_id and subject.type == SubjectType.USER
+                    subject["id"] == test_user_id and subject["type"] == SubjectType.USER
                     for subject in user_perms_after
                 )
 
             if AccessType.READ in target_permissions_after:
                 read_perms_after = target_permissions_after[AccessType.READ]
                 assert not any(
-                    subject.id == test_user_id and subject.type == SubjectType.USER
+                    subject["id"] == test_user_id and subject["type"] == SubjectType.USER
                     for subject in read_perms_after
                 )
                 assert not any(
-                    subject.id == test_group_id and subject.type == SubjectType.GROUP
+                    subject["id"] == test_group_id and subject["type"] == SubjectType.GROUP
                     for subject in read_perms_after
                 )
 
@@ -443,7 +445,7 @@ class TestOrkesAuthorizationClientIntegration:
             for role in admin_roles:
                 admin_id = f"admin_{role.lower()}_{test_suffix}@company.com"
                 admin_request = UpsertUserRequest(name=f"Admin {role}", roles=[role])
-                admin_user = await auth_client.upsert_user(admin_request, admin_id)
+                admin_user = await auth_client.upsert_user(admin_id, admin_request)
                 admin_users[role] = admin_user
                 created_resources["users"].append(admin_id)
 
@@ -454,7 +456,7 @@ class TestOrkesAuthorizationClientIntegration:
                     name=f"Manager {dept.title()}", roles=["METADATA_MANAGER", "USER"]
                 )
                 manager_user = await auth_client.upsert_user(
-                    manager_request, manager_id
+                    manager_id, manager_request
                 )
                 manager_users[dept] = manager_user
                 created_resources["users"].append(manager_id)
@@ -467,7 +469,7 @@ class TestOrkesAuthorizationClientIntegration:
                     emp_request = UpsertUserRequest(
                         name=f"Employee {i} {dept.title()}", roles=["USER"]
                     )
-                    emp_user = await auth_client.upsert_user(emp_request, emp_id)
+                    emp_user = await auth_client.upsert_user(emp_id, emp_request)
                     dept_employees.append(emp_user)
                     created_resources["users"].append(emp_id)
                 employee_users[dept] = dept_employees
@@ -480,7 +482,7 @@ class TestOrkesAuthorizationClientIntegration:
                 group_request = UpsertGroupRequest(
                     description=f"Group {role.title()}", roles=[role.upper()]
                 )
-                group = await auth_client.upsert_group(group_request, group_id)
+                group = await auth_client.upsert_group(group_id, group_request)
                 main_groups[role] = group
                 created_resources["groups"].append(group_id)
 
@@ -491,7 +493,7 @@ class TestOrkesAuthorizationClientIntegration:
                     description=f"Group {dept.title()}", roles=["USER"]
                 )
                 dept_group = await auth_client.upsert_group(
-                    dept_group_request, dept_group_id
+                    dept_group_id, dept_group_request
                 )
                 dept_groups[dept] = dept_group
                 created_resources["groups"].append(dept_group_id)
@@ -547,9 +549,7 @@ class TestOrkesAuthorizationClientIntegration:
                     id=main_groups["worker"].id, type=SubjectType.GROUP
                 )
                 await auth_client.grant_permissions(
-                    exec_subject,
-                    workflow_target,
-                    [AccessType.EXECUTE, AccessType.READ, AccessType.CREATE],
+                    AuthorizationRequest(subject=exec_subject, target=workflow_target, access=[AccessType.EXECUTE, AccessType.READ, AccessType.CREATE])
                 )
                 created_resources["permissions"].append(
                     (
@@ -563,9 +563,7 @@ class TestOrkesAuthorizationClientIntegration:
                     id=main_groups["metadata_manager"].id, type=SubjectType.GROUP
                 )
                 await auth_client.grant_permissions(
-                    manager_subject,
-                    workflow_target,
-                    [AccessType.EXECUTE, AccessType.READ],
+                    AuthorizationRequest(subject=manager_subject, target=workflow_target, access=[AccessType.EXECUTE, AccessType.READ])
                 )
                 created_resources["permissions"].append(
                     (
@@ -579,10 +577,10 @@ class TestOrkesAuthorizationClientIntegration:
                     id=main_groups["user"].id, type=SubjectType.GROUP
                 )
                 await auth_client.grant_permissions(
-                    emp_subject, workflow_target, [AccessType.READ]
+                    AuthorizationRequest(subject=emp_subject, target=workflow_target, access=[AccessType.READ])
                 )
                 created_resources["permissions"].append(
-                    (emp_subject, workflow_target, [AccessType.READ])
+                    (emp_subject, workflow_target, [AccessType.READ]) 
                 )
 
             for dept in departments:
@@ -593,9 +591,7 @@ class TestOrkesAuthorizationClientIntegration:
                 )
 
                 await auth_client.grant_permissions(
-                    dept_group_subject,
-                    dept_target,
-                    [AccessType.CREATE, AccessType.EXECUTE, AccessType.READ],
+                    AuthorizationRequest(subject=dept_group_subject, target=dept_target, access=[AccessType.CREATE, AccessType.EXECUTE, AccessType.READ])
                 )
                 created_resources["permissions"].append(
                     (
@@ -622,7 +618,7 @@ class TestOrkesAuthorizationClientIntegration:
 
             for dept, manager_user in manager_users.items():
                 group_users = await auth_client.get_users_in_group(dept_groups[dept].id)
-                group_user_ids = [user.id for user in group_users]
+                group_user_ids = [user["id"] for user in group_users]
                 assert (
                     manager_user.id in group_user_ids
                 ), f"Manager {manager_user.id} not in {dept} group"
@@ -631,13 +627,13 @@ class TestOrkesAuthorizationClientIntegration:
                 workflow_target = TargetRef(
                     id=workflow_name, type=TargetType.WORKFLOW_DEF
                 )
-                permissions = await auth_client.get_permissions(workflow_target)
+                permissions = await auth_client.get_permissions(workflow_target.type, workflow_target.id)
 
                 if AccessType.EXECUTE in permissions:
                     exec_perms = permissions[AccessType.EXECUTE]
                     assert any(
-                        subject.id == main_groups["worker"].id
-                        and subject.type == SubjectType.GROUP
+                        subject["id"] == main_groups["worker"].id
+                        and subject["type"] == SubjectType.GROUP
                         for subject in exec_perms
                     ), f"Worker missing execute permission on {workflow_name}"
 
@@ -648,7 +644,7 @@ class TestOrkesAuthorizationClientIntegration:
                     name=f"Bulk User {i}", roles=["USER"]
                 )
                 bulk_user = await auth_client.upsert_user(
-                    bulk_user_request, bulk_user_id
+                    bulk_user_id, bulk_user_request
                 )
                 bulk_users.append(bulk_user_id)
                 created_resources["users"].append(bulk_user_id)
@@ -657,7 +653,7 @@ class TestOrkesAuthorizationClientIntegration:
                 await auth_client.add_user_to_group(main_groups["user"].id, user_id)
 
             group_users = await auth_client.get_users_in_group(main_groups["user"].id)
-            group_user_ids = [user.id for user in group_users]
+            group_user_ids = [user["id"] for user in group_users]
             for user_id in bulk_users:
                 assert (
                     user_id in group_user_ids
@@ -679,7 +675,7 @@ class TestOrkesAuthorizationClientIntegration:
 
         for subject, target, access_types in created_resources["permissions"]:
             try:
-                auth_client.remove_permissions(subject, target, access_types)
+                auth_client.remove_permissions(AuthorizationRequest(subject=subject, target=target, access=access_types))
             except Exception as e:
                 print(
                     f"Warning: Failed to remove permission {subject.id} -> {target.id}: {str(e)}"
@@ -689,8 +685,8 @@ class TestOrkesAuthorizationClientIntegration:
             try:
                 group_users = await auth_client.get_users_in_group(group_id)
                 for user in group_users:
-                    if user.id in created_resources["users"]:
-                        await auth_client.remove_user_from_group(group_id, user.id)
+                    if user["id"] in created_resources["users"]:
+                        await auth_client.remove_user_from_group(group_id, user["id"])
             except Exception as e:
                 print(
                     f"Warning: Failed to remove users from group {group_id}: {str(e)}"
