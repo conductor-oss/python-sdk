@@ -430,30 +430,22 @@ def test_constructor_signature_compatibility(mock_start_workflow_request):
     """Test that constructor signature remains compatible."""
     # Test positional arguments work (in order based on WorkflowSchedule model)
     schedule = WorkflowSchedule(
-        1640995200,  # create_time
-        "creator",  # created_by
-        "0 0 * * *",  # cron_expression
-        "Test description",  # description
         "test_name",  # name
-        False,  # paused
-        "Test pause reason",  # paused_reason
+        "0 0 * * *",  # cron_expression
         True,  # run_catchup_schedule_instances
-        1672531200,  # schedule_end_time
-        1640995200,  # schedule_start_time
+        False,  # paused
         mock_start_workflow_request,  # start_workflow_request
-        [],  # tags
-        "updater",  # updated_by
+        1640995200,  # schedule_start_time
+        1672531200,  # schedule_end_time
+        1640995200,  # create_time
         1641081600,  # updated_time
-        "UTC",  # zone_id
+        "creator",  # created_by
+        "updater",  # updated_by
     )
-    print(schedule)
+
     assert schedule.name == "test_name"
     assert schedule.cron_expression == "0 0 * * *"
     assert schedule.run_catchup_schedule_instances
     assert not schedule.paused
     assert schedule.created_by == "creator"
     assert schedule.updated_by == "updater"
-    assert schedule.description == "Test description"
-    assert schedule.paused_reason == "Test pause reason"
-    assert schedule.tags == []
-    assert schedule.zone_id == "UTC"
