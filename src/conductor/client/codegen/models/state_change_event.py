@@ -28,7 +28,7 @@ class StateChangeEvent(object):
                             and the value is json key in definition.
     """
     swagger_types = {
-        'payload': 'Dict[str, object]',
+        'payload': 'dict(str, object)',
         'type': 'str'
     }
 

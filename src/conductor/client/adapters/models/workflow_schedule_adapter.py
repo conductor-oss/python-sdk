@@ -8,7 +8,7 @@ from conductor.client.codegen.models.workflow_schedule import WorkflowSchedule
 class WorkflowScheduleAdapter(WorkflowSchedule):
     def __init__(
         self,
-        name: str,
+        name: Optional[str] = None,
         cron_expression: Optional[str] = None,
         run_catchup_schedule_instances: Optional[bool] = None,
         paused: Optional[bool] = None,
