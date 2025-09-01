@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.parser_enum_descriptor_proto_adapter import ParserEnumDescriptorProtoAdapter
+from conductor.client.adapters.models.parser_enum_descriptor_proto_adapter import \
+    ParserEnumDescriptorProtoAdapter
 
 ParserEnumDescriptorProto = ParserEnumDescriptorProtoAdapter
 

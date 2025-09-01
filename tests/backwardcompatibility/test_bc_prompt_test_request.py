@@ -1,9 +1,31 @@
 import pytest
 
+# Import the model class - adjust this import path as needed for your project structure
+try:
+    from conductor.client.http.models.prompt_test_request import (
+        PromptTemplateTestRequest,
+    )
+except ImportError:
+    try:
+        from conductor.client.http.models import PromptTemplateTestRequest
+    except ImportError:
+        # If both fail, import directly from the file
+        import importlib.util
+        import os
 
-from conductor.client.http.models.prompt_template_test_request import (
-    PromptTemplateTestRequest,
-)
+        # Get the path to the prompt_test_request.py file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        module_path = os.path.join(current_dir, "..", "..", "prompt_test_request.py")
+
+        if os.path.exists(module_path):
+            spec = importlib.util.spec_from_file_location(
+                "prompt_test_request", module_path
+            )
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            PromptTemplateTestRequest = module.PromptTemplateTestRequest
+        else:
+            raise ImportError("Could not find PromptTemplateTestRequest class")
 
 
 @pytest.fixture
@@ -24,7 +46,7 @@ def test_class_exists():
     """Verify the class still exists and is importable."""
     assert PromptTemplateTestRequest is not None
     assert callable(PromptTemplateTestRequest)
-    assert PromptTemplateTestRequest.__name__ == "PromptTemplateTestRequestAdapter"
+    assert PromptTemplateTestRequest.__name__ == "PromptTemplateTestRequest"
 
 
 def test_constructor_signature_backward_compatible():

@@ -1,4 +1,5 @@
-from conductor.client.adapters.api.task_resource_api_adapter import TaskResourceApiAdapter
+from conductor.client.adapters.api.task_resource_api_adapter import \
+    TaskResourceApiAdapter
 
 TaskResourceApi = TaskResourceApiAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.handled_event_response_adapter import HandledEventResponseAdapter
+from conductor.client.adapters.models.handled_event_response_adapter import \
+    HandledEventResponseAdapter
 
 HandledEventResponse = HandledEventResponseAdapter
 

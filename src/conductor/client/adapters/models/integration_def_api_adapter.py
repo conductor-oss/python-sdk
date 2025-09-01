@@ -2,7 +2,8 @@ import pprint
 
 import six
 
-class IntegrationDefApi(object): # Model from v5.2.6 spec
+
+class IntegrationDefApi(object):  # Model from v5.2.6 spec
     """
     Attributes:
       swagger_types (dict): The key is attribute name
@@ -10,23 +11,31 @@ class IntegrationDefApi(object): # Model from v5.2.6 spec
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
+
     swagger_types = {
-        'api': 'str',
-        'description': 'str',
-        'input_schema': 'SchemaDef',
-        'integration_type': 'str',
-        'output_schema': 'SchemaDef'
+        "api": "str",
+        "description": "str",
+        "input_schema": "SchemaDef",
+        "integration_type": "str",
+        "output_schema": "SchemaDef",
     }
 
     attribute_map = {
-        'api': 'api',
-        'description': 'description',
-        'input_schema': 'inputSchema',
-        'integration_type': 'integrationType',
-        'output_schema': 'outputSchema'
+        "api": "api",
+        "description": "description",
+        "input_schema": "inputSchema",
+        "integration_type": "integrationType",
+        "output_schema": "outputSchema",
     }
 
-    def __init__(self, api=None, description=None, input_schema=None, integration_type=None, output_schema=None):  # noqa: E501
+    def __init__(
+        self,
+        api=None,
+        description=None,
+        input_schema=None,
+        integration_type=None,
+        output_schema=None,
+    ):  # noqa: E501
         """IntegrationDefApi - a model defined in Swagger"""  # noqa: E501
         self._api = None
         self._description = None
@@ -157,18 +166,22 @@ class IntegrationDefApi(object): # Model from v5.2.6 spec
         for attr, _ in six.iteritems(self.swagger_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(map(
-                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
-                    value
-                ))
+                result[attr] = list(
+                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
+                )
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(map(
-                    lambda item: (item[0], item[1].to_dict())
-                    if hasattr(item[1], "to_dict") else item,
-                    value.items()
-                ))
+                result[attr] = dict(
+                    map(
+                        lambda item: (
+                            (item[0], item[1].to_dict())
+                            if hasattr(item[1], "to_dict")
+                            else item
+                        ),
+                        value.items(),
+                    )
+                )
             else:
                 result[attr] = value
         if issubclass(IntegrationDefApi, dict):

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.start_workflow_adapter import StartWorkflowAdapter
+from conductor.client.adapters.models.start_workflow_adapter import \
+    StartWorkflowAdapter
 
 StartWorkflow = StartWorkflowAdapter
 

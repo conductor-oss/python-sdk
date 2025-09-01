@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.parser_any_adapter import ParserAnyAdapter
+from conductor.client.adapters.models.parser_any_adapter import \
+    ParserAnyAdapter
 
 ParserAny = ParserAnyAdapter
 

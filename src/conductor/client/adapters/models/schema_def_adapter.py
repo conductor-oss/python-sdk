@@ -13,7 +13,19 @@ class SchemaType(str, Enum):
 
 
 class SchemaDefAdapter(SchemaDef):
-    def __init__(self, create_time=None, created_by=None, data=None, external_ref=None, name=None, owner_app=None, type=None, update_time=None, updated_by=None, version=1):  # noqa: E501
+    def __init__(
+        self,
+        create_time=None,
+        created_by=None,
+        data=None,
+        external_ref=None,
+        name=None,
+        owner_app=None,
+        type=None,
+        update_time=None,
+        updated_by=None,
+        version=1,
+    ):  # noqa: E501
         """SchemaDef - a model defined in Swagger"""  # noqa: E501
         self._create_time = None
         self._created_by = None

@@ -13,4 +13,3 @@ class SaveScheduleRequestAdapter(SaveScheduleRequest):
         """
 
         self._start_workflow_request = start_workflow_request
-

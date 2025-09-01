@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.webhook_config_adapter import WebhookConfigAdapter
+from conductor.client.adapters.models.webhook_config_adapter import \
+    WebhookConfigAdapter
 
 WebhookConfig = WebhookConfigAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.api.event_execution_resource_api_adapter import EventExecutionResourceApiAdapter
+from conductor.client.adapters.api.event_execution_resource_api_adapter import \
+    EventExecutionResourceApiAdapter
 
 EventExecutionResourceApi = EventExecutionResourceApiAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.api.workflow_bulk_resource_api_adapter import WorkflowBulkResourceApiAdapter
+from conductor.client.adapters.api.workflow_bulk_resource_api_adapter import \
+    WorkflowBulkResourceApiAdapter
 
 WorkflowBulkResourceApi = WorkflowBulkResourceApiAdapter
 

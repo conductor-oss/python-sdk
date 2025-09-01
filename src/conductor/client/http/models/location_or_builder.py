@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.location_or_builder_adapter import LocationOrBuilderAdapter
+from conductor.client.adapters.models.location_or_builder_adapter import \
+    LocationOrBuilderAdapter
 
 LocationOrBuilder = LocationOrBuilderAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.incoming_bpmn_file_adapter import IncomingBpmnFileAdapter
+from conductor.client.adapters.models.incoming_bpmn_file_adapter import \
+    IncomingBpmnFileAdapter
 
 IncomingBpmnFile = IncomingBpmnFileAdapter
 

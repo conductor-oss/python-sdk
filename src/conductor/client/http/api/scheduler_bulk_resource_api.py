@@ -1,4 +1,5 @@
-from conductor.client.adapters.api.scheduler_bulk_resource_api_adapter import SchedulerBulkResourceApiAdapter
+from conductor.client.adapters.api.scheduler_bulk_resource_api_adapter import \
+    SchedulerBulkResourceApiAdapter
 
 SchedulerBulkResourceApi = SchedulerBulkResourceApiAdapter
 

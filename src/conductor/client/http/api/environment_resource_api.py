@@ -1,4 +1,5 @@
-from conductor.client.adapters.api.environment_resource_api_adapter import EnvironmentResourceApiAdapter
+from conductor.client.adapters.api.environment_resource_api_adapter import \
+    EnvironmentResourceApiAdapter
 
 EnvironmentResourceApi = EnvironmentResourceApiAdapter
 

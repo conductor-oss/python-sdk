@@ -29,9 +29,7 @@ class WorkflowTaskAdapter(WorkflowTask):
             self._on_state_change = state_change
         else:
             # If it's a StateChangeConfig object, convert it to the expected format
-            self._on_state_change = {
-                state_change.type: state_change.events
-            }
+            self._on_state_change = {state_change.type: state_change.events}
 
 
 class CacheConfig:

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.service_method_adapter import ServiceMethodAdapter
+from conductor.client.adapters.models.service_method_adapter import \
+    ServiceMethodAdapter
 
 ServiceMethod = ServiceMethodAdapter
 

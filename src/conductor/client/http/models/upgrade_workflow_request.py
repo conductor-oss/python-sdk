@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.upgrade_workflow_request_adapter import UpgradeWorkflowRequestAdapter
+from conductor.client.adapters.models.upgrade_workflow_request_adapter import \
+    UpgradeWorkflowRequestAdapter
 
 UpgradeWorkflowRequest = UpgradeWorkflowRequestAdapter
 

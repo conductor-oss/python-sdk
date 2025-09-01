@@ -1,6 +1,10 @@
 import pytest
 
-from conductor.client.http.models import StateChangeEvent, StateChangeEventType, StateChangeConfig
+from conductor.client.http.models import (
+    StateChangeConfig,
+    StateChangeEvent,
+    StateChangeEventType,
+)
 
 
 def test_state_change_event_type_enum_values_exist():
@@ -46,13 +50,13 @@ def test_state_change_event_constructor_signature():
     assert event is not None
 
     # Test constructor parameter requirements - both should be required
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         StateChangeEvent()  # No parameters
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         StateChangeEvent(type="test")  # Missing payload
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         StateChangeEvent(payload={"key": "value"})  # Missing type
 
 
@@ -91,7 +95,7 @@ def test_state_change_event_class_attributes():
     assert "type" in swagger_types
     assert "payload" in swagger_types
     assert swagger_types["type"] == "str"
-    assert swagger_types["payload"] == "dict(str, object)"
+    assert swagger_types["payload"] == "Dict[str, object]"
 
     # Test attribute_map exists and has correct structure
     assert hasattr(StateChangeEvent, "attribute_map")

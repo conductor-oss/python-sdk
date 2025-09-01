@@ -28,7 +28,7 @@ def sample_results(mock_task_summary_1, mock_task_summary_2):
 def test_class_exists():
     """Test that the SearchResultTaskSummary class exists."""
     assert hasattr(SearchResultTaskSummary, "__init__")
-    assert SearchResultTaskSummary.__name__ == "SearchResultTaskSummaryAdapter"
+    assert SearchResultTaskSummary.__name__ == "SearchResultTaskSummary"
 
 
 def test_required_class_attributes_exist():

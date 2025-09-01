@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.message_template_adapter import MessageTemplateAdapter
+from conductor.client.adapters.models.message_template_adapter import \
+    MessageTemplateAdapter
 
 MessageTemplate = MessageTemplateAdapter
 

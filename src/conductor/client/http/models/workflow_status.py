@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.workflow_status_adapter import WorkflowStatusAdapter
+from conductor.client.adapters.models.workflow_status_adapter import \
+    WorkflowStatusAdapter
 
 WorkflowStatus = WorkflowStatusAdapter
 

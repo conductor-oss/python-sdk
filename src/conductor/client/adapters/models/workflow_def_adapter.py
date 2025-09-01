@@ -5,8 +5,8 @@ from typing import Optional
 
 from deprecated import deprecated
 
-from conductor.client.helpers.helper import ObjectMapper
 from conductor.client.codegen.models.workflow_def import WorkflowDef
+from conductor.client.helpers.helper import ObjectMapper
 
 object_mapper = ObjectMapper()
 
@@ -155,6 +155,7 @@ class WorkflowDefAdapter(WorkflowDef):
         :type: int
         """
         self._timeout_seconds = timeout_seconds
+
 
 def to_workflow_def(
     data: Optional[str] = None, json_data: Optional[dict] = None

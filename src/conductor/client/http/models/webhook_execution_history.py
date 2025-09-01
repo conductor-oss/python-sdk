@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.webhook_execution_history_adapter import WebhookExecutionHistoryAdapter
+from conductor.client.adapters.models.webhook_execution_history_adapter import \
+    WebhookExecutionHistoryAdapter
 
 WebhookExecutionHistory = WebhookExecutionHistoryAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter, CacheConfig
+from conductor.client.adapters.models.workflow_task_adapter import (
+    CacheConfig, WorkflowTaskAdapter)
 
 WorkflowTask = WorkflowTaskAdapter
 

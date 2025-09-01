@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.feature_set_or_builder_adapter import FeatureSetOrBuilderAdapter
+from conductor.client.adapters.models.feature_set_or_builder_adapter import \
+    FeatureSetOrBuilderAdapter
 
 FeatureSetOrBuilder = FeatureSetOrBuilderAdapter
 

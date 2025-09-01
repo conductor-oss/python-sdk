@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.extended_task_def_adapter import ExtendedTaskDefAdapter
+from conductor.client.adapters.models.extended_task_def_adapter import \
+    ExtendedTaskDefAdapter
 
 ExtendedTaskDef = ExtendedTaskDefAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.external_storage_location_adapter import ExternalStorageLocationAdapter
+from conductor.client.adapters.models.external_storage_location_adapter import \
+    ExternalStorageLocationAdapter
 
 ExternalStorageLocation = ExternalStorageLocationAdapter
 

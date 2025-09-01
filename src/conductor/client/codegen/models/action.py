@@ -32,7 +32,7 @@ class Action(object):
         'complete_task': 'TaskDetails',
         'expand_inline_json': 'bool',
         'fail_task': 'TaskDetails',
-        'start_workflow': 'StartWorkflowRequest',
+        'start_workflow': 'StartWorkflow',
         'terminate_workflow': 'TerminateWorkflow',
         'update_workflow_variables': 'UpdateWorkflowVariables'
     }

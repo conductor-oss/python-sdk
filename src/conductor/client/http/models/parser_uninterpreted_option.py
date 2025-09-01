@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.parser_uninterpreted_option_adapter import ParserUninterpretedOptionAdapter
+from conductor.client.adapters.models.parser_uninterpreted_option_adapter import \
+    ParserUninterpretedOptionAdapter
 
 ParserUninterpretedOption = ParserUninterpretedOptionAdapter
 

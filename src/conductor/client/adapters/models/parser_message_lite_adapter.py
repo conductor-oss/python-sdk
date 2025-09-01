@@ -1,4 +1,5 @@
-from conductor.client.codegen.models.parser_message_lite import ParserMessageLite
+from conductor.client.codegen.models.parser_message_lite import \
+    ParserMessageLite
 
 
 class ParserMessageLiteAdapter(ParserMessageLite):

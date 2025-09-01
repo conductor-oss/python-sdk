@@ -1,7 +1,49 @@
+from __future__ import annotations
+
+from typing import ClassVar, Dict
+
 from conductor.client.codegen.models import Integration
 
 
 class IntegrationAdapter(Integration):
+    swagger_types: ClassVar[Dict[str, str]] = {
+        "apis": "list[IntegrationApi]",
+        "category": "str",
+        "configuration": "dict(str, object)",
+        "create_time": "int",
+        "created_on": "int",
+        "created_by": "str",
+        "description": "str",
+        "enabled": "bool",
+        "models_count": "int",
+        "name": "str",
+        "owner_app": "str",
+        "tags": "list[Tag]",
+        "type": "str",
+        "update_time": "int",
+        "updated_on": "int",
+        "updated_by": "str",
+    }
+
+    attribute_map: ClassVar[Dict[str, str]] = {
+        "apis": "apis",
+        "category": "category",
+        "configuration": "configuration",
+        "create_time": "createTime",
+        "created_on": "createdOn",
+        "created_by": "createdBy",
+        "description": "description",
+        "enabled": "enabled",
+        "models_count": "modelsCount",
+        "name": "name",
+        "owner_app": "ownerApp",
+        "tags": "tags",
+        "type": "type",
+        "update_time": "updateTime",
+        "updated_on": "updatedOn",
+        "updated_by": "updatedBy",
+    }
+
     def __init__(
         self,
         apis=None,
@@ -25,7 +67,6 @@ class IntegrationAdapter(Integration):
         self._apis = None
         self._category = None
         self._configuration = None
-        self._created_on = None
         self._created_by = None
         self._description = None
         self._enabled = None
@@ -34,11 +75,12 @@ class IntegrationAdapter(Integration):
         self._owner_app = None
         self._tags = None
         self._type = None
-        self._updated_on = None
         self._updated_by = None
         self.discriminator = None
         self._create_time = None
         self._update_time = None
+        self._created_on = None
+        self._updated_on = None
 
         if apis is not None:
             self.apis = apis
@@ -48,6 +90,7 @@ class IntegrationAdapter(Integration):
             self.configuration = configuration
         if created_on is not None:
             self.create_time = created_on
+            self.created_on = created_on
         if created_by is not None:
             self.created_by = created_by
         if description is not None:
@@ -64,14 +107,11 @@ class IntegrationAdapter(Integration):
             self.tags = tags
         if type is not None:
             self.type = type
-        if updated_on is not None:
-            self.updated_on = updated_on
         if updated_by is not None:
             self.updated_by = updated_by
-        if create_time is not None:
-            self.created_on = create_time
-        if update_time is not None:
-            self.updated_on = update_time
+        if updated_on is not None:
+            self.update_time = updated_on
+            self.updated_on = updated_on
 
     @property
     def created_on(self):
@@ -80,6 +120,7 @@ class IntegrationAdapter(Integration):
     @created_on.setter
     def created_on(self, create_time):
         self._create_time = create_time
+        self._created_on = create_time
 
     @property
     def updated_on(self):
@@ -88,6 +129,7 @@ class IntegrationAdapter(Integration):
     @updated_on.setter
     def updated_on(self, update_time):
         self._update_time = update_time
+        self._updated_on = update_time
 
     @Integration.category.setter
     def category(self, category):

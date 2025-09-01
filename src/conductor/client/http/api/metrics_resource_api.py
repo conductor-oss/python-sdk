@@ -1,4 +1,5 @@
-from conductor.client.adapters.api.metrics_resource_api_adapter import MetricsResourceApiAdapter
+from conductor.client.adapters.api.metrics_resource_api_adapter import \
+    MetricsResourceApiAdapter
 
 MetricsResourceApi = MetricsResourceApiAdapter
 

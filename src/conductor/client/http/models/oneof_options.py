@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.oneof_options_adapter import OneofOptionsAdapter
+from conductor.client.adapters.models.oneof_options_adapter import \
+    OneofOptionsAdapter
 
 OneofOptions = OneofOptionsAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.schema_def_adapter import SchemaDefAdapter, SchemaType
+from conductor.client.adapters.models.schema_def_adapter import (
+    SchemaDefAdapter, SchemaType)
 
 SchemaDef = SchemaDefAdapter
 

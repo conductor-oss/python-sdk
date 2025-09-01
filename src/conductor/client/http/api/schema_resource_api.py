@@ -1,4 +1,5 @@
-from conductor.client.adapters.api.schema_resource_api_adapter import SchemaResourceApiAdapter
+from conductor.client.adapters.api.schema_resource_api_adapter import \
+    SchemaResourceApiAdapter
 
 SchemaResourceApi = SchemaResourceApiAdapter
 

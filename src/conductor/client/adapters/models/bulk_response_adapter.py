@@ -3,19 +3,24 @@ from conductor.client.codegen.models import BulkResponse
 
 class BulkResponseAdapter(BulkResponse):
     swagger_types = {
-        'bulk_error_results': 'dict(str, str)',
-        'bulk_successful_results': 'list[object]',
-        "message": "str"
+        "bulk_error_results": "dict(str, str)",
+        "bulk_successful_results": "list[str]",
+        "message": "str",
     }
 
     attribute_map = {
-        'bulk_error_results': 'bulkErrorResults',
-        'bulk_successful_results': 'bulkSuccessfulResults',
-        "message": "message"
+        "bulk_error_results": "bulkErrorResults",
+        "bulk_successful_results": "bulkSuccessfulResults",
+        "message": "message",
     }
 
     def __init__(
-        self, bulk_error_results=None, bulk_successful_results=None, message=None, *_args, **_kwargs
+        self,
+        bulk_error_results=None,
+        bulk_successful_results=None,
+        message=None,
+        *_args,
+        **_kwargs
     ):
         if bulk_error_results is None:
             bulk_error_results = {}

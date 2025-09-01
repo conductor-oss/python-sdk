@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.parser_file_options_adapter import ParserFileOptionsAdapter
+from conductor.client.adapters.models.parser_file_options_adapter import \
+    ParserFileOptionsAdapter
 
 ParserFileOptions = ParserFileOptionsAdapter
 

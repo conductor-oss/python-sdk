@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.task_summary_adapter import TaskSummaryAdapter
+from conductor.client.adapters.models.task_summary_adapter import \
+    TaskSummaryAdapter
 
 TaskSummary = TaskSummaryAdapter
 

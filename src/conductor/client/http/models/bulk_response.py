@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.bulk_response_adapter import BulkResponseAdapter
+from conductor.client.adapters.models.bulk_response_adapter import \
+    BulkResponseAdapter
 
 BulkResponse = BulkResponseAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.feature_set_adapter import FeatureSetAdapter
+from conductor.client.adapters.models.feature_set_adapter import \
+    FeatureSetAdapter
 
 FeatureSet = FeatureSetAdapter
 

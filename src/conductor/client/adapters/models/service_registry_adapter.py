@@ -1,4 +1,5 @@
 from enum import Enum
+
 from conductor.client.codegen.models.service_registry import (
     Config, OrkesCircuitBreakerConfig, ServiceRegistry)
 
@@ -6,6 +7,7 @@ from conductor.client.codegen.models.service_registry import (
 class ServiceType(str, Enum):
     HTTP = "HTTP"
     GRPC = "gRPC"
+
 
 class ServiceRegistryAdapter(ServiceRegistry):
     pass

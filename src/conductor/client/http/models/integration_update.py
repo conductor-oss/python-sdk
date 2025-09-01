@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.integration_update_adapter import IntegrationUpdateAdapter
+from conductor.client.adapters.models.integration_update_adapter import \
+    IntegrationUpdateAdapter
 
 IntegrationUpdate = IntegrationUpdateAdapter
 

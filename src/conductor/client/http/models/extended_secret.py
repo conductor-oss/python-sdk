@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.extended_secret_adapter import ExtendedSecretAdapter
+from conductor.client.adapters.models.extended_secret_adapter import \
+    ExtendedSecretAdapter
 
 ExtendedSecret = ExtendedSecretAdapter
 

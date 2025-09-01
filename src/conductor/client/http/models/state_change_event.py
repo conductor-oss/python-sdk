@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.state_change_event_adapter import StateChangeEventAdapter, StateChangeEventType, StateChangeConfig
+from conductor.client.adapters.models.state_change_event_adapter import (
+    StateChangeConfig, StateChangeEventAdapter, StateChangeEventType)
 
 StateChangeEvent = StateChangeEventAdapter
 

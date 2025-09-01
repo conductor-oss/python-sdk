@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.save_schedule_request_adapter import SaveScheduleRequestAdapter
+from conductor.client.adapters.models.save_schedule_request_adapter import \
+    SaveScheduleRequestAdapter
 
 SaveScheduleRequest = SaveScheduleRequestAdapter
 

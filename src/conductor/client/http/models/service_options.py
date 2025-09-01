@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.service_options_adapter import ServiceOptionsAdapter
+from conductor.client.adapters.models.service_options_adapter import \
+    ServiceOptionsAdapter
 
 ServiceOptions = ServiceOptionsAdapter
 

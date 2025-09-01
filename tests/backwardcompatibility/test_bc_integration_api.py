@@ -178,17 +178,19 @@ def test_none_value_assignment(valid_data):
 def test_swagger_types_structure():
     """Test that swagger_types dictionary contains expected field definitions."""
     expected_swagger_types = {
-        'api': 'str',
-        'configuration': 'dict(str, object)',
-        'create_time': 'int',
-        'created_by': 'str',
-        'description': 'str',
-        'enabled': 'bool',
-        'integration_name': 'str',
-        'owner_app': 'str',
-        'tags': 'list[Tag]',
-        'update_time': 'int',
-        'updated_by': 'str'
+        "api": "str",
+        "configuration": "dict(str, object)",
+        "created_by": "str",
+        "create_time": "int",
+        "created_on": "int",
+        "description": "str",
+        "enabled": "bool",
+        "integration_name": "str",
+        "owner_app": "str",
+        "tags": "list[Tag]",
+        "update_time": "int",
+        "updated_by": "str",
+        "updated_on": "int",
     }
 
     assert IntegrationApi.swagger_types == expected_swagger_types
@@ -197,17 +199,19 @@ def test_swagger_types_structure():
 def test_attribute_map_structure():
     """Test that attribute_map dictionary contains expected mappings."""
     expected_attribute_map = {
-        'api': 'api',
-        'configuration': 'configuration',
-        'create_time': 'createTime',
-        'created_by': 'createdBy',
-        'description': 'description',
-        'enabled': 'enabled',
-        'integration_name': 'integrationName',
-        'owner_app': 'ownerApp',
-        'tags': 'tags',
-        'update_time': 'updateTime',
-        'updated_by': 'updatedBy'
+        "api": "api",
+        "configuration": "configuration",
+        "create_time": "createTime",
+        "created_on": "createdOn",
+        "created_by": "createdBy",
+        "description": "description",
+        "enabled": "enabled",
+        "integration_name": "integrationName",
+        "owner_app": "ownerApp",
+        "tags": "tags",
+        "update_time": "updateTime",
+        "updated_on": "updatedOn",
+        "updated_by": "updatedBy",
     }
 
     assert IntegrationApi.attribute_map == expected_attribute_map
@@ -223,16 +227,17 @@ def test_to_dict_method(valid_data):
         "api",
         "configuration",
         "created_by",
+        "created_on",
         "create_time",
         "description",
         "enabled",
         "integration_name",
         "tags",
         "updated_by",
+        "updated_on",
         "update_time",
         "owner_app",
     }
-
     assert set(result_dict.keys()) == expected_keys
 
     # Verify values are correctly converted

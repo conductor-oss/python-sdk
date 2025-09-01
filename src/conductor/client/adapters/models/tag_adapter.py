@@ -1,4 +1,5 @@
 from enum import Enum
+
 from conductor.client.codegen.models.tag import Tag
 
 

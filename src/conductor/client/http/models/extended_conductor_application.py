@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.extended_conductor_application_adapter import ExtendedConductorApplicationAdapter
+from conductor.client.adapters.models.extended_conductor_application_adapter import \
+    ExtendedConductorApplicationAdapter
 
 ExtendedConductorApplication = ExtendedConductorApplicationAdapter
 

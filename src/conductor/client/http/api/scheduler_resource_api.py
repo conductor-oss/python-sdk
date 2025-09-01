@@ -1,4 +1,5 @@
-from conductor.client.adapters.api.scheduler_resource_api_adapter import SchedulerResourceApiAdapter
+from conductor.client.adapters.api.scheduler_resource_api_adapter import \
+    SchedulerResourceApiAdapter
 
 SchedulerResourceApi = SchedulerResourceApiAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.descriptor_proto_adapter import DescriptorProtoAdapter
+from conductor.client.adapters.models.descriptor_proto_adapter import \
+    DescriptorProtoAdapter
 
 DescriptorProto = DescriptorProtoAdapter
 

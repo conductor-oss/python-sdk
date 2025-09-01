@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.parser_enum_options_adapter import ParserEnumOptionsAdapter
+from conductor.client.adapters.models.parser_enum_options_adapter import \
+    ParserEnumOptionsAdapter
 
 ParserEnumOptions = ParserEnumOptionsAdapter
 

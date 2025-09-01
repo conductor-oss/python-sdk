@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.metrics_token_adapter import MetricsTokenAdapter
+from conductor.client.adapters.models.metrics_token_adapter import \
+    MetricsTokenAdapter
 
 MetricsToken = MetricsTokenAdapter
 

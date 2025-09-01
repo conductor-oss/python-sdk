@@ -1,4 +1,5 @@
-from conductor.client.adapters.api.metadata_resource_api_adapter import MetadataResourceApiAdapter
+from conductor.client.adapters.api.metadata_resource_api_adapter import \
+    MetadataResourceApiAdapter
 
 MetadataResourceApi = MetadataResourceApiAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.prompt_template_adapter import PromptTemplateAdapter
+from conductor.client.adapters.models.prompt_template_adapter import \
+    PromptTemplateAdapter
 
 PromptTemplate = PromptTemplateAdapter
 

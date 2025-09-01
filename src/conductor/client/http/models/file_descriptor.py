@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.file_descriptor_adapter import FileDescriptorAdapter
+from conductor.client.adapters.models.file_descriptor_adapter import \
+    FileDescriptorAdapter
 
 FileDescriptor = FileDescriptorAdapter
 

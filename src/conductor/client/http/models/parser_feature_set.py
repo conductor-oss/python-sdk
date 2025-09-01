@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.parser_feature_set_adapter import ParserFeatureSetAdapter
+from conductor.client.adapters.models.parser_feature_set_adapter import \
+    ParserFeatureSetAdapter
 
 ParserFeatureSet = ParserFeatureSetAdapter
 

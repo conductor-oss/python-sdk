@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.parser_message_lite_adapter import ParserMessageLiteAdapter
+from conductor.client.adapters.models.parser_message_lite_adapter import \
+    ParserMessageLiteAdapter
 
 ParserMessageLite = ParserMessageLiteAdapter
 

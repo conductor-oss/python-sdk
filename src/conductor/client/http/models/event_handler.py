@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.event_handler_adapter import EventHandlerAdapter
+from conductor.client.adapters.models.event_handler_adapter import \
+    EventHandlerAdapter
 
 EventHandler = EventHandlerAdapter
 

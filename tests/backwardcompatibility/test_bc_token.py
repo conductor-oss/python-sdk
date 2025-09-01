@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.token import Token
+from conductor.client.http.models import Token
 
 
 def test_required_fields_exist():

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.task_result_adapter import TaskResultAdapter
+from conductor.client.adapters.models.task_result_adapter import \
+    TaskResultAdapter
 
 TaskResult = TaskResultAdapter
 

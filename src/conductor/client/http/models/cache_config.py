@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.cache_config_adapter import CacheConfigAdapter
+from conductor.client.adapters.models.cache_config_adapter import \
+    CacheConfigAdapter
 
 CacheConfig = CacheConfigAdapter
 

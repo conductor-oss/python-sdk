@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.integration_adapter import IntegrationAdapter
+from conductor.client.adapters.models.integration_adapter import \
+    IntegrationAdapter
 
 Integration = IntegrationAdapter
 

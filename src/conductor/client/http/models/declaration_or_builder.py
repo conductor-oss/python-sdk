@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.declaration_or_builder_adapter import DeclarationOrBuilderAdapter
+from conductor.client.adapters.models.declaration_or_builder_adapter import \
+    DeclarationOrBuilderAdapter
 
 DeclarationOrBuilder = DeclarationOrBuilderAdapter
 

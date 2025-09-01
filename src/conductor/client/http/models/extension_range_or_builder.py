@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.extension_range_or_builder_adapter import ExtensionRangeOrBuilderAdapter
+from conductor.client.adapters.models.extension_range_or_builder_adapter import \
+    ExtensionRangeOrBuilderAdapter
 
 ExtensionRangeOrBuilder = ExtensionRangeOrBuilderAdapter
 

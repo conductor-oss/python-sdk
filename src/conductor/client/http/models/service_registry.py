@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.service_registry_adapter import ServiceRegistryAdapter, OrkesCircuitBreakerConfig, Config, ServiceType
+from conductor.client.adapters.models.service_registry_adapter import (
+    Config, OrkesCircuitBreakerConfig, ServiceRegistryAdapter, ServiceType)
 
 ServiceRegistry = ServiceRegistryAdapter
 

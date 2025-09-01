@@ -144,7 +144,7 @@ def test_field_types_unchanged():
     assert isinstance(integration.category, str)
     assert isinstance(integration.configuration, dict)
     assert isinstance(integration.created_by, str)
-    assert isinstance(integration.create_time, int)
+    assert isinstance(integration.created_on, int)
     assert isinstance(integration.description, str)
     assert isinstance(integration.enabled, bool)
     assert isinstance(integration.models_count, int)
@@ -152,7 +152,7 @@ def test_field_types_unchanged():
     assert isinstance(integration.tags, list)
     assert isinstance(integration.type, str)
     assert isinstance(integration.updated_by, str)
-    assert isinstance(integration.update_time, int)
+    assert isinstance(integration.updated_on, int)
 
 
 def test_swagger_types_mapping_unchanged():
@@ -165,6 +165,7 @@ def test_attribute_map_unchanged():
         "category": "category",
         "configuration": "configuration",
         "create_time": "createTime",
+        "created_on": "createdOn",
         "created_by": "createdBy",
         "description": "description",
         "enabled": "enabled",
@@ -174,6 +175,7 @@ def test_attribute_map_unchanged():
         "type": "type",
         "updated_by": "updatedBy",
         "update_time": "updateTime",
+        "updated_on": "updatedOn",
         "owner_app": "ownerApp",
     }
     for key, expected_json_key in expected_attribute_map.items():
@@ -203,7 +205,7 @@ def test_to_dict_method_exists_and_works(sample_config, sample_tags):
     assert result["category"] == "API"
     assert result["configuration"] == sample_config
     assert result["created_by"] == "test_user"
-    assert result["create_time"] == 1234567890
+    assert result["created_on"] == 1234567890
     assert result["description"] == "Test integration"
     assert result["enabled"] is True
     assert result["models_count"] == 5
@@ -211,7 +213,7 @@ def test_to_dict_method_exists_and_works(sample_config, sample_tags):
     assert result["tags"] == sample_tags
     assert result["type"] == "webhook"
     assert result["updated_by"] == "test_user2"
-    assert result["update_time"] == 1234567891
+    assert result["updated_on"] == 1234567891
 
 
 def test_to_str_method_exists_and_works(sample_config, sample_tags):

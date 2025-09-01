@@ -1,59 +1,83 @@
 from __future__ import annotations
 
 from typing import ClassVar, Dict
+
 from conductor.client.codegen.models.task_summary import TaskSummary
 
 
 class TaskSummaryAdapter(TaskSummary):
     swagger_types: ClassVar[Dict[str, str]] = {
-        'correlation_id': 'str',
-        'end_time': 'str',
-        'execution_time': 'int',
-        'external_input_payload_storage_path': 'str',
-        'external_output_payload_storage_path': 'str',
-        'input': 'str',
-        'output': 'str',
-        'queue_wait_time': 'int',
-        'reason_for_incompletion': 'str',
-        'scheduled_time': 'str',
-        'start_time': 'str',
-        'status': 'str',
-        'task_def_name': 'str',
-        'task_id': 'str',
-        'task_reference_name': 'str',
-        'task_type': 'str',
-        'update_time': 'str',
-        'workflow_id': 'str',
-        'workflow_priority': 'int',
-        'workflow_type': 'str',
-        'domain': 'str'
+        "correlation_id": "str",
+        "end_time": "str",
+        "execution_time": "int",
+        "external_input_payload_storage_path": "str",
+        "external_output_payload_storage_path": "str",
+        "input": "str",
+        "output": "str",
+        "queue_wait_time": "int",
+        "reason_for_incompletion": "str",
+        "scheduled_time": "str",
+        "start_time": "str",
+        "status": "str",
+        "task_def_name": "str",
+        "task_id": "str",
+        "task_reference_name": "str",
+        "task_type": "str",
+        "update_time": "str",
+        "workflow_id": "str",
+        "workflow_priority": "int",
+        "workflow_type": "str",
+        "domain": "str",
     }
 
     attribute_map: ClassVar[Dict[str, str]] = {
-        'correlation_id': 'correlationId',
-        'end_time': 'endTime',
-        'execution_time': 'executionTime',
-        'external_input_payload_storage_path': 'externalInputPayloadStoragePath',
-        'external_output_payload_storage_path': 'externalOutputPayloadStoragePath',
-        'input': 'input',
-        'output': 'output',
-        'queue_wait_time': 'queueWaitTime',
-        'reason_for_incompletion': 'reasonForIncompletion',
-        'scheduled_time': 'scheduledTime',
-        'start_time': 'startTime',
-        'status': 'status',
-        'task_def_name': 'taskDefName',
-        'task_id': 'taskId',
-        'task_reference_name': 'taskReferenceName',
-        'task_type': 'taskType',
-        'update_time': 'updateTime',
-        'workflow_id': 'workflowId',
-        'workflow_priority': 'workflowPriority',
-        'workflow_type': 'workflowType',
-        'domain': 'domain'
+        "correlation_id": "correlationId",
+        "end_time": "endTime",
+        "execution_time": "executionTime",
+        "external_input_payload_storage_path": "externalInputPayloadStoragePath",
+        "external_output_payload_storage_path": "externalOutputPayloadStoragePath",
+        "input": "input",
+        "output": "output",
+        "queue_wait_time": "queueWaitTime",
+        "reason_for_incompletion": "reasonForIncompletion",
+        "scheduled_time": "scheduledTime",
+        "start_time": "startTime",
+        "status": "status",
+        "task_def_name": "taskDefName",
+        "task_id": "taskId",
+        "task_reference_name": "taskReferenceName",
+        "task_type": "taskType",
+        "update_time": "updateTime",
+        "workflow_id": "workflowId",
+        "workflow_priority": "workflowPriority",
+        "workflow_type": "workflowType",
+        "domain": "domain",
     }
 
-    def __init__(self, correlation_id=None, end_time=None, execution_time=None, external_input_payload_storage_path=None, external_output_payload_storage_path=None, input=None, output=None, queue_wait_time=None, reason_for_incompletion=None, scheduled_time=None, start_time=None, status=None, task_def_name=None, task_id=None, task_reference_name=None, task_type=None, update_time=None, workflow_id=None, workflow_priority=None, workflow_type=None, domain=None):  # noqa: E501
+    def __init__(
+        self,
+        correlation_id=None,
+        end_time=None,
+        execution_time=None,
+        external_input_payload_storage_path=None,
+        external_output_payload_storage_path=None,
+        input=None,
+        output=None,
+        queue_wait_time=None,
+        reason_for_incompletion=None,
+        scheduled_time=None,
+        start_time=None,
+        status=None,
+        task_def_name=None,
+        task_id=None,
+        task_reference_name=None,
+        task_type=None,
+        update_time=None,
+        workflow_id=None,
+        workflow_priority=None,
+        workflow_type=None,
+        domain=None,
+    ):  # noqa: E501
         """TaskSummary - a model defined in Swagger"""  # noqa: E501
         self._correlation_id = None
         self._end_time = None
@@ -84,9 +108,13 @@ class TaskSummaryAdapter(TaskSummary):
         if execution_time is not None:
             self.execution_time = execution_time
         if external_input_payload_storage_path is not None:
-            self.external_input_payload_storage_path = external_input_payload_storage_path
+            self.external_input_payload_storage_path = (
+                external_input_payload_storage_path
+            )
         if external_output_payload_storage_path is not None:
-            self.external_output_payload_storage_path = external_output_payload_storage_path
+            self.external_output_payload_storage_path = (
+                external_output_payload_storage_path
+            )
         if input is not None:
             self.input = input
         if output is not None:

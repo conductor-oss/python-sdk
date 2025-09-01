@@ -8,7 +8,7 @@ def baseline_swagger_types():
     """Baseline swagger types for backward compatibility testing."""
     return {
         "action": "str",
-        "start_workflow": "StartWorkflowRequest",
+        "start_workflow": "StartWorkflow",
         "complete_task": "TaskDetails",
         "fail_task": "TaskDetails",
         "expand_inline_json": "bool",

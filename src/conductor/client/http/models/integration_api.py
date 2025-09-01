@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.integration_api_adapter import IntegrationApiAdapter
+from conductor.client.adapters.models.integration_api_adapter import \
+    IntegrationApiAdapter
 
 IntegrationApi = IntegrationApiAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.parser_file_descriptor_proto_adapter import ParserFileDescriptorProtoAdapter
+from conductor.client.adapters.models.parser_file_descriptor_proto_adapter import \
+    ParserFileDescriptorProtoAdapter
 
 ParserFileDescriptorProto = ParserFileDescriptorProtoAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.api.event_message_resource_api_adapter import EventMessageResourceApiAdapter
+from conductor.client.adapters.api.event_message_resource_api_adapter import \
+    EventMessageResourceApiAdapter
 
 EventMessageResourceApi = EventMessageResourceApiAdapter
 

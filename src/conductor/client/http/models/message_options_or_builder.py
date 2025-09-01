@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.message_options_or_builder_adapter import MessageOptionsOrBuilderAdapter
+from conductor.client.adapters.models.message_options_or_builder_adapter import \
+    MessageOptionsOrBuilderAdapter
 
 MessageOptionsOrBuilder = MessageOptionsOrBuilderAdapter
 

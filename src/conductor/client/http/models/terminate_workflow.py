@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.terminate_workflow_adapter import TerminateWorkflowAdapter
+from conductor.client.adapters.models.terminate_workflow_adapter import \
+    TerminateWorkflowAdapter
 
 TerminateWorkflow = TerminateWorkflowAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.declaration_adapter import DeclarationAdapter
+from conductor.client.adapters.models.declaration_adapter import \
+    DeclarationAdapter
 
 Declaration = DeclarationAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.workflow_schedule_adapter import WorkflowScheduleAdapter
+from conductor.client.adapters.models.workflow_schedule_adapter import \
+    WorkflowScheduleAdapter
 
 WorkflowSchedule = WorkflowScheduleAdapter
 

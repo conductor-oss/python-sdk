@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.signal_response_adapter import SignalResponseAdapter, WorkflowSignalReturnStrategy, TaskStatus
+from conductor.client.adapters.models.signal_response_adapter import (
+    SignalResponseAdapter, TaskStatus, WorkflowSignalReturnStrategy)
 
 SignalResponse = SignalResponseAdapter
 

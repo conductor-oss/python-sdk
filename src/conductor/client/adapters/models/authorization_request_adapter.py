@@ -30,9 +30,12 @@ class AuthorizationRequestAdapter(AuthorizationRequest):
         allowed_values = ["CREATE", "READ", "EXECUTE", "UPDATE", "DELETE"]  # noqa: E501
         if not set(access).issubset(set(allowed_values)):
             raise ValueError(
-                "Invalid values for `access` [{0}], must be a subset of [{1}]"  # noqa: E501
-                .format(", ".join(map(str, set(access) - set(allowed_values))),  # noqa: E501
-                        ", ".join(map(str, allowed_values)))
+                "Invalid values for `access` [{0}], must be a subset of [{1}]".format(  # noqa: E501
+                    ", ".join(
+                        map(str, set(access) - set(allowed_values))
+                    ),  # noqa: E501
+                    ", ".join(map(str, allowed_values)),
+                )
             )
 
         self._access = access

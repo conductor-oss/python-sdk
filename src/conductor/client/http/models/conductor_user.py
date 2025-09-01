@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.conductor_user_adapter import ConductorUserAdapter
+from conductor.client.adapters.models.conductor_user_adapter import \
+    ConductorUserAdapter
 
 ConductorUser = ConductorUserAdapter
 

@@ -1,4 +1,5 @@
-from conductor.client.adapters.models.proto_registry_entry_adapter import ProtoRegistryEntryAdapter
+from conductor.client.adapters.models.proto_registry_entry_adapter import \
+    ProtoRegistryEntryAdapter
 
 ProtoRegistryEntry = ProtoRegistryEntryAdapter
 
