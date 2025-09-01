@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.integration_api import IntegrationApi
+from conductor.client.http.models import IntegrationApi
 
 
 @pytest.fixture

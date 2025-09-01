@@ -1,4 +1,4 @@
-from conductor.client.http.models.event_handler import EventHandler
+from conductor.client.http.models import EventHandler
 
 
 def test_required_fields_exist_and_accessible():

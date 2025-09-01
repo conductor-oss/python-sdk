@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.subject_ref import SubjectRef
+from conductor.client.http.models import SubjectRef
 from conductor.shared.http.enums.subject_type import SubjectType
 
 

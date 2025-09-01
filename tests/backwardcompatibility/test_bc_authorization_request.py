@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.authorization_request import AuthorizationRequest
+from conductor.client.http.models import AuthorizationRequest
 
 
 @pytest.fixture

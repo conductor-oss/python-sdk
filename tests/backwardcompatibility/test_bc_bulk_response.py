@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.bulk_response import BulkResponse
+from conductor.client.http.models import BulkResponse
 
 
 @pytest.fixture

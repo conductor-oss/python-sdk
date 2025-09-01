@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.workflow_tag import WorkflowTag
+from conductor.client.http.models import WorkflowTag
 
 
 @pytest.fixture

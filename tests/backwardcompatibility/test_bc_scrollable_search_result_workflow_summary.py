@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.scrollable_search_result_workflow_summary import ScrollableSearchResultWorkflowSummary
+from conductor.client.http.models import ScrollableSearchResultWorkflowSummary
 
 
 @pytest.fixture

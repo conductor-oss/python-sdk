@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.workflow_schedule import WorkflowSchedule
+from conductor.client.http.models import WorkflowSchedule
 
 
 @pytest.fixture

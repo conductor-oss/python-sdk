@@ -1,4 +1,4 @@
-from conductor.client.http.models.task_exec_log import TaskExecLog
+from conductor.client.http.models import TaskExecLog
 
 
 def test_constructor_with_no_args():

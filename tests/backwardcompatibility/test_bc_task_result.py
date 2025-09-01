@@ -1,7 +1,7 @@
 import pytest
 
 from conductor.client.http.models.task_result import TaskResult
-from conductor.shared.http.enums.task_result_status import TaskResultStatus
+from conductor.client.http.models.task_result_status import TaskResultStatus
 
 
 @pytest.fixture

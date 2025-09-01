@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.task_result import TaskResult
+from conductor.client.http.models import TaskResult
 from conductor.client.http.models.workflow_state_update import WorkflowStateUpdate
 
 

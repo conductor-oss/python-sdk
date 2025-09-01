@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.workflow_status import WorkflowStatus
+from conductor.client.http.models import WorkflowStatus
 
 
 @pytest.fixture

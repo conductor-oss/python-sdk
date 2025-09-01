@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.search_result_task import SearchResultTask
+from conductor.client.http.models import SearchResultTask
 
 
 @pytest.fixture

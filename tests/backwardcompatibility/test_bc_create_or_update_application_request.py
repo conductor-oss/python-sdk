@@ -1,6 +1,6 @@
 import pytest
 import sys
-from conductor.client.http.models.create_or_update_application_request import CreateOrUpdateApplicationRequest
+from conductor.client.http.models import CreateOrUpdateApplicationRequest
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from conductor.client.http.models.response import Response
+from conductor.client.http.models import Response
 from conductor.client.http.models import Response as ImportedResponse
 
 

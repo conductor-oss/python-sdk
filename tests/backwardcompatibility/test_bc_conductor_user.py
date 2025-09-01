@@ -1,4 +1,4 @@
-from conductor.client.http.models.conductor_user import ConductorUser
+from conductor.client.http.models import ConductorUser
 
 
 def test_constructor_with_no_arguments():

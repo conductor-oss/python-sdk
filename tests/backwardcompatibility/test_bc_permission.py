@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from conductor.client.http.models.permission import Permission
+from conductor.client.http.models import Permission
 
 
 @pytest.fixture

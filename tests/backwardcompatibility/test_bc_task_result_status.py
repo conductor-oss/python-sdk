@@ -2,7 +2,7 @@ from enum import Enum
 
 import pytest
 
-from conductor.shared.http.enums.task_result_status import TaskResultStatus
+from conductor.client.http.models import TaskResultStatus
 
 
 @pytest.fixture

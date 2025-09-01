@@ -48,7 +48,7 @@ def test_no_parameter_constructor_behavior():
 
     # Verify it's the expected validation error
     error_message = str(excinfo.value)
-    assert "Invalid value for `type`" in error_message
+    assert "Invalid value for `type` (None)" in error_message
 
 
 def test_constructor_signature_backward_compatible():
@@ -70,7 +70,7 @@ def test_constructor_with_only_id_parameter():
 
     # Verify it's the expected validation error
     error_message = str(excinfo.value)
-    assert "Invalid value for `type`" in error_message
+    assert "Invalid value for `type` (None)" in error_message
 
 
 def test_required_attributes_exist():
@@ -125,6 +125,45 @@ def test_type_property_getter_behavior():
     # Test by setting directly to internal field
     target_ref._type = "TASK_DEF"
     assert target_ref.type == "TASK_DEF"
+
+
+def test_id_property_getter_behavior():
+    """Verify id property getter works as expected."""
+    target_ref = TargetRef(type="SECRET")
+
+    # Initially should be None (since we only set type)
+    assert target_ref.id is None
+
+    # Should return assigned value
+    target_ref._id = "test-id"
+    assert target_ref.id == "test-id"
+
+
+def test_type_setter_validation_with_valid_values(valid_enum_values):
+    """Verify type setter accepts all existing valid enum values."""
+    target_ref = TargetRef(type="WORKFLOW_DEF")  # Start with valid value
+
+    for valid_value in valid_enum_values:
+        # Should not raise exception
+        target_ref.type = valid_value
+        assert target_ref.type == valid_value
+        assert target_ref._type == valid_value
+
+
+def test_type_setter_validation_rejects_invalid_values():
+    """Verify type setter still validates and rejects invalid values."""
+    target_ref = TargetRef(type="TAG")  # Start with valid value
+
+    invalid_values = ["INVALID", "workflow_def", "", None, 123]
+
+    for invalid_value in invalid_values:
+        with pytest.raises(ValueError, match="Invalid") as excinfo:
+            target_ref.type = invalid_value
+
+        # Verify error message format is preserved
+        error_message = str(excinfo.value)
+        assert "Invalid value for `type`" in error_message
+        assert "must be one of" in error_message
 
 
 def test_id_setter_behavior_unchanged():
@@ -214,7 +253,7 @@ def test_equality_comparison_behavior():
 
 def test_string_representation_works():
     """Verify string representation methods work."""
-    target_ref = TargetRef(type="SECRET_NAME", id="secret-456")
+    target_ref = TargetRef(type="SECRET", id="secret-456")
 
     # to_str should return a string
     str_result = target_ref.to_str()

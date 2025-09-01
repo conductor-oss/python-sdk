@@ -1,5 +1,5 @@
 import pytest
-from conductor.client.http.models.group import Group
+from conductor.client.http.models import Group
 
 
 @pytest.fixture

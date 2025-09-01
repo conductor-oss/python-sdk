@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.sub_workflow_params import SubWorkflowParams
+from conductor.client.http.models import SubWorkflowParams
 
 
 @pytest.fixture

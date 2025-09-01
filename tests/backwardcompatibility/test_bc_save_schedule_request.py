@@ -1,7 +1,6 @@
 import pytest
 
-from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
-from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
+from conductor.client.http.models import SaveScheduleRequest, StartWorkflowRequest
 
 
 @pytest.fixture

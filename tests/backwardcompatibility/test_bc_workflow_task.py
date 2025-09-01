@@ -1,8 +1,11 @@
 import pytest
 
-from conductor.client.http.models.cache_config import CacheConfig
-from conductor.client.http.models.state_change_event import StateChangeEvent, StateChangeEventType, StateChangeConfig
-from conductor.client.http.models.workflow_task import WorkflowTask
+from conductor.client.http.models.state_change_event import (
+    StateChangeConfig,
+    StateChangeEvent,
+    StateChangeEventType,
+)
+from conductor.client.http.models.workflow_task import CacheConfig, WorkflowTask
 
 
 @pytest.fixture

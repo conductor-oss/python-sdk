@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.generate_token_request import GenerateTokenRequest
+from conductor.client.http.models import GenerateTokenRequest
 
 
 @pytest.fixture

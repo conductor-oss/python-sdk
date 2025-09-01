@@ -3,8 +3,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models import WorkflowDef
-from conductor.client.http.models.workflow_def import to_workflow_def
+from conductor.client.http.models.workflow_def import WorkflowDef, to_workflow_def
 
 
 @pytest.fixture

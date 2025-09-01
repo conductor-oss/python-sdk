@@ -1,7 +1,6 @@
 import pytest
 
-from conductor.client.http.models.upsert_user_request import \
-    UpsertUserRequest
+from conductor.client.http.models import UpsertUserRequest
 
 
 @pytest.fixture

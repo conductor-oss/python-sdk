@@ -1,6 +1,6 @@
 import pytest
 
-from conductor.client.http.models.skip_task_request import SkipTaskRequest
+from conductor.client.http.models import SkipTaskRequest
 
 
 @pytest.fixture

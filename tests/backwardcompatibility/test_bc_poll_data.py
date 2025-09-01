@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from conductor.client.http.models.poll_data import PollData
+from conductor.client.http.models import PollData
 
 
 @pytest.fixture

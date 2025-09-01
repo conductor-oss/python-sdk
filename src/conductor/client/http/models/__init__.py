@@ -214,7 +214,7 @@ from conductor.client.http.models.workflow_def import \
 from conductor.client.http.models.sub_workflow_params import \
     SubWorkflowParams
 from conductor.client.http.models.state_change_event import \
-    StateChangeEvent
+    StateChangeEvent, StateChangeEventType, StateChangeConfig
 from conductor.client.http.models.task_exec_log import \
     TaskExecLog
 from conductor.client.http.models.workflow import \
@@ -250,6 +250,13 @@ from conductor.client.http.models.request_param import RequestParam, Schema
 from conductor.client.http.models.health_check_status import HealthCheckStatus
 from conductor.client.http.models.health import Health
 from conductor.client.http.models.skip_task_request import SkipTaskRequest
+from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
+from conductor.client.http.models.search_result_task import SearchResultTask
+from conductor.client.http.models.search_result_task_summary import SearchResultTaskSummary
+from conductor.client.http.models.search_result_workflow_summary import SearchResultWorkflowSummary
+from conductor.client.http.models.start_workflow import StartWorkflow
+from conductor.shared.http.enums.idempotency_strategy import IdempotencyStrategy
+from conductor.client.http.models.task_result_status import TaskResultStatus
 
 __all__ = [  # noqa: RUF022
     "Action",
@@ -387,4 +394,13 @@ __all__ = [  # noqa: RUF022
     "HealthCheckStatus",
     "Health",
     "SkipTaskRequest",
+    "SaveScheduleRequest",
+    "SearchResultTask",
+    "SearchResultTaskSummary",
+    "SearchResultWorkflowSummary",
+    "StartWorkflow",
+    "IdempotencyStrategy",
+    "StateChangeEventType",
+    "StateChangeConfig",
+    "TaskResultStatus",
 ]
