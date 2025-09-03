@@ -152,6 +152,7 @@ line-ending = "auto"
 
 [tool.ruff.lint.per-file-ignores]
 "src/conductor/client/http/**/*.py" = ["ALL"]
+"src/conductor/client/codegen/**/*.py" = ["ALL"]
 "src/conductor/client/orkes/api/*.py" = ["ALL"]
 "tests/**/*.py" = ["B", "C4", "SIM", "PLR2004"]
 "examples/**/*.py" = ["B", "C4", "SIM"]

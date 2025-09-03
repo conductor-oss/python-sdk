@@ -1,22 +1,25 @@
 from __future__ import annotations
+
 import logging
 import os
 import time
 from typing import Optional
 
-from conductor.shared.configuration.settings.authentication_settings import AuthenticationSettings
+from conductor.shared.configuration.settings.authentication_settings import (
+    AuthenticationSettings,
+)
 
 
 class Configuration:
     AUTH_TOKEN = None
 
     def __init__(
-            self,
-            base_url: Optional[str] = None,
-            debug: bool = False,
-            authentication_settings: AuthenticationSettings = None,
-            server_api_url: Optional[str] = None,
-            auth_token_ttl_min: int = 45
+        self,
+        base_url: Optional[str] = None,
+        debug: bool = False,
+        authentication_settings: AuthenticationSettings = None,
+        server_api_url: Optional[str] = None,
+        auth_token_ttl_min: int = 45,
     ):
         if server_api_url is not None:
             self.host = server_api_url
@@ -39,10 +42,11 @@ class Configuration:
             key = os.getenv("CONDUCTOR_AUTH_KEY")
             secret = os.getenv("CONDUCTOR_AUTH_SECRET")
             if key is not None and secret is not None:
-                self.authentication_settings = AuthenticationSettings(key_id=key, key_secret=secret)
+                self.authentication_settings = AuthenticationSettings(
+                    key_id=key, key_secret=secret
+                )
             else:
                 self.authentication_settings = None
-
 
         # Debug switch
         self.debug = debug
@@ -140,19 +144,16 @@ class Configuration:
         """
         return self.__ui_host
 
-    def apply_logging_config(self, log_format : Optional[str] = None, level = None):
+    def apply_logging_config(self, log_format: Optional[str] = None, level=None):
         if log_format is None:
             log_format = self.logger_format
         if level is None:
             level = self.__log_level
-        logging.basicConfig(
-            format=log_format,
-            level=level
-        )
+        logging.basicConfig(format=log_format, level=level)
 
     @staticmethod
     def get_logging_formatted_name(name):
-        return f"[{os.getpid()}] {name}"
+        return f"[pid:{os.getpid()}] {name}"
 
     def update_token(self, token: str) -> None:
         self.AUTH_TOKEN = token

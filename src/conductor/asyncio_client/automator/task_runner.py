@@ -8,20 +8,22 @@ import time
 import traceback
 from typing import Optional
 
-from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
-from conductor.asyncio_client.adapters.models.task_exec_log_adapter import \
-    TaskExecLogAdapter
-from conductor.asyncio_client.adapters.models.task_result_adapter import \
-    TaskResultAdapter
-from conductor.asyncio_client.configuration import Configuration
-from conductor.asyncio_client.adapters.api.task_resource_api import TaskResourceApiAdapter
 from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.adapters.api.task_resource_api import (
+    TaskResourceApiAdapter,
+)
+from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
+from conductor.asyncio_client.adapters.models.task_exec_log_adapter import (
+    TaskExecLogAdapter,
+)
+from conductor.asyncio_client.adapters.models.task_result_adapter import (
+    TaskResultAdapter,
+)
+from conductor.asyncio_client.configuration import Configuration
 from conductor.asyncio_client.http.exceptions import UnauthorizedException
-from conductor.asyncio_client.telemetry.metrics_collector import \
-    AsyncMetricsCollector
+from conductor.asyncio_client.telemetry.metrics_collector import AsyncMetricsCollector
 from conductor.asyncio_client.worker.worker_interface import WorkerInterface
-from conductor.shared.configuration.settings.metrics_settings import \
-    MetricsSettings
+from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
@@ -43,7 +45,9 @@ class AsyncTaskRunner:
         self.metrics_collector = None
         if metrics_settings is not None:
             self.metrics_collector = AsyncMetricsCollector(metrics_settings)
-        self.task_client = TaskResourceApiAdapter(ApiClient(configuration=self.configuration))
+        self.task_client = TaskResourceApiAdapter(
+            ApiClient(configuration=self.configuration)
+        )
 
     async def run(self) -> None:
         if self.configuration is not None:
@@ -99,8 +103,8 @@ class AsyncTaskRunner:
                 await self.metrics_collector.increment_task_poll_error(
                     task_definition_name, auth_exception
                 )
-            logger.fatal(
-                f"failed to poll task {task_definition_name} error: {auth_exception.reason} - {auth_exception.status}"
+            logger.error(
+                f"Failed to poll task {task_definition_name} error: {auth_exception.reason} - {auth_exception.status}"
             )
             return None
         except Exception as e:

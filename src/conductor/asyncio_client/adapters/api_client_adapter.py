@@ -1,12 +1,17 @@
 import json
 import logging
+import re
+from typing import Dict, Optional
 
 from conductor.asyncio_client.adapters.models import GenerateTokenRequest
+from conductor.asyncio_client.configuration import Configuration
 from conductor.asyncio_client.http import rest
 from conductor.asyncio_client.http.api_client import ApiClient
+from conductor.asyncio_client.http.api_response import ApiResponse
+from conductor.asyncio_client.http.api_response import T as ApiResponseT
 from conductor.asyncio_client.http.exceptions import ApiException
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
 
 class ApiClientAdapter(ApiClient):
@@ -55,6 +60,65 @@ class ApiClientAdapter(ApiClient):
             raise e
 
         return response_data
+
+    def response_deserialize(
+        self,
+        response_data: rest.RESTResponse,
+        response_types_map: Optional[Dict[str, ApiResponseT]] = None,
+    ) -> ApiResponse[ApiResponseT]:
+        """Deserializes response into an object.
+        :param response_data: RESTResponse object to be deserialized.
+        :param response_types_map: dict of response types.
+        :return: ApiResponse
+        """
+
+        msg = "RESTResponse.read() must be called before passing it to response_deserialize()"
+        assert response_data.data is not None, msg
+
+        response_type = response_types_map.get(str(response_data.status), None)
+        if (
+            not response_type
+            and isinstance(response_data.status, int)
+            and 100 <= response_data.status <= 599
+        ):
+            # if not found, look for '1XX', '2XX', etc.
+            response_type = response_types_map.get(
+                str(response_data.status)[0] + "XX", None
+            )
+
+        # deserialize response data
+        response_text = None
+        return_data = None
+        try:
+            if response_type == "bytearray":
+                return_data = response_data.data
+            elif response_type == "file":
+                return_data = self.__deserialize_file(response_data)
+            elif response_type is not None:
+                match = None
+                content_type = response_data.getheader("content-type")
+                if content_type is not None:
+                    match = re.search(r"charset=([a-zA-Z\-\d]+)[\s;]?", content_type)
+                encoding = match.group(1) if match else "utf-8"
+                response_text = response_data.data.decode(encoding)
+                return_data = self.deserialize(
+                    response_text, response_type, content_type
+                )
+        finally:
+            if not 200 <= response_data.status <= 299:
+                logger.error(f"Unexpected response status code: {response_data.status}")
+                raise ApiException.from_response(
+                    http_resp=response_data,
+                    body=response_text,
+                    data=return_data,
+                )
+
+        return ApiResponse(
+            status_code=response_data.status,
+            data=return_data,
+            headers=response_data.getheaders(),
+            raw_data=response_data.data,
+        )
 
     async def refresh_authorization_token(self):
         obtain_new_token_response = await self.obtain_new_token()

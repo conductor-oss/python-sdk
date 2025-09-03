@@ -4,30 +4,26 @@ import sys
 import time
 import traceback
 
+from conductor.client.codegen.rest import AuthorizationException
 from conductor.client.configuration.configuration import Configuration
-from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api_client import ApiClient
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.codegen.rest import AuthorizationException
 from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.worker.worker_interface import WorkerInterface
+from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
 
-logger = logging.getLogger(
-    Configuration.get_logging_formatted_name(
-        __name__
-    )
-)
+logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
 
 class TaskRunner:
     def __init__(
-            self,
-            worker: WorkerInterface,
-            configuration: Configuration = None,
-            metrics_settings: MetricsSettings = None
+        self,
+        worker: WorkerInterface,
+        configuration: Configuration = None,
+        metrics_settings: MetricsSettings = None,
     ):
         if not isinstance(worker, WorkerInterface):
             raise Exception("Invalid worker")
@@ -38,14 +34,8 @@ class TaskRunner:
         self.configuration = configuration
         self.metrics_collector = None
         if metrics_settings is not None:
-            self.metrics_collector = MetricsCollector(
-                metrics_settings
-            )
-        self.task_client = TaskResourceApi(
-            ApiClient(
-                configuration=self.configuration
-            )
-        )
+            self.metrics_collector = MetricsCollector(metrics_settings)
+        self.task_client = TaskResourceApi(ApiClient(configuration=self.configuration))
 
     def run(self) -> None:
         if self.configuration is not None:
@@ -58,7 +48,7 @@ class TaskRunner:
             "Polling task %s with domain %s with polling interval %s",
             task_names,
             self.worker.get_domain(),
-            self.worker.get_polling_interval_in_seconds()
+            self.worker.get_polling_interval_in_seconds(),
         )
 
         while True:
@@ -81,9 +71,7 @@ class TaskRunner:
             logger.debug("Stop polling task for: %s", task_definition_name)
             return None
         if self.metrics_collector is not None:
-            self.metrics_collector.increment_task_poll(
-                task_definition_name
-            )
+            self.metrics_collector.increment_task_poll(task_definition_name)
 
         try:
             start_time = time.time()
@@ -95,22 +83,32 @@ class TaskRunner:
             finish_time = time.time()
             time_spent = finish_time - start_time
             if self.metrics_collector is not None:
-                self.metrics_collector.record_task_poll_time(task_definition_name, time_spent)
+                self.metrics_collector.record_task_poll_time(
+                    task_definition_name, time_spent
+                )
         except AuthorizationException as auth_exception:
             if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(task_definition_name, type(auth_exception))
+                self.metrics_collector.increment_task_poll_error(
+                    task_definition_name, type(auth_exception)
+                )
             if auth_exception.invalid_token:
-                logger.fatal(f"failed to poll task {task_definition_name} due to invalid auth token")
+                logger.fatal(
+                    f"Failed to poll task {task_definition_name} due to invalid auth token"
+                )
             else:
-                logger.fatal(f"failed to poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code}")
+                logger.error(
+                    f"Failed to poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code}"
+                )
             return None
         except Exception as e:
             if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(task_definition_name, type(e))
+                self.metrics_collector.increment_task_poll_error(
+                    task_definition_name, type(e)
+                )
             logger.error(
                 "Failed to poll task for: %s, reason: %s",
                 task_definition_name,
-                traceback.format_exc()
+                traceback.format_exc(),
             )
             return None
         if task is not None:
@@ -118,7 +116,7 @@ class TaskRunner:
                 "Polled task: %s, worker_id: %s, domain: %s",
                 task_definition_name,
                 self.worker.get_identity(),
-                self.worker.get_domain()
+                self.worker.get_domain(),
             )
         return task
 
@@ -130,7 +128,7 @@ class TaskRunner:
             "Executing task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
             task.task_id,
             task.workflow_instance_id,
-            task_definition_name
+            task_definition_name,
         )
         try:
             start_time = time.time()
@@ -139,18 +137,16 @@ class TaskRunner:
             time_spent = finish_time - start_time
             if self.metrics_collector is not None:
                 self.metrics_collector.record_task_execute_time(
-                    task_definition_name,
-                    time_spent
+                    task_definition_name, time_spent
                 )
                 self.metrics_collector.record_task_result_payload_size(
-                    task_definition_name,
-                    sys.getsizeof(task_result)
+                    task_definition_name, sys.getsizeof(task_result)
                 )
             logger.debug(
                 "Executed task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
                 task.task_id,
                 task.workflow_instance_id,
-                task_definition_name
+                task_definition_name,
             )
         except Exception as e:
             if self.metrics_collector is not None:
@@ -160,19 +156,22 @@ class TaskRunner:
             task_result = TaskResult(
                 task_id=task.task_id,
                 workflow_instance_id=task.workflow_instance_id,
-                worker_id=self.worker.get_identity()
+                worker_id=self.worker.get_identity(),
             )
             task_result.status = "FAILED"
             task_result.reason_for_incompletion = str(e)
-            task_result.logs = [TaskExecLog(
-                traceback.format_exc(), task_result.task_id, int(time.time()))]
+            task_result.logs = [
+                TaskExecLog(
+                    traceback.format_exc(), task_result.task_id, int(time.time())
+                )
+            ]
             logger.error(
                 "Failed to execute task, id: %s, workflow_instance_id: %s, "
                 "task_definition_name: %s, reason: %s",
                 task.task_id,
                 task.workflow_instance_id,
                 task_definition_name,
-                traceback.format_exc()
+                traceback.format_exc(),
             )
         return task_result
 
@@ -184,7 +183,7 @@ class TaskRunner:
             "Updating task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
             task_result.task_id,
             task_result.workflow_instance_id,
-            task_definition_name
+            task_definition_name,
         )
         for attempt in range(4):
             if attempt > 0:
@@ -197,7 +196,7 @@ class TaskRunner:
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
-                    response
+                    response,
                 )
                 return response
             except Exception as e:
@@ -210,7 +209,7 @@ class TaskRunner:
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
-                    traceback.format_exc()
+                    traceback.format_exc(),
                 )
         return None
 
@@ -229,19 +228,29 @@ class TaskRunner:
         else:
             self.worker.domain = self.worker.get_domain()
 
-        polling_interval = self.__get_property_value_from_env("polling_interval", task_type)
+        polling_interval = self.__get_property_value_from_env(
+            "polling_interval", task_type
+        )
         if polling_interval:
             try:
                 self.worker.poll_interval = float(polling_interval)
             except Exception:
-                logger.error("error reading and parsing the polling interval value %s", polling_interval)
-                self.worker.poll_interval = self.worker.get_polling_interval_in_seconds()
+                logger.error(
+                    "error reading and parsing the polling interval value %s",
+                    polling_interval,
+                )
+                self.worker.poll_interval = (
+                    self.worker.get_polling_interval_in_seconds()
+                )
 
         if polling_interval:
             try:
                 self.worker.poll_interval = float(polling_interval)
             except Exception as e:
-                logger.error("Exception in reading polling interval from environment variable: %s", e)
+                logger.error(
+                    "Exception in reading polling interval from environment variable: %s",
+                    e,
+                )
 
     def __get_property_value_from_env(self, prop, task_type):
         """

@@ -10,12 +10,10 @@ from typing import List, Optional
 
 from conductor.asyncio_client.automator.task_runner import AsyncTaskRunner
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.telemetry.metrics_collector import \
-    AsyncMetricsCollector
+from conductor.asyncio_client.telemetry.metrics_collector import AsyncMetricsCollector
 from conductor.asyncio_client.worker.worker import Worker
 from conductor.asyncio_client.worker.worker_interface import WorkerInterface
-from conductor.shared.configuration.settings.metrics_settings import \
-    MetricsSettings
+from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
@@ -29,9 +27,9 @@ if not _mp_fork_set:
             set_start_method("fork")
         _mp_fork_set = True
     except Exception as e:
-        logger.info(
-            "error when setting multiprocessing.set_start_method - maybe the context is set %s",
-            e.args,
+        logger.error(
+            "Error when setting multiprocessing.set_start_method - maybe the context is set %s",
+            e.args[0],
         )
     if platform == "darwin":
         os.environ["no_proxy"] = "*"
@@ -40,7 +38,7 @@ if not _mp_fork_set:
 def register_decorated_fn(
     name: str, poll_interval: int, domain: str, worker_id: str, func
 ):
-    logger.info("decorated %s", name)
+    logger.info("Registering decorated function %s", name)
     _decorated_functions[(name, domain)] = {
         "func": func,
         "poll_interval": poll_interval,
@@ -66,7 +64,7 @@ class TaskHandler:
         importlib.import_module("conductor.asyncio_client.worker.worker_task")
         if import_modules is not None:
             for module in import_modules:
-                logger.info("loading module %s", module)
+                logger.debug("Loading module %s", module)
                 importlib.import_module(module)
 
         elif not isinstance(workers, list):
@@ -85,7 +83,7 @@ class TaskHandler:
                     poll_interval=poll_interval,
                 )
                 logger.info(
-                    "created worker with name=%s and domain=%s", task_def_name, domain
+                    "Created worker with name=%s and domain=%s", task_def_name, domain
                 )
                 workers.append(worker)
 
@@ -107,22 +105,22 @@ class TaskHandler:
     def stop_processes(self) -> None:
         self.__stop_task_runner_processes()
         self.__stop_metrics_provider_process()
-        logger.info("Stopped worker processes...")
+        logger.info("Stopped worker processes")
         self.queue.put(None)
         self.logger_process.terminate()
 
     def start_processes(self) -> None:
-        logger.info("Starting worker processes...")
+        logger.info("Starting worker processes")
         freeze_support()
         self.__start_task_runner_processes()
         self.__start_metrics_provider_process()
-        logger.info("Started all processes")
+        logger.info("Started task_runner and metrics_provider processes")
 
     def join_processes(self) -> None:
         try:
             self.__join_task_runner_processes()
             self.__join_metrics_provider_process()
-            logger.info("Joined all processes")
+            logger.info("Joined task_runner and metrics_provider processes")
         except KeyboardInterrupt:
             logger.info("KeyboardInterrupt: Stopping all processes")
             self.stop_processes()
@@ -137,7 +135,9 @@ class TaskHandler:
             target=self.coroutine_as_process_target,
             args=(AsyncMetricsCollector.provide_metrics, metrics_settings),
         )
-        logger.info("Created MetricsProvider process")
+        logger.info(
+            "Created MetricsProvider process pid: %s", self.metrics_provider_process.pid
+        )
 
     def __create_task_runner_processes(
         self,
@@ -165,32 +165,44 @@ class TaskHandler:
         if self.metrics_provider_process is None:
             return
         self.metrics_provider_process.start()
-        logger.info("Started MetricsProvider process")
+        logger.info(
+            "Started MetricsProvider process with pid: %s",
+            self.metrics_provider_process.pid,
+        )
 
     def __start_task_runner_processes(self):
-        n = 0
         for task_runner_process in self.task_runner_processes:
             task_runner_process.start()
-            n = n + 1
-        logger.info("Started %s TaskRunner process", n)
+            logger.debug(
+                "Started TaskRunner process with pid: %s", task_runner_process.pid
+            )
+        logger.info("Started %s TaskRunner processes", len(self.task_runner_processes))
 
     def __join_metrics_provider_process(self):
         if self.metrics_provider_process is None:
             return
         self.metrics_provider_process.join()
-        logger.info("Joined MetricsProvider processes")
+        logger.info(
+            "Joined MetricsProvider process with pid: %s",
+            self.metrics_provider_process.pid,
+        )
 
     def __join_task_runner_processes(self):
         for task_runner_process in self.task_runner_processes:
             task_runner_process.join()
-        logger.info("Joined TaskRunner processes")
+        logger.info("Joined %s TaskRunner processes", len(self.task_runner_processes))
 
     def __stop_metrics_provider_process(self):
         self.__stop_process(self.metrics_provider_process)
+        logger.info(
+            "Stopped MetricsProvider process with pid: %s",
+            self.metrics_provider_process.pid,
+        )
 
     def __stop_task_runner_processes(self):
         for task_runner_process in self.task_runner_processes:
             self.__stop_process(task_runner_process)
+        logger.info("Stopped %s TaskRunner processes", len(self.task_runner_processes))
 
     def __stop_process(self, process: Process):
         if process is None:
@@ -199,7 +211,7 @@ class TaskHandler:
             logger.debug("Terminating process: %s", process.pid)
             process.terminate()
         except Exception as e:
-            logger.debug("Failed to terminate process: %s, reason: %s", process.pid, e)
+            logger.error("Failed to terminate process: %s, reason: %s", process.pid, e)
             process.kill()
             logger.debug("Killed process: %s", process.pid)
 
