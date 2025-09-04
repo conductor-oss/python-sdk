@@ -245,7 +245,7 @@ class AsyncTaskRunner:
                 self.worker.poll_interval = float(polling_interval)
             except Exception:
                 logger.error(
-                    "error reading and parsing the polling interval value %s",
+                    "Error converting polling_interval to float value: %s",
                     polling_interval,
                 )
                 self.worker.poll_interval = (

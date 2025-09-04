@@ -108,10 +108,9 @@ class Worker(WorkerInterface):
 
         except Exception as ne:
             logger.error(
-                "Error executing task %s with id %s. error = %s",
+                "Error executing task task_def_name: %s; task_id: %s",
                 task.task_def_name,
                 task.task_id,
-                traceback.format_exc()
             )
 
             task_result.logs = [TaskExecLog(
