@@ -47,7 +47,7 @@ class ApiClientAdapter(ApiClient):
                 _request_timeout=_request_timeout,
             )
             if response_data.status == 401 and url != self.configuration.host + "/token":  # noqa: PLR2004 (Unauthorized status code)
-                    logger.warning("HTTP response from: %s; with status code: 401 - obtaining new token", url)
+                    logger.warning("HTTP response from: %s; status code: 401 - obtaining new token", url)
                     token = await self.refresh_authorization_token() # TODO: Fix extra requests issue
                     header_params["X-Authorization"] = token
                     response_data = await self.rest_client.request(
