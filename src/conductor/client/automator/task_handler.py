@@ -201,7 +201,7 @@ class TaskHandler:
             logger.debug("Terminating process: %s", process.pid)
             process.terminate()
         except Exception as e:
-            logger.debug("Failed to terminate process: %s, reason: %s", process.pid, e)
+            logger.debug("Failed to terminate process: %s; reason: %s", process.pid, e)
             process.kill()
             logger.debug("Killed process: %s", process.pid)
 

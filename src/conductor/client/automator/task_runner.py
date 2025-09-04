@@ -4,7 +4,7 @@ import sys
 import time
 import traceback
 
-from conductor.client.codegen.rest import AuthorizationException
+from conductor.client.codegen.rest import AuthorizationException, ApiException
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api_client import ApiClient
@@ -45,7 +45,7 @@ class TaskRunner:
 
         task_names = ",".join(self.worker.task_definition_names)
         logger.info(
-            "Polling task %s with domain %s with polling interval %s",
+            "Polling task %s; domain: %s; polling_interval: %s",
             task_names,
             self.worker.get_domain(),
             self.worker.get_polling_interval_in_seconds(),
@@ -92,15 +92,15 @@ class TaskRunner:
                     task_definition_name, type(auth_exception)
                 )
             if auth_exception.invalid_token:
-                logger.fatal(
-                    f"Failed to poll task {task_definition_name} due to invalid auth token"
+                logger.error(
+                    "Failed to poll task: %s; reason: invalid auth token", task_definition_name
                 )
             else:
                 logger.error(
-                    f"Failed to poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code}"
+                    "Failed to poll task: %s; status: %s - {auth_exception.error_code}", task_definition_name, auth_exception.status, auth_exception.error_code
                 )
             return None
-        except Exception as e:
+        except ApiException as e:
             if self.metrics_collector is not None:
                 self.metrics_collector.increment_task_poll_error(
                     task_definition_name, type(e)
@@ -113,7 +113,7 @@ class TaskRunner:
             return None
         if task is not None:
             logger.debug(
-                "Polled task: %s, worker_id: %s, domain: %s",
+                "Polled task: %s; worker_id: %s; domain: %s",
                 task_definition_name,
                 self.worker.get_identity(),
                 self.worker.get_domain(),
@@ -125,7 +125,7 @@ class TaskRunner:
             return None
         task_definition_name = self.worker.get_task_definition_name()
         logger.debug(
-            "Executing task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
+            "Executing task id: %s; workflow_instance_id: %s; task_definition_name: %s",
             task.task_id,
             task.workflow_instance_id,
             task_definition_name,
@@ -143,7 +143,7 @@ class TaskRunner:
                     task_definition_name, sys.getsizeof(task_result)
                 )
             logger.debug(
-                "Executed task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
+                "Executed task id: %s; workflow_instance_id: %s; task_definition_name: %s",
                 task.task_id,
                 task.workflow_instance_id,
                 task_definition_name,
@@ -166,8 +166,8 @@ class TaskRunner:
                 )
             ]
             logger.error(
-                "Failed to execute task, id: %s, workflow_instance_id: %s, "
-                "task_definition_name: %s, reason: %s",
+                "Failed to execute task id: %s; workflow_instance_id: %s; "
+                "task_definition_name: %s; reason: %s",
                 task.task_id,
                 task.workflow_instance_id,
                 task_definition_name,
@@ -180,7 +180,7 @@ class TaskRunner:
             return None
         task_definition_name = self.worker.get_task_definition_name()
         logger.debug(
-            "Updating task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
+            "Updating task id: %s; workflow_instance_id: %s; task_definition_name: %s",
             task_result.task_id,
             task_result.workflow_instance_id,
             task_definition_name,
@@ -192,7 +192,7 @@ class TaskRunner:
             try:
                 response = self.task_client.update_task(body=task_result)
                 logger.debug(
-                    "Updated task, id: %s, workflow_instance_id: %s, task_definition_name: %s, response: %s",
+                    "Updated task id: %s; workflow_instance_id: %s; task_definition_name: %s; response: %s",
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
@@ -205,7 +205,7 @@ class TaskRunner:
                         task_definition_name, type(e)
                     )
                 logger.error(
-                    "Failed to update task, id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
+                    "Failed to update task id: %s; workflow_instance_id: %s; task_definition_name: %s; reason: %s",
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
