@@ -186,8 +186,7 @@ class TaskHandler:
     def __stop_metrics_provider_process(self):
         self.__stop_process(self.metrics_provider_process)
         logger.info(
-            "Stopped MetricsProvider process with pid: %s",
-            self.metrics_provider_process.pid,
+            "Stopped MetricsProvider process",
         )
 
     def __stop_task_runner_processes(self):
