@@ -37,6 +37,7 @@ class ApiClientAdapter(ApiClient):
         """
 
         try:
+            logger.debug("HTTP request method: %s; url: %s; header_params: %s", method, url, header_params)
             response_data = await self.rest_client.request(
                 method,
                 url,
@@ -45,18 +46,20 @@ class ApiClientAdapter(ApiClient):
                 post_params=post_params,
                 _request_timeout=_request_timeout,
             )
-            if response_data.status == 401:  # noqa: PLR2004 (Unauthorized status code)
-                token = await self.refresh_authorization_token()
-                header_params["X-Authorization"] = token
-                response_data = await self.rest_client.request(
-                    method,
-                    url,
-                    headers=header_params,
-                    body=body,
-                    post_params=post_params,
-                    _request_timeout=_request_timeout,
-                )
+            if response_data.status == 401 and url != self.configuration.host + "/token":  # noqa: PLR2004 (Unauthorized status code)
+                    logger.warning("HTTP response from: %s; with status code: 401 - obtaining new token", url)
+                    token = await self.refresh_authorization_token() # TODO: Fix extra requests issue
+                    header_params["X-Authorization"] = token
+                    response_data = await self.rest_client.request(
+                        method,
+                        url,
+                        headers=header_params,
+                        body=body,
+                        post_params=post_params,
+                        _request_timeout=_request_timeout,
+                    )
         except ApiException as e:
+            logger.error("HTTP request failed url: %s status: %s; reason: %s", url, e.status, e.reason)
             raise e
 
         return response_data
@@ -124,6 +127,7 @@ class ApiClientAdapter(ApiClient):
         obtain_new_token_response = await self.obtain_new_token()
         token = obtain_new_token_response.get("token")
         self.configuration.api_key["api_key"] = token
+        logger.debug(f"New auth token been set")
         return token
 
     async def obtain_new_token(self):
