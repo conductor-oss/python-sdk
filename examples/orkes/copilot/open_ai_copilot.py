@@ -92,6 +92,7 @@ def main():
     llm_provider = 'openai_saas'
     chat_complete_model = 'gpt-4'
     api_config = Configuration()
+    api_config.apply_logging_config()
     clients = OrkesClients(configuration=api_config)
     workflow_executor = clients.get_workflow_executor()
     metadata_client = clients.get_metadata_client()

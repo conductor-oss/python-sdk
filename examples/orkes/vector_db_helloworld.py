@@ -1,7 +1,7 @@
 import os
 
-from conductor.client.ai.configuration import VectorDB
-from conductor.client.ai.integrations import OpenAIConfig, PineconeConfig
+from conductor.shared.ai.enums import VectorDB
+from conductor.shared.ai.configuration import OpenAIConfig, PineconeConfig
 from conductor.client.ai.orchestrator import AIOrchestrator
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
@@ -45,6 +45,7 @@ def main():
     chat_complete_model = 'gpt-4'
 
     api_config = Configuration()
+    api_config.apply_logging_config()
     clients = OrkesClients(configuration=api_config)
     workflow_executor = clients.get_workflow_executor()
     workflow_client = clients.get_workflow_client()

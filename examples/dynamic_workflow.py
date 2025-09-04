@@ -28,6 +28,7 @@ def main():
     # CONDUCTOR_AUTH_KEY : API Authentication Key
     # CONDUCTOR_AUTH_SECRET: API Auth Secret
     api_config = Configuration()
+    api_config.apply_logging_config()
 
     task_handler = TaskHandler(configuration=api_config)
     task_handler.start_processes()

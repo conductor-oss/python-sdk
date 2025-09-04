@@ -52,6 +52,7 @@ class Configuration:
         self.debug = debug
         # Log format
         self.logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
+        self.is_logger_config_applied = False
 
         # SSL/TLS verification
         # Set this to false to skip verifying SSL certificate when calling API
@@ -145,11 +146,14 @@ class Configuration:
         return self.__ui_host
 
     def apply_logging_config(self, log_format: Optional[str] = None, level=None):
+        if self.is_logger_config_applied:
+            return
         if log_format is None:
             log_format = self.logger_format
         if level is None:
             level = self.__log_level
         logging.basicConfig(format=log_format, level=level)
+        self.is_logger_config_applied = True
 
     @staticmethod
     def get_logging_formatted_name(name):

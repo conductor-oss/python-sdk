@@ -5,6 +5,7 @@ from conductor.client.orkes_clients import OrkesClients
 
 def main():
     api_config = Configuration()
+    api_config.apply_logging_config()
     clients = OrkesClients(configuration=api_config)
     metadata_client = clients.get_metadata_client()
 
