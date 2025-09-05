@@ -15,7 +15,7 @@ from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api.user_resource_api import UserResourceApi
 from conductor.client.http.api.workflow_resource_api import WorkflowResourceApi
 from conductor.client.http.api_client import ApiClient
-from conductor.client.orkes.api.tags_api import TagsApi
+from conductor.client.http.api.tags_api import TagsApi
 
 
 class OrkesBaseClient(object):

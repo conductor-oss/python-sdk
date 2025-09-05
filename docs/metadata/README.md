@@ -57,7 +57,7 @@ workflow.input_parameters(["a", "b"])
 You should be able to register your workflow at the Conductor Server:
 
 ```python
-from conductor.client.http.models.workflow_def import WorkflowDef
+from conductor.client.http.models import WorkflowDef
 
 workflowDef = workflow.to_workflow_def()
 metadata_client.register_workflow_def(workflowDef, True)
@@ -98,7 +98,7 @@ metadata_client.unregister_workflow_def('python_workflow_example_from_code', 1)
 You should be able to register your task at the Conductor Server:
 
 ```python
-from conductor.client.http.models.task_def import TaskDef
+from conductor.client.http.models import TaskDef
 
 taskDef = TaskDef(
     name="PYTHON_TASK",

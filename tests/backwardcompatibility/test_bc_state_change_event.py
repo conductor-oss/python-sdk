@@ -95,7 +95,7 @@ def test_state_change_event_class_attributes():
     assert "type" in swagger_types
     assert "payload" in swagger_types
     assert swagger_types["type"] == "str"
-    assert swagger_types["payload"] == "Dict[str, object]"
+    assert swagger_types["payload"] == "dict(str, object)"
 
     # Test attribute_map exists and has correct structure
     assert hasattr(StateChangeEvent, "attribute_map")

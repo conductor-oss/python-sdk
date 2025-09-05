@@ -1,7 +1,7 @@
 import pytest
 
 from conductor.client.http.models.task_result import TaskResult
-from conductor.shared.http.enums import TaskResultStatus
+from conductor.client.http.models.task_result_status import TaskResultStatus
 
 
 @pytest.fixture
@@ -200,6 +200,7 @@ def test_constructor_with_all_fields(valid_workflow_id, valid_task_id, valid_sta
 
     for field, expected_value in test_data.items():
         actual_value = getattr(task_result, field)
+
         if field == "status":
             # Status validation converts string to enum
             assert actual_value.name == expected_value

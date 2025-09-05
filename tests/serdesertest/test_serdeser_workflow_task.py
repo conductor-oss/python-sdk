@@ -1,6 +1,6 @@
 import json
 
-from conductor.client.http.models.workflow_task import WorkflowTask
+from conductor.client.http.models.workflow_task import WorkflowTaskAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -40,11 +40,11 @@ def test_workflow_task_serde():
     server_json = json.loads(server_json_str)
     mapped_kwargs = {}
     for json_key, value in server_json.items():
-        for py_attr, mapped_json in WorkflowTask.attribute_map.items():
+        for py_attr, mapped_json in WorkflowTaskAdapter.attribute_map.items():
             if mapped_json == json_key:
                 mapped_kwargs[py_attr] = value
                 break
-    workflow_task = WorkflowTask(**mapped_kwargs)
+    workflow_task = WorkflowTaskAdapter(**mapped_kwargs)
     assert server_json.get("name") == workflow_task.name
     assert server_json.get("taskReferenceName") == workflow_task.task_reference_name
     if "joinOn" in server_json:
@@ -54,7 +54,7 @@ def test_workflow_task_serde():
     for key, value in result_dict.items():
         if value is not None:
             camel_key = key
-            for py_attr, json_attr in WorkflowTask.attribute_map.items():
+            for py_attr, json_attr in WorkflowTaskAdapter.attribute_map.items():
                 if py_attr == key:
                     camel_key = json_attr
                     break
@@ -65,7 +65,7 @@ def test_workflow_task_serde():
     if workflow_task.join_on is not None:
         assert "joinOn" in fixed_json_dict
         assert workflow_task.join_on == fixed_json_dict["joinOn"]
-    test_task = WorkflowTask(name="Test Task", task_reference_name="testRef")
+    test_task = WorkflowTaskAdapter(name="Test Task", task_reference_name="testRef")
     test_task.join_on = ["task1", "task2"]
     fixed_test_dict = workflow_task_to_json_dict(test_task)
     assert "joinOn" in fixed_test_dict

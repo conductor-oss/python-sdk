@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from conductor.client.http.models.schema_def import SchemaDef
-from conductor.client.http.models.task_def import TaskDef
+from conductor.client.http.models.schema_def import SchemaDefAdapter
+from conductor.client.http.models.task_def import TaskDefAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -35,7 +35,7 @@ def create_task_def_from_json(json_dict):
     input_schema_json = json_dict.get("inputSchema")
     input_schema_obj = None
     if input_schema_json:
-        input_schema_obj = SchemaDef(
+        input_schema_obj = SchemaDefAdapter(
             name=input_schema_json.get("name"),
             version=input_schema_json.get("version"),
             type=input_schema_json.get("type"),
@@ -44,7 +44,7 @@ def create_task_def_from_json(json_dict):
     output_schema_json = json_dict.get("outputSchema")
     output_schema_obj = None
     if output_schema_json:
-        output_schema_obj = SchemaDef(
+        output_schema_obj = SchemaDefAdapter(
             name=output_schema_json.get("name"),
             version=output_schema_json.get("version"),
             type=output_schema_json.get("type"),
@@ -53,7 +53,7 @@ def create_task_def_from_json(json_dict):
     enforce_schema = json_dict.get("enforceSchema", False)
     base_type = json_dict.get("baseType")
     total_timeout_seconds = json_dict.get("totalTimeoutSeconds")
-    return TaskDef(
+    return TaskDefAdapter(
         owner_app=owner_app,
         create_time=create_time,
         update_time=update_time,
@@ -132,7 +132,7 @@ def verify_task_def_fields(task_def, json_dict):
 
 
 def compare_json_objects(original, result):
-    key_mapping = {json_key: attr for (attr, json_key) in TaskDef.attribute_map.items()}
+    key_mapping = {json_key: attr for (attr, json_key) in TaskDefAdapter.attribute_map.items()}
     for camel_key, orig_value in original.items():
         if camel_key not in key_mapping:
             continue

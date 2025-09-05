@@ -152,6 +152,9 @@ def test_to_dict_method_exists_and_works():
         "actions",
         "active",
         "evaluator_type",
+        "org_id",
+        "tags",
+        "created_by",
         "description",
     }
     assert set(result.keys()) == expected_keys

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.subject_ref import SubjectRef
+from conductor.client.http.models.subject_ref import SubjectRefAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -14,7 +14,7 @@ def server_json():
 
 def test_subject_ref_serdes(server_json):
     # 1. Deserialize server JSON into SDK model object
-    subject_ref = SubjectRef(type=server_json.get("type"), id=server_json.get("id"))
+    subject_ref = SubjectRefAdapter(type=server_json.get("type"), id=server_json.get("id"))
     # 2. Verify all fields are properly populated during deserialization
     assert subject_ref.type == server_json.get("type")
     assert subject_ref.id == server_json.get("id")

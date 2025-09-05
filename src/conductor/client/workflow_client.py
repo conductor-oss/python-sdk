@@ -2,8 +2,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional, List, Dict
 
-from conductor.client.http.models import WorkflowRun, SkipTaskRequest, WorkflowStatus, \
-    ScrollableSearchResultWorkflowSummary, SignalResponse
+from conductor.client.http.models.workflow_run import WorkflowRun
+from conductor.client.http.models.skip_task_request import SkipTaskRequest
+from conductor.client.http.models.workflow_status import WorkflowStatus
+from conductor.client.http.models.scrollable_search_result_workflow_summary import ScrollableSearchResultWorkflowSummary
+from conductor.client.http.models.signal_response import SignalResponse
 from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
 from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest

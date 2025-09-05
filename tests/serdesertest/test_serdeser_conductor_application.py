@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models import ConductorApplication
+from conductor.client.http.models.conductor_application import ConductorApplicationAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -12,7 +12,7 @@ def server_json():
 
 
 def test_serialization_deserialization(server_json):
-    conductor_app = ConductorApplication(
+    conductor_app = ConductorApplicationAdapter(
         id=server_json.get("id"),
         name=server_json.get("name"),
         created_by=server_json.get("createdBy"),

@@ -11,7 +11,7 @@ from conductor.client.http.api_client import ApiClient
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.http.rest import AuthorizationException
+from conductor.client.codegen.rest import AuthorizationException
 from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.worker.worker_interface import WorkerInterface
 

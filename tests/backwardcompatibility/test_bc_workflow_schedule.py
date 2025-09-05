@@ -26,6 +26,10 @@ def valid_data(mock_start_workflow_request):
         "updated_time": 1641081600,
         "created_by": "test_user",
         "updated_by": "test_user_2",
+        "description": "Test schedule description",
+        "paused_reason": "Test pause reason",
+        "tags": [],
+        "zone_id": "UTC",
     }
 
 
@@ -45,6 +49,10 @@ def test_constructor_with_no_parameters():
     assert schedule.updated_time is None
     assert schedule.created_by is None
     assert schedule.updated_by is None
+    assert schedule.description is None
+    assert schedule.paused_reason is None
+    assert schedule.tags is None
+    assert schedule.zone_id is None
 
 
 def test_constructor_with_all_parameters(valid_data, mock_start_workflow_request):
@@ -63,6 +71,10 @@ def test_constructor_with_all_parameters(valid_data, mock_start_workflow_request
     assert schedule.updated_time == 1641081600
     assert schedule.created_by == "test_user"
     assert schedule.updated_by == "test_user_2"
+    assert schedule.description == "Test schedule description"
+    assert schedule.paused_reason == "Test pause reason"
+    assert schedule.tags == []
+    assert schedule.zone_id == "UTC"
 
 
 def test_constructor_with_partial_parameters():
@@ -102,6 +114,10 @@ def test_all_required_properties_exist():
         "updated_time",
         "created_by",
         "updated_by",
+        "description",
+        "paused_reason",
+        "tags",
+        "zone_id",
     ]
 
     for prop in required_properties:
@@ -128,6 +144,15 @@ def test_property_setters_work(mock_start_workflow_request):
     schedule.updated_by = "setter_user_2"
     assert schedule.updated_by == "setter_user_2"
 
+    schedule.description = "New description"
+    assert schedule.description == "New description"
+
+    schedule.paused_reason = "New pause reason"
+    assert schedule.paused_reason == "New pause reason"
+
+    schedule.zone_id = "EST"
+    assert schedule.zone_id == "EST"
+
     # Test boolean properties
     schedule.run_catchup_schedule_instances = False
     assert not schedule.run_catchup_schedule_instances
@@ -152,6 +177,10 @@ def test_property_setters_work(mock_start_workflow_request):
     schedule.start_workflow_request = mock_start_workflow_request
     assert schedule.start_workflow_request == mock_start_workflow_request
 
+    # Test list property
+    schedule.tags = [{"key": "value"}]
+    assert schedule.tags == [{"key": "value"}]
+
 
 def test_property_types_are_preserved(valid_data, mock_start_workflow_request):
     """Test that property types match expected swagger_types."""
@@ -162,6 +191,9 @@ def test_property_types_are_preserved(valid_data, mock_start_workflow_request):
     assert isinstance(schedule.cron_expression, str)
     assert isinstance(schedule.created_by, str)
     assert isinstance(schedule.updated_by, str)
+    assert isinstance(schedule.description, str)
+    assert isinstance(schedule.paused_reason, str)
+    assert isinstance(schedule.zone_id, str)
 
     # Boolean fields
     assert isinstance(schedule.run_catchup_schedule_instances, bool)
@@ -175,6 +207,9 @@ def test_property_types_are_preserved(valid_data, mock_start_workflow_request):
 
     # Object field (StartWorkflowRequest)
     assert schedule.start_workflow_request == mock_start_workflow_request
+
+    # List field
+    assert isinstance(schedule.tags, list)
 
 
 def test_swagger_types_attribute_exists():
@@ -194,6 +229,10 @@ def test_swagger_types_attribute_exists():
         "updated_time": "int",
         "created_by": "str",
         "updated_by": "str",
+        "description": "str",
+        "paused_reason": "str",
+        "tags": "list[Tag]",
+        "zone_id": "str",
     }
 
     # Check that all expected fields exist with correct types
@@ -221,6 +260,10 @@ def test_attribute_map_exists():
         "updated_time": "updatedTime",
         "created_by": "createdBy",
         "updated_by": "updatedBy",
+        "description": "description",
+        "paused_reason": "pausedReason",
+        "tags": "tags",
+        "zone_id": "zoneId",
     }
 
     # Check that all expected mappings exist
@@ -249,12 +292,20 @@ def test_to_dict_method_exists_and_works(valid_data):
     assert "run_catchup_schedule_instances" in result
     assert "paused" in result
     assert "start_workflow_request" in result
+    assert "description" in result
+    assert "paused_reason" in result
+    assert "tags" in result
+    assert "zone_id" in result
 
     # Values should match
     assert result["name"] == "test_schedule"
     assert result["cron_expression"] == "0 0 * * *"
     assert result["run_catchup_schedule_instances"]
     assert not result["paused"]
+    assert result["description"] == "Test schedule description"
+    assert result["paused_reason"] == "Test pause reason"
+    assert result["tags"] == []
+    assert result["zone_id"] == "UTC"
 
 
 def test_to_str_method_exists_and_works():
@@ -323,6 +374,10 @@ def test_private_attributes_exist():
         "_updated_time",
         "_created_by",
         "_updated_by",
+        "_description",
+        "_paused_reason",
+        "_tags",
+        "_zone_id",
     ]
 
     for attr in private_attrs:
@@ -348,6 +403,10 @@ def test_none_values_are_handled_correctly(valid_data):
     schedule.updated_time = None
     schedule.created_by = None
     schedule.updated_by = None
+    schedule.description = None
+    schedule.paused_reason = None
+    schedule.tags = None
+    schedule.zone_id = None
 
     # Verify all are None
     assert schedule.name is None
@@ -361,11 +420,15 @@ def test_none_values_are_handled_correctly(valid_data):
     assert schedule.updated_time is None
     assert schedule.created_by is None
     assert schedule.updated_by is None
+    assert schedule.description is None
+    assert schedule.paused_reason is None
+    assert schedule.tags is None
+    assert schedule.zone_id is None
 
 
 def test_constructor_signature_compatibility(mock_start_workflow_request):
     """Test that constructor signature remains compatible."""
-    # Test positional arguments work (in order)
+    # Test positional arguments work (in order based on WorkflowSchedule model)
     schedule = WorkflowSchedule(
         "test_name",  # name
         "0 0 * * *",  # cron_expression

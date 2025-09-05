@@ -181,11 +181,14 @@ def test_swagger_types_structure():
         "api": "str",
         "configuration": "dict(str, object)",
         "created_by": "str",
+        "create_time": "int",
         "created_on": "int",
         "description": "str",
         "enabled": "bool",
         "integration_name": "str",
-        "tags": "list[TagObject]",
+        "owner_app": "str",
+        "tags": "list[Tag]",
+        "update_time": "int",
         "updated_by": "str",
         "updated_on": "int",
     }
@@ -198,14 +201,17 @@ def test_attribute_map_structure():
     expected_attribute_map = {
         "api": "api",
         "configuration": "configuration",
-        "created_by": "createdBy",
+        "create_time": "createTime",
         "created_on": "createdOn",
+        "created_by": "createdBy",
         "description": "description",
         "enabled": "enabled",
         "integration_name": "integrationName",
+        "owner_app": "ownerApp",
         "tags": "tags",
-        "updated_by": "updatedBy",
+        "update_time": "updateTime",
         "updated_on": "updatedOn",
+        "updated_by": "updatedBy",
     }
 
     assert IntegrationApi.attribute_map == expected_attribute_map
@@ -222,12 +228,15 @@ def test_to_dict_method(valid_data):
         "configuration",
         "created_by",
         "created_on",
+        "create_time",
         "description",
         "enabled",
         "integration_name",
         "tags",
         "updated_by",
         "updated_on",
+        "update_time",
+        "owner_app",
     }
     assert set(result_dict.keys()) == expected_keys
 

@@ -3,7 +3,9 @@ import re
 
 import pytest
 
-from conductor.client.http.models import Task, Workflow, WorkflowDef
+from conductor.client.http.models.task import TaskAdapter
+from conductor.client.http.models.workflow import WorkflowAdapter
+from conductor.client.http.models.workflow_def import WorkflowDefAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -48,7 +50,7 @@ def create_workflow_from_json(json_data):
             create_workflow_from_json(wf_json) for wf_json in json_data.get("history")
         ]
     # Create the workflow with all fields
-    return Workflow(
+    return WorkflowAdapter(
         owner_app=json_data.get("ownerApp"),
         create_time=json_data.get("createTime"),
         update_time=json_data.get("updateTime"),
@@ -92,9 +94,9 @@ def create_workflow_from_json(json_data):
 def create_task_from_json(task_json):
     """Create a Task object from JSON"""
     # Create a Task object with fields from task_json
-    task = Task()
+    task = TaskAdapter()
     # Access all possible fields from task_json and set them on the task object
-    for py_field, json_field in Task.attribute_map.items():
+    for py_field, json_field in TaskAdapter.attribute_map.items():
         if json_field in task_json:
             setattr(task, py_field, task_json.get(json_field))
     return task
@@ -103,9 +105,9 @@ def create_task_from_json(task_json):
 def create_workflow_def_from_json(workflow_def_json):
     """Create a WorkflowDef object from JSON"""
     # Create a WorkflowDef object with fields from workflow_def_json
-    workflow_def = WorkflowDef()
+    workflow_def = WorkflowDefAdapter()
     # Access all possible fields from workflow_def_json and set them on the workflow_def object
-    for py_field, json_field in WorkflowDef.attribute_map.items():
+    for py_field, json_field in WorkflowDefAdapter.attribute_map.items():
         if json_field in workflow_def_json:
             # Special handling for nested objects or complex types could be added here
             setattr(workflow_def, py_field, workflow_def_json.get(json_field))
@@ -115,7 +117,7 @@ def create_workflow_def_from_json(workflow_def_json):
 def verify_workflow_fields(workflow, json_data):
     """Verify that all fields in the Workflow object match the JSON data"""
     # Check all fields defined in the model
-    for py_field, json_field in Workflow.attribute_map.items():
+    for py_field, json_field in WorkflowAdapter.attribute_map.items():
         if json_field in json_data:
             python_value = getattr(workflow, py_field)
             json_value = json_data.get(json_field)
@@ -185,7 +187,7 @@ def compare_json_objects(original, result):
                     ), f"Field {key} doesn't match"
             else:
                 # Check if the attribute is defined in swagger_types but has a different JSON name
-                for py_field, json_field in Workflow.attribute_map.items():
+                for py_field, json_field in WorkflowAdapter.attribute_map.items():
                     if json_field == key and py_field in result:
                         if key in ["failedReferenceTaskNames", "failedTaskNames"]:
                             if isinstance(original[key], list) and isinstance(

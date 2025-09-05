@@ -161,9 +161,11 @@ def test_swagger_types_mapping_unchanged():
 
 def test_attribute_map_unchanged():
     expected_attribute_map = {
+        "apis": "apis",
         "category": "category",
         "configuration": "configuration",
         "created_by": "createdBy",
+        "create_time": "createTime",
         "created_on": "createdOn",
         "description": "description",
         "enabled": "enabled",
@@ -172,7 +174,9 @@ def test_attribute_map_unchanged():
         "tags": "tags",
         "type": "type",
         "updated_by": "updatedBy",
+        "update_time": "updateTime",
         "updated_on": "updatedOn",
+        "owner_app": "ownerApp",
     }
     for key, expected_json_key in expected_attribute_map.items():
         assert key in Integration.attribute_map, f"attribute_map should contain {key}"

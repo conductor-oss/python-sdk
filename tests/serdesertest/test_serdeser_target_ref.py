@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.target_ref import TargetRef
+from conductor.client.http.models.target_ref import TargetRefAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -12,7 +12,7 @@ def server_json():
 
 
 def test_target_ref_serdes(server_json):
-    target_ref = TargetRef(type=server_json.get("type"), id=server_json.get("id"))
+    target_ref = TargetRefAdapter(type=server_json.get("type"), id=server_json.get("id"))
     assert target_ref.type is not None
     assert target_ref.id is not None
     valid_types = [
@@ -30,7 +30,7 @@ def test_target_ref_serdes(server_json):
     assert server_json.get("id") == sdk_json.get("id")
     serialized_json = json.dumps(sdk_json)
     deserialized_json = json.loads(serialized_json)
-    round_trip_obj = TargetRef(
+    round_trip_obj = TargetRefAdapter(
         type=deserialized_json.get("type"), id=deserialized_json.get("id")
     )
     assert target_ref.type == round_trip_obj.type

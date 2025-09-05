@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from conductor.client.http.models.permission import Permission
-from conductor.client.http.models.role import Role
+from conductor.client.http.models.permission import PermissionAdapter
+from conductor.client.http.models.role import RoleAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -16,10 +16,10 @@ def server_json():
 def test_role_serialization_deserialization(server_json):
     """Test that Role objects can be properly serialized and deserialized."""
     # 1. Test deserialization from server JSON to SDK model
-    role_obj = Role(
+    role_obj = RoleAdapter(
         name=server_json.get("name"),
         permissions=[
-            Permission(**perm) if isinstance(perm, dict) else perm
+            PermissionAdapter(**perm) if isinstance(perm, dict) else perm
             for perm in server_json.get("permissions", [])
         ],
     )

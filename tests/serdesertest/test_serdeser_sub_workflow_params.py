@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.sub_workflow_params import SubWorkflowParams
+from conductor.client.http.models.sub_workflow_params import SubWorkflowParamsAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -12,7 +12,7 @@ def server_json():
 
 
 def test_serialization_deserialization(server_json):
-    model_obj = SubWorkflowParams(
+    model_obj = SubWorkflowParamsAdapter(
         name=server_json["name"],
         version=server_json.get("version"),
         task_to_domain=server_json.get("taskToDomain"),

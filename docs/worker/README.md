@@ -347,8 +347,7 @@ See [simple_cpp_lib.cpp](src/example/worker/cpp/simple_cpp_lib.cpp)
 and [simple_cpp_worker.py](src/example/worker/cpp/simple_cpp_worker.py) for complete working example.
 
 ```python
-from conductor.client.http.models.task import Task
-from conductor.client.http.models.task_result import TaskResult
+from conductor.client.http.models import Task, TaskResult
 from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.worker.worker_interface import WorkerInterface
 from ctypes import cdll

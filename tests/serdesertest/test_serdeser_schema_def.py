@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.schema_def import SchemaDef, SchemaType
+from conductor.client.http.models.schema_def import SchemaDefAdapter, SchemaType
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -12,7 +12,7 @@ def server_json():
 
 
 def test_schema_def_serdes(server_json):
-    schema_def = SchemaDef(
+    schema_def = SchemaDefAdapter(
         name=server_json.get("name"),
         version=server_json.get("version"),
         type=SchemaType(server_json.get("type")) if server_json.get("type") else None,
@@ -37,7 +37,7 @@ def test_schema_def_serdes(server_json):
     assert server_json.get("updatedBy") == schema_def.updated_by
     model_dict = schema_def.to_dict()
     model_json = {}
-    for attr, json_key in {**SchemaDef.attribute_map}.items():
+    for attr, json_key in {**SchemaDefAdapter.attribute_map}.items():
         value = model_dict.get(attr)
         if value is not None:
             if attr == "type" and value is not None:

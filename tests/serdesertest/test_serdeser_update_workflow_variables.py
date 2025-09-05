@@ -3,7 +3,7 @@ import json
 import pytest
 
 from conductor.client.http.models.update_workflow_variables import (
-    UpdateWorkflowVariables,
+    UpdateWorkflowVariablesAdapter,
 )
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
@@ -25,7 +25,7 @@ def test_update_workflow_variables_serde(server_json):
     4. The resulting JSON matches the original
     """
     # 1. Deserialize JSON into model object
-    model = UpdateWorkflowVariables(
+    model = UpdateWorkflowVariablesAdapter(
         workflow_id=server_json.get("workflowId"),
         variables=server_json.get("variables"),
         append_array=server_json.get("appendArray"),
@@ -41,6 +41,6 @@ def test_update_workflow_variables_serde(server_json):
     # 3. Serialize model back to JSON
     model_json = model.to_dict()
     # 4. Verify the resulting JSON matches the original
-    assert model_json.get("workflowId") == server_json.get("workflowId")
+    assert model_json.get("workflow_id") == server_json.get("workflowId")
     assert model_json.get("variables") == server_json.get("variables")
-    assert model_json.get("appendArray") == server_json.get("appendArray")
+    assert model_json.get("append_array") == server_json.get("appendArray")

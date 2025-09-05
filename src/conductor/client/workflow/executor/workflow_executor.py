@@ -8,21 +8,17 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api_client import ApiClient
-from conductor.client.http.models import (
-    TaskResult,
-    Workflow,
-    WorkflowDef,
-    WorkflowRun,
-    WorkflowStatus,
-    ScrollableSearchResultWorkflowSummary,
-    StartWorkflowRequest,
-    SkipTaskRequest,
-    RerunWorkflowRequest,
-    SignalResponse,
-)
-from conductor.client.http.models.correlation_ids_search_request import (
-    CorrelationIdsSearchRequest,
-)
+from conductor.client.http.models.task_result import TaskResult
+from conductor.client.http.models.workflow import Workflow
+from conductor.client.http.models.workflow_def import WorkflowDef
+from conductor.client.http.models.workflow_run import WorkflowRun
+from conductor.client.http.models.workflow_status import WorkflowStatus
+from conductor.client.http.models.scrollable_search_result_workflow_summary import ScrollableSearchResultWorkflowSummary
+from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
+from conductor.client.http.models.skip_task_request import SkipTaskRequest
+from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
+from conductor.client.http.models.signal_response import SignalResponse
+from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 
 
@@ -38,7 +34,7 @@ class WorkflowExecutor:
         kwargs = {}
         if overwrite is not None:
             kwargs["overwrite"] = overwrite
-        return self.metadata_client.update1(
+        return self.metadata_client.update(
             body=[workflow], **kwargs
         )
 
@@ -179,7 +175,7 @@ class WorkflowExecutor:
         also includes workflows that are completed otherwise only running workflows are returned
         """
         return self.workflow_client.get_by_correlation_ids_in_batch(batch_request=batch_request,
-                                                                    include_closed=include_closed,
+                                                                    include_completed=include_closed,
                                                                     include_tasks=include_tasks)
 
     def pause(self, workflow_id: str) -> None:
