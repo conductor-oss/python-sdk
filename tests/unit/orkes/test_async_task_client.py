@@ -169,13 +169,13 @@ async def test_update_task_by_ref_name(mocker, task_client):
     mock = mocker.patch.object(TaskResourceApiAdapter, "update_task1")
     mock.return_value = "updated"
     status = "COMPLETED"
-    request_body = {"result": {"output": "success"}}
+    request_body = {"output": "success"}
     result = await task_client.update_task_by_ref_name("wf_id", "test_task_ref_name", status, request_body)
     mock.assert_called_with(
         workflow_id="wf_id",
         task_ref_name="test_task_ref_name",
         status=status,
-        request_body=request_body,
+        request_body={"result": request_body},
         workerid=None
     )
     assert result == "updated"
@@ -186,13 +186,13 @@ async def test_update_task_by_ref_name_with_worker_id(mocker, task_client):
     mock = mocker.patch.object(TaskResourceApiAdapter, "update_task1")
     mock.return_value = "updated"
     status = "COMPLETED"
-    request_body = {"result": {"output": "success"}}
+    request_body = {"output": "success"}
     result = await task_client.update_task_by_ref_name("wf_id", "test_task_ref_name", status, request_body, "worker_id")
     mock.assert_called_with(
         workflow_id="wf_id",
         task_ref_name="test_task_ref_name",
         status=status,
-        request_body=request_body,
+        request_body={"result": request_body},
         workerid="worker_id"
     )
     assert result == "updated"
@@ -205,13 +205,13 @@ async def test_update_task_sync(mocker, task_client):
     workflow = WorkflowAdapter(workflow_id=workflow_id)
     mock.return_value = workflow
     status = "COMPLETED"
-    request_body = {"result": {"output": "success"}}
+    request_body = {"output": "success"}
     result = await task_client.update_task_sync(workflow_id, "test_task_ref_name", status, request_body)
     mock.assert_called_with(
         workflow_id=workflow_id,
         task_ref_name="test_task_ref_name",
         status=status,
-        request_body=request_body,
+        request_body={"result": request_body},
         workerid=None
     )
     assert result == workflow
@@ -224,13 +224,13 @@ async def test_update_task_sync_with_worker_id(mocker, task_client):
     workflow = WorkflowAdapter(workflow_id=workflow_id)
     mock.return_value = workflow
     status = "COMPLETED"
-    request_body = {"result": {"output": "success"}}
+    request_body = {"output": "success"}
     result = await task_client.update_task_sync(workflow_id, "test_task_ref_name", status, request_body, "worker_id")
     mock.assert_called_with(
         workflow_id=workflow_id,
         task_ref_name="test_task_ref_name",
         status=status,
-        request_body=request_body,
+        request_body={"result": request_body},
         workerid="worker_id"
     )
     assert result == workflow

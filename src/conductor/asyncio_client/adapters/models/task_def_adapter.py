@@ -18,6 +18,8 @@ class TaskDefAdapter(TaskDef):
     output_schema: Optional["SchemaDefAdapter"] = Field(
         default=None, alias="outputSchema"
     )
+    timeout_seconds: Optional[int] = Field(alias="timeoutSeconds", default=None)
+    total_timeout_seconds: Optional[int] = Field(alias="totalTimeoutSeconds", default=None)
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

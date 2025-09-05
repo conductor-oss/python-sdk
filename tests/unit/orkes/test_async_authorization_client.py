@@ -457,7 +457,7 @@ async def test_get_permissions(mocker, authorization_client):
 
 
 @pytest.mark.asyncio
-async def test_get_group_permissions(mocker, authorization_client):
+async def test_get_group_permissions(mocker, authorization_client: OrkesAuthorizationClient):
     mock = mocker.patch.object(GroupResourceApiAdapter, "get_granted_permissions1")
     mock.return_value = {
         "grantedAccess": [
