@@ -4,8 +4,9 @@ import logging
 import os
 from typing import Any, Dict, Optional, Union
 
-from conductor.asyncio_client.http.configuration import \
-    Configuration as HttpConfiguration
+from conductor.asyncio_client.http.configuration import (
+    Configuration as HttpConfiguration,
+)
 
 
 class Configuration:
@@ -55,6 +56,7 @@ class Configuration:
         auth_key: Optional[str] = None,
         auth_secret: Optional[str] = None,
         debug: bool = False,
+        auth_token_ttl_min: int = 45,
         # Worker properties
         default_polling_interval: Optional[float] = None,
         default_domain: Optional[str] = None,
@@ -128,10 +130,6 @@ class Configuration:
         if api_key is None:
             api_key = {}
 
-        if self.auth_key and self.auth_secret:
-            # Use the auth_key as the API key for X-Authorization header
-            api_key["api_key"] = self.auth_key
-
         self.__ui_host = os.getenv("CONDUCTOR_UI_SERVER_URL")
         if self.__ui_host is None:
             self.__ui_host = self.server_url.replace("/api", "")
@@ -171,6 +169,10 @@ class Configuration:
         self.logger = logging.getLogger(__name__)
         if debug:
             self.logger.setLevel(logging.DEBUG)
+
+        # Orkes Conductor auth token properties
+        self.token_update_time = 0
+        self.auth_token_ttl_sec = auth_token_ttl_min * 60
 
     def _get_env_float(self, env_var: str, default: float) -> float:
         """Get float value from environment variable with default fallback."""
@@ -450,16 +452,13 @@ class Configuration:
         """Get log level."""
         return self.__log_level
 
-    def apply_logging_config(self, log_format : Optional[str] = None, level = None):
+    def apply_logging_config(self, log_format: Optional[str] = None, level=None):
         """Apply logging configuration for the application."""
         if log_format is None:
             log_format = self.logger_format
         if level is None:
             level = self.__log_level
-        logging.basicConfig(
-            format=log_format,
-            level=level
-        )
+        logging.basicConfig(format=log_format, level=level)
 
     @staticmethod
     def get_logging_formatted_name(name):
@@ -474,5 +473,7 @@ class Configuration:
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to underlying HTTP configuration."""
         if "_http_config" not in self.__dict__ or self._http_config is None:
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{name}'"
+            )
         return getattr(self._http_config, name)
