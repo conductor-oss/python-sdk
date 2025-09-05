@@ -15,7 +15,10 @@ from conductor.client.worker.worker_task import worker_task
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.task.dynamic_task import DynamicTask
 from conductor.client.workflow.task.human_task import HumanTask
-from conductor.client.workflow.task.llm_tasks.llm_chat_complete import LlmChatComplete, ChatMessage
+from conductor.client.workflow.task.llm_tasks.llm_chat_complete import (
+    LlmChatComplete,
+    ChatMessage,
+)
 from conductor.client.workflow.task.simple_task import SimpleTask
 from conductor.client.workflow.task.sub_workflow_task import SubWorkflowTask
 from conductor.client.workflow.task.switch_task import SwitchTask
@@ -34,48 +37,53 @@ def start_workers(api_config):
     return task_handler
 
 
-@worker_task(task_definition_name='get_customer_list')
+@worker_task(task_definition_name="get_customer_list")
 def get_customer_list() -> List[Customer]:
     customers = []
     for i in range(100):
-        customer_name = ''.join(random.choices(string.ascii_uppercase +
-                                               string.digits, k=5))
+        customer_name = "".join(
+            random.choices(string.ascii_uppercase + string.digits, k=5)
+        )
         spend = random.randint(a=100000, b=9000000)
         customers.append(
-            Customer(id=i, name='Customer ' + customer_name,
-                     annual_spend=spend,
-                     country='US')
+            Customer(
+                id=i, name="Customer " + customer_name, annual_spend=spend, country="US"
+            )
         )
     return customers
 
 
-@worker_task(task_definition_name='get_top_n')
+@worker_task(task_definition_name="get_top_n")
 def get_top_n_customers(n: int, customers: List[Customer]) -> List[Customer]:
     customers.sort(key=lambda x: x.annual_spend, reverse=True)
     end = min(n + 1, len(customers))
-    return customers[1: end]
+    return customers[1:end]
 
 
-@worker_task(task_definition_name='generate_promo_code')
+@worker_task(task_definition_name="generate_promo_code")
 def get_top_n_customers() -> str:
-    res = ''.join(random.choices(string.ascii_uppercase +
-                                 string.digits, k=5))
+    res = "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
     return res
 
 
-@worker_task(task_definition_name='send_email')
+@worker_task(task_definition_name="send_email")
 def send_email(customer: list[Customer], promo_code: str) -> str:
-    return f'Sent {promo_code} to {len(customer)} customers'
+    return f"Sent {promo_code} to {len(customer)} customers"
 
 
-@worker_task(task_definition_name='create_workflow')
+@worker_task(task_definition_name="create_workflow")
 def create_workflow(steps: list[str], inputs: Dict[str, object]) -> dict:
     executor = OrkesClients().get_workflow_executor()
-    workflow = ConductorWorkflow(executor=executor, name='copilot_execution', version=1)
+    workflow = ConductorWorkflow(executor=executor, name="copilot_execution", version=1)
 
     for step in steps:
-        if step == 'review':
-            task = HumanTask(task_ref_name='review', display_name='review email', form_version=0, form_template='email_review')
+        if step == "review":
+            task = HumanTask(
+                task_ref_name="review",
+                display_name="review email",
+                form_version=0,
+                form_template="email_review",
+            )
             task.input_parameters.update(inputs[step])
             workflow >> task
         else:
@@ -84,13 +92,13 @@ def create_workflow(steps: list[str], inputs: Dict[str, object]) -> dict:
             workflow >> task
 
     workflow.register(overwrite=True)
-    print(f'\n\n\nRegistered workflow by name {workflow.name}\n')
+    print(f"\n\n\nRegistered workflow by name {workflow.name}\n")
     return workflow.to_workflow_def().toJSON()
 
 
 def main():
-    llm_provider = 'openai_saas'
-    chat_complete_model = 'gpt-4'
+    llm_provider = "openai_saas"
+    chat_complete_model = "gpt-4"
     api_config = Configuration()
     api_config.apply_logging_config()
     clients = OrkesClients(configuration=api_config)
@@ -100,11 +108,11 @@ def main():
     task_handler = start_workers(api_config=api_config)
 
     # register our two tasks
-    metadata_client.register_task_def(task_def=TaskDef(name='get_weather'))
-    metadata_client.register_task_def(task_def=TaskDef(name='get_price_from_amazon'))
+    metadata_client.register_task_def(task_def=TaskDef(name="get_weather"))
+    metadata_client.register_task_def(task_def=TaskDef(name="get_price_from_amazon"))
 
     # Define and associate prompt with the AI integration
-    prompt_name = 'chat_function_instructions'
+    prompt_name = "chat_function_instructions"
     prompt_text = """
     You are a helpful assistant that can answer questions using tools provided.  
     You have the following tools specified as functions in python:
@@ -151,47 +159,72 @@ def main():
     #                                 description='openai config',
     #                                 config=open_ai_config)
 
-    orchestrator.add_prompt_template(prompt_name, prompt_text, 'chat instructions')
+    orchestrator.add_prompt_template(prompt_name, prompt_text, "chat instructions")
 
     # associate the prompts
-    orchestrator.associate_prompt_template(prompt_name, llm_provider, [chat_complete_model])
+    orchestrator.associate_prompt_template(
+        prompt_name, llm_provider, [chat_complete_model]
+    )
 
-    wf = ConductorWorkflow(name='my_function_chatbot', version=1, executor=workflow_executor)
+    wf = ConductorWorkflow(
+        name="my_function_chatbot", version=1, executor=workflow_executor
+    )
 
-    user_input = WaitTask(task_ref_name='get_user_input')
+    user_input = WaitTask(task_ref_name="get_user_input")
 
-    chat_complete = LlmChatComplete(task_ref_name='chat_complete_ref',
-                                    llm_provider=llm_provider, model=chat_complete_model,
-                                    instructions_template=prompt_name,
-                                    messages=[
-                                        ChatMessage(role='user',
-                                                    message=user_input.output('query'))
-                                    ],
-                                    max_tokens=2048)
+    chat_complete = LlmChatComplete(
+        task_ref_name="chat_complete_ref",
+        llm_provider=llm_provider,
+        model=chat_complete_model,
+        instructions_template=prompt_name,
+        messages=[ChatMessage(role="user", message=user_input.output("query"))],
+        max_tokens=2048,
+    )
 
-    function_call = DynamicTask(task_reference_name='fn_call_ref', dynamic_task='SUB_WORKFLOW')
-    function_call.input_parameters['steps'] = chat_complete.output('function_parameters.steps')
-    function_call.input_parameters['inputs'] = chat_complete.output('function_parameters.inputs')
-    function_call.input_parameters['subWorkflowName'] = 'copilot_execution'
-    function_call.input_parameters['subWorkflowVersion'] = 1
+    function_call = DynamicTask(
+        task_reference_name="fn_call_ref", dynamic_task="SUB_WORKFLOW"
+    )
+    function_call.input_parameters["steps"] = chat_complete.output(
+        "function_parameters.steps"
+    )
+    function_call.input_parameters["inputs"] = chat_complete.output(
+        "function_parameters.inputs"
+    )
+    function_call.input_parameters["subWorkflowName"] = "copilot_execution"
+    function_call.input_parameters["subWorkflowVersion"] = 1
 
-    sub_workflow = SubWorkflowTask(task_ref_name='execute_workflow', workflow_name='copilot_execution', version=1)
+    sub_workflow = SubWorkflowTask(
+        task_ref_name="execute_workflow", workflow_name="copilot_execution", version=1
+    )
 
-    create = create_workflow(task_ref_name='create_workflow', steps=chat_complete.output('result.function_parameters.steps'),
-                             inputs=chat_complete.output('result.function_parameters.inputs'))
-    call_function = SwitchTask(task_ref_name='to_call_or_not', case_expression=chat_complete.output('result.function'))
-    call_function.switch_case('create_workflow', [create, sub_workflow])
+    create = create_workflow(
+        task_ref_name="create_workflow",
+        steps=chat_complete.output("result.function_parameters.steps"),
+        inputs=chat_complete.output("result.function_parameters.inputs"),
+    )
+    call_function = SwitchTask(
+        task_ref_name="to_call_or_not",
+        case_expression=chat_complete.output("result.function"),
+    )
+    call_function.switch_case("create_workflow", [create, sub_workflow])
 
-    call_one_fun = DynamicTask(task_reference_name='call_one_fun_ref', dynamic_task=chat_complete.output('result.function'))
-    call_one_fun.input_parameters['inputs'] = chat_complete.output('result.function_parameters')
-    call_one_fun.input_parameters['dynamicTaskInputParam'] = 'inputs'
+    call_one_fun = DynamicTask(
+        task_reference_name="call_one_fun_ref",
+        dynamic_task=chat_complete.output("result.function"),
+    )
+    call_one_fun.input_parameters["inputs"] = chat_complete.output(
+        "result.function_parameters"
+    )
+    call_one_fun.input_parameters["dynamicTaskInputParam"] = "inputs"
 
     call_function.default_case([call_one_fun])
 
     wf >> user_input >> chat_complete >> call_function
 
     # let's make sure we don't run it for more than 2 minutes -- avoid runaway loops
-    wf.timeout_seconds(120).timeout_policy(timeout_policy=TimeoutPolicy.TIME_OUT_WORKFLOW)
+    wf.timeout_seconds(120).timeout_policy(
+        timeout_policy=TimeoutPolicy.TIME_OUT_WORKFLOW
+    )
     message = """
     I am a helpful bot that can help with your customer management. 
     
@@ -202,34 +235,46 @@ def main():
     3. Get the list of top N customers and send them a promo code
     """
     print(message)
-    workflow_run = wf.execute(wait_until_task_ref=user_input.task_reference_name, wait_for_seconds=120)
+    workflow_run = wf.execute(
+        wait_until_task_ref=user_input.task_reference_name, wait_for_seconds=120
+    )
     workflow_id = workflow_run.workflow_id
-    query = input('>> ')
-    input_task = workflow_run.get_task(task_reference_name=user_input.task_reference_name)
-    workflow_run = workflow_client.update_state(workflow_id=workflow_id,
-                                                update_requesst=WorkflowStateUpdate(
-                                                    task_reference_name=user_input.task_reference_name,
-                                                    task_result=TaskResult(task_id=input_task.task_id, output_data={
-                                                        'query': query
-                                                    }, status=TaskResultStatus.COMPLETED)
-                                                ),
-                                                wait_for_seconds=30)
+    query = input(">> ")
+    input_task = workflow_run.get_task(
+        task_reference_name=user_input.task_reference_name
+    )
+    workflow_run = workflow_client.update_state(
+        workflow_id=workflow_id,
+        update_requesst=WorkflowStateUpdate(
+            task_reference_name=user_input.task_reference_name,
+            task_result=TaskResult(
+                task_id=input_task.task_id,
+                output_data={"query": query},
+                status=TaskResultStatus.COMPLETED,
+            ),
+        ),
+        wait_for_seconds=30,
+    )
 
     task_handler.stop_processes()
-    output = json.dumps(workflow_run.output['result'], indent=3)
-    print(f"""
+    output = json.dumps(workflow_run.output["result"], indent=3)
+    print(
+        f"""
     
     {output}
     
-    """)
+    """
+    )
 
-    print(f"""
+    print(
+        f"""
     See the complete execution graph here: 
     
     http://localhost:5001/execution/{workflow_id}
     
-    """)
+    """
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
