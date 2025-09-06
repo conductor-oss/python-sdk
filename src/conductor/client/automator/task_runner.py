@@ -93,11 +93,15 @@ class TaskRunner:
                 )
             if auth_exception.invalid_token:
                 logger.error(
-                    "Failed to poll task: %s; reason: invalid auth token", task_definition_name
+                    "Failed to poll task: %s; reason: invalid auth token",
+                    task_definition_name,
                 )
             else:
                 logger.error(
-                    "Failed to poll task: %s; status: %s - {auth_exception.error_code}", task_definition_name, auth_exception.status, auth_exception.error_code
+                    "Failed to poll task: %s; status: %s - %s",
+                    task_definition_name,
+                    auth_exception.status,
+                    auth_exception.error_code,
                 )
             return None
         except ApiException as e:
@@ -106,11 +110,20 @@ class TaskRunner:
                     task_definition_name, type(e)
                 )
             logger.error(
-                "Failed to poll task for: %s, reason: %s",
+                "Failed to poll task: %s, reason: %s, code: %s",
                 task_definition_name,
-                traceback.format_exc(),
+                e.reason,
+                e.code,
             )
             return None
+        except Exception as e:
+            if self.metrics_collector is not None:
+                self.metrics_collector.increment_task_poll_error(
+                    task_definition_name, type(e)
+                )
+            logger.error("Failed to poll task: %s; reason: %s", task_definition_name, e)
+            return None
+
         if task is not None:
             logger.debug(
                 "Polled task: %s; worker_id: %s; domain: %s",
