@@ -1,3 +1,5 @@
-from conductor.client.codegen.api_client import ApiClient
+from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+
+ApiClient = ApiClientAdapter
 
 __all__ = ["ApiClient"]

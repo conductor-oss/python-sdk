@@ -12,6 +12,7 @@ from conductor.client.workflow.task.wait_task import WaitTask
 
 def main():
     api_config = Configuration()
+    api_config.apply_logging_config()
     clients = OrkesClients(configuration=api_config)
 
     workflow = ConductorWorkflow(name='workflow_status_listener_demo', version=1,

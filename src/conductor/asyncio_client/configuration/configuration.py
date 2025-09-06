@@ -4,8 +4,9 @@ import logging
 import os
 from typing import Any, Dict, Optional, Union
 
-from conductor.asyncio_client.http.configuration import \
-    Configuration as HttpConfiguration
+from conductor.asyncio_client.http.configuration import (
+    Configuration as HttpConfiguration,
+)
 
 
 class Configuration:
@@ -171,6 +172,8 @@ class Configuration:
         self.logger = logging.getLogger(__name__)
         if debug:
             self.logger.setLevel(logging.DEBUG)
+
+        self.is_logger_config_applied = False
 
     def _get_env_float(self, env_var: str, default: float) -> float:
         """Get float value from environment variable with default fallback."""
@@ -450,21 +453,21 @@ class Configuration:
         """Get log level."""
         return self.__log_level
 
-    def apply_logging_config(self, log_format : Optional[str] = None, level = None):
+    def apply_logging_config(self, log_format: Optional[str] = None, level=None):
         """Apply logging configuration for the application."""
+        if self.is_logger_config_applied:
+            return
         if log_format is None:
             log_format = self.logger_format
         if level is None:
             level = self.__log_level
-        logging.basicConfig(
-            format=log_format,
-            level=level
-        )
+        logging.basicConfig(format=log_format, level=level)
+        self.is_logger_config_applied = True
 
     @staticmethod
     def get_logging_formatted_name(name):
         """Format a logger name with the current process ID."""
-        return f"[{os.getpid()}] {name}"
+        return f"[pid:{os.getpid()}] {name}"
 
     @property
     def ui_host(self):
@@ -474,5 +477,7 @@ class Configuration:
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to underlying HTTP configuration."""
         if "_http_config" not in self.__dict__ or self._http_config is None:
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{name}'"
+            )
         return getattr(self._http_config, name)

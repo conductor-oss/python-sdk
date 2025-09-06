@@ -1,9 +1,9 @@
 import asyncio
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.ai.orchestrator import AsyncAIOrchestrator
 from conductor.asyncio_client.automator.task_handler import TaskHandler
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.worker.worker_task import worker_task
 from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
 from conductor.asyncio_client.workflow.task.llm_tasks.llm_text_complete import (
@@ -34,6 +34,7 @@ async def main():
     embedding_complete_model = "text-embedding-ada-002"
 
     api_config = Configuration()
+    api_config.apply_logging_config()
     async with ApiClient(api_config) as api_client:
         task_workers = start_workers(api_config)
 

@@ -1,10 +1,10 @@
 import asyncio
 import uuid
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models import StartWorkflowRequest
 from conductor.asyncio_client.automator.task_handler import TaskHandler
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 from conductor.asyncio_client.worker.worker_task import worker_task
 from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
@@ -25,7 +25,7 @@ def send_email(email: str, subject: str, body: str):
 
 async def main():
     api_config = Configuration()
-
+    api_config.apply_logging_config()
     task_handler = TaskHandler(
         workers=[],
         configuration=api_config,

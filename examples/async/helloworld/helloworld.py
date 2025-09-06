@@ -2,9 +2,9 @@ import asyncio
 
 from greetings_workflow import greetings_workflow
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.automator.task_handler import TaskHandler
 from conductor.asyncio_client.configuration import Configuration
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
 from conductor.asyncio_client.workflow.executor.workflow_executor import (
     AsyncWorkflowExecutor,
@@ -22,6 +22,7 @@ async def register_workflow(
 async def main():
     # points to http://localhost:8080/api by default
     api_config = Configuration()
+    api_config.apply_logging_config()
     async with ApiClient(api_config) as api_client:
         workflow_executor = AsyncWorkflowExecutor(
             configuration=api_config, api_client=api_client

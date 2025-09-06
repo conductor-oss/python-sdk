@@ -14,6 +14,7 @@ def register_workflow(workflow_executor: WorkflowExecutor) -> ConductorWorkflow:
 def main():
     # points to http://localhost:8080/api by default
     api_config = Configuration()
+    api_config.apply_logging_config()
 
     workflow_executor = WorkflowExecutor(configuration=api_config)
 

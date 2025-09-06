@@ -1,7 +1,7 @@
 import asyncio
 
-from conductor.asyncio_client.configuration import Configuration
 from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
 from conductor.asyncio_client.workflow.task.fork_task import ForkTask
@@ -13,6 +13,7 @@ from conductor.shared.workflow.models import HttpInput
 
 async def main():
     api_config = Configuration()
+    api_config.apply_logging_config()
     async with ApiClient(api_config) as api_client:
         clients = OrkesClients(configuration=api_config, api_client=api_client)
         executor = clients.get_workflow_executor()

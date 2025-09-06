@@ -67,7 +67,7 @@ class AsyncMetricsCollector:
                 write_to_textfile(OUTPUT_FILE_PATH, registry)
                 await asyncio.sleep(settings.update_interval)
             except Exception as e:  # noqa: PERF203
-                logger.error("Error writing metrics to file: %s", e)
+                logger.error("Error writing metrics to file output_file_path: %s; registry: %s", OUTPUT_FILE_PATH, registry)
                 await asyncio.sleep(settings.update_interval)
 
     async def increment_task_poll(self, task_type: str) -> None:
