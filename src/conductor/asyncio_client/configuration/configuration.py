@@ -58,9 +58,9 @@ class Configuration:
         auth_secret: Optional[str] = None,
         debug: bool = False,
         # Worker properties
-        poll_interval: Optional[int] = None,
+        polling_interval: Optional[int] = None,
         domain: Optional[str] = None,
-        poll_interval_seconds: Optional[int] = None,
+        polling_interval_seconds: Optional[int] = None,
         # HTTP Configuration parameters
         api_key: Optional[Dict[str, str]] = None,
         api_key_prefix: Optional[Dict[str, str]] = None,
@@ -90,11 +90,11 @@ class Configuration:
             Authentication key secret. If not provided, reads from CONDUCTOR_AUTH_SECRET env var.
         debug : bool, optional
             Enable debug logging. Default is False.
-        poll_interval : int, optional
+        polling_interval : int, optional
             Polling interval in milliseconds. If not provided, reads from CONDUCTOR_WORKER_POLL_INTERVAL env var.
         domain : str, optional
             Worker domain. If not provided, reads from CONDUCTOR_WORKER_DOMAIN env var.
-        poll_interval_seconds : int, optional
+        polling_interval_seconds : int, optional
             Polling interval in seconds. If not provided, reads from CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS env var.
         **kwargs : Any
             Additional parameters passed to HttpConfiguration.
@@ -121,11 +121,11 @@ class Configuration:
             self.auth_secret = os.getenv("CONDUCTOR_AUTH_SECRET")
 
         # Additional worker properties with environment variable fallback
-        self.poll_interval = poll_interval or self._get_env_int(
+        self.poll_interval = polling_interval or self._get_env_int(
             "CONDUCTOR_WORKER_POLL_INTERVAL", 100
         )
         self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", "default_domain")
-        self.poll_interval_seconds = poll_interval_seconds or self._get_env_int(
+        self.poll_interval_seconds = polling_interval_seconds or self._get_env_int(
             "CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0
         )
 
@@ -243,10 +243,10 @@ class Configuration:
         # Return default value
         elif property_name == "domain":
             return self.domain
-        elif property_name == "poll_interval":
-            return self.poll_interval
+        elif property_name == "polling_interval":
+            return self.polling_interval
         elif property_name == "poll_interval_seconds":
-            return self.poll_interval_seconds
+            return self.polling_interval_seconds
 
         return None
 
@@ -256,14 +256,14 @@ class Configuration:
             try:
                 return float(value)
             except (ValueError, TypeError):
-                self.logger.warning("Invalid poll_interval value: %s", value)
-                return self.poll_interval
-        elif property_name == "poll_interval_seconds":
+                self.logger.warning("Invalid polling_interval value: %s", value)
+                return self.polling_interval
+        elif property_name == "polling_interval_seconds":
             try:
                 return float(value)
             except (ValueError, TypeError):
-                self.logger.warning("Invalid poll_interval_seconds value: %s", value)
-                return self.poll_interval_seconds
+                self.logger.warning("Invalid polling_interval_seconds value: %s", value)
+                return self.polling_interval_seconds
 
         # For other properties, return as string
         return value
@@ -355,10 +355,10 @@ class Configuration:
             Polling interval in milliseconds
         """
         if task_type:
-            value = self.get_worker_property_value("poll_interval", task_type)
+            value = self.get_worker_property_value("polling_interval", task_type)
             if value is not None:
                 return int(value)
-        return self.poll_interval
+        return self.polling_interval
 
     def get_poll_interval_seconds(self) -> int:
         """
@@ -369,7 +369,7 @@ class Configuration:
         int
             Polling interval in seconds
         """
-        return self.poll_interval_seconds
+        return self.polling_interval_seconds
 
     # Properties for commonly used HTTP configuration attributes
     @property

@@ -242,12 +242,8 @@ class TaskRunner:
             self.worker.domain = self.worker.get_domain()
 
         polling_interval = self.__get_property_value_from_env(
-            "poll_interval", task_type
+            "polling_interval", task_type
         )
-        if not polling_interval:
-            polling_interval = self.__get_property_value_from_env(
-                "polling_interval", task_type
-            )
 
         if polling_interval:
             try:
