@@ -121,11 +121,11 @@ class Configuration:
             self.auth_secret = os.getenv("CONDUCTOR_AUTH_SECRET")
 
         # Additional worker properties with environment variable fallback
-        self.poll_interval = polling_interval or self._get_env_int(
+        self.polling_interval = polling_interval or self._get_env_int(
             "CONDUCTOR_WORKER_POLL_INTERVAL", 100
         )
         self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", "default_domain")
-        self.poll_interval_seconds = polling_interval_seconds or self._get_env_int(
+        self.polling_interval_seconds = polling_interval_seconds or self._get_env_int(
             "CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0
         )
 
