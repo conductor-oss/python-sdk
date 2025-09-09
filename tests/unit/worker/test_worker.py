@@ -89,7 +89,7 @@ def test_init_with_defaults(simple_execute_function):
     
     assert worker.task_definition_name == "test_task"
     assert worker.poll_interval == 100
-    assert worker.domain is None
+    assert worker.domain == "default_domain"
     assert worker.worker_id is not None
     assert worker.execute_function == simple_execute_function
 
