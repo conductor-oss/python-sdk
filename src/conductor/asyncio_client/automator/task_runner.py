@@ -240,16 +240,14 @@ class AsyncTaskRunner:
         else:
             self.worker.domain = self.worker.get_domain()
 
-        # Try both naming conventions for polling interval
         polling_interval = self.__get_property_value_from_env(
             "poll_interval", task_type
         )
         if not polling_interval:
-            # Fallback to the "polling_interval" naming convention
             polling_interval = self.__get_property_value_from_env(
                 "polling_interval", task_type
             )
-        
+
         if polling_interval:
             try:
                 self.worker.poll_interval = float(polling_interval)
@@ -260,7 +258,7 @@ class AsyncTaskRunner:
                     e,
                 )
                 self.worker.poll_interval = (
-                    self.worker.get_polling_interval_in_seconds() * 1000
+                    self.worker.get_polling_interval_in_seconds()
                 )
 
     def __get_property_value_from_env(self, prop, task_type):

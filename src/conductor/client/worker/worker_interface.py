@@ -44,7 +44,11 @@ class WorkerInterface(abc.ABC):
         :return: float
                  Default: 100ms
         """
-        return (self.poll_interval if self.poll_interval else Configuration().get_poll_interval()) / 1000
+        return (
+            self.poll_interval
+            if self.poll_interval
+            else Configuration().get_poll_interval()
+        ) / 1000
 
     def get_task_definition_name(self) -> str:
         """
@@ -73,7 +77,9 @@ class WorkerInterface(abc.ABC):
     def compute_task_definition_name(self):
         if isinstance(self.task_definition_name, list):
             task_definition_name = self.task_definition_name[self.next_task_index]
-            self.next_task_index = (self.next_task_index + 1) % len(self.task_definition_name)
+            self.next_task_index = (self.next_task_index + 1) % len(
+                self.task_definition_name
+            )
             return task_definition_name
         return self.task_definition_name
 
@@ -87,7 +93,7 @@ class WorkerInterface(abc.ABC):
         return TaskResult(
             task_id=task.task_id,
             workflow_instance_id=task.workflow_instance_id,
-            worker_id=self.get_identity()
+            worker_id=self.get_identity(),
         )
 
     def get_domain(self) -> str:

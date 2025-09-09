@@ -83,9 +83,13 @@ class Configuration:
         self.auth_token_ttl_msec = auth_token_ttl_min * 60 * 1000
 
         # Worker properties
-        self.poll_interval = poll_interval or self._get_env_float("CONDUCTOR_WORKER_POLL_INTERVAL", 100)
+        self.poll_interval = poll_interval or self._get_env_float(
+            "CONDUCTOR_WORKER_POLL_INTERVAL", 100
+        )
         self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", "default_domain")
-        self.poll_interval_seconds = poll_interval_seconds or self._get_env_float("CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0)
+        self.poll_interval_seconds = poll_interval_seconds or self._get_env_float(
+            "CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0
+        )
 
     @property
     def debug(self):

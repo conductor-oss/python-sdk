@@ -11,8 +11,8 @@ from conductor.asyncio_client.workflow.task.simple_task import SimpleTask
 def WorkerTask(
     task_definition_name: str,
     poll_interval: int = 100,
-    domain: str = None,
-    worker_id: str = None,
+    domain: Optional[str] = None,
+    worker_id: Optional[str] = None,
     poll_interval_seconds: int = 0,
 ):
     config = Configuration()
@@ -21,7 +21,6 @@ def WorkerTask(
     domain = domain or config.get_domain()
     poll_interval_seconds = poll_interval_seconds or config.get_poll_interval_seconds()
 
-    # Calculate poll interval in milliseconds
     poll_interval_millis = poll_interval
     if poll_interval_seconds > 0:
         poll_interval_millis = 1000 * poll_interval_seconds
