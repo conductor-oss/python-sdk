@@ -18,7 +18,7 @@ from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
 from conductor.shared.http.enums import TaskResultStatus
 from conductor.shared.worker.exception import NonRetryableException
-from conductor.client.worker.worker_interface import WorkerInterface, DEFAULT_POLLING_INTERVAL
+from conductor.client.worker.worker_interface import WorkerInterface
 
 ExecuteTaskFunction = Callable[
     [
@@ -57,11 +57,16 @@ class Worker(WorkerInterface):
                  ) -> Self:
         super().__init__(task_definition_name)
         self.api_client = ApiClient()
+        self.config = Configuration()
+
         if poll_interval is None:
-            self.poll_interval = DEFAULT_POLLING_INTERVAL
+            self.poll_interval = self.config.get_poll_interval()
         else:
             self.poll_interval = deepcopy(poll_interval)
-        self.domain = deepcopy(domain)
+        if domain is None:
+            self.domain = self.config.get_domain()
+        else:
+            self.domain = deepcopy(domain)
         if worker_id is None:
             self.worker_id = deepcopy(super().get_identity())
         else:

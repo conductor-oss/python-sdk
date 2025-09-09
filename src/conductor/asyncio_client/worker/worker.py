@@ -15,8 +15,7 @@ from conductor.asyncio_client.adapters.models.task_result_adapter import \
     TaskResultAdapter
 from conductor.asyncio_client.configuration import Configuration
 from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.worker.worker_interface import (
-    DEFAULT_POLLING_INTERVAL, WorkerInterface)
+from conductor.asyncio_client.worker.worker_interface import WorkerInterface
 from conductor.shared.automator import utils
 from conductor.shared.automator.utils import convert_from_dict_or_list
 from conductor.shared.http.enums import TaskResultStatus
@@ -60,15 +59,10 @@ class Worker(WorkerInterface):
     ):
         super().__init__(task_definition_name)
         self.api_client = ApiClient()
-        if poll_interval is None:
-            self.poll_interval = DEFAULT_POLLING_INTERVAL
-        else:
-            self.poll_interval = deepcopy(poll_interval)
-        self.domain = deepcopy(domain)
-        if worker_id is None:
-            self.worker_id = deepcopy(super().get_identity())
-        else:
-            self.worker_id = deepcopy(worker_id)
+        self.config = Configuration()
+        self.poll_interval = poll_interval or self.config.get_poll_interval()
+        self.domain = domain or self.config.get_domain()
+        self.worker_id = worker_id or super().get_identity()
         self.execute_function = deepcopy(execute_function)
 
     def execute(self, task: TaskAdapter) -> TaskResultAdapter:
