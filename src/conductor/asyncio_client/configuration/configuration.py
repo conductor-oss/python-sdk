@@ -73,6 +73,8 @@ class Configuration:
         ssl_ca_cert: Optional[str] = None,
         retries: Optional[int] = None,
         ca_cert_data: Optional[Union[str, bytes]] = None,
+        proxy: Optional[str] = None,
+        proxy_headers: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ):
         """
@@ -136,6 +138,9 @@ class Configuration:
         self.__ui_host = os.getenv("CONDUCTOR_UI_SERVER_URL")
         if self.__ui_host is None:
             self.__ui_host = self.server_url.replace("/api", "")
+
+        self.proxy = proxy
+        self.proxy_headers = proxy_headers
 
         self.logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 

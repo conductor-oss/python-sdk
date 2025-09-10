@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import time
-from typing import Optional
+from typing import Optional, Dict
 
 from conductor.shared.configuration.settings.authentication_settings import (
     AuthenticationSettings,
@@ -20,7 +20,21 @@ class Configuration:
         authentication_settings: AuthenticationSettings = None,
         server_api_url: Optional[str] = None,
         auth_token_ttl_min: int = 45,
+        proxy: Optional[str] = None,
+        proxy_headers: Optional[Dict[str, str]] = None,
     ):
+        """
+        Initialize Conductor client configuration.
+        
+        Args:
+            base_url: Base URL of the Conductor server (will append /api)
+            debug: Enable debug logging
+            authentication_settings: Authentication configuration for Orkes
+            server_api_url: Full API URL (overrides base_url)
+            auth_token_ttl_min: Authentication token time-to-live in minutes
+            proxy: Proxy URL for HTTP requests (supports http, https, socks4, socks5)
+            proxy_headers: Headers to send with proxy requests (e.g., authentication)
+        """
         if server_api_url is not None:
             self.host = server_api_url
         elif base_url is not None:
@@ -68,7 +82,9 @@ class Configuration:
         self.assert_hostname = None
 
         # Proxy URL
-        self.proxy = None
+        self.proxy = proxy
+        # Proxy headers
+        self.proxy_headers = proxy_headers
         # Safe chars for path_param
         self.safe_chars_for_path_param = ""
 

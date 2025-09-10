@@ -16,7 +16,8 @@ class ApiClientAdapter(ApiClient):
         """Initialize the API client adapter with httpx-based REST client."""
         super().__init__(configuration, header_name, header_value, cookie)
         self.rest_client = RESTClientObjectAdapter(
-            connection=configuration.http_connection if configuration else None
+            connection=configuration.http_connection if configuration else None,
+            configuration=configuration,
         )
 
     def __call_api(
