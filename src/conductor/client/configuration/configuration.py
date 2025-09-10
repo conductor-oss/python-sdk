@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import time
@@ -25,7 +26,7 @@ class Configuration:
     ):
         """
         Initialize Conductor client configuration.
-        
+
         Args:
             base_url: Base URL of the Conductor server (will append /api)
             debug: Enable debug logging
@@ -34,6 +35,13 @@ class Configuration:
             auth_token_ttl_min: Authentication token time-to-live in minutes
             proxy: Proxy URL for HTTP requests (supports http, https, socks4, socks5)
             proxy_headers: Headers to send with proxy requests (e.g., authentication)
+
+        Environment Variables:
+            CONDUCTOR_SERVER_URL: Server URL (e.g., http://localhost:8080/api)
+            CONDUCTOR_AUTH_KEY: Authentication key ID
+            CONDUCTOR_AUTH_SECRET: Authentication key secret
+            CONDUCTOR_PROXY: Proxy URL for HTTP requests
+            CONDUCTOR_PROXY_HEADERS: Proxy headers as JSON string or single header value
         """
         if server_api_url is not None:
             self.host = server_api_url
@@ -81,10 +89,18 @@ class Configuration:
         # Set this to True/False to enable/disable SSL hostname verification.
         self.assert_hostname = None
 
-        # Proxy URL
-        self.proxy = proxy
-        # Proxy headers
+        # Proxy configuration - can be set via parameter or environment variable
+        self.proxy = proxy or os.getenv("CONDUCTOR_PROXY")
+        # Proxy headers - can be set via parameter or environment variable
         self.proxy_headers = proxy_headers
+        if not self.proxy_headers and os.getenv("CONDUCTOR_PROXY_HEADERS"):
+            try:
+                self.proxy_headers = json.loads(os.getenv("CONDUCTOR_PROXY_HEADERS"))
+            except (json.JSONDecodeError, TypeError):
+                # If JSON parsing fails, treat as a single header value
+                self.proxy_headers = {
+                    "Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")
+                }
         # Safe chars for path_param
         self.safe_chars_for_path_param = ""
 

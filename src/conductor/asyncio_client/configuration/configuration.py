@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 from typing import Any, Dict, Optional, Union
@@ -94,8 +95,20 @@ class Configuration:
             Default polling interval for workers in seconds.
         default_domain : str, optional
             Default domain for workers.
+        proxy : str, optional
+            Proxy URL for HTTP requests. If not provided, reads from CONDUCTOR_PROXY env var.
+        proxy_headers : Dict[str, str], optional
+            Headers to send with proxy requests. If not provided, reads from CONDUCTOR_PROXY_HEADERS env var.
         **kwargs : Any
             Additional parameters passed to HttpConfiguration.
+
+        Environment Variables:
+        ---------------------
+        CONDUCTOR_SERVER_URL: Server URL (e.g., http://localhost:8080/api)
+        CONDUCTOR_AUTH_KEY: Authentication key ID
+        CONDUCTOR_AUTH_SECRET: Authentication key secret
+        CONDUCTOR_PROXY: Proxy URL for HTTP requests
+        CONDUCTOR_PROXY_HEADERS: Proxy headers as JSON string or single header value
         """
 
         # Resolve server URL from parameter or environment variable
@@ -139,8 +152,18 @@ class Configuration:
         if self.__ui_host is None:
             self.__ui_host = self.server_url.replace("/api", "")
 
-        self.proxy = proxy
+        # Proxy configuration - can be set via parameter or environment variable
+        self.proxy = proxy or os.getenv("CONDUCTOR_PROXY")
+        # Proxy headers - can be set via parameter or environment variable
         self.proxy_headers = proxy_headers
+        if not self.proxy_headers and os.getenv("CONDUCTOR_PROXY_HEADERS"):
+            try:
+                self.proxy_headers = json.loads(os.getenv("CONDUCTOR_PROXY_HEADERS"))
+            except (json.JSONDecodeError, TypeError):
+                # If JSON parsing fails, treat as a single header value
+                self.proxy_headers = {
+                    "Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")
+                }
 
         self.logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 
@@ -163,6 +186,12 @@ class Configuration:
             debug=debug,
             **kwargs,
         )
+
+        # Set proxy configuration on the HTTP config
+        if self.proxy:
+            self._http_config.proxy = self.proxy
+        if self.proxy_headers:
+            self._http_config.proxy_headers = self.proxy_headers
 
         # Debug switch and logging setup
         self.__debug = debug
