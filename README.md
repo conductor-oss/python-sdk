@@ -32,6 +32,10 @@ Show support for the Conductor OSS.  Please help spread the awareness by starrin
   - [Start Conductor Server](#start-conductor-server)
   - [Execute Hello World Application](#execute-hello-world-application)
 - [Running Workflows on Orkes Conductor](#running-workflows-on-orkes-conductor)
+- [Proxy Configuration](#proxy-configuration)
+  - [Supported Proxy Types](#supported-proxy-types)
+  - [Synchronous Client Proxy Configuration](#client-proxy-configuration)
+  - [Environment Variable Configuration](#environment-variable-configuration)
 - [Learn More about Conductor Python SDK](#learn-more-about-conductor-python-sdk)
 - [Create and Run Conductor Workers](#create-and-run-conductor-workers)
 - [Writing Workers](#writing-workers)
@@ -274,10 +278,96 @@ export CONDUCTOR_AUTH_KEY=your_key
 export CONDUCTOR_AUTH_SECRET=your_key_secret
 ```
 
+- If you need to use a proxy server, you can configure it using environment variables:
+
+```shell
+export CONDUCTOR_PROXY=http://proxy.company.com:8080
+export CONDUCTOR_PROXY_HEADERS='{"Proxy-Authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQ="}'
+```
+
 Run the application and view the execution status from Conductor's UI Console.
 
 > [!NOTE]
 > That's it - you just created and executed your first distributed Python app!
+
+## Proxy Configuration
+
+The Conductor Python SDK supports proxy configuration for both synchronous and asynchronous clients. This is useful when your application needs to route traffic through corporate firewalls, load balancers, or other network intermediaries.
+
+### Supported Proxy Types
+
+- **HTTP Proxy**: `http://proxy.example.com:8080`
+- **HTTPS Proxy**: `https://proxy.example.com:8443`
+- **SOCKS4 Proxy**: `socks4://proxy.example.com:1080`
+- **SOCKS5 Proxy**: `socks5://proxy.example.com:1080`
+- **Proxy with Authentication**: `http://username:password@proxy.example.com:8080`
+
+> [!NOTE]
+> For SOCKS proxy support, install the additional dependency: `pip install httpx[socks]`
+
+### Client Proxy Configuration
+
+```python
+from conductor.client.configuration.configuration import Configuration
+from conductor.shared.configuration.settings.authentication_settings import AuthenticationSettings
+
+# Basic HTTP proxy configuration
+config = Configuration(
+    server_api_url="https://api.orkes.io/api",
+    authentication_settings=AuthenticationSettings(
+        key_id="your_key_id",
+        key_secret="your_key_secret"
+    ),
+    proxy="http://proxy.company.com:8080"
+)
+
+# HTTPS proxy with authentication headers
+config = Configuration(
+    server_api_url="https://api.orkes.io/api",
+    authentication_settings=AuthenticationSettings(
+        key_id="your_key_id",
+        key_secret="your_key_secret"
+    ),
+    proxy="https://secure-proxy.company.com:8443",
+    proxy_headers={
+        "Proxy-Authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQ=",
+        "X-Proxy-Client": "conductor-python-sdk"
+    }
+)
+```
+
+### Environment Variable Configuration
+
+You can configure proxy settings using Conductor-specific environment variables:
+
+```shell
+# Basic proxy configuration
+export CONDUCTOR_PROXY=http://proxy.company.com:8080
+
+# Proxy with authentication headers (JSON format)
+export CONDUCTOR_PROXY_HEADERS='{"Proxy-Authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQ=", "X-Proxy-Client": "conductor-python-sdk"}'
+
+# Or single header value
+export CONDUCTOR_PROXY_HEADERS="Basic dXNlcm5hbWU6cGFzc3dvcmQ="
+```
+
+**Priority Order:**
+1. Explicit proxy parameters in Configuration constructor
+2. `CONDUCTOR_PROXY` and `CONDUCTOR_PROXY_HEADERS` environment variables
+
+**Example Usage with Environment Variables:**
+
+```python
+# Set environment variables
+import os
+os.environ['CONDUCTOR_PROXY'] = 'http://proxy.company.com:8080'
+os.environ['CONDUCTOR_PROXY_HEADERS'] = '{"Proxy-Authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQ="}'
+
+# Configuration will automatically use proxy from environment
+from conductor.client.configuration.configuration import Configuration
+config = Configuration(server_api_url="https://api.orkes.io/api")
+# Proxy is automatically configured from CONDUCTOR_PROXY environment variable
+```
 
 ## Learn More about Conductor Python SDK
 
