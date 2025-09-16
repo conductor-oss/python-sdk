@@ -169,9 +169,7 @@ class RESTClientObjectAdapter(RESTClientObject):
                 timeout = httpx.Timeout(_request_timeout)
             else:
                 # Tuple format: (connect_timeout, read_timeout)
-                timeout = httpx.Timeout(
-                    connect=_request_timeout[0], read=_request_timeout[1]
-                )
+                timeout = httpx.Timeout(_request_timeout)
         else:
             timeout = httpx.Timeout(120.0)
 

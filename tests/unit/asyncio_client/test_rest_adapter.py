@@ -337,6 +337,34 @@ def test_request_with_custom_timeout():
         assert response.status == 200
 
 
+def test_request_with_tuple_timeout():
+    adapter = RESTClientObjectAdapter()
+
+    mock_response = Mock(spec=Response)
+    mock_response.status_code = 200
+    mock_response.reason_phrase = "OK"
+    mock_response.headers = {}
+    mock_response.content = b'{"data": "test"}'
+    mock_response.text = '{"data": "test"}'
+    mock_response.url = "https://example.com"
+    mock_response.http_version = "HTTP/1.1"
+
+    with patch.object(
+        adapter.connection, "request", return_value=mock_response
+    ) as mock_request:
+        response = adapter.request(
+            "GET", "https://example.com", _request_timeout=(5.0, 30.0)
+        )
+
+        assert isinstance(response, RESTResponse)
+        assert response.status == 200
+
+        call_args = mock_request.call_args
+        timeout_arg = call_args[1]["timeout"]
+        assert timeout_arg.connect == 5.0
+        assert timeout_arg.read == 30.0
+
+
 def test_request_authorization_error():
     adapter = RESTClientObjectAdapter()
 
