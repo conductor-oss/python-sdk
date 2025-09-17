@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import time
-from typing import Optional, Dict
+from typing import Optional, Dict, Union
 
 from conductor.shared.configuration.settings.authentication_settings import (
     AuthenticationSettings,
@@ -27,6 +27,8 @@ class Configuration:
         polling_interval: Optional[float] = None,
         domain: Optional[str] = None,
         polling_interval_seconds: Optional[float] = None,
+        ssl_ca_cert: Optional[str] = None,
+        ca_cert_data: Optional[Union[str, bytes]] = None,
     ):
         """
         Initialize Conductor client configuration.
@@ -85,7 +87,9 @@ class Configuration:
         # from https server.
         self.verify_ssl = True
         # Set this to customize the certificate file to verify the peer.
-        self.ssl_ca_cert = None
+        self.ssl_ca_cert = ssl_ca_cert
+        # Set this to verify the peer using PEM (str) or DER (bytes) certificate data.
+        self.ca_cert_data = ca_cert_data
         # client certificate file
         self.cert_file = None
         # client key file
