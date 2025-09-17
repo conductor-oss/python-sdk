@@ -1,3 +1,7 @@
-from conductor.client.codegen.api_client import ApiClient
+from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.adapters.rest_adapter import RESTClientObjectAdapter
 
-__all__ = ["ApiClient"]
+ApiClient = ApiClientAdapter
+RESTClientObject = RESTClientObjectAdapter
+
+__all__ = ["ApiClient", "RESTClientObject"]

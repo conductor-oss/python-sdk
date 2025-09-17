@@ -1,8 +1,8 @@
 import asyncio
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.ai.orchestrator import AsyncAIOrchestrator
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
 from conductor.asyncio_client.workflow.task.do_while_task import LoopTask
@@ -27,6 +27,7 @@ async def main():
     moderator_model = "command-r"
 
     api_config = Configuration()
+    api_config.apply_logging_config()
     async with ApiClient(api_config) as api_client:
         clients = OrkesClients(configuration=api_config, api_client=api_client)
         workflow_executor = clients.get_workflow_executor()

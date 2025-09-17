@@ -33,6 +33,7 @@ def main():
     text_complete_model = 'text-davinci-003'
 
     api_config = Configuration()
+    api_config.apply_logging_config()
     api_config.apply_logging_config(level=logging.INFO)
     clients = OrkesClients(configuration=api_config)
     workflow_executor = clients.get_workflow_executor()

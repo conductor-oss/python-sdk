@@ -24,6 +24,7 @@ def simple_task_2(task: Task) -> TaskResult:
 
 def main():
     api_config = Configuration()
+    api_config.apply_logging_config()
     clients = OrkesClients()
     metadata_client = clients.get_metadata_client()
     workflow_client = clients.get_workflow_client()
