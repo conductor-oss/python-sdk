@@ -648,7 +648,7 @@ def test_set_worker_properties_exception_in_polling_interval(monkeypatch, caplog
         task_runner._TaskRunner__set_worker_properties()
 
     assert (
-        "Exception in reading polling interval from environment variable" in caplog.text
+        "Error converting polling_interval to float value" in caplog.text
     )
 
 
