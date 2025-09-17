@@ -6,6 +6,50 @@ import pytest
 from conductor.asyncio_client.configuration.configuration import Configuration
 
 
+def test_initialization_default():
+    config = Configuration()
+    assert config.server_url == "http://localhost:8080/api"
+    assert config.polling_interval == 100
+    assert config.domain == "default_domain"
+    assert config.polling_interval_seconds == 0
+    assert config.debug is False
+
+
+def test_initialization_with_parameters():
+    config = Configuration(
+        server_url="https://test.com/api",
+        auth_key="test_key",
+        auth_secret="test_secret",
+        debug=True,
+        polling_interval=200,
+        domain="test_domain",
+        polling_interval_seconds=5,
+    )
+    assert config.server_url == "https://test.com/api"
+    assert config.auth_key == "test_key"
+    assert config.auth_secret == "test_secret"
+    assert config.debug is True
+    assert config.polling_interval == 200
+    assert config.domain == "test_domain"
+    assert config.polling_interval_seconds == 5
+
+
+def test_initialization_with_env_vars(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_SERVER_URL", "https://env.com/api")
+    monkeypatch.setenv("CONDUCTOR_AUTH_KEY", "env_key")
+    monkeypatch.setenv("CONDUCTOR_AUTH_SECRET", "env_secret")
+    monkeypatch.setenv("CONDUCTOR_WORKER_POLL_INTERVAL", "300")
+    monkeypatch.setenv("CONDUCTOR_WORKER_DOMAIN", "env_domain")
+    monkeypatch.setenv("CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", "10")
+
+    config = Configuration()
+    assert config.server_url == "https://env.com/api"
+    assert config.auth_key == "env_key"
+    assert config.auth_secret == "env_secret"
+    assert config.polling_interval == 300
+    assert config.domain == "env_domain"
+    assert config.polling_interval_seconds == 10
+
 def test_initialization_env_vars_override_params(monkeypatch):
     monkeypatch.setenv("CONDUCTOR_SERVER_URL", "https://env.com/api")
     monkeypatch.setenv("CONDUCTOR_AUTH_KEY", "env_key")
@@ -17,6 +61,11 @@ def test_initialization_env_vars_override_params(monkeypatch):
 
 def test_initialization_empty_server_url():
     config = Configuration(server_url="")
+    assert config.server_url == "http://localhost:8080/api"
+
+
+def test_initialization_none_server_url():
+    config = Configuration(server_url=None)
     assert config.server_url == "http://localhost:8080/api"
 
 
@@ -80,10 +129,46 @@ def test_get_worker_property_value_global(monkeypatch):
     assert result == 600.0
 
 
+def test_get_worker_property_value_default():
+    config = Configuration()
+    result = config.get_worker_property_value("polling_interval", "mytask")
+    assert result == 100
+
+
+def test_get_worker_property_value_domain():
+    config = Configuration()
+    result = config.get_worker_property_value("domain", "mytask")
+    assert result == "default_domain"
+
+
+def test_get_worker_property_value_poll_interval_seconds():
+    config = Configuration()
+    result = config.get_worker_property_value("poll_interval_seconds", "mytask")
+    assert result == 0
+
+    
 def test_convert_property_value_polling_interval():
     config = Configuration()
     result = config._convert_property_value("polling_interval", "250")
     assert result == 250.0
+
+
+def test_convert_property_value_polling_interval_invalid():
+    config = Configuration()
+    result = config._convert_property_value("polling_interval", "invalid")
+    assert result == 100
+
+
+def test_convert_property_value_polling_interval_seconds():
+    config = Configuration()
+    result = config._convert_property_value("polling_interval_seconds", "5")
+    assert result == 5.0
+
+
+def test_convert_property_value_polling_interval_seconds_invalid():
+    config = Configuration()
+    result = config._convert_property_value("polling_interval_seconds", "invalid")
+    assert result == 0
 
 
 def test_convert_property_value_string():
@@ -126,11 +211,42 @@ def test_get_polling_interval_with_task_type(monkeypatch):
     assert result == 400.0
 
 
+def test_get_polling_interval_default():
+    config = Configuration()
+    result = config.get_polling_interval("mytask")
+    assert result == 100.0
+
+
 def test_get_domain_with_task_type(monkeypatch):
     monkeypatch.setenv("CONDUCTOR_WORKER_MYTASK_DOMAIN", "task_domain")
     config = Configuration()
     result = config.get_domain("mytask")
     assert result == "task_domain"
+
+
+def test_get_domain_default():
+    config = Configuration()
+    result = config.get_domain("mytask")
+    assert result == "default_domain"
+
+
+def test_get_poll_interval_with_task_type(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_WORKER_MYTASK_POLLING_INTERVAL", "500")
+    config = Configuration()
+    result = config.get_poll_interval("mytask")
+    assert result == 500
+
+
+def test_get_poll_interval_default():
+    config = Configuration()
+    result = config.get_poll_interval("mytask")
+    assert result == 100
+
+
+def test_get_poll_interval_seconds():
+    config = Configuration()
+    result = config.get_poll_interval_seconds()
+    assert result == 0
 
 
 def test_host_property():
@@ -268,6 +384,16 @@ def test_auth_setup_with_credentials():
     assert config.api_key["api_key"] == "key"
 
 
+def test_auth_setup_without_credentials():
+    config = Configuration()
+    assert config.api_key == {}
+
+
+def test_auth_setup_with_explicit_api_key():
+    config = Configuration(api_key={"custom": "value"})
+    assert config.api_key == {"custom": "value"}
+
+
 def test_worker_properties_dict_initialization():
     config = Configuration()
     assert isinstance(config._worker_properties, dict)
@@ -278,6 +404,15 @@ def test_get_worker_property_value_unknown_property():
     config = Configuration()
     result = config.get_worker_property_value("unknown_property", "mytask")
     assert result is None
+
+
+def test_get_poll_interval_with_task_type_none_value():
+    config = Configuration()
+    with patch.dict(
+        os.environ, {"CONDUCTOR_WORKER_MYTASK_POLLING_INTERVAL": "invalid"}
+    ):
+        result = config.get_poll_interval("mytask")
+        assert result == 100
 
 
 def test_host_property_no_http_config():
@@ -291,3 +426,16 @@ def test_debug_setter_false():
     config = Configuration(debug=True)
     config.debug = False
     assert config.debug is False
+
+
+def test_get_poll_interval_with_task_type_none():
+    config = Configuration()
+    result = config.get_poll_interval("mytask")
+    assert result == 100
+
+
+def test_get_poll_interval_task_type_provided_but_value_none():
+    config = Configuration()
+    with patch.dict(os.environ, {"CONDUCTOR_WORKER_MYTASK_POLLING_INTERVAL": ""}):
+        result = config.get_poll_interval("mytask")
+        assert result == 100
