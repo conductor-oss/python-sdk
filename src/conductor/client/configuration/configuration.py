@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+
 import logging
 import os
 import time
@@ -23,6 +24,9 @@ class Configuration:
         auth_token_ttl_min: int = 45,
         proxy: Optional[str] = None,
         proxy_headers: Optional[Dict[str, str]] = None,
+        polling_interval: Optional[float] = None,
+        domain: Optional[str] = None,
+        polling_interval_seconds: Optional[float] = None,
     ):
         """
         Initialize Conductor client configuration.
@@ -111,6 +115,15 @@ class Configuration:
         self.token_update_time = 0
         self.auth_token_ttl_msec = auth_token_ttl_min * 60 * 1000
 
+        # Worker properties
+        self.polling_interval = polling_interval or self._get_env_float(
+            "CONDUCTOR_WORKER_POLL_INTERVAL", 100
+        )
+        self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", "default_domain")
+        self.polling_interval_seconds = polling_interval_seconds or self._get_env_float(
+            "CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0
+        )
+
     @property
     def debug(self):
         """Debug status
@@ -194,3 +207,22 @@ class Configuration:
     def update_token(self, token: str) -> None:
         self.AUTH_TOKEN = token
         self.token_update_time = round(time.time() * 1000)
+
+    def _get_env_float(self, env_var: str, default: float) -> float:
+        """Get float value from environment variable with default fallback."""
+        try:
+            value = os.getenv(env_var)
+            if value is not None:
+                return float(value)
+        except (ValueError, TypeError):
+            pass
+        return default
+
+    def get_poll_interval_seconds(self):
+        return self.polling_interval_seconds
+
+    def get_poll_interval(self):
+        return self.polling_interval
+
+    def get_domain(self):
+        return self.domain

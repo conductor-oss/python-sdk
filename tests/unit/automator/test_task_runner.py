@@ -5,10 +5,14 @@ import pytest
 from requests.structures import CaseInsensitiveDict
 
 from conductor.client.automator.task_runner import TaskRunner
+from conductor.client.codegen.rest import AuthorizationException, ApiException
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.models.task import Task
+from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
+from conductor.client.telemetry.metrics_collector import MetricsCollector
+from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
 from conductor.shared.http.enums.task_result_status import TaskResultStatus
 from conductor.client.worker.worker_interface import DEFAULT_POLLING_INTERVAL
 from tests.unit.resources.workers import ClassWorker, OldFaultyExecutionWorker
@@ -21,7 +25,7 @@ def disable_logging():
     logging.disable(logging.NOTSET)
 
 
-def get_valid_task_runner_with_worker_config(worker_config=None):
+def get_valid_task_runner_with_worker_config():
     return TaskRunner(configuration=Configuration(), worker=get_valid_worker())
 
 
@@ -298,3 +302,432 @@ def test_wait_for_polling_interval():
     finish_time = time.time()
     spent_time = finish_time - start_time
     assert spent_time > expected_time
+
+
+def test_initialization_with_metrics_collector():
+    metrics_settings = MetricsSettings()
+    task_runner = TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker(),
+        metrics_settings=metrics_settings,
+    )
+    assert isinstance(task_runner.metrics_collector, MetricsCollector)
+
+
+def test_initialization_without_metrics_collector():
+    task_runner = TaskRunner(configuration=Configuration(), worker=get_valid_worker())
+    assert task_runner.metrics_collector is None
+
+
+def test_initialization_with_none_configuration():
+    task_runner = TaskRunner(worker=get_valid_worker())
+    assert isinstance(task_runner.configuration, Configuration)
+
+
+def test_run_method_logging_config_application(mocker):
+    mock_apply_logging = mocker.patch.object(Configuration, "apply_logging_config")
+    mock_run_once = mocker.patch.object(TaskRunner, "run_once")
+    mock_run_once.side_effect = KeyboardInterrupt()
+
+    task_runner = get_valid_task_runner()
+    try:
+        task_runner.run()
+    except KeyboardInterrupt:
+        pass
+
+    mock_apply_logging.assert_called_once()
+
+
+def test_run_once_with_exception_handling(mocker):
+    worker = get_valid_worker()
+    mock_clear_cache = mocker.patch.object(worker, "clear_task_definition_name_cache")
+    mocker.patch.object(
+        TaskRunner,
+        "_TaskRunner__wait_for_polling_interval",
+        side_effect=Exception("Test exception"),
+    )
+
+    task_runner = TaskRunner(worker=worker)
+    task_runner.run_once()
+
+    mock_clear_cache.assert_not_called()
+
+
+def test_poll_task_with_paused_worker(mocker):
+    worker = get_valid_worker()
+    mocker.patch.object(worker, "paused", return_value=True)
+
+    task_runner = TaskRunner(worker=worker)
+    result = task_runner._TaskRunner__poll_task()
+
+    assert result is None
+
+
+def test_poll_task_with_metrics_collector(mocker):
+    metrics_settings = MetricsSettings()
+    task_runner = TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker(),
+        metrics_settings=metrics_settings,
+    )
+
+    mocker.patch.object(TaskResourceApi, "poll", return_value=get_valid_task())
+    mock_increment = mocker.patch.object(MetricsCollector, "increment_task_poll")
+    mock_record_time = mocker.patch.object(MetricsCollector, "record_task_poll_time")
+
+    task_runner._TaskRunner__poll_task()
+
+    mock_increment.assert_called_once()
+    mock_record_time.assert_called_once()
+
+
+def test_poll_task_authorization_exception_invalid_token(mocker):
+    auth_exception = AuthorizationException(status=401, reason="Unauthorized")
+    auth_exception._error_code = "INVALID_TOKEN"
+
+    mocker.patch.object(TaskResourceApi, "poll", side_effect=auth_exception)
+    task_runner = get_valid_task_runner()
+    result = task_runner._TaskRunner__poll_task()
+
+    assert result is None
+
+
+def test_poll_task_authorization_exception_with_metrics(mocker):
+    auth_exception = AuthorizationException(status=403, reason="Forbidden")
+    auth_exception._error_code = "FORBIDDEN"
+
+    metrics_settings = MetricsSettings()
+    task_runner = TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker(),
+        metrics_settings=metrics_settings,
+    )
+
+    mocker.patch.object(TaskResourceApi, "poll", side_effect=auth_exception)
+    mock_increment_error = mocker.patch.object(
+        MetricsCollector, "increment_task_poll_error"
+    )
+
+    result = task_runner._TaskRunner__poll_task()
+
+    assert result is None
+    mock_increment_error.assert_called_once()
+
+
+def test_poll_task_api_exception(mocker):
+    api_exception = ApiException()
+    api_exception.reason = "Server Error"
+    api_exception.code = 500
+
+    mocker.patch.object(TaskResourceApi, "poll", side_effect=api_exception)
+    task_runner = get_valid_task_runner()
+    result = task_runner._TaskRunner__poll_task()
+
+    assert result is None
+
+
+def test_poll_task_api_exception_with_metrics(mocker):
+    api_exception = ApiException()
+    api_exception.reason = "Bad Request"
+    api_exception.code = 400
+
+    metrics_settings = MetricsSettings()
+    task_runner = TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker(),
+        metrics_settings=metrics_settings,
+    )
+
+    mocker.patch.object(TaskResourceApi, "poll", side_effect=api_exception)
+    mock_increment_error = mocker.patch.object(
+        MetricsCollector, "increment_task_poll_error"
+    )
+
+    result = task_runner._TaskRunner__poll_task()
+
+    assert result is None
+    mock_increment_error.assert_called_once()
+
+
+def test_poll_task_generic_exception_with_metrics(mocker):
+    metrics_settings = MetricsSettings()
+    task_runner = TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker(),
+        metrics_settings=metrics_settings,
+    )
+
+    mocker.patch.object(
+        TaskResourceApi, "poll", side_effect=ValueError("Generic error")
+    )
+    mock_increment_error = mocker.patch.object(
+        MetricsCollector, "increment_task_poll_error"
+    )
+
+    result = task_runner._TaskRunner__poll_task()
+
+    assert result is None
+    mock_increment_error.assert_called_once()
+
+
+def test_execute_task_with_metrics_collector(mocker):
+    metrics_settings = MetricsSettings()
+    task_runner = TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker(),
+        metrics_settings=metrics_settings,
+    )
+
+    mock_record_time = mocker.patch.object(MetricsCollector, "record_task_execute_time")
+    mock_record_size = mocker.patch.object(
+        MetricsCollector, "record_task_result_payload_size"
+    )
+
+    task = get_valid_task()
+    task_runner._TaskRunner__execute_task(task)
+
+    mock_record_time.assert_called_once()
+    mock_record_size.assert_called_once()
+
+
+def test_execute_task_exception_with_metrics(mocker):
+    metrics_settings = MetricsSettings()
+    worker = OldFaultyExecutionWorker("task")
+    task_runner = TaskRunner(
+        configuration=Configuration(), worker=worker, metrics_settings=metrics_settings
+    )
+
+    mock_increment_error = mocker.patch.object(
+        MetricsCollector, "increment_task_execution_error"
+    )
+
+    task = get_valid_task()
+    task_result = task_runner._TaskRunner__execute_task(task)
+
+    assert task_result.status == "FAILED"
+    assert task_result.reason_for_incompletion == "faulty execution"
+    assert len(task_result.logs) == 1
+    assert isinstance(task_result.logs[0], TaskExecLog)
+    mock_increment_error.assert_called_once()
+
+
+def test_update_task_with_metrics_collector(mocker):
+    metrics_settings = MetricsSettings()
+    task_runner = TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker(),
+        metrics_settings=metrics_settings,
+    )
+
+    mocker.patch.object(TaskResourceApi, "update_task", return_value="SUCCESS")
+    mock_increment_error = mocker.patch.object(
+        MetricsCollector, "increment_task_update_error"
+    )
+
+    task_result = get_valid_task_result()
+    response = task_runner._TaskRunner__update_task(task_result)
+
+    assert response == "SUCCESS"
+    mock_increment_error.assert_not_called()
+
+
+def test_update_task_retry_logic_with_metrics(mocker):
+    metrics_settings = MetricsSettings()
+    task_runner = TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker(),
+        metrics_settings=metrics_settings,
+    )
+
+    mock_sleep = mocker.patch("time.sleep")
+    mock_update = mocker.patch.object(TaskResourceApi, "update_task")
+    mock_update.side_effect = [
+        Exception("First attempt"),
+        Exception("Second attempt"),
+        "SUCCESS",
+    ]
+    mock_increment_error = mocker.patch.object(
+        MetricsCollector, "increment_task_update_error"
+    )
+
+    task_result = get_valid_task_result()
+    response = task_runner._TaskRunner__update_task(task_result)
+
+    assert response == "SUCCESS"
+    assert mock_sleep.call_count == 2
+    assert mock_increment_error.call_count == 2
+
+
+def test_update_task_all_retries_fail_with_metrics(mocker):
+    metrics_settings = MetricsSettings()
+    task_runner = TaskRunner(
+        configuration=Configuration(),
+        worker=get_valid_worker(),
+        metrics_settings=metrics_settings,
+    )
+
+    mock_sleep = mocker.patch("time.sleep")
+    mock_update = mocker.patch.object(TaskResourceApi, "update_task")
+    mock_update.side_effect = Exception("All attempts fail")
+    mock_increment_error = mocker.patch.object(
+        MetricsCollector, "increment_task_update_error"
+    )
+
+    task_result = get_valid_task_result()
+    response = task_runner._TaskRunner__update_task(task_result)
+
+    assert response is None
+    assert mock_sleep.call_count == 3
+    assert mock_increment_error.call_count == 4
+
+
+def test_get_property_value_from_env_generic_property(monkeypatch):
+    monkeypatch.setenv("conductor_worker_domain", "test_domain")
+    task_runner = get_valid_task_runner()
+    result = task_runner._TaskRunner__get_property_value_from_env("domain", "task")
+    assert result == "test_domain"
+
+
+def test_get_property_value_from_env_uppercase_generic(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_WORKER_DOMAIN", "test_domain_upper")
+    task_runner = get_valid_task_runner()
+    result = task_runner._TaskRunner__get_property_value_from_env("domain", "task")
+    assert result == "test_domain_upper"
+
+
+def test_get_property_value_from_env_task_specific(monkeypatch):
+    monkeypatch.setenv("conductor_worker_domain", "generic_domain")
+    monkeypatch.setenv("conductor_worker_task_domain", "task_specific_domain")
+    task_runner = get_valid_task_runner()
+    result = task_runner._TaskRunner__get_property_value_from_env("domain", "task")
+    assert result == "task_specific_domain"
+
+
+def test_get_property_value_from_env_uppercase_task_specific(monkeypatch):
+    monkeypatch.setenv("conductor_worker_domain", "generic_domain")
+    monkeypatch.setenv("CONDUCTOR_WORKER_task_DOMAIN", "task_specific_upper")
+    task_runner = get_valid_task_runner()
+    result = task_runner._TaskRunner__get_property_value_from_env("domain", "task")
+    assert result == "task_specific_upper"
+
+
+def test_get_property_value_from_env_fallback_to_generic(monkeypatch):
+    monkeypatch.setenv("conductor_worker_domain", "generic_domain")
+    task_runner = get_valid_task_runner()
+    result = task_runner._TaskRunner__get_property_value_from_env(
+        "domain", "nonexistent_task"
+    )
+    assert result == "generic_domain"
+
+
+def test_get_property_value_from_env_no_value():
+    task_runner = get_valid_task_runner()
+    result = task_runner._TaskRunner__get_property_value_from_env(
+        "nonexistent_prop", "task"
+    )
+    assert result is None
+
+
+def test_set_worker_properties_invalid_polling_interval(monkeypatch, caplog):
+    monkeypatch.setenv("conductor_worker_polling_interval", "invalid_float")
+    worker = get_valid_worker()
+    task_runner = TaskRunner(worker=worker)
+
+    with caplog.at_level(logging.ERROR):
+        task_runner._TaskRunner__set_worker_properties()
+
+    assert "Error converting polling_interval to float value" in caplog.text
+
+
+def test_set_worker_properties_exception_in_polling_interval(monkeypatch, caplog):
+    monkeypatch.setenv("conductor_worker_polling_interval", "invalid_float")
+    worker = get_valid_worker()
+    task_runner = TaskRunner(worker=worker)
+
+    with caplog.at_level(logging.ERROR):
+        task_runner._TaskRunner__set_worker_properties()
+
+    assert (
+        "Exception in reading polling interval from environment variable" in caplog.text
+    )
+
+
+def test_set_worker_properties_domain_from_env(monkeypatch):
+    monkeypatch.setenv("conductor_worker_task_domain", "env_domain")
+    worker = get_valid_worker()
+    task_runner = TaskRunner(worker=worker)
+    assert task_runner.worker.domain == "env_domain"
+
+
+def test_set_worker_properties_polling_interval_from_env(monkeypatch):
+    monkeypatch.setenv("conductor_worker_task_polling_interval", "2.5")
+    worker = get_valid_worker()
+    task_runner = TaskRunner(worker=worker)
+    assert task_runner.worker.poll_interval == 2.5
+
+
+def test_poll_task_with_domain_parameter(mocker):
+    worker = get_valid_worker()
+    mocker.patch.object(worker, "paused", return_value=False)
+    mocker.patch.object(worker, "get_domain", return_value="test_domain")
+
+    task_runner = TaskRunner(worker=worker)
+    mock_poll = mocker.patch.object(
+        TaskResourceApi, "poll", return_value=get_valid_task()
+    )
+
+    task_runner._TaskRunner__poll_task()
+
+    mock_poll.assert_called_once_with(
+        tasktype="task", workerid=worker.get_identity(), domain="test_domain"
+    )
+
+
+def test_poll_task_without_domain_parameter(mocker):
+    worker = get_valid_worker()
+    mocker.patch.object(worker, "paused", return_value=False)
+    mocker.patch.object(worker, "get_domain", return_value=None)
+
+    task_runner = TaskRunner(worker=worker)
+    mock_poll = mocker.patch.object(
+        TaskResourceApi, "poll", return_value=get_valid_task()
+    )
+
+    task_runner._TaskRunner__poll_task()
+
+    mock_poll.assert_called_once_with(tasktype="task", workerid=worker.get_identity())
+
+
+def test_execute_task_with_non_task_input():
+    task_runner = get_valid_task_runner()
+    result = task_runner._TaskRunner__execute_task("not_a_task")
+    assert result is None
+
+
+def test_update_task_with_non_task_result():
+    task_runner = get_valid_task_runner()
+    result = task_runner._TaskRunner__update_task("not_a_task_result")
+    assert result is None
+
+
+def test_run_once_with_no_task(mocker):
+    worker = get_valid_worker()
+    mock_clear_cache = mocker.patch.object(worker, "clear_task_definition_name_cache")
+    mocker.patch.object(TaskResourceApi, "poll", return_value=None)
+
+    task_runner = TaskRunner(worker=worker)
+    task_runner.run_once()
+
+    mock_clear_cache.assert_called_once()
+
+
+def test_run_once_with_task_no_id(mocker):
+    worker = get_valid_worker()
+    mock_clear_cache = mocker.patch.object(worker, "clear_task_definition_name_cache")
+    task_without_id = Task(workflow_instance_id="test_workflow")
+    mocker.patch.object(TaskResourceApi, "poll", return_value=task_without_id)
+
+    task_runner = TaskRunner(worker=worker)
+    task_runner.run_once()
+
+    mock_clear_cache.assert_called_once()

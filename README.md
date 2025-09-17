@@ -86,6 +86,10 @@ Show support for the Conductor OSS.  Please help spread the awareness by starrin
     - [Example Unit Testing Application](#example-unit-testing-application)
   - [Workflow Deployments Using CI/CD](#workflow-deployments-using-cicd)
   - [Versioning Workflows](#versioning-workflows)
+- [Development](#development)
+  - [Client Regeneration](#client-regeneration)
+    - [Sync Client Regeneration](#sync-client-regeneration)
+    - [Async Client Regeneration](#async-client-regeneration)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -1019,3 +1023,32 @@ A powerful feature of Conductor is the ability to version workflows. You should 
 
 * Versioning allows safely testing changes by doing canary testing in production or A/B testing across multiple versions before rolling out.
 * A version can also be deleted, effectively allowing for "rollback" if required.
+
+
+## Development
+
+### Client Regeneration
+
+When updating to a new Orkes version, you may need to regenerate the client code to support new APIs and features. The SDK provides comprehensive guides for regenerating both sync and async clients:
+
+#### Sync Client Regeneration
+
+For the synchronous client (`conductor.client`), see the [Client Regeneration Guide](src/conductor/client/CLIENT_REGENERATION_GUIDE.md) which covers:
+
+- Creating swagger.json files for new Orkes versions
+- Generating client code using Swagger Codegen
+- Replacing models and API clients in the codegen folder
+- Creating adapters and updating the proxy package
+- Running backward compatibility, serialization, and integration tests
+
+#### Async Client Regeneration
+
+For the asynchronous client (`conductor.asyncio_client`), see the [Async Client Regeneration Guide](src/conductor/asyncio_client/ASYNC_CLIENT_REGENERATION_GUIDE.md) which covers:
+
+- Creating swagger.json files for new Orkes versions
+- Generating async client code using OpenAPI Generator
+- Replacing models and API clients in the http folder
+- Creating adapters for backward compatibility
+- Running async-specific tests and handling breaking changes
+
+Both guides include detailed troubleshooting sections, best practices, and step-by-step instructions to ensure a smooth regeneration process while maintaining backward compatibility.

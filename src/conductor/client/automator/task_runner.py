@@ -261,8 +261,12 @@ class TaskRunner:
                 self.worker.poll_interval = float(polling_interval)
             except Exception as e:
                 logger.error(
-                    "Exception in reading polling interval from environment variable: %s",
+                    "Error converting polling_interval to float value: %s, exception: %s",
+                    polling_interval,
                     e,
+                )
+                self.worker.poll_interval = (
+                    self.worker.get_polling_interval_in_seconds()
                 )
 
     def __get_property_value_from_env(self, prop, task_type):
