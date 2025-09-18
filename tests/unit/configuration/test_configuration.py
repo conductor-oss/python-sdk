@@ -33,3 +33,54 @@ def test_initialization_with_basic_auth_server_api_url():
         "Accept-Encoding": "gzip",
         "authorization": token,
     }
+
+
+def test_ssl_ca_cert_initialization():
+    configuration = Configuration(
+        base_url="https://internal.conductor.dev",
+        ssl_ca_cert="/path/to/ca-cert.pem"
+    )
+    assert configuration.ssl_ca_cert == "/path/to/ca-cert.pem"
+    assert configuration.ca_cert_data is None
+    assert configuration.verify_ssl is True
+
+
+def test_ca_cert_data_initialization_with_string():
+    cert_data = "-----BEGIN CERTIFICATE-----\nMIIBIjANBgkqhkiG9w0B...\n-----END CERTIFICATE-----"
+    configuration = Configuration(
+        base_url="https://example.com",
+        ca_cert_data=cert_data
+    )
+    assert configuration.ca_cert_data == cert_data
+    assert configuration.ssl_ca_cert is None
+
+
+def test_ca_cert_data_initialization_with_bytes():
+    cert_data = b"-----BEGIN CERTIFICATE-----\nMIIBIjANBgkqhkiG9w0B...\n-----END CERTIFICATE-----"
+    configuration = Configuration(
+        base_url="https://internal.conductor.dev",
+        ca_cert_data=cert_data
+    )
+    assert configuration.ca_cert_data == cert_data
+    assert configuration.ssl_ca_cert is None
+
+
+def test_ssl_options_combined():
+    cert_data = "-----BEGIN CERTIFICATE-----\nMIIBIjANBgkqhkiG9w0B...\n-----END CERTIFICATE-----"
+    configuration = Configuration(
+        base_url="https://internal.conductor.dev",
+        ssl_ca_cert="/path/to/ca-cert.pem",
+        ca_cert_data=cert_data
+    )
+    assert configuration.ssl_ca_cert == "/path/to/ca-cert.pem"
+    assert configuration.ca_cert_data == cert_data
+
+
+def test_ssl_defaults():
+    configuration = Configuration(base_url="https://internal.conductor.dev")
+    assert configuration.verify_ssl is True
+    assert configuration.ssl_ca_cert is None
+    assert configuration.ca_cert_data is None
+    assert configuration.cert_file is None
+    assert configuration.key_file is None
+    assert configuration.assert_hostname is None
