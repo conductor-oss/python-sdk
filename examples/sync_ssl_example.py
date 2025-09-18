@@ -83,7 +83,10 @@ aWRnaXRzIFB0eSBMdGQwHhcNMTYwMjEyMTQ0NDQ2WhcNMjYwMjEwMTQ0NDQ2WjBF
     # httpx client with custom SSL settings
     httpx_ssl_client = httpx.Client(
         verify="/path/to/ca-certificate.pem",  # CA certificate file
-        cert=("/path/to/client-certificate.pem", "/path/to/client-key.pem"),  # Client cert
+        cert=(
+            "/path/to/client-certificate.pem",
+            "/path/to/client-key.pem",
+        ),  # Client cert
         timeout=httpx.Timeout(120.0),
         follow_redirects=True,
     )
@@ -144,11 +147,11 @@ aWRnaXRzIFB0eSBMdGQwHhcNMTYwMjEyMTQ0NDQ2WhcNMjYwMjEwMTQ0NDQ2WjBF
 
     # Example usage with different SSL configurations:
     # You can use any of the configurations above by passing them to OrkesClients
-    
+
     # Example with client certificate authentication:
     # clients_with_cert = OrkesClients(configuration=client_cert_config)
     # workflow_client_cert = clients_with_cert.get_workflow_client()
-    
+
     # Example with custom httpx client:
     # clients_with_httpx = OrkesClients(configuration=httpx_ssl_config)
     # workflow_client_httpx = clients_with_httpx.get_workflow_client()
