@@ -183,9 +183,9 @@ class Configuration:
             server_operation_index=server_operation_index,
             server_operation_variables=server_operation_variables,
             ignore_operation_servers=ignore_operation_servers,
-            ssl_ca_cert=ssl_ca_cert,
+            ssl_ca_cert=ssl_ca_cert or os.getenv("CONDUCTOR_SSL_CA_CERT"),
             retries=retries,
-            ca_cert_data=ca_cert_data,
+            ca_cert_data=ca_cert_data or os.getenv("CONDUCTOR_SSL_CA_CERT_DATA"),
             debug=debug,
             **kwargs,
         )

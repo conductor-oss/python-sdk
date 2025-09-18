@@ -36,6 +36,22 @@ Show support for the Conductor OSS.  Please help spread the awareness by starrin
   - [Supported Proxy Types](#supported-proxy-types)
   - [Synchronous Client Proxy Configuration](#client-proxy-configuration)
   - [Environment Variable Configuration](#environment-variable-configuration)
+- [SSL TLS Configuration](#ssl-tls-configuration)
+- [Synchronous Client SSL Configuration](#synchronous-client-ssl-configuration)
+  - [Basic SSL Configuration](#basic-ssl-configuration)
+  - [SSL with Certificate Data](#ssl-with-certificate-data)
+  - [SSL with Client Certificate Authentication](#ssl-with-client-certificate-authentication)
+  - [SSL with Disabled Verification](#ssl-with-disabled-verification-not-recommended-for-production)
+  - [Advanced SSL Configuration with httpx](#advanced-ssl-configuration-with-httpx)
+- [Asynchronous Client SSL Configuration](#asynchronous-client-ssl-configuration)
+  - [Basic Async SSL Configuration](#basic-async-ssl-configuration)
+  - [Async SSL with Certificate Data](#async-ssl-with-certificate-data)
+  - [Async SSL with Custom SSL Context](#async-ssl-with-custom-ssl-context)
+- [Environment Variable Configuration](#environment-variable-configuration)
+- [Configuration Parameters](#configuration-parameters)
+- [Example Files](#example-files)
+- [Security Best Practices](#security-best-practices)
+- [Troubleshooting SSL Issues](#troubleshooting-ssl-issues)
 - [Learn More about Conductor Python SDK](#learn-more-about-conductor-python-sdk)
 - [Create and Run Conductor Workers](#create-and-run-conductor-workers)
 - [Writing Workers](#writing-workers)
@@ -372,6 +388,193 @@ from conductor.client.configuration.configuration import Configuration
 config = Configuration(server_api_url="https://api.orkes.io/api")
 # Proxy is automatically configured from CONDUCTOR_PROXY environment variable
 ```
+
+## SSL TLS Configuration
+
+The Conductor Python SDK supports comprehensive SSL/TLS configuration for both synchronous and asynchronous clients. This allows you to configure secure connections with custom certificates, client authentication, and various SSL verification options.
+
+### Synchronous Client SSL Configuration
+
+#### Basic SSL Configuration
+
+```python
+from conductor.client.configuration.configuration import Configuration
+from conductor.client.orkes_clients import OrkesClients
+
+# Basic SSL configuration with custom CA certificate
+config = Configuration(
+    base_url="https://play.orkes.io",
+    ssl_ca_cert="/path/to/ca-certificate.pem",
+)
+
+# Create clients with SSL configuration
+clients = OrkesClients(configuration=config)
+workflow_client = clients.get_workflow_client()
+```
+
+#### SSL with Certificate Data
+
+```python
+# SSL with custom CA certificate data (PEM string)
+config = Configuration(
+    base_url="https://play.orkes.io",
+    ca_cert_data="""-----BEGIN CERTIFICATE-----
+MIIDXTCCAkWgAwIBAgIJAKoK/Ovj8EUMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV
+BAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBX
+aWRnaXRzIFB0eSBMdGQwHhcNMTYwMjEyMTQ0NDQ2WhcNMjYwMjEwMTQ0NDQ2WjBF
+-----END CERTIFICATE-----""",
+)
+```
+
+#### SSL with Client Certificate Authentication
+
+```python
+# SSL with client certificate authentication
+config = Configuration(
+    base_url="https://play.orkes.io",
+    ssl_ca_cert="/path/to/ca-certificate.pem",
+    cert_file="/path/to/client-certificate.pem",
+    key_file="/path/to/client-key.pem",
+)
+```
+
+#### SSL with Disabled Verification (Not Recommended for Production)
+
+```python
+# SSL with completely disabled verification (NOT RECOMMENDED for production)
+config = Configuration(
+    base_url="https://play.orkes.io",
+)
+config.verify_ssl = False
+```
+
+#### Advanced SSL Configuration with httpx
+
+```python
+import httpx
+import ssl
+
+# Create custom SSL context
+ssl_context = ssl.create_default_context()
+ssl_context.load_verify_locations("/path/to/ca-certificate.pem")
+ssl_context.load_cert_chain(
+    certfile="/path/to/client-certificate.pem", 
+    keyfile="/path/to/client-key.pem"
+)
+
+# Create custom httpx client with SSL context
+custom_client = httpx.Client(
+    verify=ssl_context,
+    timeout=httpx.Timeout(120.0),
+    follow_redirects=True,
+    limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
+)
+
+config = Configuration(base_url="https://play.orkes.io")
+config.http_connection = custom_client
+```
+
+### Asynchronous Client SSL Configuration
+
+#### Basic Async SSL Configuration
+
+```python
+import asyncio
+from conductor.asyncio_client.configuration import Configuration
+from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
+
+# Basic SSL configuration with custom CA certificate
+config = Configuration(
+    server_url="https://play.orkes.io/api",
+    ssl_ca_cert="/path/to/ca-certificate.pem",
+)
+
+async def main():
+    async with ApiClient(config) as api_client:
+        orkes_clients = OrkesClients(api_client, config)
+        workflow_client = orkes_clients.get_workflow_client()
+        
+        # Use the client with SSL configuration
+        workflows = await workflow_client.search_workflows()
+        print(f"Found {len(workflows)} workflows")
+
+asyncio.run(main())
+```
+
+#### Async SSL with Certificate Data
+
+```python
+# SSL with custom CA certificate data (PEM string)
+config = Configuration(
+    server_url="https://play.orkes.io/api",
+    ca_cert_data="""-----BEGIN CERTIFICATE-----
+MIIDXTCCAkWgAwIBAgIJAKoK/Ovj8EUMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV
+BAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBX
+aWRnaXRzIFB0eSBMdGQwHhcNMTYwMjEyMTQ0NDQ2WhcNMjYwMjEwMTQ0NDQ2WjBF
+-----END CERTIFICATE-----""",
+)
+```
+
+#### Async SSL with Custom SSL Context
+
+```python
+import ssl
+
+# Create custom SSL context
+ssl_context = ssl.create_default_context()
+ssl_context.load_verify_locations("/path/to/ca-certificate.pem")
+ssl_context.load_cert_chain(
+    certfile="/path/to/client-certificate.pem", 
+    keyfile="/path/to/client-key.pem"
+)
+ssl_context.check_hostname = True
+ssl_context.verify_mode = ssl.CERT_REQUIRED
+
+# Use with async client
+config = Configuration(
+    server_url="https://play.orkes.io/api",
+    ssl_ca_cert="/path/to/ca-certificate.pem",
+)
+```
+
+### Environment Variable Configuration
+
+You can configure SSL settings using environment variables:
+
+```bash
+# Basic SSL configuration
+export CONDUCTOR_SERVER_URL="https://play.orkes.io/api"
+export CONDUCTOR_SSL_CA_CERT="/path/to/ca-certificate.pem"
+
+# Client certificate authentication
+export CONDUCTOR_CERT_FILE="/path/to/client-certificate.pem"
+export CONDUCTOR_KEY_FILE="/path/to/client-key.pem"
+```
+
+```python
+# Configuration will automatically pick up environment variables
+from conductor.client.configuration.configuration import Configuration
+
+config = Configuration()  # SSL settings loaded from environment
+```
+
+### Configuration Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `ssl_ca_cert` | str | Path to CA certificate file |
+| `ca_cert_data` | str/bytes | CA certificate data as PEM string or DER bytes |
+| `cert_file` | str | Path to client certificate file |
+| `key_file` | str | Path to client private key file |
+| `verify_ssl` | bool | Enable/disable SSL verification (default: True) |
+| `assert_hostname` | str | Custom hostname for SSL verification |
+
+### Example Files
+
+For complete working examples, see:
+- [Sync SSL Example](examples/sync_ssl_example.py) - Comprehensive sync client SSL configuration
+- [Async SSL Example](examples/async/async_ssl_example.py) - Comprehensive async client SSL configuration
 
 ## Learn More about Conductor Python SDK
 

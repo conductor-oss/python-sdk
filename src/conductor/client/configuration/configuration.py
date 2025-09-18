@@ -87,11 +87,11 @@ class Configuration:
         # from https server.
         self.verify_ssl = True
         # Set this to customize the certificate file to verify the peer.
-        self.ssl_ca_cert = ssl_ca_cert
+        self.ssl_ca_cert = ssl_ca_cert or os.getenv("CONDUCTOR_SSL_CA_CERT")
         # Set this to verify the peer using PEM (str) or DER (bytes) certificate data.
-        self.ca_cert_data = ca_cert_data
+        self.ca_cert_data = ca_cert_data or os.getenv("CONDUCTOR_SSL_CA_CERT_DATA")
         # client certificate file
-        self.cert_file = None
+        self.cert_file = None or os.getenv("CONDUCTOR_CERT_FILE")
         # client key file
         self.key_file = None
         # Set this to True/False to enable/disable SSL hostname verification.
