@@ -14,6 +14,12 @@ Show support for the Conductor OSS.  Please help spread the awareness by starrin
 
 [![GitHub stars](https://img.shields.io/github/stars/conductor-oss/conductor.svg?style=social&label=Star&maxAge=)](https://GitHub.com/conductor-oss/conductor/)
 
+## Conductor-OSS vs. Orkes Conductor
+
+Conductor-OSS is the open-source version of the Conductor orchestration platform, maintained by the community and available for self-hosting. It provides a robust, extensible framework for building and managing workflows, ideal for developers who want full control over their deployment and customization.
+
+Orkes Conductor, built on top of Conductor-OSS, is a fully-managed, cloud-hosted service provided by Orkes. It offers additional features such as a user-friendly UI, enterprise-grade security, scalability, and support, making it suitable for organizations seeking a turnkey solution without managing infrastructure.
+
 ## Quick Start
 
 - [Installation](#installation)

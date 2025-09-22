@@ -316,4 +316,3 @@ logging.getLogger("conductor.client.workflow").setLevel(logging.DEBUG)
 
 - Check existing [GitHub Issues](https://github.com/conductor-oss/python-sdk/issues)
 - Create a new issue with detailed information
-- Join the [Conductor Community](https://www.conductor-oss.org/community)
