@@ -15,24 +15,44 @@ class WorkflowAdapter(Workflow):
     def is_completed(self) -> bool:
         """Checks if the workflow has completed
         :return: True if the workflow status is COMPLETED, FAILED or TERMINATED
+
+        Example:
+            workflow = WorkflowAdapter(status="COMPLETED")
+            if workflow.is_completed():
+                print("Workflow has finished")
         """
         return self.status in terminal_status
 
     def is_successful(self) -> bool:
         """Checks if the workflow has completed in successful state (ie COMPLETED)
         :return: True if the workflow status is COMPLETED
+
+        Example:
+            workflow = WorkflowAdapter(status="COMPLETED")
+            if workflow.is_successful():
+                print("Workflow completed successfully!")
         """
         return self.status in successful_status
 
     def is_running(self) -> bool:
         """Checks if the workflow is currently running
         :return: True if the workflow status is RUNNING or PAUSED
+
+        Example:
+            workflow = WorkflowAdapter(status="RUNNING")
+            if workflow.is_running():
+                print("Workflow is still executing")
         """
         return self.status in running_status
 
     def is_failed(self) -> bool:
         """Checks if the workflow has failed
         :return: True if the workflow status is FAILED, TIMED_OUT, or TERMINATED
+
+        Example:
+            workflow = WorkflowAdapter(status="FAILED")
+            if workflow.is_failed():
+                print("Workflow execution failed")
         """
         return self.status in ("FAILED", "TIMED_OUT", "TERMINATED")
 
@@ -40,6 +60,12 @@ class WorkflowAdapter(Workflow):
     def current_task(self) -> Optional[TaskAdapter]:
         """Gets the currently in-progress task
         :return: The task that is currently SCHEDULED or IN_PROGRESS, or None if no such task exists
+
+        Example:
+            workflow = WorkflowAdapter(tasks=[...])
+            current = workflow.current_task
+            if current:
+                print(f"Current task: {current.task_def_name}")
         """
         if not self.tasks:
             return None
@@ -51,6 +77,11 @@ class WorkflowAdapter(Workflow):
     def get_in_progress_tasks(self) -> List[TaskAdapter]:
         """Gets all currently in-progress tasks
         :return: List of tasks that are currently SCHEDULED or IN_PROGRESS
+
+        Example:
+            workflow = WorkflowAdapter(tasks=[...])
+            in_progress = workflow.get_in_progress_tasks()
+            print(f"Found {len(in_progress)} in-progress tasks")
         """
         if not self.tasks:
             return []
@@ -62,6 +93,12 @@ class WorkflowAdapter(Workflow):
         """Gets a task by its reference name
         :param reference_name: The reference name of the task to find
         :return: The task with the specified reference name, or None if not found
+
+        Example:
+            workflow = WorkflowAdapter(tasks=[...])
+            task = workflow.get_task_by_reference_name("process_data")
+            if task:
+                print(f"Found task: {task.task_def_name}")
         """
         if not self.tasks:
             return None
