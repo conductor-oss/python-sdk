@@ -18,13 +18,70 @@ class WorkflowAdapter(Workflow):
     tasks: Optional[List["TaskAdapter"]] = None
     history: Optional[List["WorkflowAdapter"]] = None
 
+    def is_completed(self) -> bool:
+        """Checks if the workflow has completed
+        :return: True if the workflow status is COMPLETED, FAILED, TIMED_OUT, or TERMINATED
+        """
+        return self.status in ("COMPLETED", "FAILED", "TIMED_OUT", "TERMINATED")
+
+    def is_successful(self) -> bool:
+        """Checks if the workflow has completed in successful state
+        :return: True if the workflow status is COMPLETED
+        """
+        return self.status == "COMPLETED"
+
+    def is_running(self) -> bool:
+        """Checks if the workflow is currently running
+        :return: True if the workflow status is RUNNING or PAUSED
+        """
+        return self.status in ("RUNNING", "PAUSED")
+
+    def is_failed(self) -> bool:
+        """Checks if the workflow has failed
+        :return: True if the workflow status is FAILED, TIMED_OUT, or TERMINATED
+        """
+        return self.status in ("FAILED", "TIMED_OUT", "TERMINATED")
+
     @property
-    def current_task(self) -> TaskAdapter:
-        current = None
-        for task in self.tasks or []:
+    def current_task(self) -> Optional["TaskAdapter"]:
+        """Gets the currently in-progress task
+        :return: The task that is currently SCHEDULED or IN_PROGRESS, or None if no such task exists
+        """
+        if not self.tasks:
+            return None
+        for task in self.tasks:
             if task.status in ("SCHEDULED", "IN_PROGRESS"):
-                current = task
-        return current
+                return task
+        return None
+
+    def get_in_progress_tasks(self) -> List["TaskAdapter"]:
+        """Gets all currently in-progress tasks
+        :return: List of tasks that are currently SCHEDULED or IN_PROGRESS
+        """
+        if not self.tasks:
+            return []
+        return [
+            task for task in self.tasks if task.status in ("SCHEDULED", "IN_PROGRESS")
+        ]
+
+    def get_task_by_reference_name(
+        self, reference_name: str
+    ) -> Optional["TaskAdapter"]:
+        """Gets a task by its reference name
+        :param reference_name: The reference name of the task to find
+        :return: The task with the specified reference name, or None if not found
+        """
+        if not self.tasks:
+            return None
+        for task in self.tasks:
+            if (
+                hasattr(task, "workflow_task")
+                and task.workflow_task
+                and hasattr(task.workflow_task, "task_reference_name")
+            ):
+                if task.workflow_task.task_reference_name == reference_name:
+                    return task
+        return None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -91,7 +148,9 @@ class WorkflowAdapter(Workflow):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter  # noqa: E402
+from conductor.asyncio_client.adapters.models.task_adapter import (
+    TaskAdapter,
+)  # noqa: E402
 from conductor.asyncio_client.adapters.models.workflow_def_adapter import (  # noqa: E402
     WorkflowDefAdapter,
 )
