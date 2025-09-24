@@ -51,6 +51,9 @@ class ApiClientAdapter(ApiClient):
                 and url != self.configuration.host + "/token"
             ):  # noqa: PLR2004 (Unauthorized status code)
                 async with self._token_lock:
+                    # The lock is intentionally broad (covers the whole block including the token state)
+                    # to avoid race conditions: without it, other coroutines could mis-evaluate
+                    # token state during a context switch and trigger redundant refreshes
                     token_expired = (
                         self.configuration.token_update_time > 0
                         and time.time()
