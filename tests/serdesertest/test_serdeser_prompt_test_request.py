@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.prompt_test_request import PromptTemplateTestRequest
+from conductor.client.http.models.prompt_template_test_request import PromptTemplateTestRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -12,7 +12,7 @@ def server_json():
 
 
 def test_prompt_template_test_request_serde(server_json):
-    model_obj = PromptTemplateTestRequest(
+    model_obj = PromptTemplateTestRequestAdapter(
         llm_provider=server_json.get("llmProvider"),
         model=server_json.get("model"),
         prompt=server_json.get("prompt"),

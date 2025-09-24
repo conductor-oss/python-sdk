@@ -5,13 +5,12 @@ from uuid import uuid4
 
 from typing_extensions import Self
 
-from conductor.client.http.models.integration_api_update import IntegrationApiUpdate
-from conductor.client.http.models.integration_update import IntegrationUpdate
-from conductor.client.http.rest import ApiException
+from conductor.client.http.models import IntegrationApiUpdate, IntegrationUpdate
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes_clients import OrkesClients
 
 if TYPE_CHECKING:
-    from conductor.client.http.models.prompt_template import PromptTemplate
+    from conductor.client.http.models import PromptTemplate
     from conductor.client.configuration.configuration import Configuration
     from conductor.shared.ai.configuration.interfaces.integration_config import IntegrationConfig
     from conductor.shared.ai.enums import VectorDB

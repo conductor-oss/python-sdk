@@ -35,6 +35,7 @@ def main():
     embedding_complete_model = 'text-embedding-ada-002'
 
     api_config = Configuration()
+    api_config.apply_logging_config()
     task_workers = start_workers(api_config)
 
     open_ai_config = OpenAIConfig()

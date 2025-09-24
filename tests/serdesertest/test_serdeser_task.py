@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.task import Task
+from conductor.client.http.models.task import TaskAdapter
 from conductor.shared.http.enums import TaskResultStatus
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
@@ -12,7 +12,7 @@ def convert_to_snake_case(json_obj):
         python_obj = {}
         for key, value in json_obj.items():
             snake_key = None
-            for python_key, json_key in Task.attribute_map.items():
+            for python_key, json_key in TaskAdapter.attribute_map.items():
                 if json_key == key:
                     snake_key = python_key
                     break
@@ -51,15 +51,15 @@ def server_json():
 
 def test_task_serialization_deserialization(server_json):
     python_json = convert_to_snake_case(server_json)
-    task = Task(**python_json)
-    assert isinstance(task, Task)
+    task = TaskAdapter(**python_json)
+    assert isinstance(task, TaskAdapter)
     if "task_id" in python_json:
         assert task.task_id == python_json["task_id"]
     if "status" in python_json:
         assert task.status == python_json["status"]
     serialized_json = task.to_dict()
-    task2 = Task(**convert_to_snake_case(serialized_json))
-    assert isinstance(task2, Task)
+    task2 = TaskAdapter(**convert_to_snake_case(serialized_json))
+    assert isinstance(task2, TaskAdapter)
     task_result = task.to_task_result(TaskResultStatus.COMPLETED)
     assert task_result.task_id == task.task_id
     assert task_result.workflow_instance_id == task.workflow_instance_id

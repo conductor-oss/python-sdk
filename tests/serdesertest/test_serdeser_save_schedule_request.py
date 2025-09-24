@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
+from conductor.client.http.models.save_schedule_request import SaveScheduleRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -61,7 +61,7 @@ def verify_json_match(result_json, original_json):
 
 
 def test_save_schedule_request_serde(server_json):
-    request = SaveScheduleRequest(
+    request = SaveScheduleRequestAdapter(
         name=server_json.get("name"),
         cron_expression=server_json.get("cronExpression"),
         run_catchup_schedule_instances=server_json.get("runCatchupScheduleInstances"),

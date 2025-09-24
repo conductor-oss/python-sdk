@@ -2,6 +2,7 @@ import asyncio
 import json
 import uuid
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models import (
     ExtendedWorkflowDef,
     RerunWorkflowRequest,
@@ -11,7 +12,6 @@ from conductor.asyncio_client.adapters.models import (
     WorkflowStateUpdate,
 )
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 from conductor.asyncio_client.orkes.orkes_workflow_client import OrkesWorkflowClient
 from conductor.shared.http.enums import TaskResultStatus
@@ -38,7 +38,7 @@ async def start_workflow(workflow_client: OrkesWorkflowClient) -> WorkflowRun:
 
 async def main():
     api_config = Configuration()
-
+    api_config.apply_logging_config()
     async with ApiClient(api_config) as api_client:
         clients = OrkesClients(configuration=api_config, api_client=api_client)
         workflow_client = clients.get_workflow_client()

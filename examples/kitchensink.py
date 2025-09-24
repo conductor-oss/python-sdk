@@ -29,6 +29,7 @@ def start_workers(api_config):
 
 def main():
     api_config = Configuration()
+    api_config.apply_logging_config()
 
     clients = OrkesClients(configuration=api_config)
     workflow_executor = clients.get_workflow_executor()

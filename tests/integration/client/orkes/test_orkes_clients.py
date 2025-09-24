@@ -19,7 +19,7 @@ from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
 from conductor.client.http.models.upsert_user_request import UpsertUserRequest
 from conductor.client.http.models.workflow_def import WorkflowDef
 from conductor.client.http.models.workflow_test_request import WorkflowTestRequest
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.models.access_key_status import AccessKeyStatus
 from conductor.client.orkes.models.access_type import AccessType
 from conductor.client.orkes.models.metadata_tag import MetadataTag

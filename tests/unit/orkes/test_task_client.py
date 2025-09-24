@@ -10,7 +10,7 @@ from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
 from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.http.models.workflow import Workflow
-from conductor.client.http.rest import ApiException
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.orkes_task_client import OrkesTaskClient
 from conductor.client.workflow.task.task_type import TaskType
 

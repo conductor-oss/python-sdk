@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from conductor.client.http.models.rate_limit import RateLimit
+from conductor.client.http.models.rate_limit import RateLimitAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -18,7 +18,7 @@ def camel_to_snake(name):
 
 
 def test_serialization_deserialization(server_json):
-    rate_limit = RateLimit(
+    rate_limit = RateLimitAdapter(
         rate_limit_key=server_json.get("rateLimitKey"),
         concurrent_exec_limit=server_json.get("concurrentExecLimit"),
         tag=server_json.get("tag"),

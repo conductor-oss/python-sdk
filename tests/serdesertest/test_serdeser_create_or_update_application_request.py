@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models import CreateOrUpdateApplicationRequest
+from conductor.client.http.models.create_or_update_application_request import CreateOrUpdateApplicationRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -14,7 +14,7 @@ def server_json():
 
 
 def test_deserialize_serialize(server_json):
-    model = CreateOrUpdateApplicationRequest()
+    model = CreateOrUpdateApplicationRequestAdapter()
     model_dict = server_json
     if "name" in model_dict:
         model.name = model_dict["name"]

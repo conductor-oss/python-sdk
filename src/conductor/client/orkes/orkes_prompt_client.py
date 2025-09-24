@@ -4,8 +4,8 @@ from typing import List, Optional
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.prompt_template import PromptTemplate
-from conductor.client.http.models.prompt_test_request import PromptTemplateTestRequest
-from conductor.client.http.rest import ApiException
+from conductor.client.http.models.prompt_template_test_request import PromptTemplateTestRequest
+from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.prompt_client import PromptClient
@@ -34,7 +34,7 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
         self.promptApi.delete_message_template(prompt_name)
 
     def get_tags_for_prompt_template(self, prompt_name: str) -> List[MetadataTag]:
-        self.promptApi.get_tags_for_prompt_template(prompt_name)
+        return self.promptApi.get_tags_for_prompt_template(prompt_name)
 
     def update_tag_for_prompt_template(self, prompt_name: str, tags: List[MetadataTag]):
         self.promptApi.put_tag_for_prompt_template(tags, prompt_name)

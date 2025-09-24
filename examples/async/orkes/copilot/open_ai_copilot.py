@@ -5,11 +5,11 @@ import string
 from dataclasses import dataclass
 from typing import Dict, List
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models import ExtendedTaskDef, TaskResult
 from conductor.asyncio_client.ai.orchestrator import AsyncAIOrchestrator
 from conductor.asyncio_client.automator.task_handler import TaskHandler
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.models.workflow_state_update import (
     WorkflowStateUpdate,
 )
@@ -115,6 +115,7 @@ async def main():
     llm_provider = "openai"
     chat_complete_model = "gpt-5"
     api_config = Configuration()
+    api_config.apply_logging_config()
 
     async with ApiClient(api_config) as api_client:
         clients = OrkesClients(api_client=api_client, configuration=api_config)

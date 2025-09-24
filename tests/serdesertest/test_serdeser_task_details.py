@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.task_details import TaskDetails
+from conductor.client.http.models.task_details import TaskDetailsAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -22,7 +22,7 @@ def test_task_details_serde(server_json):
     4. The resulting JSON matches the original, ensuring no data is lost
     """
     # 1. Deserialize JSON into TaskDetails object
-    task_details = TaskDetails(
+    task_details = TaskDetailsAdapter(
         workflow_id=server_json.get("workflowId"),
         task_ref_name=server_json.get("taskRefName"),
         output=server_json.get("output"),

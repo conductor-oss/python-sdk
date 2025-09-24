@@ -2,7 +2,9 @@ import json
 
 import pytest
 
-from conductor.client.http.models import ConductorUser, Group, Role
+from conductor.client.http.models.conductor_user import ConductorUserAdapter
+from conductor.client.http.models.group import GroupAdapter
+from conductor.client.http.models.role import RoleAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -12,7 +14,7 @@ def server_json():
 
 
 def test_conductor_user_serde(server_json):  #  noqa: PLR0915
-    conductor_user = ConductorUser()
+    conductor_user = ConductorUserAdapter()
     conductor_user_dict = server_json
     if "id" in conductor_user_dict:
         conductor_user.id = conductor_user_dict["id"]
@@ -21,13 +23,13 @@ def test_conductor_user_serde(server_json):  #  noqa: PLR0915
     if "roles" in conductor_user_dict:
         roles_list = []
         for _ in conductor_user_dict["roles"]:
-            role = Role()
+            role = RoleAdapter()
             roles_list.append(role)
         conductor_user.roles = roles_list
     if "groups" in conductor_user_dict:
         groups_list = []
         for group_data in conductor_user_dict["groups"]:
-            group = Group()
+            group = GroupAdapter()
             groups_list.append(group)
         conductor_user.groups = groups_list
     if "uuid" in conductor_user_dict:

@@ -37,6 +37,7 @@ python-dateutil = "^2.8.2"
 pydantic = "2.11.7"
 aiohttp = "3.12.15"
 aiohttp-retry = "2.9.1"
+httpx = "^0.28.1"
 
 [tool.poetry.group.dev.dependencies]
 pylint = ">=2.17.5"
@@ -152,6 +153,7 @@ line-ending = "auto"
 
 [tool.ruff.lint.per-file-ignores]
 "src/conductor/client/http/**/*.py" = ["ALL"]
+"src/conductor/client/codegen/**/*.py" = ["ALL"]
 "src/conductor/client/orkes/api/*.py" = ["ALL"]
 "tests/**/*.py" = ["B", "C4", "SIM", "PLR2004"]
 "examples/**/*.py" = ["B", "C4", "SIM"]
@@ -163,9 +165,10 @@ omit = [
     "tests/*",
     "examples/*",
     "*/__init__.py",
-    "src/conductor/asyncio_client/http/",
-    "src/conductor/client/http/",
-    "src/conductor/client/orkes/api/"
+    "src/conductor/asyncio_client/http/*",
+    "src/conductor/client/http/*",
+    "src/conductor/client/orkes/api/*",
+    "src/conductor/client/codegen/*"
 ]
 
 [tool.coverage.report]

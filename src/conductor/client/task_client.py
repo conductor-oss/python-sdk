@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional, List
 
-from conductor.client.http.models import PollData
+from conductor.client.http.models.poll_data import PollData
 from conductor.client.http.models.workflow import Workflow
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
