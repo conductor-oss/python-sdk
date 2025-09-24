@@ -47,7 +47,7 @@ class ApiClientAdapter(ApiClient):
                 _request_timeout=_request_timeout,
             )
             if (
-                response_data.status == 401 # noqa: PLR2004 (Unauthorized status code)
+                response_data.status == 401  # noqa: PLR2004 (Unauthorized status code)
                 and url != self.configuration.host + "/token"
             ):
                 async with self._token_lock:
