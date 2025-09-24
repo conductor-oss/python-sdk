@@ -2,11 +2,11 @@ import json
 
 import pytest
 
-from conductor.client.http.models.workflow_def import WorkflowDef
+from conductor.client.http.models.workflow_def import WorkflowDefAdapter
 from conductor.client.http.models.workflow_test_request import (
-    TaskMock,
-    WorkflowTestRequest,
+    WorkflowTestRequestAdapter,
 )
+from conductor.client.http.models.task_mock import TaskMockAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -25,7 +25,7 @@ def snake_to_camel(snake_case):
 def test_workflow_test_request_serdes(server_json):  # noqa: PLR0915
     """Test serialization and deserialization of WorkflowTestRequest"""
     # 1. Deserialize JSON into SDK model object
-    workflow_test_request = WorkflowTestRequest(
+    workflow_test_request = WorkflowTestRequestAdapter(
         correlation_id=server_json.get("correlationId"),
         created_by=server_json.get("createdBy"),
         external_input_payload_storage_path=server_json.get(
@@ -41,7 +41,7 @@ def test_workflow_test_request_serdes(server_json):  # noqa: PLR0915
         workflow_test_request.task_to_domain = server_json.get("taskToDomain")
     # Handle workflowDef object if present
     if "workflowDef" in server_json and server_json["workflowDef"] is not None:
-        workflow_def = WorkflowDef()
+        workflow_def = WorkflowDefAdapter()
         # Assuming there are fields in WorkflowDef that need to be populated
         workflow_test_request.workflow_def = workflow_def
     # Handle subWorkflowTestRequest if present
@@ -49,7 +49,7 @@ def test_workflow_test_request_serdes(server_json):  # noqa: PLR0915
         sub_workflow_dict = {}
         for key, value in server_json["subWorkflowTestRequest"].items():
             # Create a sub-request for each entry
-            sub_request = WorkflowTestRequest(name=value.get("name"))
+            sub_request = WorkflowTestRequestAdapter(name=value.get("name"))
             sub_workflow_dict[key] = sub_request
         workflow_test_request.sub_workflow_test_request = sub_workflow_dict
     # Handle taskRefToMockOutput if present
@@ -58,7 +58,7 @@ def test_workflow_test_request_serdes(server_json):  # noqa: PLR0915
         for task_ref, mock_list in server_json["taskRefToMockOutput"].items():
             task_mocks = []
             for mock_data in mock_list:
-                task_mock = TaskMock(
+                task_mock = TaskMockAdapter(
                     status=mock_data.get("status", "COMPLETED"),
                     output=mock_data.get("output"),
                     execution_time=mock_data.get("executionTime", 0),

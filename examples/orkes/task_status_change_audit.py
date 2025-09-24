@@ -1,7 +1,7 @@
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models import WorkflowDef, WorkflowTask, Task, StartWorkflowRequest, TaskDef, TaskResult
-from conductor.client.http.models.state_change_event import StateChangeConfig, StateChangeEventType, StateChangeEvent
+from conductor.client.http.models.state_change_event import StateChangeEventAdapter as StateChangeEvent, StateChangeEventType, StateChangeConfig
 from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.orkes_clients import OrkesClients
 from conductor.client.worker.worker_task import worker_task
@@ -24,6 +24,7 @@ def simple_task_2(task: Task) -> TaskResult:
 
 def main():
     api_config = Configuration()
+    api_config.apply_logging_config()
     clients = OrkesClients()
     metadata_client = clients.get_metadata_client()
     workflow_client = clients.get_workflow_client()

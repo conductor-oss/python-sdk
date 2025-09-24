@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.workflow_status import WorkflowStatus
+from conductor.client.http.models.workflow_status import WorkflowStatusAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -14,7 +14,7 @@ def server_json():
 
 def test_workflow_status_ser_des(server_json):
     # 1. Test deserialization from server JSON to SDK model
-    workflow_status = WorkflowStatus(
+    workflow_status = WorkflowStatusAdapter(
         workflow_id=server_json.get("workflowId"),
         correlation_id=server_json.get("correlationId"),
         output=server_json.get("output"),

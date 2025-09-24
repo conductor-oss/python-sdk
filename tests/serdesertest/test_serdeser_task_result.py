@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from conductor.client.http.models.task_exec_log import TaskExecLog
-from conductor.client.http.models.task_result import TaskResult
+from conductor.client.http.models.task_exec_log import TaskExecLogAdapter
+from conductor.client.http.models.task_result import TaskResultAdapter
 from conductor.shared.http.enums import TaskResultStatus
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
@@ -16,7 +16,7 @@ def server_json_str():
 def test_task_result_serdeser(server_json_str):
     # Step 1: Deserialize JSON into TaskResult object
     server_json_dict = json.loads(server_json_str)
-    task_result = TaskResult(
+    task_result = TaskResultAdapter(
         workflow_instance_id=server_json_dict.get("workflowInstanceId"),
         task_id=server_json_dict.get("taskId"),
         reason_for_incompletion=server_json_dict.get("reasonForIncompletion"),
@@ -24,7 +24,7 @@ def test_task_result_serdeser(server_json_str):
         worker_id=server_json_dict.get("workerId"),
         status=server_json_dict.get("status"),
         output_data=server_json_dict.get("outputData"),
-        logs=[TaskExecLog(log.get("log")) for log in server_json_dict.get("logs", [])],
+        logs=[TaskExecLogAdapter(log=log.get("log")) for log in server_json_dict.get("logs", [])],
         external_output_payload_storage_path=server_json_dict.get(
             "externalOutputPayloadStoragePath"
         ),
@@ -47,8 +47,8 @@ def test_task_result_serdeser(server_json_str):
     assert server_json_dict.get("workerId") == task_result.worker_id
     # Verify enum status is correctly converted
     if server_json_dict.get("status"):
-        assert isinstance(task_result.status, TaskResultStatus)
-        assert server_json_dict.get("status") == task_result.status.name
+        assert isinstance(task_result.status, str)
+        assert server_json_dict.get("status") == task_result.status
     # Verify output_data map
     assert server_json_dict.get("outputData") == task_result.output_data
     # Verify logs list
@@ -79,7 +79,7 @@ def test_task_result_serdeser(server_json_str):
     assert server_json_dict.get("workerId") == serialized_json_dict.get("worker_id")
     # Check status - need to convert enum to string when comparing
     if server_json_dict.get("status"):
-        assert server_json_dict.get("status") == serialized_json_dict.get("status").name
+        assert server_json_dict.get("status") == serialized_json_dict.get("status")
     # Check output_data map
     assert server_json_dict.get("outputData") == serialized_json_dict.get("output_data")
     # Check logs list - in serialized version, logs are returned as dictionaries

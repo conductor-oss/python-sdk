@@ -19,6 +19,7 @@ def send_email(email: str, subject: str, body: str):
 
 def main():
     api_config = Configuration()
+    api_config.apply_logging_config()
 
     task_handler = TaskHandler(
         workers=[],

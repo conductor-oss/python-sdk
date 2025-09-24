@@ -279,7 +279,7 @@ async def test_update_task_with_invalid_task_result():
 
 @pytest.mark.asyncio
 async def test_update_task_with_faulty_task_api(mocker):
-    mocker.patch("time.sleep", return_value=None)
+    mocker.patch("asyncio.sleep", return_value=None)
     mocker.patch.object(TaskResourceApiAdapter, "update_task", side_effect=Exception())
     task_runner = get_valid_task_runner()
     task_result = get_valid_task_result()

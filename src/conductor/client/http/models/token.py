@@ -1,21 +1,5 @@
-class Token(object):
-    swagger_types = {
-        'token': 'str'
-    }
+from conductor.client.adapters.models.token_adapter import TokenAdapter
 
-    attribute_map = {
-        'token': 'token'
-    }
+Token = TokenAdapter
 
-    def __init__(self, token: str = None):
-        self.token = None
-        if token is not None:
-            self.token = token
-
-    @property
-    def token(self) -> str:
-        return self._token
-
-    @token.setter
-    def token(self, token: str):
-        self._token = token
+__all__ = ["Token"]

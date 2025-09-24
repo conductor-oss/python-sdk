@@ -24,6 +24,7 @@ def start_workflow(workflow_executor: WorkflowExecutor) -> str:
 
 def main():
     api_config = Configuration()
+    api_config.apply_logging_config()
     clients = OrkesClients(configuration=api_config)
     workflow_client = clients.get_workflow_client()
     task_client = clients.get_task_client()

@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Optional, List
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.models import PollData
+from conductor.client.http.models.poll_data import PollData
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
