@@ -324,22 +324,3 @@ class OrkesEventClient(OrkesBaseClient):
         return self.eventResourceApi.delete_queue_config(
             queue_type=queue_type, queue_name=queue_name
         )
-
-    # Note: create_queue_configuration() is deprecated.
-    # Use OrkesIntegrationClient for creating message broker integrations instead.
-    # Example:
-    # integration_client = orkes_clients.get_integration_client()
-    # integration_client.save_integration_provider(
-    #     "kafka_events", 
-    #     IntegrationUpdateAdapter(
-    #         category="MESSAGE_BROKER",
-    #         type="kafka",
-    #         description="Kafka integration for events",
-    #         enabled=True,
-    #         configuration={
-    #             "bootstrapServers": "localhost:9092",
-    #             "topic": "workflow_events",
-    #             "consumerGroup": "conductor_events"
-    #         }
-    #     )
-    # )
