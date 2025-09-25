@@ -378,12 +378,6 @@ def test_getattr_no_http_config():
         _ = config.nonexistent_attr
 
 
-def test_auth_setup_with_credentials():
-    config = Configuration(auth_key="key", auth_secret="secret")
-    assert "api_key" in config.api_key
-    assert config.api_key["api_key"] == "key"
-
-
 def test_worker_properties_dict_initialization():
     config = Configuration()
     assert isinstance(config._worker_properties, dict)

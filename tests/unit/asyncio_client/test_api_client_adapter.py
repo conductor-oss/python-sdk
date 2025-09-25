@@ -1,15 +1,15 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from conductor.asyncio_client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.asyncio_client.configuration import Configuration
 from conductor.asyncio_client.http.exceptions import ApiException
 from conductor.asyncio_client.http.api_response import ApiResponse
 
 
 @pytest.fixture
 def mock_config():
-    config = MagicMock()
+    config = Configuration()
     config.host = "http://test.com"
-    config.api_key = {"api_key": "test_token"}
     config.auth_key = "test_key"
     config.auth_secret = "test_secret"
     return config
