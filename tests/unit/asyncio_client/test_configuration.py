@@ -211,7 +211,6 @@ def test_get_polling_interval_with_task_type(monkeypatch):
     assert result == 400.0
 
 
-
 def test_get_polling_interval_default():
     config = Configuration()
     result = config.get_polling_interval("mytask")
