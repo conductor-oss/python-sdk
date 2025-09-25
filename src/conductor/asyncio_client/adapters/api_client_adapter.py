@@ -43,7 +43,9 @@ class ApiClientAdapter(ApiClient):
         """
 
         try:
-            logger.debug("HTTP request method: %s; url: %s; header_params: %s", method, url, header_params)
+            logger.debug(
+                "HTTP request method: %s; url: %s; header_params: %s", method, url, header_params
+            )
             response_data = await self.rest_client.request(
                 method,
                 url,
@@ -56,7 +58,9 @@ class ApiClientAdapter(ApiClient):
                 response_data.status == 401  # noqa: PLR2004 (Unauthorized status code)
                 and url != self.configuration.host + "/token"
             ):
-                logger.warning("HTTP response from: %s; status code: 401 - obtaining new token", url)
+                logger.warning(
+                    "HTTP response from: %s; status code: 401 - obtaining new token", url
+                )
                 async with self._token_lock:
                     # The lock is intentionally broad (covers the whole block including the token state)
                     # to avoid race conditions: without it, other coroutines could mis-evaluate
@@ -67,9 +71,7 @@ class ApiClientAdapter(ApiClient):
                         >= self.configuration.token_update_time
                         + self.configuration.auth_token_ttl_sec
                     )
-                    invalid_token = not self.configuration._http_config.api_key.get(
-                        "api_key"
-                    )
+                    invalid_token = not self.configuration._http_config.api_key.get("api_key")
 
                     if invalid_token or token_expired:
                         token = await self.refresh_authorization_token()
@@ -85,7 +87,9 @@ class ApiClientAdapter(ApiClient):
                         _request_timeout=_request_timeout,
                     )
         except ApiException as e:
-            logger.error("HTTP request failed url: %s status: %s; reason: %s", url, e.status, e.reason)
+            logger.error(
+                "HTTP request failed url: %s status: %s; reason: %s", url, e.status, e.reason
+            )
             raise e
 
         return response_data
@@ -111,9 +115,7 @@ class ApiClientAdapter(ApiClient):
             and 100 <= response_data.status <= 599
         ):
             # if not found, look for '1XX', '2XX', etc.
-            response_type = response_types_map.get(
-                str(response_data.status)[0] + "XX", None
-            )
+            response_type = response_types_map.get(str(response_data.status)[0] + "XX", None)
 
         # deserialize response data
         response_text = None
@@ -130,9 +132,7 @@ class ApiClientAdapter(ApiClient):
                     match = re.search(r"charset=([a-zA-Z\-\d]+)[\s;]?", content_type)
                 encoding = match.group(1) if match else "utf-8"
                 response_text = response_data.data.decode(encoding)
-                return_data = self.deserialize(
-                    response_text, response_type, content_type
-                )
+                return_data = self.deserialize(response_text, response_type, content_type)
         finally:
             if not 200 <= response_data.status <= 299:
                 logger.error(f"Unexpected response status code: {response_data.status}")
