@@ -50,9 +50,7 @@ async def test_call_api_401_retry(adapter):
     adapter.rest_client.request = AsyncMock(return_value=mock_response)
     adapter.refresh_authorization_token = AsyncMock(return_value="new_token")
 
-    result = await adapter.call_api(
-        "GET", "http://test.com/api", {"X-Authorization": "old_token"}
-    )
+    result = await adapter.call_api("GET", "http://test.com/api", {"X-Authorization": "old_token"})
 
     assert result == mock_response
     assert adapter.rest_client.request.call_count == 2
@@ -215,9 +213,7 @@ async def test_obtain_new_token_with_patch():
         client_adapter.configuration = MagicMock()
         client_adapter.configuration.auth_key = "test_key"
         client_adapter.configuration.auth_secret = "test_secret"
-        client_adapter.param_serialize = MagicMock(
-            return_value=("POST", "/token", {}, {})
-        )
+        client_adapter.param_serialize = MagicMock(return_value=("POST", "/token", {}, {}))
 
         mock_response = MagicMock()
         mock_response.data = b'{"token": "test_token"}'
@@ -227,9 +223,7 @@ async def test_obtain_new_token_with_patch():
         result = await client_adapter.obtain_new_token()
 
         assert result == {"token": "test_token"}
-        mock_generate_token.assert_called_once_with(
-            key_id="test_key", key_secret="test_secret"
-        )
+        mock_generate_token.assert_called_once_with(key_id="test_key", key_secret="test_secret")
 
 
 def test_response_deserialize_encoding_detection(adapter):

@@ -269,9 +269,7 @@ class Configuration:
         # For other properties, return as string
         return value
 
-    def set_worker_property(
-        self, task_type: str, property_name: str, value: Any
-    ) -> None:
+    def set_worker_property(self, task_type: str, property_name: str, value: Any) -> None:
         """
         Set worker property for a specific task type.
 
@@ -524,7 +522,5 @@ class Configuration:
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to underlying HTTP configuration."""
         if "_http_config" not in self.__dict__ or self._http_config is None:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{name}'"
-            )
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
         return getattr(self._http_config, name)
