@@ -3,25 +3,21 @@ import logging
 import pytest
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.api.application_resource_api import ApplicationResourceApi
-from conductor.client.http.api.authorization_resource_api import (
-    AuthorizationResourceApi,
-)
-from conductor.client.http.api.group_resource_api import GroupResourceApi
-from conductor.client.http.api.user_resource_api import UserResourceApi
-from conductor.client.http.models.authorization_request import AuthorizationRequest
-from conductor.client.http.models.conductor_application import ConductorApplication
-from conductor.client.http.models.conductor_user import ConductorUser
+from conductor.client.http.api import UserResourceApi, ApplicationResourceApi, GroupResourceApi, AuthorizationResourceApi
+from conductor.client.http.models.authorization_request import AuthorizationRequestAdapter as AuthorizationRequest
+from conductor.client.http.models.granted_access_response import GrantedAccessResponseAdapter as GrantedAccessResponse
+from conductor.client.http.models import ExtendedConductorApplication
+from conductor.client.http.models.conductor_user import ConductorUserAdapter as ConductorUser
 from conductor.client.http.models.create_or_update_application_request import (
     CreateOrUpdateApplicationRequest,
 )
-from conductor.client.http.models.group import Group
-from conductor.client.http.models.permission import Permission
-from conductor.client.http.models.role import Role
-from conductor.client.http.models.subject_ref import SubjectRef
-from conductor.client.http.models.target_ref import TargetRef
-from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
-from conductor.client.http.models.upsert_user_request import UpsertUserRequest
+from conductor.client.http.models.group import GroupAdapter as Group
+from conductor.client.http.models.permission import PermissionAdapter as Permission
+from conductor.client.http.models.role import RoleAdapter as Role
+from conductor.client.http.models.subject_ref import SubjectRefAdapter as SubjectRef
+from conductor.client.http.models.target_ref import TargetRefAdapter as TargetRef
+from conductor.client.http.models.upsert_group_request import UpsertGroupRequestAdapter as UpsertGroupRequest
+from conductor.client.http.models.upsert_user_request import UpsertUserRequestAdapter as UpsertUserRequest
 from conductor.client.orkes.models.access_key import AccessKey
 from conductor.client.orkes.models.access_key_status import AccessKeyStatus
 from conductor.client.orkes.models.access_type import AccessType
@@ -54,8 +50,8 @@ def authorization_client():
 
 @pytest.fixture(scope="module")
 def conductor_application():
-    return ConductorApplication(
-        APP_ID, APP_NAME, USER_ID, 1699236095031, 1699236095031, USER_ID
+    return ExtendedConductorApplication(
+        1699236095031, USER_ID, APP_ID, APP_NAME, None, 1699236095031, USER_ID
     )
 
 
@@ -115,7 +111,7 @@ def group_roles():
 
 @pytest.fixture(scope="module")
 def conductor_group(group_roles):
-    return Group(GROUP_ID, GROUP_NAME, group_roles)
+    return Group(None, GROUP_NAME, GROUP_ID, group_roles)
 
 
 @pytest.fixture(autouse=True)
@@ -153,6 +149,7 @@ def test_create_application(mocker, authorization_client, conductor_application)
     }
     app = authorization_client.create_application(createReq)
     mock.assert_called_with(createReq)
+
     assert app == conductor_application
 
 
@@ -196,9 +193,9 @@ def test_update_application(mocker, authorization_client, conductor_application)
         "createTime": 1699236095031,
         "updateTime": 1699236095031,
     }
-    app = authorization_client.update_application(updateReq, APP_ID)
+    app = authorization_client.update_application(APP_ID, updateReq)
     assert app == conductor_application
-    mock.assert_called_with(updateReq, APP_ID)
+    mock.assert_called_with(APP_ID, updateReq)
 
 
 def test_add_role_to_application_user(mocker, authorization_client):
@@ -216,7 +213,7 @@ def test_remove_role_from_application_user(mocker, authorization_client):
 
 
 def test_set_application_tags(mocker, authorization_client, conductor_application):
-    mock = mocker.patch.object(ApplicationResourceApi, "put_tags_for_application")
+    mock = mocker.patch.object(ApplicationResourceApi, "put_tag_for_application")
     tag1 = MetadataTag("tag1", "val1")
     tag2 = MetadataTag("tag2", "val2")
     tags = [tag1, tag2]
@@ -236,7 +233,7 @@ def test_get_application_tags(mocker, authorization_client, conductor_applicatio
 
 
 def test_delete_application_tags(mocker, authorization_client, conductor_application):
-    mock = mocker.patch.object(ApplicationResourceApi, "delete_tags_for_application")
+    mock = mocker.patch.object(ApplicationResourceApi, "put_tag_for_application")
     tag1 = MetadataTag("tag1", "val1")
     tag2 = MetadataTag("tag2", "val2")
     tags = [tag1, tag2]
@@ -296,8 +293,8 @@ def test_upsert_user(mocker, authorization_client, conductor_user, roles):
     mock = mocker.patch.object(UserResourceApi, "upsert_user")
     upsertReq = UpsertUserRequest(USER_NAME, ["ADMIN"])
     mock.return_value = conductor_user.to_dict()
-    user = authorization_client.upsert_user(upsertReq, USER_ID)
-    mock.assert_called_with(upsertReq, USER_ID)
+    user = authorization_client.upsert_user(USER_ID, upsertReq)
+    mock.assert_called_with(USER_ID, upsertReq)
     assert user.name == USER_NAME
     assert user.id == USER_ID
     assert user.uuid == USER_UUID
@@ -341,8 +338,8 @@ def test_upsert_group(mocker, authorization_client, conductor_group, group_roles
     mock = mocker.patch.object(GroupResourceApi, "upsert_group")
     upsertReq = UpsertGroupRequest(GROUP_NAME, ["USER"])
     mock.return_value = conductor_group.to_dict()
-    group = authorization_client.upsert_group(upsertReq, GROUP_ID)
-    mock.assert_called_with(upsertReq, GROUP_ID)
+    group = authorization_client.upsert_group(GROUP_ID, upsertReq)
+    mock.assert_called_with(GROUP_ID, upsertReq)
     assert group == conductor_group
     assert group.description == GROUP_NAME
     assert group.id == GROUP_ID
@@ -401,25 +398,19 @@ def test_remove_user_from_group(mocker, authorization_client):
 
 def test_get_granted_permissions_for_group(mocker, authorization_client):
     mock = mocker.patch.object(GroupResourceApi, "get_granted_permissions1")
-    mock.return_value = {
-        "grantedAccess": [
-            {
-                "target": {
-                    "type": "WORKFLOW_DEF",
-                    "id": WF_NAME,
-                },
-                "access": [
-                    "EXECUTE",
-                    "UPDATE",
-                    "READ",
-                ],
-            }
+    mock.return_value = GrantedAccessResponse(
+        granted_access=[
+            GrantedPermission(
+                target=TargetRef(WF_NAME, TargetType.WORKFLOW_DEF.value),
+                access=["EXECUTE", "UPDATE", "READ"],
+            )
         ]
-    }
+    )
+
     perms = authorization_client.get_granted_permissions_for_group(GROUP_ID)
     mock.assert_called_with(GROUP_ID)
     expected_perm = GrantedPermission(
-        target=TargetRef(TargetType.WORKFLOW_DEF, WF_NAME),
+        target=TargetRef(WF_NAME, TargetType.WORKFLOW_DEF.value),
         access=["EXECUTE", "UPDATE", "READ"],
     )
     assert perms == [expected_perm]
@@ -445,7 +436,7 @@ def test_get_granted_permissions_for_user(mocker, authorization_client):
     perms = authorization_client.get_granted_permissions_for_user(USER_ID)
     mock.assert_called_with(USER_ID)
     expected_perm = GrantedPermission(
-        target=TargetRef(TargetType.WORKFLOW_DEF, WF_NAME),
+        target=TargetRef(id=WF_NAME, type=TargetType.WORKFLOW_DEF.value),
         access=["EXECUTE", "UPDATE", "READ"],
     )
     assert perms == [expected_perm]
@@ -463,16 +454,16 @@ def test_get_permissions(mocker, authorization_client):
         ],
     }
     permissions = authorization_client.get_permissions(
-        TargetRef(TargetType.WORKFLOW_DEF, WF_NAME)
+        TargetRef(WF_NAME, TargetType.WORKFLOW_DEF)
     )
     mock.assert_called_with(TargetType.WORKFLOW_DEF.name, "workflow_name")
     expected_permissions_dict = {
         AccessType.EXECUTE.name: [
-            SubjectRef(SubjectType.USER, USER_ID),
+            SubjectRef(USER_ID, SubjectType.USER),
         ],
         AccessType.READ.name: [
-            SubjectRef(SubjectType.USER, USER_ID),
-            SubjectRef(SubjectType.GROUP, GROUP_ID),
+            SubjectRef(USER_ID, SubjectType.USER),
+            SubjectRef(GROUP_ID, SubjectType.GROUP),
         ],
     }
     assert permissions == expected_permissions_dict
@@ -480,8 +471,8 @@ def test_get_permissions(mocker, authorization_client):
 
 def test_grant_permissions(mocker, authorization_client):
     mock = mocker.patch.object(AuthorizationResourceApi, "grant_permissions")
-    subject = SubjectRef(SubjectType.USER, USER_ID)
-    target = TargetRef(TargetType.WORKFLOW_DEF, WF_NAME)
+    subject = SubjectRef(USER_ID, SubjectType.USER)
+    target = TargetRef(WF_NAME,TargetType.WORKFLOW_DEF)
     access = [AccessType.READ, AccessType.EXECUTE]
     authorization_client.grant_permissions(subject, target, access)
     mock.assert_called_with(AuthorizationRequest(subject, target, access))
@@ -489,8 +480,8 @@ def test_grant_permissions(mocker, authorization_client):
 
 def test_remove_permissions(mocker, authorization_client):
     mock = mocker.patch.object(AuthorizationResourceApi, "remove_permissions")
-    subject = SubjectRef(SubjectType.USER, USER_ID)
-    target = TargetRef(TargetType.WORKFLOW_DEF, WF_NAME)
+    subject = SubjectRef(USER_ID, SubjectType.USER)
+    target = TargetRef(WF_NAME, TargetType.WORKFLOW_DEF)
     access = [AccessType.READ, AccessType.EXECUTE]
     authorization_client.remove_permissions(subject, target, access)
     mock.assert_called_with(AuthorizationRequest(subject, target, access))

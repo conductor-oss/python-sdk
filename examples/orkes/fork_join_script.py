@@ -8,6 +8,7 @@ from conductor.client.workflow.task.join_task import JoinTask
 
 def main():
     api_config = Configuration()
+    api_config.apply_logging_config()
     clients = OrkesClients(configuration=api_config)
     workflow_client = clients.get_workflow_client()
     executor = clients.get_workflow_executor()

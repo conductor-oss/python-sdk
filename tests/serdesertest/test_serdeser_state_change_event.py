@@ -4,7 +4,7 @@ import pytest
 
 from conductor.client.http.models.state_change_event import (
     StateChangeConfig,
-    StateChangeEvent,
+    StateChangeEventAdapter,
     StateChangeEventType,
 )
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
@@ -16,7 +16,7 @@ def state_change_event_json():
 
 
 def test_state_change_event_serde(state_change_event_json):
-    event = StateChangeEvent(
+    event = StateChangeEventAdapter(
         type=state_change_event_json["type"], payload=state_change_event_json["payload"]
     )
     assert event.type == state_change_event_json["type"]
@@ -28,7 +28,7 @@ def test_state_change_event_serde(state_change_event_json):
 
 def test_state_change_config_multiple_event_types():
     event_types = [StateChangeEventType.onStart, StateChangeEventType.onSuccess]
-    events = [StateChangeEvent(type="sample_type", payload={"key": "value"})]
+    events = [StateChangeEventAdapter(type="sample_type", payload={"key": "value"})]
     config = StateChangeConfig(event_type=event_types, events=events)
     assert config.type == "onStart,onSuccess"
     serialized_json = config.to_dict()

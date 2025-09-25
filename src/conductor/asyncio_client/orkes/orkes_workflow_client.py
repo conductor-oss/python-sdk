@@ -182,9 +182,10 @@ class OrkesWorkflowClient(OrkesBaseClient):
     ) -> Dict[str, List[WorkflowAdapter]]:
         """Get workflows by correlation IDs"""
         # Create correlation IDs search request
-        search_request = CorrelationIdsSearchRequestAdapter()
-        search_request.workflow_names = [workflow_name]
-        search_request.correlation_ids = correlation_ids
+        search_request = CorrelationIdsSearchRequestAdapter(    
+            workflow_names=[workflow_name],
+            correlation_ids=correlation_ids,
+        )
         return await self.workflow_api.get_workflows1(
             correlation_ids_search_request=search_request,
             include_closed=include_completed,
@@ -268,22 +269,16 @@ class OrkesWorkflowClient(OrkesBaseClient):
         self,
         workflow_id: str,
         workflow_state_update: WorkflowStateUpdateAdapter,
-        request_id: str = uuid.uuid4(),
-        wait_until_task_ref_names: Optional[List[str]] = None,
+        request_id: str = str(uuid.uuid4()),
+        wait_until_task_ref_name: Optional[str] = None,
         wait_for_seconds: Optional[int] = None,
     ) -> WorkflowRunAdapter:
         """Update workflow and task state"""
-        # Convert the adapter to dict for the API call
-        request_body = (
-            workflow_state_update.to_dict()
-            if hasattr(workflow_state_update, "to_dict")
-            else workflow_state_update
-        )
         return await self.workflow_api.update_workflow_and_task_state(
             workflow_id=workflow_id,
             request_id=request_id,
-            workflow_state_update=request_body,
-            wait_until_task_ref=wait_until_task_ref_names,
+            workflow_state_update=workflow_state_update,
+            wait_until_task_ref=wait_until_task_ref_name,
             wait_for_seconds=wait_for_seconds,
         )
 

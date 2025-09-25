@@ -1,22 +1,28 @@
 from __future__ import annotations
+
 import logging
 import os
 import time
 from typing import Optional
 
-from conductor.shared.configuration.settings.authentication_settings import AuthenticationSettings
+from conductor.shared.configuration.settings.authentication_settings import (
+    AuthenticationSettings,
+)
 
 
 class Configuration:
     AUTH_TOKEN = None
 
     def __init__(
-            self,
-            base_url: Optional[str] = None,
-            debug: bool = False,
-            authentication_settings: AuthenticationSettings = None,
-            server_api_url: Optional[str] = None,
-            auth_token_ttl_min: int = 45
+        self,
+        base_url: Optional[str] = None,
+        debug: bool = False,
+        authentication_settings: AuthenticationSettings = None,
+        server_api_url: Optional[str] = None,
+        auth_token_ttl_min: int = 45,
+        polling_interval: Optional[float] = None,
+        domain: Optional[str] = None,
+        polling_interval_seconds: Optional[float] = None,
     ):
         if server_api_url is not None:
             self.host = server_api_url
@@ -39,15 +45,17 @@ class Configuration:
             key = os.getenv("CONDUCTOR_AUTH_KEY")
             secret = os.getenv("CONDUCTOR_AUTH_SECRET")
             if key is not None and secret is not None:
-                self.authentication_settings = AuthenticationSettings(key_id=key, key_secret=secret)
+                self.authentication_settings = AuthenticationSettings(
+                    key_id=key, key_secret=secret
+                )
             else:
                 self.authentication_settings = None
-
 
         # Debug switch
         self.debug = debug
         # Log format
         self.logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
+        self.is_logger_config_applied = False
 
         # SSL/TLS verification
         # Set this to false to skip verifying SSL certificate when calling API
@@ -73,6 +81,15 @@ class Configuration:
         # not updated yet
         self.token_update_time = 0
         self.auth_token_ttl_msec = auth_token_ttl_min * 60 * 1000
+
+        # Worker properties
+        self.polling_interval = polling_interval or self._get_env_float(
+            "CONDUCTOR_WORKER_POLL_INTERVAL", 100
+        )
+        self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", "default_domain")
+        self.polling_interval_seconds = polling_interval_seconds or self._get_env_float(
+            "CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0
+        )
 
     @property
     def debug(self):
@@ -140,20 +157,39 @@ class Configuration:
         """
         return self.__ui_host
 
-    def apply_logging_config(self, log_format : Optional[str] = None, level = None):
+    def apply_logging_config(self, log_format: Optional[str] = None, level=None):
+        if self.is_logger_config_applied:
+            return
         if log_format is None:
             log_format = self.logger_format
         if level is None:
             level = self.__log_level
-        logging.basicConfig(
-            format=log_format,
-            level=level
-        )
+        logging.basicConfig(format=log_format, level=level)
+        self.is_logger_config_applied = True
 
     @staticmethod
     def get_logging_formatted_name(name):
-        return f"[{os.getpid()}] {name}"
+        return f"[pid:{os.getpid()}] {name}"
 
     def update_token(self, token: str) -> None:
         self.AUTH_TOKEN = token
         self.token_update_time = round(time.time() * 1000)
+
+    def _get_env_float(self, env_var: str, default: float) -> float:
+        """Get float value from environment variable with default fallback."""
+        try:
+            value = os.getenv(env_var)
+            if value is not None:
+                return float(value)
+        except (ValueError, TypeError):
+            pass
+        return default
+
+    def get_poll_interval_seconds(self):
+        return self.polling_interval_seconds
+
+    def get_poll_interval(self):
+        return self.polling_interval
+
+    def get_domain(self):
+        return self.domain

@@ -3,9 +3,9 @@ import json
 import pytest
 
 from conductor.client.http.models.search_result_workflow_summary import (
-    SearchResultWorkflowSummary,
+    SearchResultWorkflowSummaryAdapter,
 )
-from conductor.client.http.models.workflow_summary import WorkflowSummary
+from conductor.client.http.models.workflow_summary import WorkflowSummaryAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -15,8 +15,8 @@ def server_json():
 
 
 def test_serialization_deserialization(server_json):
-    workflow_summary = WorkflowSummary()
-    model = SearchResultWorkflowSummary(
+    workflow_summary = WorkflowSummaryAdapter()
+    model = SearchResultWorkflowSummaryAdapter(
         total_hits=server_json.get("totalHits"),
         results=[workflow_summary] if server_json.get("results") else None,
     )

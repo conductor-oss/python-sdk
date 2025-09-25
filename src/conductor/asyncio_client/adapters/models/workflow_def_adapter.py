@@ -28,6 +28,8 @@ class WorkflowDefAdapter(WorkflowDef):
     rate_limit_config: Optional["RateLimitConfigAdapter"] = Field(
         default=None, alias="rateLimitConfig"
     )
+    timeout_seconds: Optional[int] = Field(default=None, alias="timeoutSeconds")
+
     __properties: ClassVar[List[str]] = [
         "createTime",
         "createdBy",

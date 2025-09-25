@@ -92,6 +92,8 @@ def test_swagger_types_mapping_exists():
         "updated_by": "str",
         "schedule_start_time": "int",
         "schedule_end_time": "int",
+        'zone_id': 'str',
+        'description': 'str',
     }
 
     for field, expected_type in expected_swagger_types.items():

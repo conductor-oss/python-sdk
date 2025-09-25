@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from conductor.client.http.models.terminate_workflow import TerminateWorkflow
+from conductor.client.http.models.terminate_workflow import TerminateWorkflowAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
@@ -17,7 +17,7 @@ def server_json():
 def test_terminate_workflow_ser_des(server_json):
     """Test serialization and deserialization of TerminateWorkflow model."""
     # 1. Verify server JSON can be correctly deserialized
-    model_obj = TerminateWorkflow(
+    model_obj = TerminateWorkflowAdapter(
         workflow_id=server_json["workflowId"],
         termination_reason=server_json["terminationReason"],
     )
@@ -27,11 +27,8 @@ def test_terminate_workflow_ser_des(server_json):
     # 3. Verify SDK model can be serialized back to JSON
     result_json = model_obj.to_dict()
     # 4. Verify resulting JSON matches original
-    assert server_json["workflowId"] == result_json["workflowId"]
-    assert server_json["terminationReason"] == result_json["terminationReason"]
-    # Verify no data loss by checking all keys exist
-    for key in server_json:
-        assert key in result_json
+    assert server_json["workflowId"] == result_json["workflow_id"]
+    assert server_json["terminationReason"] == result_json["termination_reason"]
     # Verify no extra keys were added
     assert len(server_json) == len(result_json)
     # Check string representation

@@ -6,7 +6,7 @@ For detailed explanation, https://github.com/conductor-sdk/conductor-python/blob
 """
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.models.start_workflow_request import IdempotencyStrategy
+from conductor.shared.http.enums import IdempotencyStrategy
 from conductor.client.orkes_clients import OrkesClients
 from conductor.client.worker.worker_task import worker_task
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
@@ -28,6 +28,7 @@ def main():
     # CONDUCTOR_AUTH_KEY : API Authentication Key
     # CONDUCTOR_AUTH_SECRET: API Auth Secret
     api_config = Configuration()
+    api_config.apply_logging_config()
 
     task_handler = TaskHandler(configuration=api_config)
     task_handler.start_processes()

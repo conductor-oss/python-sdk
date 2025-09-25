@@ -26,8 +26,9 @@ class Configuration:
 
     Worker Properties (via environment variables):
     ----------------------------------------------
-    CONDUCTOR_WORKER_POLLING_INTERVAL: Default polling interval in seconds
     CONDUCTOR_WORKER_DOMAIN: Default worker domain
+    CONDUCTOR_WORKER_POLL_INTERVAL: Polling interval in milliseconds (default: 100)
+    CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS: Polling interval in seconds (default: 0)
     CONDUCTOR_WORKER_<TASK_TYPE>_POLLING_INTERVAL: Task-specific polling interval
     CONDUCTOR_WORKER_<TASK_TYPE>_DOMAIN: Task-specific domain
 
@@ -58,8 +59,9 @@ class Configuration:
         debug: bool = False,
         auth_token_ttl_min: int = 45,
         # Worker properties
-        default_polling_interval: Optional[float] = None,
-        default_domain: Optional[str] = None,
+        polling_interval: Optional[int] = None,
+        domain: Optional[str] = None,
+        polling_interval_seconds: Optional[int] = None,
         # HTTP Configuration parameters
         api_key: Optional[Dict[str, str]] = None,
         api_key_prefix: Optional[Dict[str, str]] = None,
@@ -89,10 +91,12 @@ class Configuration:
             Authentication key secret. If not provided, reads from CONDUCTOR_AUTH_SECRET env var.
         debug : bool, optional
             Enable debug logging. Default is False.
-        default_polling_interval : float, optional
-            Default polling interval for workers in seconds.
-        default_domain : str, optional
-            Default domain for workers.
+        polling_interval : int, optional
+            Polling interval in milliseconds. If not provided, reads from CONDUCTOR_WORKER_POLL_INTERVAL env var.
+        domain : str, optional
+            Worker domain. If not provided, reads from CONDUCTOR_WORKER_DOMAIN env var.
+        polling_interval_seconds : int, optional
+            Polling interval in seconds. If not provided, reads from CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS env var.
         **kwargs : Any
             Additional parameters passed to HttpConfiguration.
         """
@@ -117,11 +121,14 @@ class Configuration:
         else:
             self.auth_secret = os.getenv("CONDUCTOR_AUTH_SECRET")
 
-        # Worker properties with environment variable fallback
-        self.default_polling_interval = default_polling_interval or self._get_env_float(
-            "CONDUCTOR_WORKER_POLLING_INTERVAL", 1.0
+        # Additional worker properties with environment variable fallback
+        self.polling_interval = polling_interval or self._get_env_int(
+            "CONDUCTOR_WORKER_POLL_INTERVAL", 100
         )
-        self.default_domain = default_domain or os.getenv("CONDUCTOR_WORKER_DOMAIN")
+        self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", "default_domain")
+        self.polling_interval_seconds = polling_interval_seconds or self._get_env_int(
+            "CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0
+        )
 
         # Store additional worker properties
         self._worker_properties: Dict[str, Dict[str, Any]] = {}
@@ -169,6 +176,8 @@ class Configuration:
         self.logger = logging.getLogger(__name__)
         if debug:
             self.logger.setLevel(logging.DEBUG)
+
+        self.is_logger_config_applied = False
 
         # Orkes Conductor auth token properties
         self.token_update_time = 0
@@ -233,10 +242,12 @@ class Configuration:
             return self._convert_property_value(property_name, value)
 
         # Return default value
-        if property_name == "polling_interval":
-            return self.default_polling_interval
         elif property_name == "domain":
-            return self.default_domain
+            return self.domain
+        elif property_name == "polling_interval":
+            return self.polling_interval
+        elif property_name == "poll_interval_seconds":
+            return self.polling_interval_seconds
 
         return None
 
@@ -247,7 +258,13 @@ class Configuration:
                 return float(value)
             except (ValueError, TypeError):
                 self.logger.warning("Invalid polling_interval value: %s", value)
-                return self.default_polling_interval
+                return self.polling_interval
+        elif property_name == "polling_interval_seconds":
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                self.logger.warning("Invalid polling_interval_seconds value: %s", value)
+                return self.polling_interval_seconds
 
         # For other properties, return as string
         return value
@@ -323,6 +340,37 @@ class Configuration:
             Domain name or None
         """
         return self.get_worker_property_value("domain", task_type)
+
+    def get_poll_interval(self, task_type: Optional[str] = None) -> int:
+        """
+        Get polling interval in milliseconds for a task type with environment variable support.
+
+        Parameters:
+        -----------
+        task_type : str, optional
+            Task type for task-specific configuration
+
+        Returns:
+        --------
+        int
+            Polling interval in milliseconds
+        """
+        if task_type:
+            value = self.get_worker_property_value("polling_interval", task_type)
+            if value is not None:
+                return int(value)
+        return self.polling_interval
+
+    def get_poll_interval_seconds(self) -> int:
+        """
+        Get polling interval in seconds.
+
+        Returns:
+        --------
+        int
+            Polling interval in seconds
+        """
+        return self.polling_interval_seconds
 
     # Properties for commonly used HTTP configuration attributes
     @property
@@ -458,12 +506,15 @@ class Configuration:
             log_format = self.logger_format
         if level is None:
             level = self.__log_level
-        logging.basicConfig(format=log_format, level=level)
+        logging.basicConfig(
+            format=log_format,
+            level=level
+        )
 
     @staticmethod
     def get_logging_formatted_name(name):
         """Format a logger name with the current process ID."""
-        return f"[{os.getpid()}] {name}"
+        return f"[pid:{os.getpid()}] {name}"
 
     @property
     def ui_host(self):

@@ -8,20 +8,22 @@ import time
 import traceback
 from typing import Optional
 
-from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
-from conductor.asyncio_client.adapters.models.task_exec_log_adapter import \
-    TaskExecLogAdapter
-from conductor.asyncio_client.adapters.models.task_result_adapter import \
-    TaskResultAdapter
-from conductor.asyncio_client.configuration import Configuration
-from conductor.asyncio_client.adapters.api.task_resource_api import TaskResourceApiAdapter
 from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.adapters.api.task_resource_api import (
+    TaskResourceApiAdapter,
+)
+from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
+from conductor.asyncio_client.adapters.models.task_exec_log_adapter import (
+    TaskExecLogAdapter,
+)
+from conductor.asyncio_client.adapters.models.task_result_adapter import (
+    TaskResultAdapter,
+)
+from conductor.asyncio_client.configuration import Configuration
 from conductor.asyncio_client.http.exceptions import UnauthorizedException
-from conductor.asyncio_client.telemetry.metrics_collector import \
-    AsyncMetricsCollector
+from conductor.asyncio_client.telemetry.metrics_collector import AsyncMetricsCollector
 from conductor.asyncio_client.worker.worker_interface import WorkerInterface
-from conductor.shared.configuration.settings.metrics_settings import \
-    MetricsSettings
+from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
@@ -43,7 +45,9 @@ class AsyncTaskRunner:
         self.metrics_collector = None
         if metrics_settings is not None:
             self.metrics_collector = AsyncMetricsCollector(metrics_settings)
-        self.task_client = TaskResourceApiAdapter(ApiClient(configuration=self.configuration))
+        self.task_client = TaskResourceApiAdapter(
+            ApiClient(configuration=self.configuration)
+        )
 
     async def run(self) -> None:
         if self.configuration is not None:
@@ -53,7 +57,7 @@ class AsyncTaskRunner:
 
         task_names = ",".join(self.worker.task_definition_names)
         logger.info(
-            "Polling task %s with domain %s with polling interval %s",
+            "Polling tasks task_names: %s; domain: %s; polling_interval: %s",
             task_names,
             self.worker.get_domain(),
             self.worker.get_polling_interval_in_seconds(),
@@ -76,7 +80,7 @@ class AsyncTaskRunner:
     async def __poll_task(self) -> Optional[TaskAdapter]:
         task_definition_name = self.worker.get_task_definition_name()
         if self.worker.paused():
-            logger.debug("Stop polling task for: %s", task_definition_name)
+            logger.debug("Stop polling task: %s", task_definition_name)
             return None
         if self.metrics_collector is not None:
             await self.metrics_collector.increment_task_poll(task_definition_name)
@@ -99,8 +103,11 @@ class AsyncTaskRunner:
                 await self.metrics_collector.increment_task_poll_error(
                     task_definition_name, auth_exception
                 )
-            logger.fatal(
-                f"failed to poll task {task_definition_name} error: {auth_exception.reason} - {auth_exception.status}"
+            logger.error(
+                "Failed to poll task: %s; reason: %s; status: %s",
+                task_definition_name,
+                auth_exception.reason,
+                auth_exception.status,
             )
             return None
         except Exception as e:
@@ -109,14 +116,14 @@ class AsyncTaskRunner:
                     task_definition_name, e
                 )
             logger.error(
-                "Failed to poll task for: %s, reason: %s",
+                "Failed to poll task: %s, reason: %s",
                 task_definition_name,
                 traceback.format_exc(),
             )
             return None
         if task is not None:
             logger.debug(
-                "Polled task: %s, worker_id: %s, domain: %s",
+                "Polled task: %s; worker_id: %s; domain: %s",
                 task_definition_name,
                 self.worker.get_identity(),
                 self.worker.get_domain(),
@@ -128,7 +135,7 @@ class AsyncTaskRunner:
             return None
         task_definition_name = self.worker.get_task_definition_name()
         logger.debug(
-            "Executing task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
+            "Executing task task_id: %s; workflow_instance_id: %s; task_definition_name: %s",
             task.task_id,
             task.workflow_instance_id,
             task_definition_name,
@@ -146,7 +153,7 @@ class AsyncTaskRunner:
                     task_definition_name, sys.getsizeof(task_result)
                 )
             logger.debug(
-                "Executed task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
+                "Executed task task_id: %s; workflow_instance_id: %s; task_definition_name: %s",
                 task.task_id,
                 task.workflow_instance_id,
                 task_definition_name,
@@ -171,8 +178,8 @@ class AsyncTaskRunner:
                 )
             ]
             logger.error(
-                "Failed to execute task, id: %s, workflow_instance_id: %s, "
-                "task_definition_name: %s, reason: %s",
+                "Failed to execute task task_id: %s; workflow_instance_id: %s; "
+                "task_definition_name: %s; reason: %s",
                 task.task_id,
                 task.workflow_instance_id,
                 task_definition_name,
@@ -185,7 +192,7 @@ class AsyncTaskRunner:
             return None
         task_definition_name = self.worker.get_task_definition_name()
         logger.debug(
-            "Updating task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
+            "Updating task task_id: %s, workflow_instance_id: %s, task_definition_name: %s",
             task_result.task_id,
             task_result.workflow_instance_id,
             task_definition_name,
@@ -197,7 +204,7 @@ class AsyncTaskRunner:
             try:
                 response = await self.task_client.update_task(task_result=task_result)
                 logger.debug(
-                    "Updated task, id: %s, workflow_instance_id: %s, task_definition_name: %s, response: %s",
+                    "Updated task task_id: %s; workflow_instance_id: %s; task_definition_name: %s; response: %s",
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
@@ -210,7 +217,7 @@ class AsyncTaskRunner:
                         task_definition_name, e
                     )
                 logger.error(
-                    "Failed to update task, id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
+                    "Failed to update task task_id: %s; workflow_instance_id: %s; task_definition_name: %s; reason: %s",
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
@@ -236,25 +243,18 @@ class AsyncTaskRunner:
         polling_interval = self.__get_property_value_from_env(
             "polling_interval", task_type
         )
-        if polling_interval:
-            try:
-                self.worker.poll_interval = float(polling_interval)
-            except Exception:
-                logger.error(
-                    "error reading and parsing the polling interval value %s",
-                    polling_interval,
-                )
-                self.worker.poll_interval = (
-                    self.worker.get_polling_interval_in_seconds()
-                )
 
         if polling_interval:
             try:
                 self.worker.poll_interval = float(polling_interval)
             except Exception as e:
                 logger.error(
-                    "Exception in reading polling interval from environment variable: %s",
+                    "Error converting polling_interval to float value: %s, exception: %s",
+                    polling_interval,
                     e,
+                )
+                self.worker.poll_interval = (
+                    self.worker.get_polling_interval_in_seconds()
                 )
 
     def __get_property_value_from_env(self, prop, task_type):

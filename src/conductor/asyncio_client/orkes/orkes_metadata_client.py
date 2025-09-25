@@ -10,6 +10,8 @@ from conductor.asyncio_client.adapters.models.task_def_adapter import \
     TaskDefAdapter
 from conductor.asyncio_client.adapters.models.workflow_def_adapter import \
     WorkflowDefAdapter
+from conductor.asyncio_client.adapters.models.tag_adapter import \
+    TagAdapter
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
@@ -203,3 +205,27 @@ class OrkesMetadataClient(OrkesBaseClient):
     async def get_workflow_def_by_name(self, name: str) -> List[WorkflowDefAdapter]:
         """Get all versions of workflow definition by name"""
         return await self.get_workflow_defs_by_name(name)
+
+    async def add_workflow_tag(self, tag: TagAdapter, workflow_name: str):
+        await self.tags_api.add_workflow_tag(workflow_name, tag)
+
+    async def delete_workflow_tag(self, tag: TagAdapter, workflow_name: str):
+        await self.tags_api.delete_workflow_tag(workflow_name, tag)
+
+    async def get_workflow_tags(self, workflow_name: str) -> List[TagAdapter]:
+        return await self.tags_api.get_workflow_tags(workflow_name)
+
+    async def set_workflow_tags(self, tags: List[TagAdapter], workflow_name: str):
+        await self.tags_api.set_workflow_tags(workflow_name, tags)
+
+    async def add_task_tag(self, tag: TagAdapter, task_name: str):
+        await self.tags_api.add_task_tag(task_name, tag)
+
+    async def delete_task_tag(self, tag: TagAdapter, task_name: str):
+        await self.tags_api.delete_task_tag(task_name, tag)
+
+    async def get_task_tags(self, task_name: str) -> List[TagAdapter]:
+        return await self.tags_api.get_task_tags(task_name)
+
+    async def set_task_tags(self, tags: List[TagAdapter], task_name: str):
+        await self.tags_api.set_task_tags(task_name, tags)

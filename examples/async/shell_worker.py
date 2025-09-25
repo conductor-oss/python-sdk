@@ -1,9 +1,9 @@
 import asyncio
 from typing import Dict
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.automator.task_handler import TaskHandler
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 from conductor.asyncio_client.worker.worker_task import worker_task
 from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
@@ -87,6 +87,7 @@ async def main():
     # CONDUCTOR_AUTH_KEY : API Authentication Key
     # CONDUCTOR_AUTH_SECRET: API Auth Secret
     api_config = Configuration()
+    api_config.apply_logging_config()
 
     print("Starting async shell worker...")
     task_handler = TaskHandler(

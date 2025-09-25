@@ -2,12 +2,12 @@ import json
 import os
 import time
 
-from conductor.client.ai.configuration import LLMProvider
-from conductor.client.ai.integrations import OpenAIConfig
+from conductor.shared.ai.enums import LLMProvider
+from conductor.shared.ai.configuration import OpenAIConfig
 from conductor.client.ai.orchestrator import AIOrchestrator
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.models.workflow_run import terminal_status
+from conductor.client.adapters.models.workflow_run_adapter import terminal_status
 from conductor.client.orkes_clients import OrkesClients
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.task.do_while_task import LoopTask

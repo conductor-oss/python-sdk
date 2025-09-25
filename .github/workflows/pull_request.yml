@@ -68,6 +68,30 @@ jobs:
             conductor-sdk-test:latest \
             /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.serdeser coverage run -m pytest tests/serdesertest -v"
 
+      - name: Run integration tests
+        id: integration_tests
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            -e CONDUCTOR_AUTH_KEY=${{ env.CONDUCTOR_AUTH_KEY }} \
+            -e CONDUCTOR_AUTH_SECRET=${{ env.CONDUCTOR_AUTH_SECRET }} \
+            -e CONDUCTOR_SERVER_URL=${{ env.CONDUCTOR_SERVER_URL }} \
+            -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
+            conductor-sdk-test:latest \
+            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.integration coverage run -m pytest -m v4 tests/integration -v"
+
+      - name: Run asyncio integration tests
+        id: integration_tests
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            -e CONDUCTOR_AUTH_KEY=${{ env.CONDUCTOR_AUTH_KEY }} \
+            -e CONDUCTOR_AUTH_SECRET=${{ env.CONDUCTOR_AUTH_SECRET }} \
+            -e CONDUCTOR_SERVER_URL=${{ env.CONDUCTOR_SERVER_URL }} \
+            -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
+            conductor-sdk-test:latest \
+            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.integration coverage run -m pytest -m v4 tests/integration -v"
+
       - name: Generate coverage report
         id: coverage_report
         continue-on-error: true
