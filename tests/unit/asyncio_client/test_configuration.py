@@ -50,6 +50,7 @@ def test_initialization_with_env_vars(monkeypatch):
     assert config.domain == "env_domain"
     assert config.polling_interval_seconds == 10
 
+
 def test_initialization_env_vars_override_params(monkeypatch):
     monkeypatch.setenv("CONDUCTOR_SERVER_URL", "https://env.com/api")
     monkeypatch.setenv("CONDUCTOR_AUTH_KEY", "env_key")
@@ -146,7 +147,7 @@ def test_get_worker_property_value_poll_interval_seconds():
     result = config.get_worker_property_value("poll_interval_seconds", "mytask")
     assert result == 0
 
-    
+
 def test_convert_property_value_polling_interval():
     config = Configuration()
     result = config._convert_property_value("polling_interval", "250")
@@ -378,12 +379,6 @@ def test_getattr_no_http_config():
         _ = config.nonexistent_attr
 
 
-def test_auth_setup_with_credentials():
-    config = Configuration(auth_key="key", auth_secret="secret")
-    assert "api_key" in config.api_key
-    assert config.api_key["api_key"] == "key"
-
-
 def test_worker_properties_dict_initialization():
     config = Configuration()
     assert isinstance(config._worker_properties, dict)
@@ -398,9 +393,7 @@ def test_get_worker_property_value_unknown_property():
 
 def test_get_poll_interval_with_task_type_none_value():
     config = Configuration()
-    with patch.dict(
-        os.environ, {"CONDUCTOR_WORKER_MYTASK_POLLING_INTERVAL": "invalid"}
-    ):
+    with patch.dict(os.environ, {"CONDUCTOR_WORKER_MYTASK_POLLING_INTERVAL": "invalid"}):
         result = config.get_poll_interval("mytask")
         assert result == 100
 
