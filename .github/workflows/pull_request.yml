@@ -81,7 +81,7 @@ jobs:
             /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.integration coverage run -m pytest -m v4 tests/integration -v"
 
       - name: Run asyncio integration tests
-        id: integration_tests
+        id: asyncio_integration_tests
         continue-on-error: true
         run: |
           docker run --rm \
@@ -90,7 +90,7 @@ jobs:
             -e CONDUCTOR_SERVER_URL=${{ env.CONDUCTOR_SERVER_URL }} \
             -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
             conductor-sdk-test:latest \
-            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.integration coverage run -m pytest -m v4 tests/integration -v"
+            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.asyncio_integration_tests coverage run -m pytest -m v4 tests/integration/async -v"
 
       - name: Generate coverage report
         id: coverage_report
