@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -112,7 +114,7 @@ class ApiClientAdapter(ApiClient):
         if (
             not response_type
             and isinstance(response_data.status, int)
-            and 100 <= response_data.status <= 599
+            and 100 <= response_data.status <= 599  # noqa: PLR2004
         ):
             # if not found, look for '1XX', '2XX', etc.
             response_type = response_types_map.get(str(response_data.status)[0] + "XX", None)
@@ -134,8 +136,8 @@ class ApiClientAdapter(ApiClient):
                 response_text = response_data.data.decode(encoding)
                 return_data = self.deserialize(response_text, response_type, content_type)
         finally:
-            if not 200 <= response_data.status <= 299:
-                logger.error(f"Unexpected response status code: {response_data.status}")
+            if not 200 <= response_data.status <= 299:  #  noqa: PLR2004
+                logger.error("Unexpected response status code: %s", response_data.status)
                 raise ApiException.from_response(
                     http_resp=response_data,
                     body=response_text,
@@ -154,7 +156,7 @@ class ApiClientAdapter(ApiClient):
         token = obtain_new_token_response.get("token")
         self.configuration._http_config.api_key["api_key"] = token
         self.configuration.token_update_time = time.time()
-        logger.debug(f"New auth token been set")
+        logger.debug("New auth token been set")
         return token
 
     async def obtain_new_token(self):
