@@ -29,10 +29,11 @@ class IntegrationAdapter(Integration):
                 "GIT",
                 "EMAIL",
                 "MCP",
+                "CLOUD",
             ]
         ):
             raise ValueError(
-                "must be one of enum values ('API', 'AI_MODEL', 'VECTOR_DB', 'RELATIONAL_DB', 'MESSAGE_BROKER', 'GIT', 'EMAIL', 'MCP')"
+                "must be one of enum values ('API', 'AI_MODEL', 'VECTOR_DB', 'RELATIONAL_DB', 'MESSAGE_BROKER', 'GIT', 'EMAIL', 'MCP', 'CLOUD')"
             )
         return value
 
