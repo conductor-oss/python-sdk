@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from pydantic import field_validator
 from typing_extensions import Self
 
 from conductor.asyncio_client.http.models import Integration
@@ -11,6 +12,29 @@ class IntegrationAdapter(Integration):
     apis: Optional[List["IntegrationApiAdapter"]] = None
     configuration: Optional[Dict[str, Any]] = None
     tags: Optional[List["TagAdapter"]] = None
+
+    @field_validator("category")
+    def category_validate_enum(cls, value):
+        """Validates the enum"""
+        if value is None:
+            return value
+
+        if value not in set(
+            [
+                "API",
+                "AI_MODEL",
+                "VECTOR_DB",
+                "RELATIONAL_DB",
+                "MESSAGE_BROKER",
+                "GIT",
+                "EMAIL",
+                "MCP",
+            ]
+        ):
+            raise ValueError(
+                "must be one of enum values ('API', 'AI_MODEL', 'VECTOR_DB', 'RELATIONAL_DB', 'MESSAGE_BROKER', 'GIT', 'EMAIL', 'MCP')"
+            )
+        return value
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -53,6 +77,8 @@ class IntegrationAdapter(Integration):
 from conductor.asyncio_client.adapters.models.integration_api_adapter import (  # noqa: E402
     IntegrationApiAdapter,
 )
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter  # noqa: E402
+from conductor.asyncio_client.adapters.models.tag_adapter import (
+    TagAdapter,
+)  # noqa: E402
 
 IntegrationAdapter.model_rebuild(raise_errors=False)
