@@ -57,6 +57,7 @@ class Configuration:
         auth_key: Optional[str] = None,
         auth_secret: Optional[str] = None,
         debug: bool = False,
+        auth_token_ttl_min: int = 45,
         # Worker properties
         polling_interval: Optional[int] = None,
         domain: Optional[str] = None,
@@ -136,10 +137,6 @@ class Configuration:
         if api_key is None:
             api_key = {}
 
-        if self.auth_key and self.auth_secret:
-            # Use the auth_key as the API key for X-Authorization header
-            api_key["api_key"] = self.auth_key
-
         self.__ui_host = os.getenv("CONDUCTOR_UI_SERVER_URL")
         if self.__ui_host is None:
             self.__ui_host = self.server_url.replace("/api", "")
@@ -181,6 +178,10 @@ class Configuration:
             self.logger.setLevel(logging.DEBUG)
 
         self.is_logger_config_applied = False
+
+        # Orkes Conductor auth token properties
+        self.token_update_time = 0
+        self.auth_token_ttl_sec = auth_token_ttl_min * 60
 
     def _get_env_float(self, env_var: str, default: float) -> float:
         """Get float value from environment variable with default fallback."""
@@ -268,9 +269,7 @@ class Configuration:
         # For other properties, return as string
         return value
 
-    def set_worker_property(
-        self, task_type: str, property_name: str, value: Any
-    ) -> None:
+    def set_worker_property(self, task_type: str, property_name: str, value: Any) -> None:
         """
         Set worker property for a specific task type.
 
@@ -523,7 +522,5 @@ class Configuration:
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to underlying HTTP configuration."""
         if "_http_config" not in self.__dict__ or self._http_config is None:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{name}'"
-            )
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
         return getattr(self._http_config, name)
