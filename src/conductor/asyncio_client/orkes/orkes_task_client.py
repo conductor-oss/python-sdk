@@ -22,7 +22,7 @@ class OrkesTaskClient(OrkesBaseClient):
 
     # Task Polling Operations
     async def poll_for_task(
-        self, task_type: str, worker_id: str, domain: Optional[str] = None
+        self, task_type: str, worker_id: Optional[str] = None, domain: Optional[str] = None
     ) -> Optional[TaskAdapter]:
         """Poll for a single task of a certain type"""
         return await self.task_api.poll(
@@ -32,7 +32,7 @@ class OrkesTaskClient(OrkesBaseClient):
     async def poll_for_task_batch(
         self,
         task_type: str,
-        worker_id: str,
+        worker_id: Optional[str] = None,
         count: int = 1,
         timeout: int = 100,
         domain: Optional[str] = None,
@@ -60,15 +60,17 @@ class OrkesTaskClient(OrkesBaseClient):
         workflow_id: str,
         task_ref_name: str,
         status: str,
-        request_body: Dict[str, Dict[str, Any]],
+        output: Dict[str, Dict[str, Any]],
         worker_id: Optional[str] = None,
     ) -> str:
         """Update task by workflow ID and task reference name"""
+        body = {"result": output}
+
         return await self.task_api.update_task1(
             workflow_id=workflow_id,
             task_ref_name=task_ref_name,
             status=status,
-            request_body=request_body,
+            request_body=body,
             workerid=worker_id,
         )
 
@@ -77,15 +79,16 @@ class OrkesTaskClient(OrkesBaseClient):
         workflow_id: str,
         task_ref_name: str,
         status: str,
-        request_body: Dict[str, Any],
+        output: Dict[str, Any],
         worker_id: Optional[str] = None,
     ) -> str:
         """Update task synchronously by workflow ID and task reference name"""
+        body = {"result": output}
         return await self.task_api.update_task_sync(
             workflow_id=workflow_id,
             task_ref_name=task_ref_name,
             status=status,
-            request_body=request_body,
+            request_body=body,
             workerid=worker_id,
         )
 
@@ -161,6 +164,6 @@ class OrkesTaskClient(OrkesBaseClient):
         return await self.task_api.requeue_pending_task(task_type=task_type)
 
     # Utility Methods
-    async def get_queue_size_for_task_type(self, task_type: str) -> int:
+    async def get_queue_size_for_task_type(self, task_type: List[str]) -> Dict[str, int]:
         """Get queue size for a specific task type"""
         return await self.task_api.size(task_type=task_type)
