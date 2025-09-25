@@ -1,5 +1,6 @@
 import io
 import logging
+import ssl
 from typing import Optional, Dict, Any, Union, Tuple
 
 import httpx
@@ -67,14 +68,56 @@ class RESTResponse(io.IOBase):
 class RESTClientObjectAdapter(RESTClientObject):
     """HTTP client adapter using httpx instead of requests."""
 
-    def __init__(self, connection: Optional[httpx.Client] = None):
-        """Initialize the REST client with httpx."""
-        # Don't call super().__init__() to avoid requests initialization
-        self.connection = connection or httpx.Client(
-            timeout=httpx.Timeout(120.0),
-            follow_redirects=True,
-            limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
-        )
+    def __init__(self, connection: Optional[httpx.Client] = None, configuration=None):
+        """
+        Initialize the REST client with httpx.
+        Args:
+            connection: Pre-configured httpx.Client instance. If provided,
+                       proxy settings from configuration will be ignored.
+            configuration: Configuration object containing proxy settings.
+                          Expected attributes: proxy (str), proxy_headers (dict)
+        """
+        if connection is not None:
+            self.connection = connection
+        else:
+            client_kwargs = {
+                "timeout": httpx.Timeout(120.0),
+                "follow_redirects": True,
+                "limits": httpx.Limits(
+                    max_keepalive_connections=20, max_connections=100
+                ),
+            }
+
+            if (
+                configuration
+                and hasattr(configuration, "proxy")
+                and configuration.proxy
+            ):
+                client_kwargs["proxy"] = configuration.proxy
+            if (
+                configuration
+                and hasattr(configuration, "proxy_headers")
+                and configuration.proxy_headers
+            ):
+                client_kwargs["proxy_headers"] = configuration.proxy_headers
+
+            if configuration:
+                ssl_context = ssl.create_default_context(
+                    cafile=configuration.ssl_ca_cert,
+                    cadata=configuration.ca_cert_data,
+                )
+                if configuration.cert_file:
+                    ssl_context.load_cert_chain(
+                        configuration.cert_file, keyfile=configuration.key_file
+                    )
+
+                if not configuration.verify_ssl:
+                    ssl_context.check_hostname = False
+                    ssl_context.verify_mode = ssl.CERT_NONE
+
+                client_kwargs["verify"] = ssl_context
+
+            self.connection = httpx.Client(**client_kwargs)
 
     def close(self):
         """Close the HTTP client connection."""
