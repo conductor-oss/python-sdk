@@ -92,6 +92,7 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
                 "completionsPath",
                 "betaVersion",
                 "version",
+                "organizationId",
             ]
         ):
             raise ValueError(
