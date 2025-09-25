@@ -201,7 +201,7 @@ def test_add_task_log(mocker, task_client):
     mock = mocker.patch.object(TaskResourceApi, "log")
     log_message = "Test log"
     task_client.add_task_log(TASK_ID, log_message)
-    mock.assert_called_with(log_message, TASK_ID)
+    mock.assert_called_with(body=log_message, task_id=TASK_ID)
 
 
 def test_get_task_logs(mocker, task_client):
