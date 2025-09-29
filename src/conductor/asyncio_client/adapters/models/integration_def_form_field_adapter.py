@@ -36,68 +36,85 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
         if value not in set(
             [
                 "api_key",
-                "user",
-                "header",
-                "endpoint",
+                "authenticationType",
                 "authUrl",
-                "environment",
-                "projectName",
-                "indexName",
-                "publisher",
-                "password",
-                "namespace",
+                "awsAccountId",
+                "batchPollConsumersCount",
                 "batchSize",
                 "batchWaitTime",
-                "visibilityTimeout",
-                "connectionType",
-                "connectionPoolSize",
-                "consumer",
-                "stream",
-                "batchPollConsumersCount",
-                "consumer_type",
-                "region",
-                "awsAccountId",
-                "externalId",
-                "roleArn",
-                "protocol",
-                "mechanism",
-                "port",
-                "schemaRegistryUrl",
-                "schemaRegistryApiKey",
-                "schemaRegistryApiSecret",
-                "authenticationType",
-                "truststoreAuthenticationType",
-                "tls",
-                "cipherSuite",
-                "pubSubMethod",
-                "keyStorePassword",
-                "keyStoreLocation",
-                "schemaRegistryAuthType",
-                "valueSubjectNameStrategy",
-                "datasourceURL",
-                "jdbcDriver",
-                "subscription",
-                "serviceAccountCredentials",
-                "file",
-                "tlsFile",
-                "queueManager",
-                "groupId",
+                "betaVersion",
                 "channel",
+                "cipherSuite",
+                'completionsPath',
+                "connectionPoolSize",
+                "connectionType",
+                "consumer",
+                "consumer_type",
+                "datasourceURL",
                 "dimensions",
                 "distance_metric",
+                "endpoint",
+                "environment",
+                "externalId",
+                "file",
+                "groupId",
+                "header",
                 "indexing_method",
+                "indexName",
                 "inverted_list_count",
-                "pullPeriod",
-                "pullBatchWaitMillis",
-                "completionsPath",
-                "betaVersion",
-                "version",
+                "jdbcDriver",
+                "keyStoreLocation",
+                "keyStorePassword",
+                "mechanism",
+                "namespace",
                 "organizationId",
+                "password",
+                "port",
+                "projectName",
+                "protocol",
+                "pubSubMethod",
+                "publisher",
+                "pullBatchWaitMillis",
+                "pullPeriod",
+                "queueManager",
+                "region",
+                "roleArn",
+                "schemaRegistryApiKey",
+                "schemaRegistryApiSecret",
+                "schemaRegistryAuthType",
+                "schemaRegistryUrl",
+                "serviceAccountCredentials",
+                "stream",
+                "subscription",
+                "tls",
+                "tlsFile",
+                "truststoreAuthenticationType",
+                "user",
+                "valueSubjectNameStrategy",
+                "version",
+                "visibilityTimeout",
             ]
         ):
             raise ValueError(
-                "must be one of enum values ('api_key', 'user', 'endpoint', 'authUrl', 'environment', 'projectName', 'indexName', 'publisher', 'password', 'namespace', 'batchSize', 'batchWaitTime', 'visibilityTimeout', 'connectionType', 'consumer', 'stream', 'batchPollConsumersCount', 'consumer_type', 'region', 'awsAccountId', 'externalId', 'roleArn', 'protocol', 'mechanism', 'port', 'schemaRegistryUrl', 'schemaRegistryApiKey', 'schemaRegistryApiSecret', 'authenticationType', 'truststoreAuthenticationType', 'tls', 'cipherSuite', 'pubSubMethod', 'keyStorePassword', 'keyStoreLocation', 'schemaRegistryAuthType', 'valueSubjectNameStrategy', 'datasourceURL', 'jdbcDriver', 'subscription', 'serviceAccountCredentials', 'file', 'tlsFile', 'queueManager', 'groupId', 'channel', 'dimensions', 'distance_metric', 'indexing_method', 'inverted_list_count')"
+                "must be one of enum values ("
+                "'api_key', 'authenticationType', 'authUrl', 'awsAccountId', "
+                "'batchPollConsumersCount', 'batchSize', 'batchWaitTime', "
+                "'betaVersion', 'channel', 'cipherSuite', 'completionsPath', "
+                "'connectionPoolSize', 'connectionType', 'consumer', 'consumer_type', "
+                "'datasourceURL', 'dimensions', 'distance_metric', 'endpoint', "
+                "'environment', 'externalId', 'file', 'groupId', 'header', "
+                "'indexing_method', 'indexName', 'inverted_list_count', 'jdbcDriver', "
+                "'keyStoreLocation', 'keyStorePassword', 'mechanism', 'namespace', "
+                "'organizationId', 'password', 'port', 'projectName', 'protocol', "
+                "'pubSubMethod', 'publisher', 'pullBatchWaitMillis', 'pullPeriod', "
+                "'queueManager', 'region', 'roleArn', 'schemaRegistryApiKey', "
+                "'schemaRegistryApiSecret', 'schemaRegistryAuthType', 'schemaRegistryUrl', "
+                "'serviceAccountCredentials', 'stream', 'subscription', 'tls', 'tlsFile', "
+                "'truststoreAuthenticationType', 'user', 'valueSubjectNameStrategy', "
+                "'version', 'visibilityTimeout'"
+                ")"
             )
+
         return value
 
     @classmethod
