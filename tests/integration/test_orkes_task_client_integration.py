@@ -725,8 +725,8 @@ class TestOrkesTaskClientIntegration:
                 )
                 if notification_task:
                     task_client.add_task_log(
-                        notification_task.task_id,
-                        f"Sending notification for workflow {workflow_id}",
+                        task_id=notification_task.task_id,
+                        log_message=f"Sending notification for workflow {workflow_id}",
                     )
 
                     notification_result = TaskResult(
