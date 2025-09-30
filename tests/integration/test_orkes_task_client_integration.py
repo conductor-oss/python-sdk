@@ -5,18 +5,17 @@ import uuid
 
 import pytest
 
+from conductor.client.codegen.rest import ApiException
+from conductor.client.configuration.configuration import Configuration
+from conductor.client.http.models import task
 from conductor.client.http.models.start_workflow_request import \
     StartWorkflowRequestAdapter as StartWorkflowRequest
-from conductor.client.http.models.task_def import \
-    TaskDefAdapter as TaskDef
+from conductor.client.http.models.task_def import TaskDefAdapter as TaskDef
 from conductor.client.http.models.task_result import \
     TaskResultAdapter as TaskResult
-from conductor.client.http.models.workflow import \
-    WorkflowAdapter as Workflow
+from conductor.client.http.models.workflow import WorkflowAdapter as Workflow
 from conductor.client.http.models.workflow_def import \
     WorkflowDefAdapter as WorkflowDef
-from conductor.client.configuration.configuration import Configuration
-from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.client.orkes.orkes_task_client import OrkesTaskClient
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
@@ -688,7 +687,8 @@ class TestOrkesTaskClientIntegration:
                 )
                 if data_task:
                     task_client.add_task_log(
-                        data_task.task_id, f"Processing data for workflow {workflow_id}"
+                        task_id=data_task.task_id,
+                        log_message=f"Processing data for workflow {workflow_id}",
                     )
 
                     data_result = TaskResult(
@@ -706,8 +706,8 @@ class TestOrkesTaskClientIntegration:
                 )
                 if validation_task:
                     task_client.add_task_log(
-                        validation_task.task_id,
-                        f"Validating data for workflow {workflow_id}",
+                        task_id=validation_task.task_id,
+                        log_message=f"Validating data for workflow {workflow_id}",
                     )
 
                     validation_result = TaskResult(
@@ -743,7 +743,8 @@ class TestOrkesTaskClientIntegration:
                 )
                 if cleanup_task:
                     task_client.add_task_log(
-                        cleanup_task.task_id, f"Cleaning up for workflow {workflow_id}"
+                        task_id=cleanup_task.task_id,
+                        log_message=f"Cleaning up for workflow {workflow_id}",
                     )
                     cleanup_result = TaskResult(
                         workflow_instance_id=workflow_id,
