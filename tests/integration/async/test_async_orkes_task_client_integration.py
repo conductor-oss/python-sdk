@@ -399,8 +399,8 @@ class TestOrkesTaskClientIntegration:
 
         finally:
             try:
-                metadata_client.unregister_task_def(test_task_type)
-                metadata_client.unregister_workflow_def(test_workflow_name, 1)
+                await metadata_client.unregister_task_def(test_task_type)
+                await metadata_client.unregister_workflow_def(test_workflow_name, 1)
             except Exception:
                 pass
 

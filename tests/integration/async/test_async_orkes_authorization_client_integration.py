@@ -716,7 +716,7 @@ class TestOrkesAuthorizationClientIntegration:
 
         for subject, target, access_types in created_resources["permissions"]:
             try:
-                auth_client.remove_permissions(
+                await auth_client.remove_permissions(
                     AuthorizationRequest(
                         subject=subject, target=target, access=access_types
                     )
