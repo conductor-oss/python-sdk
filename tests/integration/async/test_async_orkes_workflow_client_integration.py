@@ -797,7 +797,9 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             for workflow_id in workflow_ids:
                 try:
-                    await workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
@@ -840,7 +842,9 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             if workflow_id:
                 try:
-                    await workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
