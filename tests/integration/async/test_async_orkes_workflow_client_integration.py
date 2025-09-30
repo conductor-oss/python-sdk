@@ -281,7 +281,7 @@ class TestOrkesWorkflowClientIntegration:
             workflow_run = await workflow_client.execute_workflow(
                 start_workflow_request=simple_start_workflow_request,
                 request_id=f"execute_sync_{str(uuid.uuid4())[:8]}",
-                wait_for_seconds=30,
+                wait_for_seconds=10,
             )
 
             assert workflow_run is not None
@@ -305,7 +305,7 @@ class TestOrkesWorkflowClientIntegration:
                 await workflow_client.execute_workflow_with_return_strategy(
                     start_workflow_request=simple_start_workflow_request,
                     request_id=f"execute_strategy_{str(uuid.uuid4())[:8]}",
-                    wait_for_seconds=30,
+                    wait_for_seconds=10,
                 )
             )
 
@@ -876,7 +876,7 @@ class TestOrkesWorkflowClientIntegration:
                 workflow_id=workflow_id,
                 workflow_state_update=state_update,
                 wait_until_task_ref_name="test_task_ref",
-                wait_for_seconds=30,
+                wait_for_seconds=10,
             )
 
             assert workflow_run is not None
