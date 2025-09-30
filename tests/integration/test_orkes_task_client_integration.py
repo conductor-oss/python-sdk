@@ -700,6 +700,9 @@ class TestOrkesTaskClientIntegration:
                     task_client.update_task(data_result)
                     created_resources["tasks"].append(data_task.task_id)
 
+                # Wait for workflow to process data task completion and schedule validation task
+                time.sleep(2)
+
                 validation_task = task_client.poll_task(
                     f"validation_task_{test_suffix}",
                     worker_id=f"worker_{test_suffix}_{i}",
@@ -719,6 +722,9 @@ class TestOrkesTaskClientIntegration:
                     task_client.update_task(validation_result)
                     created_resources["tasks"].append(validation_task.task_id)
 
+                # Wait for workflow to process validation task completion and schedule notification task
+                time.sleep(2)
+
                 notification_task = task_client.poll_task(
                     f"notification_task_{test_suffix}",
                     worker_id=f"worker_{test_suffix}_{i}",
@@ -737,6 +743,8 @@ class TestOrkesTaskClientIntegration:
                     )
                     task_client.update_task(notification_result)
                     created_resources["tasks"].append(notification_task.task_id)
+
+                time.sleep(2)
 
                 cleanup_task = task_client.poll_task(
                     f"cleanup_task_{test_suffix}", worker_id=f"worker_{test_suffix}_{i}"
