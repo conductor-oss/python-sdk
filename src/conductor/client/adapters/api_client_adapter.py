@@ -15,7 +15,7 @@ class ApiClientAdapter(ApiClient):
         self.configuration = configuration or Configuration()
 
         # Create httpx-compatible REST client directly
-        self.rest_client = RESTClientObjectAdapter(connection=configuration.http_connection)
+        self.rest_client = RESTClientObjectAdapter(connection=self.configuration.http_connection)
 
         self.default_headers = self._ApiClient__get_default_headers(header_name, header_value)
         self.cookie = cookie
