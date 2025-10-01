@@ -10,22 +10,16 @@ logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
 
 class ApiClientAdapter(ApiClient):
-    def __init__(
-        self, configuration=None, header_name=None, header_value=None, cookie=None
-    ):
+    def __init__(self, configuration=None, header_name=None, header_value=None, cookie=None):
         """Initialize the API client adapter with httpx-based REST client."""
-        if configuration is None:
-            configuration = Configuration()
-        self.configuration = configuration
-        
+        self.configuration = configuration or Configuration()
+
         # Create httpx-compatible REST client directly
-        self.rest_client = RESTClientObjectAdapter(
-            connection=configuration.http_connection if configuration else None
-        )
-        
-        self.default_headers = ApiClient._ApiClient__get_default_headers(self, header_name, header_value)
+        self.rest_client = RESTClientObjectAdapter(connection=configuration.http_connection)
+
+        self.default_headers = self._ApiClient__get_default_headers(header_name, header_value)
         self.cookie = cookie
-        ApiClient._ApiClient__refresh_auth_token(self)
+        self._ApiClient__refresh_auth_token()
 
     def __call_api(
         self,
