@@ -14,10 +14,18 @@ class ApiClientAdapter(ApiClient):
         self, configuration=None, header_name=None, header_value=None, cookie=None
     ):
         """Initialize the API client adapter with httpx-based REST client."""
-        super().__init__(configuration, header_name, header_value, cookie)
+        if configuration is None:
+            configuration = Configuration()
+        self.configuration = configuration
+        
+        # Create httpx-compatible REST client directly
         self.rest_client = RESTClientObjectAdapter(
             connection=configuration.http_connection if configuration else None
         )
+        
+        self.default_headers = ApiClient._ApiClient__get_default_headers(self, header_name, header_value)
+        self.cookie = cookie
+        ApiClient._ApiClient__refresh_auth_token(self)
 
     def __call_api(
         self,
