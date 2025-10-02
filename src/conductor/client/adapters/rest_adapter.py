@@ -71,9 +71,10 @@ class RESTClientObjectAdapter(RESTClientObject):
         """Initialize the REST client with httpx."""
         # Don't call super().__init__() to avoid requests initialization
         self.connection = connection or httpx.Client(
-            timeout=httpx.Timeout(120.0),
+            timeout=httpx.Timeout(300.0),
             follow_redirects=True,
             limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
+            http2=True  # added explicit configuration
         )
 
     def close(self):

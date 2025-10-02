@@ -13,6 +13,7 @@ class IntegrationUpdateAdapter(IntegrationUpdate):
             "GIT",
             "EMAIL",
             "MCP",
+            "CLOUD",
         ]  # noqa: E501
         if category not in allowed_values:
             raise ValueError(

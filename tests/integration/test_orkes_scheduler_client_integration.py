@@ -3,6 +3,7 @@ import time
 import uuid
 
 import pytest
+import httpx
 
 from conductor.client.http.models.save_schedule_request import \
     SaveScheduleRequestAdapter as SaveScheduleRequest
@@ -30,6 +31,12 @@ class TestOrkesSchedulerClientIntegration:
     @pytest.fixture(scope="class")
     def configuration(self) -> Configuration:
         config = Configuration()
+        config.http_connection = httpx.Client(
+            timeout=httpx.Timeout(600.0),
+            follow_redirects=True,
+            limits=httpx.Limits(max_keepalive_connections=1, max_connections=1),
+            http2=True
+        )
         config.debug = os.getenv("CONDUCTOR_DEBUG", "false").lower() == "true"
         config.apply_logging_config()
         return config
