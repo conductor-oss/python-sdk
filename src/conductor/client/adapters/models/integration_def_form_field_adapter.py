@@ -68,6 +68,7 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
             "completionsPath",
             "betaVersion",
             "version",
+            "organizationId",
         ]
         if field_name not in allowed_values:
             raise ValueError(

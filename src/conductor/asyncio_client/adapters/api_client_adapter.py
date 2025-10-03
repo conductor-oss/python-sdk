@@ -1,6 +1,10 @@
+from __future__ import annotations
+
+import asyncio
 import json
 import logging
 import re
+import time
 from typing import Dict, Optional
 
 from conductor.asyncio_client.adapters.models import GenerateTokenRequest
@@ -15,6 +19,10 @@ logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
 
 class ApiClientAdapter(ApiClient):
+    def __init__(self, *args, **kwargs):
+        self._token_lock = asyncio.Lock()
+        super().__init__(*args, **kwargs)
+
     async def call_api(
         self,
         method,
@@ -37,7 +45,9 @@ class ApiClientAdapter(ApiClient):
         """
 
         try:
-            logger.debug("HTTP request method: %s; url: %s; header_params: %s", method, url, header_params)
+            logger.debug(
+                "HTTP request method: %s; url: %s; header_params: %s", method, url, header_params
+            )
             response_data = await self.rest_client.request(
                 method,
                 url,
@@ -46,9 +56,29 @@ class ApiClientAdapter(ApiClient):
                 post_params=post_params,
                 _request_timeout=_request_timeout,
             )
-            if response_data.status == 401 and url != self.configuration.host + "/token":  # noqa: PLR2004 (Unauthorized status code)
-                    logger.warning("HTTP response from: %s; status code: 401 - obtaining new token", url)
-                    token = await self.refresh_authorization_token()
+            if (
+                response_data.status == 401  # noqa: PLR2004 (Unauthorized status code)
+                and url != self.configuration.host + "/token"
+            ):
+                logger.warning(
+                    "HTTP response from: %s; status code: 401 - obtaining new token", url
+                )
+                async with self._token_lock:
+                    # The lock is intentionally broad (covers the whole block including the token state)
+                    # to avoid race conditions: without it, other coroutines could mis-evaluate
+                    # token state during a context switch and trigger redundant refreshes
+                    token_expired = (
+                        self.configuration.token_update_time > 0
+                        and time.time()
+                        >= self.configuration.token_update_time
+                        + self.configuration.auth_token_ttl_sec
+                    )
+                    invalid_token = not self.configuration._http_config.api_key.get("api_key")
+
+                    if invalid_token or token_expired:
+                        token = await self.refresh_authorization_token()
+                    else:
+                        token = self.configuration._http_config.api_key["api_key"]
                     header_params["X-Authorization"] = token
                     response_data = await self.rest_client.request(
                         method,
@@ -59,7 +89,9 @@ class ApiClientAdapter(ApiClient):
                         _request_timeout=_request_timeout,
                     )
         except ApiException as e:
-            logger.error("HTTP request failed url: %s status: %s; reason: %s", url, e.status, e.reason)
+            logger.error(
+                "HTTP request failed url: %s status: %s; reason: %s", url, e.status, e.reason
+            )
             raise e
 
         return response_data
@@ -82,12 +114,10 @@ class ApiClientAdapter(ApiClient):
         if (
             not response_type
             and isinstance(response_data.status, int)
-            and 100 <= response_data.status <= 599
+            and 100 <= response_data.status <= 599  # noqa: PLR2004
         ):
             # if not found, look for '1XX', '2XX', etc.
-            response_type = response_types_map.get(
-                str(response_data.status)[0] + "XX", None
-            )
+            response_type = response_types_map.get(str(response_data.status)[0] + "XX", None)
 
         # deserialize response data
         response_text = None
@@ -104,12 +134,10 @@ class ApiClientAdapter(ApiClient):
                     match = re.search(r"charset=([a-zA-Z\-\d]+)[\s;]?", content_type)
                 encoding = match.group(1) if match else "utf-8"
                 response_text = response_data.data.decode(encoding)
-                return_data = self.deserialize(
-                    response_text, response_type, content_type
-                )
+                return_data = self.deserialize(response_text, response_type, content_type)
         finally:
-            if not 200 <= response_data.status <= 299:
-                logger.error(f"Unexpected response status code: {response_data.status}")
+            if not 200 <= response_data.status <= 299:  #  noqa: PLR2004
+                logger.error("Unexpected response status code: %s", response_data.status)
                 raise ApiException.from_response(
                     http_resp=response_data,
                     body=response_text,
@@ -126,8 +154,9 @@ class ApiClientAdapter(ApiClient):
     async def refresh_authorization_token(self):
         obtain_new_token_response = await self.obtain_new_token()
         token = obtain_new_token_response.get("token")
-        self.configuration.api_key["api_key"] = token
-        logger.debug(f"New auth token been set")
+        self.configuration._http_config.api_key["api_key"] = token
+        self.configuration.token_update_time = time.time()
+        logger.debug("New auth token been set")
         return token
 
     async def obtain_new_token(self):
