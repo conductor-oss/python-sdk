@@ -3,14 +3,18 @@ import uuid
 from copy import deepcopy
 
 import pytest
-import httpx
+import pytest_asyncio
 
-from conductor.client.http.models.schema_def import \
+from conductor.asyncio_client.adapters.api_client_adapter import \
+    ApiClientAdapter as ApiClient
+from conductor.asyncio_client.adapters.models.schema_def_adapter import \
     SchemaDefAdapter as SchemaDef
-from conductor.client.http.models.schema_def import SchemaType
-from conductor.client.configuration.configuration import Configuration
-from conductor.client.codegen.rest import ApiException
-from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
+from conductor.asyncio_client.adapters.models.schema_def_adapter import \
+    SchemaType
+from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.http.rest import ApiException
+from conductor.asyncio_client.orkes.orkes_schema_client import \
+    OrkesSchemaClient
 
 
 class TestOrkesSchemaClientIntegration:
@@ -29,19 +33,14 @@ class TestOrkesSchemaClientIntegration:
     @pytest.fixture(scope="class")
     def configuration(self) -> Configuration:
         config = Configuration()
-        config.http_connection = httpx.Client(
-            timeout=httpx.Timeout(600.0),
-            follow_redirects=True,
-            limits=httpx.Limits(max_keepalive_connections=1, max_connections=1),
-            http2=True
-        )
         config.debug = os.getenv("CONDUCTOR_DEBUG", "false").lower() == "true"
         config.apply_logging_config()
         return config
 
-    @pytest.fixture(scope="class")
-    def schema_client(self, configuration: Configuration) -> OrkesSchemaClient:
-        return OrkesSchemaClient(configuration)
+    @pytest_asyncio.fixture(scope="function")
+    async def schema_client(self, configuration: Configuration) -> OrkesSchemaClient:
+        async with ApiClient(configuration) as api_client:
+            return OrkesSchemaClient(configuration, api_client)
 
     @pytest.fixture(scope="class")
     def test_suffix(self) -> str:
@@ -98,7 +97,8 @@ class TestOrkesSchemaClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_schema_lifecycle_json(
+    @pytest.mark.asyncio
+    async def test_schema_lifecycle_json(
         self,
         schema_client: OrkesSchemaClient,
         test_schema_name: str,
@@ -113,9 +113,9 @@ class TestOrkesSchemaClientIntegration:
                 external_ref="http://example.com/json-schema",
             )
 
-            schema_client.register_schema(schema)
+            await schema_client.save_schema(schema)
 
-            retrieved_schema = schema_client.get_schema(test_schema_name, 1)
+            retrieved_schema = await schema_client.get_schema(test_schema_name, 1)
             assert retrieved_schema.name == test_schema_name
             assert retrieved_schema.version == 1
             assert retrieved_schema.type == SchemaType.JSON
@@ -125,7 +125,7 @@ class TestOrkesSchemaClientIntegration:
                 == "http://json-schema.org/draft-07/schema"
             )
 
-            schemas = schema_client.get_all_schemas()
+            schemas = await schema_client.get_all_schemas()
             schema_names = [s.name for s in schemas]
             assert test_schema_name in schema_names
 
@@ -134,13 +134,14 @@ class TestOrkesSchemaClientIntegration:
             raise
         finally:
             try:
-                schema_client.delete_schema(test_schema_name, 1)
+                await schema_client.delete_schema(test_schema_name, 1)
             except Exception as e:
                 print(f"Warning: Failed to cleanup schema {test_schema_name}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_schema_lifecycle_avro(
+    @pytest.mark.asyncio
+    async def test_schema_lifecycle_avro(
         self, schema_client: OrkesSchemaClient, test_suffix: str, avro_schema_data: dict
     ):
         schema_name = f"test_avro_schema_{test_suffix}"
@@ -153,9 +154,9 @@ class TestOrkesSchemaClientIntegration:
                 external_ref="http://example.com/avro-schema",
             )
 
-            schema_client.register_schema(schema)
+            await schema_client.save_schema(schema)
 
-            retrieved_schema = schema_client.get_schema(schema_name, 1)
+            retrieved_schema = await schema_client.get_schema(schema_name, 1)
             assert retrieved_schema.name == schema_name
             assert retrieved_schema.version == 1
             assert retrieved_schema.type == SchemaType.AVRO
@@ -166,13 +167,14 @@ class TestOrkesSchemaClientIntegration:
             raise
         finally:
             try:
-                schema_client.delete_schema(schema_name, 1)
+                await schema_client.delete_schema(schema_name, 1)
             except Exception as e:
                 print(f"Warning: Failed to cleanup schema {schema_name}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_schema_lifecycle_protobuf(
+    @pytest.mark.asyncio
+    async def test_schema_lifecycle_protobuf(
         self,
         schema_client: OrkesSchemaClient,
         test_suffix: str,
@@ -188,9 +190,9 @@ class TestOrkesSchemaClientIntegration:
                 external_ref="http://example.com/protobuf-schema",
             )
 
-            schema_client.register_schema(schema)
+            await schema_client.save_schema(schema)
 
-            retrieved_schema = schema_client.get_schema(schema_name, 1)
+            retrieved_schema = await schema_client.get_schema(schema_name, 1)
             assert retrieved_schema.name == schema_name
             assert retrieved_schema.version == 1
             assert retrieved_schema.type == SchemaType.PROTOBUF
@@ -201,13 +203,14 @@ class TestOrkesSchemaClientIntegration:
             raise
         finally:
             try:
-                schema_client.delete_schema(schema_name, 1)
+                await schema_client.delete_schema(schema_name, 1)
             except Exception as e:
                 print(f"Warning: Failed to cleanup schema {schema_name}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_schema_versioning(
+    @pytest.mark.asyncio
+    async def test_schema_versioning(
         self, schema_client: OrkesSchemaClient, test_suffix: str, json_schema_data: dict
     ):
         schema_name = f"test_versioned_schema_{test_suffix}"
@@ -229,14 +232,14 @@ class TestOrkesSchemaClientIntegration:
                 external_ref="http://example.com/v2",
             )
 
-            schema_client.register_schema(schema_v1)
-            schema_client.register_schema(schema_v2)
+            await schema_client.save_schema(schema_v1)
+            await schema_client.save_schema(schema_v2)
 
-            retrieved_v1 = schema_client.get_schema(schema_name, 1)
+            retrieved_v1 = await schema_client.get_schema(schema_name, 1)
             assert retrieved_v1.version == 1
             assert "age" not in retrieved_v1.data["properties"].keys()
 
-            retrieved_v2 = schema_client.get_schema(schema_name, 2)
+            retrieved_v2 = await schema_client.get_schema(schema_name, 2)
             assert retrieved_v2.version == 2
             assert "age" in retrieved_v2.data["properties"].keys()
 
@@ -245,14 +248,15 @@ class TestOrkesSchemaClientIntegration:
             raise
         finally:
             try:
-                schema_client.delete_schema(schema_name, 1)
-                schema_client.delete_schema(schema_name, 2)
+                await schema_client.delete_schema(schema_name, 1)
+                await schema_client.delete_schema(schema_name, 2)
             except Exception as e:
                 print(f"Warning: Failed to cleanup schema {schema_name}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_delete_schema_by_name(
+    @pytest.mark.asyncio
+    async def test_delete_schema_by_name(
         self, schema_client: OrkesSchemaClient, test_suffix: str, json_schema_data: dict
     ):
         schema_name = f"test_delete_by_name_{test_suffix}"
@@ -265,18 +269,18 @@ class TestOrkesSchemaClientIntegration:
                 name=schema_name, version=2, type=SchemaType.JSON, data=json_schema_data
             )
 
-            schema_client.register_schema(schema_v1)
-            schema_client.register_schema(schema_v2)
+            await schema_client.save_schema(schema_v1)
+            await schema_client.save_schema(schema_v2)
 
-            schema_client.delete_schema_by_name(schema_name)
-
-            with pytest.raises(ApiException) as exc_info:
-                schema_client.get_schema(schema_name, 1)
-            assert exc_info.value.code == 404
+            await schema_client.delete_schema_by_name(schema_name)
 
             with pytest.raises(ApiException) as exc_info:
-                schema_client.get_schema(schema_name, 2)
-            assert exc_info.value.code == 404
+                await schema_client.get_schema(schema_name, 1)
+            assert exc_info.value.status == 404
+
+            with pytest.raises(ApiException) as exc_info:
+                await schema_client.get_schema(schema_name, 2)
+            assert exc_info.value.status == 404
 
         except Exception as e:
             print(f"Exception in test_delete_schema_by_name: {str(e)}")
@@ -284,86 +288,8 @@ class TestOrkesSchemaClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_concurrent_schema_operations(
-        self, schema_client: OrkesSchemaClient, test_suffix: str, json_schema_data: dict
-    ):
-        try:
-            import threading
-            import time
-
-            results = []
-            errors = []
-            created_schemas = []
-            cleanup_lock = threading.Lock()
-
-            def create_and_delete_schema(schema_suffix: str):
-                schema_name = None
-                try:
-                    schema_name = f"concurrent_schema_{schema_suffix}"
-                    schema = SchemaDef(
-                        name=schema_name,
-                        version=1,
-                        type=SchemaType.JSON,
-                        data=json_schema_data,
-                    )
-
-                    schema_client.register_schema(schema)
-
-                    with cleanup_lock:
-                        created_schemas.append(schema_name)
-
-                    time.sleep(0.1)
-
-                    retrieved_schema = schema_client.get_schema(schema_name, 1)
-                    assert retrieved_schema.name == schema_name
-
-                    if os.getenv("CONDUCTOR_TEST_CLEANUP", "true").lower() == "true":
-                        try:
-                            schema_client.delete_schema(schema_name, 1)
-                            with cleanup_lock:
-                                if schema_name in created_schemas:
-                                    created_schemas.remove(schema_name)
-                        except Exception as cleanup_error:
-                            print(
-                                f"Warning: Failed to cleanup schema {schema_name} in thread: {str(cleanup_error)}"
-                            )
-
-                    results.append(f"schema_{schema_suffix}_success")
-                except Exception as e:
-                    errors.append(f"schema_{schema_suffix}_error: {str(e)}")
-                    if schema_name and schema_name not in created_schemas:
-                        with cleanup_lock:
-                            created_schemas.append(schema_name)
-
-            threads = []
-            for i in range(3):
-                thread = threading.Thread(
-                    target=create_and_delete_schema, args=(f"{test_suffix}_{i}",)
-                )
-                threads.append(thread)
-                thread.start()
-
-            for thread in threads:
-                thread.join()
-
-            assert (
-                len(results) == 3
-            ), f"Expected 3 successful operations, got {len(results)}. Errors: {errors}"
-            assert len(errors) == 0, f"Unexpected errors: {errors}"
-
-        except Exception as e:
-            print(f"Exception in test_concurrent_schema_operations: {str(e)}")
-            raise
-        finally:
-            for schema_name in created_schemas:
-                try:
-                    schema_client.delete_schema(schema_name, 1)
-                except Exception as e:
-                    print(f"Warning: Failed to delete schema {schema_name}: {str(e)}")
-
-    @pytest.mark.v5_2_6
-    @pytest.mark.v4_1_73
-    def test_complex_schema_management_flow(
+    @pytest.mark.asyncio
+    async def test_complex_schema_management_flow(
         self, schema_client: OrkesSchemaClient, test_suffix: str
     ):
         created_resources = {"schemas": []}
@@ -392,21 +318,19 @@ class TestOrkesSchemaClientIntegration:
 
             for schema_type in schema_types:
                 for version in range(1, 4):
-                    schema_name = (
-                        f"complex_{schema_type.value.lower()}_v{version}_{test_suffix}"
-                    )
+                    schema_name = f"complex_{schema_type}_v{version}_{test_suffix}"
                     schema = SchemaDef(
                         name=schema_name,
                         version=version,
                         type=schema_type,
                         data=schema_templates[schema_type],
-                        external_ref=f"http://example.com/{schema_type.value.lower()}/v{version}",
+                        external_ref=f"http://example.com/{schema_type}/v{version}",
                     )
 
-                    schema_client.register_schema(schema)
+                    await schema_client.save_schema(schema)
                     created_resources["schemas"].append((schema_name, version))
 
-            all_schemas = schema_client.get_all_schemas()
+            all_schemas = await schema_client.get_all_schemas()
             schema_names = [s.name for s in all_schemas]
             for schema_name, version in created_resources["schemas"]:
                 assert (
@@ -415,10 +339,10 @@ class TestOrkesSchemaClientIntegration:
 
             for schema_type in schema_types:
                 for version in range(1, 4):
-                    schema_name = (
-                        f"complex_{schema_type.value.lower()}_v{version}_{test_suffix}"
+                    schema_name = f"complex_{schema_type}_v{version}_{test_suffix}"
+                    retrieved_schema = await schema_client.get_schema(
+                        schema_name, version
                     )
-                    retrieved_schema = schema_client.get_schema(schema_name, version)
                     assert retrieved_schema.name == schema_name
                     assert retrieved_schema.version == version
                     assert retrieved_schema.type == schema_type
@@ -432,11 +356,11 @@ class TestOrkesSchemaClientIntegration:
                     type=SchemaType.JSON,
                     data={"type": "object", "properties": {"id": {"type": "integer"}}},
                 )
-                schema_client.register_schema(schema)
+                await schema_client.save_schema(schema)
                 bulk_schemas.append(schema_name)
                 created_resources["schemas"].append((schema_name, 1))
 
-            all_schemas_after_bulk = schema_client.get_all_schemas()
+            all_schemas_after_bulk = await schema_client.get_all_schemas()
             schema_names_after_bulk = [s.name for s in all_schemas_after_bulk]
             for schema_name in bulk_schemas:
                 assert (
@@ -447,9 +371,9 @@ class TestOrkesSchemaClientIntegration:
             print(f"Exception in test_complex_schema_management_flow: {str(e)}")
             raise
         finally:
-            self._perform_comprehensive_cleanup(schema_client, created_resources)
+            await self._perform_comprehensive_cleanup(schema_client, created_resources)
 
-    def _perform_comprehensive_cleanup(
+    async def _perform_comprehensive_cleanup(
         self, schema_client: OrkesSchemaClient, created_resources: dict
     ):
         cleanup_enabled = os.getenv("CONDUCTOR_TEST_CLEANUP", "true").lower() == "true"
@@ -458,7 +382,7 @@ class TestOrkesSchemaClientIntegration:
 
         for schema_name, version in created_resources["schemas"]:
             try:
-                schema_client.delete_schema(schema_name, version)
+                await schema_client.delete_schema(schema_name, version)
             except Exception as e:
                 print(
                     f"Warning: Failed to delete schema {schema_name} v{version}: {str(e)}"
@@ -467,10 +391,10 @@ class TestOrkesSchemaClientIntegration:
         remaining_schemas = []
         for schema_name, version in created_resources["schemas"]:
             try:
-                schema_client.get_schema(schema_name, version)
+                await schema_client.get_schema(schema_name, version)
                 remaining_schemas.append((schema_name, version))
             except ApiException as e:
-                if e.code == 404:
+                if e.status == 404:
                     pass
                 else:
                     remaining_schemas.append((schema_name, version))

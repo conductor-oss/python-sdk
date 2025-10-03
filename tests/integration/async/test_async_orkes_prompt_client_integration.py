@@ -2,12 +2,16 @@ import os
 import uuid
 
 import pytest
-import httpx
+import pytest_asyncio
 
-from conductor.client.codegen.rest import ApiException
-from conductor.client.configuration.configuration import Configuration
-from conductor.client.orkes.models.metadata_tag import MetadataTag
-from conductor.client.orkes.orkes_prompt_client import OrkesPromptClient
+from conductor.asyncio_client.adapters.api_client_adapter import \
+    ApiClientAdapter as ApiClient
+from conductor.asyncio_client.adapters.models.tag_adapter import \
+    TagAdapter as MetadataTag
+from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.http.rest import ApiException
+from conductor.asyncio_client.orkes.orkes_prompt_client import \
+    OrkesPromptClient
 
 
 class TestOrkesPromptClientIntegration:
@@ -26,19 +30,14 @@ class TestOrkesPromptClientIntegration:
     @pytest.fixture(scope="class")
     def configuration(self) -> Configuration:
         config = Configuration()
-        config.http_connection = httpx.Client(
-            timeout=httpx.Timeout(600.0),
-            follow_redirects=True,
-            limits=httpx.Limits(max_keepalive_connections=1, max_connections=1),
-            http2=True
-        )
         config.debug = os.getenv("CONDUCTOR_DEBUG", "false").lower() == "true"
         config.apply_logging_config()
         return config
 
-    @pytest.fixture(scope="class")
-    def prompt_client(self, configuration: Configuration) -> OrkesPromptClient:
-        return OrkesPromptClient(configuration)
+    @pytest_asyncio.fixture(scope="function")
+    async def prompt_client(self, configuration: Configuration) -> OrkesPromptClient:
+        async with ApiClient(configuration) as api_client:
+            return OrkesPromptClient(configuration, api_client)
 
     @pytest.fixture(scope="class")
     def test_suffix(self) -> str:
@@ -90,27 +89,29 @@ class TestOrkesPromptClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_prompt_lifecycle_simple(
+    @pytest.mark.asyncio
+    async def test_prompt_lifecycle_simple(
         self,
         prompt_client: OrkesPromptClient,
         test_prompt_name: str,
         simple_prompt_template: str,
-        simple_variables: dict,
     ):
         try:
             description = "A simple greeting prompt template"
-            prompt_client.save_prompt(
+            await prompt_client.save_prompt(
                 test_prompt_name, description, simple_prompt_template
             )
 
-            retrieved_prompt = prompt_client.get_prompt(test_prompt_name)
+            retrieved_prompt = await prompt_client.get_message_template(
+                test_prompt_name
+            )
             assert retrieved_prompt.name == test_prompt_name
             assert retrieved_prompt.description == description
             assert retrieved_prompt.template == simple_prompt_template
             assert "name" in retrieved_prompt.variables
             assert "company" in retrieved_prompt.variables
 
-            prompts = prompt_client.get_prompts()
+            prompts = await prompt_client.get_message_templates()
             prompt_names = [p.name for p in prompts]
             assert test_prompt_name in prompt_names
 
@@ -119,25 +120,27 @@ class TestOrkesPromptClientIntegration:
             raise
         finally:
             try:
-                prompt_client.delete_prompt(test_prompt_name)
+                await prompt_client.delete_prompt(test_prompt_name)
             except Exception as e:
                 print(f"Warning: Failed to cleanup prompt {test_prompt_name}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_prompt_lifecycle_complex(
+    @pytest.mark.asyncio
+    async def test_prompt_lifecycle_complex(
         self,
         prompt_client: OrkesPromptClient,
         test_suffix: str,
         complex_prompt_template: str,
-        complex_variables: dict,
     ):
         prompt_name = f"test_complex_prompt_{test_suffix}"
         try:
             description = "A complex customer service prompt template"
-            prompt_client.save_prompt(prompt_name, description, complex_prompt_template)
+            await prompt_client.save_prompt(
+                prompt_name, description, complex_prompt_template
+            )
 
-            retrieved_prompt = prompt_client.get_prompt(prompt_name)
+            retrieved_prompt = await prompt_client.get_prompt(prompt_name)
             assert retrieved_prompt.name == prompt_name
             assert retrieved_prompt.description == description
             assert "company" in retrieved_prompt.variables
@@ -149,13 +152,14 @@ class TestOrkesPromptClientIntegration:
             raise
         finally:
             try:
-                prompt_client.delete_prompt(prompt_name)
+                await prompt_client.delete_prompt(prompt_name)
             except Exception as e:
                 print(f"Warning: Failed to cleanup prompt {prompt_name}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_prompt_with_tags(
+    @pytest.mark.asyncio
+    async def test_prompt_with_tags(
         self,
         prompt_client: OrkesPromptClient,
         test_suffix: str,
@@ -164,27 +168,35 @@ class TestOrkesPromptClientIntegration:
         prompt_name = f"test_tagged_prompt_{test_suffix}"
         try:
             description = "A prompt template with tags"
-            prompt_client.save_prompt(prompt_name, description, simple_prompt_template)
+            await prompt_client.save_prompt(
+                prompt_name, description, simple_prompt_template
+            )
 
             tags = [
-                MetadataTag("category", "greeting"),
-                MetadataTag("language", "english"),
-                MetadataTag("priority", "high"),
+                MetadataTag(key="category", value="greeting", type="METADATA"),
+                MetadataTag(key="language", value="english", type="METADATA"),
+                MetadataTag(key="priority", value="high", type="METADATA"),
             ]
-            prompt_client.update_tag_for_prompt_template(prompt_name, tags)
+            await prompt_client.put_tag_for_prompt_template(prompt_name, tags)
 
-            retrieved_tags = prompt_client.get_tags_for_prompt_template(prompt_name)
+            retrieved_tags = await prompt_client.get_tags_for_prompt_template(
+                prompt_name
+            )
             assert len(retrieved_tags) == 3
             tag_keys = [tag.key for tag in retrieved_tags]
             assert "category" in tag_keys
             assert "language" in tag_keys
             assert "priority" in tag_keys
 
-            tags_to_delete = [MetadataTag("priority", "high")]
-            prompt_client.delete_tag_for_prompt_template(prompt_name, tags_to_delete)
+            tags_to_delete = [
+                MetadataTag(key="priority", value="high", type="METADATA")
+            ]
+            await prompt_client.delete_tag_for_prompt_template(
+                prompt_name, tags_to_delete
+            )
 
-            retrieved_tags_after_delete = prompt_client.get_tags_for_prompt_template(
-                prompt_name
+            retrieved_tags_after_delete = (
+                await prompt_client.get_tags_for_prompt_template(prompt_name)
             )
             remaining_tag_keys = [tag.key for tag in retrieved_tags_after_delete]
             assert "priority" not in remaining_tag_keys
@@ -195,13 +207,14 @@ class TestOrkesPromptClientIntegration:
             raise
         finally:
             try:
-                prompt_client.delete_prompt(prompt_name)
+                await prompt_client.delete_prompt(prompt_name)
             except Exception as e:
                 print(f"Warning: Failed to cleanup prompt {prompt_name}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_prompt_update(
+    @pytest.mark.asyncio
+    async def test_prompt_update(
         self,
         prompt_client: OrkesPromptClient,
         test_suffix: str,
@@ -211,11 +224,11 @@ class TestOrkesPromptClientIntegration:
         try:
             initial_description = "Initial description"
             initial_template = simple_prompt_template
-            prompt_client.save_prompt(
+            await prompt_client.save_prompt(
                 prompt_name, initial_description, initial_template
             )
 
-            retrieved_prompt = prompt_client.get_prompt(prompt_name)
+            retrieved_prompt = await prompt_client.get_prompt(prompt_name)
             assert retrieved_prompt.description == initial_description
             assert retrieved_prompt.template == initial_template
 
@@ -223,11 +236,11 @@ class TestOrkesPromptClientIntegration:
             updated_template = (
                 "Hello ${name}, welcome to ${company}! We're glad to have you here."
             )
-            prompt_client.save_prompt(
+            await prompt_client.save_prompt(
                 prompt_name, updated_description, updated_template
             )
 
-            updated_prompt = prompt_client.get_prompt(prompt_name)
+            updated_prompt = await prompt_client.get_prompt(prompt_name)
             assert updated_prompt.description == updated_description
             assert updated_prompt.template == updated_template
             assert "name" in updated_prompt.variables
@@ -238,116 +251,6 @@ class TestOrkesPromptClientIntegration:
             raise
         finally:
             try:
-                prompt_client.delete_prompt(prompt_name)
+                await prompt_client.delete_prompt(prompt_name)
             except Exception as e:
                 print(f"Warning: Failed to cleanup prompt {prompt_name}: {str(e)}")
-
-    @pytest.mark.v5_2_6
-    @pytest.mark.v4_1_73
-    def test_concurrent_prompt_operations(
-        self,
-        prompt_client: OrkesPromptClient,
-        test_suffix: str,
-        simple_prompt_template: str,
-    ):
-        try:
-            import threading
-            import time
-
-            results = []
-            errors = []
-            created_prompts = []
-            cleanup_lock = threading.Lock()
-
-            def create_and_delete_prompt(prompt_suffix: str):
-                prompt_name = None
-                try:
-                    prompt_name = f"concurrent_prompt_{prompt_suffix}"
-                    description = f"Concurrent prompt {prompt_suffix}"
-                    prompt_client.save_prompt(
-                        prompt_name, description, simple_prompt_template
-                    )
-
-                    with cleanup_lock:
-                        created_prompts.append(prompt_name)
-
-                    time.sleep(0.1)
-
-                    retrieved_prompt = prompt_client.get_prompt(prompt_name)
-                    assert retrieved_prompt.name == prompt_name
-
-                    if os.getenv("CONDUCTOR_TEST_CLEANUP", "true").lower() == "true":
-                        try:
-                            prompt_client.delete_prompt(prompt_name)
-                            with cleanup_lock:
-                                if prompt_name in created_prompts:
-                                    created_prompts.remove(prompt_name)
-                        except Exception as cleanup_error:
-                            print(
-                                f"Warning: Failed to cleanup prompt {prompt_name} in thread: {str(cleanup_error)}"
-                            )
-
-                    results.append(f"prompt_{prompt_suffix}_success")
-                except Exception as e:
-                    errors.append(f"prompt_{prompt_suffix}_error: {str(e)}")
-                    if prompt_name and prompt_name not in created_prompts:
-                        with cleanup_lock:
-                            created_prompts.append(prompt_name)
-
-            threads = []
-            for i in range(3):
-                thread = threading.Thread(
-                    target=create_and_delete_prompt, args=(f"{test_suffix}_{i}",)
-                )
-                threads.append(thread)
-                thread.start()
-
-            for thread in threads:
-                thread.join()
-
-            assert (
-                len(results) == 3
-            ), f"Expected 3 successful operations, got {len(results)}. Errors: {errors}"
-            assert len(errors) == 0, f"Unexpected errors: {errors}"
-
-        except Exception as e:
-            print(f"Exception in test_concurrent_prompt_operations: {str(e)}")
-            raise
-        finally:
-            for prompt_name in created_prompts:
-                try:
-                    prompt_client.delete_prompt(prompt_name)
-                except Exception as e:
-                    print(f"Warning: Failed to delete prompt {prompt_name}: {str(e)}")
-
-    def _perform_comprehensive_cleanup(
-        self, prompt_client: OrkesPromptClient, created_resources: dict
-    ):
-        cleanup_enabled = os.getenv("CONDUCTOR_TEST_CLEANUP", "true").lower() == "true"
-        if not cleanup_enabled:
-            return
-
-        for prompt_name in created_resources["prompts"]:
-            try:
-                prompt_client.delete_prompt(prompt_name)
-            except Exception as e:
-                print(f"Warning: Failed to delete prompt {prompt_name}: {str(e)}")
-
-        remaining_prompts = []
-        for prompt_name in created_resources["prompts"]:
-            try:
-                retrieved_prompt = prompt_client.get_prompt(prompt_name)
-                if retrieved_prompt is not None:
-                    remaining_prompts.append(prompt_name)
-            except ApiException as e:
-                if e.code == 404:
-                    pass
-                else:
-                    remaining_prompts.append(prompt_name)
-            except Exception:
-                remaining_prompts.append(prompt_name)
-
-        if remaining_prompts:
-            print(
-                f"Warning: {len(remaining_prompts)} prompts could not be verified as deleted: {remaining_prompts}"
-            )

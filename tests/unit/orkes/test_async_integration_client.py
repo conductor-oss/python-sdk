@@ -182,11 +182,10 @@ async def test_get_integration_provider_defs(
     mock = mocker.patch.object(
         IntegrationResourceApiAdapter,
         "get_integration_provider_defs",
-        return_value=[integration_def],
     )
-    result = await integration_client.get_integration_provider_defs(INTEGRATION_NAME)
+    mock.return_value = [integration_def]
+    result = await integration_client.get_integration_provider_defs()
     assert mock.called
-    mock.assert_called_with(INTEGRATION_NAME)
     assert result == [integration_def]
 
 
@@ -373,7 +372,7 @@ async def test_put_tag_for_integration_provider(mocker, integration_client, tag)
     )
     await integration_client.put_tag_for_integration_provider([tag], INTEGRATION_NAME)
     assert mock.called
-    mock.assert_called_with([tag], INTEGRATION_NAME)
+    mock.assert_called_with(INTEGRATION_NAME, [tag])
 
 
 @pytest.mark.asyncio
@@ -400,7 +399,7 @@ async def test_delete_tag_for_integration_provider(mocker, integration_client, t
         [tag], INTEGRATION_NAME
     )
     assert mock.called
-    mock.assert_called_with([tag], INTEGRATION_NAME)
+    mock.assert_called_with(INTEGRATION_NAME,[tag])
 
 
 @pytest.mark.asyncio

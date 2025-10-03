@@ -256,10 +256,6 @@ class AsyncTaskRunner:
                 self.worker.poll_interval = (
                     self.worker.get_polling_interval_in_seconds()
                 )
-        else:
-            logger.error(
-                "Exception in reading polling_interval from environment variable",
-            )
 
     def __get_property_value_from_env(self, prop, task_type):
         """

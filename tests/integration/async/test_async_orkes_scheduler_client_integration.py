@@ -3,16 +3,20 @@ import time
 import uuid
 
 import pytest
-import httpx
+import pytest_asyncio
 
-from conductor.client.http.models.save_schedule_request import \
+from conductor.asyncio_client.adapters.api_client_adapter import \
+    ApiClientAdapter as ApiClient
+from conductor.asyncio_client.adapters.models.save_schedule_request_adapter import \
     SaveScheduleRequestAdapter as SaveScheduleRequest
-from conductor.client.http.models.start_workflow_request import \
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import \
     StartWorkflowRequestAdapter as StartWorkflowRequest
-from conductor.client.configuration.configuration import Configuration
-from conductor.client.codegen.rest import ApiException
-from conductor.client.orkes.models.metadata_tag import MetadataTag
-from conductor.client.orkes.orkes_scheduler_client import OrkesSchedulerClient
+from conductor.asyncio_client.adapters.models.tag_adapter import \
+    TagAdapter as MetadataTag
+from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.http.rest import ApiException
+from conductor.asyncio_client.orkes.orkes_scheduler_client import \
+    OrkesSchedulerClient
 
 
 class TestOrkesSchedulerClientIntegration:
@@ -31,19 +35,16 @@ class TestOrkesSchedulerClientIntegration:
     @pytest.fixture(scope="class")
     def configuration(self) -> Configuration:
         config = Configuration()
-        config.http_connection = httpx.Client(
-            timeout=httpx.Timeout(600.0),
-            follow_redirects=True,
-            limits=httpx.Limits(max_keepalive_connections=1, max_connections=1),
-            http2=True
-        )
         config.debug = os.getenv("CONDUCTOR_DEBUG", "false").lower() == "true"
         config.apply_logging_config()
         return config
 
-    @pytest.fixture(scope="class")
-    def scheduler_client(self, configuration: Configuration) -> OrkesSchedulerClient:
-        return OrkesSchedulerClient(configuration)
+    @pytest_asyncio.fixture(scope="function")
+    async def scheduler_client(
+        self, configuration: Configuration
+    ) -> OrkesSchedulerClient:
+        async with ApiClient(configuration) as api_client:
+            return OrkesSchedulerClient(configuration, api_client)
 
     @pytest.fixture(scope="class")
     def test_suffix(self) -> str:
@@ -99,15 +100,16 @@ class TestOrkesSchedulerClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_schedule_lifecycle_simple(
+    @pytest.mark.asyncio
+    async def test_schedule_lifecycle_simple(
         self,
         scheduler_client: OrkesSchedulerClient,
         simple_save_schedule_request: SaveScheduleRequest,
     ):
         try:
-            scheduler_client.save_schedule(simple_save_schedule_request)
+            await scheduler_client.save_schedule(simple_save_schedule_request)
 
-            retrieved_schedule = scheduler_client.get_schedule(
+            retrieved_schedule = await scheduler_client.get_schedule(
                 simple_save_schedule_request.name
             )
             assert retrieved_schedule.name == simple_save_schedule_request.name
@@ -120,7 +122,7 @@ class TestOrkesSchedulerClientIntegration:
                 == simple_save_schedule_request.description
             )
 
-            all_schedules = scheduler_client.get_all_schedules()
+            all_schedules = await scheduler_client.get_all_schedules()
             schedule_names = [schedule.name for schedule in all_schedules]
             assert simple_save_schedule_request.name in schedule_names
 
@@ -129,7 +131,9 @@ class TestOrkesSchedulerClientIntegration:
             raise
         finally:
             try:
-                scheduler_client.delete_schedule(simple_save_schedule_request.name)
+                await scheduler_client.delete_schedule(
+                    simple_save_schedule_request.name
+                )
             except Exception as e:
                 print(
                     f"Warning: Failed to cleanup schedule {simple_save_schedule_request.name}: {str(e)}"
@@ -137,15 +141,16 @@ class TestOrkesSchedulerClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_schedule_lifecycle_complex(
+    @pytest.mark.asyncio
+    async def test_schedule_lifecycle_complex(
         self,
         scheduler_client: OrkesSchedulerClient,
         complex_save_schedule_request: SaveScheduleRequest,
     ):
         try:
-            scheduler_client.save_schedule(complex_save_schedule_request)
+            await scheduler_client.save_schedule(complex_save_schedule_request)
 
-            retrieved_schedule = scheduler_client.get_schedule(
+            retrieved_schedule = await scheduler_client.get_schedule(
                 complex_save_schedule_request.name
             )
             assert retrieved_schedule.name == complex_save_schedule_request.name
@@ -160,7 +165,9 @@ class TestOrkesSchedulerClientIntegration:
             raise
         finally:
             try:
-                scheduler_client.delete_schedule(complex_save_schedule_request.name)
+                await scheduler_client.delete_schedule(
+                    complex_save_schedule_request.name
+                )
             except Exception as e:
                 print(
                     f"Warning: Failed to cleanup schedule {complex_save_schedule_request.name}: {str(e)}"
@@ -168,7 +175,8 @@ class TestOrkesSchedulerClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_schedule_pause_resume(
+    @pytest.mark.asyncio
+    async def test_schedule_pause_resume(
         self,
         scheduler_client: OrkesSchedulerClient,
         test_suffix: str,
@@ -184,19 +192,19 @@ class TestOrkesSchedulerClientIntegration:
                 paused=False,
             )
 
-            scheduler_client.save_schedule(schedule_request)
+            await scheduler_client.save_schedule(schedule_request)
 
-            retrieved_schedule = scheduler_client.get_schedule(schedule_name)
+            retrieved_schedule = await scheduler_client.get_schedule(schedule_name)
             assert not retrieved_schedule.paused
 
-            scheduler_client.pause_schedule(schedule_name)
+            await scheduler_client.pause_schedule(schedule_name)
 
-            paused_schedule = scheduler_client.get_schedule(schedule_name)
+            paused_schedule = await scheduler_client.get_schedule(schedule_name)
             assert paused_schedule.paused
 
-            scheduler_client.resume_schedule(schedule_name)
+            await scheduler_client.resume_schedule(schedule_name)
 
-            resumed_schedule = scheduler_client.get_schedule(schedule_name)
+            resumed_schedule = await scheduler_client.get_schedule(schedule_name)
             assert not resumed_schedule.paused
 
         except Exception as e:
@@ -204,13 +212,14 @@ class TestOrkesSchedulerClientIntegration:
             raise
         finally:
             try:
-                scheduler_client.delete_schedule(schedule_name)
+                await scheduler_client.delete_schedule(schedule_name)
             except Exception as e:
                 print(f"Warning: Failed to cleanup schedule {schedule_name}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_schedule_execution_times(
+    @pytest.mark.asyncio
+    async def test_schedule_execution_times(
         self,
         scheduler_client: OrkesSchedulerClient,
     ):
@@ -220,7 +229,7 @@ class TestOrkesSchedulerClientIntegration:
             schedule_end_time = int((time.time() + 86400 * 7) * 1000)
             limit = 5
 
-            execution_times = scheduler_client.get_next_few_schedule_execution_times(
+            execution_times = await scheduler_client.get_next_few_schedules(
                 cron_expression=cron_expression,
                 schedule_start_time=schedule_start_time,
                 schedule_end_time=schedule_end_time,
@@ -232,7 +241,7 @@ class TestOrkesSchedulerClientIntegration:
             assert all(isinstance(time_ms, int) for time_ms in execution_times)
 
             execution_times_without_params = (
-                scheduler_client.get_next_few_schedule_execution_times(
+                await scheduler_client.get_next_few_schedules(
                     cron_expression=cron_expression,
                 )
             )
@@ -248,7 +257,8 @@ class TestOrkesSchedulerClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_schedule_search(
+    @pytest.mark.asyncio
+    async def test_schedule_search(
         self,
         scheduler_client: OrkesSchedulerClient,
         test_suffix: str,
@@ -264,17 +274,17 @@ class TestOrkesSchedulerClientIntegration:
                 paused=False,
             )
 
-            scheduler_client.save_schedule(schedule_request)
+            await scheduler_client.save_schedule(schedule_request)
 
-            search_results = scheduler_client.search_schedule_executions(
-                start=0, size=10, sort="startTime", query=1
+            search_results = await scheduler_client.search_schedules(
+                start=0, size=10, sort="startTime", query="1"
             )
 
             assert search_results is not None
             assert hasattr(search_results, "total_hits")
             assert hasattr(search_results, "results")
 
-            search_results_with_query = scheduler_client.search_schedule_executions(
+            search_results_with_query = await scheduler_client.search_schedules(
                 start=0,
                 size=5,
                 query=f"name:{schedule_name}",
@@ -287,13 +297,14 @@ class TestOrkesSchedulerClientIntegration:
             raise
         finally:
             try:
-                scheduler_client.delete_schedule(schedule_name)
+                await scheduler_client.delete_schedule(schedule_name)
             except Exception as e:
                 print(f"Warning: Failed to cleanup schedule {schedule_name}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_schedule_tags(
+    @pytest.mark.asyncio
+    async def test_schedule_tags(
         self,
         scheduler_client: OrkesSchedulerClient,
         test_suffix: str,
@@ -309,27 +320,31 @@ class TestOrkesSchedulerClientIntegration:
                 paused=False,
             )
 
-            scheduler_client.save_schedule(schedule_request)
+            await scheduler_client.save_schedule(schedule_request)
 
             tags = [
-                MetadataTag("environment", "test"),
-                MetadataTag("team", "backend"),
-                MetadataTag("priority", "high"),
+                MetadataTag(key="environment", value="test", type="METADATA"),
+                MetadataTag(key="team", value="backend", type="METADATA"),
+                MetadataTag(key="priority", value="high", type="METADATA"),
             ]
 
-            scheduler_client.set_scheduler_tags(tags, schedule_name)
+            await scheduler_client.put_tag_for_schedule(schedule_name, tags)
 
-            retrieved_tags = scheduler_client.get_scheduler_tags(schedule_name)
+            retrieved_tags = await scheduler_client.get_tags_for_schedule(schedule_name)
             assert len(retrieved_tags) >= 3
             tag_keys = [tag.key for tag in retrieved_tags]
             assert "environment" in tag_keys
             assert "team" in tag_keys
             assert "priority" in tag_keys
 
-            tags_to_delete = [MetadataTag("priority", "high")]
-            scheduler_client.delete_scheduler_tags(tags_to_delete, schedule_name)
+            tags_to_delete = [
+                MetadataTag(key="priority", value="high", type="METADATA")
+            ]
+            await scheduler_client.delete_tag_for_schedule(
+                schedule_name, tags_to_delete
+            )
 
-            retrieved_tags_after_delete = scheduler_client.get_scheduler_tags(
+            retrieved_tags_after_delete = await scheduler_client.get_tags_for_schedule(
                 schedule_name
             )
             remaining_tag_keys = [tag.key for tag in retrieved_tags_after_delete]
@@ -340,13 +355,14 @@ class TestOrkesSchedulerClientIntegration:
             raise
         finally:
             try:
-                scheduler_client.delete_schedule(schedule_name)
+                await scheduler_client.delete_schedule(schedule_name)
             except Exception as e:
                 print(f"Warning: Failed to cleanup schedule {schedule_name}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_schedule_update(
+    @pytest.mark.asyncio
+    async def test_schedule_update(
         self,
         scheduler_client: OrkesSchedulerClient,
         test_suffix: str,
@@ -362,9 +378,9 @@ class TestOrkesSchedulerClientIntegration:
                 paused=False,
             )
 
-            scheduler_client.save_schedule(initial_schedule)
+            await scheduler_client.save_schedule(initial_schedule)
 
-            retrieved_schedule = scheduler_client.get_schedule(schedule_name)
+            retrieved_schedule = await scheduler_client.get_schedule(schedule_name)
             assert retrieved_schedule.description == "Initial schedule"
 
             updated_schedule = SaveScheduleRequest(
@@ -375,9 +391,11 @@ class TestOrkesSchedulerClientIntegration:
                 paused=True,
             )
 
-            scheduler_client.save_schedule(updated_schedule)
+            await scheduler_client.save_schedule(updated_schedule)
 
-            updated_retrieved_schedule = scheduler_client.get_schedule(schedule_name)
+            updated_retrieved_schedule = await scheduler_client.get_schedule(
+                schedule_name
+            )
             assert updated_retrieved_schedule.description == "Updated schedule"
             assert updated_retrieved_schedule.paused
 
@@ -386,13 +404,14 @@ class TestOrkesSchedulerClientIntegration:
             raise
         finally:
             try:
-                scheduler_client.delete_schedule(schedule_name)
+                await scheduler_client.delete_schedule(schedule_name)
             except Exception as e:
                 print(f"Warning: Failed to cleanup schedule {schedule_name}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_complex_schedule_management_flow(
+    @pytest.mark.asyncio
+    async def test_complex_schedule_management_flow(
         self, scheduler_client: OrkesSchedulerClient, test_suffix: str
     ):
         created_resources = {"schedules": []}
@@ -430,18 +449,18 @@ class TestOrkesSchedulerClientIntegration:
                     zone_id="UTC",
                 )
 
-                scheduler_client.save_schedule(schedule_request)
+                await scheduler_client.save_schedule(schedule_request)
                 created_resources["schedules"].append(schedule_name)
 
                 tags = [
-                    MetadataTag("type", schedule_type),
-                    MetadataTag("environment", "test"),
-                    MetadataTag("owner", "integration_test"),
+                    MetadataTag(key="type", value=schedule_type, type="METADATA"),
+                    MetadataTag(key="environment", value="test", type="METADATA"),
+                    MetadataTag(key="owner", value="integration_test", type="METADATA"),
                 ]
 
-                scheduler_client.set_scheduler_tags(tags, schedule_name)
+                await scheduler_client.put_tag_for_schedule(schedule_name, tags)
 
-            all_schedules = scheduler_client.get_all_schedules()
+            all_schedules = await scheduler_client.get_all_schedules()
             schedule_names = [schedule.name for schedule in all_schedules]
             for schedule_name in created_resources["schedules"]:
                 assert (
@@ -450,10 +469,12 @@ class TestOrkesSchedulerClientIntegration:
 
             for schedule_type in schedule_types.keys():
                 schedule_name = f"complex_{schedule_type}_{test_suffix}"
-                retrieved_schedule = scheduler_client.get_schedule(schedule_name)
+                retrieved_schedule = await scheduler_client.get_schedule(schedule_name)
                 assert retrieved_schedule.name == schedule_name
 
-                retrieved_tags = scheduler_client.get_scheduler_tags(schedule_name)
+                retrieved_tags = await scheduler_client.get_tags_for_schedule(
+                    schedule_name
+                )
                 tag_keys = [tag.key for tag in retrieved_tags]
                 assert "type" in tag_keys
                 assert "environment" in tag_keys
@@ -478,11 +499,11 @@ class TestOrkesSchedulerClientIntegration:
                     paused=False,
                 )
 
-                scheduler_client.save_schedule(schedule_request)
+                await scheduler_client.save_schedule(schedule_request)
                 bulk_schedules.append(schedule_name)
                 created_resources["schedules"].append(schedule_name)
 
-            all_schedules_after_bulk = scheduler_client.get_all_schedules()
+            all_schedules_after_bulk = await scheduler_client.get_all_schedules()
             schedule_names_after_bulk = [
                 schedule.name for schedule in all_schedules_after_bulk
             ]
@@ -491,15 +512,13 @@ class TestOrkesSchedulerClientIntegration:
                     schedule_name in schedule_names_after_bulk
                 ), f"Bulk schedule {schedule_name} not found in list"
 
-            scheduler_client.requeue_all_execution_records()
+            await scheduler_client.requeue_all_execution_records()
 
             for schedule_type in ["daily", "hourly"]:
                 schedule_name = f"complex_{schedule_type}_{test_suffix}"
-                execution_times = (
-                    scheduler_client.get_next_few_schedule_execution_times(
-                        cron_expression=schedule_types[schedule_type],
-                        limit=3,
-                    )
+                execution_times = await scheduler_client.get_next_few_schedules(
+                    cron_expression=schedule_types[schedule_type],
+                    limit=3,
                 )
                 assert isinstance(execution_times, list)
                 assert len(execution_times) <= 3
@@ -508,9 +527,11 @@ class TestOrkesSchedulerClientIntegration:
             print(f"Exception in test_complex_schedule_management_flow: {str(e)}")
             raise
         finally:
-            self._perform_comprehensive_cleanup(scheduler_client, created_resources)
+            await self._perform_comprehensive_cleanup(
+                scheduler_client, created_resources
+            )
 
-    def _perform_comprehensive_cleanup(
+    async def _perform_comprehensive_cleanup(
         self, scheduler_client: OrkesSchedulerClient, created_resources: dict
     ):
         cleanup_enabled = os.getenv("CONDUCTOR_TEST_CLEANUP", "true").lower() == "true"
@@ -519,17 +540,17 @@ class TestOrkesSchedulerClientIntegration:
 
         for schedule_name in created_resources["schedules"]:
             try:
-                scheduler_client.delete_schedule(schedule_name)
+                await scheduler_client.delete_schedule(schedule_name)
             except Exception as e:
                 print(f"Warning: Failed to delete schedule {schedule_name}: {str(e)}")
 
         remaining_schedules = []
         for schedule_name in created_resources["schedules"]:
             try:
-                scheduler_client.get_schedule(schedule_name)
+                await scheduler_client.get_schedule(schedule_name)
                 remaining_schedules.append(schedule_name)
             except ApiException as e:
-                if e.code == 404:
+                if e.status == 404:
                     pass
                 else:
                     remaining_schedules.append(schedule_name)

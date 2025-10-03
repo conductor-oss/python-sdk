@@ -89,6 +89,7 @@ class RESTClientObjectAdapter(RESTClientObject):
                 "limits": httpx.Limits(
                     max_keepalive_connections=20, max_connections=100
                 ),
+                "http2": True
             }
 
             if (

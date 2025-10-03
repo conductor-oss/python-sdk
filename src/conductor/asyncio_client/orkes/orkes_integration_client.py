@@ -50,9 +50,9 @@ class OrkesIntegrationClient(OrkesBaseClient):
         """Get all integration providers"""
         return await self.integration_api.get_integration_providers(category=category, active_only=active_only)
 
-    async def get_integration_provider_defs(self, name: str) -> List[IntegrationDefAdapter]:
+    async def get_integration_provider_defs(self) -> List[IntegrationDefAdapter]:
         """Get integration provider definitions"""
-        return await self.integration_api.get_integration_provider_defs(name)
+        return await self.integration_api.get_integration_provider_defs()
 
     # Integration API Operations
     async def save_integration_api(self, name: str, integration_name: str, integration_api_update: IntegrationApiUpdateAdapter) -> None:
@@ -103,7 +103,7 @@ class OrkesIntegrationClient(OrkesBaseClient):
 
     async def put_tag_for_integration_provider(self, body: List[TagAdapter], name: str) -> None:
         """Add tags to an integration provider"""
-        await self.integration_api.put_tag_for_integration_provider(body, name)
+        await self.integration_api.put_tag_for_integration_provider(name, body)
 
     async def get_tags_for_integration_provider(self, name: str) -> List[TagAdapter]:
         """Get tags for an integration provider"""
@@ -111,7 +111,7 @@ class OrkesIntegrationClient(OrkesBaseClient):
 
     async def delete_tag_for_integration_provider(self, body: List[TagAdapter], name: str) -> None:
         """Delete tags from an integration provider"""
-        await self.integration_api.delete_tag_for_integration_provider(body, name)
+        await self.integration_api.delete_tag_for_integration_provider(name, body)
 
     # Token Usage Operations
     async def get_token_usage_for_integration(self, name: str, integration_name: str) -> int:
