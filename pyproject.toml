@@ -27,7 +27,7 @@ python = ">=3.9,<3.13"
 certifi = ">=14.05.14"
 prometheus-client = ">=0.13.1"
 six = ">=1.10"
-requests = ">=2.31.0" git merge master
+requests = ">=2.31.0"
 aiohttp = "3.12.15"
 aiohttp-retry = "2.9.1"
 httpx = {extras = ["http2"], version = "^0.28.1"}
