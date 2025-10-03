@@ -27,7 +27,7 @@ class Configuration:
         if server_api_url is not None:
             self.host = server_api_url
         elif base_url is not None:
-            self.host = base_url + "/api"
+            self.host = base_url
         else:
             self.host = os.getenv("CONDUCTOR_SERVER_URL")
 
