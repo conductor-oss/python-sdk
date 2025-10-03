@@ -2,6 +2,7 @@ import os
 import uuid
 
 import pytest
+import httpx
 
 from conductor.client.http.models.task_def import \
     TaskDefAdapter as TaskDef
