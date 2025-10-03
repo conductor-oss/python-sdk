@@ -101,7 +101,13 @@ class RESTClientObjectAdapter(RESTClientObject):
             ):
                 client_kwargs["proxy_headers"] = configuration.proxy_headers
 
-            self.connection = httpx.Client(**client_kwargs)
+            self.connection = httpx.Client(
+                timeout=httpx.Timeout(300.0),
+                follow_redirects=True,
+                limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
+                http2=True,  # added explicit configuration
+                **client_kwargs,
+            )
 
     def close(self):
         """Close the HTTP client connection."""

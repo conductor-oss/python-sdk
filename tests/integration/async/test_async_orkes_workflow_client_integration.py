@@ -3,26 +3,29 @@ import time
 import uuid
 
 import pytest
-import httpx
+import pytest_asyncio
 
-from conductor.client.http.models.correlation_ids_search_request import \
+from conductor.asyncio_client.adapters.api_client_adapter import \
+    ApiClientAdapter as ApiClient
+from conductor.asyncio_client.adapters.models.correlation_ids_search_request_adapter import \
     CorrelationIdsSearchRequestAdapter as CorrelationIdsSearchRequest
-from conductor.client.http.models.rerun_workflow_request import \
+from conductor.asyncio_client.adapters.models.extended_workflow_def_adapter import \
+    ExtendedWorkflowDefAdapter as WorkflowDef
+from conductor.asyncio_client.adapters.models.rerun_workflow_request_adapter import \
     RerunWorkflowRequestAdapter as RerunWorkflowRequest
-from conductor.client.http.models.start_workflow_request import \
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import \
     StartWorkflowRequestAdapter as StartWorkflowRequest
-from conductor.client.http.models.workflow_def import \
-    WorkflowDefAdapter as WorkflowDef
-from conductor.client.http.models.workflow_state_update import \
+from conductor.asyncio_client.adapters.models.workflow_state_update_adapter import \
     WorkflowStateUpdateAdapter as WorkflowStateUpdate
-from conductor.client.http.models.workflow_task import \
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import \
     WorkflowTaskAdapter as WorkflowTask
-from conductor.client.http.models.workflow_test_request import \
+from conductor.asyncio_client.adapters.models.workflow_test_request_adapter import \
     WorkflowTestRequestAdapter as WorkflowTestRequest
-from conductor.client.configuration.configuration import Configuration
-from conductor.client.codegen.rest import ApiException
-from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
-from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
+from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.orkes.orkes_metadata_client import \
+    OrkesMetadataClient
+from conductor.asyncio_client.orkes.orkes_workflow_client import \
+    OrkesWorkflowClient
 
 
 class TestOrkesWorkflowClientIntegration:
@@ -41,23 +44,23 @@ class TestOrkesWorkflowClientIntegration:
     @pytest.fixture(scope="class")
     def configuration(self) -> Configuration:
         config = Configuration()
-        config.http_connection = httpx.Client(
-            timeout=httpx.Timeout(600.0),
-            follow_redirects=True,
-            limits=httpx.Limits(max_keepalive_connections=1, max_connections=1),
-            http2=True
-        )
         config.debug = os.getenv("CONDUCTOR_DEBUG", "false").lower() == "true"
         config.apply_logging_config()
         return config
 
-    @pytest.fixture(scope="class")
-    def workflow_client(self, configuration: Configuration) -> OrkesWorkflowClient:
-        return OrkesWorkflowClient(configuration)
+    @pytest_asyncio.fixture(scope="function")
+    async def workflow_client(
+        self, configuration: Configuration
+    ) -> OrkesWorkflowClient:
+        async with ApiClient(configuration) as api_client:
+            return OrkesWorkflowClient(configuration, api_client=api_client)
 
-    @pytest.fixture(scope="class")
-    def metadata_client(self, configuration: Configuration) -> OrkesMetadataClient:
-        return OrkesMetadataClient(configuration)
+    @pytest_asyncio.fixture(scope="function")
+    async def metadata_client(
+        self, configuration: Configuration
+    ) -> OrkesMetadataClient:
+        async with ApiClient(configuration) as api_client:
+            return OrkesMetadataClient(configuration, api_client=api_client)
 
     @pytest.fixture(scope="class")
     def test_suffix(self) -> str:
@@ -165,18 +168,20 @@ class TestOrkesWorkflowClientIntegration:
             idempotency_key=f"idempotency_{str(uuid.uuid4())[:8]}",
         )
 
-    @pytest.fixture(scope="class", autouse=True)
-    def setup_workflow_definition(
+    @pytest_asyncio.fixture(scope="function", autouse=True)
+    async def setup_workflow_definition(
         self, metadata_client: OrkesMetadataClient, simple_workflow_def: WorkflowDef
     ):
         """Create workflow definition before running tests."""
         try:
-            metadata_client.register_workflow_def(simple_workflow_def, overwrite=True)
+            await metadata_client.register_workflow_def(
+                simple_workflow_def, overwrite=True
+            )
             time.sleep(1)
             yield
         finally:
             try:
-                metadata_client.unregister_workflow_def(
+                await metadata_client.unregister_workflow_def(
                     simple_workflow_def.name, simple_workflow_def.version
                 )
             except Exception as e:
@@ -187,7 +192,8 @@ class TestOrkesWorkflowClientIntegration:
     @pytest.mark.v3_21_16
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_start_by_name(
+    @pytest.mark.asyncio
+    async def test_workflow_start_by_name(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -196,11 +202,11 @@ class TestOrkesWorkflowClientIntegration:
         workflow_id = None
         try:
 
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = await workflow_client.start_workflow_by_name(
                 name=test_workflow_name,
-                input=simple_workflow_input,
+                input_data=simple_workflow_input,
                 version=1,
-                correlationId=f"start_by_name_{str(uuid.uuid4())[:8]}",
+                correlation_id=f"start_by_name_{str(uuid.uuid4())[:8]}",
                 priority=0,
             )
 
@@ -208,7 +214,9 @@ class TestOrkesWorkflowClientIntegration:
             assert isinstance(workflow_id, str)
             assert len(workflow_id) > 0
 
-            workflow = workflow_client.get_workflow(workflow_id, include_tasks=True)
+            workflow = await workflow_client.get_workflow(
+                workflow_id, include_tasks=True
+            )
             assert workflow.workflow_id == workflow_id
             assert workflow.workflow_name == test_workflow_name
             assert workflow.workflow_version == 1
@@ -219,26 +227,33 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             try:
                 if workflow_id:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
             except Exception as e:
                 print(f"Warning: Failed to cleanup workflow: {str(e)}")
 
     @pytest.mark.v3_21_16
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_start_with_request(
+    @pytest.mark.asyncio
+    async def test_workflow_start_with_request(
         self,
         workflow_client: OrkesWorkflowClient,
         simple_start_workflow_request: StartWorkflowRequest,
     ):
         try:
-            workflow_id = workflow_client.start_workflow(simple_start_workflow_request)
+            workflow_id = await workflow_client.start_workflow(
+                simple_start_workflow_request
+            )
 
             assert workflow_id is not None
             assert isinstance(workflow_id, str)
             assert len(workflow_id) > 0
 
-            workflow = workflow_client.get_workflow(workflow_id, include_tasks=True)
+            workflow = await workflow_client.get_workflow(
+                workflow_id, include_tasks=True
+            )
             assert workflow.workflow_id == workflow_id
             assert workflow.workflow_name == simple_start_workflow_request.name
             assert workflow.workflow_version == simple_start_workflow_request.version
@@ -248,22 +263,25 @@ class TestOrkesWorkflowClientIntegration:
             raise
         finally:
             try:
-                workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                await workflow_client.delete_workflow(
+                    workflow_id, archive_workflow=True
+                )
             except Exception as e:
                 print(f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_execute_sync(
+    @pytest.mark.asyncio
+    async def test_workflow_execute_sync(
         self,
         workflow_client: OrkesWorkflowClient,
         simple_start_workflow_request: StartWorkflowRequest,
     ):
         try:
-            workflow_run = workflow_client.execute_workflow(
+            workflow_run = await workflow_client.execute_workflow(
                 start_workflow_request=simple_start_workflow_request,
                 request_id=f"execute_sync_{str(uuid.uuid4())[:8]}",
-                wait_for_seconds=30,
+                wait_for_seconds=10,
             )
 
             assert workflow_run is not None
@@ -276,18 +294,19 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_execute_with_return_strategy(
+    @pytest.mark.asyncio
+    async def test_workflow_execute_with_return_strategy(
         self,
         workflow_client: OrkesWorkflowClient,
         simple_start_workflow_request: StartWorkflowRequest,
     ):
         try:
-            signal_response = workflow_client.execute_workflow_with_return_strategy(
-                start_workflow_request=simple_start_workflow_request,
-                request_id=f"execute_strategy_{str(uuid.uuid4())[:8]}",
-                wait_for_seconds=30,
-                consistency="DURABLE",
-                return_strategy="TARGET_WORKFLOW",
+            signal_response = (
+                await workflow_client.execute_workflow_with_return_strategy(
+                    start_workflow_request=simple_start_workflow_request,
+                    request_id=f"execute_strategy_{str(uuid.uuid4())[:8]}",
+                    wait_for_seconds=10,
+                )
             )
 
             assert signal_response is not None
@@ -298,7 +317,8 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_pause_resume(
+    @pytest.mark.asyncio
+    async def test_workflow_pause_resume(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -306,20 +326,20 @@ class TestOrkesWorkflowClientIntegration:
     ):
         workflow_id = None
         try:
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = await workflow_client.start_workflow_by_name(
                 name=test_workflow_name,
-                input=simple_workflow_input,
+                input_data=simple_workflow_input,
                 version=1,
             )
 
-            workflow_client.pause_workflow(workflow_id)
+            await workflow_client.pause_workflow(workflow_id)
 
-            workflow_status = workflow_client.get_workflow_status(workflow_id)
+            workflow_status = await workflow_client.get_workflow_status(workflow_id)
             assert workflow_status.status in ["PAUSED", "RUNNING"]
 
-            workflow_client.resume_workflow(workflow_id)
+            await workflow_client.resume_workflow(workflow_id)
 
-            workflow_status_after_resume = workflow_client.get_workflow_status(
+            workflow_status_after_resume = await workflow_client.get_workflow_status(
                 workflow_id
             )
             assert workflow_status_after_resume.status in ["RUNNING", "COMPLETED"]
@@ -330,7 +350,9 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             if workflow_id:
                 try:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
@@ -338,7 +360,8 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_restart(
+    @pytest.mark.asyncio
+    async def test_workflow_restart(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -346,22 +369,24 @@ class TestOrkesWorkflowClientIntegration:
     ):
         workflow_id = None
         try:
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = await workflow_client.start_workflow_by_name(
                 name=test_workflow_name,
-                input=simple_workflow_input,
+                input_data=simple_workflow_input,
                 version=1,
             )
-            workflow_client.terminate_workflow(
+            await workflow_client.terminate_workflow(
                 workflow_id,
                 reason="Integration test termination",
                 trigger_failure_workflow=False,
             )
-            workflow_status = workflow_client.get_workflow_status(workflow_id)
+            workflow_status = await workflow_client.get_workflow_status(workflow_id)
             assert workflow_status.status == "TERMINATED"
 
-            workflow_client.restart_workflow(workflow_id, use_latest_def=False)
+            await workflow_client.restart_workflow(
+                workflow_id, use_latest_definitions=False
+            )
 
-            workflow_status = workflow_client.get_workflow_status(workflow_id)
+            workflow_status = await workflow_client.get_workflow_status(workflow_id)
             assert workflow_status.status in ["RUNNING", "COMPLETED"]
 
         except Exception as e:
@@ -370,7 +395,9 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             if workflow_id:
                 try:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
@@ -378,7 +405,8 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_rerun(
+    @pytest.mark.asyncio
+    async def test_workflow_rerun(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -387,18 +415,20 @@ class TestOrkesWorkflowClientIntegration:
         original_workflow_id = None
         rerun_workflow_id = None
         try:
-            original_workflow_id = workflow_client.start_workflow_by_name(
+            original_workflow_id = await workflow_client.start_workflow_by_name(
                 name=test_workflow_name,
-                input=simple_workflow_input,
+                input_data=simple_workflow_input,
                 version=1,
             )
 
-            workflow_client.terminate_workflow(
+            await workflow_client.terminate_workflow(
                 original_workflow_id,
                 reason="Integration test termination",
                 trigger_failure_workflow=False,
             )
-            workflow_status = workflow_client.get_workflow_status(original_workflow_id)
+            workflow_status = await workflow_client.get_workflow_status(
+                original_workflow_id
+            )
             assert workflow_status.status == "TERMINATED"
 
             rerun_request = RerunWorkflowRequest(
@@ -406,7 +436,7 @@ class TestOrkesWorkflowClientIntegration:
                 workflow_input={"rerun_param": "rerun_value"},
             )
 
-            rerun_workflow_id = workflow_client.rerun_workflow(
+            rerun_workflow_id = await workflow_client.rerun_workflow(
                 original_workflow_id, rerun_request
             )
 
@@ -414,7 +444,7 @@ class TestOrkesWorkflowClientIntegration:
             assert isinstance(rerun_workflow_id, str)
             assert rerun_workflow_id == original_workflow_id
 
-            rerun_workflow = workflow_client.get_workflow(rerun_workflow_id)
+            rerun_workflow = await workflow_client.get_workflow(rerun_workflow_id)
             assert rerun_workflow.workflow_id == rerun_workflow_id
 
         except Exception as e:
@@ -424,13 +454,16 @@ class TestOrkesWorkflowClientIntegration:
             for wf_id in [original_workflow_id, rerun_workflow_id]:
                 if wf_id:
                     try:
-                        workflow_client.delete_workflow(wf_id, archive_workflow=True)
+                        await workflow_client.delete_workflow(
+                            wf_id, archive_workflow=True
+                        )
                     except Exception as e:
                         print(f"Warning: Failed to cleanup workflow {wf_id}: {str(e)}")
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_retry(
+    @pytest.mark.asyncio
+    async def test_workflow_retry(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -438,23 +471,25 @@ class TestOrkesWorkflowClientIntegration:
     ):
         workflow_id = None
         try:
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = await workflow_client.start_workflow_by_name(
                 name=test_workflow_name,
-                input=simple_workflow_input,
+                input_data=simple_workflow_input,
                 version=1,
             )
 
-            workflow_client.terminate_workflow(
+            await workflow_client.terminate_workflow(
                 workflow_id,
                 reason="Integration test termination",
                 trigger_failure_workflow=False,
             )
-            workflow_status = workflow_client.get_workflow_status(workflow_id)
+            workflow_status = await workflow_client.get_workflow_status(workflow_id)
             assert workflow_status.status == "TERMINATED"
 
-            workflow_client.retry_workflow(workflow_id, resume_subworkflow_tasks=False)
+            await workflow_client.retry_workflow(
+                workflow_id, resume_subworkflow_tasks=False
+            )
 
-            workflow_status = workflow_client.get_workflow_status(workflow_id)
+            workflow_status = await workflow_client.get_workflow_status(workflow_id)
             assert workflow_status.status in ["RUNNING", "COMPLETED"]
 
         except Exception as e:
@@ -463,7 +498,9 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             if workflow_id:
                 try:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
@@ -471,7 +508,8 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_terminate(
+    @pytest.mark.asyncio
+    async def test_workflow_terminate(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -479,19 +517,19 @@ class TestOrkesWorkflowClientIntegration:
     ):
         workflow_id = None
         try:
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = await workflow_client.start_workflow_by_name(
                 name=test_workflow_name,
-                input=simple_workflow_input,
+                input_data=simple_workflow_input,
                 version=1,
             )
 
-            workflow_client.terminate_workflow(
+            await workflow_client.terminate_workflow(
                 workflow_id,
                 reason="Integration test termination",
                 trigger_failure_workflow=False,
             )
 
-            workflow_status = workflow_client.get_workflow_status(workflow_id)
+            workflow_status = await workflow_client.get_workflow_status(workflow_id)
             assert workflow_status.status == "TERMINATED"
 
         except Exception as e:
@@ -500,7 +538,9 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             if workflow_id:
                 try:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
@@ -508,7 +548,8 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_get_with_tasks(
+    @pytest.mark.asyncio
+    async def test_workflow_get_with_tasks(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -516,19 +557,19 @@ class TestOrkesWorkflowClientIntegration:
     ):
         workflow_id = None
         try:
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = await workflow_client.start_workflow_by_name(
                 name=test_workflow_name,
-                input=simple_workflow_input,
+                input_data=simple_workflow_input,
                 version=1,
             )
 
-            workflow_with_tasks = workflow_client.get_workflow(
+            workflow_with_tasks = await workflow_client.get_workflow(
                 workflow_id, include_tasks=True
             )
             assert workflow_with_tasks.workflow_id == workflow_id
             assert hasattr(workflow_with_tasks, "tasks")
 
-            workflow_without_tasks = workflow_client.get_workflow(
+            workflow_without_tasks = await workflow_client.get_workflow(
                 workflow_id, include_tasks=False
             )
             assert workflow_without_tasks.workflow_id == workflow_id
@@ -539,7 +580,9 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             if workflow_id:
                 try:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
@@ -547,7 +590,8 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_status_with_options(
+    @pytest.mark.asyncio
+    async def test_workflow_status_with_options(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -555,19 +599,19 @@ class TestOrkesWorkflowClientIntegration:
     ):
         workflow_id = None
         try:
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = await workflow_client.start_workflow_by_name(
                 name=test_workflow_name,
-                input=simple_workflow_input,
+                input_data=simple_workflow_input,
                 version=1,
             )
 
-            status_with_output = workflow_client.get_workflow_status(
+            status_with_output = await workflow_client.get_workflow_status(
                 workflow_id, include_output=True, include_variables=True
             )
             assert status_with_output.workflow_id == workflow_id
             assert hasattr(status_with_output, "status")
 
-            status_without_output = workflow_client.get_workflow_status(
+            status_without_output = await workflow_client.get_workflow_status(
                 workflow_id, include_output=False, include_variables=False
             )
             assert status_without_output.workflow_id == workflow_id
@@ -578,7 +622,9 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             if workflow_id:
                 try:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
@@ -586,7 +632,8 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_test(
+    @pytest.mark.asyncio
+    async def test_workflow_test(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -596,11 +643,11 @@ class TestOrkesWorkflowClientIntegration:
             test_request = WorkflowTestRequest(
                 name=test_workflow_name,
                 version=1,
-                input=simple_workflow_input,
+                input_data=simple_workflow_input,
                 correlation_id=f"test_correlation_{str(uuid.uuid4())[:8]}",
             )
 
-            test_result = workflow_client.test_workflow(test_request)
+            test_result = await workflow_client.test_workflow(test_request)
 
             assert test_result is not None
             assert hasattr(test_result, "workflow_id")
@@ -611,7 +658,8 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_search(
+    @pytest.mark.asyncio
+    async def test_workflow_search(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -619,13 +667,13 @@ class TestOrkesWorkflowClientIntegration:
     ):
         workflow_id = None
         try:
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = await workflow_client.start_workflow_by_name(
                 name=test_workflow_name,
-                input=simple_workflow_input,
+                input_data=simple_workflow_input,
                 version=1,
             )
 
-            search_results = workflow_client.search(
+            search_results = await workflow_client.search(
                 start=0,
                 size=10,
                 free_text="*",
@@ -636,7 +684,7 @@ class TestOrkesWorkflowClientIntegration:
             assert hasattr(search_results, "total_hits")
             assert hasattr(search_results, "results")
 
-            search_results_with_query = workflow_client.search(
+            search_results_with_query = await workflow_client.search(
                 start=0,
                 size=5,
                 free_text="*",
@@ -651,7 +699,9 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             if workflow_id:
                 try:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
@@ -659,7 +709,8 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_correlation_ids_batch(
+    @pytest.mark.asyncio
+    async def test_workflow_correlation_ids_batch(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -670,11 +721,11 @@ class TestOrkesWorkflowClientIntegration:
         try:
             for i in range(3):
                 correlation_id = f"batch_correlation_{i}_{str(uuid.uuid4())[:8]}"
-                workflow_id = workflow_client.start_workflow_by_name(
+                workflow_id = await workflow_client.start_workflow_by_name(
                     name=test_workflow_name,
-                    input=simple_workflow_input,
+                    input_data=simple_workflow_input,
                     version=1,
-                    correlationId=correlation_id,
+                    correlation_id=correlation_id,
                 )
                 workflow_ids.append(workflow_id)
                 correlation_ids.append(correlation_id)
@@ -684,7 +735,7 @@ class TestOrkesWorkflowClientIntegration:
                 workflow_names=[test_workflow_name],
             )
 
-            batch_results = workflow_client.get_by_correlation_ids_in_batch(
+            batch_results = await workflow_client.get_by_correlation_ids_in_batch(
                 batch_request=batch_request,
                 include_completed=False,
                 include_tasks=False,
@@ -699,7 +750,9 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             for workflow_id in workflow_ids:
                 try:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
@@ -707,7 +760,8 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_correlation_ids_simple(
+    @pytest.mark.asyncio
+    async def test_workflow_correlation_ids_simple(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -718,16 +772,16 @@ class TestOrkesWorkflowClientIntegration:
         try:
             for i in range(2):
                 correlation_id = f"simple_correlation_{i}_{str(uuid.uuid4())[:8]}"
-                workflow_id = workflow_client.start_workflow_by_name(
+                workflow_id = await workflow_client.start_workflow_by_name(
                     name=test_workflow_name,
-                    input=simple_workflow_input,
+                    input_data=simple_workflow_input,
                     version=1,
-                    correlationId=correlation_id,
+                    correlation_id=correlation_id,
                 )
                 workflow_ids.append(workflow_id)
                 correlation_ids.append(correlation_id)
 
-            correlation_results = workflow_client.get_by_correlation_ids(
+            correlation_results = await workflow_client.get_by_correlation_ids(
                 workflow_name=test_workflow_name,
                 correlation_ids=correlation_ids,
                 include_completed=False,
@@ -743,7 +797,9 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             for workflow_id in workflow_ids:
                 try:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
@@ -751,7 +807,8 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_update_variables(
+    @pytest.mark.asyncio
+    async def test_workflow_update_variables(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -759,9 +816,9 @@ class TestOrkesWorkflowClientIntegration:
     ):
         workflow_id = None
         try:
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = await workflow_client.start_workflow_by_name(
                 name=test_workflow_name,
-                input=simple_workflow_input,
+                input_data=simple_workflow_input,
                 version=1,
             )
 
@@ -772,9 +829,11 @@ class TestOrkesWorkflowClientIntegration:
                 "boolean_var": False,
             }
 
-            workflow_client.update_variables(workflow_id, updated_variables)
+            await workflow_client.update_variables(workflow_id, updated_variables)
 
-            workflow = workflow_client.get_workflow(workflow_id, include_tasks=True)
+            workflow = await workflow_client.get_workflow(
+                workflow_id, include_tasks=True
+            )
             assert workflow.workflow_id == workflow_id
 
         except Exception as e:
@@ -783,7 +842,9 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             if workflow_id:
                 try:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
@@ -791,7 +852,8 @@ class TestOrkesWorkflowClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_update_state(
+    @pytest.mark.asyncio
+    async def test_workflow_update_state(
         self,
         workflow_client: OrkesWorkflowClient,
         test_workflow_name: str,
@@ -799,9 +861,9 @@ class TestOrkesWorkflowClientIntegration:
     ):
         workflow_id = None
         try:
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = await workflow_client.start_workflow_by_name(
                 name=test_workflow_name,
-                input=simple_workflow_input,
+                input_data=simple_workflow_input,
                 version=1,
             )
 
@@ -810,11 +872,11 @@ class TestOrkesWorkflowClientIntegration:
                 variables={"state_var1": "state_value1", "state_var2": "state_value2"},
             )
 
-            workflow_run = workflow_client.update_state(
+            workflow_run = await workflow_client.update_workflow_and_task_state(
                 workflow_id=workflow_id,
-                update_request=state_update,
-                wait_until_task_ref_names=["test_task_ref"],
-                wait_for_seconds=30,
+                workflow_state_update=state_update,
+                wait_until_task_ref_name="test_task_ref",
+                wait_for_seconds=10,
             )
 
             assert workflow_run is not None
@@ -825,263 +887,10 @@ class TestOrkesWorkflowClientIntegration:
         finally:
             if workflow_id:
                 try:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
+                    await workflow_client.delete_workflow(
+                        workflow_id, archive_workflow=True
+                    )
                 except Exception as e:
                     print(
                         f"Warning: Failed to cleanup workflow {workflow_id}: {str(e)}"
                     )
-
-    @pytest.mark.v5_2_6
-    @pytest.mark.v4_1_73
-    def test_concurrent_workflow_operations(
-        self,
-        workflow_client: OrkesWorkflowClient,
-        test_workflow_name: str,
-        simple_workflow_input: dict,
-    ):
-        try:
-            import threading
-            import time
-
-            results = []
-            errors = []
-            created_workflows = []
-            cleanup_lock = threading.Lock()
-
-            def create_and_manage_workflow(workflow_suffix: str):
-                workflow_id = None
-                try:
-                    workflow_id = workflow_client.start_workflow_by_name(
-                        name=test_workflow_name,
-                        input=simple_workflow_input,
-                        version=1,
-                        correlationId=f"concurrent_{workflow_suffix}",
-                    )
-
-                    with cleanup_lock:
-                        created_workflows.append(workflow_id)
-
-                    time.sleep(0.1)
-
-                    workflow = workflow_client.get_workflow(workflow_id)
-                    assert workflow.workflow_id == workflow_id
-
-                    workflow_status = workflow_client.get_workflow_status(workflow_id)
-                    assert workflow_status.workflow_id == workflow_id
-
-                    if os.getenv("CONDUCTOR_TEST_CLEANUP", "true").lower() == "true":
-                        try:
-                            workflow_client.delete_workflow(
-                                workflow_id, archive_workflow=True
-                            )
-                            with cleanup_lock:
-                                if workflow_id in created_workflows:
-                                    created_workflows.remove(workflow_id)
-                        except Exception as cleanup_error:
-                            print(
-                                f"Warning: Failed to cleanup workflow {workflow_id} in thread: {str(cleanup_error)}"
-                            )
-
-                    results.append(f"workflow_{workflow_suffix}_success")
-                except Exception as e:
-                    errors.append(f"workflow_{workflow_suffix}_error: {str(e)}")
-                    if workflow_id and workflow_id not in created_workflows:
-                        with cleanup_lock:
-                            created_workflows.append(workflow_id)
-
-            threads = []
-            for i in range(3):
-                thread = threading.Thread(
-                    target=create_and_manage_workflow, args=(f"{i}",)
-                )
-                threads.append(thread)
-                thread.start()
-
-            for thread in threads:
-                thread.join()
-
-            assert (
-                len(results) == 3
-            ), f"Expected 3 successful operations, got {len(results)}. Errors: {errors}"
-            assert len(errors) == 0, f"Unexpected errors: {errors}"
-
-        except Exception as e:
-            print(f"Exception in test_concurrent_workflow_operations: {str(e)}")
-            raise
-        finally:
-            for workflow_id in created_workflows:
-                try:
-                    workflow_client.delete_workflow(workflow_id, archive_workflow=True)
-                except Exception as e:
-                    print(f"Warning: Failed to delete workflow {workflow_id}: {str(e)}")
-
-    @pytest.mark.v5_2_6
-    @pytest.mark.v4_1_73
-    def test_complex_workflow_management_flow(
-        self,
-        workflow_client: OrkesWorkflowClient,
-        metadata_client: OrkesMetadataClient,
-        test_suffix: str,
-        simple_workflow_task: WorkflowTask,
-    ):
-        created_resources = {"workflows": [], "workflow_defs": []}
-
-        try:
-            workflow_types = {
-                "simple": {"param1": "value1", "param2": "value2"},
-                "complex": {
-                    "user_data": {"id": "user_123", "name": "Test User"},
-                    "order_data": {"items": [{"id": "item_1", "quantity": 2}]},
-                },
-                "batch": {
-                    "batch_id": "batch_456",
-                    "items": [
-                        {"id": f"item_{i}", "data": f"data_{i}"} for i in range(5)
-                    ],
-                },
-            }
-
-            for workflow_type, input_data in workflow_types.items():
-                workflow_name = f"complex_workflow_{workflow_type}_{test_suffix}"
-
-                workflow_def = WorkflowDef(
-                    name=workflow_name,
-                    version=1,
-                    description=f"Complex {workflow_type} workflow for testing",
-                    tasks=[simple_workflow_task],
-                    timeout_seconds=60,
-                    timeout_policy="TIME_OUT_WF",
-                    restartable=True,
-                    owner_email="test@example.com",
-                )
-
-                metadata_client.register_workflow_def(workflow_def, overwrite=True)
-                created_resources["workflow_defs"].append((workflow_name, 1))
-
-                time.sleep(1)
-
-                try:
-                    retrieved_def = metadata_client.get_workflow_def(workflow_name)
-                    assert retrieved_def.name == workflow_name
-                    assert retrieved_def.version == 1
-                except Exception as e:
-                    print(
-                        f"Warning: Could not verify workflow definition {workflow_name}: {str(e)}"
-                    )
-
-                correlation_id = f"complex_{workflow_type}_{test_suffix}"
-                workflow_id = workflow_client.start_workflow_by_name(
-                    name=workflow_name,
-                    input=input_data,
-                    version=1,
-                    correlationId=correlation_id,
-                    priority=0,
-                )
-                created_resources["workflows"].append(workflow_id)
-
-                workflow = workflow_client.get_workflow(workflow_id, include_tasks=True)
-                assert workflow.workflow_id == workflow_id
-                assert workflow.workflow_name == workflow_name
-
-                workflow_status = workflow_client.get_workflow_status(
-                    workflow_id, include_output=True, include_variables=True
-                )
-                assert workflow_status.workflow_id == workflow_id
-
-            search_results = workflow_client.search(
-                start=0,
-                size=20,
-                free_text="*",
-                query=f"correlationId:*{test_suffix}*",
-            )
-
-            assert search_results is not None
-            assert hasattr(search_results, "total_hits")
-            assert hasattr(search_results, "results")
-
-            correlation_ids = [
-                f"complex_{workflow_type}_{test_suffix}"
-                for workflow_type in workflow_types.keys()
-            ]
-
-            batch_request = CorrelationIdsSearchRequest(
-                correlation_ids=correlation_ids,
-                workflow_names=[
-                    f"complex_workflow_simple_{test_suffix}",
-                    f"complex_workflow_complex_{test_suffix}",
-                    f"complex_workflow_batch_{test_suffix}",
-                ],
-            )
-
-            batch_results = workflow_client.get_by_correlation_ids_in_batch(
-                batch_request=batch_request,
-                include_completed=False,
-                include_tasks=False,
-            )
-
-            assert batch_results is not None
-            assert isinstance(batch_results, dict)
-
-            for workflow_type in workflow_types.keys():
-                workflow_name = f"complex_workflow_{workflow_type}_{test_suffix}"
-                correlation_id = f"complex_{workflow_type}_{test_suffix}"
-                correlation_results = workflow_client.get_by_correlation_ids(
-                    workflow_name=workflow_name,
-                    correlation_ids=[correlation_id],
-                    include_completed=False,
-                    include_tasks=False,
-                )
-
-                assert correlation_results is not None
-                assert isinstance(correlation_results, dict)
-
-        except Exception as e:
-            print(f"Exception in test_complex_workflow_management_flow: {str(e)}")
-            raise
-        finally:
-            self._perform_comprehensive_cleanup(
-                workflow_client, metadata_client, created_resources, test_suffix
-            )
-
-    def _perform_comprehensive_cleanup(
-        self,
-        workflow_client: OrkesWorkflowClient,
-        metadata_client: OrkesMetadataClient,
-        created_resources: dict,
-        test_suffix: str,
-    ):
-        cleanup_enabled = os.getenv("CONDUCTOR_TEST_CLEANUP", "true").lower() == "true"
-        if not cleanup_enabled:
-            return
-
-        for workflow_id in created_resources["workflows"]:
-            try:
-                workflow_client.delete_workflow(workflow_id, archive_workflow=True)
-            except Exception as e:
-                print(f"Warning: Failed to delete workflow {workflow_id}: {str(e)}")
-
-        for workflow_name, version in created_resources.get("workflow_defs", []):
-            try:
-                metadata_client.unregister_workflow_def(workflow_name, version)
-            except Exception as e:
-                print(
-                    f"Warning: Failed to delete workflow definition {workflow_name}: {str(e)}"
-                )
-
-        remaining_workflows = []
-        for workflow_id in created_resources["workflows"]:
-            try:
-                workflow_client.get_workflow(workflow_id)
-                remaining_workflows.append(workflow_id)
-            except ApiException as e:
-                if e.code == 404:
-                    pass
-                else:
-                    remaining_workflows.append(workflow_id)
-            except Exception:
-                remaining_workflows.append(workflow_id)
-
-        if remaining_workflows:
-            print(
-                f"Warning: {len(remaining_workflows)} workflows could not be verified as deleted: {remaining_workflows}"
-            )

@@ -4,22 +4,27 @@ import time
 import uuid
 
 import pytest
-import httpx
+import pytest_asyncio
 
-from conductor.client.codegen.rest import ApiException
-from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.models import task
-from conductor.client.http.models.start_workflow_request import \
+from conductor.asyncio_client.adapters.api_client_adapter import \
+    ApiClientAdapter as ApiClient
+from conductor.asyncio_client.adapters.models.extended_task_def_adapter import \
+    ExtendedTaskDefAdapter as TaskDef
+from conductor.asyncio_client.adapters.models.extended_workflow_def_adapter import \
+    ExtendedWorkflowDefAdapter as WorkflowDef
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import \
     StartWorkflowRequestAdapter as StartWorkflowRequest
-from conductor.client.http.models.task_def import TaskDefAdapter as TaskDef
-from conductor.client.http.models.task_result import \
+from conductor.asyncio_client.adapters.models.task_result_adapter import \
     TaskResultAdapter as TaskResult
-from conductor.client.http.models.workflow import WorkflowAdapter as Workflow
-from conductor.client.http.models.workflow_def import \
-    WorkflowDefAdapter as WorkflowDef
-from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
-from conductor.client.orkes.orkes_task_client import OrkesTaskClient
-from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
+from conductor.asyncio_client.adapters.models.workflow_adapter import \
+    WorkflowAdapter as Workflow
+from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.http.rest import ApiException
+from conductor.asyncio_client.orkes.orkes_metadata_client import \
+    OrkesMetadataClient
+from conductor.asyncio_client.orkes.orkes_task_client import OrkesTaskClient
+from conductor.asyncio_client.orkes.orkes_workflow_client import \
+    OrkesWorkflowClient
 from conductor.shared.http.enums.task_result_status import TaskResultStatus
 
 
@@ -40,30 +45,31 @@ class TestOrkesTaskClientIntegration:
     def configuration(self) -> Configuration:
         """Create configuration from environment variables."""
         config = Configuration()
-        config.http_connection = httpx.Client(
-            timeout=httpx.Timeout(600.0),
-            follow_redirects=True,
-            limits=httpx.Limits(max_keepalive_connections=1, max_connections=1),
-            http2=True
-        )
         config.debug = os.getenv("CONDUCTOR_DEBUG", "false").lower() == "true"
         config.apply_logging_config()
         return config
 
-    @pytest.fixture(scope="class")
-    def task_client(self, configuration: Configuration) -> OrkesTaskClient:
+    @pytest_asyncio.fixture(scope="function")
+    async def task_client(self, configuration: Configuration) -> OrkesTaskClient:
         """Create OrkesTaskClient instance."""
-        return OrkesTaskClient(configuration)
+        async with ApiClient(configuration) as api_client:
+            return OrkesTaskClient(configuration, api_client)
 
-    @pytest.fixture(scope="class")
-    def workflow_client(self, configuration: Configuration) -> OrkesWorkflowClient:
+    @pytest_asyncio.fixture(scope="function")
+    async def workflow_client(
+        self, configuration: Configuration
+    ) -> OrkesWorkflowClient:
         """Create OrkesWorkflowClient instance."""
-        return OrkesWorkflowClient(configuration)
+        async with ApiClient(configuration) as api_client:
+            return OrkesWorkflowClient(configuration, api_client)
 
-    @pytest.fixture(scope="class")
-    def metadata_client(self, configuration: Configuration) -> OrkesMetadataClient:
+    @pytest_asyncio.fixture(scope="function")
+    async def metadata_client(
+        self, configuration: Configuration
+    ) -> OrkesMetadataClient:
         """Create OrkesMetadataClient instance."""
-        return OrkesMetadataClient(configuration)
+        async with ApiClient(configuration) as api_client:
+            return OrkesMetadataClient(configuration, api_client)
 
     @pytest.fixture(scope="class")
     def test_suffix(self) -> str:
@@ -92,7 +98,8 @@ class TestOrkesTaskClientIntegration:
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_task_definition_lifecycle(
+    @pytest.mark.asyncio
+    async def test_task_definition_lifecycle(
         self, metadata_client: OrkesMetadataClient, test_task_type: str
     ):
         """Test complete task definition lifecycle: create, read, update, delete."""
@@ -107,16 +114,16 @@ class TestOrkesTaskClientIntegration:
                 output_keys=["output1", "output2"],
             )
 
-            metadata_client.register_task_def(task_def)
+            await metadata_client.register_task_def(task_def)
 
-            retrieved_task_def = metadata_client.get_task_def(test_task_type)
+            retrieved_task_def = await metadata_client.get_task_def(test_task_type)
             assert retrieved_task_def.get("name") == test_task_type
             assert (
                 retrieved_task_def.get("description")
                 == "Test task for integration testing"
             )
 
-            task_defs = metadata_client.get_all_task_defs()
+            task_defs = await metadata_client.get_all_task_defs()
             task_names = [td.name for td in task_defs]
             assert test_task_type in task_names
 
@@ -130,9 +137,9 @@ class TestOrkesTaskClientIntegration:
                 output_keys=["output1", "output2", "output3"],
             )
 
-            metadata_client.update_task_def(updated_task_def)
+            await metadata_client.update_task_def(updated_task_def)
 
-            retrieved_updated = metadata_client.get_task_def(test_task_type)
+            retrieved_updated = await metadata_client.get_task_def(test_task_type)
             assert (
                 retrieved_updated.get("description")
                 == "Updated test task for integration testing"
@@ -141,13 +148,14 @@ class TestOrkesTaskClientIntegration:
 
         finally:
             try:
-                metadata_client.unregister_task_def(test_task_type)
+                await metadata_client.unregister_task_def(test_task_type)
             except Exception:
                 pass
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_workflow_definition_lifecycle(
+    @pytest.mark.asyncio
+    async def test_workflow_definition_lifecycle(
         self,
         metadata_client: OrkesMetadataClient,
         test_workflow_name: str,
@@ -171,9 +179,9 @@ class TestOrkesTaskClientIntegration:
                 owner_email="test@example.com",
             )
 
-            metadata_client.update_workflow_def(workflow_def)
+            await metadata_client.update_workflow_def(workflow_def)
 
-            retrieved_workflow_def = metadata_client.get_workflow_def(
+            retrieved_workflow_def = await metadata_client.get_workflow_def(
                 test_workflow_name, 1
             )
             assert retrieved_workflow_def.name == test_workflow_name
@@ -182,22 +190,22 @@ class TestOrkesTaskClientIntegration:
                 == "Test workflow for integration testing"
             )
 
-            workflow_defs = metadata_client.get_all_workflow_defs()
+            workflow_defs = await metadata_client.get_all_workflow_defs()
             workflow_names = [wd.name for wd in workflow_defs]
             assert test_workflow_name in workflow_names
 
         finally:
             try:
-                metadata_client.unregister_workflow_def(test_workflow_name, 1)
+                await metadata_client.unregister_workflow_def(test_workflow_name, 1)
             except Exception:
                 pass
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_task_polling_lifecycle(
+    @pytest.mark.asyncio
+    async def test_task_polling_lifecycle(
         self,
         task_client: OrkesTaskClient,
-        workflow_client: OrkesWorkflowClient,
         metadata_client: OrkesMetadataClient,
         test_task_type: str,
         test_workflow_name: str,
@@ -213,7 +221,7 @@ class TestOrkesTaskClientIntegration:
                 timeout_seconds=30,
                 response_timeout_seconds=20,
             )
-            metadata_client.register_task_def(task_def)
+            await metadata_client.register_task_def(task_def)
 
             workflow_def = WorkflowDef(
                 name=test_workflow_name,
@@ -230,69 +238,72 @@ class TestOrkesTaskClientIntegration:
                 output_parameters={},
                 owner_email="test@example.com",
             )
-            metadata_client.update_workflow_def(workflow_def)
+            await metadata_client.update_workflow_def(workflow_def)
 
-            polled_task = task_client.poll_task(test_task_type)
-            assert polled_task.domain is None
+            polled_task = await task_client.poll_for_task(test_task_type)
+            assert polled_task is None
 
-            polled_task_with_worker = task_client.poll_task(
-                test_task_type, worker_id=test_worker_id
+            polled_task_with_worker = await task_client.poll_for_task(
+                task_type=test_task_type, worker_id=test_worker_id
             )
-            assert polled_task_with_worker.domain is None
+            assert polled_task_with_worker is None
 
-            polled_task_with_domain = task_client.poll_task(
-                test_task_type, domain=test_domain
+            polled_task_with_domain = await task_client.poll_for_task(
+                task_type=test_task_type, domain=test_domain
             )
-            assert polled_task_with_domain.domain is None
+            assert polled_task_with_domain is None
 
-            polled_task_with_both = task_client.poll_task(
-                test_task_type, worker_id=test_worker_id, domain=test_domain
+            polled_task_with_both = await task_client.poll_for_task(
+                task_type=test_task_type, worker_id=test_worker_id, domain=test_domain
             )
-            assert polled_task_with_both.domain is None
+            assert polled_task_with_both is None
 
-            batch_polled_tasks = task_client.batch_poll_tasks(test_task_type)
+            batch_polled_tasks = await task_client.poll_for_task_batch(test_task_type)
             assert isinstance(batch_polled_tasks, list)
             assert len(batch_polled_tasks) == 0
 
-            batch_polled_tasks_with_count = task_client.batch_poll_tasks(
-                test_task_type, count=5
+            batch_polled_tasks_with_count = await task_client.poll_for_task_batch(
+                task_type=test_task_type, count=5
             )
             assert isinstance(batch_polled_tasks_with_count, list)
             assert len(batch_polled_tasks_with_count) == 0
 
-            batch_polled_tasks_with_timeout = task_client.batch_poll_tasks(
-                test_task_type, timeout_in_millisecond=1000
+            batch_polled_tasks_with_timeout = await task_client.poll_for_task_batch(
+                task_type=test_task_type, timeout=1000
             )
             assert isinstance(batch_polled_tasks_with_timeout, list)
             assert len(batch_polled_tasks_with_timeout) == 0
 
-            batch_polled_tasks_with_all = task_client.batch_poll_tasks(
-                test_task_type,
+            batch_polled_tasks_with_all = await task_client.poll_for_task_batch(
+                task_type=test_task_type,
                 worker_id=test_worker_id,
                 count=3,
-                timeout_in_millisecond=500,
+                timeout=500,
                 domain=test_domain,
             )
             assert isinstance(batch_polled_tasks_with_all, list)
             assert len(batch_polled_tasks_with_all) == 0
 
-            queue_size = task_client.get_queue_size_for_task(test_task_type)
-            assert isinstance(queue_size, int)
-            assert queue_size >= 0
+            queue_size = await task_client.get_queue_size_for_task_type(
+                [test_task_type]
+            )
+            assert isinstance(queue_size, dict)
+            assert queue_size[test_task_type] >= 0
 
-            poll_data = task_client.get_task_poll_data(test_task_type)
+            poll_data = await task_client.get_poll_data(test_task_type)
             assert isinstance(poll_data, list)
 
         finally:
             try:
-                metadata_client.unregister_task_def(test_task_type)
-                metadata_client.unregister_workflow_def(test_workflow_name, 1)
+                await metadata_client.unregister_task_def(test_task_type)
+                await metadata_client.unregister_workflow_def(test_workflow_name, 1)
             except Exception:
                 pass
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_task_execution_lifecycle(
+    @pytest.mark.asyncio
+    async def test_task_execution_lifecycle(
         self,
         task_client: OrkesTaskClient,
         workflow_client: OrkesWorkflowClient,
@@ -310,7 +321,7 @@ class TestOrkesTaskClientIntegration:
                 timeout_seconds=30,
                 response_timeout_seconds=20,
             )
-            metadata_client.register_task_def(task_def)
+            await metadata_client.register_task_def(task_def)
 
             workflow_def = WorkflowDef(
                 name=test_workflow_name,
@@ -327,29 +338,29 @@ class TestOrkesTaskClientIntegration:
                 output_parameters={},
                 owner_email="test@example.com",
             )
-            metadata_client.update_workflow_def(workflow_def)
+            await metadata_client.update_workflow_def(workflow_def)
 
             start_request = StartWorkflowRequest(
                 name=test_workflow_name, version=1, input={"test_input": "test_value"}
             )
-            workflow_id = workflow_client.start_workflow(start_request)
+            workflow_id = await workflow_client.start_workflow(start_request)
             assert workflow_id is not None
 
             time.sleep(2)
 
-            polled_task = task_client.poll_task(
+            polled_task = await task_client.poll_for_task(
                 test_task_type, worker_id=test_worker_id
             )
 
             if polled_task is not None:
-                retrieved_task = task_client.get_task(polled_task.task_id)
+                retrieved_task = await task_client.get_task(polled_task.task_id)
                 assert retrieved_task.task_id == polled_task.task_id
                 assert retrieved_task.task_type == test_task_type
 
                 log_message = f"Test log message from {test_worker_id}"
-                task_client.add_task_log(polled_task.task_id, log_message)
+                await task_client.log_task(polled_task.task_id, log_message)
 
-                task_logs = task_client.get_task_logs(polled_task.task_id)
+                task_logs = await task_client.get_task_logs(polled_task.task_id)
                 assert isinstance(task_logs, list)
                 assert len(task_logs) >= 1
 
@@ -359,10 +370,10 @@ class TestOrkesTaskClientIntegration:
                     status=TaskResultStatus.IN_PROGRESS,
                     output_data={"result": "task completed successfully"},
                 )
-                update_result = task_client.update_task(task_result)
+                update_result = await task_client.update_task(task_result)
                 assert update_result is not None
 
-                update_by_ref_result = task_client.update_task_by_ref_name(
+                update_by_ref_result = await task_client.update_task_by_ref_name(
                     workflow_id=workflow_id,
                     task_ref_name="test_task_ref",
                     status=TaskResultStatus.IN_PROGRESS,
@@ -371,7 +382,7 @@ class TestOrkesTaskClientIntegration:
                 )
                 assert update_by_ref_result is not None
 
-                sync_result = task_client.update_task_sync(
+                sync_result = await task_client.update_task_sync(
                     workflow_id=workflow_id,
                     task_ref_name="test_task_ref",
                     status=TaskResultStatus.COMPLETED,
@@ -383,19 +394,20 @@ class TestOrkesTaskClientIntegration:
 
             else:
                 with pytest.raises(ApiException) as exc_info:
-                    task_client.get_task("non_existent_task_id")
+                    await task_client.get_task("non_existent_task_id")
                 assert exc_info.value.code == 404
 
         finally:
             try:
-                metadata_client.unregister_task_def(test_task_type)
-                metadata_client.unregister_workflow_def(test_workflow_name, 1)
+                await metadata_client.unregister_task_def(test_task_type)
+                await metadata_client.unregister_workflow_def(test_workflow_name, 1)
             except Exception:
                 pass
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_task_status_transitions(
+    @pytest.mark.asyncio
+    async def test_task_status_transitions(
         self,
         task_client: OrkesTaskClient,
         workflow_client: OrkesWorkflowClient,
@@ -413,7 +425,7 @@ class TestOrkesTaskClientIntegration:
                 timeout_seconds=30,
                 response_timeout_seconds=20,
             )
-            metadata_client.register_task_def(task_def)
+            await metadata_client.register_task_def(task_def)
 
             workflow_def = WorkflowDef(
                 name=test_workflow_name,
@@ -430,16 +442,16 @@ class TestOrkesTaskClientIntegration:
                 output_parameters={},
                 owner_email="test@example.com",
             )
-            metadata_client.update_workflow_def(workflow_def)
+            await metadata_client.update_workflow_def(workflow_def)
 
             start_request = StartWorkflowRequest(
                 name=test_workflow_name, version=1, input={"test_input": "status_test"}
             )
-            workflow_id = workflow_client.start_workflow(start_request)
+            workflow_id = await workflow_client.start_workflow(start_request)
 
             time.sleep(2)
 
-            polled_task = task_client.poll_task(
+            polled_task = await task_client.poll_for_task(
                 test_task_type, worker_id=test_worker_id
             )
 
@@ -450,7 +462,7 @@ class TestOrkesTaskClientIntegration:
                     status=TaskResultStatus.IN_PROGRESS,
                     output_data={"status": "in_progress"},
                 )
-                task_client.update_task(in_progress_result)
+                await task_client.update_task(in_progress_result)
 
                 completed_result = TaskResult(
                     workflow_instance_id=workflow_id,
@@ -458,7 +470,7 @@ class TestOrkesTaskClientIntegration:
                     status=TaskResultStatus.COMPLETED,
                     output_data={"status": "completed", "result": "success"},
                 )
-                task_client.update_task(completed_result)
+                await task_client.update_task(completed_result)
 
                 failed_result = TaskResult(
                     workflow_instance_id=workflow_id,
@@ -466,7 +478,7 @@ class TestOrkesTaskClientIntegration:
                     status=TaskResultStatus.FAILED,
                     output_data={"status": "failed", "error": "test error"},
                 )
-                task_client.update_task(failed_result)
+                await task_client.update_task(failed_result)
 
                 terminal_error_result = TaskResult(
                     workflow_instance_id=workflow_id,
@@ -474,126 +486,19 @@ class TestOrkesTaskClientIntegration:
                     status=TaskResultStatus.FAILED_WITH_TERMINAL_ERROR,
                     output_data={"status": "terminal_error", "error": "terminal error"},
                 )
-                task_client.update_task(terminal_error_result)
+                await task_client.update_task(terminal_error_result)
 
         finally:
             try:
-                metadata_client.unregister_task_def(test_task_type)
-                metadata_client.unregister_workflow_def(test_workflow_name, 1)
+                await metadata_client.unregister_task_def(test_task_type)
+                await metadata_client.unregister_workflow_def(test_workflow_name, 1)
             except Exception:
                 pass
 
     @pytest.mark.v5_2_6
     @pytest.mark.v4_1_73
-    def test_concurrent_task_operations(
-        self,
-        task_client: OrkesTaskClient,
-        workflow_client: OrkesWorkflowClient,
-        metadata_client: OrkesMetadataClient,
-        test_suffix: str,
-    ):
-        """Test concurrent operations on multiple tasks."""
-        try:
-            task_types = []
-            workflow_names = []
-            workflow_ids = []
-
-            for i in range(3):
-                task_type = f"concurrent_task_{test_suffix}_{i}"
-                workflow_name = f"concurrent_workflow_{test_suffix}_{i}"
-
-                task_def = TaskDef(
-                    name=task_type,
-                    description=f"Concurrent test task {i}",
-                    owner_email="test@example.com",
-                    timeout_seconds=30,
-                    response_timeout_seconds=20,
-                )
-                metadata_client.register_task_def(task_def)
-                task_types.append(task_type)
-
-                workflow_def = WorkflowDef(
-                    name=workflow_name,
-                    description=f"Concurrent test workflow {i}",
-                    version=1,
-                    tasks=[
-                        {
-                            "name": task_type,
-                            "taskReferenceName": f"task_ref_{i}",
-                            "type": "SIMPLE",
-                        }
-                    ],
-                    input_parameters=[],
-                    output_parameters={},
-                    owner_email="test@example.com",
-                )
-                metadata_client.update_workflow_def(workflow_def)
-                workflow_names.append(workflow_name)
-
-                start_request = StartWorkflowRequest(
-                    name=workflow_name,
-                    version=1,
-                    input={"test_input": "concurrent_test"},
-                )
-                workflow_id = workflow_client.start_workflow(start_request)
-                workflow_ids.append(workflow_id)
-
-            results = []
-            errors = []
-
-            def poll_and_update_task(task_type: str, worker_id: str):
-                try:
-                    task = task_client.poll_task(task_type, worker_id=worker_id)
-                    if task is not None:
-                        task_result = TaskResult(
-                            workflow_instance_id=workflow_ids[i],
-                            task_id=task.task_id,
-                            status=TaskResultStatus.COMPLETED,
-                            output_data={
-                                "worker_id": worker_id,
-                                "result": "concurrent_test",
-                            },
-                        )
-                        update_result = task_client.update_task(task_result)
-                        results.append(f"task_{task_type}_success")
-                    else:
-                        results.append(f"task_{task_type}_no_task")
-                except Exception as e:
-                    errors.append(f"task_{task_type}_error: {str(e)}")
-
-            threads = []
-            for i, task_type in enumerate(task_types):
-                worker_id = f"concurrent_worker_{test_suffix}_{i}"
-                thread = threading.Thread(
-                    target=poll_and_update_task, args=(task_type, worker_id)
-                )
-                threads.append(thread)
-                thread.start()
-
-            for thread in threads:
-                thread.join()
-
-            assert (
-                len(results) == 3
-            ), f"Expected 3 operations, got {len(results)}. Errors: {errors}"
-            assert len(errors) == 0, f"Unexpected errors: {errors}"
-
-        finally:
-            for task_type in task_types:
-                try:
-                    metadata_client.unregister_task_def(task_type)
-                except Exception:
-                    pass
-
-            for workflow_name in workflow_names:
-                try:
-                    metadata_client.unregister_workflow_def(workflow_name, 1)
-                except Exception:
-                    pass
-
-    @pytest.mark.v5_2_6
-    @pytest.mark.v4_1_73
-    def test_complex_task_workflow_scenario(
+    @pytest.mark.asyncio
+    async def test_complex_task_workflow_scenario(
         self,
         task_client: OrkesTaskClient,
         workflow_client: OrkesWorkflowClient,
@@ -631,7 +536,7 @@ class TestOrkesTaskClientIntegration:
                     output_keys=[f"{task_type}_output"],
                 )
 
-                created_task_def = metadata_client.register_task_def(task_def)
+                created_task_def = await metadata_client.register_task_def(task_def)
                 task_defs[task_type] = created_task_def
                 created_resources["task_defs"].append(full_task_type)
 
@@ -673,7 +578,9 @@ class TestOrkesTaskClientIntegration:
                 owner_email="test@example.com",
             )
 
-            created_workflow_def = metadata_client.update_workflow_def(workflow_def)
+            created_workflow_def = await metadata_client.update_workflow_def(
+                workflow_def
+            )
             created_resources["workflow_defs"].append((workflow_name, 1))
 
             workflow_instances = []
@@ -683,19 +590,18 @@ class TestOrkesTaskClientIntegration:
                     version=1,
                     input={"initial_data": f"test_data_{i}"},
                 )
-                workflow_id = workflow_client.start_workflow(start_request)
+                workflow_id = await workflow_client.start_workflow(start_request)
                 workflow_instances.append(workflow_id)
                 created_resources["workflows"].append(workflow_id)
 
             for i, workflow_id in enumerate(workflow_instances):
-                data_task = task_client.poll_task(
+                data_task = await task_client.poll_for_task(
                     f"data_processing_task_{test_suffix}",
                     worker_id=f"worker_{test_suffix}_{i}",
                 )
                 if data_task:
-                    task_client.add_task_log(
-                        task_id=data_task.task_id,
-                        log_message=f"Processing data for workflow {workflow_id}",
+                    await task_client.log_task(
+                        data_task.task_id, f"Processing data for workflow {workflow_id}"
                     )
 
                     data_result = TaskResult(
@@ -704,20 +610,17 @@ class TestOrkesTaskClientIntegration:
                         status=TaskResultStatus.COMPLETED,
                         output_data={"data_processing_output": f"processed_data_{i}"},
                     )
-                    task_client.update_task(data_result)
+                    await task_client.update_task(data_result)
                     created_resources["tasks"].append(data_task.task_id)
 
-                # Wait for workflow to process data task completion and schedule validation task
-                time.sleep(2)
-
-                validation_task = task_client.poll_task(
+                validation_task = await task_client.poll_for_task(
                     f"validation_task_{test_suffix}",
                     worker_id=f"worker_{test_suffix}_{i}",
                 )
                 if validation_task:
-                    task_client.add_task_log(
-                        task_id=validation_task.task_id,
-                        log_message=f"Validating data for workflow {workflow_id}",
+                    await task_client.log_task(
+                        validation_task.task_id,
+                        f"Validating data for workflow {workflow_id}",
                     )
 
                     validation_result = TaskResult(
@@ -726,20 +629,17 @@ class TestOrkesTaskClientIntegration:
                         status=TaskResultStatus.COMPLETED,
                         output_data={"validation_output": f"validated_data_{i}"},
                     )
-                    task_client.update_task(validation_result)
+                    await task_client.update_task(validation_result)
                     created_resources["tasks"].append(validation_task.task_id)
 
-                # Wait for workflow to process validation task completion and schedule notification task
-                time.sleep(2)
-
-                notification_task = task_client.poll_task(
+                notification_task = await task_client.poll_for_task(
                     f"notification_task_{test_suffix}",
                     worker_id=f"worker_{test_suffix}_{i}",
                 )
                 if notification_task:
-                    task_client.add_task_log(
-                        task_id=notification_task.task_id,
-                        log_message=f"Sending notification for workflow {workflow_id}",
+                    await task_client.log_task(
+                        notification_task.task_id,
+                        f"Sending notification for workflow {workflow_id}",
                     )
 
                     notification_result = TaskResult(
@@ -748,18 +648,15 @@ class TestOrkesTaskClientIntegration:
                         status=TaskResultStatus.COMPLETED,
                         output_data={"notification_output": f"notification_sent_{i}"},
                     )
-                    task_client.update_task(notification_result)
+                    await task_client.update_task(notification_result)
                     created_resources["tasks"].append(notification_task.task_id)
 
-                time.sleep(2)
-
-                cleanup_task = task_client.poll_task(
+                cleanup_task = await task_client.poll_for_task(
                     f"cleanup_task_{test_suffix}", worker_id=f"worker_{test_suffix}_{i}"
                 )
                 if cleanup_task:
-                    task_client.add_task_log(
-                        task_id=cleanup_task.task_id,
-                        log_message=f"Cleaning up for workflow {workflow_id}",
+                    await task_client.log_task(
+                        cleanup_task.task_id, f"Cleaning up for workflow {workflow_id}"
                     )
                     cleanup_result = TaskResult(
                         workflow_instance_id=workflow_id,
@@ -767,30 +664,32 @@ class TestOrkesTaskClientIntegration:
                         status=TaskResultStatus.COMPLETED,
                         output_data={"cleanup_output": f"cleanup_completed_{i}"},
                     )
-                    task_client.update_task(cleanup_result)
+                    await task_client.update_task(cleanup_result)
                     created_resources["tasks"].append(cleanup_task.task_id)
 
             for task_id in created_resources["tasks"]:
-                retrieved_task = task_client.get_task(task_id)
+                retrieved_task = await task_client.get_task(task_id)
                 assert retrieved_task.task_id == task_id
 
-                task_logs = task_client.get_task_logs(task_id)
+                task_logs = await task_client.get_task_logs(task_id)
                 assert len(task_logs) >= 1
 
                 assert retrieved_task.status == "COMPLETED"
 
             for task_type in task_types:
                 full_task_type = f"{task_type}_task_{test_suffix}"
-                batch_tasks = task_client.batch_poll_tasks(
-                    full_task_type, count=5, timeout_in_millisecond=1000
+                batch_tasks = await task_client.poll_for_task_batch(
+                    full_task_type, count=5, timeout=1000
                 )
                 assert isinstance(batch_tasks, list)
 
-                queue_size = task_client.get_queue_size_for_task(full_task_type)
-                assert isinstance(queue_size, int)
-                assert queue_size >= 0
+                queue_size = await task_client.get_queue_size_for_task_type(
+                    [full_task_type]
+                )
+                assert isinstance(queue_size, dict)
+                assert queue_size[full_task_type] >= 0
 
-                poll_data = task_client.get_task_poll_data(full_task_type)
+                poll_data = await task_client.get_poll_data(full_task_type)
                 assert isinstance(poll_data, list)
 
             if created_resources["tasks"]:
@@ -801,7 +700,7 @@ class TestOrkesTaskClientIntegration:
                         output_data={"error": "test"},
                     )
                     try:
-                        task_client.update_task(invalid_task_result)
+                        await task_client.update_task(invalid_task_result)
                     except Exception as e:
                         print(f"Expected error with invalid status: {e}")
 
@@ -809,9 +708,11 @@ class TestOrkesTaskClientIntegration:
             print(f"Error during complex scenario: {str(e)}")
             raise
         finally:
-            self._perform_comprehensive_cleanup(metadata_client, created_resources)
+            await self._perform_comprehensive_cleanup(
+                metadata_client, created_resources
+            )
 
-    def _perform_comprehensive_cleanup(
+    async def _perform_comprehensive_cleanup(
         self, metadata_client: OrkesMetadataClient, created_resources: dict
     ):
         """
@@ -824,7 +725,7 @@ class TestOrkesTaskClientIntegration:
 
         for workflow_name, version in created_resources["workflow_defs"]:
             try:
-                metadata_client.unregister_workflow_def(workflow_name, version)
+                await metadata_client.unregister_workflow_def(workflow_name, version)
             except Exception as e:
                 print(
                     f"Warning: Failed to delete workflow definition {workflow_name}: {str(e)}"
@@ -832,7 +733,7 @@ class TestOrkesTaskClientIntegration:
 
         for task_type in created_resources["task_defs"]:
             try:
-                metadata_client.unregister_task_def(task_type)
+                await metadata_client.unregister_task_def(task_type)
             except Exception as e:
                 print(
                     f"Warning: Failed to delete task definition {task_type}: {str(e)}"
