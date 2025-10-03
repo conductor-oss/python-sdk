@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import time
+import warnings
 from typing import Optional
 
 from conductor.shared.configuration.settings.authentication_settings import (
@@ -27,6 +29,12 @@ class Configuration:
         if server_api_url is not None:
             self.host = server_api_url
         elif base_url is not None:
+            if re.search(r'/(?:^|/)api(?:/|$)', base_url):
+                warnings.warn(
+                    "'base_url' been passed with '/api' path. Consider using 'server_api_url' instead"
+                )
+            else:
+                base_url += "/api"
             self.host = base_url
         else:
             self.host = os.getenv("CONDUCTOR_SERVER_URL")
@@ -45,9 +53,7 @@ class Configuration:
             key = os.getenv("CONDUCTOR_AUTH_KEY")
             secret = os.getenv("CONDUCTOR_AUTH_SECRET")
             if key is not None and secret is not None:
-                self.authentication_settings = AuthenticationSettings(
-                    key_id=key, key_secret=secret
-                )
+                self.authentication_settings = AuthenticationSettings(key_id=key, key_secret=secret)
             else:
                 self.authentication_settings = None
 
