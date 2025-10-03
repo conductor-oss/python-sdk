@@ -4,19 +4,19 @@ import time
 import uuid
 
 import pytest
+import httpx
 
+from conductor.client.codegen.rest import ApiException
+from conductor.client.configuration.configuration import Configuration
+from conductor.client.http.models import task
 from conductor.client.http.models.start_workflow_request import \
     StartWorkflowRequestAdapter as StartWorkflowRequest
-from conductor.client.http.models.task_def import \
-    TaskDefAdapter as TaskDef
+from conductor.client.http.models.task_def import TaskDefAdapter as TaskDef
 from conductor.client.http.models.task_result import \
     TaskResultAdapter as TaskResult
-from conductor.client.http.models.workflow import \
-    WorkflowAdapter as Workflow
+from conductor.client.http.models.workflow import WorkflowAdapter as Workflow
 from conductor.client.http.models.workflow_def import \
     WorkflowDefAdapter as WorkflowDef
-from conductor.client.configuration.configuration import Configuration
-from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.client.orkes.orkes_task_client import OrkesTaskClient
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
@@ -40,6 +40,12 @@ class TestOrkesTaskClientIntegration:
     def configuration(self) -> Configuration:
         """Create configuration from environment variables."""
         config = Configuration()
+        config.http_connection = httpx.Client(
+            timeout=httpx.Timeout(600.0),
+            follow_redirects=True,
+            limits=httpx.Limits(max_keepalive_connections=1, max_connections=1),
+            http2=True
+        )
         config.debug = os.getenv("CONDUCTOR_DEBUG", "false").lower() == "true"
         config.apply_logging_config()
         return config
@@ -688,7 +694,8 @@ class TestOrkesTaskClientIntegration:
                 )
                 if data_task:
                     task_client.add_task_log(
-                        data_task.task_id, f"Processing data for workflow {workflow_id}"
+                        task_id=data_task.task_id,
+                        log_message=f"Processing data for workflow {workflow_id}",
                     )
 
                     data_result = TaskResult(
@@ -700,14 +707,17 @@ class TestOrkesTaskClientIntegration:
                     task_client.update_task(data_result)
                     created_resources["tasks"].append(data_task.task_id)
 
+                # Wait for workflow to process data task completion and schedule validation task
+                time.sleep(2)
+
                 validation_task = task_client.poll_task(
                     f"validation_task_{test_suffix}",
                     worker_id=f"worker_{test_suffix}_{i}",
                 )
                 if validation_task:
                     task_client.add_task_log(
-                        validation_task.task_id,
-                        f"Validating data for workflow {workflow_id}",
+                        task_id=validation_task.task_id,
+                        log_message=f"Validating data for workflow {workflow_id}",
                     )
 
                     validation_result = TaskResult(
@@ -719,14 +729,17 @@ class TestOrkesTaskClientIntegration:
                     task_client.update_task(validation_result)
                     created_resources["tasks"].append(validation_task.task_id)
 
+                # Wait for workflow to process validation task completion and schedule notification task
+                time.sleep(2)
+
                 notification_task = task_client.poll_task(
                     f"notification_task_{test_suffix}",
                     worker_id=f"worker_{test_suffix}_{i}",
                 )
                 if notification_task:
                     task_client.add_task_log(
-                        notification_task.task_id,
-                        f"Sending notification for workflow {workflow_id}",
+                        task_id=notification_task.task_id,
+                        log_message=f"Sending notification for workflow {workflow_id}",
                     )
 
                     notification_result = TaskResult(
@@ -738,12 +751,15 @@ class TestOrkesTaskClientIntegration:
                     task_client.update_task(notification_result)
                     created_resources["tasks"].append(notification_task.task_id)
 
+                time.sleep(2)
+
                 cleanup_task = task_client.poll_task(
                     f"cleanup_task_{test_suffix}", worker_id=f"worker_{test_suffix}_{i}"
                 )
                 if cleanup_task:
                     task_client.add_task_log(
-                        cleanup_task.task_id, f"Cleaning up for workflow {workflow_id}"
+                        task_id=cleanup_task.task_id,
+                        log_message=f"Cleaning up for workflow {workflow_id}",
                     )
                     cleanup_result = TaskResult(
                         workflow_instance_id=workflow_id,

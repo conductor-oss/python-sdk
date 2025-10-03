@@ -6,6 +6,8 @@ import pytest_asyncio
 
 from conductor.asyncio_client.adapters.api_client_adapter import \
     ApiClientAdapter as ApiClient
+from conductor.asyncio_client.adapters.models.authorization_request_adapter import \
+    AuthorizationRequestAdapter as AuthorizationRequest
 from conductor.asyncio_client.adapters.models.create_or_update_application_request_adapter import \
     CreateOrUpdateApplicationRequestAdapter as CreateOrUpdateApplicationRequest
 from conductor.asyncio_client.adapters.models.subject_ref_adapter import \
@@ -23,7 +25,6 @@ from conductor.asyncio_client.http.models import tag
 from conductor.asyncio_client.http.rest import ApiException
 from conductor.asyncio_client.orkes.orkes_authorization_client import \
     OrkesAuthorizationClient
-from conductor.asyncio_client.adapters.models.authorization_request_adapter import AuthorizationRequestAdapter as AuthorizationRequest
 from conductor.client.orkes.models.access_key_status import AccessKeyStatus
 from conductor.client.orkes.models.access_type import AccessType
 from conductor.shared.http.enums.subject_type import SubjectType
@@ -59,7 +60,6 @@ class TestOrkesAuthorizationClientIntegration:
         """Create OrkesAuthorizationClient instance."""
         async with ApiClient(configuration) as api_client:
             return OrkesAuthorizationClient(configuration, api_client=api_client)
-
 
     @pytest.fixture(scope="class")
     def test_suffix(self) -> str:
@@ -113,7 +113,7 @@ class TestOrkesAuthorizationClientIntegration:
             updated_name = f"{test_application_name}_updated"
             update_request = CreateOrUpdateApplicationRequest(name=updated_name)
             updated_app = await auth_client.update_application(
-                created_app.id,update_request
+                created_app.id, update_request
             )
             assert updated_app.name == updated_name
 
@@ -227,7 +227,7 @@ class TestOrkesAuthorizationClientIntegration:
                 description="Test Group", roles=["USER"]
             )
             created_group = await auth_client.upsert_group(
-                test_group_id, create_request 
+                test_group_id, create_request
             )
 
             assert created_group.id == test_group_id
@@ -298,12 +298,22 @@ class TestOrkesAuthorizationClientIntegration:
             group_subject = SubjectRef(id=test_group_id, type=SubjectType.GROUP)
 
             user_access = [AccessType.EXECUTE, AccessType.READ]
-            await auth_client.grant_permissions(AuthorizationRequest(subject=user_subject, target=target, access=user_access))
+            await auth_client.grant_permissions(
+                AuthorizationRequest(
+                    subject=user_subject, target=target, access=user_access
+                )
+            )
 
             group_access = [AccessType.READ]
-            await auth_client.grant_permissions(AuthorizationRequest(subject=group_subject, target=target, access=group_access))
+            await auth_client.grant_permissions(
+                AuthorizationRequest(
+                    subject=group_subject, target=target, access=group_access
+                )
+            )
 
-            target_permissions = await auth_client.get_permissions(target.type, target.id)
+            target_permissions = await auth_client.get_permissions(
+                target.type, target.id
+            )
 
             assert AccessType.EXECUTE in target_permissions
             assert AccessType.READ in target_permissions
@@ -349,25 +359,38 @@ class TestOrkesAuthorizationClientIntegration:
             assert len(group_target_perms) >= 1
             assert AccessType.READ in group_target_perms[0].access
 
-            await auth_client.remove_permissions(AuthorizationRequest(subject=user_subject, target=target, access=user_access))
-            await auth_client.remove_permissions(AuthorizationRequest(subject=group_subject, target=target, access=group_access))
+            await auth_client.remove_permissions(
+                AuthorizationRequest(
+                    subject=user_subject, target=target, access=user_access
+                )
+            )
+            await auth_client.remove_permissions(
+                AuthorizationRequest(
+                    subject=group_subject, target=target, access=group_access
+                )
+            )
 
-            target_permissions_after = await auth_client.get_permissions(target.type, target.id)
+            target_permissions_after = await auth_client.get_permissions(
+                target.type, target.id
+            )
             if AccessType.EXECUTE in target_permissions_after:
                 user_perms_after = target_permissions_after[AccessType.EXECUTE]
                 assert not any(
-                    subject["id"] == test_user_id and subject["type"] == SubjectType.USER
+                    subject["id"] == test_user_id
+                    and subject["type"] == SubjectType.USER
                     for subject in user_perms_after
                 )
 
             if AccessType.READ in target_permissions_after:
                 read_perms_after = target_permissions_after[AccessType.READ]
                 assert not any(
-                    subject["id"] == test_user_id and subject["type"] == SubjectType.USER
+                    subject["id"] == test_user_id
+                    and subject["type"] == SubjectType.USER
                     for subject in read_perms_after
                 )
                 assert not any(
-                    subject["id"] == test_group_id and subject["type"] == SubjectType.GROUP
+                    subject["id"] == test_group_id
+                    and subject["type"] == SubjectType.GROUP
                     for subject in read_perms_after
                 )
 
@@ -549,7 +572,11 @@ class TestOrkesAuthorizationClientIntegration:
                     id=main_groups["worker"].id, type=SubjectType.GROUP
                 )
                 await auth_client.grant_permissions(
-                    AuthorizationRequest(subject=exec_subject, target=workflow_target, access=[AccessType.EXECUTE, AccessType.READ, AccessType.CREATE])
+                    AuthorizationRequest(
+                        subject=exec_subject,
+                        target=workflow_target,
+                        access=[AccessType.EXECUTE, AccessType.READ, AccessType.CREATE],
+                    )
                 )
                 created_resources["permissions"].append(
                     (
@@ -563,7 +590,11 @@ class TestOrkesAuthorizationClientIntegration:
                     id=main_groups["metadata_manager"].id, type=SubjectType.GROUP
                 )
                 await auth_client.grant_permissions(
-                    AuthorizationRequest(subject=manager_subject, target=workflow_target, access=[AccessType.EXECUTE, AccessType.READ])
+                    AuthorizationRequest(
+                        subject=manager_subject,
+                        target=workflow_target,
+                        access=[AccessType.EXECUTE, AccessType.READ],
+                    )
                 )
                 created_resources["permissions"].append(
                     (
@@ -577,10 +608,14 @@ class TestOrkesAuthorizationClientIntegration:
                     id=main_groups["user"].id, type=SubjectType.GROUP
                 )
                 await auth_client.grant_permissions(
-                    AuthorizationRequest(subject=emp_subject, target=workflow_target, access=[AccessType.READ])
+                    AuthorizationRequest(
+                        subject=emp_subject,
+                        target=workflow_target,
+                        access=[AccessType.READ],
+                    )
                 )
                 created_resources["permissions"].append(
-                    (emp_subject, workflow_target, [AccessType.READ]) 
+                    (emp_subject, workflow_target, [AccessType.READ])
                 )
 
             for dept in departments:
@@ -591,7 +626,11 @@ class TestOrkesAuthorizationClientIntegration:
                 )
 
                 await auth_client.grant_permissions(
-                    AuthorizationRequest(subject=dept_group_subject, target=dept_target, access=[AccessType.CREATE, AccessType.EXECUTE, AccessType.READ])
+                    AuthorizationRequest(
+                        subject=dept_group_subject,
+                        target=dept_target,
+                        access=[AccessType.CREATE, AccessType.EXECUTE, AccessType.READ],
+                    )
                 )
                 created_resources["permissions"].append(
                     (
@@ -627,7 +666,9 @@ class TestOrkesAuthorizationClientIntegration:
                 workflow_target = TargetRef(
                     id=workflow_name, type=TargetType.WORKFLOW_DEF
                 )
-                permissions = await auth_client.get_permissions(workflow_target.type, workflow_target.id)
+                permissions = await auth_client.get_permissions(
+                    workflow_target.type, workflow_target.id
+                )
 
                 if AccessType.EXECUTE in permissions:
                     exec_perms = permissions[AccessType.EXECUTE]
@@ -675,7 +716,11 @@ class TestOrkesAuthorizationClientIntegration:
 
         for subject, target, access_types in created_resources["permissions"]:
             try:
-                auth_client.remove_permissions(AuthorizationRequest(subject=subject, target=target, access=access_types))
+                await auth_client.remove_permissions(
+                    AuthorizationRequest(
+                        subject=subject, target=target, access=access_types
+                    )
+                )
             except Exception as e:
                 print(
                     f"Warning: Failed to remove permission {subject.id} -> {target.id}: {str(e)}"

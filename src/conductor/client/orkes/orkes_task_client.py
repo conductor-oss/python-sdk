@@ -87,7 +87,7 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
         return queueSize
 
     def add_task_log(self, task_id: str, log_message: str):
-        self.taskResourceApi.log(log_message, task_id)
+        self.taskResourceApi.log(body=log_message, task_id=task_id)
 
     def get_task_logs(self, task_id: str) -> List[TaskExecLog]:
         return self.taskResourceApi.get_task_logs(task_id)
