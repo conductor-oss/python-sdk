@@ -29,7 +29,7 @@ class Configuration:
         if server_api_url is not None:
             self.host = server_api_url
         elif base_url is not None:
-            if re.search(r'/(?:^|/)api(?:/|$)', base_url):
+            if re.search(r'/api(/|$)', base_url):
                 warnings.warn(
                     "'base_url' been passed with '/api' path. Consider using 'server_api_url' instead"
                 )
