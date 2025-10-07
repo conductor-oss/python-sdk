@@ -1,5 +1,6 @@
 import logging
 import time
+import urllib3
 
 from conductor.client.codegen.api_client import ApiClient
 from conductor.client.configuration.configuration import Configuration
@@ -14,14 +15,14 @@ logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 class ApiClientAdapter(ApiClient):
     def __init__(self, configuration=None, header_name=None, header_value=None, cookie=None):
         """Initialize the API client adapter with httpx-based REST client."""
-        super().__init__(configuration, header_name, header_value, cookie)
         self.configuration = configuration or Configuration()
 
-        # Create httpx-compatible REST client directly
+        # Create httpx-compatible REST client
         self.rest_client = RESTClientObjectAdapter(connection=self.configuration.http_connection)
 
         self.default_headers = self._ApiClient__get_default_headers(header_name, header_value)
         self.cookie = cookie
+        self._ApiClient__refresh_auth_token()
 
         # Initialize 401 policy handler
         auth_401_policy = Auth401Policy(
@@ -32,8 +33,6 @@ class ApiClientAdapter(ApiClient):
             stop_behavior=self.configuration.auth_401_stop_behavior
         )
         self.auth_401_handler = Auth401Handler(auth_401_policy)
-
-        self._ApiClient__refresh_auth_token()
 
     def __call_api(
         self,
