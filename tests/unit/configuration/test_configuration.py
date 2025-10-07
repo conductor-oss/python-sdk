@@ -114,3 +114,16 @@ def test_proxy_headers_json_with_special_chars(monkeypatch):
     monkeypatch.setenv("CONDUCTOR_PROXY_HEADERS", proxy_headers_json)
     configuration = Configuration()
     assert configuration.proxy_headers == special_headers
+
+
+def test_proxy_from_parameter():
+    proxy_url = "http://proxy.company.com:8080"
+    configuration = Configuration(proxy=proxy_url)
+    assert configuration.proxy == proxy_url
+
+
+def test_proxy_from_env(monkeypatch):
+    proxy_url = "http://proxy.company.com:8080"
+    monkeypatch.setenv("CONDUCTOR_PROXY", proxy_url)
+    configuration = Configuration()
+    assert configuration.proxy == proxy_url
