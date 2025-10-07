@@ -1,6 +1,5 @@
 import logging
 import time
-import urllib3
 
 from conductor.client.codegen.api_client import ApiClient
 from conductor.client.configuration.configuration import Configuration
@@ -13,14 +12,20 @@ logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
 
 class ApiClientAdapter(ApiClient):
-    def __init__(self, configuration=None, header_name=None, header_value=None, cookie=None):
+    def __init__(
+        self, configuration=None, header_name=None, header_value=None, cookie=None
+    ):
         """Initialize the API client adapter with httpx-based REST client."""
         self.configuration = configuration or Configuration()
 
         # Create httpx-compatible REST client
-        self.rest_client = RESTClientObjectAdapter(connection=self.configuration.http_connection)
+        self.rest_client = RESTClientObjectAdapter(
+            connection=self.configuration.http_connection
+        )
 
-        self.default_headers = self._ApiClient__get_default_headers(header_name, header_value)
+        self.default_headers = self._ApiClient__get_default_headers(
+            header_name, header_value
+        )
         self.cookie = cookie
         self._ApiClient__refresh_auth_token()
 
@@ -30,11 +35,11 @@ class ApiClientAdapter(ApiClient):
             base_delay_ms=self.configuration.auth_401_base_delay_ms,
             max_delay_ms=self.configuration.auth_401_max_delay_ms,
             jitter_percent=self.configuration.auth_401_jitter_percent,
-            stop_behavior=self.configuration.auth_401_stop_behavior
+            stop_behavior=self.configuration.auth_401_stop_behavior,
         )
         self.auth_401_handler = Auth401Handler(auth_401_policy)
 
-    def __call_api(
+    def call_api(
         self,
         resource_path,
         method,
@@ -46,11 +51,32 @@ class ApiClientAdapter(ApiClient):
         files=None,
         response_type=None,
         auth_settings=None,
+        async_req=None,
         _return_http_data_only=None,
         collection_formats=None,
         _preload_content=True,
         _request_timeout=None,
     ):
+        # Handle async requests by delegating to parent
+        if async_req:
+            return super().call_api(
+                resource_path=resource_path,
+                method=method,
+                path_params=path_params,
+                query_params=query_params,
+                header_params=header_params,
+                body=body,
+                post_params=post_params,
+                files=files,
+                response_type=response_type,
+                auth_settings=auth_settings,
+                async_req=async_req,
+                _return_http_data_only=_return_http_data_only,
+                collection_formats=collection_formats,
+                _preload_content=_preload_content,
+                _request_timeout=_request_timeout,
+            )
+
         try:
             logger.debug(
                 "HTTP request method: %s; resource_path: %s; header_params: %s",
@@ -58,7 +84,7 @@ class ApiClientAdapter(ApiClient):
                 resource_path,
                 header_params,
             )
-            result = self.__call_api_no_retry(
+            result = self._ApiClient__call_api_no_retry(
                 resource_path=resource_path,
                 method=method,
                 path_params=path_params,
@@ -81,28 +107,33 @@ class ApiClientAdapter(ApiClient):
             # Handle 401 errors with the new policy
             if ae.status == 401:
                 # Check if this is an auth-dependent call that should trigger 401 policy
-                if self.auth_401_handler.policy.is_auth_dependent_call(resource_path, method):
+                if self.auth_401_handler.policy.is_auth_dependent_call(
+                    resource_path, method
+                ):
                     # Handle 401 with policy (exponential backoff, max attempts, etc.)
                     result = self.auth_401_handler.handle_401_error(
                         resource_path=resource_path,
                         method=method,
                         status_code=ae.status,
-                        error_code=getattr(ae, '_error_code', None)
+                        error_code=getattr(ae, "_error_code", None),
                     )
-                    
-                    if result['should_retry']:
+
+                    if result["should_retry"]:
                         # Apply exponential backoff delay
-                        if result['delay_seconds'] > 0:
+                        if result["delay_seconds"] > 0:
                             logger.info(
                                 "401 error on %s %s - waiting %.2fs before retry (attempt %d/%d)",
-                                method, resource_path, result['delay_seconds'], 
-                                result['attempt_count'], result['max_attempts']
+                                method,
+                                resource_path,
+                                result["delay_seconds"],
+                                result["attempt_count"],
+                                result["max_attempts"],
                             )
-                            time.sleep(result['delay_seconds'])
-                        
+                            time.sleep(result["delay_seconds"])
+
                         # Try to refresh token and retry
-                        self.__force_refresh_auth_token()
-                        return self.__call_api_no_retry(
+                        self._ApiClient__force_refresh_auth_token()
+                        return self._ApiClient__call_api_no_retry(
                             resource_path=resource_path,
                             method=method,
                             path_params=path_params,
@@ -122,7 +153,9 @@ class ApiClientAdapter(ApiClient):
                         # Max attempts reached - stop worker
                         logger.error(
                             "401 error on %s %s - max attempts (%d) reached, stopping worker",
-                            method, resource_path, result['max_attempts']
+                            method,
+                            resource_path,
+                            result["max_attempts"],
                         )
                         raise ae
                 else:
@@ -134,8 +167,8 @@ class ApiClientAdapter(ApiClient):
                             resource_path,
                             token_status,
                         )
-                        self.__force_refresh_auth_token()
-                        return self.__call_api_no_retry(
+                        self._ApiClient__force_refresh_auth_token()
+                        return self._ApiClient__call_api_no_retry(
                             resource_path=resource_path,
                             method=method,
                             path_params=path_params,
