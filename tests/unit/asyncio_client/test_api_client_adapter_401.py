@@ -1,9 +1,10 @@
+import asyncio
+
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
 
 from conductor.asyncio_client.adapters.api_client_adapter import ApiClientAdapter
 from conductor.asyncio_client.configuration import Configuration
-from conductor.asyncio_client.http import rest
 
 
 class TestApiClientAdapter401Policy:
@@ -306,3 +307,118 @@ class TestApiClientAdapter401Policy:
         )
 
         assert adapter.auth_401_handler.policy.get_attempt_count("/workflow/start") == 0
+
+    @pytest.mark.asyncio
+    @patch("conductor.asyncio_client.adapters.api_client_adapter.asyncio.sleep")
+    @patch("conductor.asyncio_client.adapters.api_client_adapter.time.time")
+    async def test_call_api_401_concurrent_requests_race_condition(
+        self, mock_time, mock_sleep
+    ):
+        mock_sleep.return_value = None
+        config = Configuration(auth_401_max_attempts=3, auth_token_ttl_min=1)
+        adapter = ApiClientAdapter(configuration=config)
+
+        mock_response_401_first = Mock()
+        mock_response_401_first.status = 401
+        mock_response_success = Mock()
+        mock_response_success.status = 200
+
+        call_count = 0
+
+        async def mock_request_side_effect(*_args, **_kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return mock_response_401_first
+            return mock_response_success
+
+        refresh_count = 0
+
+        async def mock_refresh_token():
+            nonlocal refresh_count
+            refresh_count += 1
+            await asyncio.sleep(0.01)
+            adapter.configuration._http_config.api_key["api_key"] = "refreshed_token"
+            adapter.configuration.token_update_time = 1000.0
+            mock_time.return_value = 1001.0
+            return "refreshed_token"
+
+        adapter.rest_client.request = AsyncMock(side_effect=mock_request_side_effect)
+        adapter.refresh_authorization_token = AsyncMock(side_effect=mock_refresh_token)
+        adapter.configuration._http_config.api_key["api_key"] = ""
+        adapter.configuration.token_update_time = 0
+        mock_time.return_value = 100.0
+
+        tasks = []
+        for _ in range(3):
+            task = adapter.call_api(
+                method="POST",
+                url="http://localhost:8080/api/workflow/start",
+                header_params={"X-Authorization": "old_token"},
+            )
+            tasks.append(task)
+
+        results = await asyncio.gather(*tasks)
+
+        for result in results:
+            assert result.status == 200
+
+        assert refresh_count == 1
+
+    @pytest.mark.asyncio
+    @patch("conductor.asyncio_client.adapters.api_client_adapter.asyncio.sleep")
+    @patch("conductor.asyncio_client.adapters.api_client_adapter.time.time")
+    async def test_call_api_401_token_already_refreshed_by_another_coroutine(
+        self, mock_time, mock_sleep
+    ):
+        mock_sleep.return_value = None
+        config = Configuration(auth_401_max_attempts=3, auth_token_ttl_min=1)
+        adapter = ApiClientAdapter(configuration=config)
+
+        mock_response_401 = Mock()
+        mock_response_401.status = 401
+        mock_response_success = Mock()
+        mock_response_success.status = 200
+
+        first_call = True
+
+        async def mock_refresh_token():
+            adapter.configuration._http_config.api_key["api_key"] = "refreshed_token"
+            adapter.configuration.token_update_time = 1000.0
+            mock_time.return_value = 1001.0
+            return "refreshed_token"
+
+        async def mock_request_side_effect(*_args, **_kwargs):
+            nonlocal first_call
+            if first_call:
+                first_call = False
+                return mock_response_401
+            return mock_response_success
+
+        adapter.rest_client.request = AsyncMock(side_effect=mock_request_side_effect)
+        adapter.refresh_authorization_token = AsyncMock(side_effect=mock_refresh_token)
+
+        mock_time.return_value = 100.0
+        adapter.configuration._http_config.api_key["api_key"] = ""
+        adapter.configuration.token_update_time = 0
+
+        result = await adapter.call_api(
+            method="POST",
+            url="http://localhost:8080/api/workflow/start",
+            header_params={"X-Authorization": "old_token"},
+        )
+
+        assert result.status == 200
+        adapter.refresh_authorization_token.assert_called_once()
+
+        first_call = True
+        adapter.rest_client.request = AsyncMock(side_effect=mock_request_side_effect)
+
+        result2 = await adapter.call_api(
+            method="POST",
+            url="http://localhost:8080/api/workflow/start",
+            header_params={"X-Authorization": "old_token"},
+        )
+
+        assert result2.status == 200
+        adapter.refresh_authorization_token.assert_called_once()
