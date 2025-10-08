@@ -114,16 +114,38 @@ class ApiClientAdapter(ApiClient):
 
                         # Try to refresh token and retry
                         async with self._token_lock:
-                            token = await self.refresh_authorization_token()
-                            header_params["X-Authorization"] = token
-                            response_data = await self.rest_client.request(
-                                method,
-                                url,
-                                headers=header_params,
-                                body=body,
-                                post_params=post_params,
-                                _request_timeout=_request_timeout,
+                            # Check if token was already refreshed by another coroutine
+                            # to avoid race condition where multiple concurrent 401s
+                            # trigger redundant token refreshes
+                            token_expired = (
+                                self.configuration.token_update_time > 0
+                                and time.time()
+                                >= self.configuration.token_update_time
+                                + self.configuration.auth_token_ttl_sec
                             )
+                            invalid_token = (
+                                not self.configuration._http_config.api_key.get(
+                                    "api_key"
+                                )
+                            )
+
+                            if invalid_token or token_expired:
+                                token = await self.refresh_authorization_token()
+                            else:
+                                token = self.configuration._http_config.api_key[
+                                    "api_key"
+                                ]
+                            header_params["X-Authorization"] = token
+
+                        # Make the retry request outside the lock to avoid blocking other coroutines
+                        response_data = await self.rest_client.request(
+                            method,
+                            url,
+                            headers=header_params,
+                            body=body,
+                            post_params=post_params,
+                            _request_timeout=_request_timeout,
+                        )
                     else:
                         # Max attempts reached - log error and break
                         logger.error(
