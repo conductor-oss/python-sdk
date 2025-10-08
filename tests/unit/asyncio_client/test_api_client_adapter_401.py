@@ -171,8 +171,9 @@ class TestApiClientAdapter401Policy:
             header_params={"X-Authorization": "token"},
         )
 
-        assert adapter.auth_401_handler.policy.get_attempt_count("/workflow/start") == 1
-        assert adapter.auth_401_handler.policy.get_attempt_count("/task/poll") == 1
+        # With max_attempts=2, each endpoint will have 2 attempts (initial + 1 retry)
+        assert adapter.auth_401_handler.policy.get_attempt_count("/workflow/start") == 2
+        assert adapter.auth_401_handler.policy.get_attempt_count("/task/poll") == 2
 
     @pytest.mark.asyncio
     @patch("conductor.asyncio_client.adapters.api_client_adapter.logger")
