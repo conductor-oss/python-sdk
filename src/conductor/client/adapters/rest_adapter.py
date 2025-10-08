@@ -126,6 +126,7 @@ class RESTClientObjectAdapter(RESTClientObject):
         """Close the HTTP client connection."""
         if hasattr(self, "connection") and self.connection:
             self.connection.close()
+
     def check_http2_support(self, url: str) -> bool:
         """Check if the server supports HTTP/2 by making a test request."""
         try:

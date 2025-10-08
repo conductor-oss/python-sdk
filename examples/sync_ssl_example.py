@@ -61,6 +61,8 @@ aWRnaXRzIFB0eSBMdGQwHhcNMTYwMjEyMTQ0NDQ2WhcNMjYwMjEwMTQ0NDQ2WjBF
     client_cert_config = Configuration(
         base_url="https://play.orkes.io",
         ssl_ca_cert="/path/to/ca-certificate.pem",
+        cert_file="/path/to/client-certificate.pem",
+        key_file="/path/to/client-key.pem",
     )
 
     # SSL with disabled hostname verification
