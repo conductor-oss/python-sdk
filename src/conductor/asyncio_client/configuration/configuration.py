@@ -76,6 +76,12 @@ class Configuration:
         ssl_ca_cert: Optional[str] = None,
         retries: Optional[int] = None,
         ca_cert_data: Optional[Union[str, bytes]] = None,
+        # 401-specific configuration
+        auth_401_max_attempts: Optional[int] = None,
+        auth_401_base_delay_ms: Optional[float] = None,
+        auth_401_max_delay_ms: Optional[float] = None,
+        auth_401_jitter_percent: Optional[float] = None,
+        auth_401_stop_behavior: Optional[str] = None,
         **kwargs: Any,
     ):
         """
@@ -182,6 +188,23 @@ class Configuration:
         # Orkes Conductor auth token properties
         self.token_update_time = 0
         self.auth_token_ttl_sec = auth_token_ttl_min * 60
+        
+        # 401-specific configuration
+        self.auth_401_max_attempts = auth_401_max_attempts or self._get_env_int(
+            "CONDUCTOR_AUTH_401_MAX_ATTEMPTS", 6
+        )
+        self.auth_401_base_delay_ms = auth_401_base_delay_ms or self._get_env_float(
+            "CONDUCTOR_AUTH_401_BASE_DELAY_MS", 1000.0
+        )
+        self.auth_401_max_delay_ms = auth_401_max_delay_ms or self._get_env_float(
+            "CONDUCTOR_AUTH_401_MAX_DELAY_MS", 60000.0
+        )
+        self.auth_401_jitter_percent = auth_401_jitter_percent or self._get_env_float(
+            "CONDUCTOR_AUTH_401_JITTER_PERCENT", 0.2
+        )
+        self.auth_401_stop_behavior = auth_401_stop_behavior or os.getenv(
+            "CONDUCTOR_AUTH_401_STOP_BEHAVIOR", "stop_worker"
+        )
 
     def _get_env_float(self, env_var: str, default: float) -> float:
         """Get float value from environment variable with default fallback."""

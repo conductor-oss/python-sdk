@@ -14,14 +14,33 @@ from conductor.asyncio_client.http.api_client import ApiClient
 from conductor.asyncio_client.http.api_response import ApiResponse
 from conductor.asyncio_client.http.api_response import T as ApiResponseT
 from conductor.asyncio_client.http.exceptions import ApiException
+from conductor.client.exceptions.auth_401_policy import Auth401Policy, Auth401Handler
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
 
 class ApiClientAdapter(ApiClient):
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self, configuration=None, header_name=None, header_value=None, cookie=None
+    ):
         self._token_lock = asyncio.Lock()
-        super().__init__(*args, **kwargs)
+        self.configuration = configuration or Configuration()
+
+        self.rest_client = rest.RESTClientObject(self.configuration)
+        self.default_headers = {}
+        if header_name is not None:
+            self.default_headers[header_name] = header_value
+        self.cookie = cookie
+
+        # Initialize 401 policy handler
+        auth_401_policy = Auth401Policy(
+            max_attempts=self.configuration.auth_401_max_attempts,
+            base_delay_ms=self.configuration.auth_401_base_delay_ms,
+            max_delay_ms=self.configuration.auth_401_max_delay_ms,
+            jitter_percent=self.configuration.auth_401_jitter_percent,
+            stop_behavior=self.configuration.auth_401_stop_behavior
+        )
+        self.auth_401_handler = Auth401Handler(auth_401_policy)
 
     async def call_api(
         self,
@@ -56,38 +75,86 @@ class ApiClientAdapter(ApiClient):
                 post_params=post_params,
                 _request_timeout=_request_timeout,
             )
+            
+            # Record successful call to reset 401 attempt counters
+            if response_data.status != 401:
+                resource_path = url.replace(self.configuration.host, "")
+                self.auth_401_handler.record_successful_call(resource_path)
+            
             if (
                 response_data.status == 401  # noqa: PLR2004 (Unauthorized status code)
                 and url != self.configuration.host + "/token"
             ):
-                logger.warning(
-                    "HTTP response from: %s; status code: 401 - obtaining new token", url
-                )
-                async with self._token_lock:
-                    # The lock is intentionally broad (covers the whole block including the token state)
-                    # to avoid race conditions: without it, other coroutines could mis-evaluate
-                    # token state during a context switch and trigger redundant refreshes
-                    token_expired = (
-                        self.configuration.token_update_time > 0
-                        and time.time()
-                        >= self.configuration.token_update_time
-                        + self.configuration.auth_token_ttl_sec
+                resource_path = url.replace(self.configuration.host, "")
+                
+                # Check if this is an auth-dependent call that should trigger 401 policy
+                if self.auth_401_handler.policy.is_auth_dependent_call(resource_path, method):
+                    # Handle 401 with policy (exponential backoff, max attempts, etc.)
+                    result = self.auth_401_handler.handle_401_error(
+                        resource_path=resource_path,
+                        method=method,
+                        status_code=401,
+                        error_code=None
                     )
-                    invalid_token = not self.configuration._http_config.api_key.get("api_key")
-
-                    if invalid_token or token_expired:
-                        token = await self.refresh_authorization_token()
+                    
+                    if result['should_retry']:
+                        # Apply exponential backoff delay
+                        if result['delay_seconds'] > 0:
+                            logger.info(
+                                "401 error on %s %s - waiting %.2fs before retry (attempt %d/%d)",
+                                method, url, result['delay_seconds'],
+                                result['attempt_count'], result['max_attempts']
+                            )
+                            await asyncio.sleep(result['delay_seconds'])
+                        
+                        # Try to refresh token and retry
+                        async with self._token_lock:
+                            token = await self.refresh_authorization_token()
+                            header_params["X-Authorization"] = token
+                            response_data = await self.rest_client.request(
+                                method,
+                                url,
+                                headers=header_params,
+                                body=body,
+                                post_params=post_params,
+                                _request_timeout=_request_timeout,
+                            )
                     else:
-                        token = self.configuration._http_config.api_key["api_key"]
-                    header_params["X-Authorization"] = token
-                    response_data = await self.rest_client.request(
-                        method,
-                        url,
-                        headers=header_params,
-                        body=body,
-                        post_params=post_params,
-                        _request_timeout=_request_timeout,
+                        # Max attempts reached - log error
+                        logger.error(
+                            "401 error on %s %s - max attempts (%d) reached, stopping worker",
+                            method, url, result['max_attempts']
+                        )
+                else:
+                    # Non-auth-dependent call with 401 - use original behavior
+                    logger.warning(
+                        "HTTP response from: %s; status code: 401 - obtaining new token", url
                     )
+                    async with self._token_lock:
+                        # The lock is intentionally broad (covers the whole block including the token state)
+                        # to avoid race conditions: without it, other coroutines could mis-evaluate
+                        # token state during a context switch and trigger redundant refreshes
+                        token_expired = (
+                            self.configuration.token_update_time > 0
+                            and time.time()
+                            >= self.configuration.token_update_time
+                            + self.configuration.auth_token_ttl_sec
+                        )
+                        invalid_token = not self.configuration._http_config.api_key.get("api_key")
+
+                        if invalid_token or token_expired:
+                            token = await self.refresh_authorization_token()
+                        else:
+                            token = self.configuration._http_config.api_key["api_key"]
+                        header_params["X-Authorization"] = token
+                        response_data = await self.rest_client.request(
+                            method,
+                            url,
+                            headers=header_params,
+                            body=body,
+                            post_params=post_params,
+                            _request_timeout=_request_timeout,
+                        )
         except ApiException as e:
             logger.error(
                 "HTTP request failed url: %s status: %s; reason: %s", url, e.status, e.reason
