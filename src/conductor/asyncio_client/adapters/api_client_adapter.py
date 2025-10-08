@@ -135,6 +135,8 @@ class ApiClientAdapter(ApiClient):
                                 token = self.configuration._http_config.api_key[
                                     "api_key"
                                 ]
+                            if header_params is None:
+                                header_params = {}
                             header_params["X-Authorization"] = token
 
                         # Make the retry request outside the lock to avoid blocking other coroutines
@@ -179,6 +181,8 @@ class ApiClientAdapter(ApiClient):
                             token = await self.refresh_authorization_token()
                         else:
                             token = self.configuration._http_config.api_key["api_key"]
+                        if header_params is None:
+                            header_params = {}
                         header_params["X-Authorization"] = token
                         response_data = await self.rest_client.request(
                             method,
