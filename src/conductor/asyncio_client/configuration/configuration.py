@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 from typing import Any, Dict, Optional, Union
@@ -76,6 +77,11 @@ class Configuration:
         ssl_ca_cert: Optional[str] = None,
         retries: Optional[int] = None,
         ca_cert_data: Optional[Union[str, bytes]] = None,
+        cert_file: Optional[str] = None,
+        key_file: Optional[str] = None,
+        verify_ssl: Optional[bool] = None,
+        proxy: Optional[str] = None,
+        proxy_headers: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ):
         """
@@ -99,6 +105,14 @@ class Configuration:
             Polling interval in seconds. If not provided, reads from CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS env var.
         **kwargs : Any
             Additional parameters passed to HttpConfiguration.
+
+        Environment Variables:
+        ---------------------
+        CONDUCTOR_SERVER_URL: Server URL (e.g., http://localhost:8080/api)
+        CONDUCTOR_AUTH_KEY: Authentication key ID
+        CONDUCTOR_AUTH_SECRET: Authentication key secret
+        CONDUCTOR_PROXY: Proxy URL for HTTP requests
+        CONDUCTOR_PROXY_HEADERS: Proxy headers as JSON string or single header value
         """
 
         # Resolve server URL from parameter or environment variable
@@ -141,27 +155,58 @@ class Configuration:
         if self.__ui_host is None:
             self.__ui_host = self.server_url.replace("/api", "")
 
+        # Proxy configuration - can be set via parameter or environment variable
+        self.proxy = proxy or os.getenv("CONDUCTOR_PROXY")
+        # Proxy headers - can be set via parameter or environment variable
+        self.proxy_headers = proxy_headers
+        if not self.proxy_headers and os.getenv("CONDUCTOR_PROXY_HEADERS"):
+            try:
+                self.proxy_headers = json.loads(os.getenv("CONDUCTOR_PROXY_HEADERS"))
+            except (json.JSONDecodeError, TypeError):
+                # If JSON parsing fails, treat as a single header value
+                self.proxy_headers = {
+                    "Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")
+                }
+
         self.logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 
         # Create the underlying HTTP configuration
-        self._http_config = HttpConfiguration(
-            host=self.server_url,
-            api_key=api_key,
-            api_key_prefix=api_key_prefix,
-            username=username,
-            password=password,
-            access_token=access_token,
-            server_index=server_index,
-            server_variables=server_variables,
-            server_operation_index=server_operation_index,
-            server_operation_variables=server_operation_variables,
-            ignore_operation_servers=ignore_operation_servers,
-            ssl_ca_cert=ssl_ca_cert,
-            retries=retries,
-            ca_cert_data=ca_cert_data,
-            debug=debug,
-            **kwargs,
-        )
+        http_config_kwargs = {
+            "host": self.server_url,
+            "api_key": api_key,
+            "api_key_prefix": api_key_prefix,
+            "username": username,
+            "password": password,
+            "access_token": access_token,
+            "server_index": server_index,
+            "server_variables": server_variables,
+            "server_operation_index": server_operation_index,
+            "server_operation_variables": server_operation_variables,
+            "ignore_operation_servers": ignore_operation_servers,
+            "ssl_ca_cert": ssl_ca_cert or os.getenv("CONDUCTOR_SSL_CA_CERT"),
+            "retries": retries,
+            "ca_cert_data": ca_cert_data or os.getenv("CONDUCTOR_SSL_CA_CERT_DATA"),
+            "debug": debug,
+        }
+        
+        # Add SSL parameters if they exist in HttpConfiguration
+        if cert_file or os.getenv("CONDUCTOR_CERT_FILE"):
+            http_config_kwargs["cert_file"] = cert_file or os.getenv("CONDUCTOR_CERT_FILE")
+        if key_file or os.getenv("CONDUCTOR_KEY_FILE"):
+            http_config_kwargs["key_file"] = key_file or os.getenv("CONDUCTOR_KEY_FILE")
+        if verify_ssl is not None:
+            http_config_kwargs["verify_ssl"] = verify_ssl
+        elif os.getenv("CONDUCTOR_VERIFY_SSL"):
+            http_config_kwargs["verify_ssl"] = self._get_env_bool("CONDUCTOR_VERIFY_SSL", True)
+        
+        http_config_kwargs.update(kwargs)
+        self._http_config = HttpConfiguration(**http_config_kwargs)
+
+        # Set proxy configuration on the HTTP config
+        if self.proxy:
+            self._http_config.proxy = self.proxy
+        if self.proxy_headers:
+            self._http_config.proxy_headers = self.proxy_headers
 
         # Debug switch and logging setup
         self.__debug = debug
@@ -201,6 +246,13 @@ class Configuration:
                 return int(value)
         except (ValueError, TypeError):
             self.logger.warning("Invalid float value for %s: %s", env_var, value)
+        return default
+
+    def _get_env_bool(self, env_var: str, default: bool) -> bool:
+        """Get boolean value from environment variable with default fallback."""
+        value = os.getenv(env_var)
+        if value is not None:
+            return value.lower() in ("true", "1")
         return default
 
     def get_worker_property_value(
@@ -522,5 +574,7 @@ class Configuration:
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to underlying HTTP configuration."""
         if "_http_config" not in self.__dict__ or self._http_config is None:
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{name}'"
+            )
         return getattr(self._http_config, name)

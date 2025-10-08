@@ -3,7 +3,6 @@ import pytest
 import uuid
 import threading
 import time
-import httpx
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.orkes.orkes_integration_client import OrkesIntegrationClient
@@ -33,12 +32,6 @@ class TestOrkesIntegrationClientIntegration:
     @pytest.fixture(scope="class")
     def configuration(self) -> Configuration:
         config = Configuration()
-        config.http_connection = httpx.Client(
-            timeout=httpx.Timeout(600.0),
-            follow_redirects=True,
-            limits=httpx.Limits(max_keepalive_connections=1, max_connections=1),
-            http2=True
-        )
         config.debug = os.getenv("CONDUCTOR_DEBUG", "false").lower() == "true"
         config.apply_logging_config()
         return config

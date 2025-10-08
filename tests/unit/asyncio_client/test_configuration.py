@@ -50,7 +50,6 @@ def test_initialization_with_env_vars(monkeypatch):
     assert config.domain == "env_domain"
     assert config.polling_interval_seconds == 10
 
-
 def test_initialization_env_vars_override_params(monkeypatch):
     monkeypatch.setenv("CONDUCTOR_SERVER_URL", "https://env.com/api")
     monkeypatch.setenv("CONDUCTOR_AUTH_KEY", "env_key")
@@ -146,7 +145,6 @@ def test_get_worker_property_value_poll_interval_seconds():
     config = Configuration()
     result = config.get_worker_property_value("poll_interval_seconds", "mytask")
     assert result == 0
-
 
 def test_convert_property_value_polling_interval():
     config = Configuration()
@@ -422,3 +420,16 @@ def test_get_poll_interval_task_type_provided_but_value_none():
     with patch.dict(os.environ, {"CONDUCTOR_WORKER_MYTASK_POLLING_INTERVAL": ""}):
         result = config.get_poll_interval("mytask")
         assert result == 100
+
+
+def test_proxy_from_parameter():
+    proxy_url = "http://proxy.company.com:8080"
+    config = Configuration(proxy=proxy_url)
+    assert config.proxy == proxy_url
+
+
+def test_proxy_from_env(monkeypatch):
+    proxy_url = "http://proxy.company.com:8080"
+    monkeypatch.setenv("CONDUCTOR_PROXY", proxy_url)
+    config = Configuration()
+    assert config.proxy == proxy_url
