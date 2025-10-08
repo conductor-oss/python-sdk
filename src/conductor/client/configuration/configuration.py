@@ -11,6 +11,58 @@ from conductor.shared.configuration.settings.authentication_settings import (
 
 
 class Configuration:
+    """
+    Configuration class for Orkes Conductor Sync Client with environment variable support.
+
+    This class provides configuration for the synchronous Conductor client with support for:
+    - Environment variable configuration for standard Conductor settings
+    - Worker properties configuration (pollInterval, domain, etc.)
+    - Authentication retry policy with exponential backoff
+
+    Supported Environment Variables:
+    --------------------------------
+    CONDUCTOR_SERVER_URL: Server URL (e.g., http://localhost:8080/api)
+    CONDUCTOR_UI_SERVER_URL: UI Server URL (e.g., http://localhost:5001)
+    CONDUCTOR_AUTH_KEY: Authentication key ID
+    CONDUCTOR_AUTH_SECRET: Authentication key secret
+
+    Worker Properties (via environment variables):
+    ----------------------------------------------
+    CONDUCTOR_WORKER_DOMAIN: Default worker domain (default: 'default_domain')
+    CONDUCTOR_WORKER_POLL_INTERVAL: Polling interval in milliseconds (default: 100)
+    CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS: Polling interval in seconds (default: 0)
+
+    Authentication Retry Policy (401 Handling):
+    -------------------------------------------
+    CONDUCTOR_AUTH_401_MAX_ATTEMPTS: Maximum retry attempts per endpoint (default: 6)
+    CONDUCTOR_AUTH_401_BASE_DELAY_MS: Base delay in milliseconds (default: 1000.0)
+    CONDUCTOR_AUTH_401_MAX_DELAY_MS: Maximum delay cap in milliseconds (default: 60000.0)
+    CONDUCTOR_AUTH_401_JITTER_PERCENT: Random jitter percentage 0.0-1.0 (default: 0.2)
+    CONDUCTOR_AUTH_401_STOP_BEHAVIOR: Behavior after max attempts: 'stop_worker' or 'continue' (default: 'stop_worker')
+
+    Example:
+    --------
+    ```python
+    # Using environment variables
+    import os
+    os.environ['CONDUCTOR_SERVER_URL'] = 'http://localhost:8080/api'
+    os.environ['CONDUCTOR_AUTH_KEY'] = 'your_key'
+    os.environ['CONDUCTOR_AUTH_SECRET'] = 'your_secret'
+
+    config = Configuration()
+
+    # Or with explicit parameters
+    from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
+
+    auth_settings = AuthenticationSettings(key_id='your_key', key_secret='your_secret')
+    config = Configuration(
+        server_api_url='http://localhost:8080/api',
+        authentication_settings=auth_settings,
+        auth_401_max_attempts=5,
+        auth_401_base_delay_ms=1000.0
+    )
+    ```
+    """
     AUTH_TOKEN = None
 
     def __init__(

@@ -32,6 +32,15 @@ class Configuration:
     CONDUCTOR_WORKER_<TASK_TYPE>_POLLING_INTERVAL: Task-specific polling interval
     CONDUCTOR_WORKER_<TASK_TYPE>_DOMAIN: Task-specific domain
 
+    Authentication Retry Policy (401 Handling):
+    -------------------------------------------
+    CONDUCTOR_AUTH_401_MAX_ATTEMPTS: Maximum retry attempts per endpoint (default: 6)
+    CONDUCTOR_AUTH_401_BASE_DELAY_MS: Base delay in milliseconds (default: 1000.0)
+    CONDUCTOR_AUTH_401_MAX_DELAY_MS: Maximum delay cap in milliseconds (default: 60000.0)
+    CONDUCTOR_AUTH_401_JITTER_PERCENT: Random jitter percentage 0.0-1.0 (default: 0.2)
+    CONDUCTOR_AUTH_401_STOP_BEHAVIOR: Behavior after max attempts: 'stop_worker' or 'continue' (default: 'stop_worker')
+
+    
     Example:
     --------
     ```python
