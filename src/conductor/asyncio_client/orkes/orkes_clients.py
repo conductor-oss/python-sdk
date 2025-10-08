@@ -6,6 +6,7 @@ from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.orkes.orkes_authorization_client import \
     OrkesAuthorizationClient
+from conductor.asyncio_client.orkes.orkes_event_client import OrkesEventClient
 from conductor.asyncio_client.orkes.orkes_integration_client import \
     OrkesIntegrationClient
 from conductor.asyncio_client.orkes.orkes_metadata_client import \
@@ -272,6 +273,26 @@ class OrkesClients:
             - Managing schema metadata and documentation
         """
         return OrkesSchemaClient(self.configuration, self.api_client)
+
+    def get_event_client(self) -> OrkesEventClient:
+        """
+        Create and return an event management client.
+
+        The event client manages event handlers and event processing within the
+        Conductor platform, allowing you to create, configure, and monitor
+        event-driven workflows and integrations.
+
+        Returns:
+        --------
+        OrkesEventClient
+            Client for event operations including:
+            - Creating and managing event handlers
+            - Configuring event processing rules
+            - Monitoring event executions
+            - Managing event handler tags and metadata
+            - Configuring queue settings for event processing
+        """
+        return OrkesEventClient(self.configuration, self.api_client)
 
     def get_workflow_executor(self) -> AsyncWorkflowExecutor:
         """

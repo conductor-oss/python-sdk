@@ -4,6 +4,10 @@ from conductor.asyncio_client.adapters.api.application_resource_api import \
     ApplicationResourceApiAdapter
 from conductor.asyncio_client.adapters.api.authorization_resource_api import \
     AuthorizationResourceApiAdapter
+from conductor.asyncio_client.adapters.api.event_execution_resource_api import \
+    EventExecutionResourceApiAdapter
+from conductor.asyncio_client.adapters.api.event_resource_api import \
+    EventResourceApiAdapter
 from conductor.asyncio_client.adapters.api.group_resource_api import \
     GroupResourceApiAdapter
 from conductor.asyncio_client.adapters.api.integration_resource_api import \
@@ -67,3 +71,5 @@ class OrkesBaseClient:
         self.integration_api = IntegrationResourceApiAdapter(self.api_client)
         self.prompt_api = PromptResourceApiAdapter(self.api_client)
         self.schema_api = SchemaResourceApiAdapter(self.api_client)
+        self.event_api = EventResourceApiAdapter(self.api_client)
+        self.event_execution_api = EventExecutionResourceApiAdapter(self.api_client)

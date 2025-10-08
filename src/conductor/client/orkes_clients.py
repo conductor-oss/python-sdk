@@ -11,6 +11,7 @@ from conductor.client.orkes.orkes_task_client import OrkesTaskClient
 from conductor.client.orkes.orkes_scheduler_client import OrkesSchedulerClient
 from conductor.client.orkes.orkes_secret_client import OrkesSecretClient
 from conductor.client.orkes.orkes_authorization_client import OrkesAuthorizationClient
+from conductor.client.orkes.orkes_event_client import OrkesEventClient
 from conductor.client.prompt_client import PromptClient
 from conductor.client.scheduler_client import SchedulerClient
 from conductor.client.schema_client import SchemaClient
@@ -55,3 +56,6 @@ class OrkesClients:
 
     def get_schema_client(self) -> SchemaClient:
         return OrkesSchemaClient(self.configuration)
+
+    def get_event_client(self) -> OrkesEventClient:
+        return OrkesEventClient(self.configuration)
