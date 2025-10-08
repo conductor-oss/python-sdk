@@ -208,6 +208,12 @@ class Configuration:
         if self.proxy_headers:
             self._http_config.proxy_headers = self.proxy_headers
 
+        # Set proxy configuration on the HTTP config
+        if self.proxy:
+            self._http_config.proxy = self.proxy
+        if self.proxy_headers:
+            self._http_config.proxy_headers = self.proxy_headers
+
         # Debug switch and logging setup
         self.__debug = debug
         if self.__debug:

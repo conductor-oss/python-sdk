@@ -73,7 +73,6 @@ class RESTClientObjectAdapter(RESTClientObject):
     def __init__(self, connection: Optional[httpx.Client] = None, configuration=None):
         """
         Initialize the REST client with httpx.
-
         Args:
             connection: Pre-configured httpx.Client instance. If provided,
                        proxy settings from configuration will be ignored.
@@ -198,7 +197,6 @@ class RESTClientObjectAdapter(RESTClientObject):
         try:
             # Log the request attempt
             logger.debug(f"Making HTTP request - Method: {method}, URL: {url}")
-
             # Prepare request parameters
             request_kwargs = {
                 "method": method,
