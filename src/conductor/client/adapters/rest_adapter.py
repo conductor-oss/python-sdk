@@ -1,9 +1,10 @@
 import io
 import logging
-from typing import Optional, Dict, Any, Union, Tuple
+import ssl
+from typing import Any, Dict, Optional, Tuple, Union
 
 import httpx
-from httpx import Response, RequestError, HTTPStatusError, TimeoutException
+from httpx import HTTPStatusError, RequestError, Response, TimeoutException
 
 from conductor.client.codegen.rest import (
     ApiException,
@@ -23,11 +24,13 @@ class RESTResponse(io.IOBase):
         self.reason = response.reason_phrase
         self.resp = response
         self.headers = response.headers
-        
+
         # Log HTTP protocol version
-        http_version = getattr(response, 'http_version', 'Unknown')
-        logger.debug(f"HTTP response received - Status: {self.status}, Protocol: {http_version}")
-        
+        http_version = getattr(response, "http_version", "Unknown")
+        logger.debug(
+            f"HTTP response received - Status: {self.status}, Protocol: {http_version}"
+        )
+
         # Log HTTP/2 usage
         if http_version == "HTTP/2":
             logger.info(f"HTTP/2 connection established - URL: {response.url}")
@@ -53,12 +56,12 @@ class RESTResponse(io.IOBase):
     def text(self) -> str:
         """Get response data as text."""
         return self.resp.text
-    
+
     @property
     def http_version(self) -> str:
         """Get the HTTP protocol version used."""
-        return getattr(self.resp, 'http_version', 'Unknown')
-    
+        return getattr(self.resp, "http_version", "Unknown")
+
     def is_http2(self) -> bool:
         """Check if HTTP/2 was used for this response."""
         return self.http_version == "HTTP/2"
@@ -102,6 +105,22 @@ class RESTClientObjectAdapter(RESTClientObject):
             ):
                 client_kwargs["proxy_headers"] = configuration.proxy_headers
 
+            if configuration:
+                ssl_context = ssl.create_default_context(
+                    cafile=configuration.ssl_ca_cert,
+                    cadata=configuration.ca_cert_data,
+                )
+                if configuration.cert_file:
+                    ssl_context.load_cert_chain(
+                        configuration.cert_file, keyfile=configuration.key_file
+                    )
+
+                if not configuration.verify_ssl:
+                    ssl_context.check_hostname = False
+                    ssl_context.verify_mode = ssl.CERT_NONE
+
+                client_kwargs["verify"] = ssl_context
+
             self.connection = httpx.Client(**client_kwargs)
 
     def close(self):
@@ -115,12 +134,14 @@ class RESTClientObjectAdapter(RESTClientObject):
             logger.info(f"Checking HTTP/2 support for: {url}")
             response = self.GET(url)
             is_http2 = response.is_http2()
-            
+
             if is_http2:
                 logger.info(f"✓ HTTP/2 supported by {url}")
             else:
-                logger.info(f"✗ HTTP/2 not supported by {url}, using {response.http_version}")
-            
+                logger.info(
+                    f"✗ HTTP/2 not supported by {url}, using {response.http_version}"
+                )
+
             return is_http2
         except Exception as e:
             logger.error(f"Failed to check HTTP/2 support for {url}: {e}")

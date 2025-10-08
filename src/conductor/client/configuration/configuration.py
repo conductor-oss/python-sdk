@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import time
-from typing import Optional, Dict
+from typing import Optional, Dict, Union
 
 from conductor.shared.configuration.settings.authentication_settings import (
     AuthenticationSettings,
@@ -27,6 +27,11 @@ class Configuration:
         polling_interval: Optional[float] = None,
         domain: Optional[str] = None,
         polling_interval_seconds: Optional[float] = None,
+        ssl_ca_cert: Optional[str] = None,
+        ca_cert_data: Optional[Union[str, bytes]] = None,
+        cert_file: Optional[str] = None,
+        key_file: Optional[str] = None,
+        verify_ssl: Optional[bool] = None,
     ):
         """
         Initialize Conductor client configuration.
@@ -83,13 +88,18 @@ class Configuration:
         # SSL/TLS verification
         # Set this to false to skip verifying SSL certificate when calling API
         # from https server.
-        self.verify_ssl = True
+        if verify_ssl is not None:
+            self.verify_ssl = verify_ssl
+        else:
+            self.verify_ssl = self._get_env_bool("CONDUCTOR_VERIFY_SSL", True)
         # Set this to customize the certificate file to verify the peer.
-        self.ssl_ca_cert = None
+        self.ssl_ca_cert = ssl_ca_cert or os.getenv("CONDUCTOR_SSL_CA_CERT")
+        # Set this to verify the peer using PEM (str) or DER (bytes) certificate data.
+        self.ca_cert_data = ca_cert_data or os.getenv("CONDUCTOR_SSL_CA_CERT_DATA")
         # client certificate file
-        self.cert_file = None
+        self.cert_file = cert_file or os.getenv("CONDUCTOR_CERT_FILE")
         # client key file
-        self.key_file = None
+        self.key_file = key_file or os.getenv("CONDUCTOR_KEY_FILE")
         # Set this to True/False to enable/disable SSL hostname verification.
         self.assert_hostname = None
 
@@ -216,6 +226,13 @@ class Configuration:
                 return float(value)
         except (ValueError, TypeError):
             pass
+        return default
+
+    def _get_env_bool(self, env_var: str, default: bool) -> bool:
+        """Get boolean value from environment variable with default fallback."""
+        value = os.getenv(env_var)
+        if value is not None:
+            return value.lower() in ("true", "1")
         return default
 
     def get_poll_interval_seconds(self):
