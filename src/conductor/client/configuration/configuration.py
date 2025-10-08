@@ -209,6 +209,10 @@ class Configuration:
             "CONDUCTOR_AUTH_401_STOP_BEHAVIOR", "stop_worker"
         )
 
+        print("\n\n\n", self._get_env_int(
+            "CONDUCTOR_AUTH_401_MAX_ATTEMPTS", 6
+        ))
+
     @property
     def debug(self):
         """Debug status
@@ -311,6 +315,7 @@ class Configuration:
                 return int(value)
         except (ValueError, TypeError):
             pass
+        return default
 
     def _get_env_bool(self, env_var: str, default: bool) -> bool:
         """Get boolean value from environment variable with default fallback."""
