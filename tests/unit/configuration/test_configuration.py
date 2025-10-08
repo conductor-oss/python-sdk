@@ -176,7 +176,7 @@ def test_proxy_headers_complex_json(monkeypatch):
         "Authorization": "Bearer token123",
         "X-API-Key": "api-key-456",
         "X-Custom-Header": "custom-value",
-        "User-Agent": "ConductorClient/1.0"
+        "User-Agent": "ConductorClient/1.0",
     }
     proxy_headers_json = json.dumps(complex_headers)
     monkeypatch.setenv("CONDUCTOR_PROXY_HEADERS", proxy_headers_json)
@@ -187,7 +187,7 @@ def test_proxy_headers_complex_json(monkeypatch):
 def test_proxy_headers_json_with_special_chars(monkeypatch):
     special_headers = {
         "Authorization": "Bearer token with spaces and special chars!@#$%",
-        "X-Header": "value with \"quotes\" and 'apostrophes'"
+        "X-Header": "value with \"quotes\" and 'apostrophes'",
     }
     proxy_headers_json = json.dumps(special_headers)
     monkeypatch.setenv("CONDUCTOR_PROXY_HEADERS", proxy_headers_json)
