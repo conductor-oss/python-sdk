@@ -87,12 +87,13 @@ class Auth401Policy:
         # Exponential backoff
         delay_ms = self.base_delay_ms * (2**attempt_count)
 
-        delay_ms = min(delay_ms, self.max_delay_ms)
-
-        # Add jitter: ±jitter_percent of the delay
+        # Add jitter: ±jitter_percent of the delay (before capping)
         jitter_range = delay_ms * self.jitter_percent
         jitter = random.uniform(-jitter_range, jitter_range)
-        delay_ms = max(0, delay_ms + jitter)
+        delay_ms = delay_ms + jitter
+
+        # Apply max delay cap after jitter to ensure we never exceed the max
+        delay_ms = min(max(0, delay_ms), self.max_delay_ms)
 
         return delay_ms / 1000.0  # Convert to seconds
 
