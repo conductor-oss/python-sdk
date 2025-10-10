@@ -69,6 +69,10 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
             "betaVersion",
             "version",
             "organizationId",
+            "oAuth2RefreshToken",
+            "oAuth2AuthCode",
+            "oAuth2TokenExpiresAt",
+            "oAuth2RedirectUri",
         ]
         if field_name not in allowed_values:
             raise ValueError(
