@@ -209,10 +209,6 @@ class Configuration:
             "CONDUCTOR_AUTH_401_STOP_BEHAVIOR", "stop_worker"
         )
 
-        print("\n\n\n", self._get_env_int(
-            "CONDUCTOR_AUTH_401_MAX_ATTEMPTS", 6
-        ))
-
     @property
     def debug(self):
         """Debug status
