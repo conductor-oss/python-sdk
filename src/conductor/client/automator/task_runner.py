@@ -52,6 +52,13 @@ class TaskRunner:
         )
 
         while True:
+            # Check if worker should stop due to 401 policy
+            if (hasattr(self.task_client, 'api_client') and 
+                hasattr(self.task_client.api_client, 'auth_401_handler') and 
+                hasattr(self.task_client.api_client.auth_401_handler, 'is_worker_stopped') and 
+                self.task_client.api_client.auth_401_handler.is_worker_stopped()):
+                logger.error("Worker stopped due to persistent 401 authentication failures")
+                break
             self.run_once()
 
     def run_once(self) -> None:
