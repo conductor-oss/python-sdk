@@ -30,14 +30,13 @@ if not _mp_fork_set:
         logger.error(
             "Error when setting multiprocessing.set_start_method - maybe the context is set %s",
             e.args,
-
         )
     if platform == "darwin":
         os.environ["no_proxy"] = "*"
 
 
 def register_decorated_fn(
-    name: str, poll_interval: int, domain: str, worker_id: str, func
+    name: str, poll_interval: int, domain: str, worker_id: str, func, task_options=None
 ):
     logger.info("Registering decorated function: %s", name)
     _decorated_functions[(name, domain)] = {
@@ -45,6 +44,7 @@ def register_decorated_fn(
         "poll_interval": poll_interval,
         "domain": domain,
         "worker_id": worker_id,
+        "task_options": task_options,
     }
 
 

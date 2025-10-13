@@ -6,6 +6,7 @@ from typing import Optional
 from conductor.asyncio_client.automator.task_handler import register_decorated_fn
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.workflow.task.simple_task import SimpleTask
+from conductor.shared.worker.task_options import get_task_options
 
 
 def WorkerTask(
@@ -26,12 +27,15 @@ def WorkerTask(
         poll_interval_millis = 1000 * poll_interval_seconds
 
     def worker_task_func(func):
+        task_opts = get_task_options(func)
+
         register_decorated_fn(
             name=task_definition_name,
             poll_interval=poll_interval_millis,
             domain=domain,
             worker_id=worker_id,
             func=func,
+            task_options=task_opts,
         )
 
         @functools.wraps(func)
@@ -63,12 +67,15 @@ def worker_task(
     domain = domain or config.get_domain()
 
     def worker_task_func(func):
+        task_opts = get_task_options(func)
+
         register_decorated_fn(
             name=task_definition_name,
             poll_interval=poll_interval_millis,
             domain=domain,
             worker_id=worker_id,
             func=func,
+            task_options=task_opts,
         )
 
         @functools.wraps(func)
