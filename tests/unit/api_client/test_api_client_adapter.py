@@ -20,11 +20,9 @@ def api_adapter(mock_config):
 
 def test_call_api_success(api_adapter):
     mock_response = MagicMock()
-    api_adapter._ApiClientAdapter__call_api_no_retry = MagicMock(
-        return_value=mock_response
-    )
+    api_adapter._ApiClient__call_api_no_retry = MagicMock(return_value=mock_response)
 
-    result = api_adapter._ApiClientAdapter__call_api(
+    result = api_adapter.call_api(
         resource_path="/test",
         method="GET",
         path_params=None,
@@ -42,20 +40,20 @@ def test_call_api_success(api_adapter):
     )
 
     assert result == mock_response
-    api_adapter._ApiClientAdapter__call_api_no_retry.assert_called_once()
+    api_adapter._ApiClient__call_api_no_retry.assert_called_once()
 
 
 def test_call_api_authorization_exception_expired_token(api_adapter):
     mock_response = MagicMock()
     mock_auth_exception = AuthorizationException(status=401, reason="Unauthorized")
     mock_auth_exception._error_code = "EXPIRED_TOKEN"
-    api_adapter._ApiClientAdapter__call_api_no_retry = MagicMock(
+    api_adapter._ApiClient__call_api_no_retry = MagicMock(
         side_effect=[mock_auth_exception, mock_response]
     )
-    api_adapter._ApiClientAdapter__force_refresh_auth_token = MagicMock()
+    api_adapter._ApiClient__force_refresh_auth_token = MagicMock()
 
     with patch("conductor.client.adapters.api_client_adapter.logger") as mock_logger:
-        result = api_adapter._ApiClientAdapter__call_api(
+        result = api_adapter.call_api(
             resource_path="/test",
             method="GET",
             path_params=None,
@@ -73,8 +71,8 @@ def test_call_api_authorization_exception_expired_token(api_adapter):
         )
 
     assert result == mock_response
-    assert api_adapter._ApiClientAdapter__call_api_no_retry.call_count == 2
-    api_adapter._ApiClientAdapter__force_refresh_auth_token.assert_called_once()
+    assert api_adapter._ApiClient__call_api_no_retry.call_count == 2
+    api_adapter._ApiClient__force_refresh_auth_token.assert_called_once()
     mock_logger.warning.assert_called_once()
 
 
@@ -82,13 +80,13 @@ def test_call_api_authorization_exception_invalid_token(api_adapter):
     mock_response = MagicMock()
     mock_auth_exception = AuthorizationException(status=401, reason="Unauthorized")
     mock_auth_exception._error_code = "INVALID_TOKEN"
-    api_adapter._ApiClientAdapter__call_api_no_retry = MagicMock(
+    api_adapter._ApiClient__call_api_no_retry = MagicMock(
         side_effect=[mock_auth_exception, mock_response]
     )
-    api_adapter._ApiClientAdapter__force_refresh_auth_token = MagicMock()
+    api_adapter._ApiClient__force_refresh_auth_token = MagicMock()
 
     with patch("conductor.client.adapters.api_client_adapter.logger") as mock_logger:
-        result = api_adapter._ApiClientAdapter__call_api(
+        result = api_adapter.call_api(
             resource_path="/test",
             method="GET",
             path_params=None,
@@ -106,20 +104,20 @@ def test_call_api_authorization_exception_invalid_token(api_adapter):
         )
 
     assert result == mock_response
-    assert api_adapter._ApiClientAdapter__call_api_no_retry.call_count == 2
-    api_adapter._ApiClientAdapter__force_refresh_auth_token.assert_called_once()
+    assert api_adapter._ApiClient__call_api_no_retry.call_count == 2
+    api_adapter._ApiClient__force_refresh_auth_token.assert_called_once()
     mock_logger.warning.assert_called_once()
 
 
 def test_call_api_authorization_exception_other(api_adapter):
     mock_auth_exception = AuthorizationException(status=401, reason="Unauthorized")
     mock_auth_exception._error_code = "OTHER_ERROR"
-    api_adapter._ApiClientAdapter__call_api_no_retry = MagicMock(
+    api_adapter._ApiClient__call_api_no_retry = MagicMock(
         side_effect=mock_auth_exception
     )
 
     with pytest.raises(AuthorizationException):
-        api_adapter._ApiClientAdapter__call_api(
+        api_adapter.call_api(
             resource_path="/test",
             method="GET",
             path_params=None,
@@ -138,13 +136,13 @@ def test_call_api_authorization_exception_other(api_adapter):
 
 
 def test_call_api_exception(api_adapter):
-    api_adapter._ApiClientAdapter__call_api_no_retry = MagicMock(
+    api_adapter._ApiClient__call_api_no_retry = MagicMock(
         side_effect=ApiException(status=500, reason="Server Error")
     )
 
     with patch("conductor.client.adapters.api_client_adapter.logger") as mock_logger:
         with pytest.raises(ApiException):
-            api_adapter._ApiClientAdapter__call_api(
+            api_adapter.call_api(
                 resource_path="/test",
                 method="GET",
                 path_params=None,
@@ -166,11 +164,9 @@ def test_call_api_exception(api_adapter):
 
 def test_call_api_with_all_parameters(api_adapter):
     mock_response = MagicMock()
-    api_adapter._ApiClientAdapter__call_api_no_retry = MagicMock(
-        return_value=mock_response
-    )
+    api_adapter._ApiClient__call_api_no_retry = MagicMock(return_value=mock_response)
 
-    result = api_adapter._ApiClientAdapter__call_api(
+    result = api_adapter.call_api(
         resource_path="/test",
         method="POST",
         path_params={"id": "123"},
@@ -188,7 +184,7 @@ def test_call_api_with_all_parameters(api_adapter):
     )
 
     assert result == mock_response
-    api_adapter._ApiClientAdapter__call_api_no_retry.assert_called_once_with(
+    api_adapter._ApiClient__call_api_no_retry.assert_called_once_with(
         resource_path="/test",
         method="POST",
         path_params={"id": "123"},
@@ -207,12 +203,10 @@ def test_call_api_with_all_parameters(api_adapter):
 
 
 def test_call_api_debug_logging(api_adapter):
-    api_adapter._ApiClientAdapter__call_api_no_retry = MagicMock(
-        return_value=MagicMock()
-    )
+    api_adapter._ApiClient__call_api_no_retry = MagicMock(return_value=MagicMock())
 
     with patch("conductor.client.adapters.api_client_adapter.logger") as mock_logger:
-        api_adapter._ApiClientAdapter__call_api(
+        api_adapter.call_api(
             resource_path="/test",
             method="GET",
             header_params={"Authorization": "Bearer token"},
