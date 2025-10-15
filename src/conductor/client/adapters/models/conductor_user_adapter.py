@@ -3,30 +3,14 @@ from conductor.client.codegen.models import ConductorUser
 
 class ConductorUserAdapter(ConductorUser):
     swagger_types = {
-        "application_user": "bool",
-        "encrypted_id": "bool",
-        "encrypted_id_display_value": "str",
-        "groups": "list[Group]",
-        "id": "str",
-        "name": "str",
-        "orkes_workers_app": "bool",
-        "roles": "list[Role]",
-        "uuid": "str",
+        **ConductorUser.swagger_types,
         "orkes_app": "bool",
         "orkes_api_gateway": "bool",
         "contact_information": "dict(str, str)",
     }
 
     attribute_map = {
-        "application_user": "applicationUser",
-        "encrypted_id": "encryptedId",
-        "encrypted_id_display_value": "encryptedIdDisplayValue",
-        "groups": "groups",
-        "id": "id",
-        "name": "name",
-        "orkes_workers_app": "orkesWorkersApp",
-        "roles": "roles",
-        "uuid": "uuid",
+        **ConductorUser.attribute_map,
         "orkes_app": "orkesApp",
         "orkes_api_gateway": "orkesApiGateway",
         "contact_information": "contactInformation",
