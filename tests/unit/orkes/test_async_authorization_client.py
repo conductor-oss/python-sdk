@@ -491,3 +491,12 @@ async def test_get_group_permissions(mocker, authorization_client: OrkesAuthoriz
             }
         ]
     }
+
+
+@pytest.mark.asyncio
+async def test_get_granted_permissions_for_user_with_empty_string(mocker, authorization_client):
+    from conductor.asyncio_client.http.api import UserResourceApi
+    mock = mocker.patch.object(UserResourceApi, "get_granted_permissions")
+    mock.return_value = {"grantedAccess": []}
+    await authorization_client.get_granted_permissions_for_user("")
+    mock.assert_called_with(user_id=None)

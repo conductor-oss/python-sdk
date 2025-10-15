@@ -442,6 +442,14 @@ def test_get_granted_permissions_for_user(mocker, authorization_client):
     assert perms == [expected_perm]
 
 
+def test_get_granted_permissions_for_user_with_empty_string(mocker, authorization_client):
+    from conductor.client.codegen.api.user_resource_api import UserResourceApi
+    mock = mocker.patch.object(UserResourceApi, "get_granted_permissions")
+    mock.return_value = {"grantedAccess": []}
+    authorization_client.get_granted_permissions_for_user("")
+    mock.assert_called_with(user_id=None)
+
+
 def test_get_permissions(mocker, authorization_client):
     mock = mocker.patch.object(AuthorizationResourceApi, "get_permissions")
     mock.return_value = {
