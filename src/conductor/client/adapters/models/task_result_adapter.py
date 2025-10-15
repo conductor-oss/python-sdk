@@ -1,7 +1,7 @@
 from conductor.client.adapters.models.task_exec_log_adapter import \
     TaskExecLogAdapter
 from conductor.client.codegen.models.task_result import TaskResult
-from conductor.client.http.models.task_result_status import TaskResultStatus
+from conductor.shared.http.enums.task_result_status import TaskResultStatus
 
 
 class TaskResultAdapter(TaskResult):
