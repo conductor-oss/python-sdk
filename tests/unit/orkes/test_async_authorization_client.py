@@ -264,6 +264,15 @@ async def test_get_user(mocker, authorization_client, conductor_user_adapter):
 
 
 @pytest.mark.asyncio
+async def test_get_user_with_empty_string(mocker, authorization_client, conductor_user_adapter):
+    from conductor.asyncio_client.http.api import UserResourceApi
+    mock = mocker.patch.object(UserResourceApi, "get_user")
+    mock.return_value = conductor_user_adapter
+    await authorization_client.get_user("")
+    mock.assert_called_with(id=None)
+
+
+@pytest.mark.asyncio
 async def test_delete_user(mocker, authorization_client):
     mock = mocker.patch.object(UserResourceApiAdapter, "delete_user")
     await authorization_client.delete_user(USER_ID)

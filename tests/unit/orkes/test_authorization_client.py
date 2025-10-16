@@ -312,6 +312,14 @@ def test_get_user(mocker, authorization_client, conductor_user, roles):
     assert user.roles == roles
 
 
+def test_get_user_with_empty_string(mocker, authorization_client, conductor_user):
+    from conductor.client.codegen.api.user_resource_api import UserResourceApi
+    mock = mocker.patch.object(UserResourceApi, "get_user")
+    mock.return_value = conductor_user.to_dict()
+    authorization_client.get_user("")
+    mock.assert_called_with(id=None)
+
+
 def test_list_users_with_apps(mocker, authorization_client, conductor_user):
     mock = mocker.patch.object(UserResourceApi, "list_users")
     mock.return_value = [conductor_user]

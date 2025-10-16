@@ -6,3 +6,8 @@ class UserResourceApiAdapter(UserResourceApi):
         if not user_id:
             user_id = None
         return super().get_granted_permissions(user_id=user_id, **kwargs)
+
+    def get_user(self, id, **kwargs):
+        if not id:
+            id = None
+        return super().get_user(id=id, **kwargs)
