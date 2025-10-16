@@ -62,7 +62,6 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     async def get_user(self, user_id: str) -> ConductorUser:
         """Get user by ID"""
         user = await self.user_api.get_user(id=user_id)
-        print(user)
 
         return ConductorUser.from_dict(user)
 

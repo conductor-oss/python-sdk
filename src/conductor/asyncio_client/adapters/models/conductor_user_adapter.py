@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from pydantic import Field, StrictBool
 from typing_extensions import Self
 
 from conductor.asyncio_client.http.models import ConductorUser
@@ -10,6 +11,9 @@ from conductor.asyncio_client.http.models import ConductorUser
 class ConductorUserAdapter(ConductorUser):
     groups: Optional[List["GroupAdapter"]] = None
     roles: Optional[List["RoleAdapter"]] = None
+    orkes_app: Optional[StrictBool] = Field(default=None, alias="orkesApp")
+    orkes_api_gateway: Optional[StrictBool] = Field(default=None, alias="orkesApiGateway")
+    contact_information: Optional[Dict[Any, str]] = Field(default=None, alias="contactInformation")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -39,12 +43,19 @@ class ConductorUserAdapter(ConductorUser):
                     else None
                 ),
                 "uuid": obj.get("uuid"),
+                "orkesApp": obj.get("orkesApp"),
+                "orkesApiGateway": obj.get("orkesApiGateway"),
+                "contactInformation": obj.get("contactInformation"),
             }
         )
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter  # noqa: E402
-from conductor.asyncio_client.adapters.models.role_adapter import RoleAdapter  # noqa: E402
+from conductor.asyncio_client.adapters.models.group_adapter import (  # noqa: E402
+    GroupAdapter,
+)
+from conductor.asyncio_client.adapters.models.role_adapter import (  # noqa: E402
+    RoleAdapter,
+)
 
 ConductorUserAdapter.model_rebuild(raise_errors=False)
