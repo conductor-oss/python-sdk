@@ -6,7 +6,7 @@ from conductor.asyncio_client.http.api import UserResourceApi
 class UserResourceApiAdapter(UserResourceApi):
     async def get_granted_permissions(
         self,
-        user_id,
+        user_id: StrictStr,
         *args,
         **kwargs,
     ) -> object:
