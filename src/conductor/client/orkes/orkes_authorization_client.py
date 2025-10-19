@@ -69,7 +69,7 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
         return self.applicationResourceApi.get_tags_for_application(application_id)
 
     def delete_application_tags(self, tags: List[MetadataTag], application_id: str):
-        self.applicationResourceApi.put_tag_for_application(tags, application_id)
+        self.applicationResourceApi.delete_tag_for_application(tags, application_id)
 
     def create_access_key(self, application_id: str) -> CreatedAccessKey:
         key_obj = self.applicationResourceApi.create_access_key(application_id)

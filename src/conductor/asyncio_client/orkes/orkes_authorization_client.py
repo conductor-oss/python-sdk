@@ -186,7 +186,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return await self.application_api.get_tags_for_application(application_id)
 
     async def delete_application_tags(self, tags: List[Tag], application_id: str):
-        await self.application_api.delete_tag_for_application(tags, application_id)
+        await self.application_api.delete_tag_for_application(application_id, tags)
 
     async def create_access_key(self, application_id: str) -> AccessKey:
         key_obj = await self.application_api.create_access_key(application_id)
