@@ -6,3 +6,10 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         if not id:
             id = None
         return super().create_access_key(id, **kwargs)
+
+    def add_role_to_application_user(self, application_id, role, **kwargs):
+        if not application_id:
+            application_id = None
+        if not role:
+            role = None
+        return super().add_role_to_application_user(application_id, role, **kwargs)
