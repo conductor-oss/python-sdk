@@ -44,3 +44,8 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         if not key_id:
             key_id = None
         return super().toggle_access_key_status(application_id, key_id, **kwargs)
+
+    def get_tags_for_application(self, application_id, **kwargs):
+        if not application_id:
+            application_id = None
+        return super().get_tags_for_application(application_id, **kwargs)

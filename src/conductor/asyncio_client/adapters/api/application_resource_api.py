@@ -75,3 +75,10 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         return await super().toggle_access_key_status(
             application_id=application_id, key_id=key_id, *args, **kwargs
         )
+
+    async def get_tags_for_application(self, application_id: StrictStr, *args, **kwargs):
+        if not application_id:
+            application_id = None
+        return await super().get_tags_for_application(
+            id=application_id, *args, **kwargs
+        )
