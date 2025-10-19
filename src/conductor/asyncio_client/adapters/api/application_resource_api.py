@@ -1,6 +1,9 @@
+from typing import List
+
 from pydantic import StrictStr
 
 from conductor.asyncio_client.http.api import ApplicationResourceApi
+from conductor.asyncio_client.http.models import Tag
 
 
 class ApplicationResourceApiAdapter(ApplicationResourceApi):
@@ -79,6 +82,13 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
     async def get_tags_for_application(self, application_id: StrictStr, *args, **kwargs):
         if not application_id:
             application_id = None
-        return await super().get_tags_for_application(
-            id=application_id, *args, **kwargs
-        )
+        return await super().get_tags_for_application(id=application_id, *args, **kwargs)
+
+    async def delete_tag_for_application(
+        self, id: StrictStr, tag: List[Tag], *args, **kwargs
+    ) -> None:
+        if not id:
+            id = None
+        if not tag:
+            tag = None
+        return await super().delete_tag_for_application(id=id, tag=tag, *args, **kwargs)

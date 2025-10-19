@@ -49,3 +49,10 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         if not application_id:
             application_id = None
         return super().get_tags_for_application(application_id, **kwargs)
+
+    def delete_tag_for_application(self, body, id, **kwargs):
+        if not body:
+            body = None
+        if not id:
+            id = None
+        return super().delete_tag_for_application(body, id, **kwargs)
