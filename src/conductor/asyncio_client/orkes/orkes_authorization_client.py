@@ -273,3 +273,9 @@ class OrkesAuthorizationClient(OrkesBaseClient):
             access = ga["access"]
             granted_permissions.append(GrantedAccess(target=target, access=access))
         return granted_permissions
+
+    async def get_app_by_access_key_id(self, access_key_id: str, *args, **kwargs) -> ExtendedConductorApplication:
+        application_access_key_obj = await self.application_api.get_app_by_access_key_id(
+            access_key_id=access_key_id, *args, **kwargs
+        )
+        return ExtendedConductorApplication.from_dict(application_access_key_obj)

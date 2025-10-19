@@ -54,3 +54,8 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         return await super().remove_role_from_application_user(
             application_id=application_id, role=role, *args, **kwargs
         )
+
+    async def get_app_by_access_key_id(self, access_key_id: StrictStr, *args, **kwargs):
+        if not access_key_id:
+            access_key_id = None
+        return await super().get_app_by_access_key_id(access_key_id=access_key_id, *args, **kwargs)

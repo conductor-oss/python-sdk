@@ -27,3 +27,8 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         if not role:
             role = None
         return super().remove_role_from_application_user(application_id, role, **kwargs)
+
+    def get_app_by_access_key_id(self, access_key_id: str, **kwargs):
+        if not access_key_id:
+            access_key_id = None
+        return super().get_app_by_access_key_id(access_key_id=access_key_id, **kwargs)

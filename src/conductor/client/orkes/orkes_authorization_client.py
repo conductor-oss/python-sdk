@@ -36,6 +36,10 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
         app_obj = self.applicationResourceApi.get_application(application_id)
         return self.api_client.deserialize_class(app_obj, "ConductorApplication")
 
+    def get_app_by_access_key_id(self, access_key_id: str) -> ConductorApplication:
+        app_obj = self.applicationResourceApi.get_app_by_access_key_id(access_key_id)
+        return self.api_client.deserialize_class(app_obj, "ConductorApplication")
+
     def list_applications(self) -> List[ConductorApplication]:
         return self.applicationResourceApi.list_applications()
 
