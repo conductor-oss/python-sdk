@@ -64,3 +64,14 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         if not id:
             id = None
         return await super().get_access_keys(id=id, *args, **kwargs)
+
+    async def toggle_access_key_status(
+        self, application_id: StrictStr, key_id: StrictStr, *args, **kwargs
+    ):
+        if not application_id:
+            application_id = None
+        if not key_id:
+            key_id = None
+        return await super().toggle_access_key_status(
+            application_id=application_id, key_id=key_id, *args, **kwargs
+        )
