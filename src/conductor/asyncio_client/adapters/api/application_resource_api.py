@@ -59,3 +59,8 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         if not access_key_id:
             access_key_id = None
         return await super().get_app_by_access_key_id(access_key_id=access_key_id, *args, **kwargs)
+
+    async def get_access_keys(self, id: StrictStr, *args, **kwargs):
+        if not id:
+            id = None
+        return await super().get_access_keys(id=id, *args, **kwargs)

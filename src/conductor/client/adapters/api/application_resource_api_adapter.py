@@ -32,3 +32,8 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         if not access_key_id:
             access_key_id = None
         return super().get_app_by_access_key_id(access_key_id=access_key_id, **kwargs)
+
+    def get_access_keys(self, id: str, **kwargs):
+        if not id:
+            id = None
+        return super().get_access_keys(id=id, **kwargs)
