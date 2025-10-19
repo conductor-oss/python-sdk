@@ -9,7 +9,7 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         id: StrictStr,
         *args,
         **kwargs,
-    ) -> object:
+    ):
         if not id:
             id = None
         return await super().create_access_key(id=id, *args, **kwargs)
@@ -38,4 +38,19 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
             key_id = None
         return await super().delete_access_key(
             application_id=application_id, key_id=key_id, *args, **kwargs
+        )
+
+    async def remove_role_from_application_user(
+        self,
+        application_id: StrictStr,
+        role: StrictStr,
+        *args,
+        **kwargs,
+    ):
+        if not application_id:
+            application_id = None
+        if not role:
+            role = None
+        return await super().remove_role_from_application_user(
+            application_id=application_id, role=role, *args, **kwargs
         )
