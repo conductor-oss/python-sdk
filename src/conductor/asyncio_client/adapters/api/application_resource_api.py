@@ -24,3 +24,18 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         return await super().add_role_to_application_user(
             application_id=application_id, role=role, *args, **kwargs
         )
+
+    async def delete_access_key(
+        self,
+        application_id: StrictStr,
+        key_id: StrictStr,
+        *args,
+        **kwargs,
+    ):
+        if not application_id:
+            application_id = None
+        if not key_id:
+            key_id = None
+        return await super().delete_access_key(
+            application_id=application_id, key_id=key_id, *args, **kwargs
+        )

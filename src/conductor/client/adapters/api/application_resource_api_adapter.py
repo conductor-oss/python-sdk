@@ -13,3 +13,10 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         if not role:
             role = None
         return super().add_role_to_application_user(application_id, role, **kwargs)
+
+    def delete_access_key(self, application_id, key_id, **kwargs):
+        if not application_id:
+            application_id = None
+        if not key_id:
+            key_id = None
+        return super().delete_access_key(application_id, key_id, **kwargs)
