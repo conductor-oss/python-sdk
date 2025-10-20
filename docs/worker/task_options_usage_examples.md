@@ -29,7 +29,7 @@ def my_task(task):
 | `response_timeout_seconds` | int  | Time to wait for task response (must be < timeout_seconds) |
 | `poll_timeout_seconds`     | int  | Timeout for polling the task                               |
 
-**Important**: `response_timeout_seconds` must be less than `timeout_seconds`
+**Important**: `response_timeout_seconds` should be less than `timeout_seconds`, otherwise the response timeout will never trigger and the setting has no effect.
 
 ### Retry Configuration
 
