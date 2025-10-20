@@ -1,7 +1,9 @@
 import logging
 
 import pytest
+from pydantic import ValidationError
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.api.application_resource_api import (
     ApplicationResourceApiAdapter,
 )
@@ -42,9 +44,7 @@ from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_authorization_client import (
     OrkesAuthorizationClient,
 )
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.shared.http.enums import SubjectType, TargetType
-
 
 APP_ID = "5d860b70-a429-4b20-8d28-6b5198155882"
 APP_NAME = "ut_application_name"
@@ -155,17 +155,15 @@ def disable_logging():
 
 def test_init(authorization_client):
     message = "application_api is not of type ApplicationResourceApi"
-    assert isinstance(
-        authorization_client.application_api, ApplicationResourceApiAdapter
-    ), message
+    assert isinstance(authorization_client.application_api, ApplicationResourceApiAdapter), message
     message = "user_api is not of type UserResourceApi"
     assert isinstance(authorization_client.user_api, UserResourceApiAdapter), message
     message = "group_api is not of type GroupResourceApi"
     assert isinstance(authorization_client.group_api, GroupResourceApiAdapter), message
     message = "authorization_api is not of type AuthorizationResourceApi"
-    assert isinstance(
-        authorization_client.authorization_api, AuthorizationResourceApiAdapter
-    ), message
+    assert isinstance(authorization_client.authorization_api, AuthorizationResourceApiAdapter), (
+        message
+    )
 
 
 @pytest.mark.asyncio
@@ -174,9 +172,7 @@ async def test_create_application(
 ):
     mock = mocker.patch.object(ApplicationResourceApiAdapter, "create_application")
     mock.return_value = extended_conductor_application_adapter
-    app = await authorization_client.create_application(
-        extended_conductor_application_adapter
-    )
+    app = await authorization_client.create_application(extended_conductor_application_adapter)
     mock.assert_called_with(
         create_or_update_application_request=extended_conductor_application_adapter
     )
@@ -271,9 +267,7 @@ async def test_delete_user(mocker, authorization_client):
 
 
 @pytest.mark.asyncio
-async def test_list_users_with_apps(
-    mocker, authorization_client, conductor_user_adapter
-):
+async def test_list_users_with_apps(mocker, authorization_client, conductor_user_adapter):
     mock = mocker.patch.object(UserResourceApiAdapter, "list_users")
     mock.return_value = [conductor_user_adapter]
     users = await authorization_client.list_users(include_apps=True)
@@ -397,9 +391,7 @@ async def test_remove_users_from_group(mocker, authorization_client):
 
 
 @pytest.mark.asyncio
-async def test_get_users_in_group(
-    mocker, authorization_client, conductor_user_adapter, roles
-):
+async def test_get_users_in_group(mocker, authorization_client, conductor_user_adapter, roles):
     mock = mocker.patch.object(GroupResourceApiAdapter, "get_users_in_group")
     mock.return_value = [conductor_user_adapter]
     users = await authorization_client.get_users_in_group(GROUP_ID)
@@ -491,3 +483,122 @@ async def test_get_group_permissions(mocker, authorization_client: OrkesAuthoriz
             }
         ]
     }
+
+
+@pytest.mark.asyncio
+async def test_create_access_key_empty_string_converts_to_none(mocker, authorization_client):
+    from conductor.asyncio_client.http.api.application_resource_api import (
+        ApplicationResourceApi,
+    )
+
+    mock = mocker.patch.object(ApplicationResourceApi, "create_access_key")
+    mock.return_value = {
+        "id": "test-key-id",
+        "secret": "test-secret",
+    }
+    await authorization_client.create_access_key("")
+    mock.assert_called_with(id=None)
+
+
+@pytest.mark.asyncio
+async def test_add_role_to_application_user_empty_strings_convert_to_none(
+    mocker, authorization_client
+):
+    from conductor.asyncio_client.http.api.application_resource_api import (
+        ApplicationResourceApi,
+    )
+
+    mock = mocker.patch.object(ApplicationResourceApi, "add_role_to_application_user")
+    await authorization_client.add_role_to_application_user("", "")
+    mock.assert_called_with(application_id=None, role=None)
+
+
+@pytest.mark.asyncio
+async def test_delete_access_key_empty_strings_convert_to_none(mocker, authorization_client):
+    from conductor.asyncio_client.http.api.application_resource_api import (
+        ApplicationResourceApi,
+    )
+
+    mock = mocker.patch.object(ApplicationResourceApi, "delete_access_key")
+    await authorization_client.delete_access_key("", "")
+    mock.assert_called_with(application_id=None, key_id=None)
+
+
+@pytest.mark.asyncio
+async def test_remove_role_from_application_user_empty_strings_convert_to_none(
+    mocker, authorization_client
+):
+    from conductor.asyncio_client.http.api.application_resource_api import (
+        ApplicationResourceApi,
+    )
+
+    mock = mocker.patch.object(ApplicationResourceApi, "remove_role_from_application_user")
+    await authorization_client.remove_role_from_application_user("", "")
+    mock.assert_called_with(application_id=None, role=None)
+
+
+@pytest.mark.asyncio
+async def test_get_app_by_access_key_id_empty_string_converts_to_none(
+    mocker, authorization_client, extended_conductor_application_adapter
+):
+    from conductor.asyncio_client.http.api.application_resource_api import (
+        ApplicationResourceApi,
+    )
+
+    mock = mocker.patch.object(ApplicationResourceApi, "get_app_by_access_key_id")
+    mock.return_value = extended_conductor_application_adapter
+    await authorization_client.get_app_by_access_key_id("")
+    mock.assert_called_with(access_key_id=None)
+
+
+@pytest.mark.asyncio
+async def test_get_access_keys_empty_string_converts_to_none(mocker, authorization_client):
+    from conductor.asyncio_client.http.api.application_resource_api import (
+        ApplicationResourceApi,
+    )
+
+    mock = mocker.patch.object(ApplicationResourceApi, "get_access_keys")
+    mock.return_value = []
+    await authorization_client.get_access_keys("")
+    mock.assert_called_with(id=None)
+
+
+@pytest.mark.asyncio
+async def test_toggle_access_key_status_empty_strings_convert_to_none(mocker, authorization_client):
+    from conductor.asyncio_client.http.api.application_resource_api import (
+        ApplicationResourceApi,
+    )
+
+    mock = mocker.patch.object(ApplicationResourceApi, "toggle_access_key_status")
+    mock.return_value = {
+        "id": "test-key-id",
+        "createdAt": 1698926045112,
+        "status": "INACTIVE",
+    }
+    await authorization_client.toggle_access_key_status("", "")
+    mock.assert_called_with(application_id=None, key_id=None)
+
+
+@pytest.mark.asyncio
+async def test_get_tags_for_application_empty_string_converts_to_none(mocker, authorization_client):
+    from conductor.asyncio_client.http.api.application_resource_api import (
+        ApplicationResourceApi,
+    )
+
+    mock = mocker.patch.object(ApplicationResourceApi, "get_tags_for_application")
+    mock.return_value = []
+    await authorization_client.get_application_tags("")
+    mock.assert_called_with(id=None)
+
+
+@pytest.mark.asyncio
+async def test_delete_tag_for_application_empty_strings_convert_to_none(
+    mocker, authorization_client
+):
+    from conductor.asyncio_client.http.api.application_resource_api import (
+        ApplicationResourceApi,
+    )
+
+    mock = mocker.patch.object(ApplicationResourceApi, "delete_tag_for_application")
+    await authorization_client.delete_application_tags([], "")
+    mock.assert_called_with(id=None, tag=None)
