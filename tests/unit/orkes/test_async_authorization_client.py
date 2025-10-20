@@ -1,7 +1,6 @@
 import logging
 
 import pytest
-from pydantic import ValidationError
 
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.api.application_resource_api import (
