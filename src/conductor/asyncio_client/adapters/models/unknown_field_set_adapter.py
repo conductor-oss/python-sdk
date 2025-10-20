@@ -9,7 +9,9 @@ from conductor.asyncio_client.http.models import UnknownFieldSet
 
 
 class UnknownFieldSetAdapter(UnknownFieldSet):
-    default_instance_for_type: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="defaultInstanceForType")
+    default_instance_for_type: Optional["UnknownFieldSetAdapter"] = Field(
+        default=None, alias="defaultInstanceForType"
+    )
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

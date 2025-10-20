@@ -44,7 +44,9 @@ class WorkerInterface(abc.ABC):
         :return: float
                  Default: 100ms
         """
-        return (self.poll_interval if self.poll_interval else Configuration().get_poll_interval()) / 1000
+        return (
+            self.poll_interval if self.poll_interval else Configuration().get_poll_interval()
+        ) / 1000
 
     def get_task_definition_name(self) -> str:
         """

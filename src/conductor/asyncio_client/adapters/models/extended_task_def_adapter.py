@@ -37,14 +37,18 @@ class ExtendedTaskDefAdapter(ExtendedTaskDef):
                 "executionNameSpace": obj.get("executionNameSpace"),
                 "inputKeys": obj.get("inputKeys"),
                 "inputSchema": (
-                    SchemaDefAdapter.from_dict(obj["inputSchema"]) if obj.get("inputSchema") is not None else None
+                    SchemaDefAdapter.from_dict(obj["inputSchema"])
+                    if obj.get("inputSchema") is not None
+                    else None
                 ),
                 "inputTemplate": obj.get("inputTemplate"),
                 "isolationGroupId": obj.get("isolationGroupId"),
                 "name": obj.get("name"),
                 "outputKeys": obj.get("outputKeys"),
                 "outputSchema": (
-                    SchemaDefAdapter.from_dict(obj["outputSchema"]) if obj.get("outputSchema") is not None else None
+                    SchemaDefAdapter.from_dict(obj["outputSchema"])
+                    if obj.get("outputSchema") is not None
+                    else None
                 ),
                 "overwriteTags": obj.get("overwriteTags"),
                 "ownerApp": obj.get("ownerApp"),
@@ -57,7 +61,9 @@ class ExtendedTaskDefAdapter(ExtendedTaskDef):
                 "retryDelaySeconds": obj.get("retryDelaySeconds"),
                 "retryLogic": obj.get("retryLogic"),
                 "tags": (
-                    [TagAdapter.from_dict(_item) for _item in obj["tags"]] if obj.get("tags") is not None else None
+                    [TagAdapter.from_dict(_item) for _item in obj["tags"]]
+                    if obj.get("tags") is not None
+                    else None
                 ),
                 "timeoutPolicy": obj.get("timeoutPolicy"),
                 "timeoutSeconds": obj.get("timeoutSeconds"),

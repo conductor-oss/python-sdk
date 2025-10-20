@@ -297,7 +297,9 @@ class ConductorWorkflow:
         )
 
     def to_workflow_task(self):
-        sub_workflow_task = InlineSubWorkflowTask(task_ref_name=self.name + "_" + str(uuid()), workflow=self)
+        sub_workflow_task = InlineSubWorkflowTask(
+            task_ref_name=self.name + "_" + str(uuid()), workflow=self
+        )
         sub_workflow_task.input_parameters.update(self._input_template)
         return sub_workflow_task.to_workflow_task()
 
@@ -313,7 +315,11 @@ class ConductorWorkflow:
         for i in range(len(workflow_task_list)):
             wft: WorkflowTask = workflow_task_list[i]
             updated_task_list.append(wft)
-            if wft.type == "FORK_JOIN" and i < len(workflow_task_list) - 1 and workflow_task_list[i + 1].type != "JOIN":
+            if (
+                wft.type == "FORK_JOIN"
+                and i < len(workflow_task_list) - 1
+                and workflow_task_list[i + 1].type != "JOIN"
+            ):
                 join_on = [ft[-1].task_reference_name for ft in wft.fork_tasks]
                 join = JoinTask(task_ref_name="join_" + wft.task_reference_name, join_on=join_on)
 
@@ -321,7 +327,9 @@ class ConductorWorkflow:
 
         return updated_task_list
 
-    def __rshift__(self, task: Union[TaskInterface, List[TaskInterface], List[List[TaskInterface]]]) -> Self:
+    def __rshift__(
+        self, task: Union[TaskInterface, List[TaskInterface], List[List[TaskInterface]]]
+    ) -> Self:
         if isinstance(task, list):
             forked_tasks = []
             for fork_task in task:
@@ -332,7 +340,9 @@ class ConductorWorkflow:
             self.__add_fork_join_tasks(forked_tasks)
             return self
         elif isinstance(task, ConductorWorkflow):
-            inline = InlineSubWorkflowTask(task_ref_name=task.name + "_" + str(uuid()), workflow=task)
+            inline = InlineSubWorkflowTask(
+                task_ref_name=task.name + "_" + str(uuid()), workflow=task
+            )
             inline.input_parameters.update(task._input_template)
             self.__add_task(inline)
             return self
@@ -358,7 +368,9 @@ class ConductorWorkflow:
     def __add_fork_join_tasks(self, forked_tasks: List[List[TaskInterface]]) -> Self:
         for single_fork in forked_tasks:
             for task in single_fork:
-                if not (issubclass(type(task), TaskInterface) or isinstance(task, ConductorWorkflow)):
+                if not (
+                    issubclass(type(task), TaskInterface) or isinstance(task, ConductorWorkflow)
+                ):
                     raise Exception("invalid type")
 
         suffix = str(uuid())

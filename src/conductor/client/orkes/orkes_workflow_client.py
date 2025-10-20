@@ -151,7 +151,9 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def delete_workflow(self, workflow_id: str, archive_workflow: Optional[bool] = True):
         self.workflowResourceApi.delete1(workflow_id, archive_workflow=archive_workflow)
 
-    def skip_task_from_workflow(self, workflow_id: str, task_reference_name: str, request: SkipTaskRequest):
+    def skip_task_from_workflow(
+        self, workflow_id: str, task_reference_name: str, request: SkipTaskRequest
+    ):
         self.workflowResourceApi.skip_task_from_workflow(workflow_id, task_reference_name, request)
 
     def test_workflow(self, test_request: WorkflowTestRequest) -> Workflow:
@@ -207,12 +209,16 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if include_completed:
             kwargs["include_closed"] = include_completed
 
-        return self.workflowResourceApi.get_workflows(body=correlation_ids, name=workflow_name, **kwargs)
+        return self.workflowResourceApi.get_workflows(
+            body=correlation_ids, name=workflow_name, **kwargs
+        )
 
     def remove_workflow(self, workflow_id: str):
         self.workflowResourceApi.delete1(workflow_id)
 
-    def update_variables(self, workflow_id: str, variables: Optional[Dict[str, object]] = None) -> None:
+    def update_variables(
+        self, workflow_id: str, variables: Optional[Dict[str, object]] = None
+    ) -> None:
         variables = variables or {}
         self.workflowResourceApi.update_workflow_state(variables, workflow_id)
 

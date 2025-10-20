@@ -34,7 +34,9 @@ class ConductorUserAdapter(ConductorUser):
                 "name": obj.get("name"),
                 "orkesWorkersApp": obj.get("orkesWorkersApp"),
                 "roles": (
-                    [RoleAdapter.from_dict(_item) for _item in obj["roles"]] if obj.get("roles") is not None else None
+                    [RoleAdapter.from_dict(_item) for _item in obj["roles"]]
+                    if obj.get("roles") is not None
+                    else None
                 ),
                 "uuid": obj.get("uuid"),
             }

@@ -33,7 +33,9 @@ class IntegrationClient(ABC):
     """
 
     @abstractmethod
-    def associate_prompt_with_integration(self, ai_integration: str, model_name: str, prompt_name: str):
+    def associate_prompt_with_integration(
+        self, ai_integration: str, model_name: str, prompt_name: str
+    ):
         """Associate a prompt with an AI integration and model"""
         ...
 
@@ -60,7 +62,9 @@ class IntegrationClient(ABC):
         """Returns the list of all the available integrations"""
 
     @abstractmethod
-    def get_prompts_with_integration(self, ai_integration: str, model_name: str) -> List[PromptTemplate]: ...
+    def get_prompts_with_integration(
+        self, ai_integration: str, model_name: str
+    ) -> List[PromptTemplate]: ...
 
     @abstractmethod
     def get_token_usage_for_integration(self, name, integration_name) -> int: ...
@@ -72,7 +76,9 @@ class IntegrationClient(ABC):
     def register_token_usage(self, body, name, integration_name): ...
 
     @abstractmethod
-    def save_integration_api(self, integration_name, api_name, api_details: IntegrationApiUpdate): ...
+    def save_integration_api(
+        self, integration_name, api_name, api_details: IntegrationApiUpdate
+    ): ...
 
     @abstractmethod
     def save_integration(self, integration_name, integration_details: IntegrationUpdate): ...

@@ -10,10 +10,16 @@ from conductor.asyncio_client.http.models import EnumValueDescriptorProtoOrBuild
 
 class EnumValueDescriptorProtoOrBuilderAdapter(EnumValueDescriptorProtoOrBuilder):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["MessageAdapter"] = Field(default=None, alias="defaultInstanceForType")
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    default_instance_for_type: Optional["MessageAdapter"] = Field(
+        default=None, alias="defaultInstanceForType"
+    )
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="descriptorForType"
+    )
     options: Optional["EnumValueOptionsAdapter"] = None
-    options_or_builder: Optional["EnumValueOptionsOrBuilderAdapter"] = Field(default=None, alias="optionsOrBuilder")
+    options_or_builder: Optional["EnumValueOptionsOrBuilderAdapter"] = Field(
+        default=None, alias="optionsOrBuilder"
+    )
     unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
@@ -42,11 +48,15 @@ class EnumValueDescriptorProtoOrBuilderAdapter(EnumValueDescriptorProtoOrBuilder
                 "initialized": obj.get("initialized"),
                 "name": obj.get("name"),
                 "nameBytes": (
-                    ByteStringAdapter.from_dict(obj["nameBytes"]) if obj.get("nameBytes") is not None else None
+                    ByteStringAdapter.from_dict(obj["nameBytes"])
+                    if obj.get("nameBytes") is not None
+                    else None
                 ),
                 "number": obj.get("number"),
                 "options": (
-                    EnumValueOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None
+                    EnumValueOptionsAdapter.from_dict(obj["options"])
+                    if obj.get("options") is not None
+                    else None
                 ),
                 "optionsOrBuilder": (
                     EnumValueOptionsOrBuilderAdapter.from_dict(obj["optionsOrBuilder"])

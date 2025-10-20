@@ -95,7 +95,9 @@ class TaskRunner:
                 self.metrics_collector.record_task_poll_time(task_definition_name, time_spent)
         except AuthorizationException as auth_exception:
             if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(task_definition_name, type(auth_exception))
+                self.metrics_collector.increment_task_poll_error(
+                    task_definition_name, type(auth_exception)
+                )
             if auth_exception.invalid_token:
                 logger.error(
                     "Failed to poll task: %s; reason: invalid auth token",
@@ -151,7 +153,9 @@ class TaskRunner:
             time_spent = finish_time - start_time
             if self.metrics_collector is not None:
                 self.metrics_collector.record_task_execute_time(task_definition_name, time_spent)
-                self.metrics_collector.record_task_result_payload_size(task_definition_name, sys.getsizeof(task_result))
+                self.metrics_collector.record_task_result_payload_size(
+                    task_definition_name, sys.getsizeof(task_result)
+                )
             logger.debug(
                 "Executed task id: %s; workflow_instance_id: %s; task_definition_name: %s",
                 task.task_id,
@@ -168,7 +172,9 @@ class TaskRunner:
             )
             task_result.status = "FAILED"
             task_result.reason_for_incompletion = str(e)
-            task_result.logs = [TaskExecLog(traceback.format_exc(), task_result.task_id, int(time.time()))]
+            task_result.logs = [
+                TaskExecLog(traceback.format_exc(), task_result.task_id, int(time.time()))
+            ]
             logger.error(
                 "Failed to execute task id: %s; workflow_instance_id: %s; task_definition_name: %s; reason: %s",
                 task.task_id,
@@ -204,7 +210,9 @@ class TaskRunner:
                 return response
             except Exception as e:
                 if self.metrics_collector is not None:
-                    self.metrics_collector.increment_task_update_error(task_definition_name, type(e))
+                    self.metrics_collector.increment_task_update_error(
+                        task_definition_name, type(e)
+                    )
                 logger.error(
                     "Failed to update task id: %s; workflow_instance_id: %s; task_definition_name: %s; reason: %s",
                     task_result.task_id,

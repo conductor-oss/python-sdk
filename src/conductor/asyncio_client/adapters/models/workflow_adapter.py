@@ -15,7 +15,9 @@ class WorkflowAdapter(Workflow):
     input: Optional[Dict[str, Any]] = None
     output: Optional[Dict[str, Any]] = None
     variables: Optional[Dict[str, Any]] = None
-    workflow_definition: Optional["WorkflowDefAdapter"] = Field(default=None, alias="workflowDefinition")
+    workflow_definition: Optional["WorkflowDefAdapter"] = Field(
+        default=None, alias="workflowDefinition"
+    )
     tasks: Optional[List["TaskAdapter"]] = None
     history: Optional[List["WorkflowAdapter"]] = None
 
@@ -158,7 +160,9 @@ class WorkflowAdapter(Workflow):
                 "status": obj.get("status"),
                 "taskToDomain": obj.get("taskToDomain"),
                 "tasks": (
-                    [TaskAdapter.from_dict(_item) for _item in obj["tasks"]] if obj.get("tasks") is not None else None
+                    [TaskAdapter.from_dict(_item) for _item in obj["tasks"]]
+                    if obj.get("tasks") is not None
+                    else None
                 ),
                 "updateTime": obj.get("updateTime"),
                 "updatedBy": obj.get("updatedBy"),

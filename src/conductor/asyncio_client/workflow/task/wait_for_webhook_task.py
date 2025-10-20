@@ -33,7 +33,9 @@ class WaitForWebHookTask(TaskInterface):
         self.input_parameters["matches"] = matches
 
 
-def wait_for_webhook(task_ref_name: str, matches: Dict[str, object], task_def_name: Optional[str] = None):
+def wait_for_webhook(
+    task_ref_name: str, matches: Dict[str, object], task_def_name: Optional[str] = None
+):
     task = WaitForWebHookTask(task_ref_name=task_ref_name, matches=matches)
     if task_def_name is not None:
         task.name = task_def_name

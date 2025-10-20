@@ -28,23 +28,39 @@ class MethodDescriptorAdapter(MethodDescriptor):
         _obj = cls.model_validate(
             {
                 "clientStreaming": obj.get("clientStreaming"),
-                "file": (FileDescriptorAdapter.from_dict(obj["file"]) if obj.get("file") is not None else None),
+                "file": (
+                    FileDescriptorAdapter.from_dict(obj["file"])
+                    if obj.get("file") is not None
+                    else None
+                ),
                 "fullName": obj.get("fullName"),
                 "index": obj.get("index"),
                 "inputType": (
-                    DescriptorAdapter.from_dict(obj["inputType"]) if obj.get("inputType") is not None else None
+                    DescriptorAdapter.from_dict(obj["inputType"])
+                    if obj.get("inputType") is not None
+                    else None
                 ),
                 "name": obj.get("name"),
-                "options": (MethodOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None),
+                "options": (
+                    MethodOptionsAdapter.from_dict(obj["options"])
+                    if obj.get("options") is not None
+                    else None
+                ),
                 "outputType": (
-                    DescriptorAdapter.from_dict(obj["outputType"]) if obj.get("outputType") is not None else None
+                    DescriptorAdapter.from_dict(obj["outputType"])
+                    if obj.get("outputType") is not None
+                    else None
                 ),
                 "proto": (
-                    MethodDescriptorProtoAdapter.from_dict(obj["proto"]) if obj.get("proto") is not None else None
+                    MethodDescriptorProtoAdapter.from_dict(obj["proto"])
+                    if obj.get("proto") is not None
+                    else None
                 ),
                 "serverStreaming": obj.get("serverStreaming"),
                 "service": (
-                    ServiceDescriptorAdapter.from_dict(obj["service"]) if obj.get("service") is not None else None
+                    ServiceDescriptorAdapter.from_dict(obj["service"])
+                    if obj.get("service") is not None
+                    else None
                 ),
             }
         )

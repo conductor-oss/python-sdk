@@ -25,7 +25,9 @@ class WorkflowStateUpdateAdapter(WorkflowStateUpdate):
             {
                 "taskReferenceName": obj.get("taskReferenceName"),
                 "taskResult": (
-                    TaskResultAdapter.from_dict(obj["taskResult"]) if obj.get("taskResult") is not None else None
+                    TaskResultAdapter.from_dict(obj["taskResult"])
+                    if obj.get("taskResult") is not None
+                    else None
                 ),
                 "variables": obj.get("variables"),
             }

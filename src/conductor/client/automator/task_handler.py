@@ -119,7 +119,9 @@ class TaskHandler:
         if metrics_settings is None:
             self.metrics_provider_process = None
             return
-        self.metrics_provider_process = Process(target=MetricsCollector.provide_metrics, args=(metrics_settings,))
+        self.metrics_provider_process = Process(
+            target=MetricsCollector.provide_metrics, args=(metrics_settings,)
+        )
         logger.info("Created MetricsProvider process pid: %s", self.metrics_provider_process.pid)
 
     def __create_task_runner_processes(

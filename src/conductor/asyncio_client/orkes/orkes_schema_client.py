@@ -13,11 +13,15 @@ class OrkesSchemaClient(OrkesBaseClient):
         super().__init__(configuration, api_client)
 
     # Core Schema Operations
-    async def save_schemas(self, schema_defs: List[SchemaDefAdapter], new_version: Optional[bool] = None) -> None:
+    async def save_schemas(
+        self, schema_defs: List[SchemaDefAdapter], new_version: Optional[bool] = None
+    ) -> None:
         """Save one or more schema definitions"""
         await self.schema_api.save(schema_defs, new_version=new_version)
 
-    async def save_schema(self, schema_def: SchemaDefAdapter, new_version: Optional[bool] = None) -> None:
+    async def save_schema(
+        self, schema_def: SchemaDefAdapter, new_version: Optional[bool] = None
+    ) -> None:
         """Save a single schema definition"""
         await self.save_schemas([schema_def], new_version=new_version)
 
@@ -93,7 +97,11 @@ class OrkesSchemaClient(OrkesBaseClient):
     async def get_schema_versions(self, name: str) -> List[int]:
         """Get all version numbers for a schema"""
         all_schemas = await self.get_all_schemas()
-        versions = [schema.version for schema in all_schemas if schema.name == name and schema.version is not None]
+        versions = [
+            schema.version
+            for schema in all_schemas
+            if schema.name == name and schema.version is not None
+        ]
         return sorted(versions)
 
     async def get_schemas_by_name(self, name: str) -> List[SchemaDefAdapter]:
@@ -112,7 +120,9 @@ class OrkesSchemaClient(OrkesBaseClient):
         names = {schema.name for schema in all_schemas if schema.name}
         return sorted(names)
 
-    async def bulk_save_schemas(self, schemas: List[dict], new_version: Optional[bool] = None) -> None:
+    async def bulk_save_schemas(
+        self, schemas: List[dict], new_version: Optional[bool] = None
+    ) -> None:
         """Save multiple schemas from dictionary definitions"""
         schema_defs = []
         for schema_dict in schemas:
@@ -152,9 +162,13 @@ class OrkesSchemaClient(OrkesBaseClient):
     async def search_schemas_by_name(self, name_pattern: str) -> List[SchemaDefAdapter]:
         """Search schemas by name pattern (case-insensitive)"""
         all_schemas = await self.get_all_schemas()
-        return [schema for schema in all_schemas if name_pattern.lower() in (schema.name or "").lower()]
+        return [
+            schema for schema in all_schemas if name_pattern.lower() in (schema.name or "").lower()
+        ]
 
-    async def get_schemas_with_description(self, description_pattern: str) -> List[SchemaDefAdapter]:
+    async def get_schemas_with_description(
+        self, description_pattern: str
+    ) -> List[SchemaDefAdapter]:
         """Find schemas that contain a specific text in their description"""
         all_schemas = await self.get_all_schemas()
         return [

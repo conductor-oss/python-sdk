@@ -88,13 +88,21 @@ class OrkesWorkflowClient(OrkesBaseClient):
         """Resume a paused workflow execution"""
         await self.workflow_api.resume_workflow(workflow_id=workflow_id)
 
-    async def restart_workflow(self, workflow_id: str, use_latest_definitions: Optional[bool] = None) -> None:
+    async def restart_workflow(
+        self, workflow_id: str, use_latest_definitions: Optional[bool] = None
+    ) -> None:
         """Restart a workflow execution"""
-        await self.workflow_api.restart(workflow_id=workflow_id, use_latest_definitions=use_latest_definitions)
+        await self.workflow_api.restart(
+            workflow_id=workflow_id, use_latest_definitions=use_latest_definitions
+        )
 
-    async def rerun_workflow(self, workflow_id: str, rerun_workflow_request: RerunWorkflowRequestAdapter) -> str:
+    async def rerun_workflow(
+        self, workflow_id: str, rerun_workflow_request: RerunWorkflowRequestAdapter
+    ) -> str:
         """Rerun a workflow from a specific task"""
-        return await self.workflow_api.rerun(workflow_id=workflow_id, rerun_workflow_request=rerun_workflow_request)
+        return await self.workflow_api.rerun(
+            workflow_id=workflow_id, rerun_workflow_request=rerun_workflow_request
+        )
 
     async def retry_workflow(
         self,
@@ -122,7 +130,9 @@ class OrkesWorkflowClient(OrkesBaseClient):
             trigger_failure_workflow=trigger_failure_workflow,
         )
 
-    async def delete_workflow(self, workflow_id: str, archive_workflow: Optional[bool] = None) -> None:
+    async def delete_workflow(
+        self, workflow_id: str, archive_workflow: Optional[bool] = None
+    ) -> None:
         """Delete a workflow execution"""
         await self.workflow_api.delete1(workflow_id=workflow_id, archive_workflow=archive_workflow)
 
@@ -247,9 +257,13 @@ class OrkesWorkflowClient(OrkesBaseClient):
         """Update workflow state"""
         # Convert the adapter to dict for the API call
         request_body = (
-            workflow_state_update.to_dict() if hasattr(workflow_state_update, "to_dict") else workflow_state_update
+            workflow_state_update.to_dict()
+            if hasattr(workflow_state_update, "to_dict")
+            else workflow_state_update
         )
-        return await self.workflow_api.update_workflow_state(workflow_id=workflow_id, request_body=request_body)
+        return await self.workflow_api.update_workflow_state(
+            workflow_id=workflow_id, request_body=request_body
+        )
 
     async def update_workflow_and_task_state(
         self,
@@ -342,16 +356,22 @@ class OrkesWorkflowClient(OrkesBaseClient):
             skip_cache=skip_cache,
         )
 
-    async def remove_workflow(self, workflow_id: str, archive_workflow: Optional[bool] = None) -> None:
+    async def remove_workflow(
+        self, workflow_id: str, archive_workflow: Optional[bool] = None
+    ) -> None:
         """Alias for delete_workflow"""
         await self.delete_workflow(workflow_id=workflow_id, archive_workflow=archive_workflow)
 
-    async def update_variables(self, workflow_id: str, variables: Optional[Dict[str, Any]] = None) -> None:
+    async def update_variables(
+        self, workflow_id: str, variables: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Update workflow variables - implemented via workflow state update"""
         if variables:
             state_update = WorkflowStateUpdateAdapter()
             state_update.variables = variables
-            await self.update_workflow_state(workflow_id=workflow_id, workflow_state_update=state_update)
+            await self.update_workflow_state(
+                workflow_id=workflow_id, workflow_state_update=state_update
+            )
 
     async def update_state(
         self,
@@ -359,7 +379,9 @@ class OrkesWorkflowClient(OrkesBaseClient):
         update_request: WorkflowStateUpdateAdapter,
     ) -> WorkflowRunAdapter:
         """Alias for update_workflow_state"""
-        return await self.update_workflow_and_task_state(workflow_id=workflow_id, workflow_state_update=update_request)
+        return await self.update_workflow_and_task_state(
+            workflow_id=workflow_id, workflow_state_update=update_request
+        )
 
     async def get_workflow_status(
         self,

@@ -113,9 +113,12 @@ class ApiClientAdapter(ApiClient):
                             token_expired = (
                                 self.configuration.token_update_time > 0
                                 and time.time()
-                                >= self.configuration.token_update_time + self.configuration.auth_token_ttl_sec
+                                >= self.configuration.token_update_time
+                                + self.configuration.auth_token_ttl_sec
                             )
-                            invalid_token = not self.configuration._http_config.api_key.get("api_key")
+                            invalid_token = not self.configuration._http_config.api_key.get(
+                                "api_key"
+                            )
 
                             if invalid_token or token_expired:
                                 token = await self.refresh_authorization_token()
@@ -156,7 +159,8 @@ class ApiClientAdapter(ApiClient):
                         token_expired = (
                             self.configuration.token_update_time > 0
                             and time.time()
-                            >= self.configuration.token_update_time + self.configuration.auth_token_ttl_sec
+                            >= self.configuration.token_update_time
+                            + self.configuration.auth_token_ttl_sec
                         )
                         invalid_token = not self.configuration._http_config.api_key.get("api_key")
 
@@ -208,7 +212,11 @@ class ApiClientAdapter(ApiClient):
         assert response_data.data is not None, msg
 
         response_type = response_types_map.get(str(response_data.status), None)
-        if not response_type and isinstance(response_data.status, int) and 100 <= response_data.status <= 599:
+        if (
+            not response_type
+            and isinstance(response_data.status, int)
+            and 100 <= response_data.status <= 599
+        ):
             # if not found, look for '1XX', '2XX', etc.
             response_type = response_types_map.get(str(response_data.status)[0] + "XX", None)
 

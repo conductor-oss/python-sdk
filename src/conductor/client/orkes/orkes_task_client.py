@@ -80,7 +80,9 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
         kwargs = {}
         if worker_id:
             kwargs.update({"workerid": worker_id})
-        return self.taskResourceApi.update_task_sync(body, workflow_id, task_ref_name, status, **kwargs)
+        return self.taskResourceApi.update_task_sync(
+            body, workflow_id, task_ref_name, status, **kwargs
+        )
 
     def get_queue_size_for_task(self, task_type: str) -> int:
         queueSizesByTaskType = self.taskResourceApi.size(task_type=[task_type])

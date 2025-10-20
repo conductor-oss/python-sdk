@@ -30,7 +30,9 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
     def create_application(
         self, create_or_update_application_request: CreateOrUpdateApplicationRequest
     ) -> ConductorApplication:
-        app_obj = self.applicationResourceApi.create_application(create_or_update_application_request)
+        app_obj = self.applicationResourceApi.create_application(
+            create_or_update_application_request
+        )
         return self.api_client.deserialize_class(app_obj, "ConductorApplication")
 
     def get_application(self, application_id: str) -> ConductorApplication:
@@ -45,7 +47,9 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
         create_or_update_application_request: CreateOrUpdateApplicationRequest,
         application_id: str,
     ) -> ConductorApplication:
-        app_obj = self.applicationResourceApi.update_application(create_or_update_application_request, application_id)
+        app_obj = self.applicationResourceApi.update_application(
+            create_or_update_application_request, application_id
+        )
         return self.api_client.deserialize_class(app_obj, "ConductorApplication")
 
     def delete_application(self, application_id: str):

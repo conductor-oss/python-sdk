@@ -82,7 +82,9 @@ class Worker(WorkerInterface):
                         if typ in utils.simple_types:
                             task_input[input_name] = task.input_data[input_name]
                         else:
-                            task_input[input_name] = convert_from_dict_or_list(typ, task.input_data[input_name])
+                            task_input[input_name] = convert_from_dict_or_list(
+                                typ, task.input_data[input_name]
+                            )
                     elif default_value is not inspect.Parameter.empty:
                         task_input[input_name] = default_value
                     else:
@@ -109,7 +111,9 @@ class Worker(WorkerInterface):
                 task.task_id,
             )
 
-            task_result.logs = [TaskExecLog(traceback.format_exc(), task_result.task_id, int(time.time()))]
+            task_result.logs = [
+                TaskExecLog(traceback.format_exc(), task_result.task_id, int(time.time()))
+            ]
             task_result.status = TaskResultStatus.FAILED
             if len(ne.args) > 0:
                 task_result.reason_for_incompletion = ne.args[0]

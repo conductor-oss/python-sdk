@@ -10,8 +10,12 @@ from conductor.asyncio_client.http.models import NamePart
 
 class NamePartAdapter(NamePart):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["NamePartAdapter"] = Field(default=None, alias="defaultInstanceForType")
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    default_instance_for_type: Optional["NamePartAdapter"] = Field(
+        default=None, alias="defaultInstanceForType"
+    )
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="descriptorForType"
+    )
     unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
     name_part_bytes: Optional["ByteStringAdapter"] = Field(default=None, alias="namePartBytes")
 
@@ -43,7 +47,9 @@ class NamePartAdapter(NamePart):
                 "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
                 "namePart": obj.get("namePart"),
                 "namePartBytes": (
-                    ByteStringAdapter.from_dict(obj["namePartBytes"]) if obj.get("namePartBytes") is not None else None
+                    ByteStringAdapter.from_dict(obj["namePartBytes"])
+                    if obj.get("namePartBytes") is not None
+                    else None
                 ),
                 "parserForType": obj.get("parserForType"),
                 "serializedSize": obj.get("serializedSize"),

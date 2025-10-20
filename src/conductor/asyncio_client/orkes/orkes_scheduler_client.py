@@ -40,7 +40,9 @@ class OrkesSchedulerClient(OrkesBaseClient):
         """Delete an existing workflow schedule by name"""
         return await self.scheduler_api.delete_schedule(name)
 
-    async def get_all_schedules(self, workflow_name: Optional[str] = None) -> List[WorkflowScheduleModelAdapter]:
+    async def get_all_schedules(
+        self, workflow_name: Optional[str] = None
+    ) -> List[WorkflowScheduleModelAdapter]:
         """Get all workflow schedules, optionally filtered by workflow name"""
         return await self.scheduler_api.get_all_schedules(workflow_name=workflow_name)
 
@@ -71,9 +73,13 @@ class OrkesSchedulerClient(OrkesBaseClient):
         query: Optional[str] = None,
     ) -> SearchResultWorkflowScheduleExecutionModelAdapter:
         """Search for workflow schedules with advanced filtering"""
-        return await self.scheduler_api.search_v2(start=start, size=size, sort=sort, free_text=free_text, query=query)
+        return await self.scheduler_api.search_v2(
+            start=start, size=size, sort=sort, free_text=free_text, query=query
+        )
 
-    async def get_schedules_by_tag(self, tag_key: str, tag_value: str) -> List[WorkflowScheduleModelAdapter]:
+    async def get_schedules_by_tag(
+        self, tag_key: str, tag_value: str
+    ) -> List[WorkflowScheduleModelAdapter]:
         """Get schedules filtered by tag key and value"""
         return await self.scheduler_api.get_schedules_by_tag(tag_key, tag_value)
 
@@ -166,7 +172,9 @@ class OrkesSchedulerClient(OrkesBaseClient):
             cron_expression=cron_expression or existing_schedule.cron_expression,
             start_workflow_request=existing_schedule.start_workflow_request,
             paused=paused if paused is not None else existing_schedule.paused,
-            run_catch_up=(run_catch_up if run_catch_up is not None else existing_schedule.run_catch_up),
+            run_catch_up=(
+                run_catch_up if run_catch_up is not None else existing_schedule.run_catch_up
+            ),
             timezone=timezone or existing_schedule.timezone,
         )
 
@@ -180,7 +188,9 @@ class OrkesSchedulerClient(OrkesBaseClient):
         except Exception:
             return False
 
-    async def get_schedules_by_workflow(self, workflow_name: str) -> List[WorkflowScheduleModelAdapter]:
+    async def get_schedules_by_workflow(
+        self, workflow_name: str
+    ) -> List[WorkflowScheduleModelAdapter]:
         """Get all schedules for a specific workflow"""
         return await self.get_all_schedules(workflow_name=workflow_name)
 
@@ -226,7 +236,9 @@ class OrkesSchedulerClient(OrkesBaseClient):
         self, workflow_name: str, start: int = 0, size: int = 100
     ) -> SearchResultWorkflowScheduleExecutionModelAdapter:
         """Search schedules for a specific workflow"""
-        return await self.search_schedules(start=start, size=size, query=f"workflowName:{workflow_name}")
+        return await self.search_schedules(
+            start=start, size=size, query=f"workflowName:{workflow_name}"
+        )
 
     async def search_schedules_by_status(
         self, paused: bool, start: int = 0, size: int = 100
@@ -240,6 +252,8 @@ class OrkesSchedulerClient(OrkesBaseClient):
         schedules = await self.get_all_schedules()
         return len(schedules)
 
-    async def get_schedules_with_tag(self, tag_key: str, tag_value: str) -> List[WorkflowScheduleModelAdapter]:
+    async def get_schedules_with_tag(
+        self, tag_key: str, tag_value: str
+    ) -> List[WorkflowScheduleModelAdapter]:
         """Get schedules that have a specific tag (alias for get_schedules_by_tag)"""
         return await self.get_schedules_by_tag(tag_key, tag_value)

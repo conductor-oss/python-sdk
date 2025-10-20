@@ -11,7 +11,9 @@ from conductor.asyncio_client.http.models import Any
 
 class AnyAdapter(Any):
     all_fields: Optional[Dict[str, AnyType]] = Field(default=None, alias="allFields")
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="descriptorForType"
+    )
     unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
@@ -43,14 +45,20 @@ class AnyAdapter(Any):
                 "serializedSize": obj.get("serializedSize"),
                 "typeUrl": obj.get("typeUrl"),
                 "typeUrlBytes": (
-                    ByteStringAdapter.from_dict(obj["typeUrlBytes"]) if obj.get("typeUrlBytes") is not None else None
+                    ByteStringAdapter.from_dict(obj["typeUrlBytes"])
+                    if obj.get("typeUrlBytes") is not None
+                    else None
                 ),
                 "unknownFields": (
                     UnknownFieldSetAdapter.from_dict(obj["unknownFields"])
                     if obj.get("unknownFields") is not None
                     else None
                 ),
-                "value": (ByteStringAdapter.from_dict(obj["value"]) if obj.get("value") is not None else None),
+                "value": (
+                    ByteStringAdapter.from_dict(obj["value"])
+                    if obj.get("value") is not None
+                    else None
+                ),
             }
         )
         return _obj

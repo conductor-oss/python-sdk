@@ -110,16 +110,22 @@ class WorkflowAdapter(Workflow):
                     return task
         return None
 
-    def get_task(self, name: Optional[str] = None, task_reference_name: Optional[str] = None) -> Optional[TaskAdapter]:
+    def get_task(
+        self, name: Optional[str] = None, task_reference_name: Optional[str] = None
+    ) -> Optional[TaskAdapter]:
         """Gets a task by name or reference name (deprecated - use get_task_by_reference_name instead)
         :param name: The task definition name
         :param task_reference_name: The task reference name
         :return: The task matching the criteria, or None if not found
         """
         if name is None and task_reference_name is None:
-            raise ValueError("ONLY one of name or task_reference_name MUST be provided.  None were provided")
+            raise ValueError(
+                "ONLY one of name or task_reference_name MUST be provided.  None were provided"
+            )
         if name is not None and task_reference_name is not None:
-            raise ValueError("ONLY one of name or task_reference_name MUST be provided.  both were provided")
+            raise ValueError(
+                "ONLY one of name or task_reference_name MUST be provided.  both were provided"
+            )
 
         if not self.tasks:
             return None

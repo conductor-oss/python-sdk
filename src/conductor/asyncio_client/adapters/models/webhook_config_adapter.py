@@ -36,12 +36,17 @@ class WebhookConfigAdapter(WebhookConfig):
                 "secretValue": obj.get("secretValue"),
                 "sourcePlatform": obj.get("sourcePlatform"),
                 "tags": (
-                    [TagAdapter.from_dict(_item) for _item in obj["tags"]] if obj.get("tags") is not None else None
+                    [TagAdapter.from_dict(_item) for _item in obj["tags"]]
+                    if obj.get("tags") is not None
+                    else None
                 ),
                 "urlVerified": obj.get("urlVerified"),
                 "verifier": obj.get("verifier"),
                 "webhookExecutionHistory": (
-                    [WebhookExecutionHistoryAdapter.from_dict(_item) for _item in obj["webhookExecutionHistory"]]
+                    [
+                        WebhookExecutionHistoryAdapter.from_dict(_item)
+                        for _item in obj["webhookExecutionHistory"]
+                    ]
                     if obj.get("webhookExecutionHistory") is not None
                     else None
                 ),

@@ -13,15 +13,23 @@ class EnumDescriptorProtoAdapter(EnumDescriptorProto):
     default_instance_for_type: Optional["EnumDescriptorProtoAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="descriptorForType"
+    )
     options: Optional["EnumOptionsAdapter"] = None
-    options_or_builder: Optional["EnumOptionsOrBuilderAdapter"] = Field(default=None, alias="optionsOrBuilder")
-    reserved_range_list: Optional[List["EnumReservedRangeAdapter"]] = Field(default=None, alias="reservedRangeList")
+    options_or_builder: Optional["EnumOptionsOrBuilderAdapter"] = Field(
+        default=None, alias="optionsOrBuilder"
+    )
+    reserved_range_list: Optional[List["EnumReservedRangeAdapter"]] = Field(
+        default=None, alias="reservedRangeList"
+    )
     reserved_range_or_builder_list: Optional[List["EnumReservedRangeOrBuilderAdapter"]] = Field(
         default=None, alias="reservedRangeOrBuilderList"
     )
     unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
-    value_list: Optional[List["EnumValueDescriptorProtoAdapter"]] = Field(default=None, alias="valueList")
+    value_list: Optional[List["EnumValueDescriptorProtoAdapter"]] = Field(
+        default=None, alias="valueList"
+    )
     value_or_builder_list: Optional[List["EnumValueDescriptorProtoOrBuilderAdapter"]] = Field(
         default=None, alias="valueOrBuilderList"
     )
@@ -53,9 +61,15 @@ class EnumDescriptorProtoAdapter(EnumDescriptorProto):
                 "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
                 "name": obj.get("name"),
                 "nameBytes": (
-                    ByteStringAdapter.from_dict(obj["nameBytes"]) if obj.get("nameBytes") is not None else None
+                    ByteStringAdapter.from_dict(obj["nameBytes"])
+                    if obj.get("nameBytes") is not None
+                    else None
                 ),
-                "options": (EnumOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None),
+                "options": (
+                    EnumOptionsAdapter.from_dict(obj["options"])
+                    if obj.get("options") is not None
+                    else None
+                ),
                 "optionsOrBuilder": (
                     EnumOptionsOrBuilderAdapter.from_dict(obj["optionsOrBuilder"])
                     if obj.get("optionsOrBuilder") is not None
@@ -65,12 +79,18 @@ class EnumDescriptorProtoAdapter(EnumDescriptorProto):
                 "reservedNameCount": obj.get("reservedNameCount"),
                 "reservedRangeCount": obj.get("reservedRangeCount"),
                 "reservedRangeList": (
-                    [EnumReservedRangeAdapter.from_dict(_item) for _item in obj["reservedRangeList"]]
+                    [
+                        EnumReservedRangeAdapter.from_dict(_item)
+                        for _item in obj["reservedRangeList"]
+                    ]
                     if obj.get("reservedRangeList") is not None
                     else None
                 ),
                 "reservedRangeOrBuilderList": (
-                    [EnumReservedRangeOrBuilderAdapter.from_dict(_item) for _item in obj["reservedRangeOrBuilderList"]]
+                    [
+                        EnumReservedRangeOrBuilderAdapter.from_dict(_item)
+                        for _item in obj["reservedRangeOrBuilderList"]
+                    ]
                     if obj.get("reservedRangeOrBuilderList") is not None
                     else None
                 ),
@@ -87,7 +107,10 @@ class EnumDescriptorProtoAdapter(EnumDescriptorProto):
                     else None
                 ),
                 "valueOrBuilderList": (
-                    [EnumValueDescriptorProtoOrBuilderAdapter.from_dict(_item) for _item in obj["valueOrBuilderList"]]
+                    [
+                        EnumValueDescriptorProtoOrBuilderAdapter.from_dict(_item)
+                        for _item in obj["valueOrBuilderList"]
+                    ]
                     if obj.get("valueOrBuilderList") is not None
                     else None
                 ),

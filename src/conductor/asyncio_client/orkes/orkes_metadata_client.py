@@ -57,7 +57,9 @@ class OrkesMetadataClient(OrkesBaseClient):
         new_version: Optional[bool] = None,
     ) -> object:
         """Create a new workflow definition"""
-        return await self.metadata_api.create(extended_workflow_def, overwrite=overwrite, new_version=new_version)
+        return await self.metadata_api.create(
+            extended_workflow_def, overwrite=overwrite, new_version=new_version
+        )
 
     async def update_workflow_defs(
         self,
@@ -66,7 +68,9 @@ class OrkesMetadataClient(OrkesBaseClient):
         new_version: Optional[bool] = None,
     ) -> object:
         """Create or update multiple workflow definitions"""
-        return await self.metadata_api.update(extended_workflow_defs, overwrite=overwrite, new_version=new_version)
+        return await self.metadata_api.update(
+            extended_workflow_defs, overwrite=overwrite, new_version=new_version
+        )
 
     async def get_workflow_def(
         self, name: str, version: Optional[int] = None, metadata: Optional[bool] = None
@@ -107,7 +111,9 @@ class OrkesMetadataClient(OrkesBaseClient):
         """Get the latest version of a workflow definition"""
         return await self.get_workflow_def(name)
 
-    async def get_workflow_def_with_metadata(self, name: str, version: Optional[int] = None) -> WorkflowDefAdapter:
+    async def get_workflow_def_with_metadata(
+        self, name: str, version: Optional[int] = None
+    ) -> WorkflowDefAdapter:
         """Get workflow definition with metadata included"""
         return await self.get_workflow_def(name, version=version, metadata=True)
 
@@ -123,7 +129,9 @@ class OrkesMetadataClient(OrkesBaseClient):
         """Get task definitions filtered by tag"""
         return await self.get_task_defs(tag_key=tag_key, tag_value=tag_value)
 
-    async def get_workflow_defs_by_tag(self, tag_key: str, tag_value: str) -> List[WorkflowDefAdapter]:
+    async def get_workflow_defs_by_tag(
+        self, tag_key: str, tag_value: str
+    ) -> List[WorkflowDefAdapter]:
         """Get workflow definitions filtered by tag"""
         return await self.get_workflow_defs(tag_key=tag_key, tag_value=tag_value)
 

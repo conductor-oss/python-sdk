@@ -39,18 +39,27 @@ class WorkflowTestRequestAdapter(WorkflowTestRequest):
                 "name": obj.get("name"),
                 "priority": obj.get("priority"),
                 "subWorkflowTestRequest": (
-                    {_k: WorkflowTestRequestAdapter.from_dict(_v) for _k, _v in obj["subWorkflowTestRequest"].items()}
+                    {
+                        _k: WorkflowTestRequestAdapter.from_dict(_v)
+                        for _k, _v in obj["subWorkflowTestRequest"].items()
+                    }
                     if obj.get("subWorkflowTestRequest") is not None
                     else None
                 ),
                 "taskRefToMockOutput": {
-                    _k: ([TaskMockAdapter.from_dict(_item) for _item in _v] if _v is not None else None)
+                    _k: (
+                        [TaskMockAdapter.from_dict(_item) for _item in _v]
+                        if _v is not None
+                        else None
+                    )
                     for _k, _v in obj.get("taskRefToMockOutput", {}).items()
                 },
                 "taskToDomain": obj.get("taskToDomain"),
                 "version": obj.get("version"),
                 "workflowDef": (
-                    WorkflowDefAdapter.from_dict(obj["workflowDef"]) if obj.get("workflowDef") is not None else None
+                    WorkflowDefAdapter.from_dict(obj["workflowDef"])
+                    if obj.get("workflowDef") is not None
+                    else None
                 ),
             }
         )

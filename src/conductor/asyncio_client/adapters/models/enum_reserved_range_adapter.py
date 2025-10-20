@@ -13,7 +13,9 @@ class EnumReservedRangeAdapter(EnumReservedRange):
     default_instance_for_type: Optional["EnumReservedRangeAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="descriptorForType"
+    )
     unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod

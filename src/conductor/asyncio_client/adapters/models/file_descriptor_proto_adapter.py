@@ -13,26 +13,40 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
     default_instance_for_type: Optional["FileDescriptorProtoAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
-    enum_type_list: Optional[List["EnumDescriptorProtoAdapter"]] = Field(default=None, alias="enumTypeList")
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="descriptorForType"
+    )
+    enum_type_list: Optional[List["EnumDescriptorProtoAdapter"]] = Field(
+        default=None, alias="enumTypeList"
+    )
     enum_type_or_builder_list: Optional[List["EnumDescriptorProtoOrBuilderAdapter"]] = Field(
         default=None, alias="enumTypeOrBuilderList"
     )
-    extension_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(default=None, alias="extensionList")
+    extension_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(
+        default=None, alias="extensionList"
+    )
     extension_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = Field(
         default=None, alias="extensionOrBuilderList"
     )
-    message_type_list: Optional[List["DescriptorProtoAdapter"]] = Field(default=None, alias="messageTypeList")
+    message_type_list: Optional[List["DescriptorProtoAdapter"]] = Field(
+        default=None, alias="messageTypeList"
+    )
     message_type_or_builder_list: Optional[List["DescriptorProtoOrBuilderAdapter"]] = Field(
         default=None, alias="messageTypeOrBuilderList"
     )
     options: Optional["FileOptionsAdapter"] = None
-    options_or_builder: Optional["FileOptionsOrBuilderAdapter"] = Field(default=None, alias="optionsOrBuilder")
-    service_list: Optional[List["ServiceDescriptorProtoAdapter"]] = Field(default=None, alias="serviceList")
+    options_or_builder: Optional["FileOptionsOrBuilderAdapter"] = Field(
+        default=None, alias="optionsOrBuilder"
+    )
+    service_list: Optional[List["ServiceDescriptorProtoAdapter"]] = Field(
+        default=None, alias="serviceList"
+    )
     service_or_builder_list: Optional[List["ServiceDescriptorProtoOrBuilderAdapter"]] = Field(
         default=None, alias="serviceOrBuilderList"
     )
-    source_code_info: Optional["SourceCodeInfoAdapter"] = Field(default=None, alias="sourceCodeInfo")
+    source_code_info: Optional["SourceCodeInfoAdapter"] = Field(
+        default=None, alias="sourceCodeInfo"
+    )
     source_code_info_or_builder: Optional["SourceCodeInfoOrBuilderAdapter"] = Field(
         default=None, alias="sourceCodeInfoOrBuilder"
     )
@@ -69,7 +83,10 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
                     else None
                 ),
                 "enumTypeOrBuilderList": (
-                    [EnumDescriptorProtoOrBuilderAdapter.from_dict(_item) for _item in obj["enumTypeOrBuilderList"]]
+                    [
+                        EnumDescriptorProtoOrBuilderAdapter.from_dict(_item)
+                        for _item in obj["enumTypeOrBuilderList"]
+                    ]
                     if obj.get("enumTypeOrBuilderList") is not None
                     else None
                 ),
@@ -80,7 +97,10 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
                     else None
                 ),
                 "extensionOrBuilderList": (
-                    [FieldDescriptorProtoOrBuilderAdapter.from_dict(_item) for _item in obj["extensionOrBuilderList"]]
+                    [
+                        FieldDescriptorProtoOrBuilderAdapter.from_dict(_item)
+                        for _item in obj["extensionOrBuilderList"]
+                    ]
                     if obj.get("extensionOrBuilderList") is not None
                     else None
                 ),
@@ -94,15 +114,24 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
                     else None
                 ),
                 "messageTypeOrBuilderList": (
-                    [DescriptorProtoOrBuilderAdapter.from_dict(_item) for _item in obj["messageTypeOrBuilderList"]]
+                    [
+                        DescriptorProtoOrBuilderAdapter.from_dict(_item)
+                        for _item in obj["messageTypeOrBuilderList"]
+                    ]
                     if obj.get("messageTypeOrBuilderList") is not None
                     else None
                 ),
                 "name": obj.get("name"),
                 "nameBytes": (
-                    ByteStringAdapter.from_dict(obj["nameBytes"]) if obj.get("nameBytes") is not None else None
+                    ByteStringAdapter.from_dict(obj["nameBytes"])
+                    if obj.get("nameBytes") is not None
+                    else None
                 ),
-                "options": (FileOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None),
+                "options": (
+                    FileOptionsAdapter.from_dict(obj["options"])
+                    if obj.get("options") is not None
+                    else None
+                ),
                 "optionsOrBuilder": (
                     FileOptionsOrBuilderAdapter.from_dict(obj["optionsOrBuilder"])
                     if obj.get("optionsOrBuilder") is not None
@@ -110,7 +139,9 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
                 ),
                 "package": obj.get("package"),
                 "packageBytes": (
-                    ByteStringAdapter.from_dict(obj["packageBytes"]) if obj.get("packageBytes") is not None else None
+                    ByteStringAdapter.from_dict(obj["packageBytes"])
+                    if obj.get("packageBytes") is not None
+                    else None
                 ),
                 "parserForType": obj.get("parserForType"),
                 "publicDependencyCount": obj.get("publicDependencyCount"),
@@ -123,7 +154,10 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
                     else None
                 ),
                 "serviceOrBuilderList": (
-                    [ServiceDescriptorProtoOrBuilderAdapter.from_dict(_item) for _item in obj["serviceOrBuilderList"]]
+                    [
+                        ServiceDescriptorProtoOrBuilderAdapter.from_dict(_item)
+                        for _item in obj["serviceOrBuilderList"]
+                    ]
                     if obj.get("serviceOrBuilderList") is not None
                     else None
                 ),
@@ -139,7 +173,9 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
                 ),
                 "syntax": obj.get("syntax"),
                 "syntaxBytes": (
-                    ByteStringAdapter.from_dict(obj["syntaxBytes"]) if obj.get("syntaxBytes") is not None else None
+                    ByteStringAdapter.from_dict(obj["syntaxBytes"])
+                    if obj.get("syntaxBytes") is not None
+                    else None
                 ),
                 "unknownFields": (
                     UnknownFieldSetAdapter.from_dict(obj["unknownFields"])

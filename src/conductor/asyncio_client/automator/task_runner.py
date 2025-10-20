@@ -105,7 +105,9 @@ class AsyncTaskRunner:
                 await self.metrics_collector.record_task_poll_time(task_definition_name, time_spent)
         except UnauthorizedException as auth_exception:
             if self.metrics_collector is not None:
-                await self.metrics_collector.increment_task_poll_error(task_definition_name, auth_exception)
+                await self.metrics_collector.increment_task_poll_error(
+                    task_definition_name, auth_exception
+                )
             logger.error(
                 "Failed to poll task: %s; reason: %s; status: %s",
                 task_definition_name,
@@ -147,7 +149,9 @@ class AsyncTaskRunner:
             finish_time = time.time()
             time_spent = finish_time - start_time
             if self.metrics_collector is not None:
-                await self.metrics_collector.record_task_execute_time(task_definition_name, time_spent)
+                await self.metrics_collector.record_task_execute_time(
+                    task_definition_name, time_spent
+                )
                 await self.metrics_collector.record_task_result_payload_size(
                     task_definition_name, sys.getsizeof(task_result)
                 )
@@ -209,7 +213,9 @@ class AsyncTaskRunner:
                 return response
             except Exception as e:
                 if self.metrics_collector is not None:
-                    await self.metrics_collector.increment_task_update_error(task_definition_name, e)
+                    await self.metrics_collector.increment_task_update_error(
+                        task_definition_name, e
+                    )
                 logger.error(
                     "Failed to update task task_id: %s; workflow_instance_id: %s; task_definition_name: %s; reason: %s",
                     task_result.task_id,

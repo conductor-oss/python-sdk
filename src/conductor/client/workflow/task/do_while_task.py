@@ -19,7 +19,9 @@ def get_for_loop_condition(task_ref_name: str, iterations: int) -> str:
 
 class DoWhileTask(TaskInterface):
     # termination_condition is a Javascript expression that evaluates to True or False
-    def __init__(self, task_ref_name: str, termination_condition: str, tasks: List[TaskInterface]) -> Self:
+    def __init__(
+        self, task_ref_name: str, termination_condition: str, tasks: List[TaskInterface]
+    ) -> Self:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.DO_WHILE,

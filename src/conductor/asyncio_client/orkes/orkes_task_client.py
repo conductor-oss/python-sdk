@@ -150,7 +150,9 @@ class OrkesTaskClient(OrkesBaseClient):
             free_text: Free text search
             query: Query string
         """
-        return await self.task_api.search1(start=start, size=size, sort=sort, free_text=free_text, query=query)
+        return await self.task_api.search1(
+            start=start, size=size, sort=sort, free_text=free_text, query=query
+        )
 
     # Task Queue Management
     async def requeue_pending_tasks(self, task_type: str) -> str:

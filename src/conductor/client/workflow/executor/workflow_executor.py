@@ -50,7 +50,9 @@ class WorkflowExecutor:
         """
         workflow_id_list = [""] * len(start_workflow_request)
         for i in range(len(start_workflow_request)):
-            workflow_id_list[i] = self.start_workflow(start_workflow_request=start_workflow_request[i])
+            workflow_id_list[i] = self.start_workflow(
+                start_workflow_request=start_workflow_request[i]
+            )
         return workflow_id_list
 
     def execute_workflow(
@@ -227,7 +229,9 @@ class WorkflowExecutor:
 
     def restart(self, workflow_id: str, use_latest_definitions: Optional[bool] = None) -> None:
         """Restarts a completed workflow"""
-        return self.workflow_client.restart_workflow(workflow_id=workflow_id, use_latest_def=use_latest_definitions)
+        return self.workflow_client.restart_workflow(
+            workflow_id=workflow_id, use_latest_def=use_latest_definitions
+        )
 
     def retry(self, workflow_id: str, resume_subworkflow_tasks: Optional[bool] = None) -> None:
         """Retries the last failed task"""
@@ -252,7 +256,9 @@ class WorkflowExecutor:
             request=skip_task_request,
         )
 
-    def update_task(self, task_id: str, workflow_id: str, task_output: Dict[str, Any], status: str) -> str:
+    def update_task(
+        self, task_id: str, workflow_id: str, task_output: Dict[str, Any], status: str
+    ) -> str:
         """Update a task"""
         task_result = self.__get_task_result(task_id, workflow_id, task_output, status)
         return self.task_client.update_task(
@@ -299,9 +305,13 @@ class WorkflowExecutor:
 
     def signal_async(self, workflow_id: str, status: str, body: Dict[str, Any]) -> None:
         """Update running task in the workflow with given status and output asynchronously"""
-        return self.task_client.signal_workflow_task_async(workflow_id=workflow_id, status=status, body=body)
+        return self.task_client.signal_workflow_task_async(
+            workflow_id=workflow_id, status=status, body=body
+        )
 
-    def __get_task_result(self, task_id: str, workflow_id: str, task_output: Dict[str, Any], status: str) -> TaskResult:
+    def __get_task_result(
+        self, task_id: str, workflow_id: str, task_output: Dict[str, Any], status: str
+    ) -> TaskResult:
         return TaskResult(
             workflow_instance_id=workflow_id,
             task_id=task_id,

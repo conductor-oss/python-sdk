@@ -35,7 +35,9 @@ class StartWorkflowRequestAdapter(StartWorkflowRequest):
                 "taskToDomain": obj.get("taskToDomain"),
                 "version": obj.get("version"),
                 "workflowDef": (
-                    WorkflowDefAdapter.from_dict(obj["workflowDef"]) if obj.get("workflowDef") is not None else None
+                    WorkflowDefAdapter.from_dict(obj["workflowDef"])
+                    if obj.get("workflowDef") is not None
+                    else None
                 ),
             }
         )

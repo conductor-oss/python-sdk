@@ -90,7 +90,11 @@ class RESTClientObjectAdapter(RESTClientObject):
 
             if configuration and hasattr(configuration, "proxy") and configuration.proxy:
                 client_kwargs["proxy"] = configuration.proxy
-            if configuration and hasattr(configuration, "proxy_headers") and configuration.proxy_headers:
+            if (
+                configuration
+                and hasattr(configuration, "proxy_headers")
+                and configuration.proxy_headers
+            ):
                 client_kwargs["proxy_headers"] = configuration.proxy_headers
 
             if configuration:
@@ -99,7 +103,9 @@ class RESTClientObjectAdapter(RESTClientObject):
                     cadata=configuration.ca_cert_data,
                 )
                 if configuration.cert_file:
-                    ssl_context.load_cert_chain(configuration.cert_file, keyfile=configuration.key_file)
+                    ssl_context.load_cert_chain(
+                        configuration.cert_file, keyfile=configuration.key_file
+                    )
 
                 if not configuration.verify_ssl:
                     ssl_context.check_hostname = False

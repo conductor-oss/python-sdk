@@ -19,8 +19,12 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
     def __init__(self, configuration: Configuration):
         super(OrkesIntegrationClient, self).__init__(configuration)
 
-    def associate_prompt_with_integration(self, ai_integration: str, model_name: str, prompt_name: str):
-        self.integrationApi.associate_prompt_with_integration(ai_integration, model_name, prompt_name)
+    def associate_prompt_with_integration(
+        self, ai_integration: str, model_name: str, prompt_name: str
+    ):
+        self.integrationApi.associate_prompt_with_integration(
+            ai_integration, model_name, prompt_name
+        )
 
     def delete_integration_api(self, api_name: str, integration_name: str):
         self.integrationApi.delete_integration_api(api_name, integration_name)
@@ -74,12 +78,16 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
         """Get integration provider definitions"""
         return self.integrationApi.get_integration_provider_defs()
 
-    def get_prompts_with_integration(self, ai_integration: str, model_name: str) -> List[PromptTemplate]:
+    def get_prompts_with_integration(
+        self, ai_integration: str, model_name: str
+    ) -> List[PromptTemplate]:
         return self.integrationApi.get_prompts_with_integration(ai_integration, model_name)
 
     def save_integration_api(self, integration_name, api_name, api_details: IntegrationApiUpdate):
         print(f"Saving integration API: {api_name} for integration: {integration_name}")
-        self.integrationApi.save_integration_api(body=api_details, name=api_name, integration_name=integration_name)
+        self.integrationApi.save_integration_api(
+            body=api_details, name=api_name, integration_name=integration_name
+        )
 
     def save_integration(self, integration_name, integration_details: IntegrationUpdate):
         self.integrationApi.save_integration_provider(integration_details, integration_name)
@@ -118,7 +126,9 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
         return self.integrationApi.get_tags_for_integration_provider(name)
 
     # Utility Methods for Integration Provider Management
-    def get_integration_provider_by_category(self, category: str, active_only: bool = True) -> List[IntegrationDef]:
+    def get_integration_provider_by_category(
+        self, category: str, active_only: bool = True
+    ) -> List[IntegrationDef]:
         """Get integration providers filtered by category"""
         return self.get_integration_providers(category=category, active_only=active_only)
 

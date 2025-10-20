@@ -157,7 +157,9 @@ class WorkflowDefAdapter(WorkflowDef):
         self._timeout_seconds = timeout_seconds
 
 
-def to_workflow_def(data: Optional[str] = None, json_data: Optional[dict] = None) -> WorkflowDefAdapter:
+def to_workflow_def(
+    data: Optional[str] = None, json_data: Optional[dict] = None
+) -> WorkflowDefAdapter:
     if json_data is not None:
         return object_mapper.from_json(json_data, WorkflowDefAdapter)
     if data is not None:

@@ -13,9 +13,13 @@ class MethodDescriptorProtoAdapter(MethodDescriptorProto):
     default_instance_for_type: Optional["MethodDescriptorProtoAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="descriptorForType"
+    )
     options: Optional["MethodOptionsAdapter"] = None
-    options_or_builder: Optional["MethodOptionsOrBuilderAdapter"] = Field(default=None, alias="optionsOrBuilder")
+    options_or_builder: Optional["MethodOptionsOrBuilderAdapter"] = Field(
+        default=None, alias="optionsOrBuilder"
+    )
     unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
     input_type_bytes: Optional["ByteStringAdapter"] = Field(default=None, alias="inputTypeBytes")
     name_bytes: Optional["ByteStringAdapter"] = Field(default=None, alias="nameBytes")
@@ -55,9 +59,15 @@ class MethodDescriptorProtoAdapter(MethodDescriptorProto):
                 "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
                 "name": obj.get("name"),
                 "nameBytes": (
-                    ByteStringAdapter.from_dict(obj["nameBytes"]) if obj.get("nameBytes") is not None else None
+                    ByteStringAdapter.from_dict(obj["nameBytes"])
+                    if obj.get("nameBytes") is not None
+                    else None
                 ),
-                "options": (MethodOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None),
+                "options": (
+                    MethodOptionsAdapter.from_dict(obj["options"])
+                    if obj.get("options") is not None
+                    else None
+                ),
                 "optionsOrBuilder": (
                     MethodOptionsOrBuilderAdapter.from_dict(obj["optionsOrBuilder"])
                     if obj.get("optionsOrBuilder") is not None

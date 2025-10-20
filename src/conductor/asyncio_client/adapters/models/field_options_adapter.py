@@ -11,19 +11,27 @@ from conductor.asyncio_client.http.models import FieldOptions
 class FieldOptionsAdapter(FieldOptions):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
     all_fields_raw: Optional[Dict[str, Any]] = Field(default=None, alias="allFieldsRaw")
-    default_instance_for_type: Optional["FieldOptionsAdapter"] = Field(default=None, alias="defaultInstanceForType")
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
-    edition_defaults_list: Optional[List["EditionDefaultAdapter"]] = Field(default=None, alias="editionDefaultsList")
+    default_instance_for_type: Optional["FieldOptionsAdapter"] = Field(
+        default=None, alias="defaultInstanceForType"
+    )
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="descriptorForType"
+    )
+    edition_defaults_list: Optional[List["EditionDefaultAdapter"]] = Field(
+        default=None, alias="editionDefaultsList"
+    )
     edition_defaults_or_builder_list: Optional[List["EditionDefaultOrBuilderAdapter"]] = Field(
         default=None, alias="editionDefaultsOrBuilderList"
     )
     features: Optional["FeatureSetAdapter"] = None
-    features_or_builder: Optional["FeatureSetOrBuilderAdapter"] = Field(default=None, alias="featuresOrBuilder")
+    features_or_builder: Optional["FeatureSetOrBuilderAdapter"] = Field(
+        default=None, alias="featuresOrBuilder"
+    )
     uninterpreted_option_list: Optional[List["UninterpretedOptionAdapter"]] = Field(
         default=None, alias="uninterpretedOptionList"
     )
-    uninterpreted_option_or_builder_list: Optional[List["UninterpretedOptionOrBuilderAdapter"]] = Field(
-        default=None, alias="uninterpretedOptionOrBuilderList"
+    uninterpreted_option_or_builder_list: Optional[List["UninterpretedOptionOrBuilderAdapter"]] = (
+        Field(default=None, alias="uninterpretedOptionOrBuilderList")
     )
     unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
@@ -60,11 +68,18 @@ class FieldOptionsAdapter(FieldOptions):
                     else None
                 ),
                 "editionDefaultsOrBuilderList": (
-                    [EditionDefaultOrBuilderAdapter.from_dict(_item) for _item in obj["editionDefaultsOrBuilderList"]]
+                    [
+                        EditionDefaultOrBuilderAdapter.from_dict(_item)
+                        for _item in obj["editionDefaultsOrBuilderList"]
+                    ]
                     if obj.get("editionDefaultsOrBuilderList") is not None
                     else None
                 ),
-                "features": (FeatureSetAdapter.from_dict(obj["features"]) if obj.get("features") is not None else None),
+                "features": (
+                    FeatureSetAdapter.from_dict(obj["features"])
+                    if obj.get("features") is not None
+                    else None
+                ),
                 "featuresOrBuilder": (
                     FeatureSetOrBuilderAdapter.from_dict(obj["featuresOrBuilder"])
                     if obj.get("featuresOrBuilder") is not None
@@ -83,7 +98,10 @@ class FieldOptionsAdapter(FieldOptions):
                 "targetsList": obj.get("targetsList"),
                 "uninterpretedOptionCount": obj.get("uninterpretedOptionCount"),
                 "uninterpretedOptionList": (
-                    [UninterpretedOptionAdapter.from_dict(_item) for _item in obj["uninterpretedOptionList"]]
+                    [
+                        UninterpretedOptionAdapter.from_dict(_item)
+                        for _item in obj["uninterpretedOptionList"]
+                    ]
                     if obj.get("uninterpretedOptionList") is not None
                     else None
                 ),

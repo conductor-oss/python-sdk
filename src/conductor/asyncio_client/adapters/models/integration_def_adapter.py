@@ -52,7 +52,10 @@ class IntegrationDefAdapter(IntegrationDef):
                 "category": obj.get("category"),
                 "categoryLabel": obj.get("categoryLabel"),
                 "configuration": (
-                    [IntegrationDefFormFieldAdapter.from_dict(_item) for _item in obj["configuration"]]
+                    [
+                        IntegrationDefFormFieldAdapter.from_dict(_item)
+                        for _item in obj["configuration"]
+                    ]
                     if obj.get("configuration") is not None
                     else None
                 ),

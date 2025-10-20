@@ -61,7 +61,9 @@ class IntegrationAdapter(Integration):
                 "name": obj.get("name"),
                 "ownerApp": obj.get("ownerApp"),
                 "tags": (
-                    [TagAdapter.from_dict(_item) for _item in obj["tags"]] if obj.get("tags") is not None else None
+                    [TagAdapter.from_dict(_item) for _item in obj["tags"]]
+                    if obj.get("tags") is not None
+                    else None
                 ),
                 "type": obj.get("type"),
                 "updateTime": obj.get("updateTime"),

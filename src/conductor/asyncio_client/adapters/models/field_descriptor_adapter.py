@@ -9,7 +9,9 @@ from conductor.asyncio_client.http.models import FieldDescriptor
 
 
 class FieldDescriptorAdapter(FieldDescriptor):
-    containing_oneof: Optional["OneofDescriptorAdapter"] = Field(default=None, alias="containingOneof")
+    containing_oneof: Optional["OneofDescriptorAdapter"] = Field(
+        default=None, alias="containingOneof"
+    )
     containing_type: Optional["DescriptorAdapter"] = Field(default=None, alias="containingType")
     enum_type: Optional["EnumDescriptorAdapter"] = Field(default=None, alias="enumType")
     extension_scope: Optional["DescriptorAdapter"] = Field(default=None, alias="extensionScope")
@@ -17,7 +19,9 @@ class FieldDescriptorAdapter(FieldDescriptor):
     message_type: Optional["DescriptorAdapter"] = Field(default=None, alias="messageType")
     options: Optional["FieldOptionsAdapter"] = None
     proto: Optional["FieldDescriptorProtoAdapter"] = None
-    real_containing_oneof: Optional["OneofDescriptorAdapter"] = Field(default=None, alias="realContainingOneof")
+    real_containing_oneof: Optional["OneofDescriptorAdapter"] = Field(
+        default=None, alias="realContainingOneof"
+    )
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -42,7 +46,9 @@ class FieldDescriptorAdapter(FieldDescriptor):
                 ),
                 "defaultValue": obj.get("defaultValue"),
                 "enumType": (
-                    EnumDescriptorAdapter.from_dict(obj["enumType"]) if obj.get("enumType") is not None else None
+                    EnumDescriptorAdapter.from_dict(obj["enumType"])
+                    if obj.get("enumType") is not None
+                    else None
                 ),
                 "extension": obj.get("extension"),
                 "extensionScope": (
@@ -50,7 +56,11 @@ class FieldDescriptorAdapter(FieldDescriptor):
                     if obj.get("extensionScope") is not None
                     else None
                 ),
-                "file": (FileDescriptorAdapter.from_dict(obj["file"]) if obj.get("file") is not None else None),
+                "file": (
+                    FileDescriptorAdapter.from_dict(obj["file"])
+                    if obj.get("file") is not None
+                    else None
+                ),
                 "fullName": obj.get("fullName"),
                 "index": obj.get("index"),
                 "javaType": obj.get("javaType"),
@@ -59,16 +69,24 @@ class FieldDescriptorAdapter(FieldDescriptor):
                 "liteType": obj.get("liteType"),
                 "mapField": obj.get("mapField"),
                 "messageType": (
-                    DescriptorAdapter.from_dict(obj["messageType"]) if obj.get("messageType") is not None else None
+                    DescriptorAdapter.from_dict(obj["messageType"])
+                    if obj.get("messageType") is not None
+                    else None
                 ),
                 "name": obj.get("name"),
                 "number": obj.get("number"),
                 "optional": obj.get("optional"),
-                "options": (FieldOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None),
+                "options": (
+                    FieldOptionsAdapter.from_dict(obj["options"])
+                    if obj.get("options") is not None
+                    else None
+                ),
                 "packable": obj.get("packable"),
                 "packed": obj.get("packed"),
                 "proto": (
-                    FieldDescriptorProtoAdapter.from_dict(obj["proto"]) if obj.get("proto") is not None else None
+                    FieldDescriptorProtoAdapter.from_dict(obj["proto"])
+                    if obj.get("proto") is not None
+                    else None
                 ),
                 "realContainingOneof": (
                     OneofDescriptorAdapter.from_dict(obj["realContainingOneof"])

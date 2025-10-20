@@ -23,7 +23,11 @@ class GrantedAccessAdapter(GrantedAccess):
             {
                 "access": obj.get("access"),
                 "tag": obj.get("tag"),
-                "target": (TargetRefAdapter.from_dict(obj["target"]) if obj.get("target") is not None else None),
+                "target": (
+                    TargetRefAdapter.from_dict(obj["target"])
+                    if obj.get("target") is not None
+                    else None
+                ),
             }
         )
         return _obj

@@ -10,8 +10,12 @@ from conductor.asyncio_client.http.models import EditionDefaultOrBuilder
 
 class EditionDefaultOrBuilderAdapter(EditionDefaultOrBuilder):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["MessageAdapter"] = Field(default=None, alias="defaultInstanceForType")
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    default_instance_for_type: Optional["MessageAdapter"] = Field(
+        default=None, alias="defaultInstanceForType"
+    )
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="descriptorForType"
+    )
     unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
@@ -46,7 +50,9 @@ class EditionDefaultOrBuilderAdapter(EditionDefaultOrBuilder):
                 ),
                 "value": obj.get("value"),
                 "valueBytes": (
-                    ByteStringAdapter.from_dict(obj["valueBytes"]) if obj.get("valueBytes") is not None else None
+                    ByteStringAdapter.from_dict(obj["valueBytes"])
+                    if obj.get("valueBytes") is not None
+                    else None
                 ),
             }
         )

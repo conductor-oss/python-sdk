@@ -54,7 +54,9 @@ class AsyncAIOrchestrator:
 
     async def associate_prompt_template(self, name: str, ai_integration: str, ai_models: List[str]):
         for ai_model in ai_models:
-            await self.integration_client.associate_prompt_with_integration(ai_integration, ai_model, name)
+            await self.integration_client.associate_prompt_with_integration(
+                ai_integration, ai_model, name
+            )
 
     async def test_prompt_template(
         self,
@@ -94,14 +96,20 @@ class AsyncAIOrchestrator:
             enabled=True,
             description=description,
         )
-        existing_integration = await self.integration_client.get_integration_provider(name=ai_integration_name)
+        existing_integration = await self.integration_client.get_integration_provider(
+            name=ai_integration_name
+        )
         if existing_integration is None or overwrite:
             await self.integration_client.save_integration_provider(ai_integration_name, details)
         for model in models:
             api_details = IntegrationApiUpdateAdapter(enabled=True, description=description)
-            existing_integration_api = await self.integration_client.get_integration_api(ai_integration_name, model)
+            existing_integration_api = await self.integration_client.get_integration_api(
+                ai_integration_name, model
+            )
             if existing_integration_api is None or overwrite:
-                await self.integration_client.save_integration_api(ai_integration_name, model, api_details)
+                await self.integration_client.save_integration_api(
+                    ai_integration_name, model, api_details
+                )
 
     async def add_vector_store(
         self,
@@ -126,12 +134,18 @@ class AsyncAIOrchestrator:
             api_details = IntegrationApiUpdateAdapter()
             api_details.enabled = True
             api_details.description = description
-            existing_integration_api = await self.integration_client.get_integration_api(db_integration_name, index)
+            existing_integration_api = await self.integration_client.get_integration_api(
+                db_integration_name, index
+            )
             if existing_integration_api is None or overwrite:
-                await self.integration_client.save_integration_api(db_integration_name, index, api_details)
+                await self.integration_client.save_integration_api(
+                    db_integration_name, index, api_details
+                )
 
     async def get_token_used(self, ai_integration: str) -> int:
-        return await self.integration_client.get_token_usage_for_integration_provider(ai_integration)
+        return await self.integration_client.get_token_usage_for_integration_provider(
+            ai_integration
+        )
 
     async def get_token_used_by_model(self, ai_integration: str, model: str) -> int:
         return await self.integration_client.get_token_usage_for_integration(ai_integration, model)

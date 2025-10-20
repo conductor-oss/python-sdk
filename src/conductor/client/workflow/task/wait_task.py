@@ -20,7 +20,9 @@ class WaitTask(TaskInterface, ABC):
         """
         super().__init__(task_reference_name=task_ref_name, task_type=TaskType.WAIT)
         if wait_until is not None and wait_for_seconds is not None:
-            raise Exception("both wait_until and wait_for_seconds are provided.  ONLY one is allowed")
+            raise Exception(
+                "both wait_until and wait_for_seconds are provided.  ONLY one is allowed"
+            )
         if wait_until:
             self.input_parameters = {"wait_until": wait_until}
         if wait_for_seconds:

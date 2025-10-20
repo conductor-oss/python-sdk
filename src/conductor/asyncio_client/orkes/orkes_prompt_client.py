@@ -37,12 +37,16 @@ class OrkesPromptClient(OrkesBaseClient):
         """Delete a message template"""
         await self.prompt_api.delete_message_template(name)
 
-    async def create_message_templates(self, message_templates: List[MessageTemplateAdapter]) -> None:
+    async def create_message_templates(
+        self, message_templates: List[MessageTemplateAdapter]
+    ) -> None:
         """Create multiple message templates in bulk"""
         await self.prompt_api.create_message_templates(message_templates)
 
     # Template Testing
-    async def test_message_template(self, prompt_template_test_request: PromptTemplateTestRequestAdapter) -> str:
+    async def test_message_template(
+        self, prompt_template_test_request: PromptTemplateTestRequestAdapter
+    ) -> str:
         """Test a prompt template with provided inputs"""
         return await self.prompt_api.test_message_template(prompt_template_test_request)
 
@@ -82,7 +86,9 @@ class OrkesPromptClient(OrkesBaseClient):
         except Exception:
             return False
 
-    async def get_templates_by_tag(self, tag_key: str, tag_value: str) -> List[MessageTemplateAdapter]:
+    async def get_templates_by_tag(
+        self, tag_key: str, tag_value: str
+    ) -> List[MessageTemplateAdapter]:
         """Get all templates that have a specific tag (requires filtering on client side)"""
         all_templates = await self.get_message_templates()
         matching_templates = []
@@ -97,7 +103,9 @@ class OrkesPromptClient(OrkesBaseClient):
 
         return matching_templates
 
-    async def clone_template(self, source_name: str, target_name: str, new_description: Optional[str] = None) -> None:
+    async def clone_template(
+        self, source_name: str, target_name: str, new_description: Optional[str] = None
+    ) -> None:
         """Clone an existing template with a new name"""
         source_template = await self.get_message_template(source_name)
         description = new_description or f"Clone of {source_template.description}"
@@ -143,7 +151,9 @@ class OrkesPromptClient(OrkesBaseClient):
     async def search_templates_by_name(self, name_pattern: str) -> List[MessageTemplateAdapter]:
         """Search templates by name pattern (case-insensitive)"""
         all_templates = await self.get_message_templates()
-        return [template for template in all_templates if name_pattern.lower() in template.name.lower()]
+        return [
+            template for template in all_templates if name_pattern.lower() in template.name.lower()
+        ]
 
     async def get_templates_with_model(self, model_name: str) -> List[MessageTemplateAdapter]:
         """Get templates that use a specific AI model"""

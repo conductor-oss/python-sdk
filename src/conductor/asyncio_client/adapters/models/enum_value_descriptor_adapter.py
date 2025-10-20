@@ -24,18 +24,30 @@ class EnumValueDescriptorAdapter(EnumValueDescriptor):
 
         _obj = cls.model_validate(
             {
-                "file": (FileDescriptorAdapter.from_dict(obj["file"]) if obj.get("file") is not None else None),
+                "file": (
+                    FileDescriptorAdapter.from_dict(obj["file"])
+                    if obj.get("file") is not None
+                    else None
+                ),
                 "fullName": obj.get("fullName"),
                 "index": obj.get("index"),
                 "name": obj.get("name"),
                 "number": obj.get("number"),
                 "options": (
-                    EnumValueOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None
+                    EnumValueOptionsAdapter.from_dict(obj["options"])
+                    if obj.get("options") is not None
+                    else None
                 ),
                 "proto": (
-                    EnumValueDescriptorProtoAdapter.from_dict(obj["proto"]) if obj.get("proto") is not None else None
+                    EnumValueDescriptorProtoAdapter.from_dict(obj["proto"])
+                    if obj.get("proto") is not None
+                    else None
                 ),
-                "type": (EnumDescriptorAdapter.from_dict(obj["type"]) if obj.get("type") is not None else None),
+                "type": (
+                    EnumDescriptorAdapter.from_dict(obj["type"])
+                    if obj.get("type") is not None
+                    else None
+                ),
             }
         )
         return _obj

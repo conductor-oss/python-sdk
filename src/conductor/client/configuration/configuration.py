@@ -181,14 +181,18 @@ class Configuration:
         self.auth_token_ttl_msec = auth_token_ttl_min * 60 * 1000
 
         # Worker properties
-        self.polling_interval = polling_interval or self._get_env_float("CONDUCTOR_WORKER_POLL_INTERVAL", 100)
+        self.polling_interval = polling_interval or self._get_env_float(
+            "CONDUCTOR_WORKER_POLL_INTERVAL", 100
+        )
         self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", "default_domain")
         self.polling_interval_seconds = polling_interval_seconds or self._get_env_float(
             "CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0
         )
 
         # 401-specific configuration
-        self.auth_401_max_attempts = auth_401_max_attempts or self._get_env_int("CONDUCTOR_AUTH_401_MAX_ATTEMPTS", 6)
+        self.auth_401_max_attempts = auth_401_max_attempts or self._get_env_int(
+            "CONDUCTOR_AUTH_401_MAX_ATTEMPTS", 6
+        )
         self.auth_401_base_delay_ms = auth_401_base_delay_ms or self._get_env_float(
             "CONDUCTOR_AUTH_401_BASE_DELAY_MS", 1000.0
         )

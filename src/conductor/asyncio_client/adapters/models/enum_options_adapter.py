@@ -11,15 +11,21 @@ from conductor.asyncio_client.http.models import EnumOptions
 class EnumOptionsAdapter(EnumOptions):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
     all_fields_raw: Optional[Dict[str, Any]] = Field(default=None, alias="allFieldsRaw")
-    default_instance_for_type: Optional["EnumOptionsAdapter"] = Field(default=None, alias="defaultInstanceForType")
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    default_instance_for_type: Optional["EnumOptionsAdapter"] = Field(
+        default=None, alias="defaultInstanceForType"
+    )
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="descriptorForType"
+    )
     features: Optional["FeatureSetAdapter"] = None
-    features_or_builder: Optional["FeatureSetOrBuilderAdapter"] = Field(default=None, alias="featuresOrBuilder")
+    features_or_builder: Optional["FeatureSetOrBuilderAdapter"] = Field(
+        default=None, alias="featuresOrBuilder"
+    )
     uninterpreted_option_list: Optional[List["UninterpretedOptionAdapter"]] = Field(
         default=None, alias="uninterpretedOptionList"
     )
-    uninterpreted_option_or_builder_list: Optional[List["UninterpretedOptionOrBuilderAdapter"]] = Field(
-        default=None, alias="uninterpretedOptionOrBuilderList"
+    uninterpreted_option_or_builder_list: Optional[List["UninterpretedOptionOrBuilderAdapter"]] = (
+        Field(default=None, alias="uninterpretedOptionOrBuilderList")
     )
     unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
@@ -49,7 +55,11 @@ class EnumOptionsAdapter(EnumOptions):
                     if obj.get("descriptorForType") is not None
                     else None
                 ),
-                "features": (FeatureSetAdapter.from_dict(obj["features"]) if obj.get("features") is not None else None),
+                "features": (
+                    FeatureSetAdapter.from_dict(obj["features"])
+                    if obj.get("features") is not None
+                    else None
+                ),
                 "featuresOrBuilder": (
                     FeatureSetOrBuilderAdapter.from_dict(obj["featuresOrBuilder"])
                     if obj.get("featuresOrBuilder") is not None
@@ -62,7 +72,10 @@ class EnumOptionsAdapter(EnumOptions):
                 "serializedSize": obj.get("serializedSize"),
                 "uninterpretedOptionCount": obj.get("uninterpretedOptionCount"),
                 "uninterpretedOptionList": (
-                    [UninterpretedOptionAdapter.from_dict(_item) for _item in obj["uninterpretedOptionList"]]
+                    [
+                        UninterpretedOptionAdapter.from_dict(_item)
+                        for _item in obj["uninterpretedOptionList"]
+                    ]
                     if obj.get("uninterpretedOptionList") is not None
                     else None
                 ),

@@ -156,7 +156,9 @@ class AsyncMetricsCollector:
             },
         )
 
-    async def increment_external_payload_used(self, entity_name: str, operation: str, payload_type: str) -> None:
+    async def increment_external_payload_used(
+        self, entity_name: str, operation: str, payload_type: str
+    ) -> None:
         """Increment external payload used counter."""
         await self.__increment_counter(
             name=MetricName.EXTERNAL_PAYLOAD_USED,
@@ -168,7 +170,9 @@ class AsyncMetricsCollector:
             },
         )
 
-    async def increment_workflow_start_error(self, workflow_type: str, exception: Exception) -> None:
+    async def increment_workflow_start_error(
+        self, workflow_type: str, exception: Exception
+    ) -> None:
         """Increment workflow start error counter."""
         await self.__increment_counter(
             name=MetricName.WORKFLOW_START_ERROR,
@@ -179,7 +183,9 @@ class AsyncMetricsCollector:
             },
         )
 
-    async def record_workflow_input_payload_size(self, workflow_type: str, version: str, payload_size: int) -> None:
+    async def record_workflow_input_payload_size(
+        self, workflow_type: str, version: str, payload_size: int
+    ) -> None:
         """Record workflow input payload size."""
         await self.__record_gauge(
             name=MetricName.WORKFLOW_INPUT_SIZE,
@@ -227,7 +233,9 @@ class AsyncMetricsCollector:
         """Async method to increment a counter metric."""
         if not self.must_collect_metrics:
             return
-        counter = await self.__get_counter(name=name, documentation=documentation, labelnames=labels.keys())
+        counter = await self.__get_counter(
+            name=name, documentation=documentation, labelnames=labels.keys()
+        )
         counter.labels(*labels.values()).inc()
 
     async def __record_gauge(
@@ -240,7 +248,9 @@ class AsyncMetricsCollector:
         """Async method to record a gauge metric."""
         if not self.must_collect_metrics:
             return
-        gauge = await self.__get_gauge(name=name, documentation=documentation, labelnames=labels.keys())
+        gauge = await self.__get_gauge(
+            name=name, documentation=documentation, labelnames=labels.keys()
+        )
         gauge.labels(*labels.values()).set(value)
 
     async def __get_counter(

@@ -10,14 +10,22 @@ from conductor.asyncio_client.http.models import ServiceDescriptorProtoOrBuilder
 
 class ServiceDescriptorProtoOrBuilderAdapter(ServiceDescriptorProtoOrBuilder):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["MessageAdapter"] = Field(default=None, alias="defaultInstanceForType")
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
-    method_list: Optional[List["MethodDescriptorProtoAdapter"]] = Field(default=None, alias="methodList")
+    default_instance_for_type: Optional["MessageAdapter"] = Field(
+        default=None, alias="defaultInstanceForType"
+    )
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="descriptorForType"
+    )
+    method_list: Optional[List["MethodDescriptorProtoAdapter"]] = Field(
+        default=None, alias="methodList"
+    )
     method_or_builder_list: Optional[List["MethodDescriptorProtoOrBuilderAdapter"]] = Field(
         default=None, alias="methodOrBuilderList"
     )
     options: Optional["ServiceOptionsAdapter"] = None
-    options_or_builder: Optional["ServiceOptionsOrBuilderAdapter"] = Field(default=None, alias="optionsOrBuilder")
+    options_or_builder: Optional["ServiceOptionsOrBuilderAdapter"] = Field(
+        default=None, alias="optionsOrBuilder"
+    )
     unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
@@ -51,16 +59,23 @@ class ServiceDescriptorProtoOrBuilderAdapter(ServiceDescriptorProtoOrBuilder):
                     else None
                 ),
                 "methodOrBuilderList": (
-                    [MethodDescriptorProtoOrBuilderAdapter.from_dict(_item) for _item in obj["methodOrBuilderList"]]
+                    [
+                        MethodDescriptorProtoOrBuilderAdapter.from_dict(_item)
+                        for _item in obj["methodOrBuilderList"]
+                    ]
                     if obj.get("methodOrBuilderList") is not None
                     else None
                 ),
                 "name": obj.get("name"),
                 "nameBytes": (
-                    ByteStringAdapter.from_dict(obj["nameBytes"]) if obj.get("nameBytes") is not None else None
+                    ByteStringAdapter.from_dict(obj["nameBytes"])
+                    if obj.get("nameBytes") is not None
+                    else None
                 ),
                 "options": (
-                    ServiceOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None
+                    ServiceOptionsAdapter.from_dict(obj["options"])
+                    if obj.get("options") is not None
+                    else None
                 ),
                 "optionsOrBuilder": (
                     ServiceOptionsOrBuilderAdapter.from_dict(obj["optionsOrBuilder"])

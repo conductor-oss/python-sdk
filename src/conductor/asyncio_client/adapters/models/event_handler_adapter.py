@@ -36,7 +36,9 @@ class EventHandlerAdapter(EventHandler):
                 "name": obj.get("name"),
                 "orgId": obj.get("orgId"),
                 "tags": (
-                    [TagAdapter.from_dict(_item) for _item in obj["tags"]] if obj.get("tags") is not None else None
+                    [TagAdapter.from_dict(_item) for _item in obj["tags"]]
+                    if obj.get("tags") is not None
+                    else None
                 ),
             }
         )

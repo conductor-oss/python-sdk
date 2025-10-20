@@ -25,11 +25,15 @@ class ActionAdapter(Action):
             {
                 "action": obj.get("action"),
                 "complete_task": (
-                    TaskDetailsAdapter.from_dict(obj["complete_task"]) if obj.get("complete_task") is not None else None
+                    TaskDetailsAdapter.from_dict(obj["complete_task"])
+                    if obj.get("complete_task") is not None
+                    else None
                 ),
                 "expandInlineJSON": obj.get("expandInlineJSON"),
                 "fail_task": (
-                    TaskDetailsAdapter.from_dict(obj["fail_task"]) if obj.get("fail_task") is not None else None
+                    TaskDetailsAdapter.from_dict(obj["fail_task"])
+                    if obj.get("fail_task") is not None
+                    else None
                 ),
                 "start_workflow": (
                     StartWorkflowRequestAdapter.from_dict(obj["start_workflow"])

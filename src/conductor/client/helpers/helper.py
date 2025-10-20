@@ -52,7 +52,9 @@ class ObjectMapper(object):
                 if getattr(obj, attr) is not None
             }
         else:
-            obj_dict = {name: getattr(obj, name) for name in vars(obj) if getattr(obj, name) is not None}
+            obj_dict = {
+                name: getattr(obj, name) for name in vars(obj) if getattr(obj, name) is not None
+            }
 
         return {key: self.to_json(val) for key, val in six.iteritems(obj_dict)}
 
@@ -128,7 +130,9 @@ class ObjectMapper(object):
         except ImportError:
             return string
         except ValueError as err:
-            raise rest.ApiException(status=0, reason="Failed to parse `{0}` as date object".format(string)) from err
+            raise rest.ApiException(
+                status=0, reason="Failed to parse `{0}` as date object".format(string)
+            ) from err
 
     def __deserialize_datatime(self, string):
         """Deserializes string to datetime.
@@ -157,13 +161,21 @@ class ObjectMapper(object):
         kwargs = {}
         if klass.swagger_types is not None:
             for attr, attr_type in six.iteritems(klass.swagger_types):
-                if data is not None and klass.attribute_map[attr] in data and isinstance(data, (list, dict)):
+                if (
+                    data is not None
+                    and klass.attribute_map[attr] in data
+                    and isinstance(data, (list, dict))
+                ):
                     value = data[klass.attribute_map[attr]]
                     kwargs[attr] = self.__deserialize(value, attr_type)
 
         instance = klass(**kwargs)
 
-        if isinstance(instance, dict) and klass.swagger_types is not None and isinstance(data, dict):
+        if (
+            isinstance(instance, dict)
+            and klass.swagger_types is not None
+            and isinstance(data, dict)
+        ):
             for key, value in data.items():
                 if key not in klass.swagger_types:
                     instance[key] = value

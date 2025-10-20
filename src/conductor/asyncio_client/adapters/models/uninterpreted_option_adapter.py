@@ -13,9 +13,13 @@ class UninterpretedOptionAdapter(UninterpretedOption):
     default_instance_for_type: Optional["UninterpretedOptionAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+        default=None, alias="descriptorForType"
+    )
     name_list: Optional[List["NamePartAdapter"]] = Field(default=None, alias="nameList")
-    name_or_builder_list: Optional[List["NamePartOrBuilderAdapter"]] = Field(default=None, alias="nameOrBuilderList")
+    name_or_builder_list: Optional[List["NamePartOrBuilderAdapter"]] = Field(
+        default=None, alias="nameOrBuilderList"
+    )
     unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
@@ -63,7 +67,10 @@ class UninterpretedOptionAdapter(UninterpretedOption):
                     else None
                 ),
                 "nameOrBuilderList": (
-                    [NamePartOrBuilderAdapter.from_dict(_item) for _item in obj["nameOrBuilderList"]]
+                    [
+                        NamePartOrBuilderAdapter.from_dict(_item)
+                        for _item in obj["nameOrBuilderList"]
+                    ]
                     if obj.get("nameOrBuilderList") is not None
                     else None
                 ),
@@ -72,7 +79,9 @@ class UninterpretedOptionAdapter(UninterpretedOption):
                 "positiveIntValue": obj.get("positiveIntValue"),
                 "serializedSize": obj.get("serializedSize"),
                 "stringValue": (
-                    ByteStringAdapter.from_dict(obj["stringValue"]) if obj.get("stringValue") is not None else None
+                    ByteStringAdapter.from_dict(obj["stringValue"])
+                    if obj.get("stringValue") is not None
+                    else None
                 ),
                 "unknownFields": (
                     UnknownFieldSetAdapter.from_dict(obj["unknownFields"])

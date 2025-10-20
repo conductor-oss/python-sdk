@@ -60,7 +60,9 @@ class TaskAdapter(Task):
                 "subworkflowChanged": obj.get("subworkflowChanged"),
                 "taskDefName": obj.get("taskDefName"),
                 "taskDefinition": (
-                    TaskDefAdapter.from_dict(obj["taskDefinition"]) if obj.get("taskDefinition") is not None else None
+                    TaskDefAdapter.from_dict(obj["taskDefinition"])
+                    if obj.get("taskDefinition") is not None
+                    else None
                 ),
                 "taskId": obj.get("taskId"),
                 "taskType": obj.get("taskType"),
@@ -69,7 +71,9 @@ class TaskAdapter(Task):
                 "workflowInstanceId": obj.get("workflowInstanceId"),
                 "workflowPriority": obj.get("workflowPriority"),
                 "workflowTask": (
-                    WorkflowTaskAdapter.from_dict(obj["workflowTask"]) if obj.get("workflowTask") is not None else None
+                    WorkflowTaskAdapter.from_dict(obj["workflowTask"])
+                    if obj.get("workflowTask") is not None
+                    else None
                 ),
                 "workflowType": obj.get("workflowType"),
             }

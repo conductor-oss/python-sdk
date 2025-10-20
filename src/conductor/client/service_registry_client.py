@@ -44,7 +44,9 @@ class ServiceRegistryClient(ABC):
         pass
 
     @abstractmethod
-    def remove_method(self, registry_name: str, service_name: str, method: str, method_type: str) -> None:
+    def remove_method(
+        self, registry_name: str, service_name: str, method: str, method_type: str
+    ) -> None:
         pass
 
     @abstractmethod

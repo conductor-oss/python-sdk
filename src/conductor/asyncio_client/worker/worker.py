@@ -28,7 +28,9 @@ ExecuteTaskFunction = Callable[[Union[TaskAdapter, object]], Union[TaskResultAda
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
 
-def is_callable_input_parameter_a_task(callable_exec_task_function: ExecuteTaskFunction, object_type: Any) -> bool:
+def is_callable_input_parameter_a_task(
+    callable_exec_task_function: ExecuteTaskFunction, object_type: Any
+) -> bool:
     parameters = inspect.signature(callable_exec_task_function).parameters
     if len(parameters) != 1:
         return False
@@ -36,7 +38,9 @@ def is_callable_input_parameter_a_task(callable_exec_task_function: ExecuteTaskF
     return parameter.annotation in {object_type, parameter.empty} or parameter.annotation is object
 
 
-def is_callable_return_value_of_type(callable_exec_task_function: ExecuteTaskFunction, object_type: Any) -> bool:
+def is_callable_return_value_of_type(
+    callable_exec_task_function: ExecuteTaskFunction, object_type: Any
+) -> bool:
     return_annotation = inspect.signature(callable_exec_task_function).return_annotation
     return return_annotation == object_type
 
@@ -75,7 +79,9 @@ class Worker(WorkerInterface):
                         if typ in utils.simple_types:
                             task_input[input_name] = task.input_data[input_name]
                         else:
-                            task_input[input_name] = convert_from_dict_or_list(typ, task.input_data[input_name])
+                            task_input[input_name] = convert_from_dict_or_list(
+                                typ, task.input_data[input_name]
+                            )
                     elif default_value is not inspect.Parameter.empty:
                         task_input[input_name] = default_value
                     else:

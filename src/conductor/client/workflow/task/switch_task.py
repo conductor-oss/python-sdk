@@ -19,7 +19,9 @@ class EvaluatorType(str, Enum):
 
 
 class SwitchTask(TaskInterface):
-    def __init__(self, task_ref_name: str, case_expression: str, use_javascript: bool = False) -> Self:
+    def __init__(
+        self, task_ref_name: str, case_expression: str, use_javascript: bool = False
+    ) -> Self:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.SWITCH,

@@ -8,7 +8,9 @@ class MetricDocumentation(str, Enum):
     TASK_EXECUTE_ERROR = "Execution error"
     TASK_EXECUTE_TIME = "Time to execute a task"
     TASK_EXECUTION_QUEUE_FULL = "Counter to record execution queue has saturated"
-    TASK_PAUSED = "Counter for number of times the task has been polled, when the worker has been paused"
+    TASK_PAUSED = (
+        "Counter for number of times the task has been polled, when the worker has been paused"
+    )
     TASK_POLL = "Incremented each time polling is done"
     TASK_POLL_ERROR = "Client error when polling for a task queue"
     TASK_POLL_TIME = "Time to poll for a batch of tasks"

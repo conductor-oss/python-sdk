@@ -104,7 +104,9 @@ class MetricsCollector:
             labels={MetricLabel.TASK_TYPE: task_type, MetricLabel.EXCEPTION: str(exception)},
         )
 
-    def increment_external_payload_used(self, entity_name: str, operation: str, payload_type: str) -> None:
+    def increment_external_payload_used(
+        self, entity_name: str, operation: str, payload_type: str
+    ) -> None:
         self.__increment_counter(
             name=MetricName.EXTERNAL_PAYLOAD_USED,
             documentation=MetricDocumentation.EXTERNAL_PAYLOAD_USED,
@@ -125,7 +127,9 @@ class MetricsCollector:
             },
         )
 
-    def record_workflow_input_payload_size(self, workflow_type: str, version: str, payload_size: int) -> None:
+    def record_workflow_input_payload_size(
+        self, workflow_type: str, version: str, payload_size: int
+    ) -> None:
         self.__record_gauge(
             name=MetricName.WORKFLOW_INPUT_SIZE,
             documentation=MetricDocumentation.WORKFLOW_INPUT_SIZE,
@@ -165,7 +169,9 @@ class MetricsCollector:
     ) -> None:
         if not self.must_collect_metrics:
             return
-        counter = self.__get_counter(name=name, documentation=documentation, labelnames=labels.keys())
+        counter = self.__get_counter(
+            name=name, documentation=documentation, labelnames=labels.keys()
+        )
         counter.labels(*labels.values()).inc()
 
     def __record_gauge(
@@ -187,7 +193,9 @@ class MetricsCollector:
             self.counters[name] = self.__generate_counter(name, documentation, labelnames)
         return self.counters[name]
 
-    def __get_gauge(self, name: MetricName, documentation: MetricDocumentation, labelnames: List[MetricLabel]) -> Gauge:
+    def __get_gauge(
+        self, name: MetricName, documentation: MetricDocumentation, labelnames: List[MetricLabel]
+    ) -> Gauge:
         if name not in self.gauges:
             self.gauges[name] = self.__generate_gauge(name, documentation, labelnames)
         return self.gauges[name]
@@ -195,9 +203,13 @@ class MetricsCollector:
     def __generate_counter(
         self, name: MetricName, documentation: MetricDocumentation, labelnames: List[MetricLabel]
     ) -> Counter:
-        return Counter(name=name, documentation=documentation, labelnames=labelnames, registry=self.registry)
+        return Counter(
+            name=name, documentation=documentation, labelnames=labelnames, registry=self.registry
+        )
 
     def __generate_gauge(
         self, name: MetricName, documentation: MetricDocumentation, labelnames: List[MetricLabel]
     ) -> Gauge:
-        return Gauge(name=name, documentation=documentation, labelnames=labelnames, registry=self.registry)
+        return Gauge(
+            name=name, documentation=documentation, labelnames=labelnames, registry=self.registry
+        )

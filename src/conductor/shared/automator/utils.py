@@ -65,7 +65,11 @@ def convert_from_dict(cls: type, data: dict) -> object:
                 kwargs[member] = data[member]
             else:
                 kwargs[member] = members[member].default
-        elif str(typ).startswith("typing.List[") or str(typ).startswith("typing.Set[") or str(typ).startswith("list["):
+        elif (
+            str(typ).startswith("typing.List[")
+            or str(typ).startswith("typing.Set[")
+            or str(typ).startswith("list[")
+        ):
             values = []
 
             generic_type = object
@@ -106,7 +110,11 @@ def convert_from_dict(cls: type, data: dict) -> object:
 def get_value(typ: type, val: object) -> object:
     if typ in simple_types:
         return val
-    elif str(typ).startswith("typing.List[") or str(typ).startswith("typing.Set[") or str(typ).startswith("list["):
+    elif (
+        str(typ).startswith("typing.List[")
+        or str(typ).startswith("typing.Set[")
+        or str(typ).startswith("list[")
+    ):
         values = [get_value(type(item), item) for item in val]
         return values
     elif (

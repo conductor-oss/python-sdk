@@ -29,7 +29,9 @@ class ExtendedEventExecutionAdapter(ExtendedEventExecution):
                 "created": obj.get("created"),
                 "event": obj.get("event"),
                 "eventHandler": (
-                    EventHandlerAdapter.from_dict(obj["eventHandler"]) if obj.get("eventHandler") is not None else None
+                    EventHandlerAdapter.from_dict(obj["eventHandler"])
+                    if obj.get("eventHandler") is not None
+                    else None
                 ),
                 "fullMessagePayload": obj.get("fullMessagePayload"),
                 "id": obj.get("id"),
