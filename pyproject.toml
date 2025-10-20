@@ -58,6 +58,9 @@ extend-exclude = [
     "tests/",
     "examples/",
     "docs/",
+    "**/http/**",
+    "**/codegen/**",
+    "**/orkes/api/**",
     "*.egg-info",
     "build",
     "dist",
@@ -152,12 +155,8 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.ruff.lint.per-file-ignores]
-"src/conductor/client/http/**/*.py" = ["ALL"]
-"src/conductor/client/codegen/**/*.py" = ["ALL"]
-"src/conductor/client/orkes/api/*.py" = ["ALL"]
 "tests/**/*.py" = ["B", "C4", "SIM", "PLR2004"]
 "examples/**/*.py" = ["B", "C4", "SIM"]
-"src/conductor/asyncio_client/http/**/*.py" = ["ALL"]
 
 [tool.coverage.run]
 source = ["src/conductor"]
