@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from conductor.asyncio_client.adapters.models.poll_data_adapter import \
-    PollDataAdapter
-from conductor.asyncio_client.adapters.models.search_result_task_summary_adapter import \
-    SearchResultTaskSummaryAdapter
+from conductor.asyncio_client.adapters.models.poll_data_adapter import PollDataAdapter
+from conductor.asyncio_client.adapters.models.search_result_task_summary_adapter import (
+    SearchResultTaskSummaryAdapter,
+)
 from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
-from conductor.asyncio_client.adapters.models.task_exec_log_adapter import \
-    TaskExecLogAdapter
-from conductor.asyncio_client.adapters.models.task_result_adapter import \
-    TaskResultAdapter
+from conductor.asyncio_client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
+from conductor.asyncio_client.adapters.models.task_result_adapter import TaskResultAdapter
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
@@ -25,9 +23,7 @@ class OrkesTaskClient(OrkesBaseClient):
         self, task_type: str, worker_id: Optional[str] = None, domain: Optional[str] = None
     ) -> Optional[TaskAdapter]:
         """Poll for a single task of a certain type"""
-        return await self.task_api.poll(
-            tasktype=task_type, workerid=worker_id, domain=domain
-        )
+        return await self.task_api.poll(tasktype=task_type, workerid=worker_id, domain=domain)
 
     async def poll_for_task_batch(
         self,
@@ -154,9 +150,7 @@ class OrkesTaskClient(OrkesBaseClient):
             free_text: Free text search
             query: Query string
         """
-        return await self.task_api.search1(
-            start=start, size=size, sort=sort, free_text=free_text, query=query
-        )
+        return await self.task_api.search1(start=start, size=size, sort=sort, free_text=free_text, query=query)
 
     # Task Queue Management
     async def requeue_pending_tasks(self, task_type: str) -> str:

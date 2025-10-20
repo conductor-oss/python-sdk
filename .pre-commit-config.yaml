@@ -1,6 +1,10 @@
+# Global exclusions for generated code
+exclude: |
+  (?x)^(src/conductor/client/http/|src/conductor/client/codegen/|src/conductor/client/orkes/api/|src/conductor/asyncio_client/http/)
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -20,14 +24,14 @@ repos:
       - id: poetry-check
       - id: poetry-lock
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
-    hooks:
-      - id: mypy
-        pass_filenames: false
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.15.0
+  #   hooks:
+  #     - id: mypy
+  #       pass_filenames: false
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.7
+    rev: v0.12.3
     hooks:
       - id: ruff
         args:

@@ -6,11 +6,11 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class DynamicTask(TaskInterface):
-    def __init__(self, dynamic_task: str, task_reference_name: str, dynamic_task_param : str = "taskToExecute") -> Self:
+    def __init__(self, dynamic_task: str, task_reference_name: str, dynamic_task_param: str = "taskToExecute") -> Self:
         super().__init__(
             task_reference_name=task_reference_name,
             task_type=TaskType.DYNAMIC,
-            task_name="dynamic_task"
+            task_name="dynamic_task",
         )
         self.input_parameters[dynamic_task_param] = dynamic_task
         self._dynamic_task_param = dynamic_task_param

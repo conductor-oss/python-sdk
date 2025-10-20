@@ -50,7 +50,7 @@ def main():
     # CONDUCTOR_AUTH_SECRET: API Auth Secret
     api_config = Configuration()
 
-    task_handler = TaskHandler(configuration=api_config)  
+    task_handler = TaskHandler(configuration=api_config)
     #Start Polling
     task_handler.start_processes()
 
@@ -80,7 +80,7 @@ if __name__ == '__main__':
 
 See [dynamic_workflow.py](../../examples/dynamic_workflow.py) for a fully functional example.
 
-### Kitchen-Sink Workflow 
+### Kitchen-Sink Workflow
 
 For a more complex workflow example with all the supported features, see [kitchensink.py](../../examples/kitchensink.py).
 
@@ -94,7 +94,7 @@ from conductor.client.orkes_clients import OrkesClients
 
 api_config = Configuration()
 clients = OrkesClients(configuration=api_config)
-workflow_client = clients.get_workflow_client() 
+workflow_client = clients.get_workflow_client()
 ```
 
 ### Execute Workflow Asynchronously
@@ -125,13 +125,13 @@ request.version = 1
 request.input = {'name': 'Orkes'}
 
 workflow_run = workflow_client.execute_workflow(
-        start_workflow_request=request, 
+        start_workflow_request=request,
         wait_for_seconds=12)
 ```
 
 ## Managing Workflow Executions
 
-> [!note] 
+> [!note]
 > See [workflow_ops.py](../../examples/workflow_ops.py)  for a fully working application that demonstrates working with the workflow executions and sending signals to the workflow to manage its state.
 
 Workflows represent the application state. With Conductor, you can query the workflow execution state anytime during its lifecycle. You can also send signals to the workflow that determines the outcome of the workflow state.
@@ -298,19 +298,19 @@ def main():
 ```json
 {
   "name": "task_with_retries",
-  
+
   "retryCount": 3,
   "retryLogic": "LINEAR_BACKOFF",
   "retryDelaySeconds": 1,
   "backoffScaleFactor": 1,
-  
+
   "timeoutSeconds": 120,
   "responseTimeoutSeconds": 60,
   "pollTimeoutSeconds": 60,
   "timeoutPolicy": "TIME_OUT_WF",
-  
+
   "concurrentExecLimit": 3,
-  
+
   "rateLimitPerFrequency": 0,
   "rateLimitFrequencyInSeconds": 1
 }

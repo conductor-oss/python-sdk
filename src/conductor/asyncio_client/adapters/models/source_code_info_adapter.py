@@ -10,21 +10,13 @@ from conductor.asyncio_client.http.models import SourceCodeInfo
 
 class SourceCodeInfoAdapter(SourceCodeInfo):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["SourceCodeInfoAdapter"] = Field(
-        default=None, alias="defaultInstanceForType"
-    )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="descriptorForType"
-    )
-    location_list: Optional[List["LocationAdapter"]] = Field(
-        default=None, alias="locationList"
-    )
+    default_instance_for_type: Optional["SourceCodeInfoAdapter"] = Field(default=None, alias="defaultInstanceForType")
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    location_list: Optional[List["LocationAdapter"]] = Field(default=None, alias="locationList")
     location_or_builder_list: Optional[List["LocationOrBuilderAdapter"]] = Field(
         default=None, alias="locationOrBuilderList"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -57,10 +49,7 @@ class SourceCodeInfoAdapter(SourceCodeInfo):
                     else None
                 ),
                 "locationOrBuilderList": (
-                    [
-                        LocationOrBuilderAdapter.from_dict(_item)
-                        for _item in obj["locationOrBuilderList"]
-                    ]
+                    [LocationOrBuilderAdapter.from_dict(_item) for _item in obj["locationOrBuilderList"]]
                     if obj.get("locationOrBuilderList") is not None
                     else None
                 ),

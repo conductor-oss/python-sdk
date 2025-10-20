@@ -27,11 +27,21 @@ class LlmIndexDocument(TaskInterface):
     metadata: a dictionary of optional metadata to be added to thd indexed doc
     """
 
-    def __init__(self, task_ref_name: str, vector_db: str, namespace: str,
-                 embedding_model: EmbeddingModel, index: str, url: str, media_type: str,
-                 chunk_size: Optional[int] = None, chunk_overlap: Optional[int] = None, doc_id: Optional[str] = None,
-                 task_name: Optional[str] = None,
-                 metadata: Optional[dict] = None) -> Self:
+    def __init__(
+        self,
+        task_ref_name: str,
+        vector_db: str,
+        namespace: str,
+        embedding_model: EmbeddingModel,
+        index: str,
+        url: str,
+        media_type: str,
+        chunk_size: Optional[int] = None,
+        chunk_overlap: Optional[int] = None,
+        doc_id: Optional[str] = None,
+        task_name: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> Self:
         metadata = metadata or {}
         input_params = {
             "vectorDB": vector_db,
@@ -41,7 +51,7 @@ class LlmIndexDocument(TaskInterface):
             "embeddingModel": embedding_model.model,
             "url": url,
             "mediaType": media_type,
-            "metadata": metadata
+            "metadata": metadata,
         }
 
         optional_input_params = {}
@@ -63,5 +73,5 @@ class LlmIndexDocument(TaskInterface):
             task_name=task_name,
             task_reference_name=task_ref_name,
             task_type=TaskType.LLM_INDEX_DOCUMENT,
-            input_parameters=input_params
+            input_parameters=input_params,
         )

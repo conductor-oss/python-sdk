@@ -9,18 +9,10 @@ from conductor.asyncio_client.http.models import DeclarationOrBuilder
 
 
 class DeclarationOrBuilderAdapter(DeclarationOrBuilder):
-    all_fields: Optional[Dict[str, Dict[str, Any]]] = Field(
-        default=None, alias="allFields"
-    )
-    default_instance_for_type: Optional["MessageAdapter"] = Field(
-        default=None, alias="defaultInstanceForType"
-    )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="descriptorForType"
-    )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    all_fields: Optional[Dict[str, Dict[str, Any]]] = Field(default=None, alias="allFields")
+    default_instance_for_type: Optional["MessageAdapter"] = Field(default=None, alias="defaultInstanceForType")
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -46,9 +38,7 @@ class DeclarationOrBuilderAdapter(DeclarationOrBuilder):
                 ),
                 "fullName": obj.get("fullName"),
                 "fullNameBytes": (
-                    ByteStringAdapter.from_dict(obj["fullNameBytes"])
-                    if obj.get("fullNameBytes") is not None
-                    else None
+                    ByteStringAdapter.from_dict(obj["fullNameBytes"]) if obj.get("fullNameBytes") is not None else None
                 ),
                 "initializationErrorString": obj.get("initializationErrorString"),
                 "initialized": obj.get("initialized"),
@@ -57,9 +47,7 @@ class DeclarationOrBuilderAdapter(DeclarationOrBuilder):
                 "reserved": obj.get("reserved"),
                 "type": obj.get("type"),
                 "typeBytes": (
-                    ByteStringAdapter.from_dict(obj["typeBytes"])
-                    if obj.get("typeBytes") is not None
-                    else None
+                    ByteStringAdapter.from_dict(obj["typeBytes"]) if obj.get("typeBytes") is not None else None
                 ),
                 "unknownFields": (
                     UnknownFieldSetAdapter.from_dict(obj["unknownFields"])

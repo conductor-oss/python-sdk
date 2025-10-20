@@ -41,7 +41,7 @@ class Configuration:
     CONDUCTOR_AUTH_401_JITTER_PERCENT: Random jitter percentage 0.0-1.0 (default: 0.2)
     CONDUCTOR_AUTH_401_STOP_BEHAVIOR: Behavior after max attempts: 'stop_worker' or 'continue' (default: 'stop_worker')
 
-    
+
     Example:
     --------
     ```python
@@ -151,9 +151,7 @@ class Configuration:
             self.auth_secret = os.getenv("CONDUCTOR_AUTH_SECRET")
 
         # Additional worker properties with environment variable fallback
-        self.polling_interval = polling_interval or self._get_env_int(
-            "CONDUCTOR_WORKER_POLL_INTERVAL", 100
-        )
+        self.polling_interval = polling_interval or self._get_env_int("CONDUCTOR_WORKER_POLL_INTERVAL", 100)
         self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", "default_domain")
         self.polling_interval_seconds = polling_interval_seconds or self._get_env_int(
             "CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0
@@ -179,9 +177,7 @@ class Configuration:
                 self.proxy_headers = json.loads(os.getenv("CONDUCTOR_PROXY_HEADERS"))
             except (json.JSONDecodeError, TypeError):
                 # If JSON parsing fails, treat as a single header value
-                self.proxy_headers = {
-                    "Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")
-                }
+                self.proxy_headers = {"Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")}
 
         self.logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 
@@ -203,7 +199,7 @@ class Configuration:
             "ca_cert_data": ca_cert_data or os.getenv("CONDUCTOR_SSL_CA_CERT_DATA"),
             "debug": debug,
         }
-        
+
         # Add SSL parameters if they exist in HttpConfiguration
         if cert_file or os.getenv("CONDUCTOR_CERT_FILE"):
             http_config_kwargs["cert_file"] = cert_file or os.getenv("CONDUCTOR_CERT_FILE")
@@ -213,7 +209,7 @@ class Configuration:
             http_config_kwargs["verify_ssl"] = verify_ssl
         elif os.getenv("CONDUCTOR_VERIFY_SSL"):
             http_config_kwargs["verify_ssl"] = self._get_env_bool("CONDUCTOR_VERIFY_SSL", True)
-        
+
         http_config_kwargs.update(kwargs)
         self._http_config = HttpConfiguration(**http_config_kwargs)
 
@@ -248,11 +244,9 @@ class Configuration:
         # Orkes Conductor auth token properties
         self.token_update_time = 0
         self.auth_token_ttl_sec = auth_token_ttl_min * 60
-        
+
         # 401-specific configuration
-        self.auth_401_max_attempts = auth_401_max_attempts or self._get_env_int(
-            "CONDUCTOR_AUTH_401_MAX_ATTEMPTS", 6
-        )
+        self.auth_401_max_attempts = auth_401_max_attempts or self._get_env_int("CONDUCTOR_AUTH_401_MAX_ATTEMPTS", 6)
         self.auth_401_base_delay_ms = auth_401_base_delay_ms or self._get_env_float(
             "CONDUCTOR_AUTH_401_BASE_DELAY_MS", 1000.0
         )
@@ -293,9 +287,7 @@ class Configuration:
             return value.lower() in ("true", "1")
         return default
 
-    def get_worker_property_value(
-        self, property_name: str, task_type: Optional[str] = None
-    ) -> Optional[Any]:
+    def get_worker_property_value(self, property_name: str, task_type: Optional[str] = None) -> Optional[Any]:
         """
         Get worker property value with task-specific and global fallback.
 
@@ -612,7 +604,5 @@ class Configuration:
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to underlying HTTP configuration."""
         if "_http_config" not in self.__dict__ or self._http_config is None:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{name}'"
-            )
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
         return getattr(self._http_config, name)

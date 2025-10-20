@@ -2,16 +2,15 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from conductor.asyncio_client.adapters.models.extended_task_def_adapter import \
-    ExtendedTaskDefAdapter
-from conductor.asyncio_client.adapters.models.extended_workflow_def_adapter import \
-    ExtendedWorkflowDefAdapter
-from conductor.asyncio_client.adapters.models.task_def_adapter import \
-    TaskDefAdapter
-from conductor.asyncio_client.adapters.models.workflow_def_adapter import \
-    WorkflowDefAdapter
-from conductor.asyncio_client.adapters.models.tag_adapter import \
-    TagAdapter
+from conductor.asyncio_client.adapters.models.extended_task_def_adapter import (
+    ExtendedTaskDefAdapter,
+)
+from conductor.asyncio_client.adapters.models.extended_workflow_def_adapter import (
+    ExtendedWorkflowDefAdapter,
+)
+from conductor.asyncio_client.adapters.models.task_def_adapter import TaskDefAdapter
+from conductor.asyncio_client.adapters.models.workflow_def_adapter import WorkflowDefAdapter
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
@@ -58,9 +57,7 @@ class OrkesMetadataClient(OrkesBaseClient):
         new_version: Optional[bool] = None,
     ) -> object:
         """Create a new workflow definition"""
-        return await self.metadata_api.create(
-            extended_workflow_def, overwrite=overwrite, new_version=new_version
-        )
+        return await self.metadata_api.create(extended_workflow_def, overwrite=overwrite, new_version=new_version)
 
     async def update_workflow_defs(
         self,
@@ -69,9 +66,7 @@ class OrkesMetadataClient(OrkesBaseClient):
         new_version: Optional[bool] = None,
     ) -> object:
         """Create or update multiple workflow definitions"""
-        return await self.metadata_api.update(
-            extended_workflow_defs, overwrite=overwrite, new_version=new_version
-        )
+        return await self.metadata_api.update(extended_workflow_defs, overwrite=overwrite, new_version=new_version)
 
     async def get_workflow_def(
         self, name: str, version: Optional[int] = None, metadata: Optional[bool] = None
@@ -112,9 +107,7 @@ class OrkesMetadataClient(OrkesBaseClient):
         """Get the latest version of a workflow definition"""
         return await self.get_workflow_def(name)
 
-    async def get_workflow_def_with_metadata(
-        self, name: str, version: Optional[int] = None
-    ) -> WorkflowDefAdapter:
+    async def get_workflow_def_with_metadata(self, name: str, version: Optional[int] = None) -> WorkflowDefAdapter:
         """Get workflow definition with metadata included"""
         return await self.get_workflow_def(name, version=version, metadata=True)
 
@@ -126,15 +119,11 @@ class OrkesMetadataClient(OrkesBaseClient):
         """Get all workflow definitions"""
         return await self.get_workflow_defs()
 
-    async def get_task_defs_by_tag(
-        self, tag_key: str, tag_value: str
-    ) -> List[TaskDefAdapter]:
+    async def get_task_defs_by_tag(self, tag_key: str, tag_value: str) -> List[TaskDefAdapter]:
         """Get task definitions filtered by tag"""
         return await self.get_task_defs(tag_key=tag_key, tag_value=tag_value)
 
-    async def get_workflow_defs_by_tag(
-        self, tag_key: str, tag_value: str
-    ) -> List[WorkflowDefAdapter]:
+    async def get_workflow_defs_by_tag(self, tag_key: str, tag_value: str) -> List[WorkflowDefAdapter]:
         """Get workflow definitions filtered by tag"""
         return await self.get_workflow_defs(tag_key=tag_key, tag_value=tag_value)
 
@@ -159,9 +148,7 @@ class OrkesMetadataClient(OrkesBaseClient):
         """Get task definitions filtered by access level"""
         return await self.get_task_defs(access=access)
 
-    async def get_workflow_defs_by_access(
-        self, access: str
-    ) -> List[WorkflowDefAdapter]:
+    async def get_workflow_defs_by_access(self, access: str) -> List[WorkflowDefAdapter]:
         """Get workflow definitions filtered by access level"""
         return await self.get_workflow_defs(access=access)
 
@@ -170,17 +157,13 @@ class OrkesMetadataClient(OrkesBaseClient):
         self, extended_workflow_def: ExtendedWorkflowDefAdapter, overwrite: bool = False
     ) -> object:
         """Register a new workflow definition (alias for create_workflow_def)"""
-        return await self.create_workflow_def(
-            extended_workflow_def, overwrite=overwrite
-        )
+        return await self.create_workflow_def(extended_workflow_def, overwrite=overwrite)
 
     async def update_workflow_def(
         self, extended_workflow_def: ExtendedWorkflowDefAdapter, overwrite: bool = True
     ) -> object:
         """Update a workflow definition (alias for create_workflow_def with overwrite)"""
-        return await self.create_workflow_def(
-            extended_workflow_def, overwrite=overwrite
-        )
+        return await self.create_workflow_def(extended_workflow_def, overwrite=overwrite)
 
     # Legacy compatibility methods
     async def get_workflow_def_versions(self, name: str) -> List[int]:
@@ -196,9 +179,7 @@ class OrkesMetadataClient(OrkesBaseClient):
         """Get the latest version of all workflow definitions"""
         return await self.get_all_workflow_defs()
 
-    async def get_workflow_def_by_version(
-        self, name: str, version: int
-    ) -> WorkflowDefAdapter:
+    async def get_workflow_def_by_version(self, name: str, version: int) -> WorkflowDefAdapter:
         """Get workflow definition by name and specific version"""
         return await self.get_workflow_def(name, version=version)
 

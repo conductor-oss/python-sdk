@@ -13,16 +13,10 @@ class OneofDescriptorProtoAdapter(OneofDescriptorProto):
     default_instance_for_type: Optional["OneofDescriptorProtoAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="descriptorForType"
-    )
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
     options: Optional["OneofOptionsAdapter"] = None
-    options_or_builder: Optional["OneofOptionsOrBuilderAdapter"] = Field(
-        default=None, alias="optionsOrBuilder"
-    )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    options_or_builder: Optional["OneofOptionsOrBuilderAdapter"] = Field(default=None, alias="optionsOrBuilder")
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
     name_bytes: Optional["ByteStringAdapter"] = Field(default=None, alias="nameBytes")
 
     @classmethod
@@ -52,15 +46,9 @@ class OneofDescriptorProtoAdapter(OneofDescriptorProto):
                 "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
                 "name": obj.get("name"),
                 "nameBytes": (
-                    ByteStringAdapter.from_dict(obj["nameBytes"])
-                    if obj.get("nameBytes") is not None
-                    else None
+                    ByteStringAdapter.from_dict(obj["nameBytes"]) if obj.get("nameBytes") is not None else None
                 ),
-                "options": (
-                    OneofOptionsAdapter.from_dict(obj["options"])
-                    if obj.get("options") is not None
-                    else None
-                ),
+                "options": (OneofOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None),
                 "optionsOrBuilder": (
                     OneofOptionsOrBuilderAdapter.from_dict(obj["optionsOrBuilder"])
                     if obj.get("optionsOrBuilder") is not None

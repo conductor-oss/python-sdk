@@ -5,7 +5,9 @@ from typing import Optional, List, Dict
 from conductor.client.http.models.workflow_run import WorkflowRun
 from conductor.client.http.models.skip_task_request import SkipTaskRequest
 from conductor.client.http.models.workflow_status import WorkflowStatus
-from conductor.client.http.models.scrollable_search_result_workflow_summary import ScrollableSearchResultWorkflowSummary
+from conductor.client.http.models.scrollable_search_result_workflow_summary import (
+    ScrollableSearchResultWorkflowSummary,
+)
 from conductor.client.http.models.signal_response import SignalResponse
 from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
 from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
@@ -25,8 +27,12 @@ class WorkflowClient(ABC):
         pass
 
     @abstractmethod
-    def get_workflow_status(self, workflow_id: str, include_output: Optional[bool] = None,
-                            include_variables: Optional[bool] = None) -> WorkflowStatus:
+    def get_workflow_status(
+        self,
+        workflow_id: str,
+        include_output: Optional[bool] = None,
+        include_variables: Optional[bool] = None,
+    ) -> WorkflowStatus:
         pass
 
     @abstractmethod
@@ -34,29 +40,30 @@ class WorkflowClient(ABC):
         pass
 
     @abstractmethod
-    def terminate_workflow(self, workflow_id: str, reason: Optional[str] = None,
-                           trigger_failure_workflow: bool = False):
+    def terminate_workflow(
+        self, workflow_id: str, reason: Optional[str] = None, trigger_failure_workflow: bool = False
+    ):
         pass
 
     @abstractmethod
     def execute_workflow(
-            self,
-            start_workflow_request: StartWorkflowRequest,
-            request_id: Optional[str] = None,
-            wait_until_task_ref: Optional[str] = None,
-            wait_for_seconds: int = 30
+        self,
+        start_workflow_request: StartWorkflowRequest,
+        request_id: Optional[str] = None,
+        wait_until_task_ref: Optional[str] = None,
+        wait_for_seconds: int = 30,
     ) -> WorkflowRun:
         pass
 
     @abstractmethod
     def execute_workflow_with_return_strategy(
-            self,
-            start_workflow_request: StartWorkflowRequest,
-            request_id: Optional[str] = None,
-            wait_until_task_ref: Optional[str] = None,
-            wait_for_seconds: int = 30,
-            consistency: Optional[str] = None,
-            return_strategy: Optional[str] = None
+        self,
+        start_workflow_request: StartWorkflowRequest,
+        request_id: Optional[str] = None,
+        wait_until_task_ref: Optional[str] = None,
+        wait_for_seconds: int = 30,
+        consistency: Optional[str] = None,
+        return_strategy: Optional[str] = None,
     ) -> SignalResponse:
         pass
 
@@ -89,25 +96,27 @@ class WorkflowClient(ABC):
         pass
 
     @abstractmethod
-    def search(self, start: int = 0, size: int = 100, free_text: str = "*",
-               query: Optional[str] = None) -> ScrollableSearchResultWorkflowSummary:
+    def search(
+        self, start: int = 0, size: int = 100, free_text: str = "*", query: Optional[str] = None
+    ) -> ScrollableSearchResultWorkflowSummary:
         pass
 
     @abstractmethod
     def get_by_correlation_ids_in_batch(
-            self,
-            batch_request: CorrelationIdsSearchRequest,
-            include_completed: bool = False,
-            include_tasks: bool = False) -> Dict[str, List[Workflow]]:
+        self,
+        batch_request: CorrelationIdsSearchRequest,
+        include_completed: bool = False,
+        include_tasks: bool = False,
+    ) -> Dict[str, List[Workflow]]:
         pass
 
     @abstractmethod
     def get_by_correlation_ids(
-            self,
-            workflow_name: str,
-            correlation_ids: List[str],
-            include_completed: bool = False,
-            include_tasks: bool = False
+        self,
+        workflow_name: str,
+        correlation_ids: List[str],
+        include_completed: bool = False,
+        include_tasks: bool = False,
     ) -> Dict[str, List[Workflow]]:
         pass
 
@@ -120,6 +129,11 @@ class WorkflowClient(ABC):
         pass
 
     @abstractmethod
-    def update_state(self, workflow_id: str, update_requesst: WorkflowStateUpdate,
-                     wait_until_task_ref_names: Optional[List[str]] = None, wait_for_seconds: Optional[int] = None) -> WorkflowRun:
+    def update_state(
+        self,
+        workflow_id: str,
+        update_requesst: WorkflowStateUpdate,
+        wait_until_task_ref_names: Optional[List[str]] = None,
+        wait_for_seconds: Optional[int] = None,
+    ) -> WorkflowRun:
         pass

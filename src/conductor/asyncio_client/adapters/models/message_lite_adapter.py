@@ -9,9 +9,7 @@ from conductor.asyncio_client.http.models import MessageLite
 
 
 class MessageLiteAdapter(MessageLite):
-    default_instance_for_type: Optional["MessageLiteAdapter"] = Field(
-        default=None, alias="defaultInstanceForType"
-    )
+    default_instance_for_type: Optional["MessageLiteAdapter"] = Field(default=None, alias="defaultInstanceForType")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

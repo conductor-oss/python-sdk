@@ -11,11 +11,7 @@ import conductor.client.http.models as http_models
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.codegen import rest
 
-logger = logging.getLogger(
-    Configuration.get_logging_formatted_name(
-        __name__
-    )
-)
+logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
 
 class ObjectMapper(object):
@@ -50,16 +46,15 @@ class ObjectMapper(object):
         # Convert attribute name to json key in
         # model definition for request.
         elif hasattr(obj, "attribute_map") and hasattr(obj, "swagger_types"):
-            obj_dict = {obj.attribute_map[attr]: getattr(obj, attr)
-                        for attr, _ in six.iteritems(obj.swagger_types)
-                        if getattr(obj, attr) is not None}
+            obj_dict = {
+                obj.attribute_map[attr]: getattr(obj, attr)
+                for attr, _ in six.iteritems(obj.swagger_types)
+                if getattr(obj, attr) is not None
+            }
         else:
-            obj_dict = {name: getattr(obj, name)
-                        for name in vars(obj)
-                        if getattr(obj, name) is not None}
+            obj_dict = {name: getattr(obj, name) for name in vars(obj) if getattr(obj, name) is not None}
 
-        return {key: self.to_json(val)
-            for key, val in six.iteritems(obj_dict)}
+        return {key: self.to_json(val) for key, val in six.iteritems(obj_dict)}
 
     def from_json(self, data, klass):
         return self.__deserialize(data, klass)
@@ -72,13 +67,11 @@ class ObjectMapper(object):
             if klass.startswith("list["):
                 sub_kls = re.match(r"list\[(.*)\]", klass).group(1)
 
-                return [self.__deserialize(sub_data, sub_kls)
-                        for sub_data in data]
+                return [self.__deserialize(sub_data, sub_kls) for sub_data in data]
 
             if klass.startswith("dict("):
                 sub_kls = re.match(r"dict\(([^,]*), (.*)\)", klass).group(2)
-                return {k: self.__deserialize(v, sub_kls)
-                        for k, v in six.iteritems(data)}
+                return {k: self.__deserialize(v, sub_kls) for k, v in six.iteritems(data)}
 
             # convert str to class
             if klass in self.NATIVE_TYPES_MAPPING:
@@ -135,10 +128,7 @@ class ObjectMapper(object):
         except ImportError:
             return string
         except ValueError as err:
-            raise rest.ApiException(
-                status=0,
-                reason="Failed to parse `{0}` as date object".format(string)
-            ) from err
+            raise rest.ApiException(status=0, reason="Failed to parse `{0}` as date object".format(string)) from err
 
     def __deserialize_datatime(self, string):
         """Deserializes string to datetime.
@@ -154,11 +144,7 @@ class ObjectMapper(object):
             return string
         except ValueError as err:
             raise rest.ApiException(
-                status=0,
-                reason=(
-                    "Failed to parse `{0}` as datetime object"
-                    .format(string)
-                )
+                status=0, reason=("Failed to parse `{0}` as datetime object".format(string))
             ) from err
 
     def __hasattr(self, object, name):
@@ -171,17 +157,13 @@ class ObjectMapper(object):
         kwargs = {}
         if klass.swagger_types is not None:
             for attr, attr_type in six.iteritems(klass.swagger_types):
-                if (data is not None and
-                        klass.attribute_map[attr] in data and
-                        isinstance(data, (list, dict))):
+                if data is not None and klass.attribute_map[attr] in data and isinstance(data, (list, dict)):
                     value = data[klass.attribute_map[attr]]
                     kwargs[attr] = self.__deserialize(value, attr_type)
 
         instance = klass(**kwargs)
 
-        if (isinstance(instance, dict) and
-                klass.swagger_types is not None and
-                isinstance(data, dict)):
+        if isinstance(instance, dict) and klass.swagger_types is not None and isinstance(data, dict):
             for key, value in data.items():
                 if key not in klass.swagger_types:
                     instance[key] = value

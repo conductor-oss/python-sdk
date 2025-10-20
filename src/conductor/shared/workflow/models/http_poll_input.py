@@ -26,9 +26,7 @@ class HttpPollInput(BaseModel):
         validate_by_name = True
         use_enum_values = True
         arbitrary_types_allowed = True
-        json_encoders: ClassVar[Dict[Type[Any], Callable[[Any], Any]]] = {
-            HttpMethod: lambda v: v.value
-        }
+        json_encoders: ClassVar[Dict[Type[Any], Callable[[Any], Any]]] = {HttpMethod: lambda v: v.value}
 
     def deep_copy(self) -> HttpPollInput:
         """Mimics deepcopy behavior in your original __init__."""

@@ -10,15 +10,9 @@ from conductor.asyncio_client.http.models import FeatureSetOrBuilder
 
 class FeatureSetOrBuilderAdapter(FeatureSetOrBuilder):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["MessageAdapter"] = Field(
-        default=None, alias="defaultInstanceForType"
-    )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="descriptorForType"
-    )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    default_instance_for_type: Optional["MessageAdapter"] = Field(default=None, alias="defaultInstanceForType")
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

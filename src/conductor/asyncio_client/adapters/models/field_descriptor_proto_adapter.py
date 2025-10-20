@@ -13,16 +13,10 @@ class FieldDescriptorProtoAdapter(FieldDescriptorProto):
     default_instance_for_type: Optional["FieldDescriptorProtoAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="descriptorForType"
-    )
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
     options: Optional["FieldOptionsAdapter"] = None
-    options_or_builder: Optional["FieldOptionsOrBuilderAdapter"] = Field(
-        default=None, alias="optionsOrBuilder"
-    )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    options_or_builder: Optional["FieldOptionsOrBuilderAdapter"] = Field(default=None, alias="optionsOrBuilder")
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -54,33 +48,23 @@ class FieldDescriptorProtoAdapter(FieldDescriptorProto):
                 ),
                 "extendee": obj.get("extendee"),
                 "extendeeBytes": (
-                    ByteStringAdapter.from_dict(obj["extendeeBytes"])
-                    if obj.get("extendeeBytes") is not None
-                    else None
+                    ByteStringAdapter.from_dict(obj["extendeeBytes"]) if obj.get("extendeeBytes") is not None else None
                 ),
                 "initializationErrorString": obj.get("initializationErrorString"),
                 "initialized": obj.get("initialized"),
                 "jsonName": obj.get("jsonName"),
                 "jsonNameBytes": (
-                    ByteStringAdapter.from_dict(obj["jsonNameBytes"])
-                    if obj.get("jsonNameBytes") is not None
-                    else None
+                    ByteStringAdapter.from_dict(obj["jsonNameBytes"]) if obj.get("jsonNameBytes") is not None else None
                 ),
                 "label": obj.get("label"),
                 "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
                 "name": obj.get("name"),
                 "nameBytes": (
-                    ByteStringAdapter.from_dict(obj["nameBytes"])
-                    if obj.get("nameBytes") is not None
-                    else None
+                    ByteStringAdapter.from_dict(obj["nameBytes"]) if obj.get("nameBytes") is not None else None
                 ),
                 "number": obj.get("number"),
                 "oneofIndex": obj.get("oneofIndex"),
-                "options": (
-                    FieldOptionsAdapter.from_dict(obj["options"])
-                    if obj.get("options") is not None
-                    else None
-                ),
+                "options": (FieldOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None),
                 "optionsOrBuilder": (
                     FieldOptionsOrBuilderAdapter.from_dict(obj["optionsOrBuilder"])
                     if obj.get("optionsOrBuilder") is not None
@@ -92,9 +76,7 @@ class FieldDescriptorProtoAdapter(FieldDescriptorProto):
                 "type": obj.get("type"),
                 "typeName": obj.get("typeName"),
                 "typeNameBytes": (
-                    ByteStringAdapter.from_dict(obj["typeNameBytes"])
-                    if obj.get("typeNameBytes") is not None
-                    else None
+                    ByteStringAdapter.from_dict(obj["typeNameBytes"]) if obj.get("typeNameBytes") is not None else None
                 ),
                 "unknownFields": (
                     UnknownFieldSetAdapter.from_dict(obj["unknownFields"])

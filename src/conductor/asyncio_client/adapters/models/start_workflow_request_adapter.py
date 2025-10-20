@@ -10,9 +10,7 @@ from conductor.asyncio_client.http.models import StartWorkflowRequest
 
 class StartWorkflowRequestAdapter(StartWorkflowRequest):
     input: Optional[Dict[str, Any]] = None
-    workflow_def: Optional["WorkflowDefAdapter"] = Field(
-        default=None, alias="workflowDef"
-    )
+    workflow_def: Optional["WorkflowDefAdapter"] = Field(default=None, alias="workflowDef")
     priority: Optional[int] = None
 
     @classmethod
@@ -28,9 +26,7 @@ class StartWorkflowRequestAdapter(StartWorkflowRequest):
             {
                 "correlationId": obj.get("correlationId"),
                 "createdBy": obj.get("createdBy"),
-                "externalInputPayloadStoragePath": obj.get(
-                    "externalInputPayloadStoragePath"
-                ),
+                "externalInputPayloadStoragePath": obj.get("externalInputPayloadStoragePath"),
                 "idempotencyKey": obj.get("idempotencyKey"),
                 "idempotencyStrategy": obj.get("idempotencyStrategy"),
                 "input": obj.get("input"),
@@ -39,9 +35,7 @@ class StartWorkflowRequestAdapter(StartWorkflowRequest):
                 "taskToDomain": obj.get("taskToDomain"),
                 "version": obj.get("version"),
                 "workflowDef": (
-                    WorkflowDefAdapter.from_dict(obj["workflowDef"])
-                    if obj.get("workflowDef") is not None
-                    else None
+                    WorkflowDefAdapter.from_dict(obj["workflowDef"]) if obj.get("workflowDef") is not None else None
                 ),
             }
         )

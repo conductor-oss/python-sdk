@@ -35,8 +35,8 @@ class IntegrationDefApi(object):  # Model from v5.2.6 spec
         input_schema=None,
         integration_type=None,
         output_schema=None,
-    ):  # noqa: E501
-        """IntegrationDefApi - a model defined in Swagger"""  # noqa: E501
+    ):
+        """IntegrationDefApi - a model defined in Swagger"""
         self._api = None
         self._description = None
         self._input_schema = None
@@ -166,27 +166,20 @@ class IntegrationDefApi(object):  # Model from v5.2.6 spec
         for attr, _ in six.iteritems(self.swagger_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
+                result[attr] = [x.to_dict() if hasattr(x, "to_dict") else x for x in value]
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
                 result[attr] = dict(
                     map(
-                        lambda item: (
-                            (item[0], item[1].to_dict())
-                            if hasattr(item[1], "to_dict")
-                            else item
-                        ),
+                        lambda item: ((item[0], item[1].to_dict()) if hasattr(item[1], "to_dict") else item),
                         value.items(),
                     )
                 )
             else:
                 result[attr] = value
         if issubclass(IntegrationDefApi, dict):
-            for key, value in self.items():
-                result[key] = value
+            result.update(self.items())
 
         return result
 

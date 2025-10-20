@@ -6,7 +6,10 @@ from typing import List, Optional
 from typing_extensions import Self
 
 from conductor.client.http.models.workflow_task import WorkflowTask
-from conductor.client.workflow.task.task import TaskInterface, get_task_interface_list_as_workflow_task_list
+from conductor.client.workflow.task.task import (
+    TaskInterface,
+    get_task_interface_list_as_workflow_task_list,
+)
 from conductor.client.workflow.task.task_type import TaskType
 
 
@@ -41,18 +44,26 @@ class LoopTask(DoWhileTask):
         super().__init__(
             task_ref_name=task_ref_name,
             termination_condition=get_for_loop_condition(
-                task_ref_name, iterations,
+                task_ref_name,
+                iterations,
             ),
             tasks=tasks,
         )
 
 
 class ForEachTask(DoWhileTask):
-    def __init__(self, task_ref_name: str, tasks: List[TaskInterface], iterate_over:str, variables: Optional[List[str]] = None) -> Self:
+    def __init__(
+        self,
+        task_ref_name: str,
+        tasks: List[TaskInterface],
+        iterate_over: str,
+        variables: Optional[List[str]] = None,
+    ) -> Self:
         super().__init__(
             task_ref_name=task_ref_name,
             termination_condition=get_for_loop_condition(
-                task_ref_name, 0,
+                task_ref_name,
+                0,
             ),
             tasks=tasks,
         )

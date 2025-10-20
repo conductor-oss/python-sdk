@@ -9,9 +9,7 @@ from conductor.asyncio_client.http.models import WorkflowSchedule
 
 
 class WorkflowScheduleAdapter(WorkflowSchedule):
-    start_workflow_request: Optional["StartWorkflowRequestAdapter"] = Field(
-        default=None, alias="startWorkflowRequest"
-    )
+    start_workflow_request: Optional["StartWorkflowRequestAdapter"] = Field(default=None, alias="startWorkflowRequest")
     tags: Optional[List["TagAdapter"]] = None
 
     @classmethod
@@ -41,9 +39,7 @@ class WorkflowScheduleAdapter(WorkflowSchedule):
                     else None
                 ),
                 "tags": (
-                    [TagAdapter.from_dict(_item) for _item in obj["tags"]]
-                    if obj.get("tags") is not None
-                    else None
+                    [TagAdapter.from_dict(_item) for _item in obj["tags"]] if obj.get("tags") is not None else None
                 ),
                 "updatedBy": obj.get("updatedBy"),
                 "updatedTime": obj.get("updatedTime"),

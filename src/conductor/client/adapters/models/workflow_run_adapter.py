@@ -78,24 +78,15 @@ class WorkflowRunAdapter(WorkflowRun):
                 current = task
         return current
 
-    def get_task(
-        self, name: Optional[str] = None, task_reference_name: Optional[str] = None
-    ) -> TaskAdapter:
+    def get_task(self, name: Optional[str] = None, task_reference_name: Optional[str] = None) -> TaskAdapter:
         if name is None and task_reference_name is None:
-            raise Exception(
-                "ONLY one of name or task_reference_name MUST be provided.  None were provided"
-            )
+            raise Exception("ONLY one of name or task_reference_name MUST be provided.  None were provided")
         if name is not None and task_reference_name is not None:
-            raise Exception(
-                "ONLY one of name or task_reference_name MUST be provided.  both were provided"
-            )
+            raise Exception("ONLY one of name or task_reference_name MUST be provided.  both were provided")
 
         current = None
         for task in self.tasks:
-            if (
-                task.task_def_name == name
-                or task.workflow_task.task_reference_name == task_reference_name
-            ):
+            if task.task_def_name == name or task.workflow_task.task_reference_name == task_reference_name:
                 current = task
         return current
 

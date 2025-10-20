@@ -42,7 +42,7 @@ class OrderInfo:
     quantity: int
     sku_price: float
 
-    
+
 @worker_task(task_definition_name='process_order')
 def process_order(order_info: OrderInfo) -> str:
     return f'order: {order_info.order_id}'
@@ -66,7 +66,7 @@ def main():
         scan_for_annotated_workers=True,
         import_modules=['greetings']  # import workers from this module - leave empty if all the workers are in the same module
     )
-    
+
     # start worker polling
     task_handler.start_processes()
 
@@ -212,7 +212,7 @@ jq = JsonJQTask(task_ref_name='jq_process', script=jq_script)
   "taskReferenceName": "json_transform_task_ref",
   "type": "JSON_JQ_TRANSFORM",
   "inputParameters": {
-    "key1": "k1",        
+    "key1": "k1",
     "key2": "k2",
     "queryExpression": "{ key3: (.key1.value1 + .key2.value2) }",
   }
@@ -221,7 +221,7 @@ jq = JsonJQTask(task_ref_name='jq_process', script=jq_script)
 
 ## Worker vs. Microservice/HTTP Endpoints
 
-> [!tip] 
+> [!tip]
 > Workers are a lightweight alternative to exposing an HTTP endpoint and orchestrating using HTTP tasks. Using workers is a recommended approach if you do not need to expose the service over HTTP or gRPC endpoints.
 
 There are several advantages to this approach:

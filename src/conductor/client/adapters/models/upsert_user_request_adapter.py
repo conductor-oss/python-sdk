@@ -1,7 +1,6 @@
 from enum import Enum
 
-from conductor.client.codegen.models.upsert_user_request import \
-    UpsertUserRequest
+from conductor.client.codegen.models.upsert_user_request import UpsertUserRequest
 
 
 class RolesEnum(str, Enum):

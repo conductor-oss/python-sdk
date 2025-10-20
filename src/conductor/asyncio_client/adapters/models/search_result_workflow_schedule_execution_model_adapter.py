@@ -9,9 +9,7 @@ from conductor.asyncio_client.http.models import (
 )
 
 
-class SearchResultWorkflowScheduleExecutionModelAdapter(
-    SearchResultWorkflowScheduleExecutionModel
-):
+class SearchResultWorkflowScheduleExecutionModelAdapter(SearchResultWorkflowScheduleExecutionModel):
     results: Optional[List["WorkflowScheduleExecutionModelAdapter"]] = None
 
     @classmethod
@@ -26,10 +24,7 @@ class SearchResultWorkflowScheduleExecutionModelAdapter(
         _obj = cls.model_validate(
             {
                 "results": (
-                    [
-                        WorkflowScheduleExecutionModelAdapter.from_dict(_item)
-                        for _item in obj["results"]
-                    ]
+                    [WorkflowScheduleExecutionModelAdapter.from_dict(_item) for _item in obj["results"]]
                     if obj.get("results") is not None
                     else None
                 ),

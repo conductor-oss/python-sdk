@@ -1,5 +1,4 @@
-from conductor.client.codegen.models.upsert_group_request import \
-    UpsertGroupRequest
+from conductor.client.codegen.models.upsert_group_request import UpsertGroupRequest
 
 
 class UpsertGroupRequestAdapter(UpsertGroupRequest):

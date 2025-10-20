@@ -8,8 +8,15 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class LlmQueryEmbeddings(TaskInterface):
-    def __init__(self, task_ref_name: str, vector_db: str, index: str,
-                 embeddings: List[int], task_name: Optional[str] = None, namespace: Optional[str] = None) -> Self:
+    def __init__(
+        self,
+        task_ref_name: str,
+        vector_db: str,
+        index: str,
+        embeddings: List[int],
+        task_name: Optional[str] = None,
+        namespace: Optional[str] = None,
+    ) -> Self:
         if task_name is None:
             task_name = "llm_get_embeddings"
 
@@ -21,6 +28,6 @@ class LlmQueryEmbeddings(TaskInterface):
                 "vectorDB": vector_db,
                 "namespace": namespace,
                 "index": index,
-                "embeddings": embeddings
-            }
+                "embeddings": embeddings,
+            },
         )

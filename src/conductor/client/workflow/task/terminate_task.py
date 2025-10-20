@@ -7,12 +7,12 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class WorkflowStatus(str, Enum):
-    COMPLETED = "COMPLETED",
-    FAILED = "FAILED",
-    PAUSED = "PAUSED",
-    RUNNING = "RUNNING",
-    TERMINATED = "TERMINATED",
-    TIMEOUT_OUT = "TIMED_OUT",
+    COMPLETED = ("COMPLETED",)
+    FAILED = ("FAILED",)
+    PAUSED = ("PAUSED",)
+    RUNNING = ("RUNNING",)
+    TERMINATED = ("TERMINATED",)
+    TIMEOUT_OUT = ("TIMED_OUT",)
 
 
 class TerminateTask(TaskInterface):

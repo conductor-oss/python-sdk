@@ -24,7 +24,6 @@ def WorkerTask(
         poll_interval_millis = 1000 * poll_interval_seconds
 
     def worker_task_func(func):
-
         register_decorated_fn(
             name=task_definition_name,
             poll_interval=poll_interval_millis,

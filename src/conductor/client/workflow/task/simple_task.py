@@ -11,7 +11,7 @@ class SimpleTask(TaskInterface):
         super().__init__(
             task_reference_name=task_reference_name,
             task_type=TaskType.SIMPLE,
-            task_name=task_def_name
+            task_name=task_def_name,
         )
 
 

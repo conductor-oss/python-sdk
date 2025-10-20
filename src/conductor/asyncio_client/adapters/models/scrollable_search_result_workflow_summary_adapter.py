@@ -7,9 +7,7 @@ from typing_extensions import Self
 from conductor.asyncio_client.http.models import ScrollableSearchResultWorkflowSummary
 
 
-class ScrollableSearchResultWorkflowSummaryAdapter(
-    ScrollableSearchResultWorkflowSummary
-):
+class ScrollableSearchResultWorkflowSummaryAdapter(ScrollableSearchResultWorkflowSummary):
     results: Optional[List["WorkflowSummaryAdapter"]] = None
 
     @classmethod
@@ -25,10 +23,7 @@ class ScrollableSearchResultWorkflowSummaryAdapter(
             {
                 "queryId": obj.get("queryId"),
                 "results": (
-                    [
-                        WorkflowSummaryAdapter.from_dict(_item)
-                        for _item in obj["results"]
-                    ]
+                    [WorkflowSummaryAdapter.from_dict(_item) for _item in obj["results"]]
                     if obj.get("results") is not None
                     else None
                 ),

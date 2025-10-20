@@ -206,9 +206,7 @@ class AsyncConductorWorkflow:
             workflow=self.to_extended_workflow_def(),
         )
 
-    async def start_workflow(
-        self, start_workflow_request: StartWorkflowRequestAdapter
-    ) -> str:
+    async def start_workflow(self, start_workflow_request: StartWorkflowRequestAdapter) -> str:
         """
         Executes the workflow inline without registering with the server.  Useful for one-off workflows that need not be registered.
         Parameters
@@ -336,9 +334,7 @@ class AsyncConductorWorkflow:
         )
 
     def to_workflow_task(self):
-        sub_workflow_task = InlineSubWorkflowTask(
-            task_ref_name=self.name + "_" + str(uuid()), workflow=self
-        )
+        sub_workflow_task = InlineSubWorkflowTask(task_ref_name=self.name + "_" + str(uuid()), workflow=self)
         sub_workflow_task.input_parameters.update(self._input_template)
         return sub_workflow_task.to_workflow_task()
 
@@ -348,34 +344,22 @@ class AsyncConductorWorkflow:
             wt
             for task in self._tasks
             for wt in (
-                task.to_workflow_task()
-                if isinstance(task.to_workflow_task(), list)
-                else [task.to_workflow_task()]
+                task.to_workflow_task() if isinstance(task.to_workflow_task(), list) else [task.to_workflow_task()]
             )
         ]
 
         updated_task_list = []
-        for current, next_task in zip(
-            workflow_task_list, [*workflow_task_list[1:], None]
-        ):
+        for current, next_task in zip(workflow_task_list, [*workflow_task_list[1:], None]):
             updated_task_list.append(current)
 
-            if (
-                current.type == "FORK_JOIN"
-                and next_task is not None
-                and next_task.type != "JOIN"
-            ):
+            if current.type == "FORK_JOIN" and next_task is not None and next_task.type != "JOIN":
                 join_on = [ft[-1].task_reference_name for ft in current.fork_tasks]
-                join_task = JoinTask(
-                    task_ref_name=f"join_{current.task_reference_name}", join_on=join_on
-                )
+                join_task = JoinTask(task_ref_name=f"join_{current.task_reference_name}", join_on=join_on)
                 updated_task_list.append(join_task.to_workflow_task())
 
         return updated_task_list
 
-    def __rshift__(
-        self, task: Union[TaskInterface, List[TaskInterface], List[List[TaskInterface]]]
-    ):
+    def __rshift__(self, task: Union[TaskInterface, List[TaskInterface], List[List[TaskInterface]]]):
         if isinstance(task, list):
             forked_tasks = []
             for fork_task in task:
@@ -386,9 +370,7 @@ class AsyncConductorWorkflow:
             self.__add_fork_join_tasks(forked_tasks)
             return self
         elif isinstance(task, AsyncConductorWorkflow):
-            inline = InlineSubWorkflowTask(
-                task_ref_name=task.name + "_" + str(uuid()), workflow=task
-            )
+            inline = InlineSubWorkflowTask(task_ref_name=task.name + "_" + str(uuid()), workflow=task)
             inline.input_parameters.update(task._input_template)
             self.__add_task(inline)
             return self
@@ -403,10 +385,7 @@ class AsyncConductorWorkflow:
         return self.__add_task(task)
 
     def __add_task(self, task: TaskInterface):
-        if not (
-            issubclass(type(task), TaskInterface)
-            or isinstance(task, AsyncConductorWorkflow)
-        ):
+        if not (issubclass(type(task), TaskInterface) or isinstance(task, AsyncConductorWorkflow)):
             raise Exception(
                 f"Invalid task -- if using @worker_task or @WorkerTask decorator ensure task_ref_name is passed as "
                 f"argument.  task is {type(task)}"
@@ -417,17 +396,12 @@ class AsyncConductorWorkflow:
     def __add_fork_join_tasks(self, forked_tasks: List[List[TaskInterface]]):
         for single_fork in forked_tasks:
             for task in single_fork:
-                if not (
-                    issubclass(type(task), TaskInterface)
-                    or isinstance(task, AsyncConductorWorkflow)
-                ):
+                if not (issubclass(type(task), TaskInterface) or isinstance(task, AsyncConductorWorkflow)):
                     raise Exception("Invalid type")
 
         suffix = str(uuid())
 
-        fork_task = ForkTask(
-            task_ref_name="forked_" + suffix, forked_tasks=forked_tasks
-        )
+        fork_task = ForkTask(task_ref_name="forked_" + suffix, forked_tasks=forked_tasks)
         self._tasks.append(fork_task)
         return self
 

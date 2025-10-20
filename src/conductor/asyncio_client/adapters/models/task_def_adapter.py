@@ -9,15 +9,9 @@ from conductor.asyncio_client.http.models import TaskDef
 
 
 class TaskDefAdapter(TaskDef):
-    input_schema: Optional["SchemaDefAdapter"] = Field(
-        default=None, alias="inputSchema"
-    )
-    input_template: Optional[Dict[str, Any]] = Field(
-        default=None, alias="inputTemplate"
-    )
-    output_schema: Optional["SchemaDefAdapter"] = Field(
-        default=None, alias="outputSchema"
-    )
+    input_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="inputSchema")
+    input_template: Optional[Dict[str, Any]] = Field(default=None, alias="inputTemplate")
+    output_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="outputSchema")
     timeout_seconds: Optional[int] = Field(alias="timeoutSeconds", default=None)
     total_timeout_seconds: Optional[int] = Field(alias="totalTimeoutSeconds", default=None)
 
@@ -42,25 +36,23 @@ class TaskDefAdapter(TaskDef):
                 "executionNameSpace": obj.get("executionNameSpace"),
                 "inputKeys": obj.get("inputKeys"),
                 "inputSchema": (
-                    SchemaDefAdapter.from_dict(obj["inputSchema"])
-                    if obj.get("inputSchema") is not None
-                    else None
+                    SchemaDefAdapter.from_dict(obj["inputSchema"]) if obj.get("inputSchema") is not None else None
                 ),
                 "inputTemplate": obj.get("inputTemplate"),
                 "isolationGroupId": obj.get("isolationGroupId"),
                 "name": obj.get("name", "default_task_def"),
                 "outputKeys": obj.get("outputKeys"),
                 "outputSchema": (
-                    SchemaDefAdapter.from_dict(obj["outputSchema"])
-                    if obj.get("outputSchema") is not None
-                    else None
+                    SchemaDefAdapter.from_dict(obj["outputSchema"]) if obj.get("outputSchema") is not None else None
                 ),
                 "ownerApp": obj.get("ownerApp"),
                 "ownerEmail": obj.get("ownerEmail"),
                 "pollTimeoutSeconds": obj.get("pollTimeoutSeconds"),
                 "rateLimitFrequencyInSeconds": obj.get("rateLimitFrequencyInSeconds"),
                 "rateLimitPerFrequency": obj.get("rateLimitPerFrequency"),
-                "responseTimeoutSeconds": obj.get("responseTimeoutSeconds") if obj.get("responseTimeoutSeconds") is not None and obj.get("responseTimeoutSeconds") != 0 else 600, # default to 10 minutes
+                "responseTimeoutSeconds": obj.get("responseTimeoutSeconds")
+                if obj.get("responseTimeoutSeconds") is not None and obj.get("responseTimeoutSeconds") != 0
+                else 600,  # default to 10 minutes
                 "retryCount": obj.get("retryCount"),
                 "retryDelaySeconds": obj.get("retryDelaySeconds"),
                 "retryLogic": obj.get("retryLogic"),

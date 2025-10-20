@@ -9,21 +9,11 @@ from conductor.asyncio_client.http.models import ExtendedWorkflowDef
 
 
 class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef):
-    input_schema: Optional["SchemaDefAdapter"] = Field(
-        default=None, alias="inputSchema"
-    )
-    input_template: Optional[Dict[str, Any]] = Field(
-        default=None, alias="inputTemplate"
-    )
-    output_parameters: Optional[Dict[str, Any]] = Field(
-        default=None, alias="outputParameters"
-    )
-    output_schema: Optional["SchemaDefAdapter"] = Field(
-        default=None, alias="outputSchema"
-    )
-    rate_limit_config: Optional["RateLimitConfigAdapter"] = Field(
-        default=None, alias="rateLimitConfig"
-    )
+    input_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="inputSchema")
+    input_template: Optional[Dict[str, Any]] = Field(default=None, alias="inputTemplate")
+    output_parameters: Optional[Dict[str, Any]] = Field(default=None, alias="outputParameters")
+    output_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="outputSchema")
+    rate_limit_config: Optional["RateLimitConfigAdapter"] = Field(default=None, alias="rateLimitConfig")
     tags: Optional[List["TagAdapter"]] = None
     tasks: List["WorkflowTaskAdapter"]
     variables: Optional[Dict[str, Any]] = None
@@ -47,17 +37,13 @@ class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef):
                 "failureWorkflow": obj.get("failureWorkflow"),
                 "inputParameters": obj.get("inputParameters"),
                 "inputSchema": (
-                    SchemaDefAdapter.from_dict(obj["inputSchema"])
-                    if obj.get("inputSchema") is not None
-                    else None
+                    SchemaDefAdapter.from_dict(obj["inputSchema"]) if obj.get("inputSchema") is not None else None
                 ),
                 "inputTemplate": obj.get("inputTemplate"),
                 "name": obj.get("name"),
                 "outputParameters": obj.get("outputParameters"),
                 "outputSchema": (
-                    SchemaDefAdapter.from_dict(obj["outputSchema"])
-                    if obj.get("outputSchema") is not None
-                    else None
+                    SchemaDefAdapter.from_dict(obj["outputSchema"]) if obj.get("outputSchema") is not None else None
                 ),
                 "overwriteTags": obj.get("overwriteTags"),
                 "ownerApp": obj.get("ownerApp"),
@@ -70,9 +56,7 @@ class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef):
                 "restartable": obj.get("restartable"),
                 "schemaVersion": obj.get("schemaVersion"),
                 "tags": (
-                    [TagAdapter.from_dict(_item) for _item in obj["tags"]]
-                    if obj.get("tags") is not None
-                    else None
+                    [TagAdapter.from_dict(_item) for _item in obj["tags"]] if obj.get("tags") is not None else None
                 ),
                 "tasks": (
                     [WorkflowTaskAdapter.from_dict(_item) for _item in obj["tasks"]]
@@ -85,9 +69,7 @@ class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef):
                 "updatedBy": obj.get("updatedBy"),
                 "variables": obj.get("variables"),
                 "version": obj.get("version"),
-                "workflowStatusListenerEnabled": obj.get(
-                    "workflowStatusListenerEnabled"
-                ),
+                "workflowStatusListenerEnabled": obj.get("workflowStatusListenerEnabled"),
                 "workflowStatusListenerSink": obj.get("workflowStatusListenerSink"),
             }
         )
@@ -100,9 +82,9 @@ from conductor.asyncio_client.adapters.models.rate_limit_config_adapter import (
 from conductor.asyncio_client.adapters.models.schema_def_adapter import (  # noqa: E402
     SchemaDefAdapter,
 )
-from conductor.asyncio_client.adapters.models.tag_adapter import (
+from conductor.asyncio_client.adapters.models.tag_adapter import (  # noqa: E402
     TagAdapter,
-)  # noqa: E402
+)
 from conductor.asyncio_client.adapters.models.workflow_task_adapter import (  # noqa: E402
     WorkflowTaskAdapter,
 )

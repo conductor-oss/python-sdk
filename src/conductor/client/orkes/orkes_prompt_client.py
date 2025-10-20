@@ -12,7 +12,6 @@ from conductor.client.prompt_client import PromptClient
 
 
 class OrkesPromptClient(OrkesBaseClient, PromptClient):
-
     def __init__(self, configuration: Configuration):
         super(OrkesPromptClient, self).__init__(configuration)
 
@@ -42,8 +41,16 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
     def delete_tag_for_prompt_template(self, prompt_name: str, tags: List[MetadataTag]):
         self.promptApi.delete_tag_for_prompt_template(tags, prompt_name)
 
-    def test_prompt(self, prompt_text: str, variables: dict, ai_integration: str, text_complete_model: str,
-                    temperature: float = 0.1, top_p: float = 0.9, stop_words: Optional[List[str]] = None) -> str:
+    def test_prompt(
+        self,
+        prompt_text: str,
+        variables: dict,
+        ai_integration: str,
+        text_complete_model: str,
+        temperature: float = 0.1,
+        top_p: float = 0.9,
+        stop_words: Optional[List[str]] = None,
+    ) -> str:
         request = PromptTemplateTestRequest()
         request.prompt = prompt_text
         request.llm_provider = ai_integration

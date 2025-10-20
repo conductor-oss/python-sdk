@@ -1,7 +1,10 @@
 from enum import Enum
 
 from conductor.client.codegen.models.service_registry import (
-    Config, OrkesCircuitBreakerConfig, ServiceRegistry)
+    Config,
+    OrkesCircuitBreakerConfig,
+    ServiceRegistry,
+)
 
 
 class ServiceType(str, Enum):

@@ -85,4 +85,4 @@ This is the final step that triggers the deployment pipeline.
 
 - Pushing the tag will trigger the "Release" workflow in GitHub Actions.
 - Monitor the workflow to ensure it completes successfully.
-- Once the workflow is finished, navigate to the project's page on [PyPI](https://pypi.org/project/conductor-python/) to verify that the new version has been published. 
+- Once the workflow is finished, navigate to the project's page on [PyPI](https://pypi.org/project/conductor-python/) to verify that the new version has been published.

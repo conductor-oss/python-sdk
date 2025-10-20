@@ -12,12 +12,14 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class SubWorkflowTask(TaskInterface):
-    def __init__(self, task_ref_name: str, workflow_name: str, version: Optional[int] = None,
-                 task_to_domain_map: Optional[Dict[str, str]] = None) -> Self:
-        super().__init__(
-            task_reference_name=task_ref_name,
-            task_type=TaskType.SUB_WORKFLOW
-        )
+    def __init__(
+        self,
+        task_ref_name: str,
+        workflow_name: str,
+        version: Optional[int] = None,
+        task_to_domain_map: Optional[Dict[str, str]] = None,
+    ) -> Self:
+        super().__init__(task_reference_name=task_ref_name, task_type=TaskType.SUB_WORKFLOW)
         self._workflow_name = deepcopy(workflow_name)
         self._version = deepcopy(version)
         self._task_to_domain_map = deepcopy(task_to_domain_map)

@@ -47,7 +47,7 @@ async def test_init_with_settings(metrics_settings):
     with patch.dict('os.environ', {}, clear=True), \
          patch('prometheus_client.multiprocess.MultiProcessCollector') as mock_collector:
         collector = AsyncMetricsCollector(metrics_settings)
-        
+
         assert collector.must_collect_metrics is True
         assert collector.settings == metrics_settings
         assert os.environ["PROMETHEUS_MULTIPROC_DIR"] == "/tmp/test_metrics"
@@ -67,9 +67,9 @@ async def test_provide_metrics_success(metrics_settings):
          patch('prometheus_client.multiprocess.MultiProcessCollector'), \
          patch('prometheus_client.write_to_textfile') as mock_write, \
          patch('asyncio.sleep') as mock_sleep:
-        
+
         mock_sleep.side_effect = asyncio.CancelledError()
-        
+
         with pytest.raises(asyncio.CancelledError):
             await AsyncMetricsCollector.provide_metrics(metrics_settings)
 
@@ -88,9 +88,9 @@ async def test_provide_metrics_error_handling(metrics_settings):
          patch('prometheus_client.multiprocess.MultiProcessCollector'), \
          patch('prometheus_client.write_to_textfile', side_effect=Exception("Write failed")), \
          patch('asyncio.sleep') as mock_sleep:
-        
+
         mock_sleep.side_effect = asyncio.CancelledError()
-        
+
         with pytest.raises(asyncio.CancelledError):
             await AsyncMetricsCollector.provide_metrics(metrics_settings)
 
@@ -99,7 +99,7 @@ async def test_provide_metrics_error_handling(metrics_settings):
 async def test_increment_task_poll(metrics_collector, mock_counter):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_task_poll("test_task")
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_counter.call_args
         assert call_args[1]['name'] == MetricName.TASK_POLL
         assert call_args[1]['documentation'] == MetricDocumentation.TASK_POLL
@@ -112,7 +112,7 @@ async def test_increment_task_poll(metrics_collector, mock_counter):
 async def test_increment_task_execution_queue_full(metrics_collector, mock_counter):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_task_execution_queue_full("test_task")
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_counter.call_args
         assert call_args[1]['name'] == MetricName.TASK_EXECUTION_QUEUE_FULL
         assert call_args[1]['documentation'] == MetricDocumentation.TASK_EXECUTION_QUEUE_FULL
@@ -124,7 +124,7 @@ async def test_increment_task_execution_queue_full(metrics_collector, mock_count
 async def test_increment_uncaught_exception(metrics_collector, mock_counter):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_uncaught_exception()
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_counter.call_args
         assert call_args[1]['name'] == MetricName.THREAD_UNCAUGHT_EXCEPTION
         assert call_args[1]['documentation'] == MetricDocumentation.THREAD_UNCAUGHT_EXCEPTION
@@ -137,7 +137,7 @@ async def test_increment_task_poll_error(metrics_collector, mock_counter):
     exception = Exception("Test error")
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_task_poll_error("test_task", exception)
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_counter.call_args
         assert call_args[1]['name'] == MetricName.TASK_POLL_ERROR
         assert call_args[1]['documentation'] == MetricDocumentation.TASK_POLL_ERROR
@@ -149,7 +149,7 @@ async def test_increment_task_poll_error(metrics_collector, mock_counter):
 async def test_increment_task_paused(metrics_collector, mock_counter):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_task_paused("test_task")
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_counter.call_args
         assert call_args[1]['name'] == MetricName.TASK_PAUSED
         assert call_args[1]['documentation'] == MetricDocumentation.TASK_PAUSED
@@ -162,7 +162,7 @@ async def test_increment_task_execution_error(metrics_collector, mock_counter):
     exception = Exception("Execution error")
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_task_execution_error("test_task", exception)
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_counter.call_args
         assert call_args[1]['name'] == MetricName.TASK_EXECUTE_ERROR
         assert call_args[1]['documentation'] == MetricDocumentation.TASK_EXECUTE_ERROR
@@ -174,7 +174,7 @@ async def test_increment_task_execution_error(metrics_collector, mock_counter):
 async def test_increment_task_ack_failed(metrics_collector, mock_counter):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_task_ack_failed("test_task")
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_counter.call_args
         assert call_args[1]['name'] == MetricName.TASK_ACK_FAILED
         assert call_args[1]['documentation'] == MetricDocumentation.TASK_ACK_FAILED
@@ -187,7 +187,7 @@ async def test_increment_task_ack_error(metrics_collector, mock_counter):
     exception = Exception("ACK error")
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_task_ack_error("test_task", exception)
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_counter.call_args
         assert call_args[1]['name'] == MetricName.TASK_ACK_ERROR
         assert call_args[1]['documentation'] == MetricDocumentation.TASK_ACK_ERROR
@@ -200,7 +200,7 @@ async def test_increment_task_update_error(metrics_collector, mock_counter):
     exception = Exception("Update error")
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_task_update_error("test_task", exception)
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_counter.call_args
         assert call_args[1]['name'] == MetricName.TASK_UPDATE_ERROR
         assert call_args[1]['documentation'] == MetricDocumentation.TASK_UPDATE_ERROR
@@ -212,7 +212,7 @@ async def test_increment_task_update_error(metrics_collector, mock_counter):
 async def test_increment_external_payload_used(metrics_collector, mock_counter):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_external_payload_used("entity", "operation", "type")
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_counter.call_args
         assert call_args[1]['name'] == MetricName.EXTERNAL_PAYLOAD_USED
         assert call_args[1]['documentation'] == MetricDocumentation.EXTERNAL_PAYLOAD_USED
@@ -225,7 +225,7 @@ async def test_increment_workflow_start_error(metrics_collector, mock_counter):
     exception = Exception("Workflow error")
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_workflow_start_error("workflow_type", exception)
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_counter.call_args
         assert call_args[1]['name'] == MetricName.WORKFLOW_START_ERROR
         assert call_args[1]['documentation'] == MetricDocumentation.WORKFLOW_START_ERROR
@@ -237,7 +237,7 @@ async def test_increment_workflow_start_error(metrics_collector, mock_counter):
 async def test_record_workflow_input_payload_size(metrics_collector, mock_gauge):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_gauge', return_value=mock_gauge):
         await metrics_collector.record_workflow_input_payload_size("workflow_type", "v1", 1024)
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_gauge.call_args
         assert call_args[1]['name'] == MetricName.WORKFLOW_INPUT_SIZE
         assert call_args[1]['documentation'] == MetricDocumentation.WORKFLOW_INPUT_SIZE
@@ -250,7 +250,7 @@ async def test_record_workflow_input_payload_size(metrics_collector, mock_gauge)
 async def test_record_task_result_payload_size(metrics_collector, mock_gauge):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_gauge', return_value=mock_gauge):
         await metrics_collector.record_task_result_payload_size("test_task", 512)
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_gauge.call_args
         assert call_args[1]['name'] == MetricName.TASK_RESULT_SIZE
         assert call_args[1]['documentation'] == MetricDocumentation.TASK_RESULT_SIZE
@@ -263,7 +263,7 @@ async def test_record_task_result_payload_size(metrics_collector, mock_gauge):
 async def test_record_task_poll_time(metrics_collector, mock_gauge):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_gauge', return_value=mock_gauge):
         await metrics_collector.record_task_poll_time("test_task", 1.5)
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_gauge.call_args
         assert call_args[1]['name'] == MetricName.TASK_POLL_TIME
         assert call_args[1]['documentation'] == MetricDocumentation.TASK_POLL_TIME
@@ -276,7 +276,7 @@ async def test_record_task_poll_time(metrics_collector, mock_gauge):
 async def test_record_task_execute_time(metrics_collector, mock_gauge):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_gauge', return_value=mock_gauge):
         await metrics_collector.record_task_execute_time("test_task", 2.3)
-        
+
         call_args = metrics_collector._AsyncMetricsCollector__get_gauge.call_args
         assert call_args[1]['name'] == MetricName.TASK_EXECUTE_TIME
         assert call_args[1]['documentation'] == MetricDocumentation.TASK_EXECUTE_TIME
@@ -305,11 +305,11 @@ async def test_record_gauge_disabled_metrics():
 async def test_get_counter_existing(metrics_collector):
     existing_counter = MagicMock(spec=Counter)
     metrics_collector.counters[MetricName.TASK_POLL] = existing_counter
-    
+
     result = await metrics_collector._AsyncMetricsCollector__get_counter(
         MetricName.TASK_POLL, MetricDocumentation.TASK_POLL, [MetricLabel.TASK_TYPE]
     )
-    
+
     assert result == existing_counter
 
 
@@ -317,11 +317,11 @@ async def test_get_counter_existing(metrics_collector):
 async def test_get_gauge_existing(metrics_collector):
     existing_gauge = MagicMock(spec=Gauge)
     metrics_collector.gauges[MetricName.TASK_EXECUTE_TIME] = existing_gauge
-    
+
     result = await metrics_collector._AsyncMetricsCollector__get_gauge(
         MetricName.TASK_EXECUTE_TIME, MetricDocumentation.TASK_EXECUTE_TIME, [MetricLabel.TASK_TYPE]
     )
-    
+
     assert result == existing_gauge
 
 
@@ -330,7 +330,7 @@ async def test_generate_counter(metrics_collector):
     result = await metrics_collector._AsyncMetricsCollector__generate_counter(
         MetricName.TASK_POLL, MetricDocumentation.TASK_POLL, [MetricLabel.TASK_TYPE]
     )
-    
+
     assert isinstance(result, Counter)
     assert result._name == MetricName.TASK_POLL
     assert result._documentation == MetricDocumentation.TASK_POLL
@@ -341,7 +341,7 @@ async def test_generate_gauge(metrics_collector):
     result = await metrics_collector._AsyncMetricsCollector__generate_gauge(
         MetricName.TASK_EXECUTE_TIME, MetricDocumentation.TASK_EXECUTE_TIME, [MetricLabel.TASK_TYPE]
     )
-    
+
     assert isinstance(result, Gauge)
     assert result._name == MetricName.TASK_EXECUTE_TIME
     assert result._documentation == MetricDocumentation.TASK_EXECUTE_TIME
@@ -352,7 +352,7 @@ async def test_increment_counter_with_complex_exception(metrics_collector, mock_
     exception = ValueError("Complex error with special chars: !@#$%^&*()")
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_task_poll_error("test_task", exception)
-        
+
         mock_counter.labels.assert_called_once_with("test_task", "Complex error with special chars: !@#$%^&*()")
 
 
@@ -360,7 +360,7 @@ async def test_increment_counter_with_complex_exception(metrics_collector, mock_
 async def test_record_gauge_with_zero_value(metrics_collector, mock_gauge):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_gauge', return_value=mock_gauge):
         await metrics_collector.record_task_execute_time("test_task", 0.0)
-        
+
         mock_gauge.labels.return_value.set.assert_called_once_with(0.0)
 
 
@@ -368,7 +368,7 @@ async def test_record_gauge_with_zero_value(metrics_collector, mock_gauge):
 async def test_record_gauge_with_negative_value(metrics_collector, mock_gauge):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_gauge', return_value=mock_gauge):
         await metrics_collector.record_task_execute_time("test_task", -1.5)
-        
+
         mock_gauge.labels.return_value.set.assert_called_once_with(-1.5)
 
 
@@ -376,7 +376,7 @@ async def test_record_gauge_with_negative_value(metrics_collector, mock_gauge):
 async def test_increment_counter_with_empty_task_type(metrics_collector, mock_counter):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_counter', return_value=mock_counter):
         await metrics_collector.increment_task_poll("")
-        
+
         mock_counter.labels.assert_called_once_with("")
 
 
@@ -384,5 +384,5 @@ async def test_increment_counter_with_empty_task_type(metrics_collector, mock_co
 async def test_record_gauge_with_large_payload_size(metrics_collector, mock_gauge):
     with patch.object(metrics_collector, '_AsyncMetricsCollector__get_gauge', return_value=mock_gauge):
         await metrics_collector.record_task_result_payload_size("test_task", 999999999)
-        
-        mock_gauge.labels.return_value.set.assert_called_once_with(999999999) 
+
+        mock_gauge.labels.return_value.set.assert_called_once_with(999999999)

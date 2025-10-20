@@ -1,7 +1,6 @@
 from enum import Enum
 
-from conductor.client.codegen.models.start_workflow_request import \
-    StartWorkflowRequest
+from conductor.client.codegen.models.start_workflow_request import StartWorkflowRequest
 
 
 class IdempotencyStrategy(str, Enum):  # shared
@@ -26,8 +25,8 @@ class StartWorkflowRequestAdapter(StartWorkflowRequest):
         task_to_domain=None,
         version=None,
         workflow_def=None,
-    ):  # noqa: E501
-        """StartWorkflowRequest - a model defined in Swagger"""  # noqa: E501
+    ):
+        """StartWorkflowRequest - a model defined in Swagger"""
         self._correlation_id = None
         self._created_by = None
         self._external_input_payload_storage_path = None
@@ -45,9 +44,7 @@ class StartWorkflowRequestAdapter(StartWorkflowRequest):
         if created_by is not None:
             self.created_by = created_by
         if external_input_payload_storage_path is not None:
-            self.external_input_payload_storage_path = (
-                external_input_payload_storage_path
-            )
+            self.external_input_payload_storage_path = external_input_payload_storage_path
         if idempotency_key is not None:
             self.idempotency_key = idempotency_key
         if idempotency_strategy is not None:

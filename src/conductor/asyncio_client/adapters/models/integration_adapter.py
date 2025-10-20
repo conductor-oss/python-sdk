@@ -19,19 +19,17 @@ class IntegrationAdapter(Integration):
         if value is None:
             return value
 
-        if value not in set(
-            [
-                "API",
-                "AI_MODEL",
-                "VECTOR_DB",
-                "RELATIONAL_DB",
-                "MESSAGE_BROKER",
-                "GIT",
-                "EMAIL",
-                "MCP",
-                "CLOUD",
-            ]
-        ):
+        if value not in {
+            "API",
+            "AI_MODEL",
+            "VECTOR_DB",
+            "RELATIONAL_DB",
+            "MESSAGE_BROKER",
+            "GIT",
+            "EMAIL",
+            "MCP",
+            "CLOUD",
+        }:
             raise ValueError(
                 "must be one of enum values ('API', 'AI_MODEL', 'VECTOR_DB', 'RELATIONAL_DB', 'MESSAGE_BROKER', 'GIT', 'EMAIL', 'MCP', 'CLOUD')"
             )
@@ -63,9 +61,7 @@ class IntegrationAdapter(Integration):
                 "name": obj.get("name"),
                 "ownerApp": obj.get("ownerApp"),
                 "tags": (
-                    [TagAdapter.from_dict(_item) for _item in obj["tags"]]
-                    if obj.get("tags") is not None
-                    else None
+                    [TagAdapter.from_dict(_item) for _item in obj["tags"]] if obj.get("tags") is not None else None
                 ),
                 "type": obj.get("type"),
                 "updateTime": obj.get("updateTime"),
@@ -78,8 +74,8 @@ class IntegrationAdapter(Integration):
 from conductor.asyncio_client.adapters.models.integration_api_adapter import (  # noqa: E402
     IntegrationApiAdapter,
 )
-from conductor.asyncio_client.adapters.models.tag_adapter import (
+from conductor.asyncio_client.adapters.models.tag_adapter import (  # noqa: E402
     TagAdapter,
-)  # noqa: E402
+)
 
 IntegrationAdapter.model_rebuild(raise_errors=False)

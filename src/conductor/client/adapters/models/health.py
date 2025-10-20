@@ -29,8 +29,8 @@ class Health(object):
         "healthy": "healthy",
     }
 
-    def __init__(self, details=None, error_message=None, healthy=None):  # noqa: E501
-        """Health - a model defined in Swagger"""  # noqa: E501
+    def __init__(self, details=None, error_message=None, healthy=None):
+        """Health - a model defined in Swagger"""
         self._details = None
         self._error_message = None
         self._healthy = None
@@ -112,27 +112,20 @@ class Health(object):
         for attr, _ in six.iteritems(self.swagger_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
+                result[attr] = [x.to_dict() if hasattr(x, "to_dict") else x for x in value]
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
                 result[attr] = dict(
                     map(
-                        lambda item: (
-                            (item[0], item[1].to_dict())
-                            if hasattr(item[1], "to_dict")
-                            else item
-                        ),
+                        lambda item: ((item[0], item[1].to_dict()) if hasattr(item[1], "to_dict") else item),
                         value.items(),
                     )
                 )
             else:
                 result[attr] = value
         if issubclass(Health, dict):
-            for key, value in self.items():
-                result[key] = value
+            result.update(self.items())
 
         return result
 

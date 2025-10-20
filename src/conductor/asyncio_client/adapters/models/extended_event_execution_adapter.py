@@ -9,12 +9,8 @@ from conductor.asyncio_client.http.models import ExtendedEventExecution
 
 
 class ExtendedEventExecutionAdapter(ExtendedEventExecution):
-    event_handler: Optional["EventHandlerAdapter"] = Field(
-        default=None, alias="eventHandler"
-    )
-    full_message_payload: Optional[Dict[str, Any]] = Field(
-        default=None, alias="fullMessagePayload"
-    )
+    event_handler: Optional["EventHandlerAdapter"] = Field(default=None, alias="eventHandler")
+    full_message_payload: Optional[Dict[str, Any]] = Field(default=None, alias="fullMessagePayload")
     output: Optional[Dict[str, Any]] = None
     payload: Optional[Dict[str, Any]] = None
 
@@ -33,9 +29,7 @@ class ExtendedEventExecutionAdapter(ExtendedEventExecution):
                 "created": obj.get("created"),
                 "event": obj.get("event"),
                 "eventHandler": (
-                    EventHandlerAdapter.from_dict(obj["eventHandler"])
-                    if obj.get("eventHandler") is not None
-                    else None
+                    EventHandlerAdapter.from_dict(obj["eventHandler"]) if obj.get("eventHandler") is not None else None
                 ),
                 "fullMessagePayload": obj.get("fullMessagePayload"),
                 "id": obj.get("id"),

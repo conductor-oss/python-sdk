@@ -23,16 +23,8 @@ class AuthorizationRequestAdapter(AuthorizationRequest):
         _obj = cls.model_validate(
             {
                 "access": obj.get("access"),
-                "subject": (
-                    SubjectRefAdapter.from_dict(obj["subject"])
-                    if obj.get("subject") is not None
-                    else None
-                ),
-                "target": (
-                    TargetRefAdapter.from_dict(obj["target"])
-                    if obj.get("target") is not None
-                    else None
-                ),
+                "subject": (SubjectRefAdapter.from_dict(obj["subject"]) if obj.get("subject") is not None else None),
+                "target": (TargetRefAdapter.from_dict(obj["target"]) if obj.get("target") is not None else None),
             }
         )
         return _obj

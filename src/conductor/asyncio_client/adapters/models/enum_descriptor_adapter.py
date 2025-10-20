@@ -9,9 +9,7 @@ from conductor.asyncio_client.http.models import EnumDescriptor
 
 
 class EnumDescriptorAdapter(EnumDescriptor):
-    containing_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="containingType"
-    )
+    containing_type: Optional["DescriptorAdapter"] = Field(default=None, alias="containingType")
     file: Optional["FileDescriptorAdapter"] = None
     options: Optional["EnumOptionsAdapter"] = None
     proto: Optional["EnumDescriptorProtoAdapter"] = None
@@ -34,29 +32,14 @@ class EnumDescriptorAdapter(EnumDescriptor):
                     if obj.get("containingType") is not None
                     else None
                 ),
-                "file": (
-                    FileDescriptorAdapter.from_dict(obj["file"])
-                    if obj.get("file") is not None
-                    else None
-                ),
+                "file": (FileDescriptorAdapter.from_dict(obj["file"]) if obj.get("file") is not None else None),
                 "fullName": obj.get("fullName"),
                 "index": obj.get("index"),
                 "name": obj.get("name"),
-                "options": (
-                    EnumOptionsAdapter.from_dict(obj["options"])
-                    if obj.get("options") is not None
-                    else None
-                ),
-                "proto": (
-                    EnumDescriptorProtoAdapter.from_dict(obj["proto"])
-                    if obj.get("proto") is not None
-                    else None
-                ),
+                "options": (EnumOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None),
+                "proto": (EnumDescriptorProtoAdapter.from_dict(obj["proto"]) if obj.get("proto") is not None else None),
                 "values": (
-                    [
-                        EnumValueDescriptorAdapter.from_dict(_item)
-                        for _item in obj["values"]
-                    ]
+                    [EnumValueDescriptorAdapter.from_dict(_item) for _item in obj["values"]]
                     if obj.get("values") is not None
                     else None
                 ),

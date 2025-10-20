@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 NOT_FOUND_STATUS = 404
 
+
 class AIOrchestrator:
     def __init__(self, api_configuration: Configuration, prompt_test_workflow_name: str = "") -> Self:
         orkes_clients = OrkesClients(api_configuration)
@@ -47,18 +48,31 @@ class AIOrchestrator:
         for ai_model in ai_models:
             self.integration_client.associate_prompt_with_integration(ai_integration, ai_model, name)
 
-    def test_prompt_template(self, text: str, variables: dict,
-                             ai_integration: str,
-                             text_complete_model: str,
-                             stop_words: Optional[List[str]] = None, max_tokens: int = 100,
-                             temperature: int = 0,
-                             top_p: int = 1):
+    def test_prompt_template(
+        self,
+        text: str,
+        variables: dict,
+        ai_integration: str,
+        text_complete_model: str,
+        stop_words: Optional[List[str]] = None,
+        max_tokens: int = 100,
+        temperature: int = 0,
+        top_p: int = 1,
+    ):
         stop_words = stop_words or []
-        return self.prompt_client.test_prompt(text, variables, ai_integration, text_complete_model, temperature, top_p,
-                                              stop_words)
+        return self.prompt_client.test_prompt(
+            text, variables, ai_integration, text_complete_model, temperature, top_p, stop_words
+        )
 
-    def add_ai_integration(self, ai_integration_name: str, provider: LLMProvider, models: List[str], description: str,
-                           config: IntegrationConfig, overwrite : bool = False):
+    def add_ai_integration(
+        self,
+        ai_integration_name: str,
+        provider: LLMProvider,
+        models: List[str],
+        description: str,
+        config: IntegrationConfig,
+        overwrite: bool = False,
+    ):
         details = IntegrationUpdate()
         details.configuration = config.to_dict()
         details.type = provider.value
@@ -76,8 +90,15 @@ class AIOrchestrator:
             if existing_integration_api is None or overwrite:
                 self.integration_client.save_integration_api(ai_integration_name, model, api_details)
 
-    def add_vector_store(self, db_integration_name: str, provider: VectorDB, indices: List[str], config: IntegrationConfig,
-                         description: Optional[str] = None, overwrite: bool = False):
+    def add_vector_store(
+        self,
+        db_integration_name: str,
+        provider: VectorDB,
+        indices: List[str],
+        config: IntegrationConfig,
+        description: Optional[str] = None,
+        overwrite: bool = False,
+    ):
         vector_db = IntegrationUpdate()
         vector_db.configuration = config.to_dict()
         vector_db.type = provider.value

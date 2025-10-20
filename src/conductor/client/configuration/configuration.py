@@ -65,6 +65,7 @@ class Configuration:
     )
     ```
     """
+
     AUTH_TOKEN = None
 
     def __init__(
@@ -131,9 +132,7 @@ class Configuration:
             key = os.getenv("CONDUCTOR_AUTH_KEY")
             secret = os.getenv("CONDUCTOR_AUTH_SECRET")
             if key is not None and secret is not None:
-                self.authentication_settings = AuthenticationSettings(
-                    key_id=key, key_secret=secret
-                )
+                self.authentication_settings = AuthenticationSettings(key_id=key, key_secret=secret)
             else:
                 self.authentication_settings = None
 
@@ -170,9 +169,7 @@ class Configuration:
                 self.proxy_headers = json.loads(os.getenv("CONDUCTOR_PROXY_HEADERS"))
             except (json.JSONDecodeError, TypeError):
                 # If JSON parsing fails, treat as a single header value
-                self.proxy_headers = {
-                    "Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")
-                }
+                self.proxy_headers = {"Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")}
         # Safe chars for path_param
         self.safe_chars_for_path_param = ""
 
@@ -184,18 +181,14 @@ class Configuration:
         self.auth_token_ttl_msec = auth_token_ttl_min * 60 * 1000
 
         # Worker properties
-        self.polling_interval = polling_interval or self._get_env_float(
-            "CONDUCTOR_WORKER_POLL_INTERVAL", 100
-        )
+        self.polling_interval = polling_interval or self._get_env_float("CONDUCTOR_WORKER_POLL_INTERVAL", 100)
         self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", "default_domain")
         self.polling_interval_seconds = polling_interval_seconds or self._get_env_float(
             "CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0
         )
 
         # 401-specific configuration
-        self.auth_401_max_attempts = auth_401_max_attempts or self._get_env_int(
-            "CONDUCTOR_AUTH_401_MAX_ATTEMPTS", 6
-        )
+        self.auth_401_max_attempts = auth_401_max_attempts or self._get_env_int("CONDUCTOR_AUTH_401_MAX_ATTEMPTS", 6)
         self.auth_401_base_delay_ms = auth_401_base_delay_ms or self._get_env_float(
             "CONDUCTOR_AUTH_401_BASE_DELAY_MS", 1000.0
         )

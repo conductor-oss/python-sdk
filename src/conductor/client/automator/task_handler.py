@@ -34,9 +34,7 @@ if not _mp_fork_set:
         os.environ["no_proxy"] = "*"
 
 
-def register_decorated_fn(
-    name: str, poll_interval: int, domain: str, worker_id: str, func
-):
+def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func):
     logger.info("Registering decorated function %s", name)
     _decorated_functions[(name, domain)] = {
         "func": func,
@@ -81,9 +79,7 @@ class TaskHandler:
                     domain=domain,
                     poll_interval=poll_interval,
                 )
-                logger.info(
-                    "Created worker with name=%s and domain=%s", task_def_name, domain
-                )
+                logger.info("Created worker with name=%s and domain=%s", task_def_name, domain)
                 workers.append(worker)
 
         self.__create_task_runner_processes(workers, configuration, metrics_settings)
@@ -119,18 +115,12 @@ class TaskHandler:
             logger.info("KeyboardInterrupt: Stopping all processes")
             self.stop_processes()
 
-    def __create_metrics_provider_process(
-        self, metrics_settings: MetricsSettings
-    ) -> None:
+    def __create_metrics_provider_process(self, metrics_settings: MetricsSettings) -> None:
         if metrics_settings is None:
             self.metrics_provider_process = None
             return
-        self.metrics_provider_process = Process(
-            target=MetricsCollector.provide_metrics, args=(metrics_settings,)
-        )
-        logger.info(
-            "Created MetricsProvider process pid: %s", self.metrics_provider_process.pid
-        )
+        self.metrics_provider_process = Process(target=MetricsCollector.provide_metrics, args=(metrics_settings,))
+        logger.info("Created MetricsProvider process pid: %s", self.metrics_provider_process.pid)
 
     def __create_task_runner_processes(
         self,
@@ -164,9 +154,7 @@ class TaskHandler:
     def __start_task_runner_processes(self):
         for task_runner_process in self.task_runner_processes:
             task_runner_process.start()
-            logger.debug(
-                "Started TaskRunner process with pid: %s", task_runner_process.pid
-            )
+            logger.debug("Started TaskRunner process with pid: %s", task_runner_process.pid)
         logger.info("Started %s TaskRunner processes", len(self.task_runner_processes))
 
     def __join_metrics_provider_process(self):

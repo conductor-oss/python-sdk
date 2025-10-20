@@ -76,9 +76,7 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
         ]
         if field_name not in allowed_values:
             raise ValueError(
-                "Invalid value for `field_name` ({0}), must be one of {1}".format(  # noqa: E501
-                    field_name, allowed_values
-                )
+                "Invalid value for `field_name` ({0}), must be one of {1}".format(field_name, allowed_values)
             )
 
         self._field_name = field_name

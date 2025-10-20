@@ -23,9 +23,7 @@ class ExtendedSecretAdapter(ExtendedSecret):
             {
                 "name": obj.get("name"),
                 "tags": (
-                    [TagAdapter.from_dict(_item) for _item in obj["tags"]]
-                    if obj.get("tags") is not None
-                    else None
+                    [TagAdapter.from_dict(_item) for _item in obj["tags"]] if obj.get("tags") is not None else None
                 ),
             }
         )

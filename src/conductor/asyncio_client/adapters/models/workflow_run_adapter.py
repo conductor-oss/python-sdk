@@ -53,9 +53,7 @@ class WorkflowRunAdapter(WorkflowRun):
                 "requestId": obj.get("requestId"),
                 "status": obj.get("status"),
                 "tasks": (
-                    [TaskAdapter.from_dict(_item) for _item in obj["tasks"]]
-                    if obj.get("tasks") is not None
-                    else None
+                    [TaskAdapter.from_dict(_item) for _item in obj["tasks"]] if obj.get("tasks") is not None else None
                 ),
                 "updateTime": obj.get("updateTime"),
                 "variables": obj.get("variables"),

@@ -14,7 +14,7 @@ class JavascriptTask(TaskInterface):
             input_parameters={
                 "evaluatorType": "graaljs",
                 "expression": script,
-            }
+            },
         )
         if bindings is not None:
             self.input_parameters.update(bindings)

@@ -3,10 +3,8 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
-from conductor.asyncio_client.adapters.models.cache_config_adapter import \
-    CacheConfigAdapter
-from conductor.asyncio_client.adapters.models.workflow_task_adapter import \
-    WorkflowTaskAdapter
+from conductor.asyncio_client.adapters.models.cache_config_adapter import CacheConfigAdapter
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
 from conductor.shared.workflow.enums import TaskType
 
 
@@ -140,9 +138,7 @@ class TaskInterface:
     def to_workflow_task(self) -> WorkflowTaskAdapter:
         cache_config = None
         if self._cache_ttl_second > 0 and self._cache_key is not None:
-            cache_config = CacheConfigAdapter(
-                key=self._cache_key, ttl_in_second=self._cache_ttl_second
-            )
+            cache_config = CacheConfigAdapter(key=self._cache_key, ttl_in_second=self._cache_ttl_second)
         return WorkflowTaskAdapter(
             name=self._name,
             task_reference_name=self._task_reference_name,

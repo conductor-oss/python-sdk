@@ -12,17 +12,19 @@ from conductor.client.http.models.task_exec_log import TaskExecLog
 
 class TaskClient(ABC):
     @abstractmethod
-    def poll_task(self, task_type: str, worker_id: Optional[str] = None, domain: Optional[str] = None) -> Optional[Task]:
+    def poll_task(
+        self, task_type: str, worker_id: Optional[str] = None, domain: Optional[str] = None
+    ) -> Optional[Task]:
         pass
 
     @abstractmethod
     def batch_poll_tasks(
-            self,
-            task_type: str,
-            worker_id: Optional[str] = None,
-            count: Optional[int] = None,
-            timeout_in_millisecond: Optional[int] = None,
-            domain: Optional[str] = None
+        self,
+        task_type: str,
+        worker_id: Optional[str] = None,
+        count: Optional[int] = None,
+        timeout_in_millisecond: Optional[int] = None,
+        domain: Optional[str] = None,
     ) -> List[Task]:
         pass
 
@@ -36,23 +38,23 @@ class TaskClient(ABC):
 
     @abstractmethod
     def update_task_by_ref_name(
-            self,
-            workflow_id: str,
-            task_ref_name: str,
-            status: TaskResultStatus,
-            output: object,
-            worker_id: Optional[str] = None
+        self,
+        workflow_id: str,
+        task_ref_name: str,
+        status: TaskResultStatus,
+        output: object,
+        worker_id: Optional[str] = None,
     ) -> str:
         pass
 
     @abstractmethod
     def update_task_sync(
-            self,
-            workflow_id: str,
-            task_ref_name: str,
-            status: TaskResultStatus,
-            output: object,
-            worker_id: Optional[str] = None
+        self,
+        workflow_id: str,
+        task_ref_name: str,
+        status: TaskResultStatus,
+        output: object,
+        worker_id: Optional[str] = None,
     ) -> Workflow:
         pass
 

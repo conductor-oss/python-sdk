@@ -5,7 +5,9 @@ import uuid
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.skip_task_request import SkipTaskRequest
 from conductor.client.http.models.workflow_status import WorkflowStatus
-from conductor.client.http.models.scrollable_search_result_workflow_summary import ScrollableSearchResultWorkflowSummary
+from conductor.client.http.models.scrollable_search_result_workflow_summary import (
+    ScrollableSearchResultWorkflowSummary,
+)
 from conductor.client.http.models.signal_response import SignalResponse
 from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
 from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
@@ -19,19 +21,16 @@ from conductor.client.workflow_client import WorkflowClient
 
 
 class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
-    def __init__(
-            self,
-            configuration: Configuration
-    ):
+    def __init__(self, configuration: Configuration):
         super(OrkesWorkflowClient, self).__init__(configuration)
 
     def start_workflow_by_name(
-            self,
-            name: str,
-            input: Dict[str, object],
-            version: Optional[int] = None,
-            correlationId: Optional[str] = None,
-            priority: Optional[int] = None,
+        self,
+        name: str,
+        input: Dict[str, object],
+        version: Optional[int] = None,
+        correlationId: Optional[str] = None,
+        priority: Optional[int] = None,
     ) -> str:
         kwargs = {}
         if version:
@@ -47,13 +46,12 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         return self.workflowResourceApi.start_workflow(start_workflow_request)
 
     def execute_workflow(
-            self,
-            start_workflow_request: StartWorkflowRequest,
-            request_id: Optional[str] = None,
-            wait_until_task_ref: Optional[str] = None,
-            wait_for_seconds: int = 30
+        self,
+        start_workflow_request: StartWorkflowRequest,
+        request_id: Optional[str] = None,
+        wait_until_task_ref: Optional[str] = None,
+        wait_for_seconds: int = 30,
     ) -> WorkflowRun:
-
         return self.workflowResourceApi.execute_workflow(
             body=start_workflow_request,
             request_id=request_id,
@@ -64,13 +62,13 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         )
 
     def execute_workflow_with_return_strategy(
-            self,
-            start_workflow_request: StartWorkflowRequest,
-            request_id: Optional[str] = None,
-            wait_until_task_ref: Optional[str] = None,
-            wait_for_seconds: int = 30,
-            consistency: Optional[str] = None,
-            return_strategy: Optional[str] = None
+        self,
+        start_workflow_request: StartWorkflowRequest,
+        request_id: Optional[str] = None,
+        wait_until_task_ref: Optional[str] = None,
+        wait_for_seconds: int = 30,
+        consistency: Optional[str] = None,
+        return_strategy: Optional[str] = None,
     ) -> SignalResponse:
         """Execute a workflow synchronously with optional reactive features
         Args:
@@ -88,14 +86,16 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if return_strategy is None:
             return_strategy = "TARGET_WORKFLOW"
 
-        return self.workflowResourceApi.execute_workflow_with_return_strategy(body=start_workflow_request,
-                                                                              name=start_workflow_request.name,
-                                                                              version=start_workflow_request.version,
-                                                                              request_id=request_id,
-                                                                              wait_until_task_ref=wait_until_task_ref,
-                                                                              wait_for_seconds=wait_for_seconds,
-                                                                              consistency=consistency,
-                                                                              return_strategy=return_strategy)
+        return self.workflowResourceApi.execute_workflow_with_return_strategy(
+            body=start_workflow_request,
+            name=start_workflow_request.name,
+            version=start_workflow_request.version,
+            request_id=request_id,
+            wait_until_task_ref=wait_until_task_ref,
+            wait_for_seconds=wait_for_seconds,
+            consistency=consistency,
+            return_strategy=return_strategy,
+        )
 
     def pause_workflow(self, workflow_id: str):
         self.workflowResourceApi.pause_workflow(workflow_id)
@@ -119,8 +119,9 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
             kwargs["resume_subworkflow_tasks"] = resume_subworkflow_tasks
         self.workflowResourceApi.retry(workflow_id, **kwargs)
 
-    def terminate_workflow(self, workflow_id: str, reason: Optional[str] = None,
-                           trigger_failure_workflow: bool = False):
+    def terminate_workflow(
+        self, workflow_id: str, reason: Optional[str] = None, trigger_failure_workflow: bool = False
+    ):
         kwargs = {}
         if reason:
             kwargs["reason"] = reason
@@ -134,8 +135,12 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
             kwargs["include_tasks"] = include_tasks
         return self.workflowResourceApi.get_execution_status(workflow_id, **kwargs)
 
-    def get_workflow_status(self, workflow_id: str, include_output: Optional[bool] = None,
-                            include_variables: Optional[bool] = None) -> WorkflowStatus:
+    def get_workflow_status(
+        self,
+        workflow_id: str,
+        include_output: Optional[bool] = None,
+        include_variables: Optional[bool] = None,
+    ) -> WorkflowStatus:
         kwargs = {}
         if include_output is not None:
             kwargs["include_output"] = include_output
@@ -152,24 +157,30 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def test_workflow(self, test_request: WorkflowTestRequest) -> Workflow:
         return self.workflowResourceApi.test_workflow(test_request)
 
-    def search(self, start: int = 0, size: int = 100, free_text: str = "*", query: Optional[str] = None,
-               query_id: Optional[str] = None, skip_cache: bool = False) -> ScrollableSearchResultWorkflowSummary:
+    def search(
+        self,
+        start: int = 0,
+        size: int = 100,
+        free_text: str = "*",
+        query: Optional[str] = None,
+        query_id: Optional[str] = None,
+        skip_cache: bool = False,
+    ) -> ScrollableSearchResultWorkflowSummary:
         args = {
             "start": start,
             "size": size,
             "free_text": free_text,
             "query": query,
-            "skip_cache": skip_cache
-
+            "skip_cache": skip_cache,
         }
         return self.workflowResourceApi.search(**args)
 
     def get_by_correlation_ids_in_batch(
-            self,
-            batch_request: CorrelationIdsSearchRequest,
-            include_completed: bool = False,
-            include_tasks: bool = False) -> Dict[str, List[Workflow]]:
-
+        self,
+        batch_request: CorrelationIdsSearchRequest,
+        include_completed: bool = False,
+        include_tasks: bool = False,
+    ) -> Dict[str, List[Workflow]]:
         """Given the list of correlation ids and list of workflow names, find and return workflows
         Returns a map with key as correlationId and value as a list of Workflows
         When IncludeClosed is set to true, the return value also includes workflows that are completed otherwise only running workflows are returned"""
@@ -183,11 +194,11 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         return self.workflowResourceApi.get_workflows1(**kwargs)
 
     def get_by_correlation_ids(
-            self,
-            workflow_name: str,
-            correlation_ids: List[str],
-            include_completed: bool = False,
-            include_tasks: bool = False
+        self,
+        workflow_name: str,
+        correlation_ids: List[str],
+        include_completed: bool = False,
+        include_tasks: bool = False,
     ) -> Dict[str, List[Workflow]]:
         """Lists workflows for the given correlation id list"""
         kwargs = {}
@@ -196,11 +207,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if include_completed:
             kwargs["include_closed"] = include_completed
 
-        return self.workflowResourceApi.get_workflows(
-            body=correlation_ids,
-            name=workflow_name,
-            **kwargs
-        )
+        return self.workflowResourceApi.get_workflows(body=correlation_ids, name=workflow_name, **kwargs)
 
     def remove_workflow(self, workflow_id: str):
         self.workflowResourceApi.delete1(workflow_id)
@@ -209,13 +216,20 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         variables = variables or {}
         self.workflowResourceApi.update_workflow_state(variables, workflow_id)
 
-    def update_state(self, workflow_id: str, update_request: WorkflowStateUpdate,
-                     wait_until_task_ref_names: Optional[List[str]] = None, wait_for_seconds: Optional[int] = None) -> WorkflowRun:
+    def update_state(
+        self,
+        workflow_id: str,
+        update_request: WorkflowStateUpdate,
+        wait_until_task_ref_names: Optional[List[str]] = None,
+        wait_for_seconds: Optional[int] = None,
+    ) -> WorkflowRun:
         kwargs = {}
-        request_id=str(uuid.uuid4())
+        request_id = str(uuid.uuid4())
         if wait_until_task_ref_names is not None:
             kwargs["wait_until_task_ref"] = ",".join(wait_until_task_ref_names)
         if wait_for_seconds is not None:
             kwargs["wait_for_seconds"] = wait_for_seconds
 
-        return self.workflowResourceApi.update_workflow_and_task_state(body=update_request, workflow_id=workflow_id, request_id=request_id, **kwargs)
+        return self.workflowResourceApi.update_workflow_and_task_state(
+            body=update_request, workflow_id=workflow_id, request_id=request_id, **kwargs
+        )

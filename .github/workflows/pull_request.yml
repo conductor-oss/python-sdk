@@ -41,6 +41,7 @@ jobs:
 
   unit-test:
     runs-on: ubuntu-latest
+    needs: lint-code
     env:
       COVERAGE_FILE: coverage.xml
       COVERAGE_DIR: .coverage-reports

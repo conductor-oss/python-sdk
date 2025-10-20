@@ -255,24 +255,24 @@ def test_backward_compatibility_without_description():
         active=True,
         evaluator_type="javascript",
     )
-    
+
     assert handler.description is None
-    
+
     result = handler.to_dict()
     assert isinstance(result, dict)
-    
+
     assert "description" in result
     assert result["description"] is None
-    
+
     assert result["name"] == "bc_test"
     assert result["event"] == "test_event"
     assert result["condition"] == "test_condition"
     assert result["actions"] == []
     assert result["active"]
     assert result["evaluator_type"] == "javascript"
-    
+
     handler.description = "added_description"
     assert handler.description == "added_description"
-    
+
     updated_result = handler.to_dict()
     assert updated_result["description"] == "added_description"

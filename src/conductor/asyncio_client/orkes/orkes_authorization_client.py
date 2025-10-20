@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import List
 
 from conductor.asyncio_client.adapters.models.authorization_request_adapter import (
     AuthorizationRequestAdapter as AuthorizationRequest,
@@ -22,14 +22,7 @@ from conductor.asyncio_client.adapters.models.upsert_user_request_adapter import
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
-from conductor.asyncio_client.adapters.models.create_or_update_application_request_adapter import (
-    CreateOrUpdateApplicationRequestAdapter,
-)
 from conductor.client.orkes.models.access_key import AccessKey
-from conductor.client.orkes.models.access_type import AccessType
-from conductor.asyncio_client.adapters.models.subject_ref_adapter import (
-    SubjectRefAdapter as SubjectRef,
-)
 from conductor.asyncio_client.adapters.models.target_ref_adapter import (
     TargetRefAdapter as TargetRef,
 )
@@ -43,21 +36,13 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         super().__init__(configuration, api_client)
 
     # User Operations
-    async def create_user(
-        self, user_id: str, upsert_user_request: UpsertUserRequest
-    ) -> ConductorUser:
+    async def create_user(self, user_id: str, upsert_user_request: UpsertUserRequest) -> ConductorUser:
         """Create a new user"""
-        return await self.user_api.upsert_user(
-            id=user_id, upsert_user_request=upsert_user_request
-        )
+        return await self.user_api.upsert_user(id=user_id, upsert_user_request=upsert_user_request)
 
-    async def update_user(
-        self, user_id: str, upsert_user_request: UpsertUserRequest
-    ) -> ConductorUser:
+    async def update_user(self, user_id: str, upsert_user_request: UpsertUserRequest) -> ConductorUser:
         """Update an existing user"""
-        return await self.user_api.upsert_user(
-            id=user_id, upsert_user_request=upsert_user_request
-        )
+        return await self.user_api.upsert_user(id=user_id, upsert_user_request=upsert_user_request)
 
     async def get_user(self, user_id: str) -> ConductorUser:
         """Get user by ID"""
@@ -75,13 +60,9 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return await self.user_api.list_users(apps=include_apps)
 
     # Application Operations
-    async def create_application(
-        self, application: ExtendedConductorApplication
-    ) -> ExtendedConductorApplication:
+    async def create_application(self, application: ExtendedConductorApplication) -> ExtendedConductorApplication:
         """Create a new application"""
-        app = await self.application_api.create_application(
-            create_or_update_application_request=application
-        )
+        app = await self.application_api.create_application(create_or_update_application_request=application)
         return ExtendedConductorApplication.from_dict(app)
 
     async def update_application(
@@ -93,9 +74,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         )
         return ExtendedConductorApplication.from_dict(app)
 
-    async def get_application(
-        self, application_id: str
-    ) -> ExtendedConductorApplication:
+    async def get_application(self, application_id: str) -> ExtendedConductorApplication:
         """Get application by ID"""
         app = await self.application_api.get_application(id=application_id)
         return ExtendedConductorApplication.from_dict(app)
@@ -109,21 +88,13 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return await self.application_api.list_applications()
 
     # Group Operations
-    async def create_group(
-        self, group_id: str, upsert_group_request: UpsertGroupRequest
-    ) -> Group:
+    async def create_group(self, group_id: str, upsert_group_request: UpsertGroupRequest) -> Group:
         """Create a new group"""
-        return await self.group_api.upsert_group(
-            id=group_id, upsert_group_request=upsert_group_request
-        )
+        return await self.group_api.upsert_group(id=group_id, upsert_group_request=upsert_group_request)
 
-    async def update_group(
-        self, group_id: str, upsert_group_request: UpsertGroupRequest
-    ) -> Group:
+    async def update_group(self, group_id: str, upsert_group_request: UpsertGroupRequest) -> Group:
         """Update an existing group"""
-        group = await self.group_api.upsert_group(
-            id=group_id, upsert_group_request=upsert_group_request
-        )
+        group = await self.group_api.upsert_group(id=group_id, upsert_group_request=upsert_group_request)
         return Group.from_dict(group)
 
     async def get_group(self, group_id: str) -> Group:
@@ -142,72 +113,48 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     # Group User Management Operations
     async def add_user_to_group(self, group_id: str, user_id: str) -> object:
         """Add a user to a group"""
-        return await self.group_api.add_user_to_group(
-            group_id=group_id, user_id=user_id
-        )
+        return await self.group_api.add_user_to_group(group_id=group_id, user_id=user_id)
 
     async def remove_user_from_group(self, group_id: str, user_id: str) -> object:
         """Remove a user from a group"""
-        return await self.group_api.remove_user_from_group(
-            group_id=group_id, user_id=user_id
-        )
+        return await self.group_api.remove_user_from_group(group_id=group_id, user_id=user_id)
 
     async def add_users_to_group(self, group_id: str, user_ids: List[str]) -> object:
         """Add multiple users to a group"""
-        return await self.group_api.add_users_to_group(
-            group_id=group_id, request_body=user_ids
-        )
+        return await self.group_api.add_users_to_group(group_id=group_id, request_body=user_ids)
 
-    async def remove_users_from_group(
-        self, group_id: str, user_ids: List[str]
-    ) -> object:
+    async def remove_users_from_group(self, group_id: str, user_ids: List[str]) -> object:
         """Remove multiple users from a group"""
-        return await self.group_api.remove_users_from_group(
-            group_id=group_id, request_body=user_ids
-        )
+        return await self.group_api.remove_users_from_group(group_id=group_id, request_body=user_ids)
 
     async def get_users_in_group(self, group_id: str) -> object:
         """Get all users in a group"""
         return await self.group_api.get_users_in_group(id=group_id)
 
     # Permission Operations (Only available operations)
-    async def grant_permissions(
-        self, authorization_request: AuthorizationRequest
-    ) -> object:
+    async def grant_permissions(self, authorization_request: AuthorizationRequest) -> object:
         """Grant permissions to users or groups"""
-        return await self.authorization_api.grant_permissions(
-            authorization_request=authorization_request
-        )
+        return await self.authorization_api.grant_permissions(authorization_request=authorization_request)
 
-    async def remove_permissions(
-        self, authorization_request: AuthorizationRequest
-    ) -> object:
+    async def remove_permissions(self, authorization_request: AuthorizationRequest) -> object:
         """Remove permissions from users or groups"""
-        return await self.authorization_api.remove_permissions(
-            authorization_request=authorization_request
-        )
+        return await self.authorization_api.remove_permissions(authorization_request=authorization_request)
 
     async def get_permissions(self, entity_type: str, entity_id: str) -> object:
         """Get permissions for a specific entity (user, group, or application)"""
-        return await self.authorization_api.get_permissions(
-            type=entity_type, id=entity_id
-        )
+        return await self.authorization_api.get_permissions(type=entity_type, id=entity_id)
 
     async def get_group_permissions(self, group_id: str) -> object:
         """Get permissions granted to a group"""
         return await self.group_api.get_granted_permissions1(group_id=group_id)
 
     # Convenience Methods
-    async def upsert_user(
-        self, user_id: str, upsert_user_request: UpsertUserRequest
-    ) -> ConductorUser:
+    async def upsert_user(self, user_id: str, upsert_user_request: UpsertUserRequest) -> ConductorUser:
         """Alias for create_user/update_user"""
         user = await self.create_user(user_id, upsert_user_request)
         return ConductorUser.from_dict(user)
 
-    async def upsert_group(
-        self, group_id: str, upsert_group_request: UpsertGroupRequest
-    ) -> Group:
+    async def upsert_group(self, group_id: str, upsert_group_request: UpsertGroupRequest) -> Group:
         """Alias for create_group/update_group"""
         group = await self.create_group(group_id, upsert_group_request)
         return Group.from_dict(group)
@@ -227,18 +174,10 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
     async def get_access_keys(self, application_id: str) -> List[AccessKey]:
         access_keys_obj = await self.application_api.get_access_keys(application_id)
-        access_keys = []
-        for key_obj in access_keys_obj:
-            access_keys.append(key_obj)
+        return list(access_keys_obj)
 
-        return access_keys
-
-    async def toggle_access_key_status(
-        self, application_id: str, key_id: str
-    ) -> AccessKey:
-        key_obj = await self.application_api.toggle_access_key_status(
-            application_id, key_id
-        )
+    async def toggle_access_key_status(self, application_id: str, key_id: str) -> AccessKey:
+        key_obj = await self.application_api.toggle_access_key_status(application_id, key_id)
         return key_obj
 
     async def delete_access_key(self, application_id: str, key_id: str):
@@ -248,13 +187,9 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         await self.application_api.add_role_to_application_user(application_id, role)
 
     async def remove_role_from_application_user(self, application_id: str, role: str):
-        await self.application_api.remove_role_from_application_user(
-            application_id, role
-        )
+        await self.application_api.remove_role_from_application_user(application_id, role)
 
-    async def get_granted_permissions_for_group(
-        self, group_id: str
-    ) -> List[GrantedAccess]:
+    async def get_granted_permissions_for_group(self, group_id: str) -> List[GrantedAccess]:
         granted_access_obj = await self.group_api.get_granted_permissions1(group_id)
         granted_permissions = []
         for ga in granted_access_obj.granted_access:
@@ -263,9 +198,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
             granted_permissions.append(GrantedAccess(target=target, access=access))
         return granted_permissions
 
-    async def get_granted_permissions_for_user(
-        self, user_id: str
-    ) -> List[GrantedAccess]:
+    async def get_granted_permissions_for_user(self, user_id: str) -> List[GrantedAccess]:
         granted_access_obj = await self.user_api.get_granted_permissions(user_id)
         granted_permissions = []
         for ga in granted_access_obj["grantedAccess"]:

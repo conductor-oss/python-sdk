@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 
 from typing_extensions import Self
 
@@ -25,15 +25,12 @@ class StateChangeConfig:
     def __init__(
         self,
         event_type: Union[str, StateChangeEventType, List[StateChangeEventType]] = None,
-        events: List[StateChangeEvent] = None,
+        events: Optional[List[StateChangeEvent]] = None,
     ) -> None:
         if event_type is None:
             return
         if isinstance(event_type, list):
-            str_values = []
-            for et in event_type:
-                str_values.append(et.name)
-            self._type = ",".join(str_values)
+            self._type = ",".join(et.name for et in event_type)
         else:
             self._type = event_type.name
         self._events = events
@@ -57,22 +54,16 @@ class StateChangeConfig:
     def to_dict(self) -> Dict:
         """Returns the model properties as a dict"""
         result = {}
-        for attr, _ in self.swagger_types.items():
+        for attr in self.swagger_types.keys():
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
+                result[attr] = [x.to_dict() if hasattr(x, "to_dict") else x for x in value]
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
                 result[attr] = dict(
                     map(
-                        lambda item: (
-                            (item[0], item[1].to_dict())
-                            if hasattr(item[1], "to_dict")
-                            else item
-                        ),
+                        lambda item: ((item[0], item[1].to_dict()) if hasattr(item[1], "to_dict") else item),
                         value.items(),
                     )
                 )
@@ -99,8 +90,8 @@ class StateChangeConfig:
 
 
 class StateChangeEventAdapter(StateChangeEvent):
-    def __init__(self, payload=None, type=None):  # noqa: E501
-        """StateChangeEvent - a model defined in Swagger"""  # noqa: E501
+    def __init__(self, payload=None, type=None):
+        """StateChangeEvent - a model defined in Swagger"""
         self._payload = None
         self._type = None
         self.discriminator = None
@@ -116,9 +107,7 @@ class StateChangeEventAdapter(StateChangeEvent):
         :type: dict(str, object)
         """
         if payload is None:
-            raise TypeError(
-                "Invalid value for `payload`, must not be `None`"
-            )  # noqa: E501
+            raise TypeError("Invalid value for `payload`, must not be `None`")
 
         self._payload = payload
 
@@ -132,8 +121,6 @@ class StateChangeEventAdapter(StateChangeEvent):
         """
         print(f"type: {type}")
         if type is None:
-            raise TypeError(
-                "Invalid value for `type`, must not be `None`"
-            )  # noqa: E501
+            raise TypeError("Invalid value for `type`, must not be `None`")
 
         self._type = type

@@ -48,12 +48,8 @@ class TaskSummaryAdapter(TaskSummary):
                 "correlationId": obj.get("correlationId"),
                 "endTime": obj.get("endTime"),
                 "executionTime": obj.get("executionTime"),
-                "externalInputPayloadStoragePath": obj.get(
-                    "externalInputPayloadStoragePath"
-                ),
-                "externalOutputPayloadStoragePath": obj.get(
-                    "externalOutputPayloadStoragePath"
-                ),
+                "externalInputPayloadStoragePath": obj.get("externalInputPayloadStoragePath"),
+                "externalOutputPayloadStoragePath": obj.get("externalOutputPayloadStoragePath"),
                 "input": obj.get("input"),
                 "output": obj.get("output"),
                 "queueWaitTime": obj.get("queueWaitTime"),

@@ -10,18 +10,10 @@ from conductor.asyncio_client.http.models import NamePartOrBuilder
 
 class NamePartOrBuilderAdapter(NamePartOrBuilder):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["MessageAdapter"] = Field(
-        default=None, alias="defaultInstanceForType"
-    )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="descriptorForType"
-    )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
-    name_part_bytes: Optional["ByteStringAdapter"] = Field(
-        default=None, alias="namePartBytes"
-    )
+    default_instance_for_type: Optional["MessageAdapter"] = Field(default=None, alias="defaultInstanceForType")
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
+    name_part_bytes: Optional["ByteStringAdapter"] = Field(default=None, alias="namePartBytes")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -50,9 +42,7 @@ class NamePartOrBuilderAdapter(NamePartOrBuilder):
                 "isExtension": obj.get("isExtension"),
                 "namePart": obj.get("namePart"),
                 "namePartBytes": (
-                    ByteStringAdapter.from_dict(obj["namePartBytes"])
-                    if obj.get("namePartBytes") is not None
-                    else None
+                    ByteStringAdapter.from_dict(obj["namePartBytes"]) if obj.get("namePartBytes") is not None else None
                 ),
                 "unknownFields": (
                     UnknownFieldSetAdapter.from_dict(obj["unknownFields"])

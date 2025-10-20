@@ -10,21 +10,11 @@ from conductor.asyncio_client.http.models import LocationOrBuilder
 
 class LocationOrBuilderAdapter(LocationOrBuilder):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["MessageAdapter"] = Field(
-        default=None, alias="defaultInstanceForType"
-    )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="descriptorForType"
-    )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
-    leading_comments_bytes: Optional["ByteStringAdapter"] = Field(
-        default=None, alias="leadingCommentsBytes"
-    )
-    trailing_comments_bytes: Optional["ByteStringAdapter"] = Field(
-        default=None, alias="trailingCommentsBytes"
-    )
+    default_instance_for_type: Optional["MessageAdapter"] = Field(default=None, alias="defaultInstanceForType")
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
+    leading_comments_bytes: Optional["ByteStringAdapter"] = Field(default=None, alias="leadingCommentsBytes")
+    trailing_comments_bytes: Optional["ByteStringAdapter"] = Field(default=None, alias="trailingCommentsBytes")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

@@ -9,9 +9,7 @@ from conductor.asyncio_client.http.models import OneofDescriptor
 
 
 class OneofDescriptorAdapter(OneofDescriptor):
-    containing_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="containingType"
-    )
+    containing_type: Optional["DescriptorAdapter"] = Field(default=None, alias="containingType")
     file: Optional["FileDescriptorAdapter"] = None
     options: Optional["OneofOptionsAdapter"] = None
     proto: Optional["OneofDescriptorProtoAdapter"] = None
@@ -33,23 +31,13 @@ class OneofDescriptorAdapter(OneofDescriptor):
                     else None
                 ),
                 "fieldCount": obj.get("fieldCount"),
-                "file": (
-                    FileDescriptorAdapter.from_dict(obj["file"])
-                    if obj.get("file") is not None
-                    else None
-                ),
+                "file": (FileDescriptorAdapter.from_dict(obj["file"]) if obj.get("file") is not None else None),
                 "fullName": obj.get("fullName"),
                 "index": obj.get("index"),
                 "name": obj.get("name"),
-                "options": (
-                    OneofOptionsAdapter.from_dict(obj["options"])
-                    if obj.get("options") is not None
-                    else None
-                ),
+                "options": (OneofOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None),
                 "proto": (
-                    OneofDescriptorProtoAdapter.from_dict(obj["proto"])
-                    if obj.get("proto") is not None
-                    else None
+                    OneofDescriptorProtoAdapter.from_dict(obj["proto"]) if obj.get("proto") is not None else None
                 ),
                 "synthetic": obj.get("synthetic"),
             }

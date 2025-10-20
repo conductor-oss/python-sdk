@@ -10,19 +10,13 @@ from conductor.asyncio_client.http.models import ExtensionRange
 
 class ExtensionRangeAdapter(ExtensionRange):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["ExtensionRangeAdapter"] = Field(
-        default=None, alias="defaultInstanceForType"
-    )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="descriptorForType"
-    )
+    default_instance_for_type: Optional["ExtensionRangeAdapter"] = Field(default=None, alias="defaultInstanceForType")
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
     options: Optional["ExtensionRangeOptionsAdapter"] = None
     options_or_builder: Optional["ExtensionRangeOptionsOrBuilderAdapter"] = Field(
         default=None, alias="optionsOrBuilder"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -51,14 +45,10 @@ class ExtensionRangeAdapter(ExtensionRange):
                 "initialized": obj.get("initialized"),
                 "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
                 "options": (
-                    ExtensionRangeOptionsAdapter.from_dict(obj["options"])
-                    if obj.get("options") is not None
-                    else None
+                    ExtensionRangeOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None
                 ),
                 "optionsOrBuilder": (
-                    ExtensionRangeOptionsOrBuilderAdapter.from_dict(
-                        obj["optionsOrBuilder"]
-                    )
+                    ExtensionRangeOptionsOrBuilderAdapter.from_dict(obj["optionsOrBuilder"])
                     if obj.get("optionsOrBuilder") is not None
                     else None
                 ),

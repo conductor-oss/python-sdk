@@ -26,9 +26,7 @@ class ExtendedConductorApplicationAdapter(ExtendedConductorApplication):
                 "id": obj.get("id"),
                 "name": obj.get("name"),
                 "tags": (
-                    [TagAdapter.from_dict(_item) for _item in obj["tags"]]
-                    if obj.get("tags") is not None
-                    else None
+                    [TagAdapter.from_dict(_item) for _item in obj["tags"]] if obj.get("tags") is not None else None
                 ),
                 "updateTime": obj.get("updateTime"),
                 "updatedBy": obj.get("updatedBy"),

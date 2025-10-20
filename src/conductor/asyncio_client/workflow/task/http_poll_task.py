@@ -10,7 +10,5 @@ class HttpPollTask(TaskInterface):
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.HTTP_POLL,
-            input_parameters={
-                "http_request": http_input.model_dump(by_alias=True, exclude_none=True)
-            },
+            input_parameters={"http_request": http_input.model_dump(by_alias=True, exclude_none=True)},
         )

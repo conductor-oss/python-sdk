@@ -9,24 +9,16 @@ from conductor.asyncio_client.http.models import Descriptor
 
 
 class DescriptorAdapter(Descriptor):
-    containing_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="containingType"
-    )
-    enum_types: Optional[List["EnumDescriptorAdapter"]] = Field(
-        default=None, alias="enumTypes"
-    )
+    containing_type: Optional["DescriptorAdapter"] = Field(default=None, alias="containingType")
+    enum_types: Optional[List["EnumDescriptorAdapter"]] = Field(default=None, alias="enumTypes")
     extensions: Optional[List["FieldDescriptorAdapter"]] = None
     fields: Optional[List["FieldDescriptorAdapter"]] = None
     file: Optional["FileDescriptorAdapter"] = None
-    nested_types: Optional[List["DescriptorAdapter"]] = Field(
-        default=None, alias="nestedTypes"
-    )
+    nested_types: Optional[List["DescriptorAdapter"]] = Field(default=None, alias="nestedTypes")
     oneofs: Optional[List["OneofDescriptorAdapter"]] = None
     options: Optional["MessageOptionsAdapter"] = None
     proto: Optional["DescriptorProtoAdapter"] = None
-    real_oneofs: Optional[List["OneofDescriptorAdapter"]] = Field(
-        default=None, alias="realOneofs"
-    )
+    real_oneofs: Optional[List["OneofDescriptorAdapter"]] = Field(default=None, alias="realOneofs")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -40,24 +32,16 @@ class DescriptorAdapter(Descriptor):
         _obj = cls.model_validate(
             {
                 "containingType": (
-                    Descriptor.from_dict(obj["containingType"])
-                    if obj.get("containingType") is not None
-                    else None
+                    Descriptor.from_dict(obj["containingType"]) if obj.get("containingType") is not None else None
                 ),
                 "enumTypes": (
-                    [
-                        EnumDescriptorAdapter.from_dict(_item)
-                        for _item in obj["enumTypes"]
-                    ]
+                    [EnumDescriptorAdapter.from_dict(_item) for _item in obj["enumTypes"]]
                     if obj.get("enumTypes") is not None
                     else None
                 ),
                 "extendable": obj.get("extendable"),
                 "extensions": (
-                    [
-                        FieldDescriptorAdapter.from_dict(_item)
-                        for _item in obj["extensions"]
-                    ]
+                    [FieldDescriptorAdapter.from_dict(_item) for _item in obj["extensions"]]
                     if obj.get("extensions") is not None
                     else None
                 ),
@@ -66,11 +50,7 @@ class DescriptorAdapter(Descriptor):
                     if obj.get("fields") is not None
                     else None
                 ),
-                "file": (
-                    FileDescriptorAdapter.from_dict(obj["file"])
-                    if obj.get("file") is not None
-                    else None
-                ),
+                "file": (FileDescriptorAdapter.from_dict(obj["file"]) if obj.get("file") is not None else None),
                 "fullName": obj.get("fullName"),
                 "index": obj.get("index"),
                 "name": obj.get("name"),
@@ -85,20 +65,11 @@ class DescriptorAdapter(Descriptor):
                     else None
                 ),
                 "options": (
-                    MessageOptionsAdapter.from_dict(obj["options"])
-                    if obj.get("options") is not None
-                    else None
+                    MessageOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None
                 ),
-                "proto": (
-                    DescriptorProtoAdapter.from_dict(obj["proto"])
-                    if obj.get("proto") is not None
-                    else None
-                ),
+                "proto": (DescriptorProtoAdapter.from_dict(obj["proto"]) if obj.get("proto") is not None else None),
                 "realOneofs": (
-                    [
-                        OneofDescriptorAdapter.from_dict(_item)
-                        for _item in obj["realOneofs"]
-                    ]
+                    [OneofDescriptorAdapter.from_dict(_item) for _item in obj["realOneofs"]]
                     if obj.get("realOneofs") is not None
                     else None
                 ),

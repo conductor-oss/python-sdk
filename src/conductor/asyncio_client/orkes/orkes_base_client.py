@@ -1,30 +1,24 @@
 import logging
 
-from conductor.asyncio_client.adapters.api.application_resource_api import \
-    ApplicationResourceApiAdapter
-from conductor.asyncio_client.adapters.api.authorization_resource_api import \
-    AuthorizationResourceApiAdapter
-from conductor.asyncio_client.adapters.api.group_resource_api import \
-    GroupResourceApiAdapter
-from conductor.asyncio_client.adapters.api.integration_resource_api import \
-    IntegrationResourceApiAdapter
-from conductor.asyncio_client.adapters.api.metadata_resource_api import \
-    MetadataResourceApiAdapter
-from conductor.asyncio_client.adapters.api.prompt_resource_api import \
-    PromptResourceApiAdapter
-from conductor.asyncio_client.adapters.api.scheduler_resource_api import \
-    SchedulerResourceApiAdapter
-from conductor.asyncio_client.adapters.api.schema_resource_api import \
-    SchemaResourceApiAdapter
-from conductor.asyncio_client.adapters.api.secret_resource_api import \
-    SecretResourceApiAdapter
+from conductor.asyncio_client.adapters.api.application_resource_api import (
+    ApplicationResourceApiAdapter,
+)
+from conductor.asyncio_client.adapters.api.authorization_resource_api import (
+    AuthorizationResourceApiAdapter,
+)
+from conductor.asyncio_client.adapters.api.group_resource_api import GroupResourceApiAdapter
+from conductor.asyncio_client.adapters.api.integration_resource_api import (
+    IntegrationResourceApiAdapter,
+)
+from conductor.asyncio_client.adapters.api.metadata_resource_api import MetadataResourceApiAdapter
+from conductor.asyncio_client.adapters.api.prompt_resource_api import PromptResourceApiAdapter
+from conductor.asyncio_client.adapters.api.scheduler_resource_api import SchedulerResourceApiAdapter
+from conductor.asyncio_client.adapters.api.schema_resource_api import SchemaResourceApiAdapter
+from conductor.asyncio_client.adapters.api.secret_resource_api import SecretResourceApiAdapter
 from conductor.asyncio_client.adapters.api.tags_api import TagsApiAdapter
-from conductor.asyncio_client.adapters.api.task_resource_api import \
-    TaskResourceApiAdapter
-from conductor.asyncio_client.adapters.api.user_resource_api import \
-    UserResourceApiAdapter
-from conductor.asyncio_client.adapters.api.workflow_resource_api import \
-    WorkflowResourceApiAdapter
+from conductor.asyncio_client.adapters.api.task_resource_api import TaskResourceApiAdapter
+from conductor.asyncio_client.adapters.api.user_resource_api import UserResourceApiAdapter
+from conductor.asyncio_client.adapters.api.workflow_resource_api import WorkflowResourceApiAdapter
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.adapters import ApiClient
 

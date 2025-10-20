@@ -114,7 +114,7 @@ def main():
     # Define and associate prompt with the AI integration
     prompt_name = "chat_function_instructions"
     prompt_text = """
-    You are a helpful assistant that can answer questions using tools provided.  
+    You are a helpful assistant that can answer questions using tools provided.
     You have the following tools specified as functions in python:
     1. get_customer_list() ->  Customer (useful to get the list of customers / all the customers / customers)
     2. generate_promo_code() -> str (useful to generate a promocode for the customer)
@@ -122,34 +122,34 @@ def main():
     4. get_top_n(n: int, customers: List[Customer]) -> List[Customer]
         (
             useful to get the top N customers based on their spend.
-            customers as input can come from the output of get_customer_list function using ${get_customer_list.output.result} 
+            customers as input can come from the output of get_customer_list function using ${get_customer_list.output.result}
             reference.
-            This function needs a list of customers as input to get the top N. 
+            This function needs a list of customers as input to get the top N.
         ).
-    5. create_workflow(steps: List[str], inputs: dict[str, dict]) -> dict 
-       (Useful to chain the function calls.  
-       inputs are: 
+    5. create_workflow(steps: List[str], inputs: dict[str, dict]) -> dict
+       (Useful to chain the function calls.
+       inputs are:
         steps: which is the list of python functions to be executed
         inputs: a dictionary with key as the function name and value as the dictionary object that is given as the input
-                to the function when calling 
+                to the function when calling
        ).
     6. review(input: str) (useful when you wan a human to review something)
-    note, if you have to execute multiple steps, then you MUST use create_workflow function.  
-    Do not call a function from another function to chain them.  
-    
+    note, if you have to execute multiple steps, then you MUST use create_workflow function.
+    Do not call a function from another function to chain them.
+
     When asked a question, you can use one of these functions to answer the question if required.
-    
-    If you have to call these functions, respond with a python code that will call this function. 
+
+    If you have to call these functions, respond with a python code that will call this function.
     Make sure, when you have to call a function return in the following valid JSON format that can be parsed directly as a json object:
     {
       "type": "function",
       "function": "ACTUAL_PYTHON_FUNCTION_NAME_TO_CALL_WITHOUT_PARAMETERS"
       "function_parameters": "PARAMETERS FOR THE FUNCTION as a JSON map with key as parameter name and value as parameter value"
     }
-    
+
     Rule: Think about the steps to do this, but your output MUST be the above JSON formatted response.
     ONLY send the JSON response - nothing else!
-    
+
     """
     open_ai_config = OpenAIConfig()
 
@@ -226,10 +226,10 @@ def main():
         timeout_policy=TimeoutPolicy.TIME_OUT_WORKFLOW
     )
     message = """
-    I am a helpful bot that can help with your customer management. 
-    
+    I am a helpful bot that can help with your customer management.
+
     Here are some examples:
-    
+
     1. Get me the list of top N customers
     2. Get the list of all the customers
     3. Get the list of top N customers and send them a promo code
@@ -260,18 +260,18 @@ def main():
     output = json.dumps(workflow_run.output["result"], indent=3)
     print(
         f"""
-    
+
     {output}
-    
+
     """
     )
 
     print(
         f"""
-    See the complete execution graph here: 
-    
+    See the complete execution graph here:
+
     http://localhost:5001/execution/{workflow_id}
-    
+
     """
     )
 

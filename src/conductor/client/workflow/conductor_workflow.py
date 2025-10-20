@@ -22,11 +22,13 @@ from conductor.client.workflow.task.timeout_policy import TimeoutPolicy
 class ConductorWorkflow:
     SCHEMA_VERSION = 2
 
-    def __init__(self,
-                 executor: WorkflowExecutor,
-                 name: str,
-                 version: Optional[int] = None,
-                 description: Optional[str] = None) -> Self:
+    def __init__(
+        self,
+        executor: WorkflowExecutor,
+        name: str,
+        version: Optional[int] = None,
+        description: Optional[str] = None,
+    ) -> Self:
         self._executor = executor
         self.name = name
         self.version = version
@@ -206,8 +208,15 @@ class ConductorWorkflow:
         start_workflow_request.version = self.version
         return self._executor.start_workflow(start_workflow_request)
 
-    def start_workflow_with_input(self, workflow_input: Optional[dict] = None, correlation_id: Optional[str] = None, task_to_domain: Optional[Dict[str, str]] = None,
-                 priority: Optional[int] = None, idempotency_key: Optional[str] = None, idempotency_strategy: IdempotencyStrategy = IdempotencyStrategy.FAIL) -> str:
+    def start_workflow_with_input(
+        self,
+        workflow_input: Optional[dict] = None,
+        correlation_id: Optional[str] = None,
+        task_to_domain: Optional[Dict[str, str]] = None,
+        priority: Optional[int] = None,
+        idempotency_key: Optional[str] = None,
+        idempotency_strategy: IdempotencyStrategy = IdempotencyStrategy.FAIL,
+    ) -> str:
         """
         Starts the workflow with given inputs and parameters and returns the id of the started workflow
         """
@@ -221,13 +230,20 @@ class ConductorWorkflow:
         start_workflow_request.idempotency_key = idempotency_key
         start_workflow_request.idempotency_strategy = idempotency_strategy
         start_workflow_request.priority = priority
-        start_workflow_request.task_to_domain =task_to_domain
+        start_workflow_request.task_to_domain = task_to_domain
 
         return self._executor.start_workflow(start_workflow_request)
 
-    def execute(self, workflow_input: Any = None, wait_until_task_ref: str = "", wait_for_seconds: int = 10,
-                request_id: Optional[str] = None,
-                idempotency_key: Optional[str] = None, idempotency_strategy : IdempotencyStrategy = IdempotencyStrategy.FAIL, task_to_domain: Optional[Dict[str, str]] = None) -> WorkflowRun:
+    def execute(
+        self,
+        workflow_input: Any = None,
+        wait_until_task_ref: str = "",
+        wait_for_seconds: int = 10,
+        request_id: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+        idempotency_strategy: IdempotencyStrategy = IdempotencyStrategy.FAIL,
+        task_to_domain: Optional[Dict[str, str]] = None,
+    ) -> WorkflowRun:
         """
         Executes a workflow synchronously.  Useful for short duration workflow (e.g. < 20 seconds)
         Parameters
@@ -252,8 +268,12 @@ class ConductorWorkflow:
             request.idempotency_strategy = idempotency_strategy
         if task_to_domain is not None:
             request.task_to_domain = task_to_domain
-        run = self._executor.execute_workflow(request, wait_until_task_ref=wait_until_task_ref,
-                                              wait_for_seconds=wait_for_seconds, request_id=request_id)
+        run = self._executor.execute_workflow(
+            request,
+            wait_until_task_ref=wait_until_task_ref,
+            wait_for_seconds=wait_for_seconds,
+            request_id=request_id,
+        )
 
         return run
 
@@ -273,7 +293,7 @@ class ConductorWorkflow:
             variables=self._variables,
             input_template=self._input_template,
             workflow_status_listener_enabled=self._workflow_status_listener_enabled,
-            workflow_status_listener_sink=self._workflow_status_listener_sink
+            workflow_status_listener_sink=self._workflow_status_listener_sink,
         )
 
     def to_workflow_task(self):
@@ -330,7 +350,8 @@ class ConductorWorkflow:
         if not (issubclass(type(task), TaskInterface) or isinstance(task, ConductorWorkflow)):
             raise Exception(
                 f"invalid task -- if using @worker_task or @WorkerTask decorator ensure task_ref_name is passed as "
-                f"argument.  task is {type(task)}")
+                f"argument.  task is {type(task)}"
+            )
         self._tasks.append(deepcopy(task))
         return self
 
@@ -342,10 +363,7 @@ class ConductorWorkflow:
 
         suffix = str(uuid())
 
-        fork_task = ForkTask(
-            task_ref_name="forked_" + suffix,
-            forked_tasks=forked_tasks
-        )
+        fork_task = ForkTask(task_ref_name="forked_" + suffix, forked_tasks=forked_tasks)
         self._tasks.append(fork_task)
         return self
 

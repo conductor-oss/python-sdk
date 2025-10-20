@@ -5,7 +5,9 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.service_registry import ServiceRegistry
 from conductor.client.http.models.service_method import ServiceMethod
 from conductor.client.http.models.proto_registry_entry import ProtoRegistryEntry
-from conductor.client.http.models.circuit_breaker_transition_response import CircuitBreakerTransitionResponse
+from conductor.client.http.models.circuit_breaker_transition_response import (
+    CircuitBreakerTransitionResponse,
+)
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.service_registry_client import ServiceRegistryClient
 

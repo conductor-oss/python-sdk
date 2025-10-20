@@ -14,12 +14,8 @@ class IntegrationUpdateAdapter(IntegrationUpdate):
             "EMAIL",
             "MCP",
             "CLOUD",
-        ]  # noqa: E501
+        ]
         if category not in allowed_values:
-            raise ValueError(
-                "Invalid value for `category` ({0}), must be one of {1}".format(  # noqa: E501
-                    category, allowed_values
-                )
-            )
+            raise ValueError("Invalid value for `category` ({0}), must be one of {1}".format(category, allowed_values))
 
         self._category = category

@@ -77,8 +77,8 @@ class TaskSummaryAdapter(TaskSummary):
         workflow_priority=None,
         workflow_type=None,
         domain=None,
-    ):  # noqa: E501
-        """TaskSummary - a model defined in Swagger"""  # noqa: E501
+    ):
+        """TaskSummary - a model defined in Swagger"""
         self._correlation_id = None
         self._end_time = None
         self._execution_time = None
@@ -108,13 +108,9 @@ class TaskSummaryAdapter(TaskSummary):
         if execution_time is not None:
             self.execution_time = execution_time
         if external_input_payload_storage_path is not None:
-            self.external_input_payload_storage_path = (
-                external_input_payload_storage_path
-            )
+            self.external_input_payload_storage_path = external_input_payload_storage_path
         if external_output_payload_storage_path is not None:
-            self.external_output_payload_storage_path = (
-                external_output_payload_storage_path
-            )
+            self.external_output_payload_storage_path = external_output_payload_storage_path
         if input is not None:
             self.input = input
         if output is not None:

@@ -25,8 +25,8 @@ class SchemaDefAdapter(SchemaDef):
         update_time=None,
         updated_by=None,
         version=1,
-    ):  # noqa: E501
-        """SchemaDef - a model defined in Swagger"""  # noqa: E501
+    ):
+        """SchemaDef - a model defined in Swagger"""
         self._create_time = None
         self._created_by = None
         self._data = None

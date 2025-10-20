@@ -17,22 +17,16 @@ class ExtensionRangeOptionsAdapter(ExtensionRangeOptions):
     default_instance_for_type: Optional["ExtensionRangeOptionsAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="descriptorForType"
-    )
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(default=None, alias="descriptorForType")
     features: Optional["FeatureSetAdapter"] = None
-    features_or_builder: Optional["FeatureSetOrBuilderAdapter"] = Field(
-        default=None, alias="featuresOrBuilder"
-    )
+    features_or_builder: Optional["FeatureSetOrBuilderAdapter"] = Field(default=None, alias="featuresOrBuilder")
     uninterpreted_option_list: Optional[List["UninterpretedOptionAdapter"]] = Field(
         default=None, alias="uninterpretedOptionList"
     )
-    uninterpreted_option_or_builder_list: Optional[
-        List["UninterpretedOptionOrBuilderAdapter"]
-    ] = Field(default=None, alias="uninterpretedOptionOrBuilderList")
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
+    uninterpreted_option_or_builder_list: Optional[List["UninterpretedOptionOrBuilderAdapter"]] = Field(
+        default=None, alias="uninterpretedOptionOrBuilderList"
     )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -49,25 +43,17 @@ class ExtensionRangeOptionsAdapter(ExtensionRangeOptions):
                 "allFieldsRaw": obj.get("allFieldsRaw"),
                 "declarationCount": obj.get("declarationCount"),
                 "declarationList": (
-                    [
-                        DeclarationAdapter.from_dict(_item)
-                        for _item in obj["declarationList"]
-                    ]
+                    [DeclarationAdapter.from_dict(_item) for _item in obj["declarationList"]]
                     if obj.get("declarationList") is not None
                     else None
                 ),
                 "declarationOrBuilderList": (
-                    [
-                        DeclarationOrBuilderAdapter.from_dict(_item)
-                        for _item in obj["declarationOrBuilderList"]
-                    ]
+                    [DeclarationOrBuilderAdapter.from_dict(_item) for _item in obj["declarationOrBuilderList"]]
                     if obj.get("declarationOrBuilderList") is not None
                     else None
                 ),
                 "defaultInstanceForType": (
-                    ExtensionRangeOptionsAdapter.from_dict(
-                        obj["defaultInstanceForType"]
-                    )
+                    ExtensionRangeOptionsAdapter.from_dict(obj["defaultInstanceForType"])
                     if obj.get("defaultInstanceForType") is not None
                     else None
                 ),
@@ -76,11 +62,7 @@ class ExtensionRangeOptionsAdapter(ExtensionRangeOptions):
                     if obj.get("descriptorForType") is not None
                     else None
                 ),
-                "features": (
-                    FeatureSetAdapter.from_dict(obj["features"])
-                    if obj.get("features") is not None
-                    else None
-                ),
+                "features": (FeatureSetAdapter.from_dict(obj["features"]) if obj.get("features") is not None else None),
                 "featuresOrBuilder": (
                     FeatureSetOrBuilderAdapter.from_dict(obj["featuresOrBuilder"])
                     if obj.get("featuresOrBuilder") is not None
@@ -93,10 +75,7 @@ class ExtensionRangeOptionsAdapter(ExtensionRangeOptions):
                 "serializedSize": obj.get("serializedSize"),
                 "uninterpretedOptionCount": obj.get("uninterpretedOptionCount"),
                 "uninterpretedOptionList": (
-                    [
-                        UninterpretedOptionAdapter.from_dict(_item)
-                        for _item in obj["uninterpretedOptionList"]
-                    ]
+                    [UninterpretedOptionAdapter.from_dict(_item) for _item in obj["uninterpretedOptionList"]]
                     if obj.get("uninterpretedOptionList") is not None
                     else None
                 ),

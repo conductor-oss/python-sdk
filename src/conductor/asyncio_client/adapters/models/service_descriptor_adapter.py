@@ -22,31 +22,20 @@ class ServiceDescriptorAdapter(ServiceDescriptor):
 
         _obj = cls.model_validate(
             {
-                "file": (
-                    FileDescriptorAdapter.from_dict(obj["file"])
-                    if obj.get("file") is not None
-                    else None
-                ),
+                "file": (FileDescriptorAdapter.from_dict(obj["file"]) if obj.get("file") is not None else None),
                 "fullName": obj.get("fullName"),
                 "index": obj.get("index"),
                 "methods": (
-                    [
-                        MethodDescriptorAdapter.from_dict(_item)
-                        for _item in obj["methods"]
-                    ]
+                    [MethodDescriptorAdapter.from_dict(_item) for _item in obj["methods"]]
                     if obj.get("methods") is not None
                     else None
                 ),
                 "name": obj.get("name"),
                 "options": (
-                    ServiceOptionsAdapter.from_dict(obj["options"])
-                    if obj.get("options") is not None
-                    else None
+                    ServiceOptionsAdapter.from_dict(obj["options"]) if obj.get("options") is not None else None
                 ),
                 "proto": (
-                    ServiceDescriptorProtoAdapter.from_dict(obj["proto"])
-                    if obj.get("proto") is not None
-                    else None
+                    ServiceDescriptorProtoAdapter.from_dict(obj["proto"]) if obj.get("proto") is not None else None
                 ),
             }
         )

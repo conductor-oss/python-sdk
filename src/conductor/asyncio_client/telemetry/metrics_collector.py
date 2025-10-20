@@ -3,13 +3,11 @@ import logging
 import os
 from typing import Any, ClassVar, Dict, List
 
-from prometheus_client import (CollectorRegistry, Counter, Gauge,
-                               write_to_textfile)
+from prometheus_client import CollectorRegistry, Counter, Gauge, write_to_textfile
 from prometheus_client.multiprocess import MultiProcessCollector
 
 from conductor.shared.telemetry.configuration.metrics import MetricsSettings
-from conductor.shared.telemetry.enums import (MetricDocumentation, MetricLabel,
-                                              MetricName)
+from conductor.shared.telemetry.enums import MetricDocumentation, MetricLabel, MetricName
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +64,12 @@ class AsyncMetricsCollector:
             try:
                 write_to_textfile(OUTPUT_FILE_PATH, registry)
                 await asyncio.sleep(settings.update_interval)
-            except Exception as e:  # noqa: PERF203
-                logger.error("Error writing metrics to file output_file_path: %s; registry: %s", OUTPUT_FILE_PATH, registry)
+            except Exception:  # noqa: PERF203
+                logger.error(
+                    "Error writing metrics to file output_file_path: %s; registry: %s",
+                    OUTPUT_FILE_PATH,
+                    registry,
+                )
                 await asyncio.sleep(settings.update_interval)
 
     async def increment_task_poll(self, task_type: str) -> None:
@@ -94,9 +96,7 @@ class AsyncMetricsCollector:
             labels={},
         )
 
-    async def increment_task_poll_error(
-        self, task_type: str, exception: Exception
-    ) -> None:
+    async def increment_task_poll_error(self, task_type: str, exception: Exception) -> None:
         """Increment task poll error counter."""
         await self.__increment_counter(
             name=MetricName.TASK_POLL_ERROR,
@@ -115,9 +115,7 @@ class AsyncMetricsCollector:
             labels={MetricLabel.TASK_TYPE: task_type},
         )
 
-    async def increment_task_execution_error(
-        self, task_type: str, exception: Exception
-    ) -> None:
+    async def increment_task_execution_error(self, task_type: str, exception: Exception) -> None:
         """Increment task execution error counter."""
         await self.__increment_counter(
             name=MetricName.TASK_EXECUTE_ERROR,
@@ -136,9 +134,7 @@ class AsyncMetricsCollector:
             labels={MetricLabel.TASK_TYPE: task_type},
         )
 
-    async def increment_task_ack_error(
-        self, task_type: str, exception: Exception
-    ) -> None:
+    async def increment_task_ack_error(self, task_type: str, exception: Exception) -> None:
         """Increment task ack error counter."""
         await self.__increment_counter(
             name=MetricName.TASK_ACK_ERROR,
@@ -149,9 +145,7 @@ class AsyncMetricsCollector:
             },
         )
 
-    async def increment_task_update_error(
-        self, task_type: str, exception: Exception
-    ) -> None:
+    async def increment_task_update_error(self, task_type: str, exception: Exception) -> None:
         """Increment task update error counter."""
         await self.__increment_counter(
             name=MetricName.TASK_UPDATE_ERROR,
@@ -162,9 +156,7 @@ class AsyncMetricsCollector:
             },
         )
 
-    async def increment_external_payload_used(
-        self, entity_name: str, operation: str, payload_type: str
-    ) -> None:
+    async def increment_external_payload_used(self, entity_name: str, operation: str, payload_type: str) -> None:
         """Increment external payload used counter."""
         await self.__increment_counter(
             name=MetricName.EXTERNAL_PAYLOAD_USED,
@@ -176,9 +168,7 @@ class AsyncMetricsCollector:
             },
         )
 
-    async def increment_workflow_start_error(
-        self, workflow_type: str, exception: Exception
-    ) -> None:
+    async def increment_workflow_start_error(self, workflow_type: str, exception: Exception) -> None:
         """Increment workflow start error counter."""
         await self.__increment_counter(
             name=MetricName.WORKFLOW_START_ERROR,
@@ -189,9 +179,7 @@ class AsyncMetricsCollector:
             },
         )
 
-    async def record_workflow_input_payload_size(
-        self, workflow_type: str, version: str, payload_size: int
-    ) -> None:
+    async def record_workflow_input_payload_size(self, workflow_type: str, version: str, payload_size: int) -> None:
         """Record workflow input payload size."""
         await self.__record_gauge(
             name=MetricName.WORKFLOW_INPUT_SIZE,
@@ -203,9 +191,7 @@ class AsyncMetricsCollector:
             value=payload_size,
         )
 
-    async def record_task_result_payload_size(
-        self, task_type: str, payload_size: int
-    ) -> None:
+    async def record_task_result_payload_size(self, task_type: str, payload_size: int) -> None:
         """Record task result payload size."""
         await self.__record_gauge(
             name=MetricName.TASK_RESULT_SIZE,
@@ -241,9 +227,7 @@ class AsyncMetricsCollector:
         """Async method to increment a counter metric."""
         if not self.must_collect_metrics:
             return
-        counter = await self.__get_counter(
-            name=name, documentation=documentation, labelnames=labels.keys()
-        )
+        counter = await self.__get_counter(name=name, documentation=documentation, labelnames=labels.keys())
         counter.labels(*labels.values()).inc()
 
     async def __record_gauge(
@@ -256,9 +240,7 @@ class AsyncMetricsCollector:
         """Async method to record a gauge metric."""
         if not self.must_collect_metrics:
             return
-        gauge = await self.__get_gauge(
-            name=name, documentation=documentation, labelnames=labels.keys()
-        )
+        gauge = await self.__get_gauge(name=name, documentation=documentation, labelnames=labels.keys())
         gauge.labels(*labels.values()).set(value)
 
     async def __get_counter(
@@ -269,9 +251,7 @@ class AsyncMetricsCollector:
     ) -> Counter:
         """Async method to get or create a counter metric."""
         if name not in self.counters:
-            self.counters[name] = await self.__generate_counter(
-                name, documentation, labelnames
-            )
+            self.counters[name] = await self.__generate_counter(name, documentation, labelnames)
         return self.counters[name]
 
     async def __get_gauge(
@@ -282,9 +262,7 @@ class AsyncMetricsCollector:
     ) -> Gauge:
         """Async method to get or create a gauge metric."""
         if name not in self.gauges:
-            self.gauges[name] = await self.__generate_gauge(
-                name, documentation, labelnames
-            )
+            self.gauges[name] = await self.__generate_gauge(name, documentation, labelnames)
         return self.gauges[name]
 
     async def __generate_counter(

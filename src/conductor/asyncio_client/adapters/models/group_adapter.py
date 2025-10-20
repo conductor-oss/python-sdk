@@ -30,9 +30,7 @@ class GroupAdapter(Group):
                 "description": obj.get("description"),
                 "id": obj.get("id"),
                 "roles": (
-                    [RoleAdapter.from_dict(_item) for _item in obj["roles"]]
-                    if obj.get("roles") is not None
-                    else None
+                    [RoleAdapter.from_dict(_item) for _item in obj["roles"]] if obj.get("roles") is not None else None
                 ),
             }
         )

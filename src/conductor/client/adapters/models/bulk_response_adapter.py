@@ -14,14 +14,7 @@ class BulkResponseAdapter(BulkResponse):
         "message": "message",
     }
 
-    def __init__(
-        self,
-        bulk_error_results=None,
-        bulk_successful_results=None,
-        message=None,
-        *_args,
-        **_kwargs
-    ):
+    def __init__(self, bulk_error_results=None, bulk_successful_results=None, message=None, *_args, **_kwargs):
         if bulk_error_results is None:
             bulk_error_results = {}
         if bulk_successful_results is None:

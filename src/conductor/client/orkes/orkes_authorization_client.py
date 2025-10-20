@@ -6,7 +6,9 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.authorization_request import AuthorizationRequest
 from conductor.client.http.models.conductor_application import ConductorApplication
 from conductor.client.http.models.conductor_user import ConductorUser
-from conductor.client.http.models.create_or_update_application_request import CreateOrUpdateApplicationRequest
+from conductor.client.http.models.create_or_update_application_request import (
+    CreateOrUpdateApplicationRequest,
+)
 from conductor.client.http.models.group import Group
 from conductor.client.http.models.subject_ref import SubjectRef
 from conductor.client.http.models.target_ref import TargetRef
@@ -26,8 +28,7 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
 
     # Applications
     def create_application(
-            self,
-            create_or_update_application_request: CreateOrUpdateApplicationRequest
+        self, create_or_update_application_request: CreateOrUpdateApplicationRequest
     ) -> ConductorApplication:
         app_obj = self.applicationResourceApi.create_application(create_or_update_application_request)
         return self.api_client.deserialize_class(app_obj, "ConductorApplication")
@@ -40,13 +41,11 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
         return self.applicationResourceApi.list_applications()
 
     def update_application(
-            self,
-            create_or_update_application_request: CreateOrUpdateApplicationRequest,
-            application_id: str
+        self,
+        create_or_update_application_request: CreateOrUpdateApplicationRequest,
+        application_id: str,
     ) -> ConductorApplication:
-        app_obj = self.applicationResourceApi.update_application(
-            create_or_update_application_request, application_id
-        )
+        app_obj = self.applicationResourceApi.update_application(create_or_update_application_request, application_id)
         return self.api_client.deserialize_class(app_obj, "ConductorApplication")
 
     def delete_application(self, application_id: str):

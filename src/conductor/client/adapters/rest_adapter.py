@@ -1,3 +1,4 @@
+from __future__ import annotations
 import io
 import logging
 import ssl
@@ -27,9 +28,7 @@ class RESTResponse(io.IOBase):
 
         # Log HTTP protocol version
         http_version = getattr(response, "http_version", "Unknown")
-        logger.debug(
-            f"HTTP response received - Status: {self.status}, Protocol: {http_version}"
-        )
+        logger.debug(f"HTTP response received - Status: {self.status}, Protocol: {http_version}")
 
         # Log HTTP/2 usage
         if http_version == "HTTP/2":
@@ -85,23 +84,13 @@ class RESTClientObjectAdapter(RESTClientObject):
             client_kwargs = {
                 "timeout": httpx.Timeout(120.0),
                 "follow_redirects": True,
-                "limits": httpx.Limits(
-                    max_keepalive_connections=20, max_connections=100
-                ),
-                "http2": True
+                "limits": httpx.Limits(max_keepalive_connections=20, max_connections=100),
+                "http2": True,
             }
 
-            if (
-                configuration
-                and hasattr(configuration, "proxy")
-                and configuration.proxy
-            ):
+            if configuration and hasattr(configuration, "proxy") and configuration.proxy:
                 client_kwargs["proxy"] = configuration.proxy
-            if (
-                configuration
-                and hasattr(configuration, "proxy_headers")
-                and configuration.proxy_headers
-            ):
+            if configuration and hasattr(configuration, "proxy_headers") and configuration.proxy_headers:
                 client_kwargs["proxy_headers"] = configuration.proxy_headers
 
             if configuration:
@@ -110,9 +99,7 @@ class RESTClientObjectAdapter(RESTClientObject):
                     cadata=configuration.ca_cert_data,
                 )
                 if configuration.cert_file:
-                    ssl_context.load_cert_chain(
-                        configuration.cert_file, keyfile=configuration.key_file
-                    )
+                    ssl_context.load_cert_chain(configuration.cert_file, keyfile=configuration.key_file)
 
                 if not configuration.verify_ssl:
                     ssl_context.check_hostname = False
@@ -137,9 +124,7 @@ class RESTClientObjectAdapter(RESTClientObject):
             if is_http2:
                 logger.info(f"✓ HTTP/2 supported by {url}")
             else:
-                logger.info(
-                    f"✗ HTTP/2 not supported by {url}, using {response.http_version}"
-                )
+                logger.info(f"✗ HTTP/2 not supported by {url}, using {response.http_version}")
 
             return is_http2
         except Exception as e:
@@ -173,9 +158,7 @@ class RESTClientObjectAdapter(RESTClientObject):
         assert method in ["GET", "HEAD", "DELETE", "POST", "PUT", "PATCH", "OPTIONS"]
 
         if post_params and body:
-            raise ValueError(
-                "body parameter cannot be used with post_params parameter."
-            )
+            raise ValueError("body parameter cannot be used with post_params parameter.")
 
         post_params = post_params or {}
         headers = headers or {}

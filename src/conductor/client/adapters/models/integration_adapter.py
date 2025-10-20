@@ -62,8 +62,8 @@ class IntegrationAdapter(Integration):
         updated_by=None,
         updated_on=None,  # added to handle backwards compatibility
         created_on=None,  # added to handle backwards compatibility
-    ):  # noqa: E501
-        """Integration - a model defined in Swagger"""  # noqa: E501
+    ):
+        """Integration - a model defined in Swagger"""
         self._apis = None
         self._category = None
         self._configuration = None
@@ -143,12 +143,8 @@ class IntegrationAdapter(Integration):
             "EMAIL",
             "MCP",
             "CLOUD",
-        ]  # noqa: E501
+        ]
         if category not in allowed_values:
-            raise ValueError(
-                "Invalid value for `category` ({0}), must be one of {1}".format(  # noqa: E501
-                    category, allowed_values
-                )
-            )
+            raise ValueError("Invalid value for `category` ({0}), must be one of {1}".format(category, allowed_values))
 
         self._category = category
