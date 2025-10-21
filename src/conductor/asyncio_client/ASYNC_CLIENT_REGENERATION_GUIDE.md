@@ -2,7 +2,6 @@
 
 This guide provides step-by-step instructions for regenerating the Conductor Python SDK async client code when updating to a new Orkes version.
 
-
 ## Overview
 
 The async client regeneration process involves:
