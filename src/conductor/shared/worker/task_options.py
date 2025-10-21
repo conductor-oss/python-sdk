@@ -98,10 +98,7 @@ class TaskOptions:
         if rate_limit_per_frequency is not None and rate_limit_per_frequency < 0:
             raise ValueError("rate_limit_per_frequency must be >= 0")
 
-        if (
-            rate_limit_frequency_in_seconds is not None
-            and rate_limit_frequency_in_seconds < 0
-        ):
+        if rate_limit_frequency_in_seconds is not None and rate_limit_frequency_in_seconds < 0:
             raise ValueError("rate_limit_frequency_in_seconds must be >= 0")
 
         if concurrent_exec_limit is not None and concurrent_exec_limit < 0:
@@ -133,9 +130,7 @@ class TaskOptions:
         if self.rate_limit_per_frequency is not None:
             result["rate_limit_per_frequency"] = self.rate_limit_per_frequency
         if self.rate_limit_frequency_in_seconds is not None:
-            result["rate_limit_frequency_in_seconds"] = (
-                self.rate_limit_frequency_in_seconds
-            )
+            result["rate_limit_frequency_in_seconds"] = self.rate_limit_frequency_in_seconds
         if self.concurrent_exec_limit is not None:
             result["concurrent_exec_limit"] = self.concurrent_exec_limit
         if self.timeout_policy is not None:

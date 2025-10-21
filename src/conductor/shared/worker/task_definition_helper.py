@@ -35,9 +35,7 @@ def apply_task_options_to_task_def(task_def, task_options: TaskOptions) -> None:
         task_def.rate_limit_per_frequency = task_options.rate_limit_per_frequency
 
     if task_options.rate_limit_frequency_in_seconds is not None:
-        task_def.rate_limit_frequency_in_seconds = (
-            task_options.rate_limit_frequency_in_seconds
-        )
+        task_def.rate_limit_frequency_in_seconds = task_options.rate_limit_frequency_in_seconds
 
     if task_options.concurrent_exec_limit is not None:
         task_def.concurrent_exec_limit = task_options.concurrent_exec_limit
