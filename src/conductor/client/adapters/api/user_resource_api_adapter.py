@@ -18,7 +18,7 @@ class UserResourceApiAdapter(UserResourceApi):
         # Convert empty user id to None to prevent sending invalid data to server
         if not id:
             id = None
-        return super().upsert_user(id=id, upsert_user_request=upsert_user_request, **kwargs)
+        return super().upsert_user(id=id, body=upsert_user_request, **kwargs)
 
     def delete_user(self, id, **kwargs):
         # Convert empty user id to None to prevent sending invalid data to server
