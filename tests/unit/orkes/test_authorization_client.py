@@ -304,10 +304,10 @@ def test_upsert_user(mocker, authorization_client, conductor_user, roles):
 def test_upsert_user_with_empty_string(mocker, authorization_client, conductor_user, roles):
     from conductor.client.codegen.api.user_resource_api import UserResourceApi
     mock = mocker.patch.object(UserResourceApi, "upsert_user")
-    upsertReq = UpsertUserRequest(USER_NAME, ["ADMIN"])
+    upsert_req = UpsertUserRequest(USER_NAME, ["ADMIN"])
     mock.return_value = conductor_user.to_dict()
-    authorization_client.upsert_user("", upsertReq)
-    mock.assert_called_with(id=None, upsert_user_request=upsertReq)
+    authorization_client.upsert_user(upsert_req, "")
+    mock.assert_called_with(id=None, body=upsert_req)
 
 
 def test_get_user(mocker, authorization_client, conductor_user, roles):
