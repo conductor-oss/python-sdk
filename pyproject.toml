@@ -137,12 +137,6 @@ ignore = [
     "PLR2004",
     # PLR0915: Too many statements (generated code has large functions)
     "PLR0915",
-    # G004: Logging statement uses f-string (acceptable for performance)
-    "G004",
-    # B904: Within an `except` clause, raise exceptions with `raise ... from err`
-    "B904",
-    # RUF012: Mutable class attributes should be annotated with `typing.ClassVar` (generated code)
-    "RUF012",
     # PLW1641: Object does not implement `__hash__` method (generated code)
     "PLW1641",
     # PYI063: Use PEP 570 syntax for positional-only parameters (backward compatibility)

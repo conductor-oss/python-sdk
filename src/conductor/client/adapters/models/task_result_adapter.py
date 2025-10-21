@@ -15,10 +15,10 @@ class TaskResultAdapter(TaskResult):
         if isinstance(status, str):
             try:
                 status = TaskResultStatus(status)
-            except ValueError:
+            except ValueError as e:
                 raise ValueError(
                     f"Invalid value for `status` ({status}), must be one of {[e.value for e in TaskResultStatus]}"
-                )
+                ) from e
         elif not isinstance(status, TaskResultStatus):
             raise TypeError(f"status must be a TaskStatus enum or string, got {type(status)}")
 

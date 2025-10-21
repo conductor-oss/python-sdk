@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Dict, List, Union, Optional
+from typing import ClassVar, Dict, List, Union, Optional
 
 from typing_extensions import Self
 
@@ -17,9 +17,9 @@ class StateChangeEventType(Enum):
 
 
 class StateChangeConfig:
-    swagger_types = {"type": "str", "events": "list[StateChangeEvent]"}
+    swagger_types: ClassVar[Dict[str, str]] = {"type": "str", "events": "list[StateChangeEvent]"}
 
-    attribute_map = {"type": "type", "events": "events"}
+    attribute_map: ClassVar[Dict[str, str]] = {"type": "type", "events": "events"}
 
     # Keep original init for backward compatibility
     def __init__(

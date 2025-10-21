@@ -1,3 +1,4 @@
+from typing import ClassVar, Dict
 import pprint
 
 import six
@@ -12,7 +13,7 @@ class IntegrationDefApi(object):  # Model from v5.2.6 spec
                             and the value is json key in definition.
     """
 
-    swagger_types = {
+    swagger_types: ClassVar[Dict[str, str]] = {
         "api": "str",
         "description": "str",
         "input_schema": "SchemaDef",
@@ -20,7 +21,7 @@ class IntegrationDefApi(object):  # Model from v5.2.6 spec
         "output_schema": "SchemaDef",
     }
 
-    attribute_map = {
+    attribute_map: ClassVar[Dict[str, str]] = {
         "api": "api",
         "description": "description",
         "input_schema": "inputSchema",

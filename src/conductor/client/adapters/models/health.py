@@ -1,3 +1,4 @@
+from typing import ClassVar, Dict
 import pprint
 import re  # noqa: F401
 
@@ -17,13 +18,13 @@ class Health(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
-    swagger_types = {
+    swagger_types: ClassVar[Dict[str, str]] = {
         "details": "dict(str, object)",
         "error_message": "str",
         "healthy": "bool",
     }
 
-    attribute_map = {
+    attribute_map: ClassVar[Dict[str, str]] = {
         "details": "details",
         "error_message": "errorMessage",
         "healthy": "healthy",

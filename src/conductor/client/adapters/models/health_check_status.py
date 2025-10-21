@@ -1,3 +1,4 @@
+from typing import ClassVar, Dict
 import pprint
 
 import six
@@ -16,13 +17,13 @@ class HealthCheckStatus(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
-    swagger_types = {
+    swagger_types: ClassVar[Dict[str, str]] = {
         "health_results": "list[Health]",
         "suppressed_health_results": "list[Health]",
         "healthy": "bool",
     }
 
-    attribute_map = {
+    attribute_map: ClassVar[Dict[str, str]] = {
         "health_results": "healthResults",
         "suppressed_health_results": "suppressedHealthResults",
         "healthy": "healthy",

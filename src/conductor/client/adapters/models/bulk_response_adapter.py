@@ -1,14 +1,15 @@
+from typing import ClassVar, Dict
 from conductor.client.codegen.models import BulkResponse
 
 
 class BulkResponseAdapter(BulkResponse):
-    swagger_types = {
+    swagger_types: ClassVar[Dict[str, str]] = {
         "bulk_error_results": "dict(str, str)",
         "bulk_successful_results": "list[str]",
         "message": "str",
     }
 
-    attribute_map = {
+    attribute_map: ClassVar[Dict[str, str]] = {
         "bulk_error_results": "bulkErrorResults",
         "bulk_successful_results": "bulkSuccessfulResults",
         "message": "message",
