@@ -94,6 +94,9 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
             "oAuth2AuthCode",
             "oAuth2TokenExpiresAt",
             "oAuth2RedirectUri",
+            "oAuth2Scope",
+            "oAuth2Provider",
+            "oAuth2AccessToken",
         }:
             raise ValueError(
                 "must be one of enum values ("
@@ -111,7 +114,8 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
                 "'schemaRegistryApiSecret', 'schemaRegistryAuthType', 'schemaRegistryUrl', "
                 "'serviceAccountCredentials', 'stream', 'subscription', 'tls', 'tlsFile', "
                 "'truststoreAuthenticationType', 'user', 'valueSubjectNameStrategy', "
-                "'version', 'visibilityTimeout', 'oAuth2RefreshToken', 'oAuth2AuthCode', 'oAuth2TokenExpiresAt', 'oAuth2RedirectUri'"
+                "'version', 'visibilityTimeout', 'oAuth2RefreshToken', 'oAuth2AuthCode', "
+                "'oAuth2TokenExpiresAt', 'oAuth2RedirectUri', 'oAuth2Scope', 'oAuth2Provider', 'oAuth2AccessToken'"
                 ")"
             )
 

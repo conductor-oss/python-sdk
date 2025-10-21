@@ -73,6 +73,9 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
             "oAuth2AuthCode",
             "oAuth2TokenExpiresAt",
             "oAuth2RedirectUri",
+            "oAuth2Scope",
+            "oAuth2Provider",
+            "oAuth2AccessToken",
         ]
         if field_name not in allowed_values:
             raise ValueError(
