@@ -301,6 +301,15 @@ def test_upsert_user(mocker, authorization_client, conductor_user, roles):
     assert user.roles == roles
 
 
+def test_upsert_user_with_empty_string(mocker, authorization_client, conductor_user, roles):
+    from conductor.client.codegen.api.user_resource_api import UserResourceApi
+    mock = mocker.patch.object(UserResourceApi, "upsert_user")
+    upsertReq = UpsertUserRequest(USER_NAME, ["ADMIN"])
+    mock.return_value = conductor_user.to_dict()
+    authorization_client.upsert_user("", upsertReq)
+    mock.assert_called_with(id=None, upsert_user_request=upsertReq)
+
+
 def test_get_user(mocker, authorization_client, conductor_user, roles):
     mock = mocker.patch.object(UserResourceApi, "get_user")
     mock.return_value = conductor_user.to_dict()
@@ -340,6 +349,13 @@ def test_delete_user(mocker, authorization_client):
     mock = mocker.patch.object(UserResourceApi, "delete_user")
     authorization_client.delete_user(USER_ID)
     mock.assert_called_with(USER_ID)
+
+
+def test_delete_user_with_empty_string(mocker, authorization_client):
+    from conductor.client.codegen.api.user_resource_api import UserResourceApi
+    mock = mocker.patch.object(UserResourceApi, "delete_user")
+    authorization_client.delete_user("")
+    mock.assert_called_with(id=None)
 
 
 def test_upsert_group(mocker, authorization_client, conductor_group, group_roles):

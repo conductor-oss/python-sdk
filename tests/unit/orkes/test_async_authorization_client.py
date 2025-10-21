@@ -280,6 +280,14 @@ async def test_delete_user(mocker, authorization_client):
 
 
 @pytest.mark.asyncio
+async def test_delete_user_with_empty_string(mocker, authorization_client):
+    from conductor.asyncio_client.http.api import UserResourceApi
+    mock = mocker.patch.object(UserResourceApi, "delete_user")
+    await authorization_client.delete_user("")
+    mock.assert_called_with(id=None)
+
+
+@pytest.mark.asyncio
 async def test_list_users_with_apps(
     mocker, authorization_client, conductor_user_adapter
 ):
@@ -309,6 +317,16 @@ async def test_upsert_user(mocker, authorization_client, conductor_user_adapter)
     assert user.name == USER_NAME
     assert user.id == USER_ID
     assert user.uuid == USER_UUID
+
+
+@pytest.mark.asyncio
+async def test_upsert_user_with_empty_string(mocker, authorization_client, conductor_user_adapter):
+    from conductor.asyncio_client.http.api import UserResourceApi
+    mock = mocker.patch.object(UserResourceApi, "upsert_user")
+    upsert_req = UpsertUserRequestAdapter(name=USER_NAME, roles=["ADMIN"])
+    mock.return_value = conductor_user_adapter
+    await authorization_client.upsert_user("", upsert_req)
+    mock.assert_called_with(id=None, upsert_user_request=upsert_req)
 
 
 @pytest.mark.asyncio
