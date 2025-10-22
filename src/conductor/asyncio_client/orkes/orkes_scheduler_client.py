@@ -172,10 +172,12 @@ class OrkesSchedulerClient(OrkesBaseClient):
             cron_expression=cron_expression or existing_schedule.cron_expression,
             start_workflow_request=existing_schedule.start_workflow_request,
             paused=paused if paused is not None else existing_schedule.paused,
-            run_catch_up=(
-                run_catch_up if run_catch_up is not None else existing_schedule.run_catch_up
+            run_catchup_schedule_instances=(
+                run_catch_up
+                if run_catch_up is not None
+                else existing_schedule.run_catchup_schedule_instances
             ),
-            timezone=timezone or existing_schedule.timezone,
+            zone_id=timezone or existing_schedule.zone_id,
         )
 
         return await self.save_schedule(save_request)

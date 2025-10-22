@@ -94,11 +94,13 @@ class OrkesPromptClient(OrkesBaseClient):
         matching_templates = []
 
         for template in all_templates:
+            if not template.name:
+                continue
             try:
                 tags = await self.get_tags_for_prompt_template(template.name)
                 if any(tag.key == tag_key and tag.value == tag_value for tag in tags):
                     matching_templates.append(template)
-            except Exception:  # noqa: PERF203
+            except Exception:
                 continue
 
         return matching_templates
@@ -113,7 +115,7 @@ class OrkesPromptClient(OrkesBaseClient):
         await self.save_message_template(
             target_name,
             description,
-            source_template.template,
+            source_template.template or "",
             models=(source_template.models if hasattr(source_template, "models") else None),
         )
 
@@ -152,7 +154,9 @@ class OrkesPromptClient(OrkesBaseClient):
         """Search templates by name pattern (case-insensitive)"""
         all_templates = await self.get_message_templates()
         return [
-            template for template in all_templates if name_pattern.lower() in template.name.lower()
+            template
+            for template in all_templates
+            if template.name and name_pattern.lower() in template.name.lower()
         ]
 
     async def get_templates_with_model(self, model_name: str) -> List[MessageTemplateAdapter]:
