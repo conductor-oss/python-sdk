@@ -1,5 +1,7 @@
-from typing import List
+from __future__ import annotations
 
+from typing import List, Optional, Dict, Any, Union, Annotated, Tuple
+from pydantic import StrictStr, StrictFloat, StrictInt, Field
 from conductor.asyncio_client.http.api import SchedulerResourceApi
 from conductor.asyncio_client.adapters.models.workflow_schedule_adapter import (
     WorkflowScheduleAdapter,
@@ -14,25 +16,173 @@ from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 
 
 class SchedulerResourceApiAdapter(SchedulerResourceApi):
-    async def get_schedule(self, *args, **kwargs) -> WorkflowScheduleAdapter:
-        return await super().get_schedule(*args, **kwargs)
+    async def get_schedule(  # type: ignore[override]
+        self,
+        name: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> WorkflowScheduleAdapter:
+        result = await super().get_schedule(
+            name,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result  # type: ignore[return-value]
 
-    async def get_all_schedules(self, *args, **kwargs) -> List[WorkflowScheduleModelAdapter]:
-        return await super().get_all_schedules(*args, **kwargs)
-
-    async def search_v2(self, *args, **kwargs) -> SearchResultWorkflowScheduleExecutionModelAdapter:
-        return await super().search_v2(*args, **kwargs)
-
-    async def get_schedules_by_tag(
-        self, tag_key, tag_value, *args, **kwargs
+    async def get_all_schedules(  # type: ignore[override]
+        self,
+        workflow_name: Optional[StrictStr] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> List[WorkflowScheduleModelAdapter]:
-        return await super().get_schedules_by_tag(tag_key, tag_value, *args, **kwargs)
+        result = await super().get_all_schedules(
+            workflow_name,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result  # type: ignore[return-value]
 
-    async def put_tag_for_schedule(self, name, body: List[TagAdapter], *args, **kwargs) -> None:
-        return await super().put_tag_for_schedule(name, body, *args, **kwargs)
+    async def search_v2(  # type: ignore[override]
+        self,
+        start: Optional[StrictInt] = None,
+        size: Optional[StrictInt] = None,
+        sort: Optional[StrictStr] = None,
+        free_text: Optional[StrictStr] = None,
+        query: Optional[StrictStr] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> SearchResultWorkflowScheduleExecutionModelAdapter:
+        result = await super().search_v2(
+            start,
+            size,
+            sort,
+            free_text,
+            query,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result  # type: ignore[return-value]
 
-    async def get_tags_for_schedule(self, *args, **kwargs) -> List[TagAdapter]:
-        return await super().get_tags_for_schedule(*args, **kwargs)
+    async def get_schedules_by_tag(  # type: ignore[override]
+        self,
+        tag: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> List[WorkflowScheduleModelAdapter]:
+        result = await super().get_schedules_by_tag(
+            tag,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result  # type: ignore[return-value]
 
-    async def delete_tag_for_schedule(self, name, body: List[TagAdapter], *args, **kwargs) -> None:
-        return await super().delete_tag_for_schedule(name, body, *args, **kwargs)
+    async def put_tag_for_schedule(
+        self,
+        name: StrictStr,
+        tag: List[TagAdapter],  # type: ignore[override]
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> None:
+        return await super().put_tag_for_schedule(
+            name,
+            tag,  # type: ignore[arg-type]
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+
+    async def get_tags_for_schedule(  # type: ignore[override]
+        self,
+        name: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> List[TagAdapter]:
+        result = await super().get_tags_for_schedule(
+            name,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result  # type: ignore[return-value]
+
+    async def delete_tag_for_schedule(
+        self,
+        name: StrictStr,
+        tag: List[TagAdapter],  # type: ignore[override]
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> None:
+        return await super().delete_tag_for_schedule(
+            name,
+            tag,  # type: ignore[arg-type]
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )

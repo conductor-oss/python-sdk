@@ -13,7 +13,7 @@ from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.telemetry.metrics_collector import AsyncMetricsCollector
 from conductor.asyncio_client.worker.worker import Worker
 from conductor.asyncio_client.worker.worker_interface import WorkerInterface
-from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
+from conductor.shared.telemetry.configuration.metrics import MetricsSettings
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 

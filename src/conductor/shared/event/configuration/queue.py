@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Dict
+from typing import ClassVar, Dict
 
 from conductor.shared.event.configuration.queue_worker import QueueWorkerConfiguration
 
@@ -20,5 +20,5 @@ class QueueConfiguration(ABC):
         self.worker_configuration[self.WORKER_PRODUCER_KEY] = worker_configuration
 
     @abstractmethod
-    def get_worker_configuration(self) -> Dict[str, Any]:
+    def get_worker_configuration(self) -> str:
         raise NotImplementedError

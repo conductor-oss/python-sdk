@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Optional, List, TYPE_CHECKING
 from uuid import uuid4
 
-from typing_extensions import Self
 
 from conductor.client.http.models import IntegrationApiUpdate, IntegrationUpdate
 from conductor.client.codegen.rest import ApiException
@@ -22,7 +21,7 @@ NOT_FOUND_STATUS = 404
 class AIOrchestrator:
     def __init__(
         self, api_configuration: Configuration, prompt_test_workflow_name: str = ""
-    ) -> Self:
+    ) -> None:
         orkes_clients = OrkesClients(api_configuration)
 
         self.integration_client = orkes_clients.get_integration_client()
@@ -38,7 +37,7 @@ class AIOrchestrator:
         self.prompt_client.save_prompt(name, description, prompt_template)
         return self
 
-    def get_prompt_template(self, template_name: str) -> PromptTemplate:
+    def get_prompt_template(self, template_name: str) -> Optional[PromptTemplate]:
         try:
             return self.prompt_client.get_prompt(template_name)
         except ApiException as e:

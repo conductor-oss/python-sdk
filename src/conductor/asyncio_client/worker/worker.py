@@ -75,22 +75,23 @@ class Worker(WorkerInterface):
                 for input_name in params:
                     typ = params[input_name].annotation
                     default_value = params[input_name].default
-                    if input_name in task.input_data:
+                    if input_name in task.input_data:  # type: ignore[operator]
                         if typ in utils.simple_types:
-                            task_input[input_name] = task.input_data[input_name]
+                            task_input[input_name] = task.input_data[input_name]  # type: ignore[index]
                         else:
                             task_input[input_name] = convert_from_dict_or_list(
-                                typ, task.input_data[input_name]
+                                typ,
+                                task.input_data[input_name],  # type: ignore[index]
                             )
                     elif default_value is not inspect.Parameter.empty:
                         task_input[input_name] = default_value
                     else:
                         task_input[input_name] = None
-                task_output = self.execute_function(**task_input)
+                task_output = self.execute_function(**task_input)  # type: ignore[call-arg]
 
             if isinstance(task_output, TaskResultAdapter):
-                task_output.task_id = task.task_id
-                task_output.workflow_instance_id = task.workflow_instance_id
+                task_output.task_id = task.task_id  # type: ignore[assignment]
+                task_output.workflow_instance_id = task.workflow_instance_id  # type: ignore[assignment]
                 return task_output
             else:
                 task_result.status = TaskResultStatus.COMPLETED
@@ -120,8 +121,8 @@ class Worker(WorkerInterface):
                 task_result.reason_for_incompletion = ne.args[0]
 
         if dataclasses.is_dataclass(type(task_result.output_data)):
-            task_output = dataclasses.asdict(task_result.output_data)
-            task_result.output_data = task_output
+            task_output = dataclasses.asdict(task_result.output_data)  # type: ignore[call-overload]
+            task_result.output_data = task_output  # type: ignore[assignment]
             return task_result
         if not isinstance(task_result.output_data, dict):
             task_output = task_result.output_data

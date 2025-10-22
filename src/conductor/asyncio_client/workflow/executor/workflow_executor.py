@@ -307,11 +307,12 @@ class AsyncWorkflowExecutor:
         status: str,
     ) -> WorkflowAdapter:
         """Update a task By Ref Name"""
+        body = {"result": task_output}
         return await self.task_client.update_task_sync(
-            request_body=task_output,
             workflow_id=workflow_id,
             task_ref_name=task_reference_name,
             status=status,
+            request_body=body,
         )
 
     async def get_task(self, task_id: str) -> Optional[TaskAdapter]:

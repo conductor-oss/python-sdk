@@ -12,6 +12,7 @@ from conductor.asyncio_client.adapters.models.integration_def_adapter import Int
 from conductor.asyncio_client.adapters.models.integration_update_adapter import (
     IntegrationUpdateAdapter,
 )
+from conductor.asyncio_client.adapters.models.message_template_adapter import MessageTemplateAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.adapters.models.event_log_adapter import EventLogAdapter
 from conductor.asyncio_client.http.exceptions import NotFoundException
@@ -34,11 +35,11 @@ class OrkesIntegrationClient(OrkesBaseClient):
     ) -> None:
         await self.integration_api.save_integration_provider(integration_name, integration_details)
 
-    async def get_integration_provider(self, name: str) -> IntegrationDefAdapter:
+    async def get_integration_provider(self, name: str) -> IntegrationAdapter:
         """Get integration provider by name"""
         return await self.integration_api.get_integration_provider(name)
 
-    async def get_integration(self, integration_name: str) -> IntegrationDefAdapter | None:
+    async def get_integration(self, integration_name: str) -> Optional[IntegrationAdapter]:
         try:
             return await self.get_integration_provider(integration_name)
         except NotFoundException:
@@ -50,7 +51,7 @@ class OrkesIntegrationClient(OrkesBaseClient):
 
     async def get_integration_providers(
         self, category: Optional[str] = None, active_only: Optional[bool] = None
-    ) -> List[IntegrationDefAdapter]:
+    ) -> List[IntegrationAdapter]:
         """Get all integration providers"""
         return await self.integration_api.get_integration_providers(
             category=category, active_only=active_only
@@ -81,12 +82,12 @@ class OrkesIntegrationClient(OrkesBaseClient):
         """Get all APIs for a specific integration"""
         return await self.integration_api.get_integration_apis(integration_name)
 
-    async def get_integration_available_apis(self, name: str) -> List[IntegrationApiAdapter]:
+    async def get_integration_available_apis(self, name: str) -> List[str]:
         """Get available APIs for an integration"""
         return await self.integration_api.get_integration_available_apis(name)
 
     # Integration Operations
-    async def save_all_integrations(self, request_body: List[IntegrationUpdateAdapter]) -> None:
+    async def save_all_integrations(self, request_body: List[IntegrationAdapter]) -> None:
         """Save all integrations"""
         await self.integration_api.save_all_integrations(request_body)
 
@@ -100,7 +101,7 @@ class OrkesIntegrationClient(OrkesBaseClient):
 
     async def get_providers_and_integrations(
         self, integration_type: Optional[str] = None, active_only: Optional[bool] = None
-    ) -> Dict[str, object]:
+    ) -> List[str]:
         """Get providers and integrations together"""
         return await self.integration_api.get_providers_and_integrations(
             type=integration_type, active_only=active_only
@@ -146,7 +147,7 @@ class OrkesIntegrationClient(OrkesBaseClient):
         """Get token usage for a specific integration"""
         return await self.integration_api.get_token_usage_for_integration(name, integration_name)
 
-    async def get_token_usage_for_integration_provider(self, name: str) -> int:
+    async def get_token_usage_for_integration_provider(self, name: str) -> Dict[str, str]:
         """Get token usage for an integration provider"""
         return await self.integration_api.get_token_usage_for_integration_provider(name)
 
@@ -165,7 +166,7 @@ class OrkesIntegrationClient(OrkesBaseClient):
 
     async def get_prompts_with_integration(
         self, integration_provider: str, integration_name: str
-    ) -> List[str]:
+    ) -> List[MessageTemplateAdapter]:
         """Get prompts associated with an integration"""
         return await self.integration_api.get_prompts_with_integration(
             integration_provider, integration_name
@@ -189,10 +190,10 @@ class OrkesIntegrationClient(OrkesBaseClient):
 
     async def get_integration_provider_by_category(
         self, category: str, active_only: bool = True
-    ) -> List[IntegrationDefAdapter]:
+    ) -> List[IntegrationAdapter]:
         """Get integration providers filtered by category"""
         return await self.get_integration_providers(category=category, active_only=active_only)
 
-    async def get_active_integration_providers(self) -> List[IntegrationDefAdapter]:
+    async def get_active_integration_providers(self) -> List[IntegrationAdapter]:
         """Get only active integration providers"""
         return await self.get_integration_providers(active_only=True)

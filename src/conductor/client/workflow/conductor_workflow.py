@@ -29,22 +29,22 @@ class ConductorWorkflow:
         version: Optional[int] = None,
         description: Optional[str] = None,
     ) -> Self:
-        self._executor = executor
-        self.name = name
-        self.version = version
-        self.description = description
-        self._tasks = []
-        self._owner_email = None
-        self._timeout_policy = None
-        self._timeout_seconds = 60
-        self._failure_workflow = ""
-        self._input_parameters = []
-        self._output_parameters = {}
-        self._input_template = {}
-        self._variables = {}
-        self._restartable = True
-        self._workflow_status_listener_enabled = False
-        self._workflow_status_listener_sink = None
+        self._executor: WorkflowExecutor = executor
+        self.name: str = name
+        self.version: Optional[int] = version
+        self.description: Optional[str] = description
+        self._tasks: List[TaskInterface] = []
+        self._owner_email: Optional[str] = None
+        self._timeout_policy: Optional[TimeoutPolicy] = None
+        self._timeout_seconds: int = 60
+        self._failure_workflow: str = ""
+        self._input_parameters: List[str] = []
+        self._output_parameters: Dict[str, Any] = {}
+        self._input_template: Dict[str, Any] = {}
+        self._variables: Dict[str, Any] = {}
+        self._restartable: bool = True
+        self._workflow_status_listener_enabled: bool = False
+        self._workflow_status_listener_sink: Optional[str] = None
 
     @property
     def name(self) -> str:
@@ -110,11 +110,11 @@ class ConductorWorkflow:
         self._restartable = deepcopy(restartable)
         return self
 
-    def enable_status_listener(self, sink_name: bool) -> Self:
+    def enable_status_listener(self, sink_name: bool) -> None:
         self._workflow_status_listener_sink = sink_name
         self._workflow_status_listener_enabled = True
 
-    def disable_status_listener(self) -> Self:
+    def disable_status_listener(self) -> None:
         self._workflow_status_listener_sink = None
         self._workflow_status_listener_enabled = False
 
@@ -399,7 +399,7 @@ class ConductorWorkflow:
 
 
 class InlineSubWorkflowTask(TaskInterface):
-    def __init__(self, task_ref_name: str, workflow: ConductorWorkflow) -> Self:
+    def __init__(self, task_ref_name: str, workflow: ConductorWorkflow) -> None:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.SUB_WORKFLOW,

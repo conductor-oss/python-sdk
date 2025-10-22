@@ -26,6 +26,9 @@ from conductor.asyncio_client.adapters.models.upsert_group_request_adapter impor
 from conductor.asyncio_client.adapters.models.upsert_user_request_adapter import (
     UpsertUserRequestAdapter as UpsertUserRequest,
 )
+from conductor.asyncio_client.adapters.models.create_or_update_application_request_adapter import (
+    CreateOrUpdateApplicationRequestAdapter,
+)
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.orkes.models.access_key import AccessKey
@@ -62,7 +65,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
     # Application Operations
     async def create_application(
-        self, application: ExtendedConductorApplicationAdapter
+        self, application: CreateOrUpdateApplicationRequestAdapter
     ) -> ExtendedConductorApplicationAdapter:
         """Create a new application"""
         return await self.application_api.create_application(
@@ -70,14 +73,16 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         )
 
     async def update_application(
-        self, application_id: str, application: ExtendedConductorApplicationAdapter
+        self, application_id: str, application: CreateOrUpdateApplicationRequestAdapter
     ) -> ExtendedConductorApplicationAdapter:
         """Update an existing application"""
         return await self.application_api.update_application(
             id=application_id, create_or_update_application_request=application
         )
 
-    async def get_application(self, application_id: str) -> ExtendedConductorApplicationAdapter:
+    async def get_application(
+        self, application_id: str
+    ) -> Optional[ExtendedConductorApplicationAdapter]:
         """Get application by ID"""
         return await self.application_api.get_application(id=application_id)
 

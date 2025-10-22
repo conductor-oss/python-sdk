@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 from uuid import uuid4
 
 from conductor.asyncio_client.adapters.models.integration_api_update_adapter import (
@@ -142,7 +142,7 @@ class AsyncAIOrchestrator:
                     db_integration_name, index, api_details
                 )
 
-    async def get_token_used(self, ai_integration: str) -> int:
+    async def get_token_used(self, ai_integration: str) -> Dict[str, str]:
         return await self.integration_client.get_token_usage_for_integration_provider(
             ai_integration
         )
