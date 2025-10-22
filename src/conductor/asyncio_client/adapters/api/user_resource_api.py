@@ -14,7 +14,7 @@ class UserResourceApiAdapter(UserResourceApi):
         # Convert empty user_id to None to prevent sending invalid data to server
         if not user_id:
             user_id = None
-        return await super().get_granted_permissions(user_id=user_id, *args, **kwargs)
+        return await super().get_granted_permissions(user_id, *args, **kwargs)
 
     async def get_user(
         self,
@@ -25,7 +25,7 @@ class UserResourceApiAdapter(UserResourceApi):
         # Convert empty user id to None to prevent sending invalid data to server
         if not id:
             id = None
-        return await super().get_user(id=id, *args, **kwargs)
+        return await super().get_user(id, *args, **kwargs)
 
     async def upsert_user(
         self,
@@ -37,7 +37,7 @@ class UserResourceApiAdapter(UserResourceApi):
         # Convert empty user id to None to prevent sending invalid data to server
         if not id:
             id = None
-        return await super().upsert_user(id=id, upsert_user_request=upsert_user_request, *args, **kwargs)
+        return await super().upsert_user(id, upsert_user_request, *args, **kwargs)
 
     async def delete_user(
         self,
@@ -48,4 +48,4 @@ class UserResourceApiAdapter(UserResourceApi):
         # Convert empty user id to None to prevent sending invalid data to server
         if not id:
             id = None
-        return await super().delete_user(id=id, *args, **kwargs)
+        return await super().delete_user(id, *args, **kwargs)
