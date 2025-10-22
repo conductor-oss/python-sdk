@@ -259,10 +259,27 @@ async def test_get_user(mocker, authorization_client, conductor_user_adapter):
 
 
 @pytest.mark.asyncio
+async def test_get_user_with_empty_string(mocker, authorization_client, conductor_user_adapter):
+    from conductor.asyncio_client.http.api import UserResourceApi
+    mock = mocker.patch.object(UserResourceApi, "get_user")
+    mock.return_value = conductor_user_adapter
+    await authorization_client.get_user("")
+    mock.assert_called_with(id=None)
+
+
+@pytest.mark.asyncio
 async def test_delete_user(mocker, authorization_client):
     mock = mocker.patch.object(UserResourceApiAdapter, "delete_user")
     await authorization_client.delete_user(USER_ID)
     mock.assert_called_with(id=USER_ID)
+
+
+@pytest.mark.asyncio
+async def test_delete_user_with_empty_string(mocker, authorization_client):
+    from conductor.asyncio_client.http.api import UserResourceApi
+    mock = mocker.patch.object(UserResourceApi, "delete_user")
+    await authorization_client.delete_user("")
+    mock.assert_called_with(id=None)
 
 
 @pytest.mark.asyncio
@@ -293,6 +310,16 @@ async def test_upsert_user(mocker, authorization_client, conductor_user_adapter)
     assert user.name == USER_NAME
     assert user.id == USER_ID
     assert user.uuid == USER_UUID
+
+
+@pytest.mark.asyncio
+async def test_upsert_user_with_empty_string(mocker, authorization_client, conductor_user_adapter):
+    from conductor.asyncio_client.http.api import UserResourceApi
+    mock = mocker.patch.object(UserResourceApi, "upsert_user")
+    upsert_req = UpsertUserRequestAdapter(name=USER_NAME, roles=["ADMIN"])
+    mock.return_value = conductor_user_adapter
+    await authorization_client.upsert_user("", upsert_req)
+    mock.assert_called_with(id=None, upsert_user_request=upsert_req)
 
 
 @pytest.mark.asyncio
@@ -482,6 +509,15 @@ async def test_get_group_permissions(mocker, authorization_client: OrkesAuthoriz
             }
         ]
     }
+
+
+@pytest.mark.asyncio
+async def test_get_granted_permissions_for_user_with_empty_string(mocker, authorization_client):
+    from conductor.asyncio_client.http.api import UserResourceApi
+    mock = mocker.patch.object(UserResourceApi, "get_granted_permissions")
+    mock.return_value = {"grantedAccess": []}
+    await authorization_client.get_granted_permissions_for_user("")
+    mock.assert_called_with(user_id=None)
 
 
 @pytest.mark.asyncio
