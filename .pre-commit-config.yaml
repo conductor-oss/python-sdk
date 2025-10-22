@@ -24,11 +24,22 @@ repos:
       - id: poetry-check
       - id: poetry-lock
 
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.15.0
-  #   hooks:
-  #     - id: mypy
-  #       pass_filenames: false
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
+    hooks:
+      - id: mypy
+        pass_filenames: false
+        args: ["src/"]
+        additional_dependencies:
+          - types-six
+          - types-python-dateutil
+          - types-requests
+          - types-deprecated
+          - pydantic
+          - aiohttp
+          - aiohttp-retry
+          - httpx
+          - astor
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.12.3
