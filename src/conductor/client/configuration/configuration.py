@@ -187,7 +187,7 @@ class Configuration:
         self.polling_interval = polling_interval or self._get_env_float(
             "CONDUCTOR_WORKER_POLL_INTERVAL", 100
         )
-        self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", "default_domain")
+        self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", None)
         self.polling_interval_seconds = polling_interval_seconds or self._get_env_float(
             "CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0
         )
