@@ -10,7 +10,7 @@ def test_initialization_default():
     config = Configuration()
     assert config.server_url is not None
     assert config.polling_interval == 100
-    assert config.domain == "default_domain"
+    assert config.domain is None
     assert config.polling_interval_seconds == 0
     assert config.debug is False
 
@@ -138,7 +138,7 @@ def test_get_worker_property_value_default():
 def test_get_worker_property_value_domain():
     config = Configuration()
     result = config.get_worker_property_value("domain", "mytask")
-    assert result == "default_domain"
+    assert result is None
 
 
 def test_get_worker_property_value_poll_interval_seconds():
@@ -226,7 +226,7 @@ def test_get_domain_with_task_type(monkeypatch):
 def test_get_domain_default():
     config = Configuration()
     result = config.get_domain("mytask")
-    assert result == "default_domain"
+    assert result is None
 
 
 def test_get_poll_interval_with_task_type(monkeypatch):
