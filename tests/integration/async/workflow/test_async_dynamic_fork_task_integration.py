@@ -58,6 +58,9 @@ def test_task_def(test_task_name):
     )
 
 
+@pytest.mark.v5_2_6
+@pytest.mark.v4_1_73
+@pytest.mark.v3_21_16
 @pytest.mark.asyncio
 async def test_async_dynamic_fork_task_with_separate_params(
     configuration,
@@ -190,6 +193,9 @@ async def test_async_dynamic_fork_task_with_separate_params(
                 print(f"Warning: Failed to cleanup task definition: {cleanup_error}")
 
 
+@pytest.mark.v5_2_6
+@pytest.mark.v4_1_73
+@pytest.mark.v3_21_16
 @pytest.mark.asyncio
 async def test_async_dynamic_fork_task_with_combined_param(
     configuration,
