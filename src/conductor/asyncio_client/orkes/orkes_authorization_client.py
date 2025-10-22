@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.authorization_request_adapter import (
     AuthorizationRequestAdapter as AuthorizationRequest,
 )
@@ -11,24 +12,23 @@ from conductor.asyncio_client.adapters.models.conductor_user_adapter import (
 from conductor.asyncio_client.adapters.models.extended_conductor_application_adapter import (
     ExtendedConductorApplicationAdapter as ExtendedConductorApplication,
 )
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter as Tag
+from conductor.asyncio_client.adapters.models.granted_access_adapter import (
+    GrantedAccessAdapter as GrantedAccess,
+)
 from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter as Group
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter as Tag
+from conductor.asyncio_client.adapters.models.target_ref_adapter import (
+    TargetRefAdapter as TargetRef,
+)
 from conductor.asyncio_client.adapters.models.upsert_group_request_adapter import (
     UpsertGroupRequestAdapter as UpsertGroupRequest,
 )
 from conductor.asyncio_client.adapters.models.upsert_user_request_adapter import (
     UpsertUserRequestAdapter as UpsertUserRequest,
 )
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.orkes.models.access_key import AccessKey
-from conductor.asyncio_client.adapters.models.target_ref_adapter import (
-    TargetRefAdapter as TargetRef,
-)
-from conductor.asyncio_client.adapters.models.granted_access_adapter import (
-    GrantedAccessAdapter as GrantedAccess,
-)
 
 
 class OrkesAuthorizationClient(OrkesBaseClient):
@@ -51,7 +51,6 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     async def get_user(self, user_id: str) -> ConductorUser:
         """Get user by ID"""
         user = await self.user_api.get_user(id=user_id)
-        print(user)
 
         return ConductorUser.from_dict(user)
 
@@ -186,7 +185,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return await self.application_api.get_tags_for_application(application_id)
 
     async def delete_application_tags(self, tags: List[Tag], application_id: str):
-        await self.application_api.delete_tag_for_application(tags, application_id)
+        await self.application_api.delete_tag_for_application(application_id, tags)
 
     async def create_access_key(self, application_id: str) -> AccessKey:
         key_obj = await self.application_api.create_access_key(application_id)
@@ -226,3 +225,11 @@ class OrkesAuthorizationClient(OrkesBaseClient):
             access = ga["access"]
             granted_permissions.append(GrantedAccess(target=target, access=access))
         return granted_permissions
+
+    async def get_app_by_access_key_id(
+        self, access_key_id: str, *args, **kwargs
+    ) -> ExtendedConductorApplication:
+        application_access_key_obj = await self.application_api.get_app_by_access_key_id(
+            access_key_id, *args, **kwargs
+        )
+        return ExtendedConductorApplication.from_dict(application_access_key_obj)

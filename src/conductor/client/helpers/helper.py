@@ -7,7 +7,6 @@ from typing import ClassVar, Dict, Tuple
 import six
 from requests.structures import CaseInsensitiveDict
 
-import conductor.client.http.models as http_models
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.codegen import rest
 
@@ -79,6 +78,8 @@ class ObjectMapper(object):
             if klass in self.NATIVE_TYPES_MAPPING:
                 klass = self.NATIVE_TYPES_MAPPING[klass]
             else:
+                import conductor.client.http.models as http_models  # noqa: PLC0415
+
                 klass = getattr(http_models, klass)
 
         if klass in self.PRIMITIVE_TYPES:
