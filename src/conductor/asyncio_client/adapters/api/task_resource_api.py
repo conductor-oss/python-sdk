@@ -11,24 +11,21 @@ from conductor.asyncio_client.http.api import TaskResourceApi
 class TaskResourceApiAdapter(TaskResourceApi):
     @validate_call
     async def update_task_sync(
-            self,
-            workflow_id: StrictStr,
-            task_ref_name: StrictStr,
-            status: StrictStr,
-            request_body: Dict[str, Any],
-            workerid: Optional[StrictStr] = None,
-            _request_timeout: Union[
-                None,
-                Annotated[StrictFloat, Field(gt=0)],
-                Tuple[
-                    Annotated[StrictFloat, Field(gt=0)],
-                    Annotated[StrictFloat, Field(gt=0)]
-                ]
-            ] = None,
-            _request_auth: Optional[Dict[StrictStr, Any]] = None,
-            _content_type: Optional[StrictStr] = None,
-            _headers: Optional[Dict[StrictStr, Any]] = None,
-            _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+        self,
+        workflow_id: StrictStr,
+        task_ref_name: StrictStr,
+        status: StrictStr,
+        request_body: Dict[str, Any],
+        workerid: Optional[StrictStr] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> WorkflowAdapter:
         """Update a task By Ref Name synchronously
 
@@ -74,16 +71,13 @@ class TaskResourceApiAdapter(TaskResourceApi):
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
-            _host_index=_host_index
+            _host_index=_host_index,
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
             "200": "Workflow",
         }
-        response_data = await self.api_client.call_api(
-            *_param,
-            _request_timeout=_request_timeout
-        )
+        response_data = await self.api_client.call_api(*_param, _request_timeout=_request_timeout)
         await response_data.read()
         return self.api_client.response_deserialize(
             response_data=response_data,

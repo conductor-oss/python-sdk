@@ -9,12 +9,8 @@ from conductor.asyncio_client.http.models import ExtendedEventExecution
 
 
 class ExtendedEventExecutionAdapter(ExtendedEventExecution):
-    event_handler: Optional["EventHandlerAdapter"] = Field(
-        default=None, alias="eventHandler"
-    )
-    full_message_payload: Optional[Dict[str, Any]] = Field(
-        default=None, alias="fullMessagePayload"
-    )
+    event_handler: Optional["EventHandlerAdapter"] = Field(default=None, alias="eventHandler")
+    full_message_payload: Optional[Dict[str, Any]] = Field(default=None, alias="fullMessagePayload")
     output: Optional[Dict[str, Any]] = None
     payload: Optional[Dict[str, Any]] = None
 

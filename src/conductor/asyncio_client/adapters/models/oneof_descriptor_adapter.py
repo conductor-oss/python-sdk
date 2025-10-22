@@ -9,9 +9,7 @@ from conductor.asyncio_client.http.models import OneofDescriptor
 
 
 class OneofDescriptorAdapter(OneofDescriptor):
-    containing_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="containingType"
-    )
+    containing_type: Optional["DescriptorAdapter"] = Field(default=None, alias="containingType")
     file: Optional["FileDescriptorAdapter"] = None
     options: Optional["OneofOptionsAdapter"] = None
     proto: Optional["OneofDescriptorProtoAdapter"] = None

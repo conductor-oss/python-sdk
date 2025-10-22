@@ -1,5 +1,4 @@
-from conductor.client.codegen.models.sub_workflow_params import \
-    SubWorkflowParams
+from conductor.client.codegen.models.sub_workflow_params import SubWorkflowParams
 
 
 class SubWorkflowParamsAdapter(SubWorkflowParams):

@@ -20,9 +20,7 @@ class ExtensionRangeOrBuilderAdapter(ExtensionRangeOrBuilder):
     options_or_builder: Optional["ExtensionRangeOptionsOrBuilderAdapter"] = Field(
         default=None, alias="optionsOrBuilder"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -55,9 +53,7 @@ class ExtensionRangeOrBuilderAdapter(ExtensionRangeOrBuilder):
                     else None
                 ),
                 "optionsOrBuilder": (
-                    ExtensionRangeOptionsOrBuilderAdapter.from_dict(
-                        obj["optionsOrBuilder"]
-                    )
+                    ExtensionRangeOptionsOrBuilderAdapter.from_dict(obj["optionsOrBuilder"])
                     if obj.get("optionsOrBuilder") is not None
                     else None
                 ),

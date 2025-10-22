@@ -22,16 +22,18 @@ def get_task_interface_list_as_workflow_task_list(*tasks: Self) -> List[Workflow
     return converted_tasks
 
 
-class TaskInterface():
-    def __init__(self,
-                 task_reference_name: str,
-                 task_type: TaskType,
-                 task_name: Optional[str] = None,
-                 description: Optional[str] = None,
-                 optional: Optional[bool] = None,
-                 input_parameters: Optional[Dict[str, Any]] = None,
-                 cache_key: Optional[str] = None,
-                 cache_ttl_second: int = 0) -> Self:
+class TaskInterface:
+    def __init__(
+        self,
+        task_reference_name: str,
+        task_type: TaskType,
+        task_name: Optional[str] = None,
+        description: Optional[str] = None,
+        optional: Optional[bool] = None,
+        input_parameters: Optional[Dict[str, Any]] = None,
+        cache_key: Optional[str] = None,
+        cache_ttl_second: int = 0,
+    ) -> Self:
         self.task_reference_name = task_reference_name
         self.task_type = task_type
         self.name = task_name or task_reference_name
@@ -149,7 +151,7 @@ class TaskInterface():
             optional=self._optional,
             cache_config=cache_config,
             expression=self._expression,
-            evaluator_type=self._evaluator_type
+            evaluator_type=self._evaluator_type,
         )
 
     def output(self, json_path: Optional[str] = None) -> str:
@@ -160,7 +162,12 @@ class TaskInterface():
         else:
             return "${" + f"{self.task_reference_name}.output.{json_path}" + "}"
 
-    def input(self, json_path: Optional[str] = None, key: Optional[str] = None, value: Optional[Any] = None) -> Union[str, Self]:
+    def input(
+        self,
+        json_path: Optional[str] = None,
+        key: Optional[str] = None,
+        value: Optional[Any] = None,
+    ) -> Union[str, Self]:
         if key is not None and value is not None:
             """
             Set input parameter

@@ -193,12 +193,12 @@ async def main():
             "https://": "http://proxy.company.com:8080"
         }
     )
-    
+
     config = Configuration(
         server_url="https://api.orkes.io/api",
         http_connection=async_client
     )
-    
+
     async with ApiClient(config) as api_client:
         # Use the client with proxy configuration
         pass

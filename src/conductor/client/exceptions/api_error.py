@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class APIErrorCode(str, Enum):
-    NOT_FOUND = 404,
+    NOT_FOUND = (404,)
     FORBIDDEN = 403
     CONFLICT = 409
     BAD_REQUEST = 400
@@ -11,7 +11,6 @@ class APIErrorCode(str, Enum):
 
 
 class APIError(Exception):
-
     def __init__(self, status=None, reason=None, http_resp=None, body=None):
         super().__init__(status, reason, http_resp, body)
 

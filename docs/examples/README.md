@@ -27,22 +27,22 @@ def greet(name: str) -> str:
 def main():
     config = Configuration()
     workflow_executor = WorkflowExecutor(configuration=config)
-    
+
     workflow = ConductorWorkflow(name='greetings', executor=workflow_executor)
     workflow.version = 1
     workflow >> greet(task_ref_name='greet_ref', name=workflow.input('name'))
-    
+
     workflow.register(True)
-    
+
     task_handler = TaskHandler(configuration=config)
     task_handler.start_processes()
-    
+
     result = workflow_executor.execute(
         name=workflow.name,
         version=workflow.version,
         workflow_input={'name': 'World'}
     )
-    
+
     print(f'Result: {result.output["result"]}')
     task_handler.stop_processes()
 

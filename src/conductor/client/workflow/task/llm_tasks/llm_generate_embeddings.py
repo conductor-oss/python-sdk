@@ -7,7 +7,14 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class LlmGenerateEmbeddings(TaskInterface):
-    def __init__(self, task_ref_name: str, llm_provider: str, model: str, text: str, task_name: Optional[str] = None) -> Self:
+    def __init__(
+        self,
+        task_ref_name: str,
+        llm_provider: str,
+        model: str,
+        text: str,
+        task_name: Optional[str] = None,
+    ) -> Self:
         if task_name is None:
             task_name = "llm_generate_embeddings"
         super().__init__(
@@ -18,5 +25,5 @@ class LlmGenerateEmbeddings(TaskInterface):
                 "llmProvider": llm_provider,
                 "model": model,
                 "text": text,
-            }
+            },
         )

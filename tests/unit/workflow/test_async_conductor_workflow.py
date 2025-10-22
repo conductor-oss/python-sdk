@@ -38,10 +38,10 @@ def mock_task():
             super().__init__("test_task", TaskType.SIMPLE)
             self._mock_workflow_task = MagicMock(spec=WorkflowTaskAdapter)
             self._mock_workflow_task.type = "SIMPLE"
-        
+
         def to_workflow_task(self):
             return self._mock_workflow_task
-    
+
     return MockTask()
 
 
@@ -298,9 +298,9 @@ def test_workflow_input(conductor_workflow):
 @pytest.mark.asyncio
 async def test_register(conductor_workflow, mock_executor):
     mock_executor.register_workflow.return_value = {"status": "success"}
-    
+
     result = await conductor_workflow.register(overwrite=True)
-    
+
     mock_executor.register_workflow.assert_called_once()
     call_args = mock_executor.register_workflow.call_args
     assert call_args[1]["overwrite"] is True
@@ -312,9 +312,9 @@ async def test_register(conductor_workflow, mock_executor):
 async def test_start_workflow(conductor_workflow, mock_executor):
     mock_executor.start_workflow.return_value = "workflow_id_123"
     start_request = StartWorkflowRequestAdapter(name="test")
-    
+
     result = await conductor_workflow.start_workflow(start_request)
-    
+
     mock_executor.start_workflow.assert_called_once_with(start_request)
     assert start_request.workflow_def is not None
     assert start_request.name == "test_workflow"
@@ -325,11 +325,11 @@ async def test_start_workflow(conductor_workflow, mock_executor):
 @pytest.mark.asyncio
 async def test_start_workflow_with_input(conductor_workflow, mock_executor):
     mock_executor.start_workflow.return_value = "workflow_id_123"
-    
+
     with patch('conductor.asyncio_client.workflow.conductor_workflow.StartWorkflowRequestAdapter') as mock_request_class:
         mock_request = MagicMock()
         mock_request_class.return_value = mock_request
-        
+
         result = await conductor_workflow.start_workflow_with_input(
             workflow_input={"param1": "value1"},
             correlation_id="test_correlation",
@@ -338,7 +338,7 @@ async def test_start_workflow_with_input(conductor_workflow, mock_executor):
             idempotency_key="key123",
             idempotency_strategy=IdempotencyStrategy.FAIL
         )
-        
+
         mock_executor.start_workflow.assert_called_once_with(mock_request)
         assert result == "workflow_id_123"
 
@@ -346,13 +346,13 @@ async def test_start_workflow_with_input(conductor_workflow, mock_executor):
 @pytest.mark.asyncio
 async def test_start_workflow_with_input_defaults(conductor_workflow, mock_executor):
     mock_executor.start_workflow.return_value = "workflow_id_123"
-    
+
     with patch('conductor.asyncio_client.workflow.conductor_workflow.StartWorkflowRequestAdapter') as mock_request_class:
         mock_request = MagicMock()
         mock_request_class.return_value = mock_request
-        
+
         result = await conductor_workflow.start_workflow_with_input()
-        
+
         mock_executor.start_workflow.assert_called_once_with(mock_request)
         assert result == "workflow_id_123"
 
@@ -360,11 +360,11 @@ async def test_start_workflow_with_input_defaults(conductor_workflow, mock_execu
 @pytest.mark.asyncio
 async def test_execute(conductor_workflow, mock_executor, mock_workflow_run):
     mock_executor.execute_workflow.return_value = mock_workflow_run
-    
+
     with patch('conductor.asyncio_client.workflow.conductor_workflow.StartWorkflowRequestAdapter') as mock_request_class:
         mock_request = MagicMock()
         mock_request_class.return_value = mock_request
-        
+
         result = await conductor_workflow.execute(
             workflow_input={"param1": "value1"},
             wait_until_task_ref="task1",
@@ -374,7 +374,7 @@ async def test_execute(conductor_workflow, mock_executor, mock_workflow_run):
             idempotency_strategy=IdempotencyStrategy.FAIL,
             task_to_domain={"task1": "domain1"}
         )
-        
+
         mock_executor.execute_workflow.assert_called_once()
         call_args = mock_executor.execute_workflow.call_args
         assert call_args[1]["wait_until_task_ref"] == "task1"
@@ -386,13 +386,13 @@ async def test_execute(conductor_workflow, mock_executor, mock_workflow_run):
 @pytest.mark.asyncio
 async def test_execute_defaults(conductor_workflow, mock_executor, mock_workflow_run):
     mock_executor.execute_workflow.return_value = mock_workflow_run
-    
+
     with patch('conductor.asyncio_client.workflow.conductor_workflow.StartWorkflowRequestAdapter') as mock_request_class:
         mock_request = MagicMock()
         mock_request_class.return_value = mock_request
-        
+
         result = await conductor_workflow.execute()
-        
+
         mock_executor.execute_workflow.assert_called_once()
         call_args = mock_executor.execute_workflow.call_args
         assert call_args[1]["wait_until_task_ref"] == ""
@@ -404,9 +404,9 @@ def test_to_workflow_def(conductor_workflow):
     with patch('conductor.asyncio_client.workflow.conductor_workflow.WorkflowDefAdapter') as mock_def_class:
         mock_def = MagicMock(spec=WorkflowDefAdapter)
         mock_def_class.return_value = mock_def
-        
+
         result = conductor_workflow.to_workflow_def()
-        
+
         mock_def_class.assert_called_once()
         call_args = mock_def_class.call_args
         assert call_args[1]["name"] == "test_workflow"
@@ -421,9 +421,9 @@ def test_to_workflow_task(conductor_workflow):
         mock_task = MagicMock()
         mock_task.to_workflow_task.return_value = MagicMock(spec=WorkflowTaskAdapter)
         mock_task_class.return_value = mock_task
-        
+
         result = conductor_workflow.to_workflow_task()
-        
+
         mock_task_class.assert_called_once()
         assert result is not None
 
@@ -435,9 +435,9 @@ def test_get_workflow_task_list_empty(conductor_workflow):
 
 def test_get_workflow_task_list_single_task(conductor_workflow, mock_task):
     conductor_workflow._tasks = [mock_task]
-    
+
     result = conductor_workflow._AsyncConductorWorkflow__get_workflow_task_list()
-    
+
     assert len(result) == 1
     assert result[0] == mock_task._mock_workflow_task
 
@@ -448,15 +448,15 @@ def test_get_workflow_task_list_multiple_tasks(conductor_workflow, mock_task):
             super().__init__("test_task2", TaskType.SIMPLE)
             self._mock_workflow_task = MagicMock(spec=WorkflowTaskAdapter)
             self._mock_workflow_task.type = "SIMPLE"
-        
+
         def to_workflow_task(self):
             return self._mock_workflow_task
-    
+
     mock_task2 = MockTask2()
     conductor_workflow._tasks = [mock_task, mock_task2]
-    
+
     result = conductor_workflow._AsyncConductorWorkflow__get_workflow_task_list()
-    
+
     assert len(result) == 2
     assert result[0] == mock_task._mock_workflow_task
     assert result[1] == mock_task2._mock_workflow_task
@@ -464,7 +464,7 @@ def test_get_workflow_task_list_multiple_tasks(conductor_workflow, mock_task):
 
 def test_rshift_single_task(conductor_workflow, mock_task):
     result = conductor_workflow.__rshift__(mock_task)
-    
+
     assert result == conductor_workflow
     assert len(conductor_workflow._tasks) == 1
     assert conductor_workflow._tasks[0] is not None
@@ -474,11 +474,11 @@ def test_rshift_list_tasks(conductor_workflow, mock_task):
     class MockTask2(TaskInterface):
         def __init__(self):
             super().__init__("test_task2", TaskType.SIMPLE)
-    
+
     mock_task2 = MockTask2()
-    
+
     result = conductor_workflow.__rshift__([mock_task, mock_task2])
-    
+
     assert result == conductor_workflow
     assert len(conductor_workflow._tasks) == 1
 
@@ -487,39 +487,39 @@ def test_rshift_fork_join_tasks(conductor_workflow, mock_task):
     class MockTask2(TaskInterface):
         def __init__(self):
             super().__init__("test_task2", TaskType.SIMPLE)
-    
+
     mock_task2 = MockTask2()
-    
+
     with patch('conductor.asyncio_client.workflow.conductor_workflow.ForkTask') as mock_fork_class:
         mock_fork_task = MagicMock()
         mock_fork_class.return_value = mock_fork_task
-        
+
         result = conductor_workflow.__rshift__([[mock_task], [mock_task2]])
-        
+
         assert result == conductor_workflow
         mock_fork_class.assert_called_once()
 
 
 def test_rshift_workflow(conductor_workflow):
     sub_workflow = AsyncConductorWorkflow(MagicMock(), "sub_workflow", 1)
-    
+
     with patch('conductor.asyncio_client.workflow.conductor_workflow.InlineSubWorkflowTask') as mock_inline_class:
         class MockInlineTask(TaskInterface):
             def __init__(self):
                 super().__init__("mock_inline", TaskType.SUB_WORKFLOW)
-        
+
         mock_inline_task = MockInlineTask()
         mock_inline_class.return_value = mock_inline_task
-        
+
         result = conductor_workflow.__rshift__(sub_workflow)
-        
+
         assert result == conductor_workflow
         mock_inline_class.assert_called_once()
 
 
 def test_add_single_task(conductor_workflow, mock_task):
     result = conductor_workflow.add(mock_task)
-    
+
     assert result == conductor_workflow
     assert len(conductor_workflow._tasks) == 1
     assert conductor_workflow._tasks[0] is not None
@@ -529,11 +529,11 @@ def test_add_list_tasks(conductor_workflow, mock_task):
     class MockTask2(TaskInterface):
         def __init__(self):
             super().__init__("test_task2", TaskType.SIMPLE)
-    
+
     mock_task2 = MockTask2()
-    
+
     result = conductor_workflow.add([mock_task, mock_task2])
-    
+
     assert result == conductor_workflow
     assert len(conductor_workflow._tasks) == 2
 
@@ -547,15 +547,15 @@ def test_add_fork_join_tasks(conductor_workflow, mock_task):
     class MockTask2(TaskInterface):
         def __init__(self):
             super().__init__("test_task2", TaskType.SIMPLE)
-    
+
     mock_task2 = MockTask2()
-    
+
     with patch('conductor.asyncio_client.workflow.conductor_workflow.ForkTask') as mock_fork_class:
         mock_fork_task = MagicMock()
         mock_fork_class.return_value = mock_fork_task
-        
+
         conductor_workflow._AsyncConductorWorkflow__add_fork_join_tasks([[mock_task], [mock_task2]])
-        
+
         mock_fork_class.assert_called_once()
         assert len(conductor_workflow._tasks) == 1
         assert conductor_workflow._tasks[0] == mock_fork_task
@@ -569,13 +569,13 @@ def test_add_fork_join_tasks_invalid_type(conductor_workflow):
 @pytest.mark.asyncio
 async def test_call(conductor_workflow, mock_executor, mock_workflow_run):
     mock_executor.execute_workflow.return_value = mock_workflow_run
-    
+
     with patch('conductor.asyncio_client.workflow.conductor_workflow.StartWorkflowRequestAdapter') as mock_request_class:
         mock_request = MagicMock()
         mock_request_class.return_value = mock_request
-        
+
         result = await conductor_workflow(param1="value1", param2="value2")
-        
+
         mock_executor.execute_workflow.assert_called_once()
         assert result == mock_workflow_run
 
@@ -583,13 +583,13 @@ async def test_call(conductor_workflow, mock_executor, mock_workflow_run):
 @pytest.mark.asyncio
 async def test_call_no_params(conductor_workflow, mock_executor, mock_workflow_run):
     mock_executor.execute_workflow.return_value = mock_workflow_run
-    
+
     with patch('conductor.asyncio_client.workflow.conductor_workflow.StartWorkflowRequestAdapter') as mock_request_class:
         mock_request = MagicMock()
         mock_request_class.return_value = mock_request
-        
+
         result = await conductor_workflow()
-        
+
         mock_executor.execute_workflow.assert_called_once()
         assert result == mock_workflow_run
 
@@ -617,7 +617,7 @@ def test_output_none(conductor_workflow):
 def test_inline_sub_workflow_task_init():
     workflow = AsyncConductorWorkflow(MagicMock(), "test_workflow", 1)
     task = InlineSubWorkflowTask("task_ref", workflow)
-    
+
     assert task.task_reference_name == "task_ref"
     assert task.task_type == TaskType.SUB_WORKFLOW
     assert task._workflow_name == "test_workflow"
@@ -627,17 +627,17 @@ def test_inline_sub_workflow_task_init():
 def test_inline_sub_workflow_task_to_workflow_task():
     workflow = AsyncConductorWorkflow(MagicMock(), "test_workflow", 1)
     task = InlineSubWorkflowTask("task_ref", workflow)
-    
+
     with patch('conductor.asyncio_client.workflow.conductor_workflow.SubWorkflowParamsAdapter') as mock_params_class:
         mock_params = MagicMock()
         mock_params_class.return_value = mock_params
-        
+
         with patch('conductor.asyncio_client.workflow.task.task.TaskInterface.to_workflow_task') as mock_super:
             mock_super.return_value = MagicMock()
             result = task.to_workflow_task()
-            
+
             mock_params_class.assert_called_once()
             call_args = mock_params_class.call_args
             assert call_args[1]["name"] == "test_workflow"
             assert call_args[1]["version"] == 1
-            assert result is not None 
+            assert result is not None

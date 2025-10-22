@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from conductor.asyncio_client.workflow.task.task import TaskInterface
-from conductor.shared.workflow.enums import (AssignmentCompletionStrategy,
-                                             TaskType)
+from conductor.shared.workflow.enums import AssignmentCompletionStrategy, TaskType
 
 
 class HumanTask(TaskInterface):

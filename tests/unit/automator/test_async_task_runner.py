@@ -241,7 +241,7 @@ async def test_execute_task_with_faulty_execution_worker(mocker):
     task_runner = AsyncTaskRunner(configuration=Configuration(), worker=worker)
     task = get_valid_task()
     task_result = await task_runner._AsyncTaskRunner__execute_task(task)
-    
+
     # Check the task result properties
     assert task_result.task_id == "VALID_TASK_ID"
     assert task_result.workflow_instance_id == "VALID_WORKFLOW_INSTANCE_ID"
@@ -250,7 +250,7 @@ async def test_execute_task_with_faulty_execution_worker(mocker):
     assert task_result.reason_for_incompletion == "faulty execution"
     assert task_result.logs is not None
     assert len(task_result.logs) == 1
-    
+
     # Check the log entry
     log_entry = task_result.logs[0]
     assert log_entry.task_id == "VALID_TASK_ID"

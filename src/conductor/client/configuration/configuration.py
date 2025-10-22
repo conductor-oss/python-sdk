@@ -65,6 +65,7 @@ class Configuration:
     )
     ```
     """
+
     AUTH_TOKEN = None
 
     def __init__(
@@ -131,9 +132,7 @@ class Configuration:
             key = os.getenv("CONDUCTOR_AUTH_KEY")
             secret = os.getenv("CONDUCTOR_AUTH_SECRET")
             if key is not None and secret is not None:
-                self.authentication_settings = AuthenticationSettings(
-                    key_id=key, key_secret=secret
-                )
+                self.authentication_settings = AuthenticationSettings(key_id=key, key_secret=secret)
             else:
                 self.authentication_settings = None
 
@@ -170,9 +169,7 @@ class Configuration:
                 self.proxy_headers = json.loads(os.getenv("CONDUCTOR_PROXY_HEADERS"))
             except (json.JSONDecodeError, TypeError):
                 # If JSON parsing fails, treat as a single header value
-                self.proxy_headers = {
-                    "Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")
-                }
+                self.proxy_headers = {"Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")}
         # Safe chars for path_param
         self.safe_chars_for_path_param = ""
 

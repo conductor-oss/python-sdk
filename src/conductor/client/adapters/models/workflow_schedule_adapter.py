@@ -12,7 +12,7 @@ class WorkflowScheduleAdapter(WorkflowSchedule):
         cron_expression: Optional[str] = None,
         run_catchup_schedule_instances: Optional[bool] = None,
         paused: Optional[bool] = None,
-        start_workflow_request = None,
+        start_workflow_request=None,
         schedule_start_time: Optional[int] = None,
         schedule_end_time: Optional[int] = None,
         create_time: Optional[int] = None,
@@ -21,9 +21,9 @@ class WorkflowScheduleAdapter(WorkflowSchedule):
         updated_by: Optional[str] = None,
         paused_reason: Optional[str] = None,
         description: Optional[str] = None,
-        tags = None,
-        zone_id = None,
-    ):  # noqa: E501
+        tags=None,
+        zone_id=None,
+    ):
         self._create_time = None
         self._created_by = None
         self._cron_expression = None

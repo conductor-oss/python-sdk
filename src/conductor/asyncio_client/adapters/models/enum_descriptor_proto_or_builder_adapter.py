@@ -23,18 +23,16 @@ class EnumDescriptorProtoOrBuilderAdapter(EnumDescriptorProtoOrBuilder):
     reserved_range_list: Optional[List["EnumReservedRangeAdapter"]] = Field(
         default=None, alias="reservedRangeList"
     )
-    reserved_range_or_builder_list: Optional[
-        List["EnumReservedRangeOrBuilderAdapter"]
-    ] = Field(default=None, alias="reservedRangeOrBuilderList")
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
+    reserved_range_or_builder_list: Optional[List["EnumReservedRangeOrBuilderAdapter"]] = Field(
+        default=None, alias="reservedRangeOrBuilderList"
     )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
     value_list: Optional[List["EnumValueDescriptorProtoAdapter"]] = Field(
         default=None, alias="valueList"
     )
-    value_or_builder_list: Optional[
-        List["EnumValueDescriptorProtoOrBuilderAdapter"]
-    ] = Field(default=None, alias="valueOrBuilderList")
+    value_or_builder_list: Optional[List["EnumValueDescriptorProtoOrBuilderAdapter"]] = Field(
+        default=None, alias="valueOrBuilderList"
+    )
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -102,10 +100,7 @@ class EnumDescriptorProtoOrBuilderAdapter(EnumDescriptorProtoOrBuilder):
                 ),
                 "valueCount": obj.get("valueCount"),
                 "valueList": (
-                    [
-                        EnumValueDescriptorProtoAdapter.from_dict(_item)
-                        for _item in obj["valueList"]
-                    ]
+                    [EnumValueDescriptorProtoAdapter.from_dict(_item) for _item in obj["valueList"]]
                     if obj.get("valueList") is not None
                     else None
                 ),

@@ -10,8 +10,5 @@ class GetDocument(TaskInterface):
             task_name=task_name,
             task_reference_name=task_ref_name,
             task_type=TaskType.GET_DOCUMENT,
-            input_parameters={
-                "url": url,
-                "mediaType": media_type
-            }
+            input_parameters={"url": url, "mediaType": media_type},
         )

@@ -11,7 +11,7 @@ from conductor.shared.worker.task_definition_helper import (
 __all__ = [
     "NonRetryableException",
     "TaskOptions",
-    "task_options",
-    "get_task_options",
     "apply_task_options_to_task_def",
+    "get_task_options",
+    "task_options",
 ]

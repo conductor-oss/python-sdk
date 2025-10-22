@@ -29,7 +29,7 @@ def main():
 
     print(f'\nworkflow result: {workflow_run}\n')
     print(f'see the workflow execution here: {api_config.ui_host}/execution/{workflow_run.workflow_id}\n')
-    
+
     task_handler.stop_processes()
 
 

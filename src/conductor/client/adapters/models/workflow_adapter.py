@@ -85,9 +85,7 @@ class WorkflowAdapter(Workflow):
         """
         if not self.tasks:
             return []
-        return [
-            task for task in self.tasks if task.status in ("SCHEDULED", "IN_PROGRESS")
-        ]
+        return [task for task in self.tasks if task.status in ("SCHEDULED", "IN_PROGRESS")]
 
     def get_task_by_reference_name(self, reference_name: str) -> Optional[TaskAdapter]:
         """Gets a task by its reference name

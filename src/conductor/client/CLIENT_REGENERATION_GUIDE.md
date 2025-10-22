@@ -226,7 +226,7 @@ If tests fail due to breaking changes:
                **kwargs
            )
            return self.start_workflow(start_request)
-       
+
        # Alias for backward compatibility
        start_workflow_v1 = start_workflow_legacy
    ```

@@ -58,12 +58,15 @@ extend-exclude = [
     "tests/",
     "examples/",
     "docs/",
+    "src/conductor/client/http/",
+    "src/conductor/client/codegen/",
+    "src/conductor/client/orkes/api/",
+    "src/conductor/asyncio_client/http/",
     "*.egg-info",
     "build",
     "dist",
 ]
-fix = false
-show-fixes = true
+
 
 [tool.ruff.lint]
 select = [
@@ -120,11 +123,24 @@ select = [
 ]
 
 ignore = [
+    # B008: Do not perform function calls in argument defaults
     "B008",
+    # C901: Function is too complex
     "C901",
+    # W191: Indentation contains tabs
     "W191",
+    # E501: Line too long (handled by formatter)
     "E501",
+    # B011: Do not assert False
     "B011",
+    # PLR2004: Magic value used in comparison (HTTP status codes are well-known constants)
+    "PLR2004",
+    # PLR0915: Too many statements (generated code has large functions)
+    "PLR0915",
+    # PLW1641: Object does not implement `__hash__` method (generated code)
+    "PLW1641",
+    # PYI063: Use PEP 570 syntax for positional-only parameters (backward compatibility)
+    "PYI063",
     # too-many-arguments
     "PLR0913",
     # collapsible-else-if
@@ -155,9 +171,9 @@ line-ending = "auto"
 "src/conductor/client/http/**/*.py" = ["ALL"]
 "src/conductor/client/codegen/**/*.py" = ["ALL"]
 "src/conductor/client/orkes/api/*.py" = ["ALL"]
+"src/conductor/asyncio_client/http/**/*.py" = ["ALL"]
 "tests/**/*.py" = ["B", "C4", "SIM", "PLR2004"]
 "examples/**/*.py" = ["B", "C4", "SIM"]
-"src/conductor/asyncio_client/http/**/*.py" = ["ALL"]
 
 [tool.coverage.run]
 source = ["src/conductor"]

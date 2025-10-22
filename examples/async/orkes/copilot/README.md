@@ -1,7 +1,7 @@
 # Orkes Conductor Examples
 
 Examples in this folder uses features that are available in the Orkes Conductor.
-To run these examples, you need an account on Playground (https://play.orkes.io) or an Orkes Cloud account. 
+To run these examples, you need an account on Playground (https://play.orkes.io) or an Orkes Cloud account.
 
 ### Setup SDK
 
@@ -26,4 +26,3 @@ export PINECONE_PROJECT=
 
 export OPENAI_API_KEY=
 ```
-

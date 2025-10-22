@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from conductor.asyncio_client.adapters.models.extended_secret_adapter import \
-    ExtendedSecretAdapter
+from conductor.asyncio_client.adapters.models.extended_secret_adapter import ExtendedSecretAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
@@ -44,9 +43,7 @@ class OrkesSecretClient(OrkesBaseClient):
         self,
     ) -> List[ExtendedSecretAdapter]:
         """List secrets with tags that the current user can grant access to"""
-        return (
-            await self.secret_api.list_secrets_with_tags_that_user_can_grant_access_to()
-        )
+        return await self.secret_api.list_secrets_with_tags_that_user_can_grant_access_to()
 
     # Tag Management Operations
     async def put_tag_for_secret(self, key: str, tags: List[TagAdapter]) -> None:

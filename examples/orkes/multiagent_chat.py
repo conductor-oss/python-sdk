@@ -44,12 +44,12 @@ def main():
     moderator_text = """You are very good at moderating the debates and discussions. In this discussion, there are 2 panelists, ${ua1} and ${ua2}.
     As a moderator, you summarize the discussion so far, pick one of the panelist ${ua1} or ${ua2} and ask them a relevant question to continue the discussion.
         You are also an expert in formatting the results into structured json format.  You only output a valid JSON as a response.
-        You answer in RFC8259 compliant 
-        JSON format ONLY with two fields result and user. You can effectively manage a hot discussion while keeping it 
-        quite civil and also at the same time continue the discussion forward encouraging participants and their views. 
+        You answer in RFC8259 compliant
+        JSON format ONLY with two fields result and user. You can effectively manage a hot discussion while keeping it
+        quite civil and also at the same time continue the discussion forward encouraging participants and their views.
         Your answer MUST be in a JSON dictionary with keys "result" and "user".  Before answer, check the output for correctness of the JSON format.
         The values MUST not have new lines or special characters that are not escaped.  The JSON must be RFC8259 compliant.
-        
+
         You produce the output in the following JSON keys:
 
         {
@@ -57,44 +57,44 @@ def main():
          "user": USER_WHO_SOULD_RESPOND_NEXT --> One of ${ua1} or ${ua2}
         }
 
-        "result" should summarize the conversation so far and add the last message in the conversation.  
-        "user" should be the one who should respond next.          
-        You be fair in giving chance to all participants, alternating between ${ua1} and ${ua2}.  
-        the last person to talk was ${last_user} 
-        Do not repeat what you have said before and do not summarize the discussion each time, 
+        "result" should summarize the conversation so far and add the last message in the conversation.
+        "user" should be the one who should respond next.
+        You be fair in giving chance to all participants, alternating between ${ua1} and ${ua2}.
+        the last person to talk was ${last_user}
+        Do not repeat what you have said before and do not summarize the discussion each time,
         just use first person voice to ask questions to move discussion forward.
         Do not use filler sentences like 'in this discussion....'
         JSON:
-        
+
         """
 
     agent1 = 'agent_1'
     agent1_text = """
     You are ${ua1} and you reason and think like ${ua1}.  Your language reflects your persona.
     You are very good at analysis of the content and coming up with insights and questions on the subject and the context.
-    You are in a panel with other participants discussing a specific event/topic as set in the context.  
-    You avoid any repetitive argument, discussion that you have already talked about.          
+    You are in a panel with other participants discussing a specific event/topic as set in the context.
+    You avoid any repetitive argument, discussion that you have already talked about.
     Here is the context on the conversation, add a follow up with your insights and questions to the conversation:
     Do not mention that you are an AI model.
     ${context}
-    
+
     You answer in a very clear way, do not add any preamble to the response:
     """
 
     agent2 = 'agent_2'
     agent2_text = """
     You are ${ua2} and you reason and think like ${ua2}.  Your language reflects your persona.
-    You are very good at continuing the conversation with more insightful question.  
+    You are very good at continuing the conversation with more insightful question.
     You are in a panel with other participants discussing a specific event/topic as set in the context.
-    You bring in your contrarian views to the conversation and always challenge the norms.  
+    You bring in your contrarian views to the conversation and always challenge the norms.
     You avoid any repetitive argument, discussion that you have already talked about.
-    Your responses are times extreme and a bit hyperbolic. 
+    Your responses are times extreme and a bit hyperbolic.
     When given the history of conversation, you ask a meaningful followup question that continues to conversation
     and dives deeper into the topic.
     Do not mention that you are an AI model.
-    Here is the context on the conversation: 
+    Here is the context on the conversation:
     ${context}
-    
+
     You answer in a very clear way, do not add any preamble to the response:
     """
 
@@ -178,7 +178,7 @@ def main():
     wf = ConductorWorkflow(name='multiparty_chat_tmp', version=1, executor=workflow_executor)
 
     script = """
-    (function(){         
+    (function(){
         if ($.user == $.ua1) return 'ua1';
         if ($.user == $.ua2) return 'ua2';
         return 'ua1';

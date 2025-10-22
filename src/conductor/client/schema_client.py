@@ -9,7 +9,6 @@ from conductor.client.http.models.schema_def import SchemaDef
 
 
 class SchemaClient(ABC):
-
     @abstractmethod
     def register_schema(self, schema: SchemaDef) -> None:
         """

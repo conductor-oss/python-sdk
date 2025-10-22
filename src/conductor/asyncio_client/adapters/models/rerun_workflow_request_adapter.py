@@ -9,6 +9,4 @@ from conductor.asyncio_client.http.models import RerunWorkflowRequest
 
 class RerunWorkflowRequestAdapter(RerunWorkflowRequest):
     task_input: Optional[Dict[str, Any]] = Field(default=None, alias="taskInput")
-    workflow_input: Optional[Dict[str, Any]] = Field(
-        default=None, alias="workflowInput"
-    )
+    workflow_input: Optional[Dict[str, Any]] = Field(default=None, alias="workflowInput")

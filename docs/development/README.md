@@ -79,7 +79,7 @@ Both guides include detailed troubleshooting sections, best practices, and step-
    ```bash
    # For sync client
    python scripts/generate_swagger.py --version 3.15.0 --output src/conductor/client/swagger.json
-   
+
    # For async client
    python scripts/generate_swagger.py --version 3.15.0 --output src/conductor/asyncio_client/swagger.json
    ```
@@ -88,7 +88,7 @@ Both guides include detailed troubleshooting sections, best practices, and step-
    ```bash
    # Sync client
    swagger-codegen generate -i src/conductor/client/swagger.json -l python -o src/conductor/client/codegen/
-   
+
    # Async client
    openapi-generator generate -i src/conductor/asyncio_client/swagger.json -g python -o src/conductor/asyncio_client/http/
    ```
@@ -150,7 +150,7 @@ def test_worker_task_execution():
     @worker_task(task_definition_name='test_task')
     def test_task(input_data: str) -> str:
         return f"processed: {input_data}"
-    
+
     result = test_task("test_input")
     assert result == "processed: test_input"
 ```

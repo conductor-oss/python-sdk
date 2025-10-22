@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 import random
 import time
@@ -34,7 +35,7 @@ class Auth401Policy:
         """Check if the status code is specifically 401 (not 403 or other auth errors)."""
         return status_code == 401
 
-    def is_auth_dependent_call(self, resource_path: str, method: str = None) -> bool:
+    def is_auth_dependent_call(self, resource_path: str, method: Optional[str] = None) -> bool:
         """
         Determine if a call requires authentication and should be subject to 401 policy.
         Excludes token refresh endpoints and other non-auth calls.
@@ -69,9 +70,7 @@ class Auth401Policy:
 
     def record_401_attempt(self, resource_path: str) -> None:
         """Record a 401 attempt for tracking purposes."""
-        self._attempt_counts[resource_path] = (
-            self._attempt_counts.get(resource_path, 0) + 1
-        )
+        self._attempt_counts[resource_path] = self._attempt_counts.get(resource_path, 0) + 1
 
     def record_success(self, resource_path: str) -> None:
         """Record a successful call to reset attempt counters."""

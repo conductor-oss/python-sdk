@@ -11,11 +11,13 @@ class SimpleTask(TaskInterface):
         super().__init__(
             task_reference_name=task_reference_name,
             task_type=TaskType.SIMPLE,
-            task_name=task_def_name
+            task_name=task_def_name,
         )
 
 
-def simple_task(task_def_name: str, task_reference_name: str, inputs: Dict[str, object]) -> TaskInterface:
+def simple_task(
+    task_def_name: str, task_reference_name: str, inputs: Dict[str, object]
+) -> TaskInterface:
     task = SimpleTask(task_def_name=task_def_name, task_reference_name=task_reference_name)
     task.input_parameters.update(inputs)
     return task

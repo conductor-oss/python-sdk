@@ -94,13 +94,9 @@ class WorkflowAdapter(Workflow):
         """
         if not self.tasks:
             return []
-        return [
-            task for task in self.tasks if task.status in ("SCHEDULED", "IN_PROGRESS")
-        ]
+        return [task for task in self.tasks if task.status in ("SCHEDULED", "IN_PROGRESS")]
 
-    def get_task_by_reference_name(
-        self, reference_name: str
-    ) -> Optional["TaskAdapter"]:
+    def get_task_by_reference_name(self, reference_name: str) -> Optional["TaskAdapter"]:
         """Gets a task by its reference name
         :param reference_name: The reference name of the task to find
         :return: The task with the specified reference name, or None if not found
@@ -139,12 +135,8 @@ class WorkflowAdapter(Workflow):
                 "createdBy": obj.get("createdBy"),
                 "endTime": obj.get("endTime"),
                 "event": obj.get("event"),
-                "externalInputPayloadStoragePath": obj.get(
-                    "externalInputPayloadStoragePath"
-                ),
-                "externalOutputPayloadStoragePath": obj.get(
-                    "externalOutputPayloadStoragePath"
-                ),
+                "externalInputPayloadStoragePath": obj.get("externalInputPayloadStoragePath"),
+                "externalOutputPayloadStoragePath": obj.get("externalOutputPayloadStoragePath"),
                 "failedReferenceTaskNames": obj.get("failedReferenceTaskNames"),
                 "failedTaskNames": obj.get("failedTaskNames"),
                 "history": (
@@ -188,9 +180,9 @@ class WorkflowAdapter(Workflow):
         return _obj
 
 
-from conductor.asyncio_client.adapters.models.task_adapter import (
+from conductor.asyncio_client.adapters.models.task_adapter import (  # noqa: E402
     TaskAdapter,
-)  # noqa: E402
+)
 from conductor.asyncio_client.adapters.models.workflow_def_adapter import (  # noqa: E402
     WorkflowDefAdapter,
 )

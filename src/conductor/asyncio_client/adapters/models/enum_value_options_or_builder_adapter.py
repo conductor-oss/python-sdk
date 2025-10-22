@@ -23,12 +23,10 @@ class EnumValueOptionsOrBuilderAdapter(EnumValueOptionsOrBuilder):
     uninterpreted_option_list: Optional[List["UninterpretedOptionAdapter"]] = Field(
         default=None, alias="uninterpretedOptionList"
     )
-    uninterpreted_option_or_builder_list: Optional[
-        List["UninterpretedOptionOrBuilderAdapter"]
-    ] = Field(default=None, alias="uninterpretedOptionOrBuilderList")
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
+    uninterpreted_option_or_builder_list: Optional[List["UninterpretedOptionOrBuilderAdapter"]] = (
+        Field(default=None, alias="uninterpretedOptionOrBuilderList")
     )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

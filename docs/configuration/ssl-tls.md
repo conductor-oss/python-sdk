@@ -77,7 +77,7 @@ import ssl
 ssl_context = ssl.create_default_context()
 ssl_context.load_verify_locations("/path/to/ca-certificate.pem")
 ssl_context.load_cert_chain(
-    certfile="/path/to/client-certificate.pem", 
+    certfile="/path/to/client-certificate.pem",
     keyfile="/path/to/client-key.pem"
 )
 
@@ -113,7 +113,7 @@ async def main():
     async with ApiClient(config) as api_client:
         orkes_clients = OrkesClients(api_client, config)
         workflow_client = orkes_clients.get_workflow_client()
-        
+
         # Use the client with SSL configuration
         workflows = await workflow_client.search_workflows()
         print(f"Found {len(workflows)} workflows")
@@ -144,7 +144,7 @@ import ssl
 ssl_context = ssl.create_default_context()
 ssl_context.load_verify_locations("/path/to/ca-certificate.pem")
 ssl_context.load_cert_chain(
-    certfile="/path/to/client-certificate.pem", 
+    certfile="/path/to/client-certificate.pem",
     keyfile="/path/to/client-key.pem"
 )
 ssl_context.check_hostname = True
@@ -251,7 +251,7 @@ import socket
 def test_ssl_connection(hostname, port, ca_cert_path):
     context = ssl.create_default_context()
     context.load_verify_locations(ca_cert_path)
-    
+
     with socket.create_connection((hostname, port)) as sock:
         with context.wrap_socket(sock, server_hostname=hostname) as ssock:
             print(f"SSL connection successful: {ssock.version()}")

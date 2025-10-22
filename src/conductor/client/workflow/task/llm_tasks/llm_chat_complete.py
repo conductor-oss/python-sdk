@@ -8,17 +8,25 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class ChatMessage:
-
     def __init__(self, role: str, message: str) -> None:
         self.role = role
         self.message = message
 
 
 class LlmChatComplete(TaskInterface):
-    def __init__(self, task_ref_name: str, llm_provider: str, model: str, messages: List[ChatMessage],
-                 stop_words: Optional[List[str]] = None, max_tokens: Optional[int] = 100,
-                 temperature: int = 0, top_p: int = 1, instructions_template: Optional[str] = None,
-                 template_variables: Optional[Dict[str, object]] = None) -> Self:
+    def __init__(
+        self,
+        task_ref_name: str,
+        llm_provider: str,
+        model: str,
+        messages: List[ChatMessage],
+        stop_words: Optional[List[str]] = None,
+        max_tokens: Optional[int] = 100,
+        temperature: int = 0,
+        top_p: int = 1,
+        instructions_template: Optional[str] = None,
+        template_variables: Optional[Dict[str, object]] = None,
+    ) -> Self:
         template_variables = template_variables or {}
         stop_words = stop_words or []
 
@@ -37,7 +45,7 @@ class LlmChatComplete(TaskInterface):
             "temperature": temperature,
             "topP": top_p,
             "instructions": instructions_template,
-            "messages": messages
+            "messages": messages,
         }
 
         input_params.update(optional_input_params)
@@ -46,7 +54,7 @@ class LlmChatComplete(TaskInterface):
             task_name="llm_chat_complete",
             task_reference_name=task_ref_name,
             task_type=TaskType.LLM_CHAT_COMPLETE,
-            input_parameters=input_params
+            input_parameters=input_params,
         )
 
     def prompt_variables(self, variables: Dict[str, object]) -> Self:

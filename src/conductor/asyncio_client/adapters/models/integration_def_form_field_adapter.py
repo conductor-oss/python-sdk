@@ -9,9 +9,7 @@ from conductor.asyncio_client.http.models import IntegrationDefFormField
 
 
 class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
-    value_options: Optional[List["OptionAdapter"]] = Field(
-        default=None, alias="valueOptions"
-    )
+    value_options: Optional[List["OptionAdapter"]] = Field(default=None, alias="valueOptions")
     depends_on: Optional[List["IntegrationDefFormFieldAdapter"]] = Field(
         default=None, alias="dependsOn"
     )
@@ -33,75 +31,73 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
         if value is None:
             return value
 
-        if value not in set(
-            [
-                "api_key",
-                "authenticationType",
-                "authUrl",
-                "awsAccountId",
-                "batchPollConsumersCount",
-                "batchSize",
-                "batchWaitTime",
-                "betaVersion",
-                "channel",
-                "cipherSuite",
-                'completionsPath',
-                "connectionPoolSize",
-                "connectionType",
-                "consumer",
-                "consumer_type",
-                "datasourceURL",
-                "dimensions",
-                "distance_metric",
-                "endpoint",
-                "environment",
-                "externalId",
-                "file",
-                "groupId",
-                "header",
-                "indexing_method",
-                "indexName",
-                "inverted_list_count",
-                "jdbcDriver",
-                "keyStoreLocation",
-                "keyStorePassword",
-                "mechanism",
-                "namespace",
-                "organizationId",
-                "password",
-                "port",
-                "projectName",
-                "protocol",
-                "pubSubMethod",
-                "publisher",
-                "pullBatchWaitMillis",
-                "pullPeriod",
-                "queueManager",
-                "region",
-                "roleArn",
-                "schemaRegistryApiKey",
-                "schemaRegistryApiSecret",
-                "schemaRegistryAuthType",
-                "schemaRegistryUrl",
-                "serviceAccountCredentials",
-                "stream",
-                "subscription",
-                "tls",
-                "tlsFile",
-                "truststoreAuthenticationType",
-                "user",
-                "valueSubjectNameStrategy",
-                "version",
-                "visibilityTimeout",
-                "oAuth2RefreshToken",
-                "oAuth2AuthCode",
-                "oAuth2TokenExpiresAt",
-                "oAuth2RedirectUri",
-                "oAuth2Scope",
-                "oAuth2Provider",
-                "oAuth2AccessToken",
-            ]
-        ):
+        if value not in {
+            "api_key",
+            "authenticationType",
+            "authUrl",
+            "awsAccountId",
+            "batchPollConsumersCount",
+            "batchSize",
+            "batchWaitTime",
+            "betaVersion",
+            "channel",
+            "cipherSuite",
+            "completionsPath",
+            "connectionPoolSize",
+            "connectionType",
+            "consumer",
+            "consumer_type",
+            "datasourceURL",
+            "dimensions",
+            "distance_metric",
+            "endpoint",
+            "environment",
+            "externalId",
+            "file",
+            "groupId",
+            "header",
+            "indexing_method",
+            "indexName",
+            "inverted_list_count",
+            "jdbcDriver",
+            "keyStoreLocation",
+            "keyStorePassword",
+            "mechanism",
+            "namespace",
+            "organizationId",
+            "password",
+            "port",
+            "projectName",
+            "protocol",
+            "pubSubMethod",
+            "publisher",
+            "pullBatchWaitMillis",
+            "pullPeriod",
+            "queueManager",
+            "region",
+            "roleArn",
+            "schemaRegistryApiKey",
+            "schemaRegistryApiSecret",
+            "schemaRegistryAuthType",
+            "schemaRegistryUrl",
+            "serviceAccountCredentials",
+            "stream",
+            "subscription",
+            "tls",
+            "tlsFile",
+            "truststoreAuthenticationType",
+            "user",
+            "valueSubjectNameStrategy",
+            "version",
+            "visibilityTimeout",
+            "oAuth2RefreshToken",
+            "oAuth2AuthCode",
+            "oAuth2TokenExpiresAt",
+            "oAuth2RedirectUri",
+            "oAuth2Scope",
+            "oAuth2Provider",
+            "oAuth2AccessToken",
+        }:
             raise ValueError(
                 "must be one of enum values ("
                 "'api_key', 'authenticationType', 'authUrl', 'awsAccountId', "
@@ -118,7 +114,8 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
                 "'schemaRegistryApiSecret', 'schemaRegistryAuthType', 'schemaRegistryUrl', "
                 "'serviceAccountCredentials', 'stream', 'subscription', 'tls', 'tlsFile', "
                 "'truststoreAuthenticationType', 'user', 'valueSubjectNameStrategy', "
-                "'version', 'visibilityTimeout', 'oAuth2RefreshToken', 'oAuth2AuthCode', 'oAuth2TokenExpiresAt', 'oAuth2RedirectUri'"
+                "'version', 'visibilityTimeout', 'oAuth2RefreshToken', 'oAuth2AuthCode', "
+                "'oAuth2TokenExpiresAt', 'oAuth2RedirectUri', 'oAuth2Scope', 'oAuth2Provider', 'oAuth2AccessToken'"
                 ")"
             )
 
@@ -148,10 +145,7 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
                     else None
                 ),
                 "dependsOn": (
-                    [
-                        IntegrationDefFormFieldAdapter.from_dict(_item)
-                        for _item in obj["dependsOn"]
-                    ]
+                    [IntegrationDefFormFieldAdapter.from_dict(_item) for _item in obj["dependsOn"]]
                     if obj.get("dependsOn") is not None
                     else None
                 ),

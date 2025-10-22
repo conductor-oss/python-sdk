@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Dict
 
-from conductor.shared.event.configuration.queue_worker import \
-    QueueWorkerConfiguration
+from conductor.shared.event.configuration.queue_worker import QueueWorkerConfiguration
 
 
 class QueueConfiguration(ABC):

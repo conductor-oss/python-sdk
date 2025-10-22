@@ -71,12 +71,12 @@ async def main():
         # Define and associate prompt with the AI integration
         prompt_name = "chat_function_instructions"
         prompt_text = """
-        You are a helpful assistant that can answer questions using tools provided.  
+        You are a helpful assistant that can answer questions using tools provided.
         You have the following tools specified as functions in python:
         1. get_weather(city:str) ->  str (useful to get weather for a city input is the city name or zipcode)
         2. get_price_from_amazon(str: item) -> float (useful to get the price of an item from amazon)
         When asked a question, you can use one of these functions to answer the question if required.
-        If you have to call these functions, respond with a python code that will call this function. 
+        If you have to call these functions, respond with a python code that will call this function.
         When you have to call a function return in the following valid JSON format that can be parsed using json util:
         {
           "type": "function",
@@ -139,10 +139,10 @@ async def main():
             timeout_policy=TimeoutPolicy.TIME_OUT_WORKFLOW
         )
         message = """
-        AI Function call example.  
+        AI Function call example.
         This chatbot is programmed to handle two types of queries:
         1. Get the weather for a location
-        2. Get the price of an item 
+        2. Get the price of an item
         """
         print(message)
         workflow_run = await wf.execute(

@@ -120,22 +120,22 @@ def main():
     # Connect to Conductor server
     api_config = Configuration()
     workflow_executor = WorkflowExecutor(configuration=api_config)
-    
+
     # Register and create workflow
     workflow = greetings_workflow(workflow_executor)
     workflow.register(True)
-    
+
     # Start workers
     task_handler = TaskHandler(configuration=api_config)
     task_handler.start_processes()
-    
+
     # Execute workflow
     workflow_run = workflow_executor.execute(
-        name=workflow.name, 
+        name=workflow.name,
         version=workflow.version,
         workflow_input={'name': 'Orkes'}
     )
-    
+
     print(f'Workflow result: {workflow_run.output["result"]}')
     task_handler.stop_processes()
 

@@ -1,7 +1,7 @@
 from typing_extensions import Self
 
 
-class CreatedAccessKey:  # noqa: PLW1641
+class CreatedAccessKey:
     def __init__(self, id: str, secret: str) -> Self:
         self._id = id
         self._secret = secret

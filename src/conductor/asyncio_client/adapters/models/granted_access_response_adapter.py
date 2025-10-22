@@ -25,10 +25,7 @@ class GrantedAccessResponseAdapter(GrantedAccessResponse):
         _obj = cls.model_validate(
             {
                 "grantedAccess": (
-                    [
-                        GrantedAccessAdapter.from_dict(_item)
-                        for _item in obj["grantedAccess"]
-                    ]
+                    [GrantedAccessAdapter.from_dict(_item) for _item in obj["grantedAccess"]]
                     if obj.get("grantedAccess") is not None
                     else None
                 )

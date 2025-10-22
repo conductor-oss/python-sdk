@@ -1,17 +1,16 @@
 from copy import deepcopy
 from typing import List
 
-from conductor.asyncio_client.adapters.models.workflow_task_adapter import \
-    WorkflowTaskAdapter
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
 from conductor.asyncio_client.workflow.task.task import (
-    TaskInterface, get_task_interface_list_as_workflow_task_list)
+    TaskInterface,
+    get_task_interface_list_as_workflow_task_list,
+)
 from conductor.shared.workflow.enums import EvaluatorType, TaskType
 
 
 class SwitchTask(TaskInterface):
-    def __init__(
-        self, task_ref_name: str, case_expression: str, use_javascript: bool = False
-    ):
+    def __init__(self, task_ref_name: str, case_expression: str, use_javascript: bool = False):
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.SWITCH,
@@ -46,14 +45,10 @@ class SwitchTask(TaskInterface):
             workflow.expression = "switchCaseValue"
         workflow.decision_cases = {}
         for case_value, tasks in self._decision_cases.items():
-            workflow.decision_cases[case_value] = (
-                get_task_interface_list_as_workflow_task_list(
-                    *tasks,
-                )
+            workflow.decision_cases[case_value] = get_task_interface_list_as_workflow_task_list(
+                *tasks,
             )
         if self._default_case is None:
             self._default_case = []
-        workflow.default_case = get_task_interface_list_as_workflow_task_list(
-            *self._default_case
-        )
+        workflow.default_case = get_task_interface_list_as_workflow_task_list(*self._default_case)
         return workflow

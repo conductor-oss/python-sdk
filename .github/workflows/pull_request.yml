@@ -7,8 +7,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint-code:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-root
+
+      - name: Run pre-commit hooks
+        run: poetry run pre-commit run --all-files
+
   unit-test:
     runs-on: ubuntu-latest
+    needs: lint-code
     env:
       COVERAGE_FILE: coverage.xml
       COVERAGE_DIR: .coverage-reports

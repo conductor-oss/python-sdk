@@ -10,14 +10,10 @@ from conductor.asyncio_client.http.models import FileDescriptor
 
 class FileDescriptorAdapter(FileDescriptor):
     dependencies: Optional[List["FileDescriptorAdapter"]] = None
-    enum_types: Optional[List["EnumDescriptorAdapter"]] = Field(
-        default=None, alias="enumTypes"
-    )
+    enum_types: Optional[List["EnumDescriptorAdapter"]] = Field(default=None, alias="enumTypes")
     extensions: Optional[List["FieldDescriptorAdapter"]] = None
     file: Optional["FileDescriptorAdapter"] = None
-    message_types: Optional[List["DescriptorAdapter"]] = Field(
-        default=None, alias="messageTypes"
-    )
+    message_types: Optional[List["DescriptorAdapter"]] = Field(default=None, alias="messageTypes")
     options: Optional["FileOptionsAdapter"] = None
     proto: Optional["FileDescriptorProtoAdapter"] = None
     public_dependencies: Optional[List["FileDescriptorAdapter"]] = Field(
@@ -37,28 +33,19 @@ class FileDescriptorAdapter(FileDescriptor):
         _obj = cls.model_validate(
             {
                 "dependencies": (
-                    [
-                        FileDescriptorAdapter.from_dict(_item)
-                        for _item in obj["dependencies"]
-                    ]
+                    [FileDescriptorAdapter.from_dict(_item) for _item in obj["dependencies"]]
                     if obj.get("dependencies") is not None
                     else None
                 ),
                 "edition": obj.get("edition"),
                 "editionName": obj.get("editionName"),
                 "enumTypes": (
-                    [
-                        EnumDescriptorAdapter.from_dict(_item)
-                        for _item in obj["enumTypes"]
-                    ]
+                    [EnumDescriptorAdapter.from_dict(_item) for _item in obj["enumTypes"]]
                     if obj.get("enumTypes") is not None
                     else None
                 ),
                 "extensions": (
-                    [
-                        FieldDescriptorAdapter.from_dict(_item)
-                        for _item in obj["extensions"]
-                    ]
+                    [FieldDescriptorAdapter.from_dict(_item) for _item in obj["extensions"]]
                     if obj.get("extensions") is not None
                     else None
                 ),
@@ -69,10 +56,7 @@ class FileDescriptorAdapter(FileDescriptor):
                 ),
                 "fullName": obj.get("fullName"),
                 "messageTypes": (
-                    [
-                        DescriptorAdapter.from_dict(_item)
-                        for _item in obj["messageTypes"]
-                    ]
+                    [DescriptorAdapter.from_dict(_item) for _item in obj["messageTypes"]]
                     if obj.get("messageTypes") is not None
                     else None
                 ),
@@ -89,18 +73,12 @@ class FileDescriptorAdapter(FileDescriptor):
                     else None
                 ),
                 "publicDependencies": (
-                    [
-                        FileDescriptorAdapter.from_dict(_item)
-                        for _item in obj["publicDependencies"]
-                    ]
+                    [FileDescriptorAdapter.from_dict(_item) for _item in obj["publicDependencies"]]
                     if obj.get("publicDependencies") is not None
                     else None
                 ),
                 "services": (
-                    [
-                        ServiceDescriptorAdapter.from_dict(_item)
-                        for _item in obj["services"]
-                    ]
+                    [ServiceDescriptorAdapter.from_dict(_item) for _item in obj["services"]]
                     if obj.get("services") is not None
                     else None
                 ),

@@ -3,10 +3,8 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
-from conductor.asyncio_client.adapters.models.cache_config_adapter import \
-    CacheConfigAdapter
-from conductor.asyncio_client.adapters.models.workflow_task_adapter import \
-    WorkflowTaskAdapter
+from conductor.asyncio_client.adapters.models.cache_config_adapter import CacheConfigAdapter
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
 from conductor.shared.workflow.enums import TaskType
 
 

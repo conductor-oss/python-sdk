@@ -146,16 +146,16 @@ async def main():
         auth_401_max_attempts=3,
         auth_401_base_delay_ms=500.0
     )
-    
+
     workflow_client = WorkflowClient(config)
-    
+
     # The retry policy is automatically applied to all API calls
     workflow = await workflow_client.start_workflow(
         name="my_workflow",
         version=1,
         input={"key": "value"}
     )
-    
+
     print(f"Started workflow: {workflow.workflow_id}")
 
 asyncio.run(main())
@@ -203,9 +203,9 @@ async def start_multiple_workflows():
         auth_key="your_key",
         auth_secret="your_secret"
     )
-    
+
     workflow_client = WorkflowClient(config)
-    
+
     # Start multiple workflows concurrently
     # If all receive 401, only one token refresh will occur
     tasks = [
@@ -213,7 +213,7 @@ async def start_multiple_workflows():
         workflow_client.start_workflow(name="workflow2", version=1, input={}),
         workflow_client.start_workflow(name="workflow3", version=1, input={})
     ]
-    
+
     results = await asyncio.gather(*tasks)
     return results
 

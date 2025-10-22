@@ -9,30 +9,18 @@ from conductor.asyncio_client.http.models import WorkflowTask
 
 
 class WorkflowTaskAdapter(WorkflowTask):
-    cache_config: Optional["CacheConfigAdapter"] = Field(
-        default=None, alias="cacheConfig"
-    )
-    default_case: Optional[List["WorkflowTaskAdapter"]] = Field(
-        default=None, alias="defaultCase"
-    )
-    fork_tasks: Optional[List[List["WorkflowTaskAdapter"]]] = Field(
-        default=None, alias="forkTasks"
-    )
-    input_parameters: Optional[Dict[str, Any]] = Field(
-        default=None, alias="inputParameters"
-    )
-    loop_over: Optional[List["WorkflowTaskAdapter"]] = Field(
-        default=None, alias="loopOver"
-    )
+    cache_config: Optional["CacheConfigAdapter"] = Field(default=None, alias="cacheConfig")
+    default_case: Optional[List["WorkflowTaskAdapter"]] = Field(default=None, alias="defaultCase")
+    fork_tasks: Optional[List[List["WorkflowTaskAdapter"]]] = Field(default=None, alias="forkTasks")
+    input_parameters: Optional[Dict[str, Any]] = Field(default=None, alias="inputParameters")
+    loop_over: Optional[List["WorkflowTaskAdapter"]] = Field(default=None, alias="loopOver")
     on_state_change: Optional[Dict[str, List["StateChangeEventAdapter"]]] = Field(
         default=None, alias="onStateChange"
     )
     sub_workflow_param: Optional["SubWorkflowParamsAdapter"] = Field(
         default=None, alias="subWorkflowParam"
     )
-    task_definition: Optional["TaskDefAdapter"] = Field(
-        default=None, alias="taskDefinition"
-    )
+    task_definition: Optional["TaskDefAdapter"] = Field(default=None, alias="taskDefinition")
     decision_cases: Optional[Dict[str, List["WorkflowTaskAdapter"]]] = Field(
         default=None, alias="decisionCases"
     )
@@ -65,29 +53,21 @@ class WorkflowTaskAdapter(WorkflowTask):
                     for _k, _v in obj.get("decisionCases", {}).items()
                 },
                 "defaultCase": (
-                    [
-                        WorkflowTaskAdapter.from_dict(_item)
-                        for _item in obj["defaultCase"]
-                    ]
+                    [WorkflowTaskAdapter.from_dict(_item) for _item in obj["defaultCase"]]
                     if obj.get("defaultCase") is not None
                     else None
                 ),
                 "defaultExclusiveJoinTask": obj.get("defaultExclusiveJoinTask"),
                 "description": obj.get("description"),
                 "dynamicForkJoinTasksParam": obj.get("dynamicForkJoinTasksParam"),
-                "dynamicForkTasksInputParamName": obj.get(
-                    "dynamicForkTasksInputParamName"
-                ),
+                "dynamicForkTasksInputParamName": obj.get("dynamicForkTasksInputParamName"),
                 "dynamicForkTasksParam": obj.get("dynamicForkTasksParam"),
                 "dynamicTaskNameParam": obj.get("dynamicTaskNameParam"),
                 "evaluatorType": obj.get("evaluatorType"),
                 "expression": obj.get("expression"),
                 "forkTasks": (
                     [
-                        [
-                            WorkflowTaskAdapter.from_dict(_inner_item)
-                            for _inner_item in _item
-                        ]
+                        [WorkflowTaskAdapter.from_dict(_inner_item) for _inner_item in _item]
                         for _item in obj["forkTasks"]
                     ]
                     if obj.get("forkTasks") is not None

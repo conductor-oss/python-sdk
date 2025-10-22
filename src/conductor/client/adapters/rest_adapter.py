@@ -1,3 +1,4 @@
+from __future__ import annotations
 import io
 import logging
 import ssl
@@ -27,17 +28,7 @@ class RESTResponse(io.IOBase):
 
         # Log HTTP protocol version
         http_version = getattr(response, "http_version", "Unknown")
-        logger.debug(
-            f"HTTP response received - Status: {self.status}, Protocol: {http_version}"
-        )
-
-        # Log HTTP/2 usage
-        if http_version == "HTTP/2":
-            logger.info(f"HTTP/2 connection established - URL: {response.url}")
-        elif http_version == "HTTP/1.1":
-            logger.debug(f"HTTP/1.1 connection used - URL: {response.url}")
-        else:
-            logger.debug(f"HTTP protocol version: {http_version} - URL: {response.url}")
+        logger.debug("HTTP response received - Status: %s, Protocol: %s", self.status, http_version)
 
     def getheaders(self):
         """Get response headers."""
@@ -85,17 +76,11 @@ class RESTClientObjectAdapter(RESTClientObject):
             client_kwargs = {
                 "timeout": httpx.Timeout(120.0),
                 "follow_redirects": True,
-                "limits": httpx.Limits(
-                    max_keepalive_connections=20, max_connections=100
-                ),
-                "http2": True
+                "limits": httpx.Limits(max_keepalive_connections=20, max_connections=100),
+                "http2": True,
             }
 
-            if (
-                configuration
-                and hasattr(configuration, "proxy")
-                and configuration.proxy
-            ):
+            if configuration and hasattr(configuration, "proxy") and configuration.proxy:
                 client_kwargs["proxy"] = configuration.proxy
             if (
                 configuration
@@ -130,20 +115,12 @@ class RESTClientObjectAdapter(RESTClientObject):
     def check_http2_support(self, url: str) -> bool:
         """Check if the server supports HTTP/2 by making a test request."""
         try:
-            logger.info(f"Checking HTTP/2 support for: {url}")
             response = self.GET(url)
             is_http2 = response.is_http2()
 
-            if is_http2:
-                logger.info(f"✓ HTTP/2 supported by {url}")
-            else:
-                logger.info(
-                    f"✗ HTTP/2 not supported by {url}, using {response.http_version}"
-                )
-
             return is_http2
         except Exception as e:
-            logger.error(f"Failed to check HTTP/2 support for {url}: {e}")
+            logger.error("Failed to check HTTP/2 support for %s: %s", url, e)
             return False
 
     def request(
@@ -173,9 +150,7 @@ class RESTClientObjectAdapter(RESTClientObject):
         assert method in ["GET", "HEAD", "DELETE", "POST", "PUT", "PATCH", "OPTIONS"]
 
         if post_params and body:
-            raise ValueError(
-                "body parameter cannot be used with post_params parameter."
-            )
+            raise ValueError("body parameter cannot be used with post_params parameter.")
 
         post_params = post_params or {}
         headers = headers or {}
@@ -196,7 +171,7 @@ class RESTClientObjectAdapter(RESTClientObject):
 
         try:
             # Log the request attempt
-            logger.debug(f"Making HTTP request - Method: {method}, URL: {url}")
+            logger.debug("Making HTTP request - Method: %s, URL: %s", method, url)
             # Prepare request parameters
             request_kwargs = {
                 "method": method,

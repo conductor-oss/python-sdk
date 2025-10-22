@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Optional
 
-from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import \
-    StartWorkflowRequestAdapter
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
+    StartWorkflowRequestAdapter,
+)
 from conductor.asyncio_client.workflow.task.task import TaskInterface
 from conductor.shared.workflow.enums import TaskType
 

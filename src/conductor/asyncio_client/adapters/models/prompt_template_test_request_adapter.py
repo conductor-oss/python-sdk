@@ -8,6 +8,4 @@ from conductor.asyncio_client.http.models import PromptTemplateTestRequest
 
 
 class PromptTemplateTestRequestAdapter(PromptTemplateTestRequest):
-    prompt_variables: Optional[Dict[str, Any]] = Field(
-        default=None, alias="promptVariables"
-    )
+    prompt_variables: Optional[Dict[str, Any]] = Field(default=None, alias="promptVariables")

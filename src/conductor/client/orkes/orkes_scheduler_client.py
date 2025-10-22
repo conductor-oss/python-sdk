@@ -3,8 +3,9 @@ from typing import Optional, List
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
-from conductor.client.http.models.search_result_workflow_schedule_execution_model import \
-    SearchResultWorkflowScheduleExecutionModel
+from conductor.client.http.models.search_result_workflow_schedule_execution_model import (
+    SearchResultWorkflowScheduleExecutionModel,
+)
 from conductor.client.http.models.workflow_schedule import WorkflowSchedule
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
@@ -28,12 +29,13 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
 
         return self.schedulerResourceApi.get_all_schedules(**kwargs)
 
-    def get_next_few_schedule_execution_times(self,
-                                              cron_expression: str,
-                                              schedule_start_time: Optional[int] = None,
-                                              schedule_end_time: Optional[int] = None,
-                                              limit: Optional[int] = None,
-                                              ) -> List[int]:
+    def get_next_few_schedule_execution_times(
+        self,
+        cron_expression: str,
+        schedule_start_time: Optional[int] = None,
+        schedule_end_time: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> List[int]:
         kwargs = {}
         if schedule_start_time:
             kwargs.update({"schedule_start_time": schedule_start_time})
@@ -58,13 +60,14 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
     def resume_all_schedules(self):
         self.schedulerResourceApi.resume_all_schedules()
 
-    def search_schedule_executions(self,
-                                   start: Optional[int] = None,
-                                   size: Optional[int] = None,
-                                   sort: Optional[str] = None,
-                                   free_text: Optional[str] = None,
-                                   query: Optional[str] = None,
-                                   ) -> SearchResultWorkflowScheduleExecutionModel:
+    def search_schedule_executions(
+        self,
+        start: Optional[int] = None,
+        size: Optional[int] = None,
+        sort: Optional[str] = None,
+        free_text: Optional[str] = None,
+        query: Optional[str] = None,
+    ) -> SearchResultWorkflowScheduleExecutionModel:
         kwargs = {}
         if start:
             kwargs.update({"start": start})

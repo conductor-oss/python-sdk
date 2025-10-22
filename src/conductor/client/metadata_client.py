@@ -8,17 +8,11 @@ from conductor.client.orkes.models.metadata_tag import MetadataTag
 
 class MetadataClient(ABC):
     @abstractmethod
-    def register_workflow_def(
-            self,
-            workflow_def: WorkflowDef,
-            overwrite: Optional[bool]):
+    def register_workflow_def(self, workflow_def: WorkflowDef, overwrite: Optional[bool]):
         pass
 
     @abstractmethod
-    def update_workflow_def(
-            self,
-            workflow_def: WorkflowDef,
-            overwrite: Optional[bool]):
+    def update_workflow_def(self, workflow_def: WorkflowDef, overwrite: Optional[bool]):
         pass
 
     @abstractmethod

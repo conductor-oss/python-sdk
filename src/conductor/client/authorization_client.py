@@ -13,15 +13,16 @@ from conductor.client.http.models.conductor_user import ConductorUser
 from conductor.client.http.models.conductor_application import ConductorApplication
 from conductor.client.http.models.upsert_user_request import UpsertUserRequest
 from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
-from conductor.client.http.models.create_or_update_application_request import CreateOrUpdateApplicationRequest
+from conductor.client.http.models.create_or_update_application_request import (
+    CreateOrUpdateApplicationRequest,
+)
 
 
 class AuthorizationClient(ABC):
     # Applications
     @abstractmethod
     def create_application(
-            self,
-            create_or_update_application_request: CreateOrUpdateApplicationRequest
+        self, create_or_update_application_request: CreateOrUpdateApplicationRequest
     ) -> ConductorApplication:
         pass
 
@@ -35,9 +36,9 @@ class AuthorizationClient(ABC):
 
     @abstractmethod
     def update_application(
-            self,
-            create_or_update_application_request: CreateOrUpdateApplicationRequest,
-            application_id: str
+        self,
+        create_or_update_application_request: CreateOrUpdateApplicationRequest,
+        application_id: str,
     ) -> ConductorApplication:
         pass
 

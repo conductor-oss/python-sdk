@@ -10,11 +10,11 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class HttpMethod(str, Enum):
-    GET = "GET",
-    PUT = "PUT",
-    POST = "POST",
-    DELETE = "DELETE",
-    HEAD = "HEAD",
+    GET = ("GET",)
+    PUT = ("PUT",)
+    POST = ("POST",)
+    DELETE = ("DELETE",)
+    HEAD = ("HEAD",)
     OPTIONS = "OPTIONS"
 
 
@@ -41,15 +41,17 @@ class HttpInput:
         "_body": "body",
     }
 
-    def __init__(self,
-                 method: HttpMethod = HttpMethod.GET,
-                 uri: Optional[str] = None,
-                 headers: Optional[Dict[str, List[str]]] = None,
-                 accept: Optional[str] = None,
-                 content_type: Optional[str] = None,
-                 connection_time_out: Optional[int] = None,
-                 read_timeout: Optional[int] = None,
-                 body: Any = None) -> Self:
+    def __init__(
+        self,
+        method: HttpMethod = HttpMethod.GET,
+        uri: Optional[str] = None,
+        headers: Optional[Dict[str, List[str]]] = None,
+        accept: Optional[str] = None,
+        content_type: Optional[str] = None,
+        connection_time_out: Optional[int] = None,
+        read_timeout: Optional[int] = None,
+        body: Any = None,
+    ) -> Self:
         self._method = deepcopy(method)
         self._uri = deepcopy(uri)
         self._headers = deepcopy(headers)
@@ -67,7 +69,7 @@ class HttpTask(TaskInterface):
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.HTTP,
-            input_parameters={"http_request": http_input}
+            input_parameters={"http_request": http_input},
         )
 
     def status_code(self) -> int:

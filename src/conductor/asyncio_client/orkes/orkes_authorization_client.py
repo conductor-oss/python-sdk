@@ -193,11 +193,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
     async def get_access_keys(self, application_id: str) -> List[AccessKey]:
         access_keys_obj = await self.application_api.get_access_keys(application_id)
-        access_keys = []
-        for key_obj in access_keys_obj:
-            access_keys.append(key_obj)
-
-        return access_keys
+        return list(access_keys_obj)
 
     async def toggle_access_key_status(self, application_id: str, key_id: str) -> AccessKey:
         key_obj = await self.application_api.toggle_access_key_status(application_id, key_id)
@@ -234,6 +230,6 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         self, access_key_id: str, *args, **kwargs
     ) -> ExtendedConductorApplication:
         application_access_key_obj = await self.application_api.get_app_by_access_key_id(
-            access_key_id=access_key_id, *args, **kwargs
+            access_key_id, *args, **kwargs
         )
         return ExtendedConductorApplication.from_dict(application_access_key_obj)

@@ -1,5 +1,6 @@
-from conductor.shared.workflow.enums.assignment_completion_strategy import \
-    AssignmentCompletionStrategy
+from conductor.shared.workflow.enums.assignment_completion_strategy import (
+    AssignmentCompletionStrategy,
+)
 from conductor.shared.workflow.enums.evaluator_type import EvaluatorType
 from conductor.shared.workflow.enums.http_method import HttpMethod
 from conductor.shared.workflow.enums.task_type import TaskType

@@ -8,7 +8,6 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class WaitForWebHookTask(TaskInterface, ABC):
-
     def __init__(self, task_ref_name: str, matches: Dict[str, object]) -> Self:
         """
         matches: dictionary of matching payload that acts as correction between the incoming webhook payload and a
@@ -31,14 +30,13 @@ class WaitForWebHookTask(TaskInterface, ABC):
         The system will find a matching workflow task that is in progress matching the type and customer id and complete
         the task.
         """
-        super().__init__(
-            task_reference_name=task_ref_name,
-            task_type=TaskType.WAIT_FOR_WEBHOOK
-        )
+        super().__init__(task_reference_name=task_ref_name, task_type=TaskType.WAIT_FOR_WEBHOOK)
         self.input_parameters["matches"] = matches
 
 
-def wait_for_webhook(task_ref_name: str, matches: Dict[str, object], task_def_name: Optional[str] = None) -> TaskInterface:
+def wait_for_webhook(
+    task_ref_name: str, matches: Dict[str, object], task_def_name: Optional[str] = None
+) -> TaskInterface:
     task = WaitForWebHookTask(task_ref_name=task_ref_name, matches=matches)
     if task_def_name is not None:
         task.name = task_def_name

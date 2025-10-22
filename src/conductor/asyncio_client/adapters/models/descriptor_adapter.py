@@ -9,24 +9,16 @@ from conductor.asyncio_client.http.models import Descriptor
 
 
 class DescriptorAdapter(Descriptor):
-    containing_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="containingType"
-    )
-    enum_types: Optional[List["EnumDescriptorAdapter"]] = Field(
-        default=None, alias="enumTypes"
-    )
+    containing_type: Optional["DescriptorAdapter"] = Field(default=None, alias="containingType")
+    enum_types: Optional[List["EnumDescriptorAdapter"]] = Field(default=None, alias="enumTypes")
     extensions: Optional[List["FieldDescriptorAdapter"]] = None
     fields: Optional[List["FieldDescriptorAdapter"]] = None
     file: Optional["FileDescriptorAdapter"] = None
-    nested_types: Optional[List["DescriptorAdapter"]] = Field(
-        default=None, alias="nestedTypes"
-    )
+    nested_types: Optional[List["DescriptorAdapter"]] = Field(default=None, alias="nestedTypes")
     oneofs: Optional[List["OneofDescriptorAdapter"]] = None
     options: Optional["MessageOptionsAdapter"] = None
     proto: Optional["DescriptorProtoAdapter"] = None
-    real_oneofs: Optional[List["OneofDescriptorAdapter"]] = Field(
-        default=None, alias="realOneofs"
-    )
+    real_oneofs: Optional[List["OneofDescriptorAdapter"]] = Field(default=None, alias="realOneofs")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -45,19 +37,13 @@ class DescriptorAdapter(Descriptor):
                     else None
                 ),
                 "enumTypes": (
-                    [
-                        EnumDescriptorAdapter.from_dict(_item)
-                        for _item in obj["enumTypes"]
-                    ]
+                    [EnumDescriptorAdapter.from_dict(_item) for _item in obj["enumTypes"]]
                     if obj.get("enumTypes") is not None
                     else None
                 ),
                 "extendable": obj.get("extendable"),
                 "extensions": (
-                    [
-                        FieldDescriptorAdapter.from_dict(_item)
-                        for _item in obj["extensions"]
-                    ]
+                    [FieldDescriptorAdapter.from_dict(_item) for _item in obj["extensions"]]
                     if obj.get("extensions") is not None
                     else None
                 ),
@@ -95,10 +81,7 @@ class DescriptorAdapter(Descriptor):
                     else None
                 ),
                 "realOneofs": (
-                    [
-                        OneofDescriptorAdapter.from_dict(_item)
-                        for _item in obj["realOneofs"]
-                    ]
+                    [OneofDescriptorAdapter.from_dict(_item) for _item in obj["realOneofs"]]
                     if obj.get("realOneofs") is not None
                     else None
                 ),

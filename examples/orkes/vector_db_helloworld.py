@@ -62,9 +62,9 @@ def main():
 
     prompt_name = 'us_constitution_qna'
     prompt_text = """
-    Here is the fragment of the us constitution ${text}.  
+    Here is the fragment of the us constitution ${text}.
     I have a question ${question}.
-    Given the text fragment from the constitution - please answer the question. 
+    Given the text fragment from the constitution - please answer the question.
     If you cannot answer from within this context of text then say I don't know.
     """
 

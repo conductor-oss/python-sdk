@@ -141,7 +141,6 @@ def test_check_http2_support_success(mock_logger):
         result = adapter.check_http2_support("https://example.com")
 
         assert result is True
-        mock_logger.info.assert_called()
 
 
 @patch("conductor.client.adapters.rest_adapter.logger")
@@ -161,7 +160,6 @@ def test_check_http2_support_failure(mock_logger):
         result = adapter.check_http2_support("https://example.com")
 
         assert result is False
-        mock_logger.info.assert_called()
 
 
 @patch("conductor.client.adapters.rest_adapter.logger")

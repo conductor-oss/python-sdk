@@ -1,7 +1,6 @@
 from copy import deepcopy
 
-from conductor.asyncio_client.adapters.models.workflow_task_adapter import \
-    WorkflowTaskAdapter
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
 from conductor.asyncio_client.workflow.task.task import TaskInterface
 from conductor.shared.workflow.enums import TaskType
 

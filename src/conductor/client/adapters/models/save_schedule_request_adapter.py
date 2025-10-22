@@ -1,5 +1,4 @@
-from conductor.client.codegen.models.save_schedule_request import \
-    SaveScheduleRequest
+from conductor.client.codegen.models.save_schedule_request import SaveScheduleRequest
 
 
 class SaveScheduleRequestAdapter(SaveScheduleRequest):

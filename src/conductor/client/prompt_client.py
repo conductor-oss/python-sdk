@@ -10,7 +10,6 @@ from conductor.client.orkes.models.metadata_tag import MetadataTag
 
 
 class PromptClient(ABC):
-
     @abstractmethod
     def save_prompt(self, prompt_name: str, description: str, prompt_template: str):
         pass
@@ -40,6 +39,14 @@ class PromptClient(ABC):
         pass
 
     @abstractmethod
-    def test_prompt(self, prompt_text: str, variables: dict, ai_integration: str, text_complete_model: str,
-                    temperature : float = 0.1, top_p : float = 0.9, stop_words: Optional[List[str]] = None) -> str:
+    def test_prompt(
+        self,
+        prompt_text: str,
+        variables: dict,
+        ai_integration: str,
+        text_complete_model: str,
+        temperature: float = 0.1,
+        top_p: float = 0.9,
+        stop_words: Optional[List[str]] = None,
+    ) -> str:
         pass

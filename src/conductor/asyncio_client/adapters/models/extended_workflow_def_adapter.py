@@ -9,18 +9,10 @@ from conductor.asyncio_client.http.models import ExtendedWorkflowDef
 
 
 class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef):
-    input_schema: Optional["SchemaDefAdapter"] = Field(
-        default=None, alias="inputSchema"
-    )
-    input_template: Optional[Dict[str, Any]] = Field(
-        default=None, alias="inputTemplate"
-    )
-    output_parameters: Optional[Dict[str, Any]] = Field(
-        default=None, alias="outputParameters"
-    )
-    output_schema: Optional["SchemaDefAdapter"] = Field(
-        default=None, alias="outputSchema"
-    )
+    input_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="inputSchema")
+    input_template: Optional[Dict[str, Any]] = Field(default=None, alias="inputTemplate")
+    output_parameters: Optional[Dict[str, Any]] = Field(default=None, alias="outputParameters")
+    output_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="outputSchema")
     rate_limit_config: Optional["RateLimitConfigAdapter"] = Field(
         default=None, alias="rateLimitConfig"
     )
@@ -85,9 +77,7 @@ class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef):
                 "updatedBy": obj.get("updatedBy"),
                 "variables": obj.get("variables"),
                 "version": obj.get("version"),
-                "workflowStatusListenerEnabled": obj.get(
-                    "workflowStatusListenerEnabled"
-                ),
+                "workflowStatusListenerEnabled": obj.get("workflowStatusListenerEnabled"),
                 "workflowStatusListenerSink": obj.get("workflowStatusListenerSink"),
             }
         )
@@ -100,9 +90,9 @@ from conductor.asyncio_client.adapters.models.rate_limit_config_adapter import (
 from conductor.asyncio_client.adapters.models.schema_def_adapter import (  # noqa: E402
     SchemaDefAdapter,
 )
-from conductor.asyncio_client.adapters.models.tag_adapter import (
+from conductor.asyncio_client.adapters.models.tag_adapter import (  # noqa: E402
     TagAdapter,
-)  # noqa: E402
+)
 from conductor.asyncio_client.adapters.models.workflow_task_adapter import (  # noqa: E402
     WorkflowTaskAdapter,
 )

@@ -141,7 +141,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
             None,
             Annotated[StrictFloat, Field(gt=0)],
             Tuple[
-                Annotated[StrictFloat, Field(gt=0)], 
+                Annotated[StrictFloat, Field(gt=0)],
                 Annotated[StrictFloat, Field(gt=0)]
             ],
         ] = None,
@@ -176,10 +176,10 @@ from conductor.asyncio_client.http.models.workflow import Workflow
 
 class WorkflowAdapter(Workflow):
     """Workflow model with backward compatibility support"""
-    
+
     # Add backward compatibility fields if needed
     legacy_field: Optional[str] = Field(None, alias="oldFieldName")
-    
+
     @validator('legacy_field', pre=True)
     def handle_legacy_field(cls, v, values):
         """Handle legacy field mapping"""
@@ -187,7 +187,7 @@ class WorkflowAdapter(Workflow):
             # Map legacy field to new field structure
             return v
         return v
-    
+
     def to_legacy_dict(self) -> Dict[str, Any]:
         """Convert to legacy dictionary format for backward compatibility"""
         data = self.dict()
@@ -212,7 +212,7 @@ from conductor.asyncio_client.adapters.api.task_resource_api import TaskResource
 
 __all__ = [
     "ApiClient",
-    "WorkflowResourceApiAdapter", 
+    "WorkflowResourceApiAdapter",
     "TaskResourceApiAdapter",
     # ... add other adapters
 ]
@@ -231,7 +231,7 @@ from conductor.asyncio_client.adapters.api.task_resource_api import TaskResource
 class OrkesBaseClient:
     def __init__(self, configuration: Configuration, api_client: ApiClient):
         # ... existing code ...
-        
+
         # Initialize all API clients with adapters
         self.metadata_api = MetadataResourceApiAdapter(self.api_client)
         self.task_api = TaskResourceApiAdapter(self.api_client)
@@ -307,9 +307,9 @@ If tests fail due to breaking changes:
    ```python
    class WorkflowResourceApiAdapter(WorkflowResourceApi):
        async def start_workflow_legacy(
-           self, 
-           workflow_id: str, 
-           input_data: Optional[Dict] = None, 
+           self,
+           workflow_id: str,
+           input_data: Optional[Dict] = None,
            **kwargs
        ) -> str:
            """Backward compatibility method for old start_workflow signature"""
@@ -321,7 +321,7 @@ If tests fail due to breaking changes:
            )
            result = await self.start_workflow(start_request)
            return result.workflow_id
-       
+
        # Alias for backward compatibility
        start_workflow_v1 = start_workflow_legacy
    ```

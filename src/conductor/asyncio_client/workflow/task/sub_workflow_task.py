@@ -3,12 +3,11 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Dict, Optional
 
-from conductor.asyncio_client.adapters.models.sub_workflow_params_adapter import \
-    SubWorkflowParamsAdapter
-from conductor.asyncio_client.adapters.models.workflow_task_adapter import \
-    WorkflowTaskAdapter
-from conductor.asyncio_client.workflow.conductor_workflow import \
-    AsyncConductorWorkflow
+from conductor.asyncio_client.adapters.models.sub_workflow_params_adapter import (
+    SubWorkflowParamsAdapter,
+)
+from conductor.asyncio_client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
+from conductor.asyncio_client.workflow.conductor_workflow import AsyncConductorWorkflow
 from conductor.asyncio_client.workflow.task.task import TaskInterface
 from conductor.shared.workflow.enums import TaskType
 
@@ -21,9 +20,7 @@ class SubWorkflowTask(TaskInterface):
         version: Optional[int] = None,
         task_to_domain_map: Optional[Dict[str, str]] = None,
     ):
-        super().__init__(
-            task_reference_name=task_ref_name, task_type=TaskType.SUB_WORKFLOW
-        )
+        super().__init__(task_reference_name=task_ref_name, task_type=TaskType.SUB_WORKFLOW)
         self._workflow_name = deepcopy(workflow_name)
         self._version = deepcopy(version)
         self._task_to_domain_map = deepcopy(task_to_domain_map)

@@ -43,13 +43,11 @@ def convert_from_dict(cls: type, data: dict) -> object:
 
     typ = type(data)
     if not (
-        (
-            str(typ).startswith("dict[")
-            or str(typ).startswith("typing.Dict[")
-            or str(typ).startswith("requests.structures.CaseInsensitiveDict[")
-            or typ is dict
-            or str(typ).startswith("OrderedDict[")
-        )
+        str(typ).startswith("dict[")
+        or str(typ).startswith("typing.Dict[")
+        or str(typ).startswith("requests.structures.CaseInsensitiveDict[")
+        or typ is dict
+        or str(typ).startswith("OrderedDict[")
     ):
         data = {}
 
@@ -86,7 +84,6 @@ def convert_from_dict(cls: type, data: dict) -> object:
             or typ is dict
             or str(typ).startswith("OrderedDict[")
         ):
-
             values = {}
             generic_type = object
             if len(generic_types) > 1:

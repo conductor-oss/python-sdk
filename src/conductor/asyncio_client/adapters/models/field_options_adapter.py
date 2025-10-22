@@ -20,9 +20,9 @@ class FieldOptionsAdapter(FieldOptions):
     edition_defaults_list: Optional[List["EditionDefaultAdapter"]] = Field(
         default=None, alias="editionDefaultsList"
     )
-    edition_defaults_or_builder_list: Optional[
-        List["EditionDefaultOrBuilderAdapter"]
-    ] = Field(default=None, alias="editionDefaultsOrBuilderList")
+    edition_defaults_or_builder_list: Optional[List["EditionDefaultOrBuilderAdapter"]] = Field(
+        default=None, alias="editionDefaultsOrBuilderList"
+    )
     features: Optional["FeatureSetAdapter"] = None
     features_or_builder: Optional["FeatureSetOrBuilderAdapter"] = Field(
         default=None, alias="featuresOrBuilder"
@@ -30,12 +30,10 @@ class FieldOptionsAdapter(FieldOptions):
     uninterpreted_option_list: Optional[List["UninterpretedOptionAdapter"]] = Field(
         default=None, alias="uninterpretedOptionList"
     )
-    uninterpreted_option_or_builder_list: Optional[
-        List["UninterpretedOptionOrBuilderAdapter"]
-    ] = Field(default=None, alias="uninterpretedOptionOrBuilderList")
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
+    uninterpreted_option_or_builder_list: Optional[List["UninterpretedOptionOrBuilderAdapter"]] = (
+        Field(default=None, alias="uninterpretedOptionOrBuilderList")
     )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -65,10 +63,7 @@ class FieldOptionsAdapter(FieldOptions):
                 ),
                 "editionDefaultsCount": obj.get("editionDefaultsCount"),
                 "editionDefaultsList": (
-                    [
-                        EditionDefaultAdapter.from_dict(_item)
-                        for _item in obj["editionDefaultsList"]
-                    ]
+                    [EditionDefaultAdapter.from_dict(_item) for _item in obj["editionDefaultsList"]]
                     if obj.get("editionDefaultsList") is not None
                     else None
                 ),

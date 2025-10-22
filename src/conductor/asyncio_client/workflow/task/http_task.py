@@ -26,13 +26,9 @@ class HttpTask(TaskInterface):
     def headers(self, json_path: Optional[str] = None) -> str:
         if json_path is None:
             return "${" + f"{self.task_reference_name}.output.response.headers" + "}"
-        return (
-            "${" + f"{self.task_reference_name}.output.response.headers.{json_path}" + "}"
-        )
+        return "${" + f"{self.task_reference_name}.output.response.headers.{json_path}" + "}"
 
     def body(self, json_path: Optional[str] = None) -> str:
         if json_path is None:
             return "${" + f"{self.task_reference_name}.output.response.body" + "}"
-        return (
-            "${" + f"{self.task_reference_name}.output.response.body.{json_path}" + "}"
-        )
+        return "${" + f"{self.task_reference_name}.output.response.body.{json_path}" + "}"

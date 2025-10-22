@@ -20,16 +20,10 @@ class MethodDescriptorProtoOrBuilderAdapter(MethodDescriptorProtoOrBuilder):
     options_or_builder: Optional["MethodOptionsOrBuilderAdapter"] = Field(
         default=None, alias="optionsOrBuilder"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
-    input_type_bytes: Optional["ByteStringAdapter"] = Field(
-        default=None, alias="inputTypeBytes"
-    )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
+    input_type_bytes: Optional["ByteStringAdapter"] = Field(default=None, alias="inputTypeBytes")
     name_bytes: Optional["ByteStringAdapter"] = Field(default=None, alias="nameBytes")
-    output_type_bytes: Optional["ByteStringAdapter"] = Field(
-        default=None, alias="outputTypeBytes"
-    )
+    output_type_bytes: Optional["ByteStringAdapter"] = Field(default=None, alias="outputTypeBytes")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
