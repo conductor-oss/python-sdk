@@ -12,7 +12,7 @@ from conductor.asyncio_client.adapters.models.task_def_adapter import TaskDefAda
 from conductor.asyncio_client.adapters.models.workflow_def_adapter import WorkflowDefAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.http.configuration import Configuration
+from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 

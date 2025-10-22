@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Optional, List, Dict
 
 from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.http.configuration import Configuration
+from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.adapters.models.integration_adapter import IntegrationAdapter
 from conductor.asyncio_client.adapters.models.integration_api_adapter import IntegrationApiAdapter
 from conductor.asyncio_client.adapters.models.integration_api_update_adapter import (

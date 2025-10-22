@@ -1,7 +1,10 @@
+from typing import List
+
 from pydantic import StrictStr
 
 from conductor.asyncio_client.http.api import UserResourceApi
 from conductor.asyncio_client.adapters.models import UpsertUserRequestAdapter as UpsertUserRequest
+from conductor.asyncio_client.adapters.models.conductor_user_adapter import ConductorUserAdapter
 
 
 class UserResourceApiAdapter(UserResourceApi):
@@ -21,7 +24,7 @@ class UserResourceApiAdapter(UserResourceApi):
         id: StrictStr,
         *args,
         **kwargs,
-    ) -> object:
+    ) -> ConductorUserAdapter:
         # Convert empty user id to None to prevent sending invalid data to server
         if not id:
             id = None
@@ -33,11 +36,14 @@ class UserResourceApiAdapter(UserResourceApi):
         upsert_user_request: UpsertUserRequest,
         *args,
         **kwargs,
-    ) -> object:
+    ) -> ConductorUserAdapter:
         # Convert empty user id to None to prevent sending invalid data to server
         if not id:
             id = None
         return await super().upsert_user(id, upsert_user_request, *args, **kwargs)
+
+    async def list_users(self, *args, **kwargs) -> List[ConductorUserAdapter]:
+        return await super().list_users(*args, **kwargs)
 
     async def delete_user(
         self,

@@ -5,7 +5,7 @@ import datetime
 import inspect
 import logging
 import typing
-from typing import List
+from typing import List, cast
 
 from dacite import from_dict
 from requests.structures import CaseInsensitiveDict
@@ -28,7 +28,7 @@ def convert_from_dict_or_list(cls: type, data: typing.Union[dict, list]) -> obje
             converted = convert_from_dict(generic_types, val)
             val_list.append(converted)
         return val_list
-    return convert_from_dict(cls, data)
+    return convert_from_dict(cls, cast(dict, data))
 
 
 def convert_from_dict(cls: type, data: dict) -> object:
