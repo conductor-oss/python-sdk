@@ -23,6 +23,9 @@ class UserResourceApiAdapter(UserResourceApi):
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> object:
+        # Convert empty user_id to None to prevent sending invalid data to server
+        if not user_id:
+            user_id = None  # type: ignore[assignment]
         return await super().get_granted_permissions(
             user_id,
             _request_timeout=_request_timeout,
@@ -45,6 +48,9 @@ class UserResourceApiAdapter(UserResourceApi):
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> ConductorUserAdapter:
+        # Convert empty user id to None to prevent sending invalid data to server
+        if not id:
+            id = None  # type: ignore[assignment]
         result = await super().get_user(
             id,
             _request_timeout=_request_timeout,
@@ -69,6 +75,9 @@ class UserResourceApiAdapter(UserResourceApi):
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> ConductorUserAdapter:
+        # Convert empty user id to None to prevent sending invalid data to server
+        if not id:
+            id = None  # type: ignore[assignment]
         result = await super().upsert_user(
             id,
             upsert_user_request,
@@ -116,6 +125,9 @@ class UserResourceApiAdapter(UserResourceApi):
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> object:
+        # Convert empty user id to None to prevent sending invalid data to server
+        if not id:
+            id = None  # type: ignore[assignment]
         return await super().delete_user(
             id,
             _request_timeout=_request_timeout,

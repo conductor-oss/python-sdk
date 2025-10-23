@@ -266,7 +266,7 @@ class AsyncWorkflowExecutor:
         self,
         workflow_id: str,
         task_reference_name: str,
-        skip_task_request: SkipTaskRequestAdapter,
+        skip_task_request: Optional[SkipTaskRequestAdapter] = None,
     ) -> None:
         """Skips a given task from a current running workflow"""
         return await self.workflow_client.skip_task_from_workflow(
@@ -307,18 +307,16 @@ class AsyncWorkflowExecutor:
         status: str,
     ) -> WorkflowAdapter:
         """Update a task By Ref Name"""
-        body = {"result": task_output}
         return await self.task_client.update_task_sync(
+            request_body=task_output,
             workflow_id=workflow_id,
             task_ref_name=task_reference_name,
             status=status,
-            request_body=body,
         )
 
     async def get_task(self, task_id: str) -> Optional[TaskAdapter]:
         """Get task by Id"""
-        task = await self.task_client.get_task(task_id=task_id)
-        return TaskAdapter.from_dict(task.to_dict())
+        return await self.task_client.get_task(task_id=task_id)
 
     def __get_task_result(
         self, task_id: str, workflow_id: str, task_output: Dict[str, Any], status: str

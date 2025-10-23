@@ -228,13 +228,13 @@ class OrkesWorkflowClient(OrkesBaseClient):
         self,
         workflow_id: str,
         task_reference_name: str,
-        skip_task_request: SkipTaskRequestAdapter,
+        skip_task_request: Optional[SkipTaskRequestAdapter] = None,
     ) -> None:
         """Skip a task in a workflow"""
         await self.workflow_api.skip_task_from_workflow(
             workflow_id=workflow_id,
             task_reference_name=task_reference_name,
-            skip_task_request=skip_task_request,
+            skip_task_request=skip_task_request,  # type: ignore[arg-type]
         )
 
     async def jump_to_task(

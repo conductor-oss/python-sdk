@@ -51,9 +51,10 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         """Update an existing user"""
         return await self.user_api.upsert_user(id=user_id, upsert_user_request=upsert_user_request)
 
-    async def get_user(self, user_id: str) -> ConductorUserAdapter:
+    async def get_user(self, user_id: str) -> Optional[ConductorUserAdapter]:
         """Get user by ID"""
-        return await self.user_api.get_user(id=user_id)
+        result = await self.user_api.get_user(id=user_id)
+        return ConductorUserAdapter.from_dict(result)  # type: ignore[arg-type]
 
     async def delete_user(self, user_id: str) -> None:
         """Delete user by ID"""
@@ -66,25 +67,28 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     # Application Operations
     async def create_application(
         self, application: CreateOrUpdateApplicationRequestAdapter
-    ) -> ExtendedConductorApplicationAdapter:
+    ) -> Optional[ExtendedConductorApplicationAdapter]:
         """Create a new application"""
-        return await self.application_api.create_application(
+        result = await self.application_api.create_application(
             create_or_update_application_request=application
         )
+        return ExtendedConductorApplicationAdapter.from_dict(result)  # type: ignore[arg-type]
 
     async def update_application(
         self, application_id: str, application: CreateOrUpdateApplicationRequestAdapter
-    ) -> ExtendedConductorApplicationAdapter:
+    ) -> Optional[ExtendedConductorApplicationAdapter]:
         """Update an existing application"""
-        return await self.application_api.update_application(
+        result = await self.application_api.update_application(
             id=application_id, create_or_update_application_request=application
         )
+        return ExtendedConductorApplicationAdapter.from_dict(result)  # type: ignore[arg-type]
 
     async def get_application(
         self, application_id: str
     ) -> Optional[ExtendedConductorApplicationAdapter]:
         """Get application by ID"""
-        return await self.application_api.get_application(id=application_id)
+        result = await self.application_api.get_application(id=application_id)
+        return ExtendedConductorApplicationAdapter.from_dict(result)  # type: ignore[arg-type]
 
     async def delete_application(self, application_id: str) -> None:
         """Delete application by ID"""
@@ -105,15 +109,17 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
     async def update_group(
         self, group_id: str, upsert_group_request: UpsertGroupRequest
-    ) -> GroupAdapter:
+    ) -> Optional[GroupAdapter]:
         """Update an existing group"""
-        return await self.group_api.upsert_group(
+        result = await self.group_api.upsert_group(
             id=group_id, upsert_group_request=upsert_group_request
         )
+        return GroupAdapter.from_dict(result)  # type: ignore[arg-type]
 
-    async def get_group(self, group_id: str) -> GroupAdapter:
+    async def get_group(self, group_id: str) -> Optional[GroupAdapter]:
         """Get group by ID"""
-        return await self.group_api.get_group(id=group_id)
+        result = await self.group_api.get_group(id=group_id)
+        return GroupAdapter.from_dict(result)  # type: ignore[arg-type]
 
     async def delete_group(self, group_id: str) -> None:
         """Delete group by ID"""
@@ -170,15 +176,17 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     # Convenience Methods
     async def upsert_user(
         self, user_id: str, upsert_user_request: UpsertUserRequest
-    ) -> ConductorUserAdapter:
+    ) -> Optional[ConductorUserAdapter]:
         """Alias for create_user/update_user"""
-        return await self.create_user(user_id, upsert_user_request)
+        result = await self.create_user(user_id, upsert_user_request)
+        return ConductorUserAdapter.from_dict(result)  # type: ignore[arg-type]
 
     async def upsert_group(
         self, group_id: str, upsert_group_request: UpsertGroupRequest
-    ) -> GroupAdapter:
+    ) -> Optional[GroupAdapter]:
         """Alias for create_group/update_group"""
-        return await self.create_group(group_id, upsert_group_request)
+        result = await self.create_group(group_id, upsert_group_request)
+        return GroupAdapter.from_dict(result)  # type: ignore[arg-type]
 
     async def set_application_tags(self, tags: List[TagAdapter], application_id: str):
         await self.application_api.put_tag_for_application(application_id, tags)
@@ -241,4 +249,5 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     async def get_app_by_access_key_id(
         self, access_key_id: str, *args, **kwargs
     ) -> Optional[ExtendedConductorApplicationAdapter]:
-        return await self.application_api.get_app_by_access_key_id(access_key_id, *args, **kwargs)
+        result = await self.application_api.get_app_by_access_key_id(access_key_id, *args, **kwargs)
+        return ExtendedConductorApplicationAdapter.from_dict(result)  # type: ignore[arg-type]

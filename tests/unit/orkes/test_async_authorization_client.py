@@ -264,7 +264,7 @@ async def test_get_user_with_empty_string(mocker, authorization_client, conducto
     mock = mocker.patch.object(UserResourceApi, "get_user")
     mock.return_value = conductor_user_adapter
     await authorization_client.get_user("")
-    mock.assert_called_with(id=None)
+    mock.assert_called_with(None, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)
 
 
 @pytest.mark.asyncio
@@ -279,7 +279,7 @@ async def test_delete_user_with_empty_string(mocker, authorization_client):
     from conductor.asyncio_client.http.api import UserResourceApi
     mock = mocker.patch.object(UserResourceApi, "delete_user")
     await authorization_client.delete_user("")
-    mock.assert_called_with(id=None)
+    mock.assert_called_with(None, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)
 
 
 @pytest.mark.asyncio
@@ -319,7 +319,7 @@ async def test_upsert_user_with_empty_string(mocker, authorization_client, condu
     upsert_req = UpsertUserRequestAdapter(name=USER_NAME, roles=["ADMIN"])
     mock.return_value = conductor_user_adapter
     await authorization_client.upsert_user("", upsert_req)
-    mock.assert_called_with(id=None, upsert_user_request=upsert_req)
+    mock.assert_called_with(None, upsert_req, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)
 
 
 @pytest.mark.asyncio
@@ -517,7 +517,7 @@ async def test_get_granted_permissions_for_user_with_empty_string(mocker, author
     mock = mocker.patch.object(UserResourceApi, "get_granted_permissions")
     mock.return_value = {"grantedAccess": []}
     await authorization_client.get_granted_permissions_for_user("")
-    mock.assert_called_with(user_id=None)
+    mock.assert_called_with(None, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)
 
 
 @pytest.mark.asyncio
@@ -532,7 +532,7 @@ async def test_create_access_key_empty_string_converts_to_none(mocker, authoriza
         "secret": "test-secret",
     }
     await authorization_client.create_access_key("")
-    mock.assert_called_with(id=None)
+    mock.assert_called_with(None, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)
 
 
 @pytest.mark.asyncio
@@ -545,7 +545,7 @@ async def test_add_role_to_application_user_empty_strings_convert_to_none(
 
     mock = mocker.patch.object(ApplicationResourceApi, "add_role_to_application_user")
     await authorization_client.add_role_to_application_user("", "")
-    mock.assert_called_with(application_id=None, role=None)
+    mock.assert_called_with(None, None, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)
 
 
 @pytest.mark.asyncio
@@ -556,7 +556,7 @@ async def test_delete_access_key_empty_strings_convert_to_none(mocker, authoriza
 
     mock = mocker.patch.object(ApplicationResourceApi, "delete_access_key")
     await authorization_client.delete_access_key("", "")
-    mock.assert_called_with(application_id=None, key_id=None)
+    mock.assert_called_with(None, None, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)
 
 
 @pytest.mark.asyncio
@@ -569,7 +569,7 @@ async def test_remove_role_from_application_user_empty_strings_convert_to_none(
 
     mock = mocker.patch.object(ApplicationResourceApi, "remove_role_from_application_user")
     await authorization_client.remove_role_from_application_user("", "")
-    mock.assert_called_with(application_id=None, role=None)
+    mock.assert_called_with(None, None, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)
 
 
 @pytest.mark.asyncio
@@ -583,7 +583,7 @@ async def test_get_app_by_access_key_id_empty_string_converts_to_none(
     mock = mocker.patch.object(ApplicationResourceApi, "get_app_by_access_key_id")
     mock.return_value = extended_conductor_application_adapter
     await authorization_client.get_app_by_access_key_id("")
-    mock.assert_called_with(access_key_id=None)
+    mock.assert_called_with(None, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)
 
 
 @pytest.mark.asyncio
@@ -595,7 +595,7 @@ async def test_get_access_keys_empty_string_converts_to_none(mocker, authorizati
     mock = mocker.patch.object(ApplicationResourceApi, "get_access_keys")
     mock.return_value = []
     await authorization_client.get_access_keys("")
-    mock.assert_called_with(id=None)
+    mock.assert_called_with(None, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)
 
 
 @pytest.mark.asyncio
@@ -611,7 +611,7 @@ async def test_toggle_access_key_status_empty_strings_convert_to_none(mocker, au
         "status": "INACTIVE",
     }
     await authorization_client.toggle_access_key_status("", "")
-    mock.assert_called_with(application_id=None, key_id=None)
+    mock.assert_called_with(None, None, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)
 
 
 @pytest.mark.asyncio
@@ -623,7 +623,7 @@ async def test_get_tags_for_application_empty_string_converts_to_none(mocker, au
     mock = mocker.patch.object(ApplicationResourceApi, "get_tags_for_application")
     mock.return_value = []
     await authorization_client.get_application_tags("")
-    mock.assert_called_with(id=None)
+    mock.assert_called_with(None, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)
 
 
 @pytest.mark.asyncio
@@ -636,4 +636,4 @@ async def test_delete_tag_for_application_empty_strings_convert_to_none(
 
     mock = mocker.patch.object(ApplicationResourceApi, "delete_tag_for_application")
     await authorization_client.delete_application_tags([], "")
-    mock.assert_called_with(id=None, tag=None)
+    mock.assert_called_with(None, None, _request_timeout=None, _request_auth=None, _content_type=None, _headers=None, _host_index=0)

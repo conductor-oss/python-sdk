@@ -53,7 +53,7 @@ class TaskHandler:
         self,
         workers: List[WorkerInterface],
         configuration: Configuration,
-        metrics_settings: MetricsSettings,
+        metrics_settings: Optional[MetricsSettings] = None,
         scan_for_annotated_workers: bool = True,
         import_modules: Optional[List[str]] = None,
     ):
@@ -123,7 +123,9 @@ class TaskHandler:
             logger.info("KeyboardInterrupt: Stopping all processes")
             self.stop_processes()
 
-    def __create_metrics_provider_process(self, metrics_settings: MetricsSettings) -> None:
+    def __create_metrics_provider_process(
+        self, metrics_settings: Optional[MetricsSettings] = None
+    ) -> None:
         if metrics_settings is None:
             self.metrics_provider_process = None
             return
@@ -138,7 +140,7 @@ class TaskHandler:
         self,
         workers: List[WorkerInterface],
         configuration: Configuration,
-        metrics_settings: MetricsSettings,
+        metrics_settings: Optional[MetricsSettings] = None,
     ) -> None:
         self.task_runner_processes: List[Process] = []
         for worker in workers:
@@ -148,7 +150,7 @@ class TaskHandler:
         self,
         worker: WorkerInterface,
         configuration: Configuration,
-        metrics_settings: MetricsSettings,
+        metrics_settings: Optional[MetricsSettings] = None,
     ) -> None:
         task_runner = AsyncTaskRunner(worker, configuration, metrics_settings)
         process = Process(target=self.coroutine_as_process_target, args=(task_runner.run,))
