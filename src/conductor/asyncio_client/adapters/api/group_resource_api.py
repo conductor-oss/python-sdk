@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any, Annotated, Union, Tuple
+from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
+
 from pydantic import Field, StrictFloat, StrictInt, StrictStr
 
-from conductor.asyncio_client.http.api import GroupResourceApi
 from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter
 from conductor.asyncio_client.adapters.models.upsert_group_request_adapter import (
     UpsertGroupRequestAdapter,
 )
+from conductor.asyncio_client.http.api import GroupResourceApi
 
 
 class GroupResourceApiAdapter(GroupResourceApi):

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import Optional, Dict, Union, Annotated, Any, Tuple, List
+from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
-from pydantic import validate_call, StrictStr, StrictFloat, Field, StrictInt
+from pydantic import Field, StrictFloat, StrictInt, StrictStr, validate_call
 
-from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
 from conductor.asyncio_client.adapters.models.poll_data_adapter import PollDataAdapter
-from conductor.asyncio_client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
 from conductor.asyncio_client.adapters.models.search_result_task_summary_adapter import (
     SearchResultTaskSummaryAdapter,
 )
+from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
+from conductor.asyncio_client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
 from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
 from conductor.asyncio_client.http.api import TaskResourceApi
 

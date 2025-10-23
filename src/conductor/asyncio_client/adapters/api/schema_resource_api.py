@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any, Union, Annotated, Tuple
-from pydantic import StrictStr, StrictFloat, StrictInt, Field, StrictBool
-from conductor.asyncio_client.http.api import SchemaResourceApi
+from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
+
+from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
+
 from conductor.asyncio_client.adapters.models.schema_def_adapter import SchemaDefAdapter
+from conductor.asyncio_client.http.api import SchemaResourceApi
 
 
 class SchemaResourceApiAdapter(SchemaResourceApi):

@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Any, Dict, List, Optional, cast
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.correlation_ids_search_request_adapter import (
     CorrelationIdsSearchRequestAdapter,
 )
@@ -27,7 +28,6 @@ from conductor.asyncio_client.adapters.models.workflow_status_adapter import Wor
 from conductor.asyncio_client.adapters.models.workflow_test_request_adapter import (
     WorkflowTestRequestAdapter,
 )
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 

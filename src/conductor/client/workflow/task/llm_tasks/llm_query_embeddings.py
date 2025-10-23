@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import List, Optional
 
 from conductor.client.workflow.task.task import TaskInterface

@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from typing import List, Dict, Any, Annotated, Union, Tuple, Optional
-from pydantic import Field, StrictFloat, StrictInt, StrictStr, StrictBool
+from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
-from conductor.asyncio_client.http.api import IntegrationResourceApi
+from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
+
+from conductor.asyncio_client.adapters.models.event_log_adapter import EventLogAdapter
 from conductor.asyncio_client.adapters.models.integration_adapter import IntegrationAdapter
 from conductor.asyncio_client.adapters.models.integration_api_adapter import IntegrationApiAdapter
 from conductor.asyncio_client.adapters.models.integration_def_adapter import IntegrationDefAdapter
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.adapters.models.event_log_adapter import EventLogAdapter
 from conductor.asyncio_client.adapters.models.message_template_adapter import MessageTemplateAdapter
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.http.api import IntegrationResourceApi
 
 
 class IntegrationResourceApiAdapter(IntegrationResourceApi):

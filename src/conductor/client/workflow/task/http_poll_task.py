@@ -1,6 +1,6 @@
 from __future__ import annotations
-from copy import deepcopy
 
+from copy import deepcopy
 from typing import Any, ClassVar, Dict, List, Optional
 
 from conductor.client.workflow.task.http_task import HttpMethod

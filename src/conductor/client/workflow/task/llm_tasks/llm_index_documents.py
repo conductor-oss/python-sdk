@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from conductor.client.workflow.task.llm_tasks.utils.embedding_model import EmbeddingModel
 from conductor.client.workflow.task.task import TaskInterface

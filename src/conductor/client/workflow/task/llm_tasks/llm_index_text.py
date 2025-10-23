@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Optional
 
 from conductor.client.workflow.task.llm_tasks.utils.embedding_model import EmbeddingModel

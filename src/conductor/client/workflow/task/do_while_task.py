@@ -1,6 +1,6 @@
 from __future__ import annotations
-from copy import deepcopy
 
+from copy import deepcopy
 from typing import List, Optional
 
 from conductor.client.http.models.workflow_task import WorkflowTask

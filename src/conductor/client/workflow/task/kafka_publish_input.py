@@ -1,6 +1,7 @@
 from __future__ import annotations
+
 from copy import deepcopy
-from typing import Dict, Any, Optional, ClassVar
+from typing import Any, ClassVar, Dict, Optional
 
 
 class KafkaPublishInput:

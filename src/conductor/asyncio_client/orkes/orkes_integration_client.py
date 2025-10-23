@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Optional, List, Dict
+
+from typing import Dict, List, Optional
 
 from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.configuration.configuration import Configuration
+from conductor.asyncio_client.adapters.models.event_log_adapter import EventLogAdapter
 from conductor.asyncio_client.adapters.models.integration_adapter import IntegrationAdapter
 from conductor.asyncio_client.adapters.models.integration_api_adapter import IntegrationApiAdapter
 from conductor.asyncio_client.adapters.models.integration_api_update_adapter import (
@@ -14,7 +15,7 @@ from conductor.asyncio_client.adapters.models.integration_update_adapter import 
 )
 from conductor.asyncio_client.adapters.models.message_template_adapter import MessageTemplateAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.adapters.models.event_log_adapter import EventLogAdapter
+from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.http.exceptions import NotFoundException
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 

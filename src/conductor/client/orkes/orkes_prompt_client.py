@@ -2,10 +2,10 @@ from __future__ import absolute_import, annotations
 
 from typing import List, Optional
 
+from conductor.client.codegen.rest import ApiException
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.prompt_template import PromptTemplate
 from conductor.client.http.models.prompt_template_test_request import PromptTemplateTestRequest
-from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.prompt_client import PromptClient

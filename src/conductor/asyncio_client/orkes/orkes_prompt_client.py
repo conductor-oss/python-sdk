@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.message_template_adapter import (
     MessageTemplateAdapter,
 )
@@ -9,7 +10,6 @@ from conductor.asyncio_client.adapters.models.prompt_template_test_request_adapt
     PromptTemplateTestRequestAdapter,
 )
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 

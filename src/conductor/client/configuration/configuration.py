@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
-
 import logging
 import os
 import time
-from typing import Optional, Dict, Union
+from typing import Dict, Optional, Union
 
 from conductor.shared.configuration.settings.authentication_settings import (
     AuthenticationSettings,

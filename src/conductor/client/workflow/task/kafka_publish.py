@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import Optional
+
 from conductor.client.workflow.task.kafka_publish_input import KafkaPublishInput
 from conductor.client.workflow.task.task import TaskInterface
 from conductor.client.workflow.task.task_type import TaskType

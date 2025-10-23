@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+
 from typing_extensions import Self
 
 from conductor.asyncio_client.http.models import ServiceDescriptor

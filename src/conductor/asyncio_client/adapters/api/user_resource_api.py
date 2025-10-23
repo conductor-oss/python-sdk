@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any, Union, Annotated, Tuple
+from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
-from pydantic import StrictStr, StrictFloat, StrictInt, Field, StrictBool
+from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
 
-from conductor.asyncio_client.http.api import UserResourceApi
 from conductor.asyncio_client.adapters.models import UpsertUserRequestAdapter as UpsertUserRequest
 from conductor.asyncio_client.adapters.models.conductor_user_adapter import ConductorUserAdapter
+from conductor.asyncio_client.http.api import UserResourceApi
 
 
 class UserResourceApiAdapter(UserResourceApi):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from conductor.asyncio_client.workflow.task.task import TaskInterface
 from conductor.shared.workflow.enums import TaskType

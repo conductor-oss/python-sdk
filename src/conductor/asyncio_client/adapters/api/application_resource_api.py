@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, Annotated, Dict, List, Optional, Tuple, Union
+from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
-from pydantic import Field, StrictStr, StrictFloat, StrictInt
+from pydantic import Field, StrictFloat, StrictInt, StrictStr
 
-from conductor.asyncio_client.http.api import ApplicationResourceApi
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.adapters.models.extended_conductor_application_adapter import (
-    ExtendedConductorApplicationAdapter,
-)
 from conductor.asyncio_client.adapters.models.create_or_update_application_request_adapter import (
     CreateOrUpdateApplicationRequestAdapter,
 )
+from conductor.asyncio_client.adapters.models.extended_conductor_application_adapter import (
+    ExtendedConductorApplicationAdapter,
+)
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.http.api import ApplicationResourceApi
 
 
 class ApplicationResourceApiAdapter(ApplicationResourceApi):

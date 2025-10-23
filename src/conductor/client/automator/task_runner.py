@@ -5,10 +5,9 @@ import os
 import sys
 import time
 import traceback
-
 from typing import Optional
 
-from conductor.client.codegen.rest import AuthorizationException, ApiException
+from conductor.client.codegen.rest import ApiException, AuthorizationException
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api_client import ApiClient

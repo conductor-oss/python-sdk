@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from enum import Enum
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 from typing_extensions import Self
 

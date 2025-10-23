@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 from uuid import uuid4
 
-
-from conductor.client.http.models import IntegrationApiUpdate, IntegrationUpdate
 from conductor.client.codegen.rest import ApiException
+from conductor.client.http.models import IntegrationApiUpdate, IntegrationUpdate
 from conductor.client.orkes_clients import OrkesClients
 
 if TYPE_CHECKING:
-    from conductor.client.http.models import PromptTemplate
     from conductor.client.configuration.configuration import Configuration
+    from conductor.client.http.models import PromptTemplate
     from conductor.shared.ai.configuration.interfaces.integration_config import IntegrationConfig
-    from conductor.shared.ai.enums import VectorDB
-    from conductor.shared.ai.enums import LLMProvider
+    from conductor.shared.ai.enums import LLMProvider, VectorDB
 
 NOT_FOUND_STATUS = 404
 

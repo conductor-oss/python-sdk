@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Optional, List, Tuple
+
+from typing import List, Optional, Tuple
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest

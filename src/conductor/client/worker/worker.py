@@ -1,23 +1,23 @@
 from __future__ import annotations
+
 import dataclasses
 import inspect
 import logging
 import time
 import traceback
 from copy import deepcopy
-from typing import Any, Callable, Union, Optional
+from typing import Any, Callable, Optional, Union
 
-
-from conductor.shared.automator import utils
-from conductor.shared.automator.utils import convert_from_dict_or_list
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api_client import ApiClient
-from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task import Task
+from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
+from conductor.client.worker.worker_interface import WorkerInterface
+from conductor.shared.automator import utils
+from conductor.shared.automator.utils import convert_from_dict_or_list
 from conductor.shared.http.enums import TaskResultStatus
 from conductor.shared.worker.exception import NonRetryableException
-from conductor.client.worker.worker_interface import WorkerInterface
 
 ExecuteTaskFunction = Callable[[Union[Task, object]], Union[TaskResult, object]]
 

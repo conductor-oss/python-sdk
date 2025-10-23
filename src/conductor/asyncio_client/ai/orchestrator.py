@@ -13,13 +13,13 @@ from conductor.asyncio_client.http.exceptions import NotFoundException
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 
 if TYPE_CHECKING:
+    from conductor.asyncio_client.adapters import ApiClient
     from conductor.asyncio_client.adapters.models.message_template_adapter import (
         MessageTemplateAdapter,
     )
     from conductor.asyncio_client.configuration import Configuration
     from conductor.shared.ai.configuration.interfaces.integration_config import IntegrationConfig
     from conductor.shared.ai.enums import LLMProvider, VectorDB
-    from conductor.asyncio_client.adapters import ApiClient
 
 NOT_FOUND_STATUS = 404
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Dict, Any, cast, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.authorization_request_adapter import (
@@ -8,6 +8,9 @@ from conductor.asyncio_client.adapters.models.authorization_request_adapter impo
 )
 from conductor.asyncio_client.adapters.models.conductor_user_adapter import (
     ConductorUserAdapter,
+)
+from conductor.asyncio_client.adapters.models.create_or_update_application_request_adapter import (
+    CreateOrUpdateApplicationRequestAdapter,
 )
 from conductor.asyncio_client.adapters.models.extended_conductor_application_adapter import (
     ExtendedConductorApplicationAdapter,
@@ -25,9 +28,6 @@ from conductor.asyncio_client.adapters.models.upsert_group_request_adapter impor
 )
 from conductor.asyncio_client.adapters.models.upsert_user_request_adapter import (
     UpsertUserRequestAdapter as UpsertUserRequest,
-)
-from conductor.asyncio_client.adapters.models.create_or_update_application_request_adapter import (
-    CreateOrUpdateApplicationRequestAdapter,
 )
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient

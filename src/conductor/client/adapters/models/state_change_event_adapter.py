@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import ClassVar, Dict, List, Union, Optional, Any
+from typing import Any, ClassVar, Dict, List, Optional, Union
 
 from conductor.client.codegen.models.state_change_event import StateChangeEvent
 

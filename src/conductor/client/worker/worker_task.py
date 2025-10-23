@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import functools
 from typing import Optional
+
 from conductor.client.automator.task_handler import register_decorated_fn
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.workflow.task.simple_task import SimpleTask

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from copy import deepcopy
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional, Union

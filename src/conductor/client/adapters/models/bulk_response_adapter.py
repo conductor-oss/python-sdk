@@ -1,4 +1,5 @@
 from typing import ClassVar, Dict
+
 from conductor.client.codegen.models import BulkResponse
 
 
