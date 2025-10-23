@@ -1,14 +1,13 @@
 from __future__ import annotations
 from abc import ABC
 from typing import Dict, Optional
-from typing_extensions import Self
 
 from conductor.client.workflow.task.task import TaskInterface
 from conductor.client.workflow.task.task_type import TaskType
 
 
 class WaitForWebHookTask(TaskInterface, ABC):
-    def __init__(self, task_ref_name: str, matches: Dict[str, object]) -> Self:
+    def __init__(self, task_ref_name: str, matches: Dict[str, object]) -> None:
         """
         matches: dictionary of matching payload that acts as correction between the incoming webhook payload and a
         running workflow task - amongst all the running workflows.

@@ -6,42 +6,16 @@ from conductor.client.codegen.models import Integration
 
 
 class IntegrationAdapter(Integration):
-    swagger_types: ClassVar[Dict[str, str]] = {
-        "apis": "list[IntegrationApi]",
-        "category": "str",
-        "configuration": "dict(str, object)",
-        "create_time": "int",
+    swagger_types: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+        **Integration.swagger_types,
         "created_on": "int",
-        "created_by": "str",
-        "description": "str",
-        "enabled": "bool",
-        "models_count": "int",
-        "name": "str",
-        "owner_app": "str",
-        "tags": "list[Tag]",
-        "type": "str",
-        "update_time": "int",
         "updated_on": "int",
-        "updated_by": "str",
     }
 
-    attribute_map: ClassVar[Dict[str, str]] = {
-        "apis": "apis",
-        "category": "category",
-        "configuration": "configuration",
-        "create_time": "createTime",
+    attribute_map: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+        **Integration.attribute_map,
         "created_on": "createdOn",
-        "created_by": "createdBy",
-        "description": "description",
-        "enabled": "enabled",
-        "models_count": "modelsCount",
-        "name": "name",
-        "owner_app": "ownerApp",
-        "tags": "tags",
-        "type": "type",
-        "update_time": "updateTime",
         "updated_on": "updatedOn",
-        "updated_by": "updatedBy",
     }
 
     def __init__(
@@ -131,7 +105,7 @@ class IntegrationAdapter(Integration):
         self._update_time = update_time
         self._updated_on = update_time
 
-    @Integration.category.setter
+    @Integration.category.setter  # type: ignore[attr-defined]
     def category(self, category):
         allowed_values = [
             "API",

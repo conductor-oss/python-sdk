@@ -9,8 +9,8 @@ from conductor.asyncio_client.http.models import WebhookConfig
 
 
 class WebhookConfigAdapter(WebhookConfig):
-    tags: Optional[List["TagAdapter"]] = None
-    webhook_execution_history: Optional[List["WebhookExecutionHistoryAdapter"]] = Field(
+    tags: Optional[List["TagAdapter"]] = None  # type: ignore[assignment]
+    webhook_execution_history: Optional[List["WebhookExecutionHistoryAdapter"]] = Field(  # type: ignore[assignment]
         default=None, alias="webhookExecutionHistory"
     )
     workflows_to_start: Optional[Dict[str, Any]] = Field(default=None, alias="workflowsToStart")

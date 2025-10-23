@@ -3,8 +3,6 @@ from copy import deepcopy
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional, Union
 
-from typing_extensions import Self
-
 from conductor.client.workflow.task.task import TaskInterface
 from conductor.client.workflow.task.task_type import TaskType
 
@@ -51,7 +49,7 @@ class HttpInput:
         connection_time_out: Optional[int] = None,
         read_timeout: Optional[int] = None,
         body: Any = None,
-    ) -> Self:
+    ) -> None:
         self._method = deepcopy(method)
         self._uri = deepcopy(uri)
         self._headers = deepcopy(headers)
@@ -63,7 +61,7 @@ class HttpInput:
 
 
 class HttpTask(TaskInterface):
-    def __init__(self, task_ref_name: str, http_input: Union[HttpInput, dict]) -> Self:
+    def __init__(self, task_ref_name: str, http_input: Union[HttpInput, dict]) -> None:
         if type(http_input) is dict and "method" not in http_input:
             http_input["method"] = "GET"
         super().__init__(
@@ -72,7 +70,7 @@ class HttpTask(TaskInterface):
             input_parameters={"http_request": http_input},
         )
 
-    def status_code(self) -> int:
+    def status_code(self) -> str:
         return "${" + f"{self.task_reference_name}.output.response.statusCode" + "}"
 
     def headers(self, json_path: Optional[str] = None) -> str:

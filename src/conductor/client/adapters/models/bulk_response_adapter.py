@@ -3,15 +3,14 @@ from conductor.client.codegen.models import BulkResponse
 
 
 class BulkResponseAdapter(BulkResponse):
-    swagger_types: ClassVar[Dict[str, str]] = {
-        "bulk_error_results": "dict(str, str)",
+    swagger_types: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+        **BulkResponse.swagger_types,
         "bulk_successful_results": "list[str]",
         "message": "str",
     }
 
-    attribute_map: ClassVar[Dict[str, str]] = {
-        "bulk_error_results": "bulkErrorResults",
-        "bulk_successful_results": "bulkSuccessfulResults",
+    attribute_map: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+        **BulkResponse.attribute_map,
         "message": "message",
     }
 

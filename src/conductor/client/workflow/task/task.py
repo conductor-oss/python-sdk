@@ -10,8 +10,8 @@ from conductor.client.http.models.workflow_task import WorkflowTaskAdapter as Wo
 from conductor.client.workflow.task.task_type import TaskType
 
 
-def get_task_interface_list_as_workflow_task_list(*tasks: Self) -> List[WorkflowTask]:
-    converted_tasks = []
+def get_task_interface_list_as_workflow_task_list(*tasks: TaskInterface) -> List[WorkflowTask]:
+    converted_tasks: List[WorkflowTask] = []
     for task in tasks:
         wf_task = task.to_workflow_task()
         if isinstance(wf_task, list):
@@ -33,17 +33,17 @@ class TaskInterface:
         input_parameters: Optional[Dict[str, Any]] = None,
         cache_key: Optional[str] = None,
         cache_ttl_second: int = 0,
-    ) -> Self:
-        self.task_reference_name = task_reference_name
-        self.task_type = task_type
-        self.name = task_name or task_reference_name
-        self.description = description
-        self.optional = optional
-        self.input_parameters = input_parameters
-        self._cache_key = cache_key
-        self._cache_ttl_second = cache_ttl_second
-        self._expression = None
-        self._evaluator_type = None
+    ) -> None:
+        self.task_reference_name: str = task_reference_name
+        self.task_type: TaskType = task_type
+        self.name: str = task_name or task_reference_name
+        self.description: Optional[str] = description
+        self.optional: Optional[bool] = optional
+        self._input_parameters: Dict[str, Any] = input_parameters or {}
+        self._cache_key: Optional[str] = cache_key
+        self._cache_ttl_second: int = cache_ttl_second
+        self._expression: Optional[str] = None
+        self._evaluator_type: Optional[str] = None
 
     @property
     def task_reference_name(self) -> str:
@@ -76,7 +76,7 @@ class TaskInterface:
         self._name = name
 
     @property
-    def expression(self) -> str:
+    def expression(self) -> Optional[str]:
         return self._expression
 
     @expression.setter
@@ -84,7 +84,7 @@ class TaskInterface:
         self._expression = expression
 
     @property
-    def evaluator_type(self) -> str:
+    def evaluator_type(self) -> Optional[str]:
         return self._evaluator_type
 
     @evaluator_type.setter
@@ -96,7 +96,7 @@ class TaskInterface:
         self._cache_ttl_second = cache_ttl_second
 
     @property
-    def description(self) -> str:
+    def description(self) -> Optional[str]:
         return self._description
 
     @description.setter
@@ -106,7 +106,7 @@ class TaskInterface:
         self._description = deepcopy(description)
 
     @property
-    def optional(self) -> bool:
+    def optional(self) -> Optional[bool]:
         return self._optional
 
     @optional.setter

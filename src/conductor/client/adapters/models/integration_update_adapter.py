@@ -2,7 +2,7 @@ from conductor.client.codegen.models import IntegrationUpdate
 
 
 class IntegrationUpdateAdapter(IntegrationUpdate):
-    @IntegrationUpdate.category.setter
+    @IntegrationUpdate.category.setter  # type: ignore[attr-defined]
     def category(self, category):
         allowed_values = [
             "API",

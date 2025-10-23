@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from conductor.client.http.models.workflow_schedule import WorkflowSchedule
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
 from conductor.client.http.models.search_result_workflow_schedule_execution_model import (
@@ -15,7 +15,7 @@ class SchedulerClient(ABC):
         pass
 
     @abstractmethod
-    def get_schedule(self, name: str) -> (Optional[WorkflowSchedule], str):
+    def get_schedule(self, name: str) -> Tuple[Optional[WorkflowSchedule], str]:
         pass
 
     @abstractmethod

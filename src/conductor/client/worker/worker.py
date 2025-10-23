@@ -7,7 +7,6 @@ import traceback
 from copy import deepcopy
 from typing import Any, Callable, Union, Optional
 
-from typing_extensions import Self
 
 from conductor.shared.automator import utils
 from conductor.shared.automator.utils import convert_from_dict_or_list
@@ -46,7 +45,7 @@ class Worker(WorkerInterface):
         poll_interval: Optional[float] = None,
         domain: Optional[str] = None,
         worker_id: Optional[str] = None,
-    ) -> Self:
+    ) -> None:
         super().__init__(task_definition_name)
         self.api_client = ApiClient()
         self.config = Configuration()
@@ -89,7 +88,7 @@ class Worker(WorkerInterface):
                         task_input[input_name] = default_value
                     else:
                         task_input[input_name] = None
-                task_output = self.execute_function(**task_input)
+                task_output = self.execute_function(**task_input)  # type: ignore[call-arg]
 
             if isinstance(task_output, TaskResult):
                 task_output.task_id = task.task_id

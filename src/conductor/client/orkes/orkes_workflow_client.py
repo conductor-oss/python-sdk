@@ -36,7 +36,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if version:
             kwargs.update({"version": version})
         if correlationId:
-            kwargs.update({"correlation_id": correlationId})
+            kwargs.update({"correlation_id": correlationId})  # type: ignore[dict-item]
         if priority:
             kwargs.update({"priority": priority})
 
@@ -126,7 +126,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if reason:
             kwargs["reason"] = reason
         if trigger_failure_workflow:
-            kwargs["trigger_failure_workflow"] = trigger_failure_workflow
+            kwargs["trigger_failure_workflow"] = trigger_failure_workflow  # type: ignore[assignment]
         self.workflowResourceApi.terminate1(workflow_id, **kwargs)
 
     def get_workflow(self, workflow_id: str, include_tasks: Optional[bool] = True) -> Workflow:
@@ -152,7 +152,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         self.workflowResourceApi.delete1(workflow_id, archive_workflow=archive_workflow)
 
     def skip_task_from_workflow(
-        self, workflow_id: str, task_reference_name: str, request: SkipTaskRequest
+        self, workflow_id: str, task_reference_name: str, request: Optional[SkipTaskRequest]
     ):
         self.workflowResourceApi.skip_task_from_workflow(workflow_id, task_reference_name, request)
 
@@ -190,9 +190,9 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
 
         kwargs["body"] = batch_request
         if include_tasks:
-            kwargs["include_tasks"] = include_tasks
+            kwargs["include_tasks"] = include_tasks  # type: ignore[assignment]
         if include_completed:
-            kwargs["include_closed"] = include_completed
+            kwargs["include_closed"] = include_completed  # type: ignore[assignment]
         return self.workflowResourceApi.get_workflows1(**kwargs)
 
     def get_by_correlation_ids(
@@ -234,7 +234,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if wait_until_task_ref_names is not None:
             kwargs["wait_until_task_ref"] = ",".join(wait_until_task_ref_names)
         if wait_for_seconds is not None:
-            kwargs["wait_for_seconds"] = wait_for_seconds
+            kwargs["wait_for_seconds"] = wait_for_seconds  # type: ignore[assignment]
 
         return self.workflowResourceApi.update_workflow_and_task_state(
             body=update_request, workflow_id=workflow_id, request_id=request_id, **kwargs

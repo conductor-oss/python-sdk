@@ -29,7 +29,7 @@ class AnyAdapter(Any):
             {
                 "allFields": obj.get("allFields"),
                 "defaultInstanceForType": (
-                    Any.from_dict(obj["defaultInstanceForType"])
+                    Any.from_dict(obj["defaultInstanceForType"])  # type: ignore[attr-defined]
                     if obj.get("defaultInstanceForType") is not None
                     else None
                 ),

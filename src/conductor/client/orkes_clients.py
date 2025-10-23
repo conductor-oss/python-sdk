@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Optional
+
 from conductor.client.authorization_client import AuthorizationClient
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.integration_client import IntegrationClient
@@ -21,7 +25,7 @@ from conductor.client.workflow_client import WorkflowClient
 
 
 class OrkesClients:
-    def __init__(self, configuration: Configuration = None):
+    def __init__(self, configuration: Optional[Configuration] = None):
         if configuration is None:
             configuration = Configuration()
         self.configuration = configuration

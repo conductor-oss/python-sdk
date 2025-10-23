@@ -2,7 +2,7 @@ from conductor.client.codegen.models.sub_workflow_params import SubWorkflowParam
 
 
 class SubWorkflowParamsAdapter(SubWorkflowParams):
-    @SubWorkflowParams.idempotency_strategy.setter
+    @SubWorkflowParams.idempotency_strategy.setter  # type: ignore[attr-defined]
     def idempotency_strategy(self, idempotency_strategy):
         """Sets the idempotency_strategy of this SubWorkflowParams.
 

@@ -55,8 +55,9 @@ class TaskHandler:
         configuration: Configuration,
         metrics_settings: MetricsSettings,
         scan_for_annotated_workers: bool = True,
-        import_modules: List[str] = [],
+        import_modules: Optional[List[str]] = None,
     ):
+        import_modules = import_modules or []
         self.metrics_provider_process: Optional[Process] = None
         self.logger_process, self.queue = _setup_logging_queue(configuration)
 

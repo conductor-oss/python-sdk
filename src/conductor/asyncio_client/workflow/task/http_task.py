@@ -20,7 +20,7 @@ class HttpTask(TaskInterface):
             },
         )
 
-    def status_code(self) -> int:
+    def status_code(self) -> str:
         return "${" + f"{self.task_reference_name}.output.response.statusCode" + "}"
 
     def headers(self, json_path: Optional[str] = None) -> str:

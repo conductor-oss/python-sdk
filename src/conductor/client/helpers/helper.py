@@ -17,7 +17,7 @@ class ObjectMapper(object):
     PRIMITIVE_TYPES: ClassVar[Tuple] = (float, bool, bytes, six.text_type, *six.integer_types)
     NATIVE_TYPES_MAPPING: ClassVar[Dict] = {
         "int": int,
-        "long": int if six.PY3 else long,  # noqa: F821, YTT202
+        "long": int if six.PY3 else long,  # type: ignore[name-defined] # noqa: F821, YTT202
         "float": float,
         "str": str,
         "bool": bool,

@@ -73,4 +73,4 @@ class OrkesServiceRegistryClient(OrkesBaseClient, ServiceRegistryClient):
     def is_circuit_breaker_open(self, name: str) -> bool:
         """Check if circuit breaker is open for a service"""
         status = self.get_circuit_breaker_status(name)
-        return status.current_state and status.current_state.upper() == "OPEN"
+        return bool(status.current_state and status.current_state.upper() == "OPEN")

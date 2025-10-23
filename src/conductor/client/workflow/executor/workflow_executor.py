@@ -2,7 +2,6 @@ from __future__ import annotations
 import uuid
 from typing import Any, Dict, List, Optional
 
-from typing_extensions import Self
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
@@ -25,7 +24,7 @@ from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 
 
 class WorkflowExecutor:
-    def __init__(self, configuration: Configuration) -> Self:
+    def __init__(self, configuration: Configuration) -> None:
         api_client = ApiClient(configuration)
         self.metadata_client = MetadataResourceApi(api_client)
         self.task_client = TaskResourceApi(api_client)
@@ -172,7 +171,9 @@ class WorkflowExecutor:
         skip_cache: Optional[bool] = None,
     ) -> ScrollableSearchResultWorkflowSummary:
         """Search for workflows based on payload and other parameters"""
-        return self.workflow_client.search(start=start, size=size, free_text=free_text, query=query)
+        return self.workflow_client.search(
+            start=start or 0, size=size or 100, free_text=free_text or "*", query=query
+        )
 
     def get_by_correlation_ids(
         self,
@@ -185,8 +186,8 @@ class WorkflowExecutor:
         return self.workflow_client.get_by_correlation_ids(
             correlation_ids=correlation_ids,
             workflow_name=workflow_name,
-            include_tasks=include_tasks,
-            include_completed=include_closed,
+            include_tasks=include_tasks or False,
+            include_completed=include_closed or False,
         )
 
     def get_by_correlation_ids_and_names(
@@ -202,8 +203,8 @@ class WorkflowExecutor:
         """
         return self.workflow_client.get_by_correlation_ids_in_batch(
             batch_request=batch_request,
-            include_completed=include_closed,
-            include_tasks=include_tasks,
+            include_completed=include_closed or False,
+            include_tasks=include_tasks or False,
         )
 
     def pause(self, workflow_id: str) -> None:
@@ -224,19 +225,19 @@ class WorkflowExecutor:
         return self.workflow_client.terminate_workflow(
             workflow_id=workflow_id,
             reason=reason,
-            trigger_failure_workflow=trigger_failure_workflow,
+            trigger_failure_workflow=trigger_failure_workflow or False,
         )
 
     def restart(self, workflow_id: str, use_latest_definitions: Optional[bool] = None) -> None:
         """Restarts a completed workflow"""
         return self.workflow_client.restart_workflow(
-            workflow_id=workflow_id, use_latest_def=use_latest_definitions
+            workflow_id=workflow_id, use_latest_def=use_latest_definitions or False
         )
 
     def retry(self, workflow_id: str, resume_subworkflow_tasks: Optional[bool] = None) -> None:
         """Retries the last failed task"""
         return self.workflow_client.retry_workflow(
-            workflow_id=workflow_id, resume_subworkflow_tasks=resume_subworkflow_tasks
+            workflow_id=workflow_id, resume_subworkflow_tasks=resume_subworkflow_tasks or False
         )
 
     def rerun(self, rerun_workflow_request: RerunWorkflowRequest, workflow_id: str) -> str:
@@ -247,7 +248,10 @@ class WorkflowExecutor:
         )
 
     def skip_task_from_workflow(
-        self, workflow_id: str, task_reference_name: str, skip_task_request: SkipTaskRequest = None
+        self,
+        workflow_id: str,
+        task_reference_name: str,
+        skip_task_request: Optional[SkipTaskRequest] = None,
     ) -> None:
         """Skips a given task from a current running workflow"""
         return self.workflow_client.skip_task_from_workflow(

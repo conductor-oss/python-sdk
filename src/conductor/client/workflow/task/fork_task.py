@@ -1,8 +1,6 @@
 from __future__ import annotations
 from copy import deepcopy
-from typing import List, Optional
-
-from typing_extensions import Self
+from typing import List, Optional, Union
 
 from conductor.client.http.models.workflow_task import WorkflowTask
 from conductor.client.workflow.task.join_task import JoinTask
@@ -20,12 +18,12 @@ class ForkTask(TaskInterface):
         task_ref_name: str,
         forked_tasks: List[List[TaskInterface]],
         join_on: Optional[List[str]] = None,
-    ) -> Self:
+    ) -> None:
         super().__init__(task_reference_name=task_ref_name, task_type=TaskType.FORK_JOIN)
         self._forked_tasks = deepcopy(forked_tasks)
         self._join_on = join_on
 
-    def to_workflow_task(self) -> [WorkflowTask]:
+    def to_workflow_task(self) -> Union[WorkflowTask, List[WorkflowTask]]:  # type: ignore[override]
         tasks = []
         workflow_task = super().to_workflow_task()
         workflow_task.fork_tasks = []

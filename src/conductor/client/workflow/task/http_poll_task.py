@@ -3,8 +3,6 @@ from copy import deepcopy
 
 from typing import Any, ClassVar, Dict, List, Optional
 
-from typing_extensions import Self
-
 from conductor.client.workflow.task.http_task import HttpMethod
 from conductor.client.workflow.task.task import TaskInterface
 from conductor.client.workflow.task.task_type import TaskType
@@ -23,7 +21,7 @@ class HttpPollInput:
         "_termination_condition": "str",
         "_polling_interval": "int",
         "_max_poll_count": "int",
-        "_polling_strategy": str,
+        "_polling_strategy": "str",
     }
 
     attribute_map: ClassVar[Dict[str, str]] = {
@@ -55,7 +53,7 @@ class HttpPollInput:
         connection_time_out: Optional[int] = None,
         read_timeout: Optional[int] = None,
         body: Any = None,
-    ) -> Self:
+    ) -> None:
         self._method = deepcopy(method)
         self._uri = deepcopy(uri)
         self._headers = deepcopy(headers)
@@ -71,7 +69,7 @@ class HttpPollInput:
 
 
 class HttpPollTask(TaskInterface):
-    def __init__(self, task_ref_name: str, http_input: HttpPollInput) -> Self:
+    def __init__(self, task_ref_name: str, http_input: HttpPollInput) -> None:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.HTTP_POLL,

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
@@ -19,7 +19,7 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
     def save_schedule(self, save_schedule_request: SaveScheduleRequest):
         self.schedulerResourceApi.save_schedule(save_schedule_request)
 
-    def get_schedule(self, name: str) -> WorkflowSchedule:
+    def get_schedule(self, name: str) -> Tuple[Optional[WorkflowSchedule], str]:
         return self.schedulerResourceApi.get_schedule(name)
 
     def get_all_schedules(self, workflow_name: Optional[str] = None) -> List[WorkflowSchedule]:
@@ -74,11 +74,11 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         if size:
             kwargs.update({"size": size})
         if sort:
-            kwargs.update({"sort": sort})
+            kwargs.update({"sort": sort})  # type: ignore[dict-item]
         if free_text:
-            kwargs.update({"free_text": free_text})
+            kwargs.update({"free_text": free_text})  # type: ignore[dict-item]
         if query:
-            kwargs.update({"query": query})
+            kwargs.update({"query": query})  # type: ignore[dict-item]
         return self.schedulerResourceApi.search_v2(**kwargs)
 
     def requeue_all_execution_records(self):
@@ -91,4 +91,4 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         return self.schedulerResourceApi.get_tags_for_schedule(name)
 
     def delete_scheduler_tags(self, tags: List[MetadataTag], name: str) -> List[MetadataTag]:
-        self.schedulerResourceApi.delete_tag_for_schedule(tags, name)
+        return self.schedulerResourceApi.delete_tag_for_schedule(tags, name)

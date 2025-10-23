@@ -1,7 +1,6 @@
 from __future__ import annotations
 from enum import Enum
 from typing import Optional
-from typing_extensions import Self
 
 from conductor.client.workflow.task.task import TaskInterface
 from conductor.client.workflow.task.task_type import TaskType
@@ -35,7 +34,7 @@ class HumanTask(TaskInterface):
         form_template: Optional[str] = None,
         form_version: int = 0,
         assignment_completion_strategy: AssignmentCompletionStrategy = AssignmentCompletionStrategy.LEAVE_OPEN,
-    ) -> Self:
+    ) -> None:
         super().__init__(task_reference_name=task_ref_name, task_type=TaskType.HUMAN)
         self.input_parameters.update(
             {

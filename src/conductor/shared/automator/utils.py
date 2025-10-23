@@ -5,7 +5,7 @@ import datetime
 import inspect
 import logging
 import typing
-from typing import List, cast
+from typing import Any, List, cast
 
 from dacite import from_dict
 from requests.structures import CaseInsensitiveDict
@@ -51,7 +51,7 @@ def convert_from_dict(cls: type, data: dict) -> object:
     ):
         data = {}
 
-    members = inspect.signature(cls.__init__).parameters
+    members = inspect.signature(cls.__init__).parameters  # type: ignore[misc]
     kwargs = {}
 
     for member in members:
@@ -84,7 +84,7 @@ def convert_from_dict(cls: type, data: dict) -> object:
             or typ is dict
             or str(typ).startswith("OrderedDict[")
         ):
-            values = {}
+            values = {}  # type: ignore[assignment]
             generic_type = object
             if len(generic_types) > 1:
                 generic_type = generic_types[1]
@@ -107,7 +107,9 @@ def convert_from_dict(cls: type, data: dict) -> object:
     return cls(**kwargs)
 
 
-def get_value(typ: type, val: object) -> object:
+def get_value(typ: type, val: Any) -> Any:
+    values: Any = None
+
     if typ in simple_types:
         return val
     elif (
@@ -126,7 +128,7 @@ def get_value(typ: type, val: object) -> object:
         values = {}
         for k in val:
             v = val[k]
-            values[k] = get_value(object, v)
+            values[k] = get_value(object, v)  # type: ignore[call-overload]
         return values
     else:
         return convert_from_dict(typ, val)

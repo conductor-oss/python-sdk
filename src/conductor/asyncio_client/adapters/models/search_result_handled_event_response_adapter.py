@@ -8,7 +8,7 @@ from conductor.asyncio_client.http.models import SearchResultHandledEventRespons
 
 
 class SearchResultHandledEventResponseAdapter(SearchResultHandledEventResponse):
-    results: Optional[List["HandledEventResponseAdapter"]] = None
+    results: Optional[List["HandledEventResponseAdapter"]] = None  # type: ignore[assignment]
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

@@ -170,7 +170,7 @@ class MetricsCollector:
         if not self.must_collect_metrics:
             return
         counter = self.__get_counter(
-            name=name, documentation=documentation, labelnames=labels.keys()
+            name=name, documentation=documentation, labelnames=list(labels.keys())
         )
         counter.labels(*labels.values()).inc()
 
@@ -183,7 +183,9 @@ class MetricsCollector:
     ) -> None:
         if not self.must_collect_metrics:
             return
-        gauge = self.__get_gauge(name=name, documentation=documentation, labelnames=labels.keys())
+        gauge = self.__get_gauge(
+            name=name, documentation=documentation, labelnames=list(labels.keys())
+        )
         gauge.labels(*labels.values()).set(value)
 
     def __get_counter(

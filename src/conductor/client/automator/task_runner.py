@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 import logging
 import os
 import sys
 import time
 import traceback
+
+from typing import Optional
 
 from conductor.client.codegen.rest import AuthorizationException, ApiException
 from conductor.client.configuration.configuration import Configuration
@@ -22,8 +26,8 @@ class TaskRunner:
     def __init__(
         self,
         worker: WorkerInterface,
-        configuration: Configuration = None,
-        metrics_settings: MetricsSettings = None,
+        configuration: Optional[Configuration] = None,
+        metrics_settings: Optional[MetricsSettings] = None,
     ):
         if not isinstance(worker, WorkerInterface):
             raise Exception("Invalid worker")
@@ -74,7 +78,7 @@ class TaskRunner:
         except Exception:
             pass
 
-    def __poll_task(self) -> Task:
+    def __poll_task(self) -> Optional[Task]:
         task_definition_name = self.worker.get_task_definition_name()
         if self.worker.paused():
             logger.debug("Stop polling task for: %s", task_definition_name)
@@ -96,7 +100,7 @@ class TaskRunner:
         except AuthorizationException as auth_exception:
             if self.metrics_collector is not None:
                 self.metrics_collector.increment_task_poll_error(
-                    task_definition_name, type(auth_exception)
+                    task_definition_name, auth_exception
                 )
             if auth_exception.invalid_token:
                 logger.error(
@@ -113,7 +117,7 @@ class TaskRunner:
             return None
         except ApiException as e:
             if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(task_definition_name, type(e))
+                self.metrics_collector.increment_task_poll_error(task_definition_name, e)
             logger.error(
                 "Failed to poll task: %s, reason: %s, code: %s",
                 task_definition_name,
@@ -123,7 +127,7 @@ class TaskRunner:
             return None
         except Exception as e:
             if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(task_definition_name, type(e))
+                self.metrics_collector.increment_task_poll_error(task_definition_name, e)
             logger.error("Failed to poll task: %s; reason: %s", task_definition_name, e)
             return None
 
@@ -164,7 +168,7 @@ class TaskRunner:
             )
         except Exception as e:
             if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_execution_error(task_definition_name, type(e))
+                self.metrics_collector.increment_task_execution_error(task_definition_name, e)
             task_result = TaskResult(
                 task_id=task.task_id,
                 workflow_instance_id=task.workflow_instance_id,
@@ -210,9 +214,7 @@ class TaskRunner:
                 return response
             except Exception as e:
                 if self.metrics_collector is not None:
-                    self.metrics_collector.increment_task_update_error(
-                        task_definition_name, type(e)
-                    )
+                    self.metrics_collector.increment_task_update_error(task_definition_name, e)
                 logger.error(
                     "Failed to update task id: %s; workflow_instance_id: %s; task_definition_name: %s; reason: %s",
                     task_result.task_id,

@@ -2,7 +2,7 @@ from conductor.client.codegen.models.target_ref import TargetRef
 
 
 class TargetRefAdapter(TargetRef):
-    @TargetRef.id.setter
+    @TargetRef.id.setter  # type: ignore[attr-defined]
     def id(self, id):
         """Sets the id of this TargetRef.
 
@@ -12,7 +12,7 @@ class TargetRefAdapter(TargetRef):
         """
         self._id = id
 
-    @TargetRef.type.setter
+    @TargetRef.type.setter  # type: ignore[attr-defined]
     def type(self, type):
         """Sets the type of this TargetRef.
 

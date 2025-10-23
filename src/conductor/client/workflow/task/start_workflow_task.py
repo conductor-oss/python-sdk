@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Optional
-from typing_extensions import Self
 
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
 from conductor.client.workflow.task.task import TaskInterface
@@ -14,7 +13,7 @@ class StartWorkflowTask(TaskInterface):
         workflow_name: str,
         start_workflow_request: StartWorkflowRequest,
         version: Optional[int] = None,
-    ) -> Self:
+    ) -> None:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.START_WORKFLOW,

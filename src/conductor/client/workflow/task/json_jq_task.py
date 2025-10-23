@@ -1,11 +1,9 @@
-from typing_extensions import Self
-
 from conductor.client.workflow.task.task import TaskInterface
 from conductor.client.workflow.task.task_type import TaskType
 
 
 class JsonJQTask(TaskInterface):
-    def __init__(self, task_ref_name: str, script: str) -> Self:
+    def __init__(self, task_ref_name: str, script: str) -> None:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.JSON_JQ_TRANSFORM,

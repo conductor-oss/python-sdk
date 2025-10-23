@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from conductor.client.orkes.models.access_key_status import AccessKeyStatus
 from typing import Optional
 

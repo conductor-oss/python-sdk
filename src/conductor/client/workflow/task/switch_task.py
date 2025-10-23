@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from copy import deepcopy
 from enum import Enum
-from typing import List
+from typing import List, Dict, Optional
 
 from typing_extensions import Self
 
@@ -21,14 +23,14 @@ class EvaluatorType(str, Enum):
 class SwitchTask(TaskInterface):
     def __init__(
         self, task_ref_name: str, case_expression: str, use_javascript: bool = False
-    ) -> Self:
+    ) -> None:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.SWITCH,
         )
-        self._default_case = None
-        self._decision_cases = {}
-        self._expression = deepcopy(case_expression)
+        self._default_case: Optional[TaskInterface] = None
+        self._decision_cases: Dict[str, List[TaskInterface]] = {}
+        self._expression = deepcopy(case_expression)  # type: ignore[assignment]
         self._use_javascript = deepcopy(use_javascript)
 
     def switch_case(self, case_name: str, tasks: List[TaskInterface]) -> Self:
@@ -40,7 +42,7 @@ class SwitchTask(TaskInterface):
 
     def default_case(self, tasks: List[TaskInterface]) -> Self:
         if isinstance(tasks, List):
-            self._default_case = deepcopy(tasks)
+            self._default_case = deepcopy(tasks)  # type: ignore[assignment]
         else:
             self._default_case = [deepcopy(tasks)]
         return self
@@ -60,6 +62,6 @@ class SwitchTask(TaskInterface):
                 *tasks,
             )
         if self._default_case is None:
-            self._default_case = []
-        workflow.default_case = get_task_interface_list_as_workflow_task_list(*self._default_case)
+            self._default_case = []  # type: ignore[assignment]
+        workflow.default_case = get_task_interface_list_as_workflow_task_list(*self._default_case)  # type: ignore[misc]
         return workflow

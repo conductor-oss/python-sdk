@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import ClassVar, Dict, List, Union, Optional
-
-from typing_extensions import Self
+from typing import ClassVar, Dict, List, Union, Optional, Any
 
 from conductor.client.codegen.models.state_change_event import StateChangeEvent
 
@@ -24,7 +22,7 @@ class StateChangeConfig:
     # Keep original init for backward compatibility
     def __init__(
         self,
-        event_type: Union[str, StateChangeEventType, List[StateChangeEventType]] = None,
+        event_type: Optional[Union[StateChangeEventType, List[StateChangeEventType]]] = None,
         events: Optional[List[StateChangeEvent]] = None,
     ) -> None:
         if event_type is None:
@@ -40,7 +38,7 @@ class StateChangeConfig:
         return self._type
 
     @type.setter
-    def type(self, event_type: StateChangeEventType) -> Self:
+    def type(self, event_type: StateChangeEventType) -> None:
         self._type = event_type.name
 
     @property
@@ -48,12 +46,12 @@ class StateChangeConfig:
         return self._events
 
     @events.setter
-    def events(self, events: List[StateChangeEvent]) -> Self:
+    def events(self, events: List[StateChangeEvent]) -> None:
         self._events = events
 
     def to_dict(self) -> Dict:
         """Returns the model properties as a dict"""
-        result = {}
+        result: Dict[str, Any] = {}
         for attr in self.swagger_types.keys():
             value = getattr(self, attr)
             if isinstance(value, list):
@@ -100,7 +98,7 @@ class StateChangeEventAdapter(StateChangeEvent):
         self.payload = payload
         self.type = type
 
-    @StateChangeEvent.payload.setter
+    @StateChangeEvent.payload.setter  # type: ignore[attr-defined]
     def payload(self, payload):
         """Sets the payload of this StateChangeEvent.
 
@@ -113,7 +111,7 @@ class StateChangeEventAdapter(StateChangeEvent):
 
         self._payload = payload
 
-    @StateChangeEvent.type.setter
+    @StateChangeEvent.type.setter  # type: ignore[attr-defined]
     def type(self, type):
         """Sets the type of this StateChangeEvent.
 

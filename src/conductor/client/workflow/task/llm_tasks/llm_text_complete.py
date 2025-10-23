@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, List, Dict
-
+from typing import Optional, List, Dict, Any
 from typing_extensions import Self
 
 from conductor.client.workflow.task.task import TaskInterface
@@ -20,9 +19,9 @@ class LlmTextComplete(TaskInterface):
         temperature: int = 0,
         top_p: int = 1,
         task_name: Optional[str] = None,
-    ) -> Self:
+    ) -> None:
         stop_words = stop_words or []
-        optional_input_params = {}
+        optional_input_params: Dict[str, Any] = {}
 
         if stop_words:
             optional_input_params.update({"stopWords": stop_words})
@@ -33,7 +32,7 @@ class LlmTextComplete(TaskInterface):
         if not task_name:
             task_name = "llm_text_complete"
 
-        input_params = {
+        input_params: Dict[str, Any] = {
             "llmProvider": llm_provider,
             "model": model,
             "promptName": prompt_name,

@@ -28,11 +28,11 @@ class ConductorWorkflow:
         name: str,
         version: Optional[int] = None,
         description: Optional[str] = None,
-    ) -> Self:
+    ) -> None:
         self._executor: WorkflowExecutor = executor
-        self.name: str = name
-        self.version: Optional[int] = version
-        self.description: Optional[str] = description
+        self._name: str = name
+        self._version: Optional[int] = version
+        self._description: Optional[str] = description
         self._tasks: List[TaskInterface] = []
         self._owner_email: Optional[str] = None
         self._timeout_policy: Optional[TimeoutPolicy] = None
@@ -57,7 +57,7 @@ class ConductorWorkflow:
         self._name = deepcopy(name)
 
     @property
-    def version(self) -> int:
+    def version(self) -> Optional[int]:
         return self._version
 
     @version.setter
@@ -67,7 +67,7 @@ class ConductorWorkflow:
         self._version = deepcopy(version)
 
     @property
-    def description(self) -> str:
+    def description(self) -> Optional[str]:
         return self._description
 
     @description.setter
@@ -110,7 +110,7 @@ class ConductorWorkflow:
         self._restartable = deepcopy(restartable)
         return self
 
-    def enable_status_listener(self, sink_name: bool) -> None:
+    def enable_status_listener(self, sink_name: str) -> None:
         self._workflow_status_listener_sink = sink_name
         self._workflow_status_listener_enabled = True
 
@@ -304,7 +304,7 @@ class ConductorWorkflow:
         return sub_workflow_task.to_workflow_task()
 
     def __get_workflow_task_list(self) -> List[WorkflowTask]:
-        workflow_task_list = []
+        workflow_task_list: List[WorkflowTask] = []
         for task in self._tasks:
             converted_task = task.to_workflow_task()
             if isinstance(converted_task, list):

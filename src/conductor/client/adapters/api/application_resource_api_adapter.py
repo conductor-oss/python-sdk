@@ -1,67 +1,36 @@
+from typing import List
+
+from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.codegen.api.application_resource_api import ApplicationResourceApi
+from conductor.client.http.models.extended_conductor_application import ExtendedConductorApplication
 
 
 class ApplicationResourceApiAdapter(ApplicationResourceApi):
-    def create_access_key(self, id, **kwargs):
-        # Convert empty application id to None to prevent sending invalid data to server
-        if not id:
-            id = None
+    def create_access_key(self, id: str, **kwargs):
         return super().create_access_key(id, **kwargs)
 
-    def add_role_to_application_user(self, application_id, role, **kwargs):
-        # Convert empty application_id and role to None to prevent sending invalid data to server
-        if not application_id:
-            application_id = None
-        if not role:
-            role = None
+    def add_role_to_application_user(self, application_id: str, role: str, **kwargs):
         return super().add_role_to_application_user(application_id, role, **kwargs)
 
-    def delete_access_key(self, application_id, key_id, **kwargs):
-        # Convert empty application_id and key_id to None to prevent sending invalid data to server
-        if not application_id:
-            application_id = None
-        if not key_id:
-            key_id = None
+    def delete_access_key(self, application_id: str, key_id: str, **kwargs):
         return super().delete_access_key(application_id, key_id, **kwargs)
 
-    def remove_role_from_application_user(self, application_id, role, **kwargs):
-        # Convert empty application_id and role to None to prevent sending invalid data to server
-        if not application_id:
-            application_id = None
-        if not role:
-            role = None
+    def remove_role_from_application_user(self, application_id: str, role: str, **kwargs):
         return super().remove_role_from_application_user(application_id, role, **kwargs)
 
-    def get_app_by_access_key_id(self, access_key_id: str, **kwargs):
-        # Convert empty access_key_id to None to prevent sending invalid data to server
-        if not access_key_id:
-            access_key_id = None
+    def get_app_by_access_key_id(
+        self, access_key_id: str, **kwargs
+    ) -> ExtendedConductorApplication:
         return super().get_app_by_access_key_id(access_key_id, **kwargs)
 
     def get_access_keys(self, id: str, **kwargs):
-        # Convert empty application id to None to prevent sending invalid data to server
-        if not id:
-            id = None
         return super().get_access_keys(id=id, **kwargs)
 
-    def toggle_access_key_status(self, application_id, key_id, **kwargs):
-        # Convert empty application_id and key_id to None to prevent sending invalid data to server
-        if not application_id:
-            application_id = None
-        if not key_id:
-            key_id = None
+    def toggle_access_key_status(self, application_id: str, key_id: str, **kwargs):
         return super().toggle_access_key_status(application_id, key_id, **kwargs)
 
-    def get_tags_for_application(self, application_id, **kwargs):
-        # Convert empty application_id to None to prevent sending invalid data to server
-        if not application_id:
-            application_id = None
+    def get_tags_for_application(self, application_id: str, **kwargs) -> List[MetadataTag]:  # type: ignore[override]
         return super().get_tags_for_application(application_id, **kwargs)
 
-    def delete_tag_for_application(self, body, id, **kwargs):
-        # Convert empty tag list (body) and application id to None to prevent sending invalid data to server
-        if not body:
-            body = None
-        if not id:
-            id = None
+    def delete_tag_for_application(self, body: List[MetadataTag], id: str, **kwargs) -> None:
         return super().delete_tag_for_application(body, id, **kwargs)

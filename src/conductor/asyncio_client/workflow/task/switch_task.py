@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from copy import deepcopy
-from typing import List
+from typing import List, Dict, Optional
 
 from conductor.asyncio_client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
 from conductor.asyncio_client.workflow.task.task import (
@@ -15,8 +17,8 @@ class SwitchTask(TaskInterface):
             task_reference_name=task_ref_name,
             task_type=TaskType.SWITCH,
         )
-        self._default_case = None
-        self._decision_cases = {}
+        self._default_case: Optional[List[TaskInterface]] = None
+        self._decision_cases: Dict[str, List[TaskInterface]] = {}
         self._expression = deepcopy(case_expression)
         self._use_javascript = deepcopy(use_javascript)
 
@@ -29,7 +31,7 @@ class SwitchTask(TaskInterface):
 
     def default_case(self, tasks: List[TaskInterface]):
         if isinstance(tasks, List):
-            self._default_case = deepcopy(tasks)
+            self._default_case = deepcopy(tasks)  # type: ignore[assignment]
         else:
             self._default_case = [deepcopy(tasks)]
         return self
@@ -41,7 +43,7 @@ class SwitchTask(TaskInterface):
             workflow.expression = self._expression
         else:
             workflow.evaluator_type = EvaluatorType.VALUE_PARAM
-            workflow.input_parameters["switchCaseValue"] = self._expression
+            workflow.input_parameters["switchCaseValue"] = self._expression  # type: ignore[index]
             workflow.expression = "switchCaseValue"
         workflow.decision_cases = {}
         for case_value, tasks in self._decision_cases.items():
@@ -49,6 +51,6 @@ class SwitchTask(TaskInterface):
                 *tasks,
             )
         if self._default_case is None:
-            self._default_case = []
-        workflow.default_case = get_task_interface_list_as_workflow_task_list(*self._default_case)
+            self._default_case = []  # type: ignore[assignment]
+        workflow.default_case = get_task_interface_list_as_workflow_task_list(*self._default_case)  # type: ignore[misc]
         return workflow

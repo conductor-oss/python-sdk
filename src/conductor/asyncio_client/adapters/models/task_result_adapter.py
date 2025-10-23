@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Self
+from typing import Any, Dict, List, Optional
 
+from typing_extensions import Self
 from pydantic import Field
 
 from conductor.asyncio_client.http.models import TaskResult
 
 
 class TaskResultAdapter(TaskResult):
-    logs: Optional[List["TaskExecLogAdapter"]] = None
+    logs: Optional[List["TaskExecLogAdapter"]] = None  # type: ignore[assignment]
     output_data: Optional[Dict[str, Any]] = Field(default=None, alias="outputData")
 
     @classmethod

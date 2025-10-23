@@ -313,15 +313,15 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
     async def test_workflow(  # type: ignore[override]
         self,
         workflow_test_request: WorkflowTestRequestAdapter,  # type: ignore[override]
-        _request_timeout: Union[
+        _request_timeout: Union[  # noqa: PT019
             None,
             Annotated[StrictFloat, Field(gt=0)],
             Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
         ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,  # noqa: PT019
+        _content_type: Optional[StrictStr] = None,  # noqa: PT019
+        _headers: Optional[Dict[StrictStr, Any]] = None,  # noqa: PT019
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,  # noqa: PT019
     ) -> WorkflowAdapter:
         result = await super().test_workflow(
             workflow_test_request,  # type: ignore[override]
