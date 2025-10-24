@@ -1,0 +1,36 @@
+"""
+Utility functions for converting between generated models and adapters.
+"""
+
+from typing import List, TypeVar, Type, Any
+from pydantic import BaseModel
+
+T = TypeVar("T", bound=BaseModel)
+
+
+def convert_list_to_adapter(items: List[Any], adapter_class: Type[T]) -> List[T]:
+    """
+    Convert a list of generated models to a list of adapters.
+
+    Args:
+        items: List of generated model instances
+        adapter_class: The adapter class to convert to
+
+    Returns:
+        List of adapter instances
+    """
+    return [adapter_class.model_validate(item.model_dump()) for item in items]
+
+
+def convert_to_adapter(item: Any, adapter_class: Type[T]) -> T:
+    """
+    Convert a single generated model to an adapter.
+
+    Args:
+        item: Generated model instance
+        adapter_class: The adapter class to convert to
+
+    Returns:
+        Adapter instance
+    """
+    return adapter_class.model_validate(item.model_dump())
