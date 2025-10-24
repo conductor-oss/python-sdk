@@ -7,21 +7,21 @@ class Prompt(object):
     attribute_map: ClassVar[Dict[str, str]] = {"name": "promptName", "variables": "promptVariables"}
 
     def __init__(self, name: str, variables: Dict[str, object]):
-        self._name = name
-        self._variables = variables
+        self._name: str = name
+        self._variables: Dict[str, object] = variables
 
     @property
     def name(self) -> str:
         return self._name
 
-    @property
-    def variables(self) -> str:
-        return self._variables
-
     @name.setter
-    def name(self, name: str):
+    def name(self, name: str) -> None:
         self._name = name
 
+    @property
+    def variables(self) -> Dict[str, object]:
+        return self._variables
+
     @variables.setter
-    def variables(self, variables: str):
+    def variables(self, variables: Dict[str, object]) -> None:
         self._variables = variables

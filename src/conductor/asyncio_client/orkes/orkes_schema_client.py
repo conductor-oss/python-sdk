@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from conductor.asyncio_client.adapters.models.schema_def_adapter import SchemaDefAdapter
 from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.http.configuration import Configuration
+from conductor.asyncio_client.adapters.models.schema_def_adapter import SchemaDefAdapter
+from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
@@ -47,14 +47,14 @@ class OrkesSchemaClient(OrkesBaseClient):
         name: str,
         version: int,
         schema_definition: dict,
-        description: Optional[str] = None,
+        schema_type: str = "JSON",
     ) -> None:
         """Create a new schema with simplified parameters"""
         schema_def = SchemaDefAdapter(
             name=name,
             version=version,
-            schema=schema_definition,
-            description=description,
+            data=schema_definition,
+            type=schema_type,
         )
         await self.save_schema(schema_def)
 
@@ -63,15 +63,15 @@ class OrkesSchemaClient(OrkesBaseClient):
         name: str,
         version: int,
         schema_definition: dict,
-        description: Optional[str] = None,
+        schema_type: str = "JSON",
         create_new_version: bool = False,
     ) -> None:
         """Update an existing schema"""
         schema_def = SchemaDefAdapter(
             name=name,
             version=version,
-            schema=schema_definition,
-            description=description,
+            data=schema_definition,
+            type=schema_type,
         )
         await self.save_schema(schema_def, new_version=create_new_version)
 
@@ -129,8 +129,8 @@ class OrkesSchemaClient(OrkesBaseClient):
             schema_def = SchemaDefAdapter(
                 name=schema_dict.get("name"),
                 version=schema_dict.get("version"),
-                schema=schema_dict.get("schema"),
-                description=schema_dict.get("description"),
+                data=schema_dict.get("data"),
+                type=schema_dict.get("type", "JSON"),
             )
             schema_defs.append(schema_def)
 
@@ -149,8 +149,8 @@ class OrkesSchemaClient(OrkesBaseClient):
         cloned_schema = SchemaDefAdapter(
             name=target_name,
             version=target_version,
-            schema=source_schema.schema,
-            description=f"Clone of {source_schema.name} v{source_schema.version}",
+            data=source_schema.data,
+            type=source_schema.type,
         )
 
         await self.save_schema(cloned_schema)
@@ -166,15 +166,15 @@ class OrkesSchemaClient(OrkesBaseClient):
             schema for schema in all_schemas if name_pattern.lower() in (schema.name or "").lower()
         ]
 
-    async def get_schemas_with_description(
-        self, description_pattern: str
+    async def get_schemas_with_external_ref(
+        self, external_ref_pattern: str
     ) -> List[SchemaDefAdapter]:
-        """Find schemas that contain a specific text in their description"""
+        """Find schemas that contain a specific text in their external ref"""
         all_schemas = await self.get_all_schemas()
         return [
             schema
             for schema in all_schemas
-            if schema.description and description_pattern.lower() in schema.description.lower()
+            if schema.external_ref and external_ref_pattern.lower() in schema.external_ref.lower()
         ]
 
     async def validate_schema_structure(self, schema_definition: dict) -> bool:
@@ -187,7 +187,7 @@ class OrkesSchemaClient(OrkesBaseClient):
         all_schemas = await self.get_all_schemas()
 
         unique_names = set()
-        version_counts = {}
+        version_counts: dict[str, int] = {}
 
         for schema in all_schemas:
             if schema.name:
@@ -197,7 +197,7 @@ class OrkesSchemaClient(OrkesBaseClient):
         return {
             "total_schemas": len(all_schemas),
             "unique_schema_names": len(unique_names),
-            "schemas_with_descriptions": len([s for s in all_schemas if s.description]),
+            "schemas_with_external_ref": len([s for s in all_schemas if s.external_ref]),
             "version_counts": version_counts,
             "schema_names": sorted(unique_names),
         }
@@ -215,11 +215,11 @@ class OrkesSchemaClient(OrkesBaseClient):
             await self.delete_schema_by_name(name)
 
     async def create_schema_version(
-        self, name: str, schema_definition: dict, description: Optional[str] = None
+        self, name: str, schema_definition: dict, schema_type: str = "JSON"
     ) -> None:
         """Create a new version of an existing schema"""
         # Get the highest version number for this schema
         versions = await self.get_schema_versions(name)
         new_version = max(versions) + 1 if versions else 1
 
-        await self.create_schema(name, new_version, schema_definition, description)
+        await self.create_schema(name, new_version, schema_definition, schema_type)

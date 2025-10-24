@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
@@ -15,11 +15,11 @@ class WorkflowAdapter(Workflow):
     input: Optional[Dict[str, Any]] = None
     output: Optional[Dict[str, Any]] = None
     variables: Optional[Dict[str, Any]] = None
-    workflow_definition: Optional["WorkflowDefAdapter"] = Field(
+    workflow_definition: Optional["WorkflowDefAdapter"] = Field(  # type: ignore[assignment]
         default=None, alias="workflowDefinition"
     )
-    tasks: Optional[List["TaskAdapter"]] = None
-    history: Optional[List["WorkflowAdapter"]] = None
+    tasks: Optional[List["TaskAdapter"]] = None  # type: ignore[assignment]
+    history: Optional[List["WorkflowAdapter"]] = None  # type: ignore[assignment]
 
     def is_completed(self) -> bool:
         """Checks if the workflow has completed

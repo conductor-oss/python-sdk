@@ -1,8 +1,7 @@
 from __future__ import annotations
-from copy import deepcopy
-from typing import Dict, Any, Optional, ClassVar
 
-from typing_extensions import Self
+from copy import deepcopy
+from typing import Any, ClassVar, Dict, Optional
 
 
 class KafkaPublishInput:
@@ -38,15 +37,15 @@ class KafkaPublishInput:
         max_block_ms: Optional[str] = None,
         headers: Optional[Dict[str, Any]] = None,
         topic: Optional[str] = None,
-    ) -> Self:
-        self._bootstrap_servers = deepcopy(bootstrap_servers)
-        self._key = deepcopy(key)
-        self._key_serializer = deepcopy(key_serializer)
-        self._value = deepcopy(value)
-        self._request_timeout_ms = deepcopy(request_timeout_ms)
-        self._max_block_ms = deepcopy(max_block_ms)
-        self._headers = deepcopy(headers)
-        self._topic = deepcopy(topic)
+    ) -> None:
+        self._bootstrap_servers: Optional[str] = deepcopy(bootstrap_servers)
+        self._key: Optional[str] = deepcopy(key)
+        self._key_serializer: Optional[str] = deepcopy(key_serializer)
+        self._value: Optional[str] = deepcopy(value)
+        self._request_timeout_ms: Optional[str] = deepcopy(request_timeout_ms)
+        self._max_block_ms: Optional[str] = deepcopy(max_block_ms)
+        self._headers: Optional[Dict[str, Any]] = deepcopy(headers)
+        self._topic: Optional[str] = deepcopy(topic)
 
     @property
     def bootstrap_servers(self) -> Optional[str]:

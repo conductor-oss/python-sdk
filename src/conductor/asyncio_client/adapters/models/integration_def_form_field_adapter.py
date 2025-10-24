@@ -9,8 +9,8 @@ from conductor.asyncio_client.http.models import IntegrationDefFormField
 
 
 class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
-    value_options: Optional[List["OptionAdapter"]] = Field(default=None, alias="valueOptions")
-    depends_on: Optional[List["IntegrationDefFormFieldAdapter"]] = Field(
+    value_options: Optional[List["OptionAdapter"]] = Field(default=None, alias="valueOptions")  # type: ignore[assignment]
+    depends_on: Optional[List["IntegrationDefFormFieldAdapter"]] = Field(  # type: ignore[assignment]
         default=None, alias="dependsOn"
     )
     __properties: ClassVar[List[str]] = [

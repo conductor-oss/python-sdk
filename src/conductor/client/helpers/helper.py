@@ -1,14 +1,14 @@
 import datetime
 import logging
 import re
-from dateutil.parser import parse
 from typing import ClassVar, Dict, Tuple
 
 import six
+from dateutil.parser import parse
 from requests.structures import CaseInsensitiveDict
 
-from conductor.client.configuration.configuration import Configuration
 from conductor.client.codegen import rest
+from conductor.client.configuration.configuration import Configuration
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
@@ -17,7 +17,7 @@ class ObjectMapper(object):
     PRIMITIVE_TYPES: ClassVar[Tuple] = (float, bool, bytes, six.text_type, *six.integer_types)
     NATIVE_TYPES_MAPPING: ClassVar[Dict] = {
         "int": int,
-        "long": int if six.PY3 else long,  # noqa: F821, YTT202
+        "long": int if six.PY3 else long,  # type: ignore[name-defined] # noqa: F821, YTT202
         "float": float,
         "str": str,
         "bool": bool,

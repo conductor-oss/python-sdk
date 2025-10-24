@@ -134,7 +134,7 @@ class Configuration:
         if server_url is not None:
             self.server_url = server_url
         else:
-            self.server_url = os.getenv("CONDUCTOR_SERVER_URL")
+            self.server_url = os.getenv("CONDUCTOR_SERVER_URL")  # type: ignore[assignment]
 
         if self.server_url is None or self.server_url == "":
             self.server_url = "http://localhost:8080/api"
@@ -143,12 +143,12 @@ class Configuration:
         if auth_key is not None:
             self.auth_key = auth_key
         else:
-            self.auth_key = os.getenv("CONDUCTOR_AUTH_KEY")
+            self.auth_key = os.getenv("CONDUCTOR_AUTH_KEY")  # type: ignore[assignment]
 
         if auth_secret is not None:
             self.auth_secret = auth_secret
         else:
-            self.auth_secret = os.getenv("CONDUCTOR_AUTH_SECRET")
+            self.auth_secret = os.getenv("CONDUCTOR_AUTH_SECRET")  # type: ignore[assignment]
 
         # Additional worker properties with environment variable fallback
         self.polling_interval = polling_interval or self._get_env_int(
@@ -173,10 +173,10 @@ class Configuration:
         # Proxy configuration - can be set via parameter or environment variable
         self.proxy = proxy or os.getenv("CONDUCTOR_PROXY")
         # Proxy headers - can be set via parameter or environment variable
-        self.proxy_headers = proxy_headers
+        self.proxy_headers: Optional[Dict[str, Any]] = proxy_headers
         if not self.proxy_headers and os.getenv("CONDUCTOR_PROXY_HEADERS"):
             try:
-                self.proxy_headers = json.loads(os.getenv("CONDUCTOR_PROXY_HEADERS"))
+                self.proxy_headers = json.loads(os.getenv("CONDUCTOR_PROXY_HEADERS"))  # type: ignore[arg-type]
             except (json.JSONDecodeError, TypeError):
                 # If JSON parsing fails, treat as a single header value
                 self.proxy_headers = {"Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")}
@@ -213,19 +213,19 @@ class Configuration:
             http_config_kwargs["verify_ssl"] = self._get_env_bool("CONDUCTOR_VERIFY_SSL", True)
 
         http_config_kwargs.update(kwargs)
-        self._http_config = HttpConfiguration(**http_config_kwargs)
+        self._http_config = HttpConfiguration(**http_config_kwargs)  # type: ignore[arg-type]
 
         # Set proxy configuration on the HTTP config
         if self.proxy:
             self._http_config.proxy = self.proxy
         if self.proxy_headers:
-            self._http_config.proxy_headers = self.proxy_headers
+            self._http_config.proxy_headers = self.proxy_headers  # type: ignore[assignment]
 
         # Set proxy configuration on the HTTP config
         if self.proxy:
             self._http_config.proxy = self.proxy
         if self.proxy_headers:
-            self._http_config.proxy_headers = self.proxy_headers
+            self._http_config.proxy_headers = self.proxy_headers  # type: ignore[assignment]
 
         # Debug switch and logging setup
         self.__debug = debug
@@ -460,7 +460,7 @@ class Configuration:
 
     # Properties for commonly used HTTP configuration attributes
     @property
-    def host(self) -> str:
+    def host(self) -> Optional[str]:
         """Get server host URL."""
         if getattr(self, "_http_config", None) is not None:
             return self._http_config.host

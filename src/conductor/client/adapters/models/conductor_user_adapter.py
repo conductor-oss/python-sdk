@@ -4,14 +4,14 @@ from conductor.client.codegen.models import ConductorUser
 
 
 class ConductorUserAdapter(ConductorUser):
-    swagger_types: ClassVar[Dict[str, str]] = {
+    swagger_types: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
         **ConductorUser.swagger_types,
         "orkes_app": "bool",
         "orkes_api_gateway": "bool",
         "contact_information": "dict(str, str)",
     }
 
-    attribute_map: ClassVar[Dict[str, str]] = {
+    attribute_map: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
         **ConductorUser.attribute_map,
         "orkes_app": "orkesApp",
         "orkes_api_gateway": "orkesApiGateway",

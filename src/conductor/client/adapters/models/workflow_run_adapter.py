@@ -71,8 +71,8 @@ class WorkflowRunAdapter(WorkflowRun):
             self.workflow_id = workflow_id
 
     @property
-    def current_task(self) -> TaskAdapter:
-        current = None
+    def current_task(self) -> Optional[TaskAdapter]:
+        current: Optional[TaskAdapter] = None
         for task in self.tasks:
             if task.status in ("SCHEDULED", "IN_PROGRESS"):
                 current = task
@@ -80,7 +80,7 @@ class WorkflowRunAdapter(WorkflowRun):
 
     def get_task(
         self, name: Optional[str] = None, task_reference_name: Optional[str] = None
-    ) -> TaskAdapter:
+    ) -> Optional[TaskAdapter]:
         if name is None and task_reference_name is None:
             raise Exception(
                 "ONLY one of name or task_reference_name MUST be provided.  None were provided"
@@ -90,7 +90,7 @@ class WorkflowRunAdapter(WorkflowRun):
                 "ONLY one of name or task_reference_name MUST be provided.  both were provided"
             )
 
-        current = None
+        current: Optional[TaskAdapter] = None
         for task in self.tasks:
             if (
                 task.task_def_name == name

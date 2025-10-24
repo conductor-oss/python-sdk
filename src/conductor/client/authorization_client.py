@@ -1,21 +1,23 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
-from conductor.client.orkes.models.metadata_tag import MetadataTag
-from conductor.client.orkes.models.access_type import AccessType
-from conductor.client.orkes.models.granted_permission import GrantedPermission
-from conductor.client.orkes.models.access_key import AccessKey
-from conductor.client.orkes.models.created_access_key import CreatedAccessKey
-from conductor.client.http.models.group import Group
-from conductor.client.http.models.target_ref import TargetRef
-from conductor.client.http.models.subject_ref import SubjectRef
-from conductor.client.http.models.conductor_user import ConductorUser
+
 from conductor.client.http.models.conductor_application import ConductorApplication
-from conductor.client.http.models.upsert_user_request import UpsertUserRequest
-from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
+from conductor.client.http.models.conductor_user import ConductorUser
 from conductor.client.http.models.create_or_update_application_request import (
     CreateOrUpdateApplicationRequest,
 )
+from conductor.client.http.models.group import Group
+from conductor.client.http.models.subject_ref import SubjectRef
+from conductor.client.http.models.target_ref import TargetRef
+from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
+from conductor.client.http.models.upsert_user_request import UpsertUserRequest
+from conductor.client.orkes.models.access_key import AccessKey
+from conductor.client.orkes.models.access_type import AccessType
+from conductor.client.orkes.models.created_access_key import CreatedAccessKey
+from conductor.client.orkes.models.granted_permission import GrantedPermission
+from conductor.client.orkes.models.metadata_tag import MetadataTag
 
 
 class AuthorizationClient(ABC):

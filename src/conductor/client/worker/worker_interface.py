@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 import abc
 import socket
 from typing import Union
 
+from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
-from conductor.client.configuration.configuration import Configuration
 
 DEFAULT_POLLING_INTERVAL = 100  # ms
 

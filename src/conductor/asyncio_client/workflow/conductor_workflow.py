@@ -43,22 +43,22 @@ class AsyncConductorWorkflow:
         version: Optional[int] = None,
         description: Optional[str] = None,
     ):
-        self._executor = executor
-        self.name = name
-        self.version = version
-        self.description = description
-        self._tasks = []
-        self._owner_email = None
-        self._timeout_policy = None
-        self._timeout_seconds = 60
-        self._failure_workflow = ""
-        self._input_parameters = []
-        self._output_parameters = {}
-        self._input_template = {}
-        self._variables = {}
-        self._restartable = True
-        self._workflow_status_listener_enabled = False
-        self._workflow_status_listener_sink = None
+        self._executor: AsyncWorkflowExecutor = executor
+        self.name: str = name
+        self._version: Optional[int] = version
+        self._description: Optional[str] = description
+        self._tasks: List[TaskInterface] = []
+        self._owner_email: Optional[str] = None
+        self._timeout_policy: Optional[TimeoutPolicy] = None
+        self._timeout_seconds: int = 60
+        self._failure_workflow: str = ""
+        self._input_parameters: List[str] = []
+        self._output_parameters: Dict[str, Any] = {}
+        self._input_template: Dict[str, Any] = {}
+        self._variables: Dict[str, Any] = {}
+        self._restartable: bool = True
+        self._workflow_status_listener_enabled: bool = False
+        self._workflow_status_listener_sink: Optional[str] = None
 
     @property
     def name(self) -> str:
@@ -71,7 +71,7 @@ class AsyncConductorWorkflow:
         self._name = deepcopy(name)
 
     @property
-    def version(self) -> int:
+    def version(self) -> Union[int, None]:
         return self._version
 
     @version.setter
@@ -81,7 +81,7 @@ class AsyncConductorWorkflow:
         self._version = deepcopy(version)
 
     @property
-    def description(self) -> str:
+    def description(self) -> Union[str, None]:
         return self._description
 
     @description.setter
@@ -103,7 +103,7 @@ class AsyncConductorWorkflow:
         return self
 
     def owner_email(self, owner_email: str):
-        if not isinstance(owner_email, str):
+        if not isinstance(owner_email, str) or not owner_email:
             raise Exception("Invalid type")
         self._owner_email = deepcopy(owner_email)
         return self
@@ -124,7 +124,9 @@ class AsyncConductorWorkflow:
         self._restartable = deepcopy(restartable)
         return self
 
-    def enable_status_listener(self, sink_name: bool):
+    def enable_status_listener(self, sink_name: str):
+        if not isinstance(sink_name, str) or not sink_name:
+            raise Exception("Invalid type, sink_name must be a non-empty string")
         self._workflow_status_listener_sink = sink_name
         self._workflow_status_listener_enabled = True
 
@@ -342,22 +344,22 @@ class AsyncConductorWorkflow:
 
     def __get_workflow_task_list(self) -> List[WorkflowTaskAdapter]:
         # Flatten tasks into workflow_task_list
-        workflow_task_list = [
-            wt
-            for task in self._tasks
-            for wt in (
-                task.to_workflow_task()
-                if isinstance(task.to_workflow_task(), list)
-                else [task.to_workflow_task()]
-            )
-        ]
+        workflow_task_list: List[WorkflowTaskAdapter] = []
 
-        updated_task_list = []
+        for task in self._tasks:
+            wf_task = task.to_workflow_task()
+
+            if isinstance(wf_task, list):
+                workflow_task_list.extend(wf_task)
+            else:
+                workflow_task_list.append(wf_task)
+
+        updated_task_list: List[WorkflowTaskAdapter] = []
         for current, next_task in zip(workflow_task_list, [*workflow_task_list[1:], None]):
             updated_task_list.append(current)
 
             if current.type == "FORK_JOIN" and next_task is not None and next_task.type != "JOIN":
-                join_on = [ft[-1].task_reference_name for ft in current.fork_tasks]
+                join_on = [ft[-1].task_reference_name for ft in (current.fork_tasks or [])]
                 join_task = JoinTask(
                     task_ref_name=f"join_{current.task_reference_name}", join_on=join_on
                 )

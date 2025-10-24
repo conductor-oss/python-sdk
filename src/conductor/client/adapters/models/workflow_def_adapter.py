@@ -146,7 +146,7 @@ class WorkflowDefAdapter(WorkflowDef):
         """
         self._tasks = tasks
 
-    @WorkflowDef.timeout_seconds.setter
+    @WorkflowDef.timeout_seconds.setter  # type: ignore[attr-defined]
     def timeout_seconds(self, timeout_seconds):
         """Sets the timeout_seconds of this WorkflowDef.
 

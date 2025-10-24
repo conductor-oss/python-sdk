@@ -1,6 +1,6 @@
 from __future__ import annotations
+
 from typing import Optional
-from typing_extensions import Self
 
 from conductor.client.workflow.task.task import TaskInterface
 from conductor.client.workflow.task.task_type import TaskType
@@ -14,7 +14,7 @@ class LlmGenerateEmbeddings(TaskInterface):
         model: str,
         text: str,
         task_name: Optional[str] = None,
-    ) -> Self:
+    ) -> None:
         if task_name is None:
             task_name = "llm_generate_embeddings"
         super().__init__(

@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Optional, List
+
+from typing import List, Optional
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.poll_data import PollData
@@ -38,9 +39,9 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
         if worker_id:
             kwargs.update({"workerid": worker_id})
         if count:
-            kwargs.update({"count": count})
+            kwargs.update({"count": count})  # type: ignore[dict-item]
         if timeout_in_millisecond:
-            kwargs.update({"timeout": timeout_in_millisecond})
+            kwargs.update({"timeout": timeout_in_millisecond})  # type: ignore[dict-item]
         if domain:
             kwargs.update({"domain": domain})
 

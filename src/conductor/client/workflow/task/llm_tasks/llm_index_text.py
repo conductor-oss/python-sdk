@@ -1,6 +1,6 @@
 from __future__ import annotations
+
 from typing import Optional
-from typing_extensions import Self
 
 from conductor.client.workflow.task.llm_tasks.utils.embedding_model import EmbeddingModel
 from conductor.client.workflow.task.task import TaskInterface
@@ -32,7 +32,7 @@ class LlmIndexText(TaskInterface):
         namespace: Optional[str] = None,
         task_name: Optional[str] = None,
         metadata: Optional[dict] = None,
-    ) -> Self:
+    ) -> None:
         metadata = metadata or {}
         if task_name is None:
             task_name = "llm_index_doc"

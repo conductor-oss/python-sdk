@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 # python 2 and python 3 compatibility library
-
 from conductor.client.http.models.prompt_template import PromptTemplate
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 

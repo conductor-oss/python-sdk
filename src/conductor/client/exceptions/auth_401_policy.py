@@ -1,8 +1,9 @@
 from __future__ import annotations
+
 import logging
 import random
 import time
-from typing import Optional
+from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +29,8 @@ class Auth401Policy:
         self.stop_behavior = stop_behavior
 
         # Track attempts per endpoint to allow reset on success
-        self._attempt_counts = {}
-        self._last_success_time = {}
+        self._attempt_counts: Dict[str, int] = {}
+        self._last_success_time: Dict[str, float] = {}
 
     def is_401_unauthorized(self, status_code: int) -> bool:
         """Check if the status code is specifically 401 (not 403 or other auth errors)."""

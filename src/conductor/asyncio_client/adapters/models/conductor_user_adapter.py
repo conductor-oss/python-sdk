@@ -9,8 +9,8 @@ from conductor.asyncio_client.http.models import ConductorUser
 
 
 class ConductorUserAdapter(ConductorUser):
-    groups: Optional[List["GroupAdapter"]] = None
-    roles: Optional[List["RoleAdapter"]] = None
+    groups: Optional[List["GroupAdapter"]] = None  # type: ignore[assignment]
+    roles: Optional[List["RoleAdapter"]] = None  # type: ignore[assignment]
     orkes_app: Optional[StrictBool] = Field(default=None, alias="orkesApp")
     orkes_api_gateway: Optional[StrictBool] = Field(default=None, alias="orkesApiGateway")
     contact_information: Optional[Dict[Any, str]] = Field(default=None, alias="contactInformation")

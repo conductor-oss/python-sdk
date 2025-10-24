@@ -234,7 +234,7 @@ class AsyncMetricsCollector:
         if not self.must_collect_metrics:
             return
         counter = await self.__get_counter(
-            name=name, documentation=documentation, labelnames=labels.keys()
+            name=name, documentation=documentation, labelnames=list(labels.keys())
         )
         counter.labels(*labels.values()).inc()
 
@@ -249,7 +249,7 @@ class AsyncMetricsCollector:
         if not self.must_collect_metrics:
             return
         gauge = await self.__get_gauge(
-            name=name, documentation=documentation, labelnames=labels.keys()
+            name=name, documentation=documentation, labelnames=list(labels.keys())
         )
         gauge.labels(*labels.values()).set(value)
 

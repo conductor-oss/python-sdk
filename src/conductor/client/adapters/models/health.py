@@ -1,6 +1,6 @@
-from typing import ClassVar, Dict
 import pprint
 import re  # noqa: F401
+from typing import ClassVar, Dict
 
 import six
 

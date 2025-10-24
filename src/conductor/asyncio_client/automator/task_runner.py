@@ -23,7 +23,7 @@ from conductor.asyncio_client.configuration import Configuration
 from conductor.asyncio_client.http.exceptions import UnauthorizedException
 from conductor.asyncio_client.telemetry.metrics_collector import AsyncMetricsCollector
 from conductor.asyncio_client.worker.worker_interface import WorkerInterface
-from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
+from conductor.shared.telemetry.configuration.metrics import MetricsSettings
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
@@ -32,8 +32,8 @@ class AsyncTaskRunner:
     def __init__(
         self,
         worker: WorkerInterface,
-        configuration: Configuration = None,
-        metrics_settings: MetricsSettings = None,
+        configuration: Optional[Configuration] = None,
+        metrics_settings: Optional[MetricsSettings] = None,
     ):
         if not isinstance(worker, WorkerInterface):
             raise Exception("Invalid worker")
@@ -78,7 +78,8 @@ class AsyncTaskRunner:
             task = await self.__poll_task()
             if task is not None and task.task_id is not None:
                 task_result = await self.__execute_task(task)
-                await self.__update_task(task_result)
+                if task_result is not None:
+                    await self.__update_task(task_result)
             await self.__wait_for_polling_interval()
             self.worker.clear_task_definition_name_cache()
         except Exception:
@@ -95,10 +96,9 @@ class AsyncTaskRunner:
         try:
             start_time = time.time()
             domain = self.worker.get_domain()
-            params = {"workerid": self.worker.get_identity()}
-            if domain is not None:
-                params["domain"] = domain
-            task = await self.task_client.poll(tasktype=task_definition_name, **params)
+            task = await self.task_client.poll(
+                tasktype=task_definition_name, workerid=self.worker.get_identity(), domain=domain
+            )
             finish_time = time.time()
             time_spent = finish_time - start_time
             if self.metrics_collector is not None:

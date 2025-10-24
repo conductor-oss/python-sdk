@@ -9,12 +9,12 @@ from conductor.asyncio_client.http.models import ExtendedTaskDef
 
 
 class ExtendedTaskDefAdapter(ExtendedTaskDef):
-    input_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="inputSchema")
+    input_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="inputSchema")  # type: ignore[assignment]
     input_template: Optional[Dict[str, Any]] = Field(default=None, alias="inputTemplate")
-    output_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="outputSchema")
-    tags: Optional[List["TagAdapter"]] = None
-    timeout_seconds: Optional[int] = Field(alias="timeoutSeconds", default=None)
-    total_timeout_seconds: Optional[int] = Field(alias="totalTimeoutSeconds", default=None)
+    output_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="outputSchema")  # type: ignore[assignment]
+    tags: Optional[List["TagAdapter"]] = None  # type: ignore[assignment]
+    timeout_seconds: Optional[int] = Field(alias="timeoutSeconds", default=None)  # type: ignore[assignment]
+    total_timeout_seconds: Optional[int] = Field(alias="totalTimeoutSeconds", default=None)  # type: ignore[assignment]
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

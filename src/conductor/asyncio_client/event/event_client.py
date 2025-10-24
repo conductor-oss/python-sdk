@@ -1,7 +1,7 @@
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.api.event_resource_api import (
     EventResourceApiAdapter,
 )
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.shared.event.configuration import QueueConfiguration
 
 
@@ -26,7 +26,7 @@ class AsyncEventClient:
 
     async def put_queue_configuration(self, queue_configuration: QueueConfiguration):
         return await self.client.put_queue_config(
-            body=queue_configuration.get_worker_configuration(),
+            body=queue_configuration.get_worker_configuration(),  # type: ignore[arg-type]
             queue_name=queue_configuration.queue_name,
             queue_type=queue_configuration.queue_type,
         )

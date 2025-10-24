@@ -49,6 +49,7 @@ setuptools = "^80.9.0"
 pytest = "^8.4.1"
 pytest-mock = "^3.14.1"
 pytest-asyncio = "^1.1.0"
+mypy = "^1.18.2"
 
 [tool.ruff]
 target-version = "py39"
@@ -205,3 +206,42 @@ markers = [
     "v5_2_6: mark test to run for version 5.2.6",
     "v3_21_16: mark test to run for version 3.21.16"
 ]
+
+[tool.mypy]
+python_version = "3.9"
+follow_imports = "silent"
+
+plugins = [
+    "pydantic.mypy"
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "conductor.client.http.*",
+    "conductor.client.codegen.*",
+    "conductor.client.orkes.api.*",
+    "conductor.asyncio_client.http.*"
+]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+    "tests.*",
+    "examples.*"
+]
+disable_error_code = [
+    "attr-defined",
+    "no-untyped-def"
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "prometheus_client.*",
+    "shortuuid",
+    "dacite.*",
+    "aiohttp.*",
+    "aiohttp_retry.*",
+    "httpx.*",
+    "astor.*"
+]
+ignore_missing_imports = true

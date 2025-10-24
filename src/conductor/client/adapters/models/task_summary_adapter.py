@@ -6,51 +6,13 @@ from conductor.client.codegen.models.task_summary import TaskSummary
 
 
 class TaskSummaryAdapter(TaskSummary):
-    swagger_types: ClassVar[Dict[str, str]] = {
-        "correlation_id": "str",
-        "end_time": "str",
-        "execution_time": "int",
-        "external_input_payload_storage_path": "str",
-        "external_output_payload_storage_path": "str",
-        "input": "str",
-        "output": "str",
-        "queue_wait_time": "int",
-        "reason_for_incompletion": "str",
-        "scheduled_time": "str",
-        "start_time": "str",
-        "status": "str",
-        "task_def_name": "str",
-        "task_id": "str",
-        "task_reference_name": "str",
-        "task_type": "str",
-        "update_time": "str",
-        "workflow_id": "str",
-        "workflow_priority": "int",
-        "workflow_type": "str",
+    swagger_types: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+        **TaskSummary.swagger_types,
         "domain": "str",
     }
 
-    attribute_map: ClassVar[Dict[str, str]] = {
-        "correlation_id": "correlationId",
-        "end_time": "endTime",
-        "execution_time": "executionTime",
-        "external_input_payload_storage_path": "externalInputPayloadStoragePath",
-        "external_output_payload_storage_path": "externalOutputPayloadStoragePath",
-        "input": "input",
-        "output": "output",
-        "queue_wait_time": "queueWaitTime",
-        "reason_for_incompletion": "reasonForIncompletion",
-        "scheduled_time": "scheduledTime",
-        "start_time": "startTime",
-        "status": "status",
-        "task_def_name": "taskDefName",
-        "task_id": "taskId",
-        "task_reference_name": "taskReferenceName",
-        "task_type": "taskType",
-        "update_time": "updateTime",
-        "workflow_id": "workflowId",
-        "workflow_priority": "workflowPriority",
-        "workflow_type": "workflowType",
+    attribute_map: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+        **TaskSummary.attribute_map,
         "domain": "domain",
     }
 

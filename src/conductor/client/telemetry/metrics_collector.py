@@ -3,17 +3,14 @@ import os
 import time
 from typing import Any, ClassVar, Dict, List
 
-from prometheus_client import CollectorRegistry
-from prometheus_client import Counter
-from prometheus_client import Gauge
-from prometheus_client import write_to_textfile
+from prometheus_client import CollectorRegistry, Counter, Gauge, write_to_textfile
 from prometheus_client.multiprocess import MultiProcessCollector
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.telemetry.model.metric_documentation import MetricDocumentation
 from conductor.client.telemetry.model.metric_label import MetricLabel
 from conductor.client.telemetry.model.metric_name import MetricName
+from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
@@ -170,7 +167,7 @@ class MetricsCollector:
         if not self.must_collect_metrics:
             return
         counter = self.__get_counter(
-            name=name, documentation=documentation, labelnames=labels.keys()
+            name=name, documentation=documentation, labelnames=list(labels.keys())
         )
         counter.labels(*labels.values()).inc()
 
@@ -183,7 +180,9 @@ class MetricsCollector:
     ) -> None:
         if not self.must_collect_metrics:
             return
-        gauge = self.__get_gauge(name=name, documentation=documentation, labelnames=labels.keys())
+        gauge = self.__get_gauge(
+            name=name, documentation=documentation, labelnames=list(labels.keys())
+        )
         gauge.labels(*labels.values()).set(value)
 
     def __get_counter(

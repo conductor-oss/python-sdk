@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
-
 import logging
 import os
 import time
-from typing import Optional, Dict, Union
+from typing import Dict, Optional, Union
 
 from conductor.shared.configuration.settings.authentication_settings import (
     AuthenticationSettings,
@@ -72,7 +71,7 @@ class Configuration:
         self,
         base_url: Optional[str] = None,
         debug: bool = False,
-        authentication_settings: AuthenticationSettings = None,
+        authentication_settings: Optional[AuthenticationSettings] = None,
         server_api_url: Optional[str] = None,
         auth_token_ttl_min: int = 45,
         proxy: Optional[str] = None,
@@ -111,6 +110,8 @@ class Configuration:
             CONDUCTOR_PROXY: Proxy URL for HTTP requests
             CONDUCTOR_PROXY_HEADERS: Proxy headers as JSON string or single header value
         """
+        self.host: Optional[str] = None
+
         if server_api_url is not None:
             self.host = server_api_url
         elif base_url is not None:
@@ -134,7 +135,7 @@ class Configuration:
             if key is not None and secret is not None:
                 self.authentication_settings = AuthenticationSettings(key_id=key, key_secret=secret)
             else:
-                self.authentication_settings = None
+                self.authentication_settings = None  # type: ignore[assignment]
 
         # Debug switch
         self.debug = debug
@@ -166,10 +167,10 @@ class Configuration:
         self.proxy_headers = proxy_headers
         if not self.proxy_headers and os.getenv("CONDUCTOR_PROXY_HEADERS"):
             try:
-                self.proxy_headers = json.loads(os.getenv("CONDUCTOR_PROXY_HEADERS"))
+                self.proxy_headers = json.loads(os.getenv("CONDUCTOR_PROXY_HEADERS") or "{}")
             except (json.JSONDecodeError, TypeError):
                 # If JSON parsing fails, treat as a single header value
-                self.proxy_headers = {"Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")}
+                self.proxy_headers = {"Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS") or ""}
         # Safe chars for path_param
         self.safe_chars_for_path_param = ""
 

@@ -8,7 +8,7 @@ from conductor.asyncio_client.http.models import SearchResultTaskSummary
 
 
 class SearchResultTaskSummaryAdapter(SearchResultTaskSummary):
-    results: Optional[List["TaskSummaryAdapter"]] = None
+    results: Optional[List["TaskSummaryAdapter"]] = None  # type: ignore[assignment]
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

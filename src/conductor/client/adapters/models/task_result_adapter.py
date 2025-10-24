@@ -4,7 +4,7 @@ from conductor.shared.http.enums.task_result_status import TaskResultStatus
 
 
 class TaskResultAdapter(TaskResult):
-    @TaskResult.status.setter
+    @TaskResult.status.setter  # type: ignore[attr-defined]
     def status(self, status):
         """Sets the status of this TaskResult.
 

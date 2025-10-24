@@ -8,7 +8,7 @@ from conductor.asyncio_client.http.models import Role
 
 
 class RoleAdapter(Role):
-    permissions: Optional[List["PermissionAdapter"]] = None
+    permissions: Optional[List["PermissionAdapter"]] = None  # type: ignore[assignment]
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

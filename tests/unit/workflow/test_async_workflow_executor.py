@@ -341,11 +341,7 @@ async def test_search_with_defaults(workflow_executor, mock_workflow_client):
     result = await workflow_executor.search()
 
     mock_workflow_client.search.assert_called_once_with(
-        start=None,
-        size=None,
-        free_text=None,
-        query=None,
-        skip_cache=None
+        start=0, size=100, free_text='*', query=None, skip_cache=None
     )
     assert result == mock_search_result
 

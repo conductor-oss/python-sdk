@@ -9,11 +9,11 @@ from conductor.asyncio_client.http.models import EnumDescriptor
 
 
 class EnumDescriptorAdapter(EnumDescriptor):
-    containing_type: Optional["DescriptorAdapter"] = Field(default=None, alias="containingType")
-    file: Optional["FileDescriptorAdapter"] = None
-    options: Optional["EnumOptionsAdapter"] = None
-    proto: Optional["EnumDescriptorProtoAdapter"] = None
-    values: Optional[List["EnumValueDescriptorAdapter"]] = None
+    containing_type: Optional["DescriptorAdapter"] = Field(default=None, alias="containingType")  # type: ignore[assignment]
+    file: Optional["FileDescriptorAdapter"] = None  # type: ignore[assignment]
+    options: Optional["EnumOptionsAdapter"] = None  # type: ignore[assignment]
+    proto: Optional["EnumDescriptorProtoAdapter"] = None  # type: ignore[assignment]
+    values: Optional[List["EnumValueDescriptorAdapter"]] = None  # type: ignore[assignment]
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.save_schedule_request_adapter import (
     SaveScheduleRequestAdapter,
 )
@@ -18,8 +19,7 @@ from conductor.asyncio_client.adapters.models.workflow_schedule_adapter import (
 from conductor.asyncio_client.adapters.models.workflow_schedule_model_adapter import (
     WorkflowScheduleModelAdapter,
 )
-from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.http.configuration import Configuration
+from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
@@ -77,11 +77,9 @@ class OrkesSchedulerClient(OrkesBaseClient):
             start=start, size=size, sort=sort, free_text=free_text, query=query
         )
 
-    async def get_schedules_by_tag(
-        self, tag_key: str, tag_value: str
-    ) -> List[WorkflowScheduleModelAdapter]:
+    async def get_schedules_by_tag(self, tag_value: str) -> List[WorkflowScheduleModelAdapter]:
         """Get schedules filtered by tag key and value"""
-        return await self.scheduler_api.get_schedules_by_tag(tag_key, tag_value)
+        return await self.scheduler_api.get_schedules_by_tag(tag_value)
 
     # Schedule Planning & Analysis
     async def get_next_few_schedules(
@@ -172,10 +170,12 @@ class OrkesSchedulerClient(OrkesBaseClient):
             cron_expression=cron_expression or existing_schedule.cron_expression,
             start_workflow_request=existing_schedule.start_workflow_request,
             paused=paused if paused is not None else existing_schedule.paused,
-            run_catch_up=(
-                run_catch_up if run_catch_up is not None else existing_schedule.run_catch_up
+            run_catchup_schedule_instances=(
+                run_catch_up
+                if run_catch_up is not None
+                else existing_schedule.run_catchup_schedule_instances
             ),
-            timezone=timezone or existing_schedule.timezone,
+            zone_id=timezone or existing_schedule.zone_id,
         )
 
         return await self.save_schedule(save_request)
@@ -252,8 +252,6 @@ class OrkesSchedulerClient(OrkesBaseClient):
         schedules = await self.get_all_schedules()
         return len(schedules)
 
-    async def get_schedules_with_tag(
-        self, tag_key: str, tag_value: str
-    ) -> List[WorkflowScheduleModelAdapter]:
+    async def get_schedules_with_tag(self, tag_value: str) -> List[WorkflowScheduleModelAdapter]:
         """Get schedules that have a specific tag (alias for get_schedules_by_tag)"""
-        return await self.get_schedules_by_tag(tag_key, tag_value)
+        return await self.get_schedules_by_tag(tag_value)

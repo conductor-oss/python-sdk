@@ -6,36 +6,16 @@ from conductor.client.codegen.models import IntegrationApi
 
 
 class IntegrationApiAdapter(IntegrationApi):
-    swagger_types: ClassVar[Dict[str, str]] = {
-        "api": "str",
-        "configuration": "dict(str, object)",
-        "create_time": "int",
+    swagger_types: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+        **IntegrationApi.swagger_types,
         "created_on": "int",
-        "created_by": "str",
-        "description": "str",
-        "enabled": "bool",
-        "integration_name": "str",
-        "owner_app": "str",
-        "tags": "list[Tag]",
-        "update_time": "int",
         "updated_on": "int",
-        "updated_by": "str",
     }
 
-    attribute_map: ClassVar[Dict[str, str]] = {
-        "api": "api",
-        "configuration": "configuration",
-        "create_time": "createTime",
+    attribute_map: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+        **IntegrationApi.attribute_map,
         "created_on": "createdOn",
-        "created_by": "createdBy",
-        "description": "description",
-        "enabled": "enabled",
-        "integration_name": "integrationName",
-        "owner_app": "ownerApp",
-        "tags": "tags",
-        "update_time": "updateTime",
         "updated_on": "updatedOn",
-        "updated_by": "updatedBy",
     }
 
     def __init__(

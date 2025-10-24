@@ -19,7 +19,7 @@ class EventClient:
             queue_name=queue_topic,
         )
 
-    def get_queue_configuration(self, queue_type: str, queue_name: str):
+    def get_queue_configuration(self, queue_type: str, queue_name: str) -> QueueConfiguration:
         return self.client.get_queue_config(queue_type, queue_name)
 
     def put_queue_configuration(self, queue_configuration: QueueConfiguration):

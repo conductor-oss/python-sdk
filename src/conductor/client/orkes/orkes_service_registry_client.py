@@ -1,13 +1,14 @@
 from __future__ import annotations
-from typing import Optional, List
+
+from typing import List, Optional
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.models.service_registry import ServiceRegistry
-from conductor.client.http.models.service_method import ServiceMethod
-from conductor.client.http.models.proto_registry_entry import ProtoRegistryEntry
 from conductor.client.http.models.circuit_breaker_transition_response import (
     CircuitBreakerTransitionResponse,
 )
+from conductor.client.http.models.proto_registry_entry import ProtoRegistryEntry
+from conductor.client.http.models.service_method import ServiceMethod
+from conductor.client.http.models.service_registry import ServiceRegistry
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.service_registry_client import ServiceRegistryClient
 
@@ -73,4 +74,4 @@ class OrkesServiceRegistryClient(OrkesBaseClient, ServiceRegistryClient):
     def is_circuit_breaker_open(self, name: str) -> bool:
         """Check if circuit breaker is open for a service"""
         status = self.get_circuit_breaker_status(name)
-        return status.current_state and status.current_state.upper() == "OPEN"
+        return bool(status.current_state and status.current_state.upper() == "OPEN")

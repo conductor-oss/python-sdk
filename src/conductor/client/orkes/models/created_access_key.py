@@ -1,13 +1,10 @@
-from typing_extensions import Self
-
-
 class CreatedAccessKey:
-    def __init__(self, id: str, secret: str) -> Self:
-        self._id = id
-        self._secret = secret
+    def __init__(self, id: str, secret: str) -> None:
+        self._id: str = id
+        self._secret: str = secret
 
     @property
-    def id(self):
+    def id(self) -> str:
         """Gets the id of this CreatedAccessKey.  # noqa: E501
 
         :return: The id of this CreatedAccessKey.  # noqa: E501
@@ -16,7 +13,7 @@ class CreatedAccessKey:
         return self._id
 
     @id.setter
-    def id(self, id):
+    def id(self, id: str) -> None:
         """Sets the id of this CreatedAccessKey.
 
         :param id: The id of this CreatedAccessKey.  # noqa: E501
@@ -25,7 +22,7 @@ class CreatedAccessKey:
         self._id = id
 
     @property
-    def secret(self):
+    def secret(self) -> str:
         """Gets the secret of this CreatedAccessKey.  # noqa: E501
 
         :return: The secret of this CreatedAccessKey.  # noqa: E501
@@ -34,7 +31,7 @@ class CreatedAccessKey:
         return self._secret
 
     @secret.setter
-    def secret(self, secret):
+    def secret(self, secret: str) -> None:
         """Sets the secret of this CreatedAccessKey.
 
         :param id: The secret of this CreatedAccessKey.  # noqa: E501
@@ -42,13 +39,13 @@ class CreatedAccessKey:
         """
         self._secret = secret
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """Returns true if both objects are equal"""
         if not isinstance(other, CreatedAccessKey):
             return False
 
         return self.id == other.id and self.secret == other.secret
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         """Returns true if both objects are not equal"""
         return not self == other

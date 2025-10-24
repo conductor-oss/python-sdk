@@ -17,14 +17,14 @@ class EmbeddingModel(object):
     def provider(self) -> str:
         return self._provider
 
+    @provider.setter
+    def provider(self, provider: str) -> None:
+        self._provider = provider
+
     @property
     def model(self) -> str:
         return self._model
 
-    @provider.setter
-    def provider(self, provider: str):
-        self._provider = provider
-
     @model.setter
-    def model(self, model: str):
+    def model(self, model: str) -> None:
         self._model = model

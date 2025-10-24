@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 from uuid import uuid4
 
 from conductor.asyncio_client.adapters.models.integration_api_update_adapter import (
@@ -13,13 +13,13 @@ from conductor.asyncio_client.http.exceptions import NotFoundException
 from conductor.asyncio_client.orkes.orkes_clients import OrkesClients
 
 if TYPE_CHECKING:
+    from conductor.asyncio_client.adapters import ApiClient
     from conductor.asyncio_client.adapters.models.message_template_adapter import (
         MessageTemplateAdapter,
     )
     from conductor.asyncio_client.configuration import Configuration
     from conductor.shared.ai.configuration.interfaces.integration_config import IntegrationConfig
     from conductor.shared.ai.enums import LLMProvider, VectorDB
-    from conductor.asyncio_client.adapters import ApiClient
 
 NOT_FOUND_STATUS = 404
 
@@ -142,7 +142,7 @@ class AsyncAIOrchestrator:
                     db_integration_name, index, api_details
                 )
 
-    async def get_token_used(self, ai_integration: str) -> int:
+    async def get_token_used(self, ai_integration: str) -> Dict[str, str]:
         return await self.integration_client.get_token_usage_for_integration_provider(
             ai_integration
         )

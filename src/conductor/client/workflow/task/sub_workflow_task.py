@@ -1,8 +1,7 @@
 from __future__ import annotations
+
 from copy import deepcopy
 from typing import Dict, Optional
-
-from typing_extensions import Self
 
 from conductor.client.http.models.sub_workflow_params import SubWorkflowParams
 from conductor.client.http.models.workflow_task import WorkflowTask
@@ -18,7 +17,7 @@ class SubWorkflowTask(TaskInterface):
         workflow_name: str,
         version: Optional[int] = None,
         task_to_domain_map: Optional[Dict[str, str]] = None,
-    ) -> Self:
+    ) -> None:
         super().__init__(task_reference_name=task_ref_name, task_type=TaskType.SUB_WORKFLOW)
         self._workflow_name = deepcopy(workflow_name)
         self._version = deepcopy(version)
@@ -35,7 +34,7 @@ class SubWorkflowTask(TaskInterface):
 
 
 class InlineSubWorkflowTask(TaskInterface):
-    def __init__(self, task_ref_name: str, workflow: ConductorWorkflow) -> Self:
+    def __init__(self, task_ref_name: str, workflow: ConductorWorkflow) -> None:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.SUB_WORKFLOW,
