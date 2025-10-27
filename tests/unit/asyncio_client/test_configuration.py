@@ -50,7 +50,6 @@ def test_initialization_with_env_vars(monkeypatch):
     assert config.domain == "env_domain"
     assert config.polling_interval_seconds == 10
 
-
 def test_initialization_env_vars_override_params(monkeypatch):
     monkeypatch.setenv("CONDUCTOR_SERVER_URL", "https://env.com/api")
     monkeypatch.setenv("CONDUCTOR_AUTH_KEY", "env_key")
@@ -146,7 +145,6 @@ def test_get_worker_property_value_poll_interval_seconds():
     config = Configuration()
     result = config.get_worker_property_value("poll_interval_seconds", "mytask")
     assert result == 0
-
 
 def test_convert_property_value_polling_interval():
     config = Configuration()
@@ -411,6 +409,139 @@ def test_debug_setter_false():
     assert config.debug is False
 
 
+def test_proxy_initialization_from_parameter():
+    config = Configuration(proxy="http://proxy.example.com:8080")
+    assert config.proxy == "http://proxy.example.com:8080"
+    assert config._http_config.proxy == "http://proxy.example.com:8080"
+
+
+def test_proxy_initialization_from_env_var(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_PROXY", "http://env-proxy.example.com:3128")
+    config = Configuration()
+    assert config.proxy == "http://env-proxy.example.com:3128"
+    assert config._http_config.proxy == "http://env-proxy.example.com:3128"
+
+
+def test_proxy_parameter_overrides_env_var(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_PROXY", "http://env-proxy.example.com:3128")
+    config = Configuration(proxy="http://param-proxy.example.com:8080")
+    assert config.proxy == "http://param-proxy.example.com:8080"
+    assert config._http_config.proxy == "http://param-proxy.example.com:8080"
+
+
+def test_proxy_headers_initialization_from_parameter():
+    headers = {"Authorization": "Bearer token123", "X-Custom": "value"}
+    config = Configuration(proxy_headers=headers)
+    assert config.proxy_headers == headers
+    assert config._http_config.proxy_headers == headers
+
+
+def test_proxy_headers_initialization_from_env_var_json(monkeypatch):
+    headers_json = '{"Authorization": "Bearer token123", "X-Custom": "value"}'
+    monkeypatch.setenv("CONDUCTOR_PROXY_HEADERS", headers_json)
+    config = Configuration()
+    expected_headers = {"Authorization": "Bearer token123", "X-Custom": "value"}
+    assert config.proxy_headers == expected_headers
+    assert config._http_config.proxy_headers == expected_headers
+
+
+def test_proxy_headers_initialization_from_env_var_single_header(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_PROXY_HEADERS", "Bearer single-token")
+    config = Configuration()
+    expected_headers = {"Authorization": "Bearer single-token"}
+    assert config.proxy_headers == expected_headers
+    assert config._http_config.proxy_headers == expected_headers
+
+
+def test_proxy_headers_parameter_overrides_env_var(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_PROXY_HEADERS", '{"Authorization": "env-token"}')
+    param_headers = {"Authorization": "param-token", "X-Custom": "value"}
+    config = Configuration(proxy_headers=param_headers)
+    assert config.proxy_headers == param_headers
+    assert config._http_config.proxy_headers == param_headers
+
+
+def test_proxy_headers_invalid_json_falls_back_to_single_header(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_PROXY_HEADERS", "invalid-json-string")
+    config = Configuration()
+    expected_headers = {"Authorization": "invalid-json-string"}
+    assert config.proxy_headers == expected_headers
+    assert config._http_config.proxy_headers == expected_headers
+
+
+def test_proxy_headers_none_when_no_env_var():
+    config = Configuration()
+    assert config.proxy_headers is None
+    assert config._http_config.proxy_headers is None
+
+
+def test_proxy_none_when_no_env_var():
+    config = Configuration()
+    assert config.proxy is None
+    assert config._http_config.proxy is None
+
+
+def test_proxy_and_headers_together():
+    headers = {"Authorization": "Bearer token123"}
+    config = Configuration(
+        proxy="http://proxy.example.com:8080",
+        proxy_headers=headers
+    )
+    assert config.proxy == "http://proxy.example.com:8080"
+    assert config.proxy_headers == headers
+    assert config._http_config.proxy == "http://proxy.example.com:8080"
+    assert config._http_config.proxy_headers == headers
+
+
+def test_proxy_headers_empty_json_parses_correctly(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_PROXY_HEADERS", "{}")
+    config = Configuration()
+    expected_headers = {}
+    assert config.proxy_headers == expected_headers
+    # Empty dict is falsy, so it's not set on HTTP config
+    assert config._http_config.proxy_headers is None
+
+
+def test_proxy_headers_env_var_with_none_value(monkeypatch):
+    monkeypatch.setenv("CONDUCTOR_PROXY_HEADERS", "None")
+    config = Configuration()
+    expected_headers = {"Authorization": "None"}
+    assert config.proxy_headers == expected_headers
+    assert config._http_config.proxy_headers == expected_headers
+
+
+def test_proxy_https_url():
+    config = Configuration(proxy="https://secure-proxy.example.com:8443")
+    assert config.proxy == "https://secure-proxy.example.com:8443"
+    assert config._http_config.proxy == "https://secure-proxy.example.com:8443"
+
+
+def test_proxy_socks_url():
+    config = Configuration(proxy="socks5://socks-proxy.example.com:1080")
+    assert config.proxy == "socks5://socks-proxy.example.com:1080"
+    assert config._http_config.proxy == "socks5://socks-proxy.example.com:1080"
+
+
+def test_proxy_headers_multiple_headers():
+    headers = {
+        "Authorization": "Bearer token123",
+        "X-API-Key": "api-key-456",
+        "User-Agent": "CustomAgent/1.0"
+    }
+    config = Configuration(proxy_headers=headers)
+    assert config.proxy_headers == headers
+    assert config._http_config.proxy_headers == headers
+
+
+def test_proxy_headers_with_special_characters():
+    headers = {
+        "Authorization": "Bearer token with spaces",
+        "X-Custom-Header": "value-with-special-chars!@#$%"
+    }
+    config = Configuration(proxy_headers=headers)
+    assert config.proxy_headers == headers
+    assert config._http_config.proxy_headers == headers
+
 def test_get_poll_interval_with_task_type_none():
     config = Configuration()
     result = config.get_poll_interval("mytask")
@@ -422,3 +553,16 @@ def test_get_poll_interval_task_type_provided_but_value_none():
     with patch.dict(os.environ, {"CONDUCTOR_WORKER_MYTASK_POLLING_INTERVAL": ""}):
         result = config.get_poll_interval("mytask")
         assert result == 100
+
+
+def test_proxy_from_parameter():
+    proxy_url = "http://proxy.company.com:8080"
+    config = Configuration(proxy=proxy_url)
+    assert config.proxy == proxy_url
+
+
+def test_proxy_from_env(monkeypatch):
+    proxy_url = "http://proxy.company.com:8080"
+    monkeypatch.setenv("CONDUCTOR_PROXY", proxy_url)
+    config = Configuration()
+    assert config.proxy == proxy_url

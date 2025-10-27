@@ -1,376 +1,303 @@
-# Worker
+# Conductor Workers
 
-Considering real use cases, the goal is to run multiple workers in parallel. Due to some limitations with Python, a multiprocessing architecture was chosen in order to enable real parallelization.
+A Workflow task represents a unit of business logic that achieves a specific goal, such as checking inventory, initiating payment transfer, etc. A worker implements a task in the workflow.
 
-You can write your workers independently and append them to a list. The `TaskHandler` class will spawn a unique and independent process for each worker, making sure it will behave as expected, by running an infinite loop like this:
-* Poll for a `Task` at Conductor Server
-* Generate `TaskResult` from given `Task`
-* Update given `Task` with `TaskResult` at Conductor Server
+## Table of Contents
 
-## Write workers
+- [Implementing Workers](#implementing-workers)
+- [Managing Workers in Application](#managing-workers-in-application)
+- [Design Principles for Workers](#design-principles-for-workers)
+- [System Task Workers](#system-task-workers)
+- [Worker vs. Microservice/HTTP Endpoints](#worker-vs-microservicehttp-endpoints)
+- [Deploying Workers in Production](#deploying-workers-in-production)
 
-Currently, there are three ways of writing a Python worker:
-1. [Worker as a function](#worker-as-a-function)
-2. [Worker as a class](#worker-as-a-class)
-3. [Worker as an annotation](#worker-as-an-annotation)
+## Implementing Workers
 
+The workers can be implemented by writing a simple Python function and annotating the function with the `@worker_task`. Conductor workers are services (similar to microservices) that follow the [Single Responsibility Principle](https://en.wikipedia.org/wiki/Single_responsibility_principle).
 
-### Worker as a function
+Workers can be hosted along with the workflow or run in a distributed environment where a single workflow uses workers deployed and running in different machines/VMs/containers. Whether to keep all the workers in the same application or run them as a distributed application is a design and architectural choice. Conductor is well suited for both kinds of scenarios.
 
-The function should follow this signature:
+You can create or convert any existing Python function to a distributed worker by adding `@worker_task` annotation to it. Here is a simple worker that takes `name` as input and returns greetings:
 
 ```python
-ExecuteTaskFunction = Callable[
-    [
-        Union[Task, object]
-    ],
-    Union[TaskResult, object]
-]
+from conductor.client.worker.worker_task import worker_task
+
+@worker_task(task_definition_name='greetings')
+def greetings(name: str) -> str:
+    return f'Hello, {name}'
 ```
 
-In other words:
-* Input must be either a `Task` or an `object`
-    * If it isn't a `Task`, the assumption is - you're expecting to receive the `Task.input_data` as the object
-* Output must be either a `TaskResult` or an `object`
-    * If it isn't a `TaskResult`, the assumption is - you're expecting to use the object as the `TaskResult.output_data`
+A worker can take inputs which are primitives - `str`, `int`, `float`, `bool` etc. or can be complex data classes.
 
-Quick example below:
+Here is an example worker that uses `dataclass` as part of the worker input.
 
 ```python
-from conductor.client.http.models import Task, TaskResult
-from conductor.shared.http.enums import TaskResultStatus
+from conductor.client.worker.worker_task import worker_task
+from dataclasses import dataclass
 
+@dataclass
+class OrderInfo:
+    order_id: int
+    sku: str
+    quantity: int
+    sku_price: float
 
-def execute(task: Task) -> TaskResult:
-    task_result = TaskResult(
-        task_id=task.task_id,
-        workflow_instance_id=task.workflow_instance_id,
-        worker_id='your_custom_id'
-    )
-    task_result.add_output_data('worker_style', 'function')
-    task_result.status = TaskResultStatus.COMPLETED
-    return task_result
+    
+@worker_task(task_definition_name='process_order')
+def process_order(order_info: OrderInfo) -> str:
+    return f'order: {order_info.order_id}'
 ```
 
-In the case you like more details, you can take a look at all possible combinations of workers [here](../../tests/integration/resources/worker/python/python_worker.py)
+## Managing Workers in Application
 
-### Worker as a class
-
-The class must implement `WorkerInterface` class, which requires an `execute` method. The remaining ones are inherited, but can be easily overridden. Example with a custom polling interval:
+Workers use a polling mechanism (with a long poll) to check for any available tasks from the server periodically. The startup and shutdown of workers are handled by the `conductor.client.automator.task_handler.TaskHandler` class.
 
 ```python
-from conductor.client.http.models import Task, TaskResult
-from conductor.shared.http.enums import TaskResultStatus
-from conductor.client.worker.worker_interface import WorkerInterface
-
-class SimplePythonWorker(WorkerInterface):
-    def execute(self, task: Task) -> TaskResult:
-        task_result = self.get_task_result_from_task(task)
-        task_result.add_output_data('worker_style', 'class')
-        task_result.add_output_data('secret_number', 1234)
-        task_result.add_output_data('is_it_true', False)
-        task_result.status = TaskResultStatus.COMPLETED
-        return task_result
-
-    def get_polling_interval_in_seconds(self) -> float:
-        # poll every 500ms
-        return 0.5
-```
-
-### Worker as an annotation
-A worker can also be invoked by adding a WorkerTask decorator as shown in the below example.
-As long as the annotated worker is in any file inside the root folder of your worker application, it will be picked up by the TaskHandler, see [Run Workers](#run-workers)
-
-The arguments that can be passed when defining the decorated worker are:
-1. task_definition_name: The task definition name of the condcutor task that needs to be polled for.
-2. domain: Optional routing domain of the worker to execute tasks with a specific domain
-3. worker_id: An optional worker id used to identify the polling worker
-4. poll_interval: Polling interval in seconds. Defaulted to 1 second if not passed.
-
-```python
-from conductor.client.worker.worker_task import WorkerTask
-
-@WorkerTask(task_definition_name='python_annotated_task', worker_id='decorated', poll_interval=200.0)
-def python_annotated_task(input) -> object:
-    return {'message': 'python is so cool :)'}
-```
-
-## Run Workers
-
-Now you can run your workers by calling a `TaskHandler`, example:
-
-```python
-from conductor.shared.configuration.settings.authentication_settings import AuthenticationSettings
-from conductor.client.configuration.configuration import Configuration
 from conductor.client.automator.task_handler import TaskHandler
-from conductor.client.worker.worker import Worker
+from conductor.client.configuration.configuration import Configuration
 
-#### Add these lines if running on a mac####
-from multiprocessing import set_start_method
+def main():
+    # points to http://localhost:8080/api by default
+    api_config = Configuration()
 
-set_start_method('fork')
-############################################
-
-SERVER_API_URL = 'http://localhost:8080/api'
-KEY_ID = '<KEY_ID>'
-KEY_SECRET = '<KEY_SECRET>'
-
-configuration = Configuration(
-    server_api_url=SERVER_API_URL,
-    debug=True,
-    authentication_settings=AuthenticationSettings(
-        key_id=KEY_ID,
-        key_secret=KEY_SECRET
-    ),
-)
-
-workers = [
-    SimplePythonWorker(
-        task_definition_name='python_task_example'
-    ),
-    Worker(
-        task_definition_name='python_execute_function_task',
-        execute_function=execute,
-        poll_interval=250,
-        domain='test'
+    task_handler = TaskHandler(
+        workers=[],
+        configuration=api_config,
+        scan_for_annotated_workers=True,
+        import_modules=['greetings']  # import workers from this module - leave empty if all the workers are in the same module
     )
-]
-
-# If there are decorated workers in your application, scan_for_annotated_workers should be set
-# default value of scan_for_annotated_workers is False
-with TaskHandler(workers, configuration, scan_for_annotated_workers=True) as task_handler:
+    
+    # start worker polling
     task_handler.start_processes()
+
+    # Call to stop the workers when the application is ready to shutdown
+    task_handler.stop_processes()
+
+
+if __name__ == '__main__':
+    main()
 ```
 
-If you paste the above code in a file called main.py, you can launch the workers by running:
-```shell
-python3 main.py
-```
+## Design Principles for Workers
 
-## Task Domains
-Workers can be configured to start polling for work that is tagged by a task domain. See more on domains [here](https://orkes.io/content/developer-guides/task-to-domain).
+Each worker embodies the design pattern and follows certain basic principles:
 
+1. Workers are stateless and do not implement a workflow-specific logic.
+2. Each worker executes a particular task and produces well-defined output given specific inputs.
+3. Workers are meant to be idempotent (Should handle cases where the partially executed task, due to timeouts, etc, gets rescheduled).
+4. Workers do not implement the logic to handle retries, etc., that is taken care of by the Conductor server.
+
+## System Task Workers
+
+A system task worker is a pre-built, general-purpose worker in your Conductor server distribution.
+
+System tasks automate repeated tasks such as calling an HTTP endpoint, executing lightweight ECMA-compliant javascript code, publishing to an event broker, etc.
+
+### Wait Task
+
+> [!tip]
+> Wait is a powerful way to have your system wait for a specific trigger, such as an external event, a particular date/time, or duration, such as 2 hours, without having to manage threads, background processes, or jobs.
+
+#### Using Code to Create Wait Task
 
 ```python
-from conductor.client.worker.worker_task import WorkerTask
+from conductor.client.workflow.task.wait_task import WaitTask
 
-@WorkerTask(task_definition_name='python_annotated_task', domain='cool')
-def python_annotated_task(input) -> object:
-    return {'message': 'python is so cool :)'}
+# waits for 2 seconds before scheduling the next task
+wait_for_two_sec = WaitTask(task_ref_name='wait_for_2_sec', wait_for_seconds=2)
+
+# wait until end of jan
+wait_till_jan = WaitTask(task_ref_name='wait_till_jsn', wait_until='2024-01-31 00:00 UTC')
+
+# waits until an API call or an event is triggered
+wait_for_signal = WaitTask(task_ref_name='wait_till_jan_end')
 ```
 
-The above code would run a worker polling for task of type, *python_annotated_task*, but only for workflows that have a task to domain mapping specified with domain for this task as _cool_.
+#### JSON Configuration
 
 ```json
-"taskToDomain": {
-   "python_annotated_task": "cool"
+{
+  "name": "wait",
+  "taskReferenceName": "wait_till_jan_end",
+  "type": "WAIT",
+  "inputParameters": {
+    "until": "2024-01-31 00:00 UTC"
+  }
 }
 ```
 
-## Worker Configuration
+### HTTP Task
 
-### Using Config File
+Make a request to an HTTP(S) endpoint. The task allows for GET, PUT, POST, DELETE, HEAD, and PATCH requests.
 
-You can choose to pass an _worker.ini_ file for specifying worker arguments like domain and polling_interval. This allows for configuring your workers dynamically and hence provides the flexbility along with cleaner worker code. This file has to be in the same directory as the main.py of your worker application.
-
-#### Format
-```
-[task_definition_name]
-domain = <domain>
-polling_interval = <polling-interval-in-ms>
-```
-
-#### Generic Properties
-There is an option for specifying common set of properties which apply to all workers by putting them in the _DEFAULT_ section. All workers who don't have a domain or/and polling_interval specified will default to these values.
-
-```
-[DEFAULT]
-domain = <domain>
-polling_interval = <polling-interval-in-ms>
-```
-
-#### Example File
-```
-[DEFAULT]
-domain = nice
-polling_interval = 2000
-
-[python_annotated_task_1]
-domain = cool
-polling_interval = 500
-
-[python_annotated_task_2]
-domain = hot
-polling_interval = 300
-```
-
-With the presence of the above config file, you don't need to specify domain and poll_interval for any of the worker task types.
-
-##### Without config
-```python
-from conductor.client.worker.worker_task import WorkerTask
-
-@WorkerTask(task_definition_name='python_annotated_task_1', domain='cool', poll_interval=500.0)
-def python_annotated_task(input) -> object:
-    return {'message': 'python is so cool :)'}
-
-@WorkerTask(task_definition_name='python_annotated_task_2', domain='hot', poll_interval=300.0)
-def python_annotated_task_2(input) -> object:
-    return {'message': 'python is so hot :)'}
-
-@WorkerTask(task_definition_name='python_annotated_task_3', domain='nice', poll_interval=2000.0)
-def python_annotated_task_3(input) -> object:
-    return {'message': 'python is so nice :)'}
-
-@WorkerTask(task_definition_name='python_annotated_task_4', domain='nice', poll_interval=2000.0)
-def python_annotated_task_4(input) -> object:
-    return {'message': 'python is very nice :)'}
-```
-
-##### With config
-```python
-from conductor.client.worker.worker_task import WorkerTask
-
-@WorkerTask(task_definition_name='python_annotated_task_1')
-def python_annotated_task(input) -> object:
-    return {'message': 'python is so cool :)'}
-
-@WorkerTask(task_definition_name='python_annotated_task_2')
-def python_annotated_task_2(input) -> object:
-    return {'message': 'python is so hot :)'}
-
-@WorkerTask(task_definition_name='python_annotated_task_3')
-def python_annotated_task_3(input) -> object:
-    return {'message': 'python is so nice :)'}
-
-@WorkerTask(task_definition_name='python_annotated_task_4')
-def python_annotated_task_4(input) -> object:
-    return {'message': 'python is very nice :)'}
-
-```
-
-### Using Environment Variables
-
-Workers can also be configured at run time by using environment variables which override configuration files as well.
-
-#### Format
-```
-conductor_worker_polling_interval=<polling-interval-in-ms>
-conductor_worker_domain=<domain>
-conductor_worker_<task_definition_name>_polling_interval=<polling-interval-in-ms>
-conductor_worker_<task_definition_name>_domain=<domain>
-```
-
-#### Example
-```
-conductor_worker_polling_interval=2000
-conductor_worker_domain=nice
-conductor_worker_python_annotated_task_1_polling_interval=500
-conductor_worker_python_annotated_task_1_domain=cool
-conductor_worker_python_annotated_task_2_polling_interval=300
-conductor_worker_python_annotated_task_2_domain=hot
-```
-
-### Order of Precedence
-If the worker configuration is initialized using multiple mechanisms mentioned above then the following order of priority
-will be considered from highest to lowest:
-1. Environment Variables
-2. Config File
-3. Worker Constructor Arguments
-
-See [Using Conductor Playground](https://orkes.io/content/docs/getting-started/playground/using-conductor-playground) for more details on how to use Playground environment for testing.
-
-## Performance
-If you're looking for better performance (i.e. more workers of the same type) - you can simply append more instances of the same worker, like this:
+#### Using Code to Create HTTP Task
 
 ```python
-workers = [
-    SimplePythonWorker(
-        task_definition_name='python_task_example'
-    ),
-    SimplePythonWorker(
-        task_definition_name='python_task_example'
-    ),
-    SimplePythonWorker(
-        task_definition_name='python_task_example'
-    ),
-    ...
-]
+from conductor.client.workflow.task.http_task import HttpTask
+
+HttpTask(task_ref_name='call_remote_api', http_input={
+        'uri': 'https://orkes-api-tester.orkesconductor.com/api'
+    })
 ```
+
+#### JSON Configuration
+
+```json
+{
+  "name": "http_task",
+  "taskReferenceName": "http_task_ref",
+  "type" : "HTTP",
+  "uri": "https://orkes-api-tester.orkesconductor.com/api",
+  "method": "GET"
+}
+```
+
+### Javascript Executor Task
+
+Execute ECMA-compliant Javascript code. It is useful when writing a script for data mapping, calculations, etc.
+
+#### Using Code to Create Inline Task
 
 ```python
-workers = [
-    Worker(
-        task_definition_name='python_task_example',
-        execute_function=execute,
-        poll_interval=0.25,
-    ),
-    Worker(
-        task_definition_name='python_task_example',
-        execute_function=execute,
-        poll_interval=0.25,
-    ),
-    Worker(
-        task_definition_name='python_task_example',
-        execute_function=execute,
-        poll_interval=0.25,
-    )
-    ...
-]
+from conductor.client.workflow.task.javascript_task import JavascriptTask
+
+say_hello_js = """
+function greetings() {
+    return {
+        "text": "hello " + $.name
+    }
+}
+greetings();
+"""
+
+js = JavascriptTask(task_ref_name='hello_script', script=say_hello_js, bindings={'name': '${workflow.input.name}'})
 ```
 
-## C/C++ Support
-Python is great, but at times you need to call into native C/C++ code. 
-Here is an example how you can do that with Conductor SDK.
+#### JSON Configuration
 
-### 1. Export your C++ functions as `extern "C"`:
-   * C++ function example (sum two integers)
-        ```cpp
-        #include <iostream>
+```json
+{
+  "name": "inline_task",
+  "taskReferenceName": "inline_task_ref",
+  "type": "INLINE",
+  "inputParameters": {
+    "expression": " function greetings() {\n  return {\n            \"text\": \"hello \" + $.name\n        }\n    }\n    greetings();",
+    "evaluatorType": "graaljs",
+    "name": "${workflow.input.name}"
+  }
+}
+```
 
-        extern "C" int32_t get_sum(const int32_t A, const int32_t B) {
-            return A + B;
-        }
-        ```
-### 2. Compile and share its library:
-   * C++ file name: `simple_cpp_lib.cpp`
-   * Library output name goal: `lib.so`
-        ```shell
-        g++ -c -fPIC simple_cpp_lib.cpp -o simple_cpp_lib.o
-        g++ -shared -Wl,-install_name,lib.so -o lib.so simple_cpp_lib.o
-        ```
-     
-### 3. Use the C++ library in your python worker
-You can use the Python library to call native code written in C++.  Here is an example that calls native C++ library
-from the Python worker.
-See [simple_cpp_lib.cpp](src/example/worker/cpp/simple_cpp_lib.cpp) 
-and [simple_cpp_worker.py](src/example/worker/cpp/simple_cpp_worker.py) for complete working example.
+### JSON Processing using JQ
+
+[Jq](https://jqlang.github.io/jq/) is like sed for JSON data - you can slice, filter, map, and transform structured data with the same ease that sed, awk, grep, and friends let you play with text.
+
+#### Using Code to Create JSON JQ Transform Task
 
 ```python
-from conductor.client.http.models import Task, TaskResult
-from conductor.shared.http.enums import TaskResultStatus
-from conductor.client.worker.worker_interface import WorkerInterface
-from ctypes import cdll
+from conductor.client.workflow.task.json_jq_task import JsonJQTask
 
-class CppWrapper:
-    def __init__(self, file_path='./lib.so'):
-        self.cpp_lib = cdll.LoadLibrary(file_path)
+jq_script = """
+{ key3: (.key1.value1 + .key2.value2) }
+"""
 
-    def get_sum(self, X: int, Y: int) -> int:
-        return self.cpp_lib.get_sum(X, Y)
-
-
-class SimpleCppWorker(WorkerInterface):
-    cpp_wrapper = CppWrapper()
-
-    def execute(self, task: Task) -> TaskResult:
-        execution_result = self.cpp_wrapper.get_sum(1, 2)
-        task_result = self.get_task_result_from_task(task)
-        task_result.add_output_data(
-            'sum', execution_result
-        )
-        task_result.status = TaskResultStatus.COMPLETED
-        return task_result
+jq = JsonJQTask(task_ref_name='jq_process', script=jq_script)
 ```
 
-### Next: [Create workflows using Code](../workflow/README.md)
+#### JSON Configuration
+
+```json
+{
+  "name": "json_transform_task",
+  "taskReferenceName": "json_transform_task_ref",
+  "type": "JSON_JQ_TRANSFORM",
+  "inputParameters": {
+    "key1": "k1",        
+    "key2": "k2",
+    "queryExpression": "{ key3: (.key1.value1 + .key2.value2) }",
+  }
+}
+```
+
+## Worker vs. Microservice/HTTP Endpoints
+
+> [!tip] 
+> Workers are a lightweight alternative to exposing an HTTP endpoint and orchestrating using HTTP tasks. Using workers is a recommended approach if you do not need to expose the service over HTTP or gRPC endpoints.
+
+There are several advantages to this approach:
+
+1. **No need for an API management layer** : Given there are no exposed endpoints and workers are self-load-balancing.
+2. **Reduced infrastructure footprint** :  No need for an API gateway/load balancer.
+3. All the communication is initiated by workers using polling - avoiding the need to open up any incoming TCP ports.
+4. Workers **self-regulate** when busy; they only poll as much as they can handle. Backpressure handling is done out of the box.
+5. Workers can be scaled up/down quickly based on the demand by increasing the number of processes.
+
+## Deploying Workers in Production
+
+Conductor workers can run in the cloud-native environment or on-prem and can easily be deployed like any other Python application. Workers can run a containerized environment, VMs, or bare metal like you would deploy your other Python applications.
+
+### Best Practices
+
+1. **Resource Management**: Monitor CPU and memory usage of workers
+2. **Scaling**: Use container orchestration platforms like Kubernetes for automatic scaling
+3. **Health Checks**: Implement health check endpoints for worker monitoring
+4. **Logging**: Use structured logging for better debugging and monitoring
+5. **Error Handling**: Implement proper error handling and retry logic
+6. **Configuration**: Use environment variables for configuration management
+
+### Example Dockerfile
+
+```dockerfile
+FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+CMD ["python", "worker_app.py"]
+```
+
+### Example Kubernetes Deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: conductor-worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: conductor-worker
+  template:
+    metadata:
+      labels:
+        app: conductor-worker
+    spec:
+      containers:
+      - name: worker
+        image: your-registry/conductor-worker:latest
+        env:
+        - name: CONDUCTOR_SERVER_URL
+          value: "https://your-conductor-server.com/api"
+        - name: CONDUCTOR_AUTH_KEY
+          valueFrom:
+            secretKeyRef:
+              name: conductor-secrets
+              key: auth-key
+        - name: CONDUCTOR_AUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: conductor-secrets
+              key: auth-secret
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+```
