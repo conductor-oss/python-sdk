@@ -258,8 +258,6 @@ from conductor.client.http.models.start_workflow import StartWorkflow
 from conductor.shared.http.enums.idempotency_strategy import IdempotencyStrategy
 from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.http.models.task_details import TaskDetails
-from conductor.client.http.models.terminate_workflow import TerminateWorkflow
-from conductor.client.http.models.update_workflow_variables import UpdateWorkflowVariables
 
 __all__ = [  # noqa: RUF022
     "Action",
@@ -407,6 +405,4 @@ __all__ = [  # noqa: RUF022
     "StateChangeConfig",
     "TaskResultStatus",
     "TaskDetails",
-    "TerminateWorkflow",
-    "UpdateWorkflowVariables",
 ]

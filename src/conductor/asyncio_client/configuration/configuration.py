@@ -203,7 +203,7 @@ class Configuration:
             "ca_cert_data": ca_cert_data or os.getenv("CONDUCTOR_SSL_CA_CERT_DATA"),
             "debug": debug,
         }
-        
+
         # Add SSL parameters if they exist in HttpConfiguration
         if cert_file or os.getenv("CONDUCTOR_CERT_FILE"):
             http_config_kwargs["cert_file"] = cert_file or os.getenv("CONDUCTOR_CERT_FILE")
@@ -216,6 +216,12 @@ class Configuration:
         
         http_config_kwargs.update(kwargs)
         self._http_config = HttpConfiguration(**http_config_kwargs)
+
+        # Set proxy configuration on the HTTP config
+        if self.proxy:
+            self._http_config.proxy = self.proxy
+        if self.proxy_headers:
+            self._http_config.proxy_headers = self.proxy_headers
 
         # Set proxy configuration on the HTTP config
         if self.proxy:
