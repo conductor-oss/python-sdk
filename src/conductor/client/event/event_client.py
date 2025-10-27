@@ -90,6 +90,8 @@ class EventClient:
         event_client.add_event_handler_tag("workflow_trigger", tags)
         ```
         """
+        # Note: Sync API uses (tags, name) parameter order due to swagger-codegen placing
+        # body params before path params. Async API uses (name=name, tag=tags) instead.
         return self.client.put_tag_for_event_handler(tags, name)
 
     def remove_event_handler_tag(self, name: str, tags: List[TagAdapter]) -> None:
@@ -118,4 +120,6 @@ class EventClient:
         event_client.remove_event_handler_tag("workflow_trigger", tags_to_remove)
         ```
         """
+        # Note: Sync API uses (tags, name) parameter order due to swagger-codegen placing
+        # body params before path params. Async API uses (name=name, tag=tags) instead.
         return self.client.delete_tag_for_event_handler(tags, name)

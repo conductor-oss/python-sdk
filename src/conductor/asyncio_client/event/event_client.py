@@ -94,6 +94,8 @@ class AsyncEventClient:
         await event_client.add_event_handler_tag("workflow_trigger", tags)
         ```
         """
+        # Note: Async API uses (name=name, tag=tags) keyword args to match the server signature.
+        # Sync API uses (tags, name) positional args due to swagger-codegen parameter ordering.
         return await self.client.put_tag_for_event_handler(name=name, tag=tags)
 
     async def remove_event_handler_tag(self, name: str, tags: List[TagAdapter]) -> None:
@@ -122,4 +124,6 @@ class AsyncEventClient:
         await event_client.remove_event_handler_tag("workflow_trigger", tags_to_remove)
         ```
         """
+        # Note: Async API uses (name=name, tag=tags) keyword args to match the server signature.
+        # Sync API uses (tags, name) positional args due to swagger-codegen parameter ordering.
         return await self.client.delete_tag_for_event_handler(name=name, tag=tags)
