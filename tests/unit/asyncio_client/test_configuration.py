@@ -553,3 +553,16 @@ def test_get_poll_interval_task_type_provided_but_value_none():
     with patch.dict(os.environ, {"CONDUCTOR_WORKER_MYTASK_POLLING_INTERVAL": ""}):
         result = config.get_poll_interval("mytask")
         assert result == 100
+
+
+def test_proxy_from_parameter():
+    proxy_url = "http://proxy.company.com:8080"
+    config = Configuration(proxy=proxy_url)
+    assert config.proxy == proxy_url
+
+
+def test_proxy_from_env(monkeypatch):
+    proxy_url = "http://proxy.company.com:8080"
+    monkeypatch.setenv("CONDUCTOR_PROXY", proxy_url)
+    config = Configuration()
+    assert config.proxy == proxy_url

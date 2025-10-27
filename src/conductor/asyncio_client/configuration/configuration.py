@@ -33,6 +33,15 @@ class Configuration:
     CONDUCTOR_WORKER_<TASK_TYPE>_POLLING_INTERVAL: Task-specific polling interval
     CONDUCTOR_WORKER_<TASK_TYPE>_DOMAIN: Task-specific domain
 
+    Authentication Retry Policy (401 Handling):
+    -------------------------------------------
+    CONDUCTOR_AUTH_401_MAX_ATTEMPTS: Maximum retry attempts per endpoint (default: 6)
+    CONDUCTOR_AUTH_401_BASE_DELAY_MS: Base delay in milliseconds (default: 1000.0)
+    CONDUCTOR_AUTH_401_MAX_DELAY_MS: Maximum delay cap in milliseconds (default: 60000.0)
+    CONDUCTOR_AUTH_401_JITTER_PERCENT: Random jitter percentage 0.0-1.0 (default: 0.2)
+    CONDUCTOR_AUTH_401_STOP_BEHAVIOR: Behavior after max attempts: 'stop_worker' or 'continue' (default: 'stop_worker')
+
+    
     Example:
     --------
     ```python
@@ -77,8 +86,17 @@ class Configuration:
         ssl_ca_cert: Optional[str] = None,
         retries: Optional[int] = None,
         ca_cert_data: Optional[Union[str, bytes]] = None,
+        cert_file: Optional[str] = None,
+        key_file: Optional[str] = None,
+        verify_ssl: Optional[bool] = None,
         proxy: Optional[str] = None,
         proxy_headers: Optional[Dict[str, str]] = None,
+        # 401-specific configuration
+        auth_401_max_attempts: Optional[int] = None,
+        auth_401_base_delay_ms: Optional[float] = None,
+        auth_401_max_delay_ms: Optional[float] = None,
+        auth_401_jitter_percent: Optional[float] = None,
+        auth_401_stop_behavior: Optional[str] = None,
         **kwargs: Any,
     ):
         """
@@ -168,24 +186,48 @@ class Configuration:
         self.logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 
         # Create the underlying HTTP configuration
-        self._http_config = HttpConfiguration(
-            host=self.server_url,
-            api_key=api_key,
-            api_key_prefix=api_key_prefix,
-            username=username,
-            password=password,
-            access_token=access_token,
-            server_index=server_index,
-            server_variables=server_variables,
-            server_operation_index=server_operation_index,
-            server_operation_variables=server_operation_variables,
-            ignore_operation_servers=ignore_operation_servers,
-            ssl_ca_cert=ssl_ca_cert or os.getenv("CONDUCTOR_SSL_CA_CERT"),
-            retries=retries,
-            ca_cert_data=ca_cert_data or os.getenv("CONDUCTOR_SSL_CA_CERT_DATA"),
-            debug=debug,
-            **kwargs,
-        )
+        http_config_kwargs = {
+            "host": self.server_url,
+            "api_key": api_key,
+            "api_key_prefix": api_key_prefix,
+            "username": username,
+            "password": password,
+            "access_token": access_token,
+            "server_index": server_index,
+            "server_variables": server_variables,
+            "server_operation_index": server_operation_index,
+            "server_operation_variables": server_operation_variables,
+            "ignore_operation_servers": ignore_operation_servers,
+            "ssl_ca_cert": ssl_ca_cert or os.getenv("CONDUCTOR_SSL_CA_CERT"),
+            "retries": retries,
+            "ca_cert_data": ca_cert_data or os.getenv("CONDUCTOR_SSL_CA_CERT_DATA"),
+            "debug": debug,
+        }
+
+        # Add SSL parameters if they exist in HttpConfiguration
+        if cert_file or os.getenv("CONDUCTOR_CERT_FILE"):
+            http_config_kwargs["cert_file"] = cert_file or os.getenv("CONDUCTOR_CERT_FILE")
+        if key_file or os.getenv("CONDUCTOR_KEY_FILE"):
+            http_config_kwargs["key_file"] = key_file or os.getenv("CONDUCTOR_KEY_FILE")
+        if verify_ssl is not None:
+            http_config_kwargs["verify_ssl"] = verify_ssl
+        elif os.getenv("CONDUCTOR_VERIFY_SSL"):
+            http_config_kwargs["verify_ssl"] = self._get_env_bool("CONDUCTOR_VERIFY_SSL", True)
+        
+        http_config_kwargs.update(kwargs)
+        self._http_config = HttpConfiguration(**http_config_kwargs)
+
+        # Set proxy configuration on the HTTP config
+        if self.proxy:
+            self._http_config.proxy = self.proxy
+        if self.proxy_headers:
+            self._http_config.proxy_headers = self.proxy_headers
+
+        # Set proxy configuration on the HTTP config
+        if self.proxy:
+            self._http_config.proxy = self.proxy
+        if self.proxy_headers:
+            self._http_config.proxy_headers = self.proxy_headers
 
         # Set proxy configuration on the HTTP config
         if self.proxy:
@@ -212,6 +254,23 @@ class Configuration:
         # Orkes Conductor auth token properties
         self.token_update_time = 0
         self.auth_token_ttl_sec = auth_token_ttl_min * 60
+        
+        # 401-specific configuration
+        self.auth_401_max_attempts = auth_401_max_attempts or self._get_env_int(
+            "CONDUCTOR_AUTH_401_MAX_ATTEMPTS", 6
+        )
+        self.auth_401_base_delay_ms = auth_401_base_delay_ms or self._get_env_float(
+            "CONDUCTOR_AUTH_401_BASE_DELAY_MS", 1000.0
+        )
+        self.auth_401_max_delay_ms = auth_401_max_delay_ms or self._get_env_float(
+            "CONDUCTOR_AUTH_401_MAX_DELAY_MS", 60000.0
+        )
+        self.auth_401_jitter_percent = auth_401_jitter_percent or self._get_env_float(
+            "CONDUCTOR_AUTH_401_JITTER_PERCENT", 0.2
+        )
+        self.auth_401_stop_behavior = auth_401_stop_behavior or os.getenv(
+            "CONDUCTOR_AUTH_401_STOP_BEHAVIOR", "stop_worker"
+        )
 
     def _get_env_float(self, env_var: str, default: float) -> float:
         """Get float value from environment variable with default fallback."""
@@ -231,6 +290,13 @@ class Configuration:
                 return int(value)
         except (ValueError, TypeError):
             self.logger.warning("Invalid float value for %s: %s", env_var, value)
+        return default
+
+    def _get_env_bool(self, env_var: str, default: bool) -> bool:
+        """Get boolean value from environment variable with default fallback."""
+        value = os.getenv(env_var)
+        if value is not None:
+            return value.lower() in ("true", "1")
         return default
 
     def get_worker_property_value(

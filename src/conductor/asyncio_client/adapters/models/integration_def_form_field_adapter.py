@@ -93,6 +93,13 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
                 "valueSubjectNameStrategy",
                 "version",
                 "visibilityTimeout",
+                "oAuth2RefreshToken",
+                "oAuth2AuthCode",
+                "oAuth2TokenExpiresAt",
+                "oAuth2RedirectUri",
+                "oAuth2Scope",
+                "oAuth2Provider",
+                "oAuth2AccessToken",
             ]
         ):
             raise ValueError(
@@ -111,7 +118,7 @@ class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
                 "'schemaRegistryApiSecret', 'schemaRegistryAuthType', 'schemaRegistryUrl', "
                 "'serviceAccountCredentials', 'stream', 'subscription', 'tls', 'tlsFile', "
                 "'truststoreAuthenticationType', 'user', 'valueSubjectNameStrategy', "
-                "'version', 'visibilityTimeout'"
+                "'version', 'visibilityTimeout', 'oAuth2RefreshToken', 'oAuth2AuthCode', 'oAuth2TokenExpiresAt', 'oAuth2RedirectUri'"
                 ")"
             )
 
