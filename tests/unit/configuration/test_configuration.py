@@ -1,4 +1,5 @@
 import base64
+import warnings
 import json
 
 from conductor.client.configuration.configuration import Configuration
@@ -34,6 +35,54 @@ def test_initialization_with_basic_auth_server_api_url():
     }
 
 
+def test_base_url_with_api_path():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        configuration = Configuration(base_url="https://domain.com/api")
+        assert len(w) == 1
+        assert "base_url' been passed with '/api' path" in str(w[0].message)
+        assert configuration.host == "https://domain.com/api"
+
+
+def test_base_url_with_api_path_and_version():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        configuration = Configuration(base_url="https://domain.com/api/v1")
+        assert len(w) == 1
+        assert "base_url' been passed with '/api' path" in str(w[0].message)
+        assert configuration.host == "https://domain.com/api/v1"
+
+
+def test_base_url_with_api_subdomain_no_warning():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        configuration = Configuration(base_url="https://api.domain.com")
+        assert len(w) == 0
+        assert configuration.host == "https://api.domain.com/api"
+
+
+def test_valid_base_url_no_warning():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        configuration = Configuration(base_url="https://domain.com")
+        assert len(w) == 0
+        assert configuration.host == "https://domain.com/api"
+
+
+def test_base_url_with_port_no_warning():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        configuration = Configuration(base_url="https://domain.com:8080")
+        assert len(w) == 0
+        assert configuration.host == "https://domain.com:8080/api"
+
+
+def test_base_url_with_api_subdomain_and_port_no_warning():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        configuration = Configuration(base_url="https://api.domain.com:8080")
+        assert len(w) == 0
+        assert configuration.host == "https://api.domain.com:8080/api"
 def test_ssl_ca_cert_initialization():
     configuration = Configuration(
         base_url="https://internal.conductor.dev", ssl_ca_cert="/path/to/ca-cert.pem"
