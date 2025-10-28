@@ -13,14 +13,14 @@ class WorkflowDefAdapter(WorkflowDef):
     output_parameters: Optional[Dict[str, Any]] = Field(default=None, alias="outputParameters")
     variables: Optional[Dict[str, Any]] = None
     metadata: Optional[Dict[str, Any]] = None
-    tasks: List["WorkflowTaskAdapter"]  # type: ignore[assignment]
+    tasks: List["WorkflowTaskAdapter"]
     schema_version: Optional[int] = Field(default=None, alias="schemaVersion")
-    output_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="outputSchema")  # type: ignore[assignment]
-    input_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="inputSchema")  # type: ignore[assignment]
-    rate_limit_config: Optional["RateLimitConfigAdapter"] = Field(  # type: ignore[assignment]
+    output_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="outputSchema")
+    input_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="inputSchema")
+    rate_limit_config: Optional["RateLimitConfigAdapter"] = Field(
         default=None, alias="rateLimitConfig"
     )
-    timeout_seconds: Optional[int] = Field(default=None, alias="timeoutSeconds")  # type: ignore[assignment]
+    timeout_seconds: Optional[int] = Field(default=None, alias="timeoutSeconds")
 
     __properties: ClassVar[List[str]] = [
         "createTime",

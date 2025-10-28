@@ -9,9 +9,9 @@ from conductor.asyncio_client.http.models import Integration
 
 
 class IntegrationAdapter(Integration):
-    apis: Optional[List["IntegrationApiAdapter"]] = None  # type: ignore[assignment]
+    apis: Optional[List["IntegrationApiAdapter"]] = None
     configuration: Optional[Dict[str, Any]] = None
-    tags: Optional[List["TagAdapter"]] = None  # type: ignore[assignment]
+    tags: Optional[List["TagAdapter"]] = None
 
     @field_validator("category")
     def category_validate_enum(cls, value):

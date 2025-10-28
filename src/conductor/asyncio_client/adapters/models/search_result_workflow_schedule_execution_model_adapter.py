@@ -10,7 +10,7 @@ from conductor.asyncio_client.http.models import (
 
 
 class SearchResultWorkflowScheduleExecutionModelAdapter(SearchResultWorkflowScheduleExecutionModel):
-    results: Optional[List["WorkflowScheduleExecutionModelAdapter"]] = None  # type: ignore[assignment]
+    results: Optional[List["WorkflowScheduleExecutionModelAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

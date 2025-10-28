@@ -12,7 +12,7 @@ class WorkflowScheduleAdapter(WorkflowSchedule):
     start_workflow_request: Optional["StartWorkflowRequestAdapter"] = Field(  # type: ignore[override]
         default=None, alias="startWorkflowRequest"
     )
-    tags: Optional[List["TagAdapter"]] = None  # type: ignore[assignment]
+    tags: Optional[List["TagAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

@@ -8,7 +8,7 @@ from conductor.asyncio_client.http.models import ExtendedConductorApplication
 
 
 class ExtendedConductorApplicationAdapter(ExtendedConductorApplication):
-    tags: Optional[List["TagAdapter"]] = None  # type: ignore[assignment]
+    tags: Optional[List["TagAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

@@ -9,7 +9,7 @@ from conductor.asyncio_client.http.models import IntegrationDef
 
 
 class IntegrationDefAdapter(IntegrationDef):
-    configuration: Optional[List["IntegrationDefFormFieldAdapter"]] = None  # type: ignore[assignment]
+    configuration: Optional[List["IntegrationDefFormFieldAdapter"]] = None
 
     @field_validator("category")
     def category_validate_enum(cls, value):

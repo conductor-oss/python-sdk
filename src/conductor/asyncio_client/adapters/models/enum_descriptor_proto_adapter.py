@@ -10,27 +10,27 @@ from conductor.asyncio_client.http.models import EnumDescriptorProto
 
 class EnumDescriptorProtoAdapter(EnumDescriptorProto):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["EnumDescriptorProtoAdapter"] = Field(  # type: ignore[assignment]
+    default_instance_for_type: Optional["EnumDescriptorProtoAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(  # type: ignore[assignment]
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="descriptorForType"
     )
     options: Optional["EnumOptionsAdapter"] = None
-    options_or_builder: Optional["EnumOptionsOrBuilderAdapter"] = Field(  # type: ignore[assignment]
+    options_or_builder: Optional["EnumOptionsOrBuilderAdapter"] = Field(
         default=None, alias="optionsOrBuilder"
     )
-    reserved_range_list: Optional[List["EnumReservedRangeAdapter"]] = Field(  # type: ignore[assignment]
+    reserved_range_list: Optional[List["EnumReservedRangeAdapter"]] = Field(
         default=None, alias="reservedRangeList"
     )
-    reserved_range_or_builder_list: Optional[List["EnumReservedRangeOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
+    reserved_range_or_builder_list: Optional[List["EnumReservedRangeOrBuilderAdapter"]] = Field(
         default=None, alias="reservedRangeOrBuilderList"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")  # type: ignore[assignment]
-    value_list: Optional[List["EnumValueDescriptorProtoAdapter"]] = Field(  # type: ignore[assignment]
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
+    value_list: Optional[List["EnumValueDescriptorProtoAdapter"]] = Field(
         default=None, alias="valueList"
     )
-    value_or_builder_list: Optional[List["EnumValueDescriptorProtoOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
+    value_or_builder_list: Optional[List["EnumValueDescriptorProtoOrBuilderAdapter"]] = Field(
         default=None, alias="valueOrBuilderList"
     )
 

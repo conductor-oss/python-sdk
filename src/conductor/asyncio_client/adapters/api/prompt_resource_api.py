@@ -7,11 +7,19 @@ from pydantic import Field, StrictFloat, StrictInt, StrictStr
 from conductor.asyncio_client.adapters.models.message_template_adapter import (
     MessageTemplateAdapter,
 )
+from conductor.asyncio_client.adapters.models.prompt_template_test_request_adapter import (
+    PromptTemplateTestRequestAdapter,
+)
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.http.api import PromptResourceApi
+from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.adapters.utils import convert_list_to_adapter, convert_to_adapter
 
 
-class PromptResourceApiAdapter(PromptResourceApi):
+class PromptResourceApiAdapter:
+    def __init__(self, api_client: ApiClient):
+        self._api = PromptResourceApi(api_client)
+
     async def get_message_template(
         self,
         name: StrictStr,
@@ -25,7 +33,8 @@ class PromptResourceApiAdapter(PromptResourceApi):
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> MessageTemplateAdapter:
-        result = await super().get_message_template(
+        """Get a message template by name"""
+        result = await self._api.get_message_template(
             name,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
@@ -33,9 +42,9 @@ class PromptResourceApiAdapter(PromptResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return convert_to_adapter(result, MessageTemplateAdapter)
 
-    async def get_message_templates(  # type: ignore[override]
+    async def get_message_templates(
         self,
         _request_timeout: Union[
             None,
@@ -47,18 +56,19 @@ class PromptResourceApiAdapter(PromptResourceApi):
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> List[MessageTemplateAdapter]:
-        result = await super().get_message_templates(
+        """Get all message templates"""
+        result = await self._api.get_message_templates(
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return convert_list_to_adapter(result, MessageTemplateAdapter)
 
     async def create_message_templates(
         self,
-        message_template: List[MessageTemplateAdapter],  # type: ignore[override]
+        message_template: List[MessageTemplateAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -69,8 +79,9 @@ class PromptResourceApiAdapter(PromptResourceApi):
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> None:
-        return await super().create_message_templates(
-            message_template,  # type: ignore[arg-type]
+        """Create multiple message templates in bulk"""
+        return await self._api.create_message_templates(
+            message_template,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -81,7 +92,7 @@ class PromptResourceApiAdapter(PromptResourceApi):
     async def put_tag_for_prompt_template(
         self,
         name: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -92,9 +103,10 @@ class PromptResourceApiAdapter(PromptResourceApi):
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> None:
-        return await super().put_tag_for_prompt_template(
+        """Put a tag to Prompt Template"""
+        await self._api.put_tag_for_prompt_template(
             name,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -102,7 +114,7 @@ class PromptResourceApiAdapter(PromptResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_tags_for_prompt_template(  # type: ignore[override]
+    async def get_tags_for_prompt_template(
         self,
         name: StrictStr,
         _request_timeout: Union[
@@ -115,7 +127,8 @@ class PromptResourceApiAdapter(PromptResourceApi):
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> List[TagAdapter]:
-        result = await super().get_tags_for_prompt_template(
+        """Get tags for a prompt template"""
+        result = await self._api.get_tags_for_prompt_template(
             name,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
@@ -123,12 +136,12 @@ class PromptResourceApiAdapter(PromptResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return convert_list_to_adapter(result, TagAdapter)
 
     async def delete_tag_for_prompt_template(
         self,
         name: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -139,9 +152,86 @@ class PromptResourceApiAdapter(PromptResourceApi):
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> None:
-        return await super().delete_tag_for_prompt_template(
+        """Delete a tag from a prompt template"""
+        return await self._api.delete_tag_for_prompt_template(
             name,
-            tag,  # type: ignore[arg-type]
+            tag,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+
+    async def delete_message_template(
+        self,
+        name: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> None:
+        """Delete a message template"""
+        await self._api.delete_message_template(
+            name,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+
+    async def save_message_template(
+        self,
+        name: StrictStr,
+        description: StrictStr,
+        body: StrictStr,
+        models: Optional[List[StrictStr]] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> None:
+        """Create or Update a template"""
+        await self._api.save_message_template(
+            name,
+            description,
+            body,
+            models,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+
+    async def test_message_template(
+        self,
+        prompt_template_test_request: PromptTemplateTestRequestAdapter,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> str:
+        """Test Prompt Template"""
+        return await self._api.test_message_template(
+            prompt_template_test_request,
+            _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,

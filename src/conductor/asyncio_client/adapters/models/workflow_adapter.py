@@ -15,11 +15,11 @@ class WorkflowAdapter(Workflow):
     input: Optional[Dict[str, Any]] = None
     output: Optional[Dict[str, Any]] = None
     variables: Optional[Dict[str, Any]] = None
-    workflow_definition: Optional["WorkflowDefAdapter"] = Field(  # type: ignore[assignment]
+    workflow_definition: Optional["WorkflowDefAdapter"] = Field(
         default=None, alias="workflowDefinition"
     )
-    tasks: Optional[List["TaskAdapter"]] = None  # type: ignore[assignment]
-    history: Optional[List["WorkflowAdapter"]] = None  # type: ignore[assignment]
+    tasks: Optional[List["TaskAdapter"]] = None
+    history: Optional[List["WorkflowAdapter"]] = None
 
     def is_completed(self) -> bool:
         """Checks if the workflow has completed

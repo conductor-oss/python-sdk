@@ -10,55 +10,55 @@ from conductor.asyncio_client.http.models import DescriptorProtoOrBuilder
 
 class DescriptorProtoOrBuilderAdapter(DescriptorProtoOrBuilder):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["MessageAdapter"] = Field(  # type: ignore[assignment]
+    default_instance_for_type: Optional["MessageAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(  # type: ignore[assignment]
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="descriptorForType"
     )
-    enum_type_list: Optional[List["EnumDescriptorProtoAdapter"]] = Field(  # type: ignore[assignment]
+    enum_type_list: Optional[List["EnumDescriptorProtoAdapter"]] = Field(
         default=None, alias="enumTypeList"
     )
-    enum_type_or_builder_list: Optional[List["EnumDescriptorProtoOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
+    enum_type_or_builder_list: Optional[List["EnumDescriptorProtoOrBuilderAdapter"]] = Field(
         default=None, alias="enumTypeOrBuilderList"
     )
-    extension_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(  # type: ignore[assignment]
+    extension_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(
         default=None, alias="extensionList"
     )
-    extension_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
+    extension_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = Field(
         default=None, alias="extensionOrBuilderList"
     )
-    extension_range_list: Optional[List["ExtensionRangeAdapter"]] = Field(  # type: ignore[assignment]
+    extension_range_list: Optional[List["ExtensionRangeAdapter"]] = Field(
         default=None, alias="extensionRangeList"
     )
-    extension_range_or_builder_list: Optional[List["ExtensionRangeOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
+    extension_range_or_builder_list: Optional[List["ExtensionRangeOrBuilderAdapter"]] = Field(
         default=None, alias="extensionRangeOrBuilderList"
     )
-    field_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(  # type: ignore[assignment]
+    field_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(
         default=None, alias="fieldList"
     )
-    field_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
+    field_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = Field(
         default=None, alias="fieldOrBuilderList"
     )
-    nested_type_list: Optional[List["DescriptorProtoAdapter"]] = Field(  # type: ignore[assignment]
+    nested_type_list: Optional[List["DescriptorProtoAdapter"]] = Field(
         default=None, alias="nestedTypeList"
     )
-    oneof_decl_list: Optional[List["OneofDescriptorProtoAdapter"]] = Field(  # type: ignore[assignment]
+    oneof_decl_list: Optional[List["OneofDescriptorProtoAdapter"]] = Field(
         default=None, alias="oneofDeclList"
     )
-    oneof_decl_or_builder_list: Optional[List["OneofDescriptorProtoOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
+    oneof_decl_or_builder_list: Optional[List["OneofDescriptorProtoOrBuilderAdapter"]] = Field(
         default=None, alias="oneofDeclOrBuilderList"
     )
-    options_or_builder: Optional["MessageOptionsOrBuilderAdapter"] = Field(  # type: ignore[assignment]
+    options_or_builder: Optional["MessageOptionsOrBuilderAdapter"] = Field(
         default=None, alias="optionsOrBuilder"
     )
-    reserved_range_list: Optional[List["ReservedRangeAdapter"]] = Field(  # type: ignore[assignment]
+    reserved_range_list: Optional[List["ReservedRangeAdapter"]] = Field(
         default=None, alias="reservedRangeList"
     )
-    reserved_range_or_builder_list: Optional[List["ReservedRangeOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
+    reserved_range_or_builder_list: Optional[List["ReservedRangeOrBuilderAdapter"]] = Field(
         default=None, alias="reservedRangeOrBuilderList"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")  # type: ignore[assignment]
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

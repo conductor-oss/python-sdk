@@ -8,10 +8,10 @@ from conductor.asyncio_client.http.models import ServiceDescriptor
 
 
 class ServiceDescriptorAdapter(ServiceDescriptor):
-    file: Optional["FileDescriptorAdapter"] = None  # type: ignore[assignment]
-    methods: Optional[List["MethodDescriptorAdapter"]] = None  # type: ignore[assignment]
-    options: Optional["ServiceOptionsAdapter"] = None  # type: ignore[assignment]
-    proto: Optional["ServiceDescriptorProtoAdapter"] = None  # type: ignore[assignment]
+    file: Optional["FileDescriptorAdapter"] = None
+    methods: Optional[List["MethodDescriptorAdapter"]] = None
+    options: Optional["ServiceOptionsAdapter"] = None
+    proto: Optional["ServiceDescriptorProtoAdapter"] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

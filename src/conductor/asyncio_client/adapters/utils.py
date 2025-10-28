@@ -2,7 +2,7 @@
 Utility functions for converting between generated models and adapters.
 """
 
-from typing import List, TypeVar, Type, Any
+from typing import List, TypeVar, Type, Any, Dict
 from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
@@ -34,3 +34,19 @@ def convert_to_adapter(item: Any, adapter_class: Type[T]) -> T:
         Adapter instance
     """
     return adapter_class.model_validate(item.model_dump())
+
+
+def convert_dict_to_adapter(
+    input_dict: Dict[str, List[Any]], adapter_class: Type[T]
+) -> Dict[str, List[T]]:
+    """
+    Convert a dictionary of model lists to a dictionary of adapter lists.
+
+    Args:
+        input_dict: Dictionary mapping string keys to lists of model instances
+        adapter_class: The adapter class to convert to
+
+    Returns:
+        Dictionary mapping string keys to lists of adapter instances
+    """
+    return {key: convert_list_to_adapter(items, adapter_class) for key, items in input_dict.items()}

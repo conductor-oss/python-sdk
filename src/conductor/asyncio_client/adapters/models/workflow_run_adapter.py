@@ -10,7 +10,7 @@ from conductor.asyncio_client.http.models import WorkflowRun
 class WorkflowRunAdapter(WorkflowRun):
     input: Optional[Dict[str, Any]] = None
     output: Optional[Dict[str, Any]] = None
-    tasks: Optional[List["TaskAdapter"]] = None  # type: ignore[assignment]
+    tasks: Optional[List["TaskAdapter"]] = None
     variables: Optional[Dict[str, Any]] = None
 
     @property

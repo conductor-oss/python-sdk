@@ -9,16 +9,16 @@ from conductor.asyncio_client.http.models import Descriptor
 
 
 class DescriptorAdapter(Descriptor):
-    containing_type: Optional["DescriptorAdapter"] = Field(default=None, alias="containingType")  # type: ignore[assignment]
-    enum_types: Optional[List["EnumDescriptorAdapter"]] = Field(default=None, alias="enumTypes")  # type: ignore[assignment]
-    extensions: Optional[List["FieldDescriptorAdapter"]] = None  # type: ignore[assignment]
-    fields: Optional[List["FieldDescriptorAdapter"]] = None  # type: ignore[assignment]
-    file: Optional["FileDescriptorAdapter"] = None  # type: ignore[assignment]
-    nested_types: Optional[List["DescriptorAdapter"]] = Field(default=None, alias="nestedTypes")  # type: ignore[assignment]
-    oneofs: Optional[List["OneofDescriptorAdapter"]] = None  # type: ignore[assignment]
-    options: Optional["MessageOptionsAdapter"] = None  # type: ignore[assignment]
-    proto: Optional["DescriptorProtoAdapter"] = None  # type: ignore[assignment]
-    real_oneofs: Optional[List["OneofDescriptorAdapter"]] = Field(default=None, alias="realOneofs")  # type: ignore[assignment]
+    containing_type: Optional["DescriptorAdapter"] = Field(default=None, alias="containingType")
+    enum_types: Optional[List["EnumDescriptorAdapter"]] = Field(default=None, alias="enumTypes")
+    extensions: Optional[List["FieldDescriptorAdapter"]] = None
+    fields: Optional[List["FieldDescriptorAdapter"]] = None
+    file: Optional["FileDescriptorAdapter"] = None
+    nested_types: Optional[List["DescriptorAdapter"]] = Field(default=None, alias="nestedTypes")
+    oneofs: Optional[List["OneofDescriptorAdapter"]] = None
+    options: Optional["MessageOptionsAdapter"] = None
+    proto: Optional["DescriptorProtoAdapter"] = None
+    real_oneofs: Optional[List["OneofDescriptorAdapter"]] = Field(default=None, alias="realOneofs")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
