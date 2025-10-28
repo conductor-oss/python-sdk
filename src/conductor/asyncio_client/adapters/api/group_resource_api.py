@@ -56,9 +56,9 @@ class GroupResourceApiAdapter:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> GroupAdapter:
+    ) -> object:
         """Get a group by ID, returning a GroupAdapter instance."""
-        result = await self._api.get_group(
+        return await self._api.get_group(
             id,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
@@ -66,7 +66,6 @@ class GroupResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, GroupAdapter)
 
     async def upsert_group(
         self,
@@ -81,9 +80,9 @@ class GroupResourceApiAdapter:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> GroupAdapter:
+    ) -> object:
         """Create or update a group, returning a GroupAdapter instance."""
-        result = await self._api.upsert_group(
+        return await self._api.upsert_group(
             id,
             upsert_group_request,
             _request_timeout=_request_timeout,
@@ -92,7 +91,6 @@ class GroupResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, GroupAdapter)
 
     async def delete_group(
         self,
@@ -106,9 +104,9 @@ class GroupResourceApiAdapter:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> None:
+    ) -> object:
         """Delete a group by ID."""
-        await self._api.delete_group(
+        return await self._api.delete_group(
             id,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,

@@ -41,15 +41,11 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         super().__init__(configuration, api_client)
 
     # User Operations
-    async def create_user(
-        self, user_id: str, upsert_user_request: UpsertUserRequest
-    ) -> ConductorUserAdapter:
+    async def create_user(self, user_id: str, upsert_user_request: UpsertUserRequest) -> object:
         """Create a new user"""
         return await self.user_api.upsert_user(id=user_id, upsert_user_request=upsert_user_request)
 
-    async def update_user(
-        self, user_id: str, upsert_user_request: UpsertUserRequest
-    ) -> ConductorUserAdapter:
+    async def update_user(self, user_id: str, upsert_user_request: UpsertUserRequest) -> object:
         """Update an existing user"""
         return await self.user_api.upsert_user(id=user_id, upsert_user_request=upsert_user_request)
 
@@ -101,9 +97,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return await self.application_api.list_applications()
 
     # Group Operations
-    async def create_group(
-        self, group_id: str, upsert_group_request: UpsertGroupRequest
-    ) -> GroupAdapter:
+    async def create_group(self, group_id: str, upsert_group_request: UpsertGroupRequest) -> object:
         """Create a new group"""
         return await self.group_api.upsert_group(
             id=group_id, upsert_group_request=upsert_group_request
