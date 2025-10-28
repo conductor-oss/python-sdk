@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Annotated, Dict, Optional, Tuple, Union
-from pydantic import StrictStr, StrictFloat, StrictInt, Field
+from typing import Annotated, Any, Dict, Optional, Tuple, Union
 
-from conductor.asyncio_client.http.api import IncomingWebhookResourceApi
+from pydantic import Field, StrictFloat, StrictInt, StrictStr
+
 from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.http.api import IncomingWebhookResourceApi
 
 
 class IncomingWebhookResourceApiAdapter:

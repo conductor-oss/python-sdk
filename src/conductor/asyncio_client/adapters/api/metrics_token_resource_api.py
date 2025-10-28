@@ -4,10 +4,10 @@ from typing import Annotated, Any, Dict, Optional, Tuple, Union
 
 from pydantic import Field, StrictFloat, StrictInt, StrictStr
 
-from conductor.asyncio_client.http.api import MetricsTokenResourceApi
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.metrics_token_adapter import MetricsTokenAdapter
 from conductor.asyncio_client.adapters.utils import convert_to_adapter
+from conductor.asyncio_client.http.api import MetricsTokenResourceApi
 
 
 class MetricsTokenResourceApiAdapter:

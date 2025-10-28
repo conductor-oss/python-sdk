@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, Dict, Optional, Tuple, Union, List
+from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import Field, StrictFloat, StrictInt, StrictStr
 
-from conductor.asyncio_client.http.api import WebhooksConfigResourceApi
 from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.adapters.utils import convert_to_adapter, convert_list_to_adapter
-from conductor.asyncio_client.adapters.models.webhook_config_adapter import WebhookConfigAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.adapters.models.webhook_config_adapter import WebhookConfigAdapter
+from conductor.asyncio_client.adapters.utils import convert_list_to_adapter, convert_to_adapter
+from conductor.asyncio_client.http.api import WebhooksConfigResourceApi
 
 
 class WebhooksConfigResourceApiAdapter:

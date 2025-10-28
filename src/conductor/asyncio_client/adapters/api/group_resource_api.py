@@ -4,6 +4,7 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import Field, StrictFloat, StrictInt, StrictStr
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.granted_access_response_adapter import (
     GrantedAccessResponseAdapter,
 )
@@ -11,9 +12,8 @@ from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter
 from conductor.asyncio_client.adapters.models.upsert_group_request_adapter import (
     UpsertGroupRequestAdapter,
 )
-from conductor.asyncio_client.http.api import GroupResourceApi
 from conductor.asyncio_client.adapters.utils import convert_list_to_adapter, convert_to_adapter
-from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.http.api import GroupResourceApi
 
 
 class GroupResourceApiAdapter:

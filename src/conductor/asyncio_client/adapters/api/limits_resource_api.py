@@ -4,8 +4,8 @@ from typing import Annotated, Any, Dict, Optional, Tuple, Union
 
 from pydantic import Field, StrictFloat, StrictInt, StrictStr
 
-from conductor.asyncio_client.http.api import LimitsResourceApi
 from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.http.api import LimitsResourceApi
 
 
 class LimitsResourceApiAdapter:

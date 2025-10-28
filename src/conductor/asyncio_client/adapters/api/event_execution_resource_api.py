@@ -1,17 +1,18 @@
 from __future__ import annotations
-from typing import Annotated, Any, Dict, Optional, List, Tuple, Union
+
+from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
+
 from pydantic import Field, StrictFloat, StrictInt, StrictStr
 
-from conductor.asyncio_client.adapters.models.search_result_handled_event_response_adapter import (
-    SearchResultHandledEventResponseAdapter,
-)
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.extended_event_execution_adapter import (
     ExtendedEventExecutionAdapter,
 )
+from conductor.asyncio_client.adapters.models.search_result_handled_event_response_adapter import (
+    SearchResultHandledEventResponseAdapter,
+)
+from conductor.asyncio_client.adapters.utils import convert_list_to_adapter, convert_to_adapter
 from conductor.asyncio_client.http.api import EventExecutionResourceApi
-from conductor.asyncio_client.adapters import ApiClient
-
-from conductor.asyncio_client.adapters.utils import convert_to_adapter, convert_list_to_adapter
 
 
 class EventExecutionResourceApiAdapter:

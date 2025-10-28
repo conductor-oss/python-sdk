@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-from conductor.asyncio_client.http.api import EventResourceApi
+from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
+
+from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
+
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.connectivity_test_input_adapter import (
     ConnectivityTestInputAdapter,
 )
-from typing import Annotated, Any, Dict, Optional, List, Tuple, Union
-from pydantic import Field, StrictFloat, StrictInt, StrictStr, StrictBool
-
-from conductor.asyncio_client.adapters.utils import convert_to_adapter, convert_list_to_adapter
-from conductor.asyncio_client.adapters.models.event_handler_adapter import EventHandlerAdapter
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.adapters.models.connectivity_test_result_adapter import (
     ConnectivityTestResultAdapter,
 )
+from conductor.asyncio_client.adapters.models.event_handler_adapter import EventHandlerAdapter
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.adapters.utils import convert_list_to_adapter, convert_to_adapter
+from conductor.asyncio_client.http.api import EventResourceApi
 
 
 class EventResourceApiAdapter:
