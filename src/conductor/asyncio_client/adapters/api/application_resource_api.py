@@ -304,9 +304,9 @@ class ApplicationResourceApiAdapter:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> object:
+    ) -> ExtendedConductorApplicationAdapter:
         """Create an application"""
-        return await self._api.create_application(
+        result = await self._api.create_application(
             create_or_update_application_request,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
@@ -314,6 +314,7 @@ class ApplicationResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
+        return convert_to_adapter(result, ExtendedConductorApplicationAdapter)
 
     async def update_application(
         self,
@@ -328,9 +329,9 @@ class ApplicationResourceApiAdapter:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> object:
+    ) -> ExtendedConductorApplicationAdapter:
         """Update an application"""
-        return await self._api.update_application(
+        result = await self._api.update_application(
             id,
             create_or_update_application_request,
             _request_timeout=_request_timeout,
@@ -339,6 +340,7 @@ class ApplicationResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
+        return convert_to_adapter(result, ExtendedConductorApplicationAdapter)
 
     async def get_application(
         self,
@@ -352,9 +354,9 @@ class ApplicationResourceApiAdapter:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> object:
+    ) -> ExtendedConductorApplicationAdapter:
         """Get an application"""
-        return await self._api.get_application(
+        result = await self._api.get_application(
             id,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
@@ -362,6 +364,7 @@ class ApplicationResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
+        return convert_to_adapter(result, ExtendedConductorApplicationAdapter)
 
     async def list_applications(
         self,

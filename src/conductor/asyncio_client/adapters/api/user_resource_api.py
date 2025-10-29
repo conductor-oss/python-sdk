@@ -8,7 +8,7 @@ from conductor.asyncio_client.adapters.models import UpsertUserRequestAdapter
 from conductor.asyncio_client.adapters.models.conductor_user_adapter import ConductorUserAdapter
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.api import UserResourceApi
-from conductor.asyncio_client.adapters.utils import convert_list_to_adapter
+from conductor.asyncio_client.adapters.utils import convert_to_adapter, convert_list_to_adapter
 
 
 class UserResourceApiAdapter:
@@ -79,11 +79,11 @@ class UserResourceApiAdapter:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> object:
+    ) -> ConductorUserAdapter:
         # Convert empty user id to None to prevent sending invalid data to server
         if not id:
             id = None
-        return await self._api.get_user(
+        result = await self._api.get_user(
             id,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
@@ -91,6 +91,7 @@ class UserResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
+        return convert_to_adapter(result, ConductorUserAdapter)
 
     async def upsert_user(
         self,
@@ -105,11 +106,11 @@ class UserResourceApiAdapter:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> object:
+    ) -> ConductorUserAdapter:
         # Convert empty user id to None to prevent sending invalid data to server
         if not id:
             id = None
-        return await self._api.upsert_user(
+        result = await self._api.upsert_user(
             id,
             upsert_user_request,
             _request_timeout=_request_timeout,
@@ -118,6 +119,7 @@ class UserResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
+        return convert_to_adapter(result, ConductorUserAdapter)
 
     async def list_users(
         self,
