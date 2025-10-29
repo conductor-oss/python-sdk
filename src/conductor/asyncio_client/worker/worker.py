@@ -87,11 +87,11 @@ class Worker(WorkerInterface):
                         task_input[input_name] = default_value
                     else:
                         task_input[input_name] = None
-                task_output = self.execute_function(**task_input)  # type: ignore[call-arg]
+                task_output = self.execute_function(**task_input)
 
             if isinstance(task_output, TaskResultAdapter):
-                task_output.task_id = task.task_id  # type: ignore[assignment]
-                task_output.workflow_instance_id = task.workflow_instance_id  # type: ignore[assignment]
+                task_output.task_id = task.task_id
+                task_output.workflow_instance_id = task.workflow_instance_id
                 return task_output
             else:
                 task_result.status = TaskResultStatus.COMPLETED
@@ -122,7 +122,7 @@ class Worker(WorkerInterface):
 
         if dataclasses.is_dataclass(type(task_result.output_data)):
             task_output = dataclasses.asdict(task_result.output_data)  # type: ignore[call-overload]
-            task_result.output_data = task_output  # type: ignore[assignment]
+            task_result.output_data = task_output
             return task_result
         if not isinstance(task_result.output_data, dict):
             task_output = task_result.output_data

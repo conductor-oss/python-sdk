@@ -9,17 +9,17 @@ from conductor.asyncio_client.http.models import FileDescriptor
 
 
 class FileDescriptorAdapter(FileDescriptor):
-    dependencies: Optional[List["FileDescriptorAdapter"]] = None  # type: ignore[assignment]
-    enum_types: Optional[List["EnumDescriptorAdapter"]] = Field(default=None, alias="enumTypes")  # type: ignore[assignment]
-    extensions: Optional[List["FieldDescriptorAdapter"]] = None  # type: ignore[assignment]
-    file: Optional["FileDescriptorAdapter"] = None  # type: ignore[assignment]
-    message_types: Optional[List["DescriptorAdapter"]] = Field(default=None, alias="messageTypes")  # type: ignore[assignment]
-    options: Optional["FileOptionsAdapter"] = None  # type: ignore[assignment]
-    proto: Optional["FileDescriptorProtoAdapter"] = None  # type: ignore[assignment]
-    public_dependencies: Optional[List["FileDescriptorAdapter"]] = Field(  # type: ignore[assignment]
+    dependencies: Optional[List["FileDescriptorAdapter"]] = None
+    enum_types: Optional[List["EnumDescriptorAdapter"]] = Field(default=None, alias="enumTypes")
+    extensions: Optional[List["FieldDescriptorAdapter"]] = None
+    file: Optional["FileDescriptorAdapter"] = None
+    message_types: Optional[List["DescriptorAdapter"]] = Field(default=None, alias="messageTypes")
+    options: Optional["FileOptionsAdapter"] = None
+    proto: Optional["FileDescriptorProtoAdapter"] = None
+    public_dependencies: Optional[List["FileDescriptorAdapter"]] = Field(
         default=None, alias="publicDependencies"
     )
-    services: Optional[List["ServiceDescriptorAdapter"]] = None  # type: ignore[assignment]
+    services: Optional[List["ServiceDescriptorAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

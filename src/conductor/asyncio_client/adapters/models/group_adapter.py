@@ -9,7 +9,7 @@ from conductor.asyncio_client.http.models import Group
 
 
 class GroupAdapter(Group):
-    roles: Optional[List["RoleAdapter"]] = None  # type: ignore[assignment]
+    roles: Optional[List["RoleAdapter"]] = None
 
     @field_validator("default_access")
     def default_access_validate_enum(cls, value):

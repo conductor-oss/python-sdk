@@ -10,17 +10,17 @@ from conductor.asyncio_client.http.models import SourceCodeInfoOrBuilder
 
 class SourceCodeInfoOrBuilderAdapter(SourceCodeInfoOrBuilder):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["MessageAdapter"] = Field(  # type: ignore[assignment]
+    default_instance_for_type: Optional["MessageAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(  # type: ignore[assignment]
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="descriptorForType"
     )
-    location_list: Optional[List["LocationAdapter"]] = Field(default=None, alias="locationList")  # type: ignore[assignment]
-    location_or_builder_list: Optional[List["LocationOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
+    location_list: Optional[List["LocationAdapter"]] = Field(default=None, alias="locationList")
+    location_or_builder_list: Optional[List["LocationOrBuilderAdapter"]] = Field(
         default=None, alias="locationOrBuilderList"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")  # type: ignore[assignment]
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

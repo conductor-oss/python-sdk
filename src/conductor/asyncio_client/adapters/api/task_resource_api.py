@@ -15,7 +15,7 @@ from conductor.asyncio_client.http.api import TaskResourceApi
 
 
 class TaskResourceApiAdapter(TaskResourceApi):
-    async def poll(  # type: ignore[override]
+    async def poll(
         self,
         tasktype: StrictStr,
         workerid: Optional[StrictStr] = None,
@@ -40,9 +40,9 @@ class TaskResourceApiAdapter(TaskResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def batch_poll(  # type: ignore[override]
+    async def batch_poll(
         self,
         tasktype: StrictStr,
         workerid: Optional[StrictStr] = None,
@@ -71,9 +71,9 @@ class TaskResourceApiAdapter(TaskResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_task(  # type: ignore[override]
+    async def get_task(
         self,
         task_id: StrictStr,
         _request_timeout: Union[
@@ -94,9 +94,9 @@ class TaskResourceApiAdapter(TaskResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_poll_data(  # type: ignore[override]
+    async def get_poll_data(
         self,
         task_type: StrictStr,
         _request_timeout: Union[
@@ -117,9 +117,9 @@ class TaskResourceApiAdapter(TaskResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_task_logs(  # type: ignore[override]
+    async def get_task_logs(
         self,
         task_id: StrictStr,
         _request_timeout: Union[
@@ -140,9 +140,9 @@ class TaskResourceApiAdapter(TaskResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def search1(  # type: ignore[override]
+    async def search1(
         self,
         start: Optional[StrictInt] = None,
         size: Optional[StrictInt] = None,
@@ -171,7 +171,7 @@ class TaskResourceApiAdapter(TaskResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     @validate_call
     async def update_task_sync(

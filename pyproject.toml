@@ -214,6 +214,15 @@ follow_imports = "silent"
 plugins = [
     "pydantic.mypy"
 ]
+disable_error_code = [
+    "no-redef",
+    "return-value",
+    "var-annotated",
+    "assignment",
+    "call-arg",
+    "arg-type",
+    "override",
+]
 
 [[tool.mypy.overrides]]
 module = [

@@ -9,7 +9,7 @@ from conductor.asyncio_client.http.api import TagsApi
 
 
 class TagsApiAdapter(TagsApi):
-    async def get_workflow_tags(  # type: ignore[override]
+    async def get_workflow_tags(
         self,
         name: StrictStr,
         _request_timeout: Union[
@@ -30,12 +30,12 @@ class TagsApiAdapter(TagsApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def set_workflow_tags(  # type: ignore[override]
+    async def set_workflow_tags(
         self,
         name: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -48,16 +48,16 @@ class TagsApiAdapter(TagsApi):
     ) -> object:
         result = await super().set_workflow_tags(
             name,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_task_tags(  # type: ignore[override]
+    async def get_task_tags(
         self,
         task_name: StrictStr,
         _request_timeout: Union[
@@ -78,12 +78,12 @@ class TagsApiAdapter(TagsApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def set_task_tags(  # type: ignore[override]
+    async def set_task_tags(
         self,
         task_name: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -96,11 +96,11 @@ class TagsApiAdapter(TagsApi):
     ) -> object:
         result = await super().set_task_tags(
             task_name,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result

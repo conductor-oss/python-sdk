@@ -18,7 +18,7 @@ from conductor.asyncio_client.http.api import SchedulerResourceApi
 
 
 class SchedulerResourceApiAdapter(SchedulerResourceApi):
-    async def get_schedule(  # type: ignore[override]
+    async def get_schedule(
         self,
         name: StrictStr,
         _request_timeout: Union[
@@ -39,9 +39,9 @@ class SchedulerResourceApiAdapter(SchedulerResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_all_schedules(  # type: ignore[override]
+    async def get_all_schedules(
         self,
         workflow_name: Optional[StrictStr] = None,
         _request_timeout: Union[
@@ -62,9 +62,9 @@ class SchedulerResourceApiAdapter(SchedulerResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def search_v2(  # type: ignore[override]
+    async def search_v2(
         self,
         start: Optional[StrictInt] = None,
         size: Optional[StrictInt] = None,
@@ -93,9 +93,9 @@ class SchedulerResourceApiAdapter(SchedulerResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_schedules_by_tag(  # type: ignore[override]
+    async def get_schedules_by_tag(
         self,
         tag: StrictStr,
         _request_timeout: Union[
@@ -116,12 +116,12 @@ class SchedulerResourceApiAdapter(SchedulerResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def put_tag_for_schedule(
         self,
         name: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -134,7 +134,7 @@ class SchedulerResourceApiAdapter(SchedulerResourceApi):
     ) -> None:
         return await super().put_tag_for_schedule(
             name,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -142,7 +142,7 @@ class SchedulerResourceApiAdapter(SchedulerResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_tags_for_schedule(  # type: ignore[override]
+    async def get_tags_for_schedule(
         self,
         name: StrictStr,
         _request_timeout: Union[
@@ -163,12 +163,12 @@ class SchedulerResourceApiAdapter(SchedulerResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def delete_tag_for_schedule(
         self,
         name: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -181,7 +181,7 @@ class SchedulerResourceApiAdapter(SchedulerResourceApi):
     ) -> None:
         return await super().delete_tag_for_schedule(
             name,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,

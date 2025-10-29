@@ -25,7 +25,7 @@ class UserResourceApiAdapter(UserResourceApi):
     ) -> object:
         # Convert empty user_id to None to prevent sending invalid data to server
         if not user_id:
-            user_id = None  # type: ignore[assignment]
+            user_id = None
         return await super().get_granted_permissions(
             user_id,
             _request_timeout=_request_timeout,
@@ -35,7 +35,7 @@ class UserResourceApiAdapter(UserResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_user(  # type: ignore[override]
+    async def get_user(
         self,
         id: StrictStr,
         _request_timeout: Union[
@@ -50,7 +50,7 @@ class UserResourceApiAdapter(UserResourceApi):
     ) -> ConductorUserAdapter:
         # Convert empty user id to None to prevent sending invalid data to server
         if not id:
-            id = None  # type: ignore[assignment]
+            id = None
         result = await super().get_user(
             id,
             _request_timeout=_request_timeout,
@@ -59,12 +59,12 @@ class UserResourceApiAdapter(UserResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def upsert_user(  # type: ignore[override]
+    async def upsert_user(
         self,
         id: StrictStr,
-        upsert_user_request: UpsertUserRequest,  # type: ignore[override]
+        upsert_user_request: UpsertUserRequest,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -77,7 +77,7 @@ class UserResourceApiAdapter(UserResourceApi):
     ) -> ConductorUserAdapter:
         # Convert empty user id to None to prevent sending invalid data to server
         if not id:
-            id = None  # type: ignore[assignment]
+            id = None
         result = await super().upsert_user(
             id,
             upsert_user_request,
@@ -87,9 +87,9 @@ class UserResourceApiAdapter(UserResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def list_users(  # type: ignore[override]
+    async def list_users(
         self,
         apps: Optional[StrictBool] = None,
         _request_timeout: Union[
@@ -110,7 +110,7 @@ class UserResourceApiAdapter(UserResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def delete_user(
         self,
@@ -127,7 +127,7 @@ class UserResourceApiAdapter(UserResourceApi):
     ) -> object:
         # Convert empty user id to None to prevent sending invalid data to server
         if not id:
-            id = None  # type: ignore[assignment]
+            id = None
         return await super().delete_user(
             id,
             _request_timeout=_request_timeout,

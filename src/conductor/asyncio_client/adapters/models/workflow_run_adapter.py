@@ -10,20 +10,20 @@ from conductor.asyncio_client.http.models import WorkflowRun
 class WorkflowRunAdapter(WorkflowRun):
     input: Optional[Dict[str, Any]] = None
     output: Optional[Dict[str, Any]] = None
-    tasks: Optional[List["TaskAdapter"]] = None  # type: ignore[assignment]
+    tasks: Optional[List["TaskAdapter"]] = None
     variables: Optional[Dict[str, Any]] = None
 
     @property
-    def current_task(self) -> TaskAdapter:  # type: ignore[override]
+    def current_task(self) -> TaskAdapter:
         current = None
         for task in self.tasks:  # type: ignore[union-attr]
             if task.status in ("SCHEDULED", "IN_PROGRESS"):
                 current = task
-        return current  # type: ignore[return-value]
+        return current
 
     def get_task(
         self, name: Optional[str] = None, task_reference_name: Optional[str] = None
-    ) -> TaskAdapter:  # type: ignore[override]
+    ) -> TaskAdapter:
         if name is None and task_reference_name is None:
             raise Exception(
                 "ONLY one of name or task_reference_name MUST be provided.  None were provided"
@@ -40,7 +40,7 @@ class WorkflowRunAdapter(WorkflowRun):
                 or task.workflow_task.task_reference_name == task_reference_name  # type: ignore[union-attr]
             ):
                 current = task
-        return current  # type: ignore[return-value]
+        return current
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

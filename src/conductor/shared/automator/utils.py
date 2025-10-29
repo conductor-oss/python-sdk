@@ -84,7 +84,7 @@ def convert_from_dict(cls: type, data: dict) -> object:
             or typ is dict
             or str(typ).startswith("OrderedDict[")
         ):
-            values = {}  # type: ignore[assignment]
+            values = {}
             generic_type = object
             if len(generic_types) > 1:
                 generic_type = generic_types[1]

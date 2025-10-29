@@ -18,9 +18,9 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
     def save_prompt(self, prompt_name: str, description: str, prompt_template: str):
         self.promptApi.save_message_template(prompt_template, description, prompt_name)
 
-    def get_prompt(self, prompt_name: str) -> Optional[PromptTemplate]:  # type: ignore[override]
+    def get_prompt(self, prompt_name: str) -> Optional[PromptTemplate]:
         try:
-            return self.promptApi.get_message_template(prompt_name)  # type: ignore[return-value]
+            return self.promptApi.get_message_template(prompt_name)
         except ApiException as e:
             if e.is_not_found():
                 return None

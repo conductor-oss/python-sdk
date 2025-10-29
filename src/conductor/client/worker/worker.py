@@ -88,7 +88,7 @@ class Worker(WorkerInterface):
                         task_input[input_name] = default_value
                     else:
                         task_input[input_name] = None
-                task_output = self.execute_function(**task_input)  # type: ignore[call-arg]
+                task_output = self.execute_function(**task_input)
 
             if isinstance(task_output, TaskResult):
                 task_output.task_id = task.task_id

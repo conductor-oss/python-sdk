@@ -12,7 +12,7 @@ from conductor.asyncio_client.http.api import GroupResourceApi
 
 
 class GroupResourceApiAdapter(GroupResourceApi):
-    async def list_groups(  # type: ignore[override]
+    async def list_groups(
         self,
         _request_timeout: Union[
             None,
@@ -31,7 +31,7 @@ class GroupResourceApiAdapter(GroupResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def get_group(
         self,
@@ -54,12 +54,12 @@ class GroupResourceApiAdapter(GroupResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def upsert_group(
         self,
         id: StrictStr,
-        upsert_group_request: UpsertGroupRequestAdapter,  # type: ignore[override]
+        upsert_group_request: UpsertGroupRequestAdapter,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -80,4 +80,4 @@ class GroupResourceApiAdapter(GroupResourceApi):
             _host_index=_host_index,
         )
 
-        return result  # type: ignore[return-value]
+        return result

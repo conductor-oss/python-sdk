@@ -9,7 +9,7 @@ from conductor.asyncio_client.http.models import GrantedAccessResponse
 
 
 class GrantedAccessResponseAdapter(GrantedAccessResponse):
-    granted_access: Optional[List["GrantedAccessAdapter"]] = Field(  # type: ignore[assignment]
+    granted_access: Optional[List["GrantedAccessAdapter"]] = Field(
         default=None, alias="grantedAccess"
     )
 

@@ -29,12 +29,12 @@ from conductor.asyncio_client.http.api import WorkflowResourceApi
 
 
 class WorkflowResourceApiAdapter(WorkflowResourceApi):
-    async def execute_workflow(  # type: ignore[override]
+    async def execute_workflow(
         self,
         name: StrictStr,
         version: StrictInt,
         request_id: StrictStr,
-        start_workflow_request: StartWorkflowRequestAdapter,  # type: ignore[override]
+        start_workflow_request: StartWorkflowRequestAdapter,
         wait_until_task_ref: Optional[StrictStr] = None,
         wait_for_seconds: Optional[StrictInt] = None,
         _request_timeout: Union[
@@ -51,7 +51,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
             name,
             version,
             request_id,
-            start_workflow_request,  # type: ignore[override]
+            start_workflow_request,
             wait_until_task_ref,
             wait_for_seconds,
             _request_timeout=_request_timeout,
@@ -60,9 +60,9 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_execution_status(  # type: ignore[override]
+    async def get_execution_status(
         self,
         workflow_id: StrictStr,
         include_tasks: Optional[StrictBool] = None,
@@ -87,9 +87,9 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_workflow_status_summary(  # type: ignore[override]
+    async def get_workflow_status_summary(
         self,
         workflow_id: StrictStr,
         include_output: Optional[StrictBool] = None,
@@ -103,7 +103,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> WorkflowStatusAdapter:  # type: ignore[override]
+    ) -> WorkflowStatusAdapter:
         result = await super().get_workflow_status_summary(
             workflow_id,
             include_output,
@@ -114,7 +114,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def get_running_workflow(
         self,
@@ -144,7 +144,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_workflows(  # type: ignore[override]
+    async def get_workflows(
         self,
         name: StrictStr,
         request_body: List[StrictStr],
@@ -171,11 +171,11 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_workflows1(  # type: ignore[override]
+    async def get_workflows1(
         self,
-        correlation_ids_search_request: CorrelationIdsSearchRequestAdapter,  # type: ignore[override]
+        correlation_ids_search_request: CorrelationIdsSearchRequestAdapter,
         include_closed: Optional[StrictBool] = None,
         include_tasks: Optional[StrictBool] = None,
         _request_timeout: Union[
@@ -198,9 +198,9 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def search(  # type: ignore[override]
+    async def search(
         self,
         start: Optional[StrictInt] = None,
         size: Optional[StrictInt] = None,
@@ -231,12 +231,12 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def rerun(
         self,
         workflow_id: StrictStr,
-        rerun_workflow_request: RerunWorkflowRequestAdapter,  # type: ignore[override]
+        rerun_workflow_request: RerunWorkflowRequestAdapter,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -249,7 +249,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
     ) -> str:
         return await super().rerun(
             workflow_id,
-            rerun_workflow_request,  # type: ignore[override]
+            rerun_workflow_request,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -281,11 +281,11 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
             _host_index=_host_index,
         )
 
-    async def update_workflow_and_task_state(  # type: ignore[override]
+    async def update_workflow_and_task_state(
         self,
         workflow_id: StrictStr,
         request_id: StrictStr,
-        workflow_state_update: WorkflowStateUpdateAdapter,  # type: ignore[override]
+        workflow_state_update: WorkflowStateUpdateAdapter,
         wait_until_task_ref: Optional[StrictStr] = None,
         wait_for_seconds: Optional[StrictInt] = None,
         _request_timeout: Union[
@@ -301,7 +301,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
         result = await super().update_workflow_and_task_state(
             workflow_id,
             request_id,
-            workflow_state_update,  # type: ignore[override]
+            workflow_state_update,
             wait_until_task_ref,
             wait_for_seconds,
             _request_timeout=_request_timeout,
@@ -310,11 +310,11 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def test_workflow(  # type: ignore[override]
+    async def test_workflow(
         self,
-        workflow_test_request: WorkflowTestRequestAdapter,  # type: ignore[override]
+        workflow_test_request: WorkflowTestRequestAdapter,
         _request_timeout: Union[  # noqa: PT019
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -326,14 +326,14 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,  # noqa: PT019
     ) -> WorkflowAdapter:
         result = await super().test_workflow(
-            workflow_test_request,  # type: ignore[override]
+            workflow_test_request,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     @validate_call
     async def update_workflow_state(

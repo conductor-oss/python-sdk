@@ -8,7 +8,7 @@ from conductor.asyncio_client.http.models import ScrollableSearchResultWorkflowS
 
 
 class ScrollableSearchResultWorkflowSummaryAdapter(ScrollableSearchResultWorkflowSummary):
-    results: Optional[List["WorkflowSummaryAdapter"]] = None  # type: ignore[assignment]
+    results: Optional[List["WorkflowSummaryAdapter"]] = None
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

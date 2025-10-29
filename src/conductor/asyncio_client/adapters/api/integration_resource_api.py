@@ -35,9 +35,9 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_integration_providers(  # type: ignore[override]
+    async def get_integration_providers(
         self,
         category: Optional[StrictStr] = None,
         active_only: Optional[StrictBool] = None,
@@ -60,9 +60,9 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_integration_provider_defs(  # type: ignore[override]
+    async def get_integration_provider_defs(
         self,
         _request_timeout: Union[
             None,
@@ -81,7 +81,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def get_integration_api(
         self,
@@ -106,9 +106,9 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_integration_apis(  # type: ignore[override]
+    async def get_integration_apis(
         self,
         name: StrictStr,
         active_only: Optional[StrictBool] = None,
@@ -132,7 +132,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _host_index=_host_index,
         )
 
-        return result  # type: ignore[return-value]
+        return result
 
     async def get_integration_available_apis(
         self,
@@ -156,11 +156,11 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _host_index=_host_index,
         )
 
-        return result  # type: ignore[return-value]
+        return result
 
     async def save_all_integrations(
         self,
-        integration: List[IntegrationAdapter],  # type: ignore[override]
+        integration: List[IntegrationAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -172,7 +172,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> None:
         return await super().save_all_integrations(
-            integration,  # type: ignore[arg-type]
+            integration,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -180,7 +180,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_all_integrations(  # type: ignore[override]
+    async def get_all_integrations(
         self,
         category: Optional[StrictStr] = None,
         active_only: Optional[StrictBool] = None,
@@ -204,7 +204,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _host_index=_host_index,
         )
 
-        return result  # type: ignore[return-value]
+        return result
 
     async def get_providers_and_integrations(
         self,
@@ -234,7 +234,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
         self,
         name: StrictStr,
         integration_name: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -248,7 +248,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
         return await super().put_tag_for_integration(
             name,
             integration_name,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -256,7 +256,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_tags_for_integration(  # type: ignore[override]
+    async def get_tags_for_integration(
         self,
         name: StrictStr,
         integration_name: StrictStr,
@@ -280,13 +280,13 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _host_index=_host_index,
         )
 
-        return result  # type: ignore[return-value]
+        return result
 
     async def delete_tag_for_integration(
         self,
         name: StrictStr,
         integration_name: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -300,7 +300,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
         return await super().delete_tag_for_integration(
             name,
             integration_name,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -311,7 +311,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
     async def put_tag_for_integration_provider(
         self,
         name: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -324,7 +324,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
     ) -> None:
         return await super().put_tag_for_integration_provider(
             name,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -332,7 +332,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_tags_for_integration_provider(  # type: ignore[override]
+    async def get_tags_for_integration_provider(
         self,
         name: StrictStr,
         _request_timeout: Union[
@@ -353,12 +353,12 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def delete_tag_for_integration_provider(
         self,
         name: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -371,7 +371,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
     ) -> None:
         return await super().delete_tag_for_integration_provider(
             name,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -401,7 +401,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_prompts_with_integration(  # type: ignore[override]
+    async def get_prompts_with_integration(
         self,
         integration_provider: StrictStr,
         integration_name: StrictStr,
@@ -424,12 +424,12 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def record_event_stats(
         self,
         type: StrictStr,
-        event_log: List[EventLogAdapter],  # type: ignore[override]
+        event_log: List[EventLogAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -442,7 +442,7 @@ class IntegrationResourceApiAdapter(IntegrationResourceApi):
     ) -> None:
         return await super().record_event_stats(
             type,
-            event_log,  # type: ignore[arg-type]
+            event_log,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,

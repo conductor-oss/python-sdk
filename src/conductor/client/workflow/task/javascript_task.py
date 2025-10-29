@@ -28,5 +28,5 @@ class JavascriptTask(TaskInterface):
             return "${" + f"{self.task_reference_name}.output.result.{json_path}" + "}"
 
     @TaskInterface.evaluator_type.setter  # type: ignore[attr-defined]
-    def evaluator_type(self, evaluator_type: str) -> None:  # type: ignore[override]
+    def evaluator_type(self, evaluator_type: str) -> None:
         self.input_parameters["evaluatorType"] = evaluator_type

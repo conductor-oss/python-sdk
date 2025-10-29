@@ -11,26 +11,26 @@ from conductor.asyncio_client.http.models import ExtensionRangeOptions
 class ExtensionRangeOptionsAdapter(ExtensionRangeOptions):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
     all_fields_raw: Optional[Dict[str, Any]] = Field(default=None, alias="allFieldsRaw")
-    declaration_or_builder_list: Optional[List["DeclarationOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
+    declaration_or_builder_list: Optional[List["DeclarationOrBuilderAdapter"]] = Field(
         default=None, alias="declarationOrBuilderList"
     )
-    default_instance_for_type: Optional["ExtensionRangeOptionsAdapter"] = Field(  # type: ignore[assignment]
+    default_instance_for_type: Optional["ExtensionRangeOptionsAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(  # type: ignore[assignment]
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="descriptorForType"
     )
     features: Optional["FeatureSetAdapter"] = None
-    features_or_builder: Optional["FeatureSetOrBuilderAdapter"] = Field(  # type: ignore[assignment]
+    features_or_builder: Optional["FeatureSetOrBuilderAdapter"] = Field(
         default=None, alias="featuresOrBuilder"
     )
-    uninterpreted_option_list: Optional[List["UninterpretedOptionAdapter"]] = Field(  # type: ignore[assignment]
+    uninterpreted_option_list: Optional[List["UninterpretedOptionAdapter"]] = Field(
         default=None, alias="uninterpretedOptionList"
     )
     uninterpreted_option_or_builder_list: Optional[List["UninterpretedOptionOrBuilderAdapter"]] = (
-        Field(default=None, alias="uninterpretedOptionOrBuilderList")  # type: ignore[assignment]
+        Field(default=None, alias="uninterpretedOptionOrBuilderList")
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")  # type: ignore[assignment]
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

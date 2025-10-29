@@ -33,9 +33,9 @@ class PromptResourceApiAdapter(PromptResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_message_templates(  # type: ignore[override]
+    async def get_message_templates(
         self,
         _request_timeout: Union[
             None,
@@ -54,11 +54,11 @@ class PromptResourceApiAdapter(PromptResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def create_message_templates(
         self,
-        message_template: List[MessageTemplateAdapter],  # type: ignore[override]
+        message_template: List[MessageTemplateAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -70,7 +70,7 @@ class PromptResourceApiAdapter(PromptResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> None:
         return await super().create_message_templates(
-            message_template,  # type: ignore[arg-type]
+            message_template,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -81,7 +81,7 @@ class PromptResourceApiAdapter(PromptResourceApi):
     async def put_tag_for_prompt_template(
         self,
         name: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -94,7 +94,7 @@ class PromptResourceApiAdapter(PromptResourceApi):
     ) -> None:
         return await super().put_tag_for_prompt_template(
             name,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -102,7 +102,7 @@ class PromptResourceApiAdapter(PromptResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_tags_for_prompt_template(  # type: ignore[override]
+    async def get_tags_for_prompt_template(
         self,
         name: StrictStr,
         _request_timeout: Union[
@@ -123,12 +123,12 @@ class PromptResourceApiAdapter(PromptResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def delete_tag_for_prompt_template(
         self,
         name: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -141,7 +141,7 @@ class PromptResourceApiAdapter(PromptResourceApi):
     ) -> None:
         return await super().delete_tag_for_prompt_template(
             name,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,

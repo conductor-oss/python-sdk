@@ -29,7 +29,7 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ):
         if not id:
-            id = None  # type: ignore[assignment]
+            id = None
         return await super().create_access_key(
             id,
             _request_timeout=_request_timeout,
@@ -54,9 +54,9 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ):
         if not application_id:
-            application_id = None  # type: ignore[assignment]
+            application_id = None
         if not role:
-            role = None  # type: ignore[assignment]
+            role = None
         return await super().add_role_to_application_user(
             application_id,
             role,
@@ -65,7 +65,7 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
             _content_type=_content_type,
             _headers=_headers,
             _host_index=_host_index,
-        )  # type: ignore[arg-type]
+        )
 
     async def delete_access_key(
         self,
@@ -82,9 +82,9 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ):
         if not application_id:
-            application_id = None  # type: ignore[assignment]
+            application_id = None
         if not key_id:
-            key_id = None  # type: ignore[assignment]
+            key_id = None
         return await super().delete_access_key(
             application_id,
             key_id,
@@ -110,9 +110,9 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ):
         if not application_id:
-            application_id = None  # type: ignore[assignment]
+            application_id = None
         if not role:
-            role = None  # type: ignore[assignment]
+            role = None
         return await super().remove_role_from_application_user(
             application_id,
             role,
@@ -123,7 +123,7 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_app_by_access_key_id(  # type: ignore[override]
+    async def get_app_by_access_key_id(
         self,
         access_key_id: StrictStr,
         _request_timeout: Union[
@@ -137,7 +137,7 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> Optional[ExtendedConductorApplicationAdapter]:
         if not access_key_id:
-            access_key_id = None  # type: ignore[assignment]
+            access_key_id = None
         result = await super().get_app_by_access_key_id(
             access_key_id,
             _request_timeout=_request_timeout,
@@ -146,7 +146,7 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def get_access_keys(
         self,
@@ -162,7 +162,7 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ):
         if not id:
-            id = None  # type: ignore[assignment]
+            id = None
         return await super().get_access_keys(
             id,
             _request_timeout=_request_timeout,
@@ -187,9 +187,9 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ):
         if not application_id:
-            application_id = None  # type: ignore[assignment]
+            application_id = None
         if not key_id:
-            key_id = None  # type: ignore[assignment]
+            key_id = None
         return await super().toggle_access_key_status(
             application_id,
             key_id,
@@ -200,7 +200,7 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_tags_for_application(  # type: ignore[override]
+    async def get_tags_for_application(
         self,
         id: StrictStr,
         _request_timeout: Union[
@@ -214,7 +214,7 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> List[TagAdapter]:
         if not id:
-            id = None  # type: ignore[assignment]
+            id = None
         result = await super().get_tags_for_application(
             id,
             _request_timeout=_request_timeout,
@@ -223,12 +223,12 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def put_tag_for_application(
         self,
         id: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -240,12 +240,12 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> None:
         if not id:
-            id = None  # type: ignore[assignment]
+            id = None
         if not tag:
-            tag = None  # type: ignore[assignment]
+            tag = None
         return await super().put_tag_for_application(
             id,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -256,7 +256,7 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
     async def delete_tag_for_application(
         self,
         id: StrictStr,
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -268,12 +268,12 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> None:
         if not id:
-            id = None  # type: ignore[assignment]
+            id = None
         if not tag:
-            tag = None  # type: ignore[assignment]
+            tag = None
         return await super().delete_tag_for_application(
             id,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -281,7 +281,7 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
             _host_index=_host_index,
         )
 
-    async def create_application(  # type: ignore[override]
+    async def create_application(
         self,
         create_or_update_application_request: CreateOrUpdateApplicationRequestAdapter,
         _request_timeout: Union[
@@ -302,9 +302,9 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def update_application(  # type: ignore[override]
+    async def update_application(
         self,
         id: StrictStr,
         create_or_update_application_request: CreateOrUpdateApplicationRequestAdapter,
@@ -327,7 +327,7 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def get_application(
         self,
@@ -350,9 +350,9 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def list_applications(  # type: ignore[override]
+    async def list_applications(
         self,
         _request_timeout: Union[
             None,
@@ -371,4 +371,4 @@ class ApplicationResourceApiAdapter(ApplicationResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result

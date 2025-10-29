@@ -10,23 +10,23 @@ from conductor.asyncio_client.http.models import ServiceDescriptorProto
 
 class ServiceDescriptorProtoAdapter(ServiceDescriptorProto):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["ServiceDescriptorProtoAdapter"] = Field(  # type: ignore[assignment]
+    default_instance_for_type: Optional["ServiceDescriptorProtoAdapter"] = Field(
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(  # type: ignore[assignment]
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="descriptorForType"
     )
-    method_list: Optional[List["MethodDescriptorProtoAdapter"]] = Field(  # type: ignore[assignment]
+    method_list: Optional[List["MethodDescriptorProtoAdapter"]] = Field(
         default=None, alias="methodList"
     )
-    method_or_builder_list: Optional[List["MethodDescriptorProtoOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
+    method_or_builder_list: Optional[List["MethodDescriptorProtoOrBuilderAdapter"]] = Field(
         default=None, alias="methodOrBuilderList"
     )
-    options: Optional["ServiceOptionsAdapter"] = None  # type: ignore[assignment]
-    options_or_builder: Optional["ServiceOptionsOrBuilderAdapter"] = Field(  # type: ignore[assignment]
+    options: Optional["ServiceOptionsAdapter"] = None
+    options_or_builder: Optional["ServiceOptionsOrBuilderAdapter"] = Field(
         default=None, alias="optionsOrBuilder"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")  # type: ignore[assignment]
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

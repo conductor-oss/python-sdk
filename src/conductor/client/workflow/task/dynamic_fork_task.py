@@ -22,7 +22,7 @@ class DynamicForkTask(TaskInterface):
         self.tasks_input_param_name = tasks_input_param_name
         self._join_task = deepcopy(join_task)
 
-    def to_workflow_task(self) -> List[WorkflowTask]:  # type: ignore[override]
+    def to_workflow_task(self) -> List[WorkflowTask]:
         wf_task = super().to_workflow_task()
         wf_task.dynamic_fork_join_tasks_param = self.tasks_param
         wf_task.dynamic_fork_tasks_input_param_name = self.tasks_input_param_name

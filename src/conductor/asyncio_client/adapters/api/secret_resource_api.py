@@ -10,7 +10,7 @@ from conductor.asyncio_client.http.api import SecretResourceApi
 
 
 class SecretResourceApiAdapter(SecretResourceApi):
-    async def secret_exists(  # type: ignore[override]
+    async def secret_exists(
         self,
         key: Annotated[str, Field(strict=True)],
         _request_timeout: Union[
@@ -31,7 +31,7 @@ class SecretResourceApiAdapter(SecretResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def list_all_secret_names(
         self,
@@ -53,7 +53,7 @@ class SecretResourceApiAdapter(SecretResourceApi):
             _host_index=_host_index,
         )
 
-    async def list_secrets_with_tags_that_user_can_grant_access_to(  # type: ignore[override]
+    async def list_secrets_with_tags_that_user_can_grant_access_to(
         self,
         _request_timeout: Union[
             None,
@@ -72,12 +72,12 @@ class SecretResourceApiAdapter(SecretResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def put_tag_for_secret(
         self,
         key: Annotated[str, Field(strict=True)],
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -90,7 +90,7 @@ class SecretResourceApiAdapter(SecretResourceApi):
     ) -> None:
         return await super().put_tag_for_secret(
             key,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -98,7 +98,7 @@ class SecretResourceApiAdapter(SecretResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_tags(  # type: ignore[override]
+    async def get_tags(
         self,
         key: Annotated[str, Field(strict=True)],
         _request_timeout: Union[
@@ -119,12 +119,12 @@ class SecretResourceApiAdapter(SecretResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def delete_tag_for_secret(
         self,
         key: Annotated[str, Field(strict=True)],
-        tag: List[TagAdapter],  # type: ignore[override]
+        tag: List[TagAdapter],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -137,7 +137,7 @@ class SecretResourceApiAdapter(SecretResourceApi):
     ) -> None:
         return await super().delete_tag_for_secret(
             key,
-            tag,  # type: ignore[arg-type]
+            tag,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,

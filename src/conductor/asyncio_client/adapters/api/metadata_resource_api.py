@@ -13,7 +13,7 @@ from conductor.asyncio_client.http.api import MetadataResourceApi
 
 
 class MetadataResourceApiAdapter(MetadataResourceApi):
-    async def get_task_def(  # type: ignore[override]
+    async def get_task_def(
         self,
         tasktype: StrictStr,
         metadata: Optional[StrictBool] = None,
@@ -36,9 +36,9 @@ class MetadataResourceApiAdapter(MetadataResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_task_defs(  # type: ignore[override]
+    async def get_task_defs(
         self,
         access: Optional[StrictStr] = None,
         metadata: Optional[StrictBool] = None,
@@ -65,11 +65,11 @@ class MetadataResourceApiAdapter(MetadataResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
     async def update(
         self,
-        extended_workflow_def: List[ExtendedWorkflowDefAdapter],  # type: ignore[override]
+        extended_workflow_def: List[ExtendedWorkflowDefAdapter],
         overwrite: Optional[StrictBool] = None,
         new_version: Optional[StrictBool] = None,
         _request_timeout: Union[
@@ -83,7 +83,7 @@ class MetadataResourceApiAdapter(MetadataResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> object:
         result = await super().update(
-            extended_workflow_def,  # type: ignore[arg-type]
+            extended_workflow_def,
             overwrite,
             new_version,
             _request_timeout=_request_timeout,
@@ -92,9 +92,9 @@ class MetadataResourceApiAdapter(MetadataResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get(  # type: ignore[override]
+    async def get(
         self,
         name: StrictStr,
         version: Optional[StrictInt] = None,
@@ -119,9 +119,9 @@ class MetadataResourceApiAdapter(MetadataResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_workflow_defs(  # type: ignore[override]
+    async def get_workflow_defs(
         self,
         access: Optional[StrictStr] = None,
         metadata: Optional[StrictBool] = None,
@@ -152,4 +152,4 @@ class MetadataResourceApiAdapter(MetadataResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result

@@ -11,7 +11,7 @@ from conductor.asyncio_client.http.api import SchemaResourceApi
 class SchemaResourceApiAdapter(SchemaResourceApi):
     async def save(
         self,
-        schema_def: List[SchemaDefAdapter],  # type: ignore[override]
+        schema_def: List[SchemaDefAdapter],
         new_version: Optional[StrictBool] = None,
         _request_timeout: Union[
             None,
@@ -24,7 +24,7 @@ class SchemaResourceApiAdapter(SchemaResourceApi):
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> None:
         return await super().save(
-            schema_def,  # type: ignore[arg-type]
+            schema_def,
             new_version,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
@@ -33,7 +33,7 @@ class SchemaResourceApiAdapter(SchemaResourceApi):
             _host_index=_host_index,
         )
 
-    async def get_schema_by_name_and_version(  # type: ignore[override]
+    async def get_schema_by_name_and_version(
         self,
         name: StrictStr,
         version: StrictInt,
@@ -56,9 +56,9 @@ class SchemaResourceApiAdapter(SchemaResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result
 
-    async def get_all_schemas(  # type: ignore[override]
+    async def get_all_schemas(
         self,
         _request_timeout: Union[
             None,
@@ -77,4 +77,4 @@ class SchemaResourceApiAdapter(SchemaResourceApi):
             _headers=_headers,
             _host_index=_host_index,
         )
-        return result  # type: ignore[return-value]
+        return result

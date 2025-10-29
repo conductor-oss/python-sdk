@@ -127,7 +127,7 @@ class TaskInterface:
             except AttributeError as err:
                 raise ValueError(f"Invalid type: {type(input_parameters)}") from err
 
-        self._input_parameters: Dict[str, Any] = deepcopy(input_parameters)  # type: ignore[no-redef]
+        self._input_parameters: Dict[str, Any] = deepcopy(input_parameters)
 
     def input_parameter(self, key: str, value: Any):
         if not isinstance(key, str):
