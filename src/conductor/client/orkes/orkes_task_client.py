@@ -39,9 +39,9 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
         if worker_id:
             kwargs.update({"workerid": worker_id})
         if count:
-            kwargs.update({"count": count})  # type: ignore[dict-item]
+            kwargs.update({"count": count})
         if timeout_in_millisecond:
-            kwargs.update({"timeout": timeout_in_millisecond})  # type: ignore[dict-item]
+            kwargs.update({"timeout": timeout_in_millisecond})
         if domain:
             kwargs.update({"domain": domain})
 

@@ -98,7 +98,7 @@ class StateChangeEventAdapter(StateChangeEvent):
         self.payload = payload
         self.type = type
 
-    @StateChangeEvent.payload.setter  # type: ignore[attr-defined]
+    @StateChangeEvent.payload.setter
     def payload(self, payload):
         """Sets the payload of this StateChangeEvent.
 
@@ -111,7 +111,7 @@ class StateChangeEventAdapter(StateChangeEvent):
 
         self._payload = payload
 
-    @StateChangeEvent.type.setter  # type: ignore[attr-defined]
+    @StateChangeEvent.type.setter
     def type(self, type):
         """Sets the type of this StateChangeEvent.
 

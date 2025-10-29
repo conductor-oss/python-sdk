@@ -6,12 +6,12 @@ from conductor.client.codegen.models.task_summary import TaskSummary
 
 
 class TaskSummaryAdapter(TaskSummary):
-    swagger_types: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+    swagger_types: ClassVar[Dict[str, str]] = {
         **TaskSummary.swagger_types,
         "domain": "str",
     }
 
-    attribute_map: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+    attribute_map: ClassVar[Dict[str, str]] = {
         **TaskSummary.attribute_map,
         "domain": "domain",
     }

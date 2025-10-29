@@ -43,7 +43,7 @@ class SwitchTask(TaskInterface):
             workflow.expression = self._expression
         else:
             workflow.evaluator_type = EvaluatorType.VALUE_PARAM
-            workflow.input_parameters["switchCaseValue"] = self._expression  # type: ignore[index]
+            workflow.input_parameters["switchCaseValue"] = self._expression
             workflow.expression = "switchCaseValue"
         workflow.decision_cases = {}
         for case_value, tasks in self._decision_cases.items():
@@ -52,5 +52,5 @@ class SwitchTask(TaskInterface):
             )
         if self._default_case is None:
             self._default_case = []
-        workflow.default_case = get_task_interface_list_as_workflow_task_list(*self._default_case)  # type: ignore[misc]
+        workflow.default_case = get_task_interface_list_as_workflow_task_list(*self._default_case)
         return workflow

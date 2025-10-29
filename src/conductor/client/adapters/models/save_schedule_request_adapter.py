@@ -2,7 +2,7 @@ from conductor.client.codegen.models.save_schedule_request import SaveScheduleRe
 
 
 class SaveScheduleRequestAdapter(SaveScheduleRequest):
-    @SaveScheduleRequest.start_workflow_request.setter  # type: ignore[attr-defined]
+    @SaveScheduleRequest.start_workflow_request.setter
     def start_workflow_request(self, start_workflow_request):
         """Sets the start_workflow_request of this SaveScheduleRequest.
 

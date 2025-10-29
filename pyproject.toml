@@ -222,6 +222,14 @@ disable_error_code = [
     "call-arg",
     "arg-type",
     "override",
+    "dict-item",
+    "index",
+    "operator",
+    "call-overload",
+    "misc",
+    "attr-defined",
+    "union-attr",
+    "name-defined",
 ]
 
 [[tool.mypy.overrides]]

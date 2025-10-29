@@ -51,7 +51,7 @@ def convert_from_dict(cls: type, data: dict) -> object:
     ):
         data = {}
 
-    members = inspect.signature(cls.__init__).parameters  # type: ignore[misc]
+    members = inspect.signature(cls.__init__).parameters
     kwargs = {}
 
     for member in members:
@@ -128,7 +128,7 @@ def get_value(typ: type, val: Any) -> Any:
         values = {}
         for k in val:
             v = val[k]
-            values[k] = get_value(object, v)  # type: ignore[call-overload]
+            values[k] = get_value(object, v)
         return values
     else:
         return convert_from_dict(typ, val)

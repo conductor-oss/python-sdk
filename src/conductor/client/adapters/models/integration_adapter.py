@@ -6,13 +6,13 @@ from conductor.client.codegen.models import Integration
 
 
 class IntegrationAdapter(Integration):
-    swagger_types: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+    swagger_types: ClassVar[Dict[str, str]] = {
         **Integration.swagger_types,
         "created_on": "int",
         "updated_on": "int",
     }
 
-    attribute_map: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+    attribute_map: ClassVar[Dict[str, str]] = {
         **Integration.attribute_map,
         "created_on": "createdOn",
         "updated_on": "updatedOn",
@@ -105,7 +105,7 @@ class IntegrationAdapter(Integration):
         self._update_time = update_time
         self._updated_on = update_time
 
-    @Integration.category.setter  # type: ignore[attr-defined]
+    @Integration.category.setter
     def category(self, category):
         allowed_values = [
             "API",

@@ -2,7 +2,7 @@ from conductor.client.codegen.models.upsert_group_request import UpsertGroupRequ
 
 
 class UpsertGroupRequestAdapter(UpsertGroupRequest):
-    @UpsertGroupRequest.roles.setter  # type: ignore[attr-defined]
+    @UpsertGroupRequest.roles.setter
     def roles(self, roles):
         """Sets the roles of this UpsertGroupRequest.
 
@@ -27,7 +27,7 @@ class UpsertGroupRequestAdapter(UpsertGroupRequest):
 
         self._roles = roles
 
-    @UpsertGroupRequest.default_access.setter  # type: ignore[attr-defined]
+    @UpsertGroupRequest.default_access.setter
     def default_access(self, default_access):
         """Sets the default_access of this UpsertGroupRequest.
 

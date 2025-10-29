@@ -6,7 +6,7 @@ from conductor.client.codegen.models.workflow_task import WorkflowTask
 
 
 class WorkflowTaskAdapter(WorkflowTask):
-    @WorkflowTask.workflow_task_type.setter  # type: ignore[attr-defined]
+    @WorkflowTask.workflow_task_type.setter
     def workflow_task_type(self, workflow_task_type):
         """Sets the workflow_task_type of this WorkflowTask.
 
@@ -16,7 +16,7 @@ class WorkflowTaskAdapter(WorkflowTask):
         """
         self._workflow_task_type = workflow_task_type
 
-    @WorkflowTask.on_state_change.setter  # type: ignore[attr-defined]
+    @WorkflowTask.on_state_change.setter
     def on_state_change(self, state_change):
         """Sets the on_state_change of this WorkflowTask.
 

@@ -56,7 +56,7 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
         self.tagsApi.add_workflow_tag(tag, workflow_name)
 
     def delete_workflow_tag(self, tag: MetadataTag, workflow_name: str):
-        tagStr = TagString(tag.key, tag.type, tag.value)  # type: ignore[attr-defined]
+        tagStr = TagString(tag.key, tag.type, tag.value)
         self.tagsApi.delete_workflow_tag(tagStr, workflow_name)
 
     def get_workflow_tags(self, workflow_name: str) -> List[MetadataTag]:
@@ -69,7 +69,7 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
         self.tagsApi.add_task_tag(tag, taskName)
 
     def deleteTaskTag(self, tag: MetadataTag, taskName: str):
-        tagStr = TagString(tag.key, tag.type, tag.value)  # type: ignore[attr-defined]
+        tagStr = TagString(tag.key, tag.type, tag.value)
         self.tagsApi.delete_task_tag(tagStr, taskName)
 
     def getTaskTags(self, taskName: str) -> List[MetadataTag]:
@@ -86,8 +86,8 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
     def getWorkflowRateLimit(self, workflowName: str) -> Optional[int]:
         tags = self.tagsApi.get_workflow_tags(workflowName)
         for tag in tags:
-            if tag.type == "RATE_LIMIT" and tag.key == workflowName:  # type: ignore[attr-defined]
-                return tag.value  # type: ignore[attr-defined, return-value]
+            if tag.type == "RATE_LIMIT" and tag.key == workflowName:
+                return tag.value
 
         return None
 

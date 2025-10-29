@@ -6,12 +6,12 @@ from conductor.client.codegen.models import IntegrationDef
 
 
 class IntegrationDefAdapter(IntegrationDef):
-    swagger_types: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+    swagger_types: ClassVar[Dict[str, str]] = {
         **IntegrationDef.swagger_types,
         "apis": "list[IntegrationDefApi]",
     }
 
-    attribute_map: ClassVar[Dict[str, str]] = {  # type: ignore[misc]
+    attribute_map: ClassVar[Dict[str, str]] = {
         **IntegrationDef.attribute_map,
         "apis": "apis",
     }
@@ -69,7 +69,7 @@ class IntegrationDefAdapter(IntegrationDef):
     def apis(self, apis):
         self._apis = apis
 
-    @IntegrationDef.category.setter  # type: ignore[attr-defined]
+    @IntegrationDef.category.setter
     def category(self, category):
         """Sets the category of this IntegrationUpdate.
 

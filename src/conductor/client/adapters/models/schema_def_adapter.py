@@ -57,7 +57,7 @@ class SchemaDefAdapter(SchemaDef):
         if version is not None:
             self.version = version
 
-    @SchemaDef.type.setter  # type: ignore[attr-defined]
+    @SchemaDef.type.setter
     def type(self, type):
         """Sets the type of this SchemaDef.
 
@@ -67,7 +67,7 @@ class SchemaDefAdapter(SchemaDef):
         """
         self._type = type
 
-    @SchemaDef.name.setter  # type: ignore[attr-defined]
+    @SchemaDef.name.setter
     def name(self, name):
         """Sets the name of this SchemaDef.
 
@@ -77,7 +77,7 @@ class SchemaDefAdapter(SchemaDef):
         """
         self._name = name
 
-    @SchemaDef.version.setter  # type: ignore[attr-defined]
+    @SchemaDef.version.setter
     def version(self, version):
         """Sets the data of this SchemaDef.
 

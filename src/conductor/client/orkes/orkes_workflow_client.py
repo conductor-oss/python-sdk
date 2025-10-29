@@ -37,7 +37,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if version:
             kwargs.update({"version": version})
         if correlationId:
-            kwargs.update({"correlation_id": correlationId})  # type: ignore[dict-item]
+            kwargs.update({"correlation_id": correlationId})
         if priority:
             kwargs.update({"priority": priority})
 

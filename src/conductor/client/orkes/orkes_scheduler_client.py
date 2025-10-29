@@ -75,11 +75,11 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         if size:
             kwargs.update({"size": size})
         if sort:
-            kwargs.update({"sort": sort})  # type: ignore[dict-item]
+            kwargs.update({"sort": sort})
         if free_text:
-            kwargs.update({"free_text": free_text})  # type: ignore[dict-item]
+            kwargs.update({"free_text": free_text})
         if query:
-            kwargs.update({"query": query})  # type: ignore[dict-item]
+            kwargs.update({"query": query})
         return self.schedulerResourceApi.search_v2(**kwargs)
 
     def requeue_all_execution_records(self):

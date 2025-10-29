@@ -2,7 +2,7 @@ from conductor.client.codegen.models.task_def import TaskDef
 
 
 class TaskDefAdapter(TaskDef):
-    @TaskDef.total_timeout_seconds.setter  # type: ignore[attr-defined]
+    @TaskDef.total_timeout_seconds.setter
     def total_timeout_seconds(self, total_timeout_seconds):
         """Sets the total_timeout_seconds of this TaskDef.
 
@@ -12,7 +12,7 @@ class TaskDefAdapter(TaskDef):
         """
         self._total_timeout_seconds = total_timeout_seconds
 
-    @TaskDef.timeout_seconds.setter  # type: ignore[attr-defined]
+    @TaskDef.timeout_seconds.setter
     def timeout_seconds(self, timeout_seconds):
         """Sets the timeout_seconds of this TaskDef.
 

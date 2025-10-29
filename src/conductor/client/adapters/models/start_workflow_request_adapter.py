@@ -61,7 +61,7 @@ class StartWorkflowRequestAdapter(StartWorkflowRequest):
         if workflow_def is not None:
             self.workflow_def = workflow_def
 
-    @StartWorkflowRequest.name.setter  # type: ignore[attr-defined]
+    @StartWorkflowRequest.name.setter
     def name(self, name):
         """Sets the name of this StartWorkflowRequest.
 

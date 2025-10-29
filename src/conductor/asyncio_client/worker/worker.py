@@ -75,13 +75,13 @@ class Worker(WorkerInterface):
                 for input_name in params:
                     typ = params[input_name].annotation
                     default_value = params[input_name].default
-                    if input_name in task.input_data:  # type: ignore[operator]
+                    if input_name in task.input_data:
                         if typ in utils.simple_types:
-                            task_input[input_name] = task.input_data[input_name]  # type: ignore[index]
+                            task_input[input_name] = task.input_data[input_name]
                         else:
                             task_input[input_name] = convert_from_dict_or_list(
                                 typ,
-                                task.input_data[input_name],  # type: ignore[index]
+                                task.input_data[input_name],
                             )
                     elif default_value is not inspect.Parameter.empty:
                         task_input[input_name] = default_value
@@ -121,7 +121,7 @@ class Worker(WorkerInterface):
                 task_result.reason_for_incompletion = ne.args[0]
 
         if dataclasses.is_dataclass(type(task_result.output_data)):
-            task_output = dataclasses.asdict(task_result.output_data)  # type: ignore[call-overload]
+            task_output = dataclasses.asdict(task_result.output_data)
             task_result.output_data = task_output
             return task_result
         if not isinstance(task_result.output_data, dict):

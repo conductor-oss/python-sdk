@@ -12,7 +12,7 @@ class RolesEnum(str, Enum):
 
 
 class UpsertUserRequestAdapter(UpsertUserRequest):
-    @UpsertUserRequest.roles.setter  # type: ignore[attr-defined]
+    @UpsertUserRequest.roles.setter
     def roles(self, roles):
         """Sets the roles of this UpsertUserRequest.
 

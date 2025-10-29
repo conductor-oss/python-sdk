@@ -2,7 +2,7 @@ from conductor.client.codegen.models import IntegrationDefFormField
 
 
 class IntegrationDefFormFieldAdapter(IntegrationDefFormField):
-    @IntegrationDefFormField.field_name.setter  # type: ignore[attr-defined]
+    @IntegrationDefFormField.field_name.setter
     def field_name(self, field_name):
         """Sets the field_name of this IntegrationDefFormField.
 
