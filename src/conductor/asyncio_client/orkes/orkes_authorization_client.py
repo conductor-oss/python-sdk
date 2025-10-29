@@ -18,9 +18,6 @@ from conductor.asyncio_client.adapters.models.extended_conductor_application_ada
 from conductor.asyncio_client.adapters.models.granted_access_adapter import (
     GrantedAccessAdapter as GrantedAccess,
 )
-from conductor.asyncio_client.adapters.models.granted_access_response_adapter import (
-    GrantedAccessResponseAdapter,
-)
 from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.adapters.models.target_ref_adapter import (
@@ -172,7 +169,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         """Get permissions for a specific entity (user, group, or application)"""
         return await self.authorization_api.get_permissions(type=entity_type, id=entity_id)
 
-    async def get_group_permissions(self, group_id: str) -> GrantedAccessResponseAdapter:
+    async def get_group_permissions(self, group_id: str) -> object:
         """Get permissions granted to a group"""
         return await self.group_api.get_granted_permissions1(group_id=group_id)
 
