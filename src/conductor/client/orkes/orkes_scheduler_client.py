@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from conductor.client.configuration.configuration import Configuration
+from conductor.client.http.models import WorkflowScheduleModel
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
 from conductor.client.http.models.search_result_workflow_schedule_execution_model import (
     SearchResultWorkflowScheduleExecutionModel,
 )
 from conductor.client.http.models.workflow_schedule import WorkflowSchedule
 from conductor.client.orkes.models.metadata_tag import MetadataTag
+from conductor.client.http.models.tag import Tag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.scheduler_client import SchedulerClient
 
@@ -20,10 +22,10 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
     def save_schedule(self, save_schedule_request: SaveScheduleRequest):
         self.schedulerResourceApi.save_schedule(save_schedule_request)
 
-    def get_schedule(self, name: str) -> Tuple[Optional[WorkflowSchedule], str]:
+    def get_schedule(self, name: str) -> WorkflowSchedule:
         return self.schedulerResourceApi.get_schedule(name)
 
-    def get_all_schedules(self, workflow_name: Optional[str] = None) -> List[WorkflowSchedule]:
+    def get_all_schedules(self, workflow_name: Optional[str] = None) -> List[WorkflowScheduleModel]:
         kwargs = {}
         if workflow_name:
             kwargs.update({"workflow_name": workflow_name})
@@ -88,8 +90,8 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
     def set_scheduler_tags(self, tags: List[MetadataTag], name: str):
         self.schedulerResourceApi.put_tag_for_schedule(tags, name)
 
-    def get_scheduler_tags(self, name: str) -> List[MetadataTag]:
+    def get_scheduler_tags(self, name: str) -> List[Tag]:
         return self.schedulerResourceApi.get_tags_for_schedule(name)
 
-    def delete_scheduler_tags(self, tags: List[MetadataTag], name: str) -> List[MetadataTag]:
+    def delete_scheduler_tags(self, tags: List[MetadataTag], name: str) -> None:
         return self.schedulerResourceApi.delete_tag_for_schedule(tags, name)

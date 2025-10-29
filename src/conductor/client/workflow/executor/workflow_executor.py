@@ -7,6 +7,7 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api_client import ApiClient
+from conductor.client.http.models import Task
 from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
 from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
 from conductor.client.http.models.scrollable_search_result_workflow_summary import (
@@ -17,7 +18,7 @@ from conductor.client.http.models.skip_task_request import SkipTaskRequest
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.workflow import Workflow
-from conductor.client.http.models.workflow_def import WorkflowDef
+from conductor.client.http.models.extended_workflow_def import ExtendedWorkflowDef
 from conductor.client.http.models.workflow_run import WorkflowRun
 from conductor.client.http.models.workflow_status import WorkflowStatus
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
@@ -30,7 +31,9 @@ class WorkflowExecutor:
         self.task_client = TaskResourceApi(api_client)
         self.workflow_client = OrkesWorkflowClient(configuration)
 
-    def register_workflow(self, workflow: WorkflowDef, overwrite: Optional[bool] = None) -> object:
+    def register_workflow(
+        self, workflow: ExtendedWorkflowDef, overwrite: Optional[bool] = None
+    ) -> object:
         """Create a new workflow definition"""
         kwargs = {}
         if overwrite is not None:
@@ -81,7 +84,7 @@ class WorkflowExecutor:
         request_id: Optional[str] = None,
         consistency: Optional[str] = None,
         return_strategy: Optional[str] = None,
-    ) -> SignalResponse:
+    ) -> WorkflowRun:
         """Execute a workflow synchronously with optional reactive features"""
         if request_id is None:
             request_id = str(uuid.uuid4())
@@ -291,7 +294,7 @@ class WorkflowExecutor:
             status=status,
         )
 
-    def get_task(self, task_id: str) -> str:
+    def get_task(self, task_id: str) -> Task:
         """Get task by Id"""
         return self.task_client.get_task(task_id=task_id)
 

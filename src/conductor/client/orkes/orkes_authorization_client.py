@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 
 from conductor.client.authorization_client import AuthorizationClient
 from conductor.client.configuration.configuration import Configuration
+from conductor.client.http.models import ExtendedConductorApplication
 from conductor.client.http.models.authorization_request import AuthorizationRequest
 from conductor.client.http.models.conductor_application import ConductorApplication
 from conductor.client.http.models.conductor_user import ConductorUser
@@ -44,7 +45,7 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
         app_obj = self.applicationResourceApi.get_app_by_access_key_id(access_key_id)
         return self.api_client.deserialize_class(app_obj, "ConductorApplication")
 
-    def list_applications(self) -> List[ConductorApplication]:
+    def list_applications(self) -> List[ExtendedConductorApplication]:
         return self.applicationResourceApi.list_applications()
 
     def update_application(

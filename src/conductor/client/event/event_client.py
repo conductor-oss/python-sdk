@@ -1,3 +1,5 @@
+from typing import Dict
+
 from conductor.client.event.queue.queue_configuration import QueueConfiguration
 from conductor.client.http.api import EventResourceApi
 from conductor.client.http.api_client import ApiClient
@@ -13,13 +15,13 @@ class EventClient:
             queue_type=queue_configuration.queue_type,
         )
 
-    def get_kafka_queue_configuration(self, queue_topic: str) -> QueueConfiguration:
+    def get_kafka_queue_configuration(self, queue_topic: str) -> Dict[str, object]:
         return self.get_queue_configuration(
             queue_type="kafka",
             queue_name=queue_topic,
         )
 
-    def get_queue_configuration(self, queue_type: str, queue_name: str) -> QueueConfiguration:
+    def get_queue_configuration(self, queue_type: str, queue_name: str) -> Dict[str, object]:
         return self.client.get_queue_config(queue_type, queue_name)
 
     def put_queue_configuration(self, queue_configuration: QueueConfiguration):

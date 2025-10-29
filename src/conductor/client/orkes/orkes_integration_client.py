@@ -1,15 +1,15 @@
 from __future__ import absolute_import, annotations
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from conductor.client.codegen.rest import ApiException
 from conductor.client.configuration.configuration import Configuration
+from conductor.client.http.models import MessageTemplate
 from conductor.client.http.models.integration import Integration
 from conductor.client.http.models.integration_api import IntegrationApi
 from conductor.client.http.models.integration_api_update import IntegrationApiUpdate
 from conductor.client.http.models.integration_def import IntegrationDef
 from conductor.client.http.models.integration_update import IntegrationUpdate
-from conductor.client.http.models.prompt_template import PromptTemplate
 from conductor.client.integration_client import IntegrationClient
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 
@@ -53,7 +53,7 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
     def get_integrations(self) -> List[Integration]:
         return self.integrationApi.get_integration_providers()
 
-    def get_integration_provider(self, name: str) -> Optional[IntegrationDef]:
+    def get_integration_provider(self, name: str) -> Optional[Integration]:
         """Get integration provider by name"""
         try:
             return self.integrationApi.get_integration_provider(name)
@@ -64,7 +64,7 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
 
     def get_integration_providers(
         self, category: Optional[str] = None, active_only: Optional[bool] = None
-    ) -> List[IntegrationDef]:
+    ) -> List[Integration]:
         """Get all integration providers with optional filtering"""
         kwargs = {}
         if category is not None:
@@ -79,7 +79,7 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
 
     def get_prompts_with_integration(
         self, ai_integration: str, model_name: str
-    ) -> List[PromptTemplate]:
+    ) -> List[MessageTemplate]:
         return self.integrationApi.get_prompts_with_integration(ai_integration, model_name)
 
     def save_integration_api(self, integration_name, api_name, api_details: IntegrationApiUpdate):
@@ -127,15 +127,15 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
     # Utility Methods for Integration Provider Management
     def get_integration_provider_by_category(
         self, category: str, active_only: bool = True
-    ) -> List[IntegrationDef]:
+    ) -> List[Integration]:
         """Get integration providers filtered by category"""
         return self.get_integration_providers(category=category, active_only=active_only)
 
-    def get_active_integration_providers(self) -> List[IntegrationDef]:
+    def get_active_integration_providers(self) -> List[Integration]:
         """Get only active integration providers"""
         return self.get_integration_providers(active_only=True)
 
-    def get_integration_available_apis(self, name: str) -> List[IntegrationApi]:
+    def get_integration_available_apis(self, name: str) -> List[str]:
         """Get available APIs for an integration"""
         return self.integrationApi.get_integration_available_apis(name)
 
@@ -156,7 +156,7 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
 
     def get_providers_and_integrations(
         self, integration_type: Optional[str] = None, active_only: Optional[bool] = None
-    ) -> Dict[str, object]:
+    ) -> List[str]:
         """Get providers and integrations together"""
         kwargs = {}
         if integration_type is not None:

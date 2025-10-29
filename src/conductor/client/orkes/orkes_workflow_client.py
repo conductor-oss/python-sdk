@@ -9,7 +9,6 @@ from conductor.client.http.models.rerun_workflow_request import RerunWorkflowReq
 from conductor.client.http.models.scrollable_search_result_workflow_summary import (
     ScrollableSearchResultWorkflowSummary,
 )
-from conductor.client.http.models.signal_response import SignalResponse
 from conductor.client.http.models.skip_task_request import SkipTaskRequest
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
 from conductor.client.http.models.workflow import Workflow
@@ -70,7 +69,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         wait_for_seconds: int = 30,
         consistency: Optional[str] = None,
         return_strategy: Optional[str] = None,
-    ) -> SignalResponse:
+    ) -> WorkflowRun:
         """Execute a workflow synchronously with optional reactive features
         Args:
             start_workflow_request: StartWorkflowRequest containing workflow details

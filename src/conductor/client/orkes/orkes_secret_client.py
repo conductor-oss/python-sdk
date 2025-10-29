@@ -1,7 +1,7 @@
 from typing import List, Set
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.orkes.models.metadata_tag import MetadataTag
+from conductor.client.http.models.tag import Tag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.secret_client import SecretClient
 
@@ -25,14 +25,14 @@ class OrkesSecretClient(OrkesBaseClient, SecretClient):
     def delete_secret(self, key: str):
         self.secretResourceApi.delete_secret(key)
 
-    def secret_exists(self, key: str) -> bool:
+    def secret_exists(self, key: str) -> object:
         return self.secretResourceApi.secret_exists(key)
 
-    def set_secret_tags(self, tags: List[MetadataTag], key: str):
+    def set_secret_tags(self, tags: List[Tag], key: str):
         self.secretResourceApi.put_tag_for_secret(tags, key)
 
-    def get_secret_tags(self, key: str) -> List[MetadataTag]:
+    def get_secret_tags(self, key: str) -> List[Tag]:
         return self.secretResourceApi.get_tags(key)
 
-    def delete_secret_tags(self, tags: List[MetadataTag], key: str) -> List[MetadataTag]:
+    def delete_secret_tags(self, tags: List[Tag], key: str) -> None:
         return self.secretResourceApi.delete_tag_for_secret(tags, key)
