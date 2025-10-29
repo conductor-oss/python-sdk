@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
+from conductor.asyncio_client.http.api import EnvironmentResourceApi
+from typing import Annotated, Any, Dict, Optional, List, Tuple, Union
 
 from pydantic import Field, StrictFloat, StrictInt, StrictStr
-
 from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.adapters.models.environment_variable_adapter import (
     EnvironmentVariableAdapter,
 )
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.adapters.utils import convert_list_to_adapter
-from conductor.asyncio_client.http.api import EnvironmentResourceApi
 
 
 class EnvironmentResourceApiAdapter:

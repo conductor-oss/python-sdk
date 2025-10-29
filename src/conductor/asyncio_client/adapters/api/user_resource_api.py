@@ -4,11 +4,11 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
 
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models import UpsertUserRequestAdapter
 from conductor.asyncio_client.adapters.models.conductor_user_adapter import ConductorUserAdapter
-from conductor.asyncio_client.adapters.utils import convert_list_to_adapter
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.api import UserResourceApi
+from conductor.asyncio_client.adapters.utils import convert_list_to_adapter
 
 
 class UserResourceApiAdapter:

@@ -4,10 +4,10 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
 
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.schema_def_adapter import SchemaDefAdapter
-from conductor.asyncio_client.adapters.utils import convert_list_to_adapter, convert_to_adapter
 from conductor.asyncio_client.http.api import SchemaResourceApi
+from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.adapters.utils import convert_list_to_adapter, convert_to_adapter
 
 
 class SchemaResourceApiAdapter:

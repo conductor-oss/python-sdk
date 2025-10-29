@@ -4,11 +4,11 @@ from typing import Annotated, Any, Dict, Optional, Tuple, Union
 
 from pydantic import Field, StrictFloat, StrictInt, StrictStr
 
-from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.http.api import AuthorizationResourceApi
 from conductor.asyncio_client.adapters.models.authorization_request_adapter import (
     AuthorizationRequestAdapter,
 )
-from conductor.asyncio_client.http.api import AuthorizationResourceApi
+from conductor.asyncio_client.adapters import ApiClient
 
 
 class AuthorizationResourceApiAdapter:

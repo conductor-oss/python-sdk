@@ -2,8 +2,7 @@
 Utility functions for converting between generated models and adapters.
 """
 
-from typing import Any, Dict, List, Type, TypeVar
-
+from typing import List, TypeVar, Type, Any, Dict
 from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)

@@ -4,11 +4,11 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import Field, StrictFloat, StrictInt, StrictStr
 
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.extended_secret_adapter import ExtendedSecretAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.adapters.utils import convert_list_to_adapter
 from conductor.asyncio_client.http.api import SecretResourceApi
+from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.adapters.utils import convert_list_to_adapter
 
 
 class SecretResourceApiAdapter:

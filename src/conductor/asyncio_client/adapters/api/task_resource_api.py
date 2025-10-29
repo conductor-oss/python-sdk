@@ -4,7 +4,6 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import Field, StrictFloat, StrictInt, StrictStr
 
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.poll_data_adapter import PollDataAdapter
 from conductor.asyncio_client.adapters.models.search_result_task_summary_adapter import (
     SearchResultTaskSummaryAdapter,
@@ -13,8 +12,9 @@ from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
 from conductor.asyncio_client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
 from conductor.asyncio_client.adapters.models.task_result_adapter import TaskResultAdapter
 from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
-from conductor.asyncio_client.adapters.utils import convert_list_to_adapter, convert_to_adapter
 from conductor.asyncio_client.http.api import TaskResourceApi
+from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.adapters.utils import convert_list_to_adapter, convert_to_adapter
 
 
 class TaskResourceApiAdapter:

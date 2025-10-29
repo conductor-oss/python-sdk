@@ -3,12 +3,11 @@ from __future__ import annotations
 from typing import Annotated, Any, Dict, Optional, Tuple, Union
 
 from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
-
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.generate_token_request_adapter import (
     GenerateTokenRequestAdapter,
 )
 from conductor.asyncio_client.http.api import TokenResourceApi
+from conductor.asyncio_client.adapters import ApiClient
 
 
 class TokenResourceApiAdapter:

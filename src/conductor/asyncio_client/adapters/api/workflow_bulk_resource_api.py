@@ -3,11 +3,10 @@ from __future__ import annotations
 from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
-
-from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.adapters.models.bulk_response_adapter import BulkResponseAdapter
-from conductor.asyncio_client.adapters.utils import convert_to_adapter
 from conductor.asyncio_client.http.api import WorkflowBulkResourceApi
+from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.adapters.utils import convert_to_adapter
+from conductor.asyncio_client.adapters.models.bulk_response_adapter import BulkResponseAdapter
 
 
 class WorkflowBulkResourceApiAdapter:
