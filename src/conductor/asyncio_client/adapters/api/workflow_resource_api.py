@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
-from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
+from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr, validate_call
 
 from conductor.asyncio_client.adapters.models.correlation_ids_search_request_adapter import (
     CorrelationIdsSearchRequestAdapter,
@@ -16,9 +16,6 @@ from conductor.asyncio_client.adapters.models.scrollable_search_result_workflow_
 from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
     StartWorkflowRequestAdapter,
 )
-from conductor.asyncio_client.adapters.models.skip_task_request_adapter import (
-    SkipTaskRequestAdapter,
-)
 from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
 from conductor.asyncio_client.adapters.models.workflow_run_adapter import WorkflowRunAdapter
 from conductor.asyncio_client.adapters.models.workflow_state_update_adapter import (
@@ -29,77 +26,15 @@ from conductor.asyncio_client.adapters.models.workflow_test_request_adapter impo
     WorkflowTestRequestAdapter,
 )
 from conductor.asyncio_client.http.api import WorkflowResourceApi
-from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.adapters.utils import (
-    convert_to_adapter,
-    convert_dict_to_adapter,
-    convert_list_to_adapter,
-)
-from conductor.asyncio_client.adapters.models.task_list_search_result_summary_adapter import (
-    TaskListSearchResultSummaryAdapter,
-)
-from conductor.asyncio_client.adapters.models.upgrade_workflow_request_adapter import (
-    UpgradeWorkflowRequestAdapter,
-)
 
 
-class WorkflowResourceApiAdapter:
-    def __init__(self, api_client: ApiClient):
-        self._api = WorkflowResourceApi(api_client)
-
-    async def decide(
-        self,
-        workflow_id: StrictStr,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> None:
-        await self._api.decide(
-            workflow_id,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def delete1(
-        self,
-        workflow_id: StrictStr,
-        archive_workflow: Optional[StrictBool] = None,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> None:
-        """Removes the workflow from the system"""
-        await self._api.delete1(
-            workflow_id,
-            archive_workflow,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def execute_workflow(
+class WorkflowResourceApiAdapter(WorkflowResourceApi):
+    async def execute_workflow(  # type: ignore[override]
         self,
         name: StrictStr,
         version: StrictInt,
         request_id: StrictStr,
-        start_workflow_request: StartWorkflowRequestAdapter,
+        start_workflow_request: StartWorkflowRequestAdapter,  # type: ignore[override]
         wait_until_task_ref: Optional[StrictStr] = None,
         wait_for_seconds: Optional[StrictInt] = None,
         _request_timeout: Union[
@@ -112,11 +47,11 @@ class WorkflowResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> WorkflowRunAdapter:
-        result = await self._api.execute_workflow(
+        result = await super().execute_workflow(
             name,
             version,
             request_id,
-            start_workflow_request,
+            start_workflow_request,  # type: ignore[override]
             wait_until_task_ref,
             wait_for_seconds,
             _request_timeout=_request_timeout,
@@ -125,81 +60,9 @@ class WorkflowResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, WorkflowRunAdapter)
+        return result  # type: ignore[return-value]
 
-    async def execute_workflow_as_api(
-        self,
-        name: StrictStr,
-        request_body: Dict[str, Dict[str, Any]],
-        version: Optional[StrictInt] = None,
-        request_id: Optional[StrictStr] = None,
-        wait_until_task_ref: Optional[StrictStr] = None,
-        wait_for_seconds: Optional[StrictInt] = None,
-        x_idempotency_key: Optional[StrictStr] = None,
-        x_on_conflict: Optional[StrictStr] = None,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> Dict[str, object]:
-        """Execute a workflow synchronously with input and outputs"""
-        return await self._api.execute_workflow_as_api(
-            name,
-            request_body,
-            version,
-            request_id,
-            wait_until_task_ref,
-            wait_for_seconds,
-            x_idempotency_key,
-            x_on_conflict,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def execute_workflow_as_get_api(
-        self,
-        name: StrictStr,
-        version: Optional[StrictInt] = None,
-        request_id: Optional[StrictStr] = None,
-        wait_until_task_ref: Optional[StrictStr] = None,
-        wait_for_seconds: Optional[StrictInt] = None,
-        x_idempotency_key: Optional[StrictStr] = None,
-        x_on_conflict: Optional[StrictStr] = None,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> Dict[str, object]:
-        """(Deprecated) Execute a workflow synchronously with input and outputs using get api"""
-        return await self._api.execute_workflow_as_get_api(
-            name,
-            version,
-            request_id,
-            wait_until_task_ref,
-            wait_for_seconds,
-            x_idempotency_key,
-            x_on_conflict,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def get_execution_status(
+    async def get_execution_status(  # type: ignore[override]
         self,
         workflow_id: StrictStr,
         include_tasks: Optional[StrictBool] = None,
@@ -214,7 +77,7 @@ class WorkflowResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> WorkflowAdapter:
-        result = await self._api.get_execution_status(
+        result = await super().get_execution_status(
             workflow_id,
             include_tasks,
             summarize,
@@ -224,38 +87,9 @@ class WorkflowResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, WorkflowAdapter)
+        return result  # type: ignore[return-value]
 
-    async def get_execution_status_task_list(
-        self,
-        workflow_id: StrictStr,
-        start: Optional[StrictInt] = None,
-        count: Optional[StrictInt] = None,
-        status: Optional[List[StrictStr]] = None,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> TaskListSearchResultSummaryAdapter:
-        result = await self._api.get_execution_status_task_list(
-            workflow_id,
-            start,
-            count,
-            status,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-        return convert_to_adapter(result, TaskListSearchResultSummaryAdapter)
-
-    async def get_workflow_status_summary(
+    async def get_workflow_status_summary(  # type: ignore[override]
         self,
         workflow_id: StrictStr,
         include_output: Optional[StrictBool] = None,
@@ -269,8 +103,8 @@ class WorkflowResourceApiAdapter:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> WorkflowStatusAdapter:
-        result = await self._api.get_workflow_status_summary(
+    ) -> WorkflowStatusAdapter:  # type: ignore[override]
+        result = await super().get_workflow_status_summary(
             workflow_id,
             include_output,
             include_variables,
@@ -280,7 +114,7 @@ class WorkflowResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, WorkflowStatusAdapter)
+        return result  # type: ignore[return-value]
 
     async def get_running_workflow(
         self,
@@ -298,7 +132,7 @@ class WorkflowResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> List[str]:
-        return await self._api.get_running_workflow(
+        return await super().get_running_workflow(
             name,
             version,
             start_time,
@@ -310,7 +144,7 @@ class WorkflowResourceApiAdapter:
             _host_index=_host_index,
         )
 
-    async def get_workflows(
+    async def get_workflows(  # type: ignore[override]
         self,
         name: StrictStr,
         request_body: List[StrictStr],
@@ -326,7 +160,7 @@ class WorkflowResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> Dict[str, List[WorkflowAdapter]]:
-        result = await self._api.get_workflows(
+        result = await super().get_workflows(
             name,
             request_body,
             include_closed,
@@ -337,11 +171,11 @@ class WorkflowResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_dict_to_adapter(result, WorkflowAdapter)
+        return result  # type: ignore[return-value]
 
-    async def get_workflows1(
+    async def get_workflows1(  # type: ignore[override]
         self,
-        correlation_ids_search_request: CorrelationIdsSearchRequestAdapter,
+        correlation_ids_search_request: CorrelationIdsSearchRequestAdapter,  # type: ignore[override]
         include_closed: Optional[StrictBool] = None,
         include_tasks: Optional[StrictBool] = None,
         _request_timeout: Union[
@@ -354,7 +188,7 @@ class WorkflowResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> Dict[str, List[WorkflowAdapter]]:
-        result = await self._api.get_workflows1(
+        result = await super().get_workflows1(
             correlation_ids_search_request,
             include_closed,
             include_tasks,
@@ -364,88 +198,9 @@ class WorkflowResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_dict_to_adapter(result, WorkflowAdapter)
+        return result  # type: ignore[return-value]
 
-    async def get_workflows2(
-        self,
-        name: StrictStr,
-        correlation_id: StrictStr,
-        include_closed: Optional[StrictBool] = None,
-        include_tasks: Optional[StrictBool] = None,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> List[WorkflowAdapter]:
-        result = await self._api.get_workflows2(
-            name,
-            correlation_id,
-            include_closed,
-            include_tasks,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-        return convert_list_to_adapter(result, WorkflowAdapter)
-
-    async def jump_to_task(
-        self,
-        workflow_id: StrictStr,
-        task_reference_name: StrictStr,
-        request_body: Dict[str, Dict[str, Any]],
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> None:
-        """Jump workflow execution to given task"""
-        await self._api.jump_to_task(
-            workflow_id,
-            task_reference_name,
-            request_body,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def pause_workflow(
-        self,
-        workflow_id: StrictStr,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> None:
-        """Pauses the workflow"""
-        await self._api.pause_workflow(
-            workflow_id,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def search(
+    async def search(  # type: ignore[override]
         self,
         start: Optional[StrictInt] = None,
         size: Optional[StrictInt] = None,
@@ -463,7 +218,7 @@ class WorkflowResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> ScrollableSearchResultWorkflowSummaryAdapter:
-        result = await self._api.search(
+        result = await super().search(
             start,
             size,
             sort,
@@ -476,62 +231,12 @@ class WorkflowResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, ScrollableSearchResultWorkflowSummaryAdapter)
-
-    async def skip_task_from_workflow(
-        self,
-        workflow_id: StrictStr,
-        task_reference_name: StrictStr,
-        skip_task_request: SkipTaskRequestAdapter,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> None:
-        """Skips a given task from a current running workflow"""
-        await self._api.skip_task_from_workflow(
-            workflow_id,
-            task_reference_name,
-            skip_task_request,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def start_workflow(
-        self,
-        start_workflow_request: StartWorkflowRequestAdapter,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> str:
-        """Start a new workflow with StartWorkflowRequest, which allows task to be executed in a domain"""
-        return await self._api.start_workflow(
-            start_workflow_request,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
+        return result  # type: ignore[return-value]
 
     async def rerun(
         self,
         workflow_id: StrictStr,
-        rerun_workflow_request: RerunWorkflowRequestAdapter,
+        rerun_workflow_request: RerunWorkflowRequestAdapter,  # type: ignore[override]
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -542,32 +247,9 @@ class WorkflowResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> str:
-        return await self._api.rerun(
+        return await super().rerun(
             workflow_id,
-            rerun_workflow_request,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def reset_workflow(
-        self,
-        workflow_id: StrictStr,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> None:
-        """Resets callback times of all non-terminal SIMPLE tasks to 0"""
-        await self._api.reset_workflow(
-            workflow_id,
+            rerun_workflow_request,  # type: ignore[override]
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -589,7 +271,7 @@ class WorkflowResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> None:
-        await self._api.restart(
+        await super().restart(
             workflow_id,
             use_latest_definitions,
             _request_timeout=_request_timeout,
@@ -599,61 +281,11 @@ class WorkflowResourceApiAdapter:
             _host_index=_host_index,
         )
 
-    async def resume_workflow(
-        self,
-        workflow_id: StrictStr,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> None:
-        """Resumes the workflow"""
-        await self._api.resume_workflow(
-            workflow_id,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def retry(
-        self,
-        workflow_id: StrictStr,
-        resume_subworkflow_tasks: Optional[StrictBool] = None,
-        retry_if_retried_by_parent: Optional[StrictBool] = None,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> None:
-        """Retries the last failed task"""
-        await self._api.retry(
-            workflow_id,
-            resume_subworkflow_tasks,
-            retry_if_retried_by_parent,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def update_workflow_and_task_state(
+    async def update_workflow_and_task_state(  # type: ignore[override]
         self,
         workflow_id: StrictStr,
         request_id: StrictStr,
-        workflow_state_update: WorkflowStateUpdateAdapter,
+        workflow_state_update: WorkflowStateUpdateAdapter,  # type: ignore[override]
         wait_until_task_ref: Optional[StrictStr] = None,
         wait_for_seconds: Optional[StrictInt] = None,
         _request_timeout: Union[
@@ -666,10 +298,10 @@ class WorkflowResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> WorkflowRunAdapter:
-        result = await self._api.update_workflow_and_task_state(
+        result = await super().update_workflow_and_task_state(
             workflow_id,
             request_id,
-            workflow_state_update,
+            workflow_state_update,  # type: ignore[override]
             wait_until_task_ref,
             wait_for_seconds,
             _request_timeout=_request_timeout,
@@ -678,35 +310,36 @@ class WorkflowResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, WorkflowRunAdapter)
+        return result  # type: ignore[return-value]
 
-    async def test_workflow(
+    async def test_workflow(  # type: ignore[override]
         self,
-        workflow_test_request: WorkflowTestRequestAdapter,
-        _request_timeout: Union[
+        workflow_test_request: WorkflowTestRequestAdapter,  # type: ignore[override]
+        _request_timeout: Union[  # noqa: PT019
             None,
             Annotated[StrictFloat, Field(gt=0)],
             Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
         ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,  # noqa: PT019
+        _content_type: Optional[StrictStr] = None,  # noqa: PT019
+        _headers: Optional[Dict[StrictStr, Any]] = None,  # noqa: PT019
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,  # noqa: PT019
     ) -> WorkflowAdapter:
-        result = await self._api.test_workflow(
-            workflow_test_request,
+        result = await super().test_workflow(
+            workflow_test_request,  # type: ignore[override]
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, WorkflowAdapter)
+        return result  # type: ignore[return-value]
 
+    @validate_call
     async def update_workflow_state(
         self,
         workflow_id: StrictStr,
-        request_body: Dict[str, Dict[str, Any]],
+        request_body: Dict[str, Any],
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -717,42 +350,56 @@ class WorkflowResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> WorkflowAdapter:
-        result = await self._api.update_workflow_state(
-            workflow_id,
-            request_body,
-            _request_timeout=_request_timeout,
+        """Update workflow variables
+
+        Updates the workflow variables and triggers evaluation.
+
+        :param workflow_id: (required)
+        :type workflow_id: str
+        :param request_body: (required)
+        :type request_body: Dict[str, object]
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """
+
+        _param = self._update_workflow_state_serialize(
+            workflow_id=workflow_id,
+            request_body=request_body,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, WorkflowAdapter)
 
-    async def upgrade_running_workflow_to_version(
-        self,
-        workflow_id: StrictStr,
-        upgrade_workflow_request: UpgradeWorkflowRequestAdapter,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> None:
-        """Upgrade running workflow to newer version"""
-        await self._api.upgrade_running_workflow_to_version(
-            workflow_id,
-            upgrade_workflow_request,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
+        _response_types_map: Dict[str, Optional[str]] = {
+            "200": "Workflow",
+        }
+        response_data = await self.api_client.call_api(*_param, _request_timeout=_request_timeout)
+        await response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        ).data
 
+    @validate_call
     async def start_workflow1(
         self,
         name: StrictStr,
@@ -772,44 +419,65 @@ class WorkflowResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> str:
-        return await self._api.start_workflow1(
-            name,
-            request_body,
-            version,
-            correlation_id,
-            priority,
-            x_idempotency_key,
-            x_on_conflict,
-            _request_timeout=_request_timeout,
+        """Start a new workflow. Returns the ID of the workflow instance that can be later used for tracking
+
+
+        :param name: (required)
+        :type name: str
+        :param request_body: (required)
+        :type request_body: Dict[str, object]
+        :param version:
+        :type version: int
+        :param correlation_id:
+        :type correlation_id: str
+        :param priority:
+        :type priority: int
+        :param x_idempotency_key:
+        :type x_idempotency_key: str
+        :param x_on_conflict:
+        :type x_on_conflict: str
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """
+
+        _param = self._start_workflow1_serialize(
+            name=name,
+            request_body=request_body,
+            version=version,
+            correlation_id=correlation_id,
+            priority=priority,
+            x_idempotency_key=x_idempotency_key,
+            x_on_conflict=x_on_conflict,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
             _host_index=_host_index,
         )
 
-    async def terminate1(
-        self,
-        workflow_id: StrictStr,
-        reason: Optional[StrictStr] = None,
-        trigger_failure_workflow: Optional[StrictBool] = None,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> None:
-        """Terminate workflow execution"""
-        await self._api.terminate1(
-            workflow_id,
-            reason,
-            trigger_failure_workflow,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
+        _response_types_map: Dict[str, Optional[str]] = {
+            "200": "str",
+        }
+        response_data = await self.api_client.call_api(*_param, _request_timeout=_request_timeout)
+        await response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        ).data

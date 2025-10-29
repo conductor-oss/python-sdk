@@ -6,7 +6,7 @@ import pytest
 from conductor.asyncio_client.adapters.api.metadata_resource_api import (
     MetadataResourceApiAdapter,
 )
-from conductor.asyncio_client.adapters.api.tags_api import TagsApiAdapter
+from conductor.asyncio_client.adapters.api.tags_api import TagsApi
 from conductor.asyncio_client.adapters.models.extended_task_def_adapter import (
     ExtendedTaskDefAdapter,
 )
@@ -90,7 +90,7 @@ def test_init(metadata_client):
     message = "metadata_api is not of type MetadataResourceApiAdapter"
     assert isinstance(metadata_client.metadata_api, MetadataResourceApiAdapter), message
     message = "tags_api is not of type TagsApi"
-    assert isinstance(metadata_client.tags_api, TagsApiAdapter), message
+    assert isinstance(metadata_client.tags_api, TagsApi), message
 
 
 @pytest.mark.asyncio

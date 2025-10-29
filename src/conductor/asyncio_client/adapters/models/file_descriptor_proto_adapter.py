@@ -10,47 +10,47 @@ from conductor.asyncio_client.http.models import FileDescriptorProto
 
 class FileDescriptorProtoAdapter(FileDescriptorProto):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["FileDescriptorProtoAdapter"] = Field(
+    default_instance_for_type: Optional["FileDescriptorProtoAdapter"] = Field(  # type: ignore[assignment]
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(  # type: ignore[assignment]
         default=None, alias="descriptorForType"
     )
-    enum_type_list: Optional[List["EnumDescriptorProtoAdapter"]] = Field(
+    enum_type_list: Optional[List["EnumDescriptorProtoAdapter"]] = Field(  # type: ignore[assignment]
         default=None, alias="enumTypeList"
     )
-    enum_type_or_builder_list: Optional[List["EnumDescriptorProtoOrBuilderAdapter"]] = Field(
+    enum_type_or_builder_list: Optional[List["EnumDescriptorProtoOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
         default=None, alias="enumTypeOrBuilderList"
     )
-    extension_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(
+    extension_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(  # type: ignore[assignment]
         default=None, alias="extensionList"
     )
-    extension_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = Field(
+    extension_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
         default=None, alias="extensionOrBuilderList"
     )
-    message_type_list: Optional[List["DescriptorProtoAdapter"]] = Field(
+    message_type_list: Optional[List["DescriptorProtoAdapter"]] = Field(  # type: ignore[assignment]
         default=None, alias="messageTypeList"
     )
-    message_type_or_builder_list: Optional[List["DescriptorProtoOrBuilderAdapter"]] = Field(
+    message_type_or_builder_list: Optional[List["DescriptorProtoOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
         default=None, alias="messageTypeOrBuilderList"
     )
-    options: Optional["FileOptionsAdapter"] = None
-    options_or_builder: Optional["FileOptionsOrBuilderAdapter"] = Field(
+    options: Optional["FileOptionsAdapter"] = None  # type: ignore[assignment]
+    options_or_builder: Optional["FileOptionsOrBuilderAdapter"] = Field(  # type: ignore[assignment]
         default=None, alias="optionsOrBuilder"
     )
-    service_list: Optional[List["ServiceDescriptorProtoAdapter"]] = Field(
+    service_list: Optional[List["ServiceDescriptorProtoAdapter"]] = Field(  # type: ignore[assignment]
         default=None, alias="serviceList"
     )
-    service_or_builder_list: Optional[List["ServiceDescriptorProtoOrBuilderAdapter"]] = Field(
+    service_or_builder_list: Optional[List["ServiceDescriptorProtoOrBuilderAdapter"]] = Field(  # type: ignore[assignment]
         default=None, alias="serviceOrBuilderList"
     )
-    source_code_info: Optional["SourceCodeInfoAdapter"] = Field(
+    source_code_info: Optional["SourceCodeInfoAdapter"] = Field(  # type: ignore[assignment]
         default=None, alias="sourceCodeInfo"
     )
-    source_code_info_or_builder: Optional["SourceCodeInfoOrBuilderAdapter"] = Field(
+    source_code_info_or_builder: Optional["SourceCodeInfoOrBuilderAdapter"] = Field(  # type: ignore[assignment]
         default=None, alias="sourceCodeInfoOrBuilder"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")  # type: ignore[assignment]
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

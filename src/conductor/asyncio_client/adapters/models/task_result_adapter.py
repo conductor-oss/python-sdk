@@ -9,7 +9,7 @@ from conductor.asyncio_client.http.models import TaskResult
 
 
 class TaskResultAdapter(TaskResult):
-    logs: Optional[List["TaskExecLogAdapter"]] = None
+    logs: Optional[List["TaskExecLogAdapter"]] = None  # type: ignore[assignment]
     output_data: Optional[Dict[str, Any]] = Field(default=None, alias="outputData")
 
     @classmethod

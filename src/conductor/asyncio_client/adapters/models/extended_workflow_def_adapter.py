@@ -9,17 +9,17 @@ from conductor.asyncio_client.http.models import ExtendedWorkflowDef
 
 
 class ExtendedWorkflowDefAdapter(ExtendedWorkflowDef):
-    input_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="inputSchema")
+    input_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="inputSchema")  # type: ignore[assignment]
     input_template: Optional[Dict[str, Any]] = Field(default=None, alias="inputTemplate")
     output_parameters: Optional[Dict[str, Any]] = Field(default=None, alias="outputParameters")
-    output_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="outputSchema")
-    rate_limit_config: Optional["RateLimitConfigAdapter"] = Field(
+    output_schema: Optional["SchemaDefAdapter"] = Field(default=None, alias="outputSchema")  # type: ignore[assignment]
+    rate_limit_config: Optional["RateLimitConfigAdapter"] = Field(  # type: ignore[assignment]
         default=None, alias="rateLimitConfig"
     )
-    tags: Optional[List["TagAdapter"]] = None
-    tasks: List["WorkflowTaskAdapter"]
+    tags: Optional[List["TagAdapter"]] = None  # type: ignore[assignment]
+    tasks: List["WorkflowTaskAdapter"]  # type: ignore[assignment]
     variables: Optional[Dict[str, Any]] = None
-    timeout_seconds: Optional[int] = Field(default=None, alias="timeoutSeconds")
+    timeout_seconds: Optional[int] = Field(default=None, alias="timeoutSeconds")  # type: ignore[assignment]
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

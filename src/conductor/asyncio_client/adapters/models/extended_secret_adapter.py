@@ -8,7 +8,7 @@ from conductor.asyncio_client.http.models import ExtendedSecret
 
 
 class ExtendedSecretAdapter(ExtendedSecret):
-    tags: Optional[List["TagAdapter"]] = None
+    tags: Optional[List["TagAdapter"]] = None  # type: ignore[assignment]
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

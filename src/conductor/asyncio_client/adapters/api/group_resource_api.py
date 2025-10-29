@@ -13,13 +13,12 @@ from conductor.asyncio_client.adapters.models.upsert_group_request_adapter impor
 )
 from conductor.asyncio_client.http.api import GroupResourceApi
 from conductor.asyncio_client.adapters.utils import convert_list_to_adapter, convert_to_adapter
-from conductor.asyncio_client.adapters import ApiClient
 
 
 class GroupResourceApiAdapter:
     """Adapter for GroupResourceApi that converts between generated models and adapters."""
 
-    def __init__(self, api_client: ApiClient):
+    def __init__(self, api_client):
         self._api = GroupResourceApi(api_client)
 
     async def list_groups(

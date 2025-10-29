@@ -151,9 +151,7 @@ ignore = [
     # too-many-return-statements
     "PLR0911",
     # flake8-type-checking (150 errors)
-    "TC",
-    # PT013: Arguments starting with underscore in function definitions starting with `test_` (e.g., test_connectivity in event_resource_api.py)
-    "PT019"
+    "TC"
 ]
 
 [tool.ruff.lint.isort]
@@ -215,10 +213,6 @@ follow_imports = "silent"
 
 plugins = [
     "pydantic.mypy"
-]
-disable_error_code = [
-    "assignment",
-    "arg-type",
 ]
 
 [[tool.mypy.overrides]]

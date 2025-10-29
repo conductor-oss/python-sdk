@@ -10,23 +10,23 @@ from conductor.asyncio_client.http.models import OneofOptionsOrBuilder
 
 class OneofOptionsOrBuilderAdapter(OneofOptionsOrBuilder):
     all_fields: Optional[Dict[str, Any]] = Field(default=None, alias="allFields")
-    default_instance_for_type: Optional["MessageAdapter"] = Field(
+    default_instance_for_type: Optional["MessageAdapter"] = Field(  # type: ignore[assignment]
         default=None, alias="defaultInstanceForType"
     )
-    descriptor_for_type: Optional["DescriptorAdapter"] = Field(
+    descriptor_for_type: Optional["DescriptorAdapter"] = Field(  # type: ignore[assignment]
         default=None, alias="descriptorForType"
     )
-    features: Optional["FeatureSetAdapter"] = None
-    features_or_builder: Optional["FeatureSetOrBuilderAdapter"] = Field(
+    features: Optional["FeatureSetAdapter"] = None  # type: ignore[assignment]
+    features_or_builder: Optional["FeatureSetOrBuilderAdapter"] = Field(  # type: ignore[assignment]
         default=None, alias="featuresOrBuilder"
     )
-    uninterpreted_option_list: Optional[List["UninterpretedOptionAdapter"]] = Field(
+    uninterpreted_option_list: Optional[List["UninterpretedOptionAdapter"]] = Field(  # type: ignore[assignment]
         default=None, alias="uninterpretedOptionList"
     )
     uninterpreted_option_or_builder_list: Optional[List["UninterpretedOptionOrBuilderAdapter"]] = (
-        Field(default=None, alias="uninterpretedOptionOrBuilderList")
+        Field(default=None, alias="uninterpretedOptionOrBuilderList")  # type: ignore[assignment]
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")  # type: ignore[assignment]
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

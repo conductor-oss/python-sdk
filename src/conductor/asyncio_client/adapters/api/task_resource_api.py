@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
-from pydantic import Field, StrictFloat, StrictInt, StrictStr
+from pydantic import Field, StrictFloat, StrictInt, StrictStr, validate_call
 
 from conductor.asyncio_client.adapters.models.poll_data_adapter import PollDataAdapter
 from conductor.asyncio_client.adapters.models.search_result_task_summary_adapter import (
@@ -10,60 +10,12 @@ from conductor.asyncio_client.adapters.models.search_result_task_summary_adapter
 )
 from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
 from conductor.asyncio_client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
-from conductor.asyncio_client.adapters.models.task_result_adapter import TaskResultAdapter
 from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
 from conductor.asyncio_client.http.api import TaskResourceApi
-from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.adapters.utils import convert_list_to_adapter, convert_to_adapter
 
 
-class TaskResourceApiAdapter:
-    def __init__(self, api_client: ApiClient):
-        self._api = TaskResourceApi(api_client)
-
-    async def all(
-        self,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> Dict[str, int]:
-        """Get the details about each queue"""
-        return await self._api.all(
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def all_verbose(
-        self,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> Dict[str, Dict[str, Dict[str, int]]]:
-        """Get the details about each queue"""
-        return await self._api.all_verbose(
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def poll(
+class TaskResourceApiAdapter(TaskResourceApi):
+    async def poll(  # type: ignore[override]
         self,
         tasktype: StrictStr,
         workerid: Optional[StrictStr] = None,
@@ -78,7 +30,7 @@ class TaskResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> Optional[TaskAdapter]:
-        result = await self._api.poll(
+        result = await super().poll(
             tasktype,
             workerid,
             domain,
@@ -88,32 +40,9 @@ class TaskResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, TaskAdapter) if result else None
+        return result  # type: ignore[return-value]
 
-    async def requeue_pending_task(
-        self,
-        task_type: StrictStr,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> str:
-        """Requeue pending tasks"""
-        return await self._api.requeue_pending_task(
-            task_type,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def batch_poll(
+    async def batch_poll(  # type: ignore[override]
         self,
         tasktype: StrictStr,
         workerid: Optional[StrictStr] = None,
@@ -130,7 +59,7 @@ class TaskResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> List[TaskAdapter]:
-        result = await self._api.batch_poll(
+        result = await super().batch_poll(
             tasktype,
             workerid,
             domain,
@@ -142,42 +71,9 @@ class TaskResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_list_to_adapter(result, TaskAdapter)
+        return result  # type: ignore[return-value]
 
-    async def get_all_poll_data(
-        self,
-        worker_size: Optional[StrictInt] = None,
-        worker_opt: Optional[StrictStr] = None,
-        queue_size: Optional[StrictInt] = None,
-        queue_opt: Optional[StrictStr] = None,
-        last_poll_time_size: Optional[StrictInt] = None,
-        last_poll_time_opt: Optional[StrictStr] = None,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> Dict[str, object]:
-        """Get the last poll data for all task types"""
-        return await self._api.get_all_poll_data(
-            worker_size,
-            worker_opt,
-            queue_size,
-            queue_opt,
-            last_poll_time_size,
-            last_poll_time_opt,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def get_task(
+    async def get_task(  # type: ignore[override]
         self,
         task_id: StrictStr,
         _request_timeout: Union[
@@ -190,7 +86,7 @@ class TaskResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> TaskAdapter:
-        result = await self._api.get_task(
+        result = await super().get_task(
             task_id,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
@@ -198,9 +94,9 @@ class TaskResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, TaskAdapter)
+        return result  # type: ignore[return-value]
 
-    async def get_poll_data(
+    async def get_poll_data(  # type: ignore[override]
         self,
         task_type: StrictStr,
         _request_timeout: Union[
@@ -213,7 +109,7 @@ class TaskResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> List[PollDataAdapter]:
-        result = await self._api.get_poll_data(
+        result = await super().get_poll_data(
             task_type,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
@@ -221,9 +117,9 @@ class TaskResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_list_to_adapter(result, PollDataAdapter)
+        return result  # type: ignore[return-value]
 
-    async def get_task_logs(
+    async def get_task_logs(  # type: ignore[override]
         self,
         task_id: StrictStr,
         _request_timeout: Union[
@@ -236,7 +132,7 @@ class TaskResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> List[TaskExecLogAdapter]:
-        result = await self._api.get_task_logs(
+        result = await super().get_task_logs(
             task_id,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
@@ -244,34 +140,9 @@ class TaskResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_list_to_adapter(result, TaskExecLogAdapter)
+        return result  # type: ignore[return-value]
 
-    async def log(
-        self,
-        task_id: StrictStr,
-        body: StrictStr,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> None:
-        """Log Task Execution Details"""
-        await self._api.log(
-            task_id,
-            body,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def search1(
+    async def search1(  # type: ignore[override]
         self,
         start: Optional[StrictInt] = None,
         size: Optional[StrictInt] = None,
@@ -288,7 +159,7 @@ class TaskResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> SearchResultTaskSummaryAdapter:
-        result = await self._api.search1(
+        result = await super().search1(
             start,
             size,
             sort,
@@ -300,85 +171,9 @@ class TaskResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, SearchResultTaskSummaryAdapter)
+        return result  # type: ignore[return-value]
 
-    async def size(
-        self,
-        task_type: Optional[List[StrictStr]] = None,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> Dict[str, int]:
-        """Get Task type queue sizes"""
-        return await self._api.size(
-            task_type,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def update_task(
-        self,
-        task_result: TaskResultAdapter,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> str:
-        """Update a task"""
-        return await self._api.update_task(
-            task_result,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
-    async def update_task1(
-        self,
-        workflow_id: StrictStr,
-        task_ref_name: StrictStr,
-        status: StrictStr,
-        request_body: Dict[str, Dict[str, Any]],
-        workerid: Optional[StrictStr] = None,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> str:
-        """Update a task By Ref Name"""
-        return await self._api.update_task1(
-            workflow_id,
-            task_ref_name,
-            status,
-            request_body,
-            workerid,
-            _request_timeout=_request_timeout,
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index,
-        )
-
+    @validate_call
     async def update_task_sync(
         self,
         workflow_id: StrictStr,
@@ -396,17 +191,59 @@ class TaskResourceApiAdapter:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> WorkflowAdapter:
-        """Update a task By Ref Name synchronously"""
-        result = await self._api.update_task_sync(
-            workflow_id,
-            task_ref_name,
-            status,
-            request_body,
-            workerid,
-            _request_timeout=_request_timeout,
+        """Update a task By Ref Name synchronously
+
+
+        :param workflow_id: (required)
+        :type workflow_id: str
+        :param task_ref_name: (required)
+        :type task_ref_name: str
+        :param status: (required)
+        :type status: str
+        :param request_body: (required)
+        :type request_body: Dict[str, object]
+        :param workerid:
+        :type workerid: str
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """
+
+        _param = self._update_task_sync_serialize(
+            workflow_id=workflow_id,
+            task_ref_name=task_ref_name,
+            status=status,
+            request_body=request_body,
+            workerid=workerid,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, WorkflowAdapter)
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            "200": "Workflow",
+        }
+        response_data = await self.api_client.call_api(*_param, _request_timeout=_request_timeout)
+        await response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        ).data

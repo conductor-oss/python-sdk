@@ -34,6 +34,7 @@ from conductor.asyncio_client.adapters.models.upsert_user_request_adapter import
 )
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
+from conductor.client.orkes.models.access_key import AccessKey
 
 
 class OrkesAuthorizationClient(OrkesBaseClient):
@@ -199,15 +200,15 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     async def delete_application_tags(self, tags: List[TagAdapter], application_id: str):
         await self.application_api.delete_tag_for_application(application_id, tags)
 
-    async def create_access_key(self, application_id: str) -> object:
+    async def create_access_key(self, application_id: str) -> AccessKey:
         key_obj = await self.application_api.create_access_key(application_id)
         return key_obj
 
-    async def get_access_keys(self, application_id: str) -> object:
+    async def get_access_keys(self, application_id: str) -> List[AccessKey]:
         access_keys_obj = await self.application_api.get_access_keys(application_id)
-        return access_keys_obj
+        return list(access_keys_obj)
 
-    async def toggle_access_key_status(self, application_id: str, key_id: str) -> object:
+    async def toggle_access_key_status(self, application_id: str, key_id: str) -> AccessKey:
         key_obj = await self.application_api.toggle_access_key_status(application_id, key_id)
         return key_obj
 

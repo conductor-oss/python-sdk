@@ -26,7 +26,7 @@ class OrkesSecretClient(OrkesBaseClient):
         """Delete a secret by key"""
         return await self.secret_api.delete_secret(key)
 
-    async def secret_exists(self, key: str) -> object:
+    async def secret_exists(self, key: str) -> bool:
         """Check if a secret exists by key"""
         return await self.secret_api.secret_exists(key)
 
@@ -76,6 +76,6 @@ class OrkesSecretClient(OrkesBaseClient):
         """Alias for put_secret for consistency with other clients"""
         return await self.put_secret(key, secret)
 
-    async def has_secret(self, key: str) -> object:
+    async def has_secret(self, key: str) -> bool:
         """Alias for secret_exists for consistency"""
         return await self.secret_exists(key)
