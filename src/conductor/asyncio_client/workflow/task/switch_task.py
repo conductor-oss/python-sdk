@@ -31,7 +31,7 @@ class SwitchTask(TaskInterface):
 
     def default_case(self, tasks: List[TaskInterface]):
         if isinstance(tasks, List):
-            self._default_case = deepcopy(tasks)
+            self._default_case = deepcopy(tasks)  # type: ignore[assignment]
         else:
             self._default_case = [deepcopy(tasks)]
         return self

@@ -26,7 +26,7 @@ class ForkTask(TaskInterface):
         self._forked_tasks = forked_tasks
         self._join_on = join_on
 
-    def to_workflow_task(
+    def to_workflow_task(  # type: ignore[override]
         self,
     ) -> Union[WorkflowTaskAdapter, List[WorkflowTaskAdapter]]:
         workflow_task = super().to_workflow_task()

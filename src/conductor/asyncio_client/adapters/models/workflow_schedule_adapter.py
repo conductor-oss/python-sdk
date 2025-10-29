@@ -9,7 +9,7 @@ from conductor.asyncio_client.http.models import WorkflowSchedule
 
 
 class WorkflowScheduleAdapter(WorkflowSchedule):
-    start_workflow_request: Optional["StartWorkflowRequestAdapter"] = Field(
+    start_workflow_request: Optional["StartWorkflowRequestAdapter"] = Field(  # type: ignore[override]
         default=None, alias="startWorkflowRequest"
     )
     tags: Optional[List["TagAdapter"]] = None

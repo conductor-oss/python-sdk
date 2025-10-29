@@ -26,7 +26,7 @@ class AsyncEventClient:
 
     async def put_queue_configuration(self, queue_configuration: QueueConfiguration):
         return await self.client.put_queue_config(
-            body=queue_configuration.get_worker_configuration(),
+            body=queue_configuration.get_worker_configuration(),  # type: ignore[arg-type]
             queue_name=queue_configuration.queue_name,
             queue_type=queue_configuration.queue_type,
         )

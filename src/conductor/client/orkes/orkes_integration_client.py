@@ -70,7 +70,7 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
         if category is not None:
             kwargs["category"] = category
         if active_only is not None:
-            kwargs["active_only"] = active_only
+            kwargs["active_only"] = active_only  # type: ignore[assignment]
         return self.integrationApi.get_integration_providers(**kwargs)
 
     def get_integration_provider_defs(self) -> List[IntegrationDef]:
@@ -151,7 +151,7 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
         if category is not None:
             kwargs["category"] = category
         if active_only is not None:
-            kwargs["active_only"] = active_only
+            kwargs["active_only"] = active_only  # type: ignore[assignment]
         return self.integrationApi.get_all_integrations(**kwargs)
 
     def get_providers_and_integrations(
@@ -162,5 +162,5 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
         if integration_type is not None:
             kwargs["type"] = integration_type
         if active_only is not None:
-            kwargs["active_only"] = active_only
+            kwargs["active_only"] = active_only  # type: ignore[assignment]
         return self.integrationApi.get_providers_and_integrations(**kwargs)

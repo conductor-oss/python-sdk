@@ -33,7 +33,7 @@ class OrkesMetadataClient(OrkesBaseClient):
         """Unregister a task definition"""
         await self.metadata_api.unregister_task_def(task_type)
 
-    async def get_task_def(self, task_type: str) -> TaskDefAdapter:
+    async def get_task_def(self, task_type: str) -> object:
         """Get a task definition by task type"""
         return await self.metadata_api.get_task_def(task_type)
 
