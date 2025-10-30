@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
 from typing import Dict, Optional, Union
+import warnings
 
 from conductor.shared.configuration.settings.authentication_settings import (
     AuthenticationSettings,
@@ -115,7 +117,14 @@ class Configuration:
         if server_api_url is not None:
             self.host = server_api_url
         elif base_url is not None:
-            self.host = base_url + "/api"
+            if re.search(r"/api(/|$)", base_url):
+                warnings.warn(
+                    "'base_url' been passed with '/api' path. Consider using 'server_api_url' instead",
+                    stacklevel=2,
+                )
+            else:
+                base_url += "/api"
+            self.host = base_url
         else:
             self.host = os.getenv("CONDUCTOR_SERVER_URL")
 
@@ -185,7 +194,7 @@ class Configuration:
         self.polling_interval = polling_interval or self._get_env_float(
             "CONDUCTOR_WORKER_POLL_INTERVAL", 100
         )
-        self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", "default_domain")
+        self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", None)
         self.polling_interval_seconds = polling_interval_seconds or self._get_env_float(
             "CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0
         )
