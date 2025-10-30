@@ -12,20 +12,14 @@ logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
 
 class ApiClientAdapter(ApiClient):
-    def __init__(
-        self, configuration=None, header_name=None, header_value=None, cookie=None
-    ):
+    def __init__(self, configuration=None, header_name=None, header_value=None, cookie=None):
         """Initialize the API client adapter with httpx-based REST client."""
         self.configuration = configuration or Configuration()
 
         # Create httpx-compatible REST client
-        self.rest_client = RESTClientObjectAdapter(
-            connection=self.configuration.http_connection
-        )
+        self.rest_client = RESTClientObjectAdapter(connection=self.configuration.http_connection)
 
-        self.default_headers = self._ApiClient__get_default_headers(
-            header_name, header_value
-        )
+        self.default_headers = self._ApiClient__get_default_headers(header_name, header_value)
         self.cookie = cookie
         self._ApiClient__refresh_auth_token()
 
@@ -107,9 +101,7 @@ class ApiClientAdapter(ApiClient):
             # Handle 401 errors with the new policy
             if ae.status == 401:
                 # Check if this is an auth-dependent call that should trigger 401 policy
-                if self.auth_401_handler.policy.is_auth_dependent_call(
-                    resource_path, method
-                ):
+                if self.auth_401_handler.policy.is_auth_dependent_call(resource_path, method):
                     # Handle 401 with policy (exponential backoff, max attempts, etc.)
                     result = self.auth_401_handler.handle_401_error(
                         resource_path=resource_path,

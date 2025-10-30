@@ -2,17 +2,22 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from conductor.asyncio_client.adapters.models.save_schedule_request_adapter import \
-    SaveScheduleRequestAdapter
-from conductor.asyncio_client.adapters.models.search_result_workflow_schedule_execution_model_adapter import \
-    SearchResultWorkflowScheduleExecutionModelAdapter
-from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import \
-    StartWorkflowRequestAdapter
+from conductor.asyncio_client.adapters.models.save_schedule_request_adapter import (
+    SaveScheduleRequestAdapter,
+)
+from conductor.asyncio_client.adapters.models.search_result_workflow_schedule_execution_model_adapter import (
+    SearchResultWorkflowScheduleExecutionModelAdapter,
+)
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
+    StartWorkflowRequestAdapter,
+)
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.adapters.models.workflow_schedule_adapter import \
-    WorkflowScheduleAdapter
-from conductor.asyncio_client.adapters.models.workflow_schedule_model_adapter import \
-    WorkflowScheduleModelAdapter
+from conductor.asyncio_client.adapters.models.workflow_schedule_adapter import (
+    WorkflowScheduleAdapter,
+)
+from conductor.asyncio_client.adapters.models.workflow_schedule_model_adapter import (
+    WorkflowScheduleModelAdapter,
+)
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
@@ -23,9 +28,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
         super().__init__(configuration, api_client)
 
     # Core Schedule Operations
-    async def save_schedule(
-        self, save_schedule_request: SaveScheduleRequestAdapter
-    ) -> object:
+    async def save_schedule(self, save_schedule_request: SaveScheduleRequestAdapter) -> object:
         """Create or update a schedule for a specified workflow"""
         return await self.scheduler_api.save_schedule(save_schedule_request)
 
@@ -170,9 +173,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
             start_workflow_request=existing_schedule.start_workflow_request,
             paused=paused if paused is not None else existing_schedule.paused,
             run_catch_up=(
-                run_catch_up
-                if run_catch_up is not None
-                else existing_schedule.run_catch_up
+                run_catch_up if run_catch_up is not None else existing_schedule.run_catch_up
             ),
             timezone=timezone or existing_schedule.timezone,
         )
@@ -227,9 +228,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
             except Exception:  # noqa: PERF203
                 continue
 
-    async def validate_cron_expression(
-        self, cron_expression: str, limit: int = 5
-    ) -> List[int]:
+    async def validate_cron_expression(self, cron_expression: str, limit: int = 5) -> List[int]:
         """Validate a cron expression by getting its next execution times"""
         return await self.get_next_few_schedules(cron_expression, limit=limit)
 

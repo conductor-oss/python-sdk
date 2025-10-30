@@ -94,7 +94,7 @@ def test_initialization_with_none_values():
 def test_serialization_with_all_fields(api_client, sample_kafka_input):
     """Test serialization of KafkaPublishInput with all fields populated."""
     serialized = api_client.sanitize_for_serialization(sample_kafka_input)
-    
+
     expected_data = {
         "bootStrapServers": "kafka-broker:29092",
         "key": "test-key",
@@ -105,18 +105,18 @@ def test_serialization_with_all_fields(api_client, sample_kafka_input):
         "headers": {"content-type": "application/json"},
         "topic": "test-topic",
     }
-    
+
     assert serialized == expected_data
 
 def test_serialization_with_minimal_fields(api_client, minimal_kafka_input):
     """Test serialization of KafkaPublishInput with minimal fields."""
     serialized = api_client.sanitize_for_serialization(minimal_kafka_input)
-    
+
     expected_data = {
         "bootStrapServers": "kafka:9092",
         "topic": "test-topic",
     }
-    
+
     assert serialized == expected_data
 
 def test_serialization_with_complex_headers(api_client):
@@ -128,16 +128,16 @@ def test_serialization_with_complex_headers(api_client):
         "custom-header": "custom-value",
         "nested": {"key": "value"},
     }
-    
+
     kafka_input = KafkaPublishInput(
         bootstrap_servers="kafka:9092",
         headers=complex_headers,
         topic="complex-topic",
         value='{"complex": "data"}',
     )
-    
+
     serialized = api_client.sanitize_for_serialization(kafka_input)
-    
+
     assert serialized["headers"] == complex_headers
     assert serialized["bootStrapServers"] == "kafka:9092"
     assert serialized["topic"] == "complex-topic"
@@ -150,9 +150,9 @@ def test_serialization_with_empty_headers(api_client):
         headers={},
         topic="test-topic",
     )
-    
+
     serialized = api_client.sanitize_for_serialization(kafka_input)
-    
+
     assert serialized["headers"] == {}
     assert serialized["bootStrapServers"] == "kafka:9092"
     assert serialized["topic"] == "test-topic"
@@ -165,9 +165,9 @@ def test_serialization_with_numeric_strings(api_client):
         max_block_ms="10000",
         topic="test-topic",
     )
-    
+
     serialized = api_client.sanitize_for_serialization(kafka_input)
-    
+
     assert serialized["requestTimeoutMs"] == "5000"
     assert serialized["maxBlockMs"] == "10000"
     assert isinstance(serialized["requestTimeoutMs"], str)
@@ -185,7 +185,7 @@ def test_swagger_types_consistency():
         "_headers": "dict[str, Any]",
         "_topic": "str",
     }
-    
+
     assert KafkaPublishInput.swagger_types == expected_swagger_types
 
 def test_attribute_map_consistency():
@@ -200,7 +200,7 @@ def test_attribute_map_consistency():
         "_headers": "headers",
         "_topic": "topic",
     }
-    
+
     assert KafkaPublishInput.attribute_map == expected_attribute_map
 
 def test_property_access(sample_kafka_input):
@@ -222,10 +222,10 @@ def test_deep_copy_behavior():
         headers=original_headers,
         topic="test-topic",
     )
-    
+
     # Modify the original headers
     original_headers["modified"] = "new_value"
-    
+
     # The kafka_input headers should remain unchanged
     assert kafka_input.headers == {"test": "value"}
     assert "modified" not in kafka_input.headers
@@ -233,7 +233,7 @@ def test_deep_copy_behavior():
 def test_serialization_round_trip(api_client, sample_kafka_input):
     """Test that serialization preserves all data correctly."""
     serialized = api_client.sanitize_for_serialization(sample_kafka_input)
-    
+
     # Verify all expected keys are present
     expected_keys = [
         "bootStrapServers",
@@ -245,10 +245,10 @@ def test_serialization_round_trip(api_client, sample_kafka_input):
         "headers",
         "topic",
     ]
-    
+
     for key in expected_keys:
         assert key in serialized, f"Missing key '{key}' in serialized output"
-    
+
     # Verify all values match
     assert serialized["bootStrapServers"] == "kafka-broker:29092"
     assert serialized["key"] == "test-key"
@@ -265,9 +265,9 @@ def test_serialization_excludes_none_values(api_client):
         bootstrap_servers="kafka:9092",
         topic="test-topic",
     )
-    
+
     serialized = api_client.sanitize_for_serialization(kafka_input)
-    
+
     # Only non-None values should be present
     assert "bootStrapServers" in serialized
     assert "topic" in serialized

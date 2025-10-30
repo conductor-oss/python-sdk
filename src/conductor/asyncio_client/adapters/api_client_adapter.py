@@ -20,9 +20,7 @@ logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
 
 class ApiClientAdapter(ApiClient):
-    def __init__(
-        self, configuration=None, header_name=None, header_value=None, cookie=None
-    ):
+    def __init__(self, configuration=None, header_name=None, header_value=None, cookie=None):
         self._token_lock = asyncio.Lock()
         self.configuration = configuration or Configuration()
 
@@ -83,14 +81,9 @@ class ApiClientAdapter(ApiClient):
             resource_path = url.replace(self.configuration.host, "")
 
             # Loop to handle multiple 401 retries
-            while (
-                response_data.status == 401  # noqa: PLR2004 (Unauthorized status code)
-                and url != self.configuration.host + "/token"
-            ):
+            while response_data.status == 401 and url != self.configuration.host + "/token":
                 # Check if this is an auth-dependent call that should trigger 401 policy
-                if self.auth_401_handler.policy.is_auth_dependent_call(
-                    resource_path, method
-                ):
+                if self.auth_401_handler.policy.is_auth_dependent_call(resource_path, method):
                     # Handle 401 with policy (exponential backoff, max attempts, etc.)
                     result = self.auth_401_handler.handle_401_error(
                         resource_path=resource_path,
@@ -123,18 +116,14 @@ class ApiClientAdapter(ApiClient):
                                 >= self.configuration.token_update_time
                                 + self.configuration.auth_token_ttl_sec
                             )
-                            invalid_token = (
-                                not self.configuration._http_config.api_key.get(
-                                    "api_key"
-                                )
+                            invalid_token = not self.configuration._http_config.api_key.get(
+                                "api_key"
                             )
 
                             if invalid_token or token_expired:
                                 token = await self.refresh_authorization_token()
                             else:
-                                token = self.configuration._http_config.api_key[
-                                    "api_key"
-                                ]
+                                token = self.configuration._http_config.api_key["api_key"]
                             if header_params is None:
                                 header_params = {}
                             header_params["X-Authorization"] = token
@@ -173,9 +162,7 @@ class ApiClientAdapter(ApiClient):
                             >= self.configuration.token_update_time
                             + self.configuration.auth_token_ttl_sec
                         )
-                        invalid_token = not self.configuration._http_config.api_key.get(
-                            "api_key"
-                        )
+                        invalid_token = not self.configuration._http_config.api_key.get("api_key")
 
                         if invalid_token or token_expired:
                             token = await self.refresh_authorization_token()
@@ -228,12 +215,10 @@ class ApiClientAdapter(ApiClient):
         if (
             not response_type
             and isinstance(response_data.status, int)
-            and 100 <= response_data.status <= 599  # noqa: PLR2004
+            and 100 <= response_data.status <= 599
         ):
             # if not found, look for '1XX', '2XX', etc.
-            response_type = response_types_map.get(
-                str(response_data.status)[0] + "XX", None
-            )
+            response_type = response_types_map.get(str(response_data.status)[0] + "XX", None)
 
         # deserialize response data
         response_text = None
@@ -250,14 +235,10 @@ class ApiClientAdapter(ApiClient):
                     match = re.search(r"charset=([a-zA-Z\-\d]+)[\s;]?", content_type)
                 encoding = match.group(1) if match else "utf-8"
                 response_text = response_data.data.decode(encoding)
-                return_data = self.deserialize(
-                    response_text, response_type, content_type
-                )
+                return_data = self.deserialize(response_text, response_type, content_type)
         finally:
-            if not 200 <= response_data.status <= 299:  #  noqa: PLR2004
-                logger.error(
-                    "Unexpected response status code: %s", response_data.status
-                )
+            if not 200 <= response_data.status <= 299:
+                logger.error("Unexpected response status code: %s", response_data.status)
                 raise ApiException.from_response(
                     http_resp=response_data,
                     body=response_text,

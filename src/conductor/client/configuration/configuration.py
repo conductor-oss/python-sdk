@@ -67,6 +67,7 @@ class Configuration:
     )
     ```
     """
+
     AUTH_TOKEN = None
 
     def __init__(
@@ -115,9 +116,10 @@ class Configuration:
         if server_api_url is not None:
             self.host = server_api_url
         elif base_url is not None:
-            if re.search(r'/api(/|$)', base_url):
+            if re.search(r"/api(/|$)", base_url):
                 warnings.warn(
-                    "'base_url' been passed with '/api' path. Consider using 'server_api_url' instead"
+                    "'base_url' been passed with '/api' path. Consider using 'server_api_url' instead",
+                    stacklevel=2,
                 )
             else:
                 base_url += "/api"
@@ -176,9 +178,7 @@ class Configuration:
                 self.proxy_headers = json.loads(os.getenv("CONDUCTOR_PROXY_HEADERS"))
             except (json.JSONDecodeError, TypeError):
                 # If JSON parsing fails, treat as a single header value
-                self.proxy_headers = {
-                    "Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")
-                }
+                self.proxy_headers = {"Authorization": os.getenv("CONDUCTOR_PROXY_HEADERS")}
         # Safe chars for path_param
         self.safe_chars_for_path_param = ""
 

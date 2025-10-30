@@ -12,9 +12,7 @@ class EventClient:
     def __init__(self, api_client: ApiClient):
         self.client = EventResourceApi(api_client)
 
-    def delete_queue_configuration(
-        self, queue_configuration: QueueConfiguration
-    ) -> None:
+    def delete_queue_configuration(self, queue_configuration: QueueConfiguration) -> None:
         return self.client.delete_queue_config(
             queue_name=queue_configuration.queue_name,
             queue_type=queue_configuration.queue_type,

@@ -28,15 +28,17 @@ class KafkaPublishInput:
         "_topic": "topic",
     }
 
-    def __init__(self,
-                 bootstrap_servers: Optional[str] = None,
-                 key: Optional[str] = None,
-                 key_serializer: Optional[str] = None,
-                 value: Optional[str] = None,
-                 request_timeout_ms: Optional[str] = None,
-                 max_block_ms: Optional[str] = None,
-                 headers: Optional[Dict[str, Any]] = None,
-                 topic: Optional[str] = None) -> Self:
+    def __init__(
+        self,
+        bootstrap_servers: Optional[str] = None,
+        key: Optional[str] = None,
+        key_serializer: Optional[str] = None,
+        value: Optional[str] = None,
+        request_timeout_ms: Optional[str] = None,
+        max_block_ms: Optional[str] = None,
+        headers: Optional[Dict[str, Any]] = None,
+        topic: Optional[str] = None,
+    ) -> Self:
         self._bootstrap_servers = deepcopy(bootstrap_servers)
         self._key = deepcopy(key)
         self._key_serializer = deepcopy(key_serializer)

@@ -23,9 +23,7 @@ from conductor.shared.automator.utils import convert_from_dict_or_list
 from conductor.shared.http.enums import TaskResultStatus
 from conductor.shared.worker.exception import NonRetryableException
 
-ExecuteTaskFunction = Callable[
-    [Union[TaskAdapter, object]], Union[TaskResultAdapter, object]
-]
+ExecuteTaskFunction = Callable[[Union[TaskAdapter, object]], Union[TaskResultAdapter, object]]
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
@@ -37,10 +35,7 @@ def is_callable_input_parameter_a_task(
     if len(parameters) != 1:
         return False
     parameter = parameters[next(iter(parameters.keys()))]
-    return (
-        parameter.annotation in {object_type, parameter.empty}
-        or parameter.annotation is object
-    )
+    return parameter.annotation in {object_type, parameter.empty} or parameter.annotation is object
 
 
 def is_callable_return_value_of_type(
@@ -73,7 +68,6 @@ class Worker(WorkerInterface):
         task_result: TaskResultAdapter = self.get_task_result_from_task(task)
 
         try:
-
             if self._is_execute_function_input_parameter_a_task:
                 task_output = self.execute_function(task)
             else:
@@ -131,9 +125,7 @@ class Worker(WorkerInterface):
             return task_result
         if not isinstance(task_result.output_data, dict):
             task_output = task_result.output_data
-            task_result.output_data = self.api_client.sanitize_for_serialization(
-                task_output
-            )
+            task_result.output_data = self.api_client.sanitize_for_serialization(task_output)
             if not isinstance(task_result.output_data, dict):
                 task_result.output_data = {"result": task_result.output_data}
 
@@ -149,15 +141,11 @@ class Worker(WorkerInterface):
     @execute_function.setter
     def execute_function(self, execute_function: ExecuteTaskFunction) -> None:
         self._execute_function = execute_function
-        self._is_execute_function_input_parameter_a_task = (
-            is_callable_input_parameter_a_task(
-                callable_exec_task_function=execute_function,
-                object_type=TaskAdapter,
-            )
+        self._is_execute_function_input_parameter_a_task = is_callable_input_parameter_a_task(
+            callable_exec_task_function=execute_function,
+            object_type=TaskAdapter,
         )
-        self._is_execute_function_return_value_a_task_result = (
-            is_callable_return_value_of_type(
-                callable_exec_task_function=execute_function,
-                object_type=TaskResultAdapter,
-            )
+        self._is_execute_function_return_value_a_task_result = is_callable_return_value_of_type(
+            callable_exec_task_function=execute_function,
+            object_type=TaskResultAdapter,
         )

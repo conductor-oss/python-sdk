@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from conductor.asyncio_client.adapters.models.schema_def_adapter import \
-    SchemaDefAdapter
+from conductor.asyncio_client.adapters.models.schema_def_adapter import SchemaDefAdapter
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.http.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
@@ -164,9 +163,7 @@ class OrkesSchemaClient(OrkesBaseClient):
         """Search schemas by name pattern (case-insensitive)"""
         all_schemas = await self.get_all_schemas()
         return [
-            schema
-            for schema in all_schemas
-            if name_pattern.lower() in (schema.name or "").lower()
+            schema for schema in all_schemas if name_pattern.lower() in (schema.name or "").lower()
         ]
 
     async def get_schemas_with_description(
@@ -177,8 +174,7 @@ class OrkesSchemaClient(OrkesBaseClient):
         return [
             schema
             for schema in all_schemas
-            if schema.description
-            and description_pattern.lower() in schema.description.lower()
+            if schema.description and description_pattern.lower() in schema.description.lower()
         ]
 
     async def validate_schema_structure(self, schema_definition: dict) -> bool:

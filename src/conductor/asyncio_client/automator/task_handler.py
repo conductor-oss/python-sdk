@@ -83,9 +83,7 @@ class TaskHandler:
                     domain=domain,
                     poll_interval=poll_interval,
                 )
-                logger.info(
-                    "Created worker with name: %s; domain: %s", task_def_name, domain
-                )
+                logger.info("Created worker with name: %s; domain: %s", task_def_name, domain)
                 workers.append(worker)
 
         self.__create_task_runner_processes(workers, configuration, metrics_settings)
@@ -126,9 +124,7 @@ class TaskHandler:
             logger.info("KeyboardInterrupt: Stopping all processes")
             self.stop_processes()
 
-    def __create_metrics_provider_process(
-        self, metrics_settings: MetricsSettings
-    ) -> None:
+    def __create_metrics_provider_process(self, metrics_settings: MetricsSettings) -> None:
         if metrics_settings is None:
             self.metrics_provider_process = None
             return
@@ -136,9 +132,7 @@ class TaskHandler:
             target=self.coroutine_as_process_target,
             args=(AsyncMetricsCollector.provide_metrics, metrics_settings),
         )
-        logger.info(
-            "Created MetricsProvider process pid: %s", self.metrics_provider_process.pid
-        )
+        logger.info("Created MetricsProvider process pid: %s", self.metrics_provider_process.pid)
 
     def __create_task_runner_processes(
         self,
@@ -157,9 +151,7 @@ class TaskHandler:
         metrics_settings: MetricsSettings,
     ) -> None:
         task_runner = AsyncTaskRunner(worker, configuration, metrics_settings)
-        process = Process(
-            target=self.coroutine_as_process_target, args=(task_runner.run,)
-        )
+        process = Process(target=self.coroutine_as_process_target, args=(task_runner.run,))
         self.task_runner_processes.append(process)
 
     def __start_metrics_provider_process(self):
@@ -174,9 +166,7 @@ class TaskHandler:
     def __start_task_runner_processes(self):
         for task_runner_process in self.task_runner_processes:
             task_runner_process.start()
-            logger.debug(
-                "Started TaskRunner process with pid: %s", task_runner_process.pid
-            )
+            logger.debug("Started TaskRunner process with pid: %s", task_runner_process.pid)
         logger.info("Started %s TaskRunner processes", len(self.task_runner_processes))
 
     def __join_metrics_provider_process(self):

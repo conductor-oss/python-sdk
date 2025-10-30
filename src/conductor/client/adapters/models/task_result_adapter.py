@@ -1,5 +1,4 @@
-from conductor.client.adapters.models.task_exec_log_adapter import \
-    TaskExecLogAdapter
+from conductor.client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
 from conductor.client.codegen.models.task_result import TaskResult
 from conductor.shared.http.enums.task_result_status import TaskResultStatus
 
@@ -16,14 +15,12 @@ class TaskResultAdapter(TaskResult):
         if isinstance(status, str):
             try:
                 status = TaskResultStatus(status)
-            except ValueError:
+            except ValueError as e:
                 raise ValueError(
                     f"Invalid value for `status` ({status}), must be one of {[e.value for e in TaskResultStatus]}"
-                )
+                ) from e
         elif not isinstance(status, TaskResultStatus):
-            raise TypeError(
-                f"status must be a TaskStatus enum or string, got {type(status)}"
-            )
+            raise TypeError(f"status must be a TaskStatus enum or string, got {type(status)}")
 
         self._status = status
 

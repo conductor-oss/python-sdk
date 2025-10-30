@@ -1,3 +1,4 @@
+from typing import ClassVar, Dict
 import pprint
 
 import six
@@ -16,22 +17,20 @@ class HealthCheckStatus(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
-    swagger_types = {
+    swagger_types: ClassVar[Dict[str, str]] = {
         "health_results": "list[Health]",
         "suppressed_health_results": "list[Health]",
         "healthy": "bool",
     }
 
-    attribute_map = {
+    attribute_map: ClassVar[Dict[str, str]] = {
         "health_results": "healthResults",
         "suppressed_health_results": "suppressedHealthResults",
         "healthy": "healthy",
     }
 
-    def __init__(
-        self, health_results=None, suppressed_health_results=None, healthy=None
-    ):  # noqa: E501
-        """HealthCheckStatus - a model defined in Swagger"""  # noqa: E501
+    def __init__(self, health_results=None, suppressed_health_results=None, healthy=None):
+        """HealthCheckStatus - a model defined in Swagger"""
         self._health_results = None
         self._suppressed_health_results = None
         self._healthy = None
@@ -113,18 +112,14 @@ class HealthCheckStatus(object):
         for attr, _ in six.iteritems(self.swagger_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
+                result[attr] = [x.to_dict() if hasattr(x, "to_dict") else x for x in value]
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
                 result[attr] = dict(
                     map(
                         lambda item: (
-                            (item[0], item[1].to_dict())
-                            if hasattr(item[1], "to_dict")
-                            else item
+                            (item[0], item[1].to_dict()) if hasattr(item[1], "to_dict") else item
                         ),
                         value.items(),
                     )
@@ -132,8 +127,7 @@ class HealthCheckStatus(object):
             else:
                 result[attr] = value
         if issubclass(HealthCheckStatus, dict):
-            for key, value in self.items():
-                result[key] = value
+            result.update(self.items())
 
         return result
 

@@ -10,7 +10,5 @@ class KafkaPublishTask(TaskInterface):
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.KAFKA_PUBLISH,
-            input_parameters={
-                "kafka_request": kafka_publish_input
-            }
+            input_parameters={"kafka_request": kafka_publish_input},
         )

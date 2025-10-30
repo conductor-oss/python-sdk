@@ -30,10 +30,7 @@ class ServiceDescriptorAdapter(ServiceDescriptor):
                 "fullName": obj.get("fullName"),
                 "index": obj.get("index"),
                 "methods": (
-                    [
-                        MethodDescriptorAdapter.from_dict(_item)
-                        for _item in obj["methods"]
-                    ]
+                    [MethodDescriptorAdapter.from_dict(_item) for _item in obj["methods"]]
                     if obj.get("methods") is not None
                     else None
                 ),

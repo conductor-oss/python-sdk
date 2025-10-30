@@ -70,7 +70,7 @@ class TestOrkesIntegrationClientIntegration:
         try:
             integration_client.save_integration_provider(integration_name, integration_update)
             retrieved_integration = integration_client.get_integration_provider(integration_name)
-            
+
             assert retrieved_integration.name == integration_name
             assert retrieved_integration.category == integration_update.category
             assert retrieved_integration.type == integration_update.type
@@ -99,7 +99,7 @@ class TestOrkesIntegrationClientIntegration:
         try:
             integration_client.save_integration(integration_name, integration_update)
             retrieved_integration = integration_client.get_integration(integration_name)
-            
+
             assert retrieved_integration.name == integration_name
             assert retrieved_integration.category == integration_update.category
             assert retrieved_integration.type == integration_update.type
@@ -127,16 +127,16 @@ class TestOrkesIntegrationClientIntegration:
 
         try:
             integration_client.save_integration_provider(integration_name, integration_update)
-            
+
             all_providers = integration_client.get_integration_providers()
             assert isinstance(all_providers, list)
-            
+
             provider_names = [provider.name for provider in all_providers]
             assert integration_name in provider_names
-            
+
             ai_providers = integration_client.get_integration_providers(category="AI_MODEL")
             assert isinstance(ai_providers, list)
-            
+
             active_providers = integration_client.get_integration_providers(active_only=True)
             assert isinstance(active_providers, list)
         finally:
@@ -159,7 +159,7 @@ class TestOrkesIntegrationClientIntegration:
         simple_integration_config: dict,
     ):
         integration_name = f"test_all_integrations_{test_suffix}"
-        
+
         integration_update = IntegrationUpdate(
             category="AI_MODEL",
             type="openai",
@@ -170,16 +170,16 @@ class TestOrkesIntegrationClientIntegration:
 
         try:
             integration_client.save_integration_provider(integration_name, integration_update)
-            
+
             all_integrations = integration_client.get_all_integrations()
             assert isinstance(all_integrations, list)
-            
+
             integration_names = [integration.name for integration in all_integrations]
             assert integration_name in integration_names
-            
+
             ai_integrations = integration_client.get_all_integrations(category="AI_MODEL")
             assert isinstance(ai_integrations, list)
-            
+
             active_integrations = integration_client.get_all_integrations(active_only=True)
             assert isinstance(active_integrations, list)
         finally:
@@ -194,7 +194,7 @@ class TestOrkesIntegrationClientIntegration:
         simple_integration_config: dict,
     ):
         integration_name = f"test_providers_and_integrations_{test_suffix}"
-        
+
         integration_update = IntegrationUpdate(
             category="AI_MODEL",
             type="openai",
@@ -205,13 +205,13 @@ class TestOrkesIntegrationClientIntegration:
 
         try:
             integration_client.save_integration_provider(integration_name, integration_update)
-            
+
             providers_and_integrations = integration_client.get_providers_and_integrations()
             assert isinstance(providers_and_integrations, list)
-            
+
             openai_providers = integration_client.get_providers_and_integrations(integration_type="openai")
             assert isinstance(openai_providers, list)
-            
+
             active_providers = integration_client.get_providers_and_integrations(active_only=True)
             assert isinstance(active_providers, list)
         finally:
@@ -226,7 +226,7 @@ class TestOrkesIntegrationClientIntegration:
         simple_integration_config: dict,
     ):
         integration_name = f"test_provider_tags_{test_suffix}"
-        
+
         integration_update = IntegrationUpdate(
             category="AI_MODEL",
             type="openai",
@@ -237,7 +237,7 @@ class TestOrkesIntegrationClientIntegration:
 
         try:
             integration_client.save_integration_provider(integration_name, integration_update)
-            
+
             tag = MetadataTag("priority", "high"),
 
             integration_client.put_tag_for_integration_provider(tag, integration_name)
@@ -292,7 +292,7 @@ class TestOrkesIntegrationClientIntegration:
                     enabled=True,
                     configuration=simple_integration_config,
                 )
-                
+
                 integration_client.save_integration_provider(integration_name, integration_update)
 
                 with cleanup_lock:

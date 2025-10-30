@@ -10,15 +10,13 @@ from conductor.asyncio_client.http.models import WorkflowTestRequest
 
 class WorkflowTestRequestAdapter(WorkflowTestRequest):
     input: Optional[Dict[str, Any]] = None
-    sub_workflow_test_request: Optional[Dict[str, "WorkflowTestRequestAdapter"]] = (
-        Field(default=None, alias="subWorkflowTestRequest")
+    sub_workflow_test_request: Optional[Dict[str, "WorkflowTestRequestAdapter"]] = Field(
+        default=None, alias="subWorkflowTestRequest"
     )
     task_ref_to_mock_output: Optional[Dict[str, List["TaskMockAdapter"]]] = Field(
         default=None, alias="taskRefToMockOutput"
     )
-    workflow_def: Optional["WorkflowDefAdapter"] = Field(
-        default=None, alias="workflowDef"
-    )
+    workflow_def: Optional["WorkflowDefAdapter"] = Field(default=None, alias="workflowDef")
     priority: Optional[int] = Field(default=None, alias="priority")
 
     @classmethod
@@ -34,9 +32,7 @@ class WorkflowTestRequestAdapter(WorkflowTestRequest):
             {
                 "correlationId": obj.get("correlationId"),
                 "createdBy": obj.get("createdBy"),
-                "externalInputPayloadStoragePath": obj.get(
-                    "externalInputPayloadStoragePath"
-                ),
+                "externalInputPayloadStoragePath": obj.get("externalInputPayloadStoragePath"),
                 "idempotencyKey": obj.get("idempotencyKey"),
                 "idempotencyStrategy": obj.get("idempotencyStrategy"),
                 "input": obj.get("input"),

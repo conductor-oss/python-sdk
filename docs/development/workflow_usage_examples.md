@@ -159,7 +159,7 @@ print(not_found)  # None
 ```python
 def monitor_workflow_status(workflow: Workflow):
     """Monitor and report workflow status"""
-    
+
     if workflow.is_completed():
         if workflow.is_successful():
             print("Workflow completed successfully!")
@@ -169,16 +169,16 @@ def monitor_workflow_status(workflow: Workflow):
             return "FAILED"
     elif workflow.is_running():
         print("Workflow is still running...")
-        
+
         # Check current task
         current = workflow.current_task
         if current:
             print(f"Current task: {current.task_def_name} ({current.status})")
-        
+
         # Get all in-progress tasks
         in_progress = workflow.get_in_progress_tasks()
         print(f"Total in-progress tasks: {len(in_progress)}")
-        
+
         return "RUNNING"
     else:
         print("Unknown workflow status")
@@ -194,16 +194,16 @@ status = monitor_workflow_status(workflow)
 ```python
 def track_task_progress(workflow: Workflow):
     """Track progress of specific tasks in a workflow"""
-    
+
     # Get all in-progress tasks
     in_progress_tasks = workflow.get_in_progress_tasks()
-    
+
     print(f"Workflow Status: {workflow.status}")
     print(f"Total in-progress tasks: {len(in_progress_tasks)}")
-    
+
     for task in in_progress_tasks:
         print(f"- {task.task_def_name}: {task.status}")
-        
+
         # If task has a reference name, show it
         if hasattr(task, 'workflow_task') and task.workflow_task:
             ref_name = getattr(task.workflow_task, 'task_reference_name', 'N/A')
@@ -219,39 +219,39 @@ track_task_progress(workflow)
 ```python
 def process_workflow_result(workflow: Workflow):
     """Process workflow results based on completion status"""
-    
+
     if not workflow.is_completed():
         print("Workflow is not yet completed")
         return None
-    
+
     if workflow.is_successful():
         print("Processing successful workflow result...")
-        
+
         # Get workflow output
         if workflow.output:
             print(f"Workflow output: {workflow.output}")
-        
+
         # Find specific tasks by reference name
         result_task = workflow.get_task_by_reference_name("process_result")
         if result_task:
             print(f"Result task status: {result_task.status}")
             if hasattr(result_task, 'output_data') and result_task.output_data:
                 print(f"Task output: {result_task.output_data}")
-        
+
         return workflow.output
-    
+
     else:
         print("Processing failed workflow...")
-        
+
         # Get failed tasks
         failed_tasks = [task for task in workflow.tasks if task.status == "FAILED"]
         print(f"Number of failed tasks: {len(failed_tasks)}")
-        
+
         for task in failed_tasks:
             print(f"Failed task: {task.task_def_name}")
             if hasattr(task, 'reason_for_incompletion'):
                 print(f"Reason: {task.reason_for_incompletion}")
-        
+
         return None
 
 # Usage
@@ -264,7 +264,7 @@ result = process_workflow_result(workflow)
 ```python
 def health_check_workflow(workflow: Workflow) -> dict:
     """Perform a comprehensive health check on a workflow"""
-    
+
     health_status = {
         "workflow_id": getattr(workflow, 'workflow_id', 'unknown'),
         "status": workflow.status,
@@ -276,19 +276,19 @@ def health_check_workflow(workflow: Workflow) -> dict:
         "in_progress_count": 0,
         "total_tasks": 0
     }
-    
+
     # Task information
     if workflow.tasks:
         health_status["total_tasks"] = len(workflow.tasks)
         health_status["in_progress_count"] = len(workflow.get_in_progress_tasks())
-        
+
         current = workflow.current_task
         if current:
             health_status["current_task"] = {
                 "name": current.task_def_name,
                 "status": current.status
             }
-    
+
     # Overall health assessment
     if workflow.is_successful():
         health_status["health"] = "HEALTHY"
@@ -298,7 +298,7 @@ def health_check_workflow(workflow: Workflow) -> dict:
         health_status["health"] = "IN_PROGRESS"
     else:
         health_status["health"] = "UNKNOWN"
-    
+
     return health_status
 
 # Usage
@@ -335,7 +335,7 @@ print(workflow.current_task)  # None or current task
 ```python
 def comprehensive_workflow_check(workflow: WorkflowAdapter):
     """Comprehensive workflow state checking"""
-    
+
     if workflow.is_completed():
         if workflow.is_successful():
             return "SUCCESS"

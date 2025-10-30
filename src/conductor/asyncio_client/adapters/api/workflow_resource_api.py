@@ -16,9 +16,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
-            Tuple[
-                Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]
-            ],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
         ] = None,
         _request_auth: Optional[Dict[StrictStr, Any]] = None,
         _content_type: Optional[StrictStr] = None,
@@ -67,9 +65,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
         _response_types_map: Dict[str, Optional[str]] = {
             "200": "Workflow",
         }
-        response_data = await self.api_client.call_api(
-            *_param, _request_timeout=_request_timeout
-        )
+        response_data = await self.api_client.call_api(*_param, _request_timeout=_request_timeout)
         await response_data.read()
         return self.api_client.response_deserialize(
             response_data=response_data,
@@ -89,9 +85,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
-            Tuple[
-                Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]
-            ],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
         ] = None,
         _request_auth: Optional[Dict[StrictStr, Any]] = None,
         _content_type: Optional[StrictStr] = None,
@@ -135,7 +129,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
                             in the spec for a single request.
         :type _host_index: int, optional
         :return: Returns the result object.
-        """  # noqa: E501
+        """
 
         _param = self._start_workflow1_serialize(
             name=name,
@@ -154,9 +148,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
         _response_types_map: Dict[str, Optional[str]] = {
             "200": "str",
         }
-        response_data = await self.api_client.call_api(
-            *_param, _request_timeout=_request_timeout
-        )
+        response_data = await self.api_client.call_api(*_param, _request_timeout=_request_timeout)
         await response_data.read()
         return self.api_client.response_deserialize(
             response_data=response_data,

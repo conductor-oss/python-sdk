@@ -16,19 +16,17 @@ class IntegrationDefAdapter(IntegrationDef):
         if value is None:
             return value
 
-        if value not in set(
-            [
-                "API",
-                "AI_MODEL",
-                "VECTOR_DB",
-                "RELATIONAL_DB",
-                "MESSAGE_BROKER",
-                "GIT",
-                "EMAIL",
-                "MCP",
-                "CLOUD",
-            ]
-        ):
+        if value not in {
+            "API",
+            "AI_MODEL",
+            "VECTOR_DB",
+            "RELATIONAL_DB",
+            "MESSAGE_BROKER",
+            "GIT",
+            "EMAIL",
+            "MCP",
+            "CLOUD",
+        }:
             raise ValueError(
                 "must be one of enum values ('API', 'AI_MODEL', 'VECTOR_DB', 'RELATIONAL_DB', 'MESSAGE_BROKER', 'GIT', 'EMAIL', 'MCP', 'CLOUD')"
             )

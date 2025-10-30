@@ -20,9 +20,7 @@ class OneofDescriptorProtoAdapter(OneofDescriptorProto):
     options_or_builder: Optional["OneofOptionsOrBuilderAdapter"] = Field(
         default=None, alias="optionsOrBuilder"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
     name_bytes: Optional["ByteStringAdapter"] = Field(default=None, alias="nameBytes")
 
     @classmethod

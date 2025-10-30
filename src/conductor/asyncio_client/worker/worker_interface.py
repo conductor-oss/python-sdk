@@ -5,8 +5,7 @@ import socket
 from typing import Union
 
 from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
-from conductor.asyncio_client.adapters.models.task_result_adapter import \
-    TaskResultAdapter
+from conductor.asyncio_client.adapters.models.task_result_adapter import TaskResultAdapter
 
 DEFAULT_POLLING_INTERVAL = 100  # ms
 
@@ -45,9 +44,7 @@ class WorkerInterface(abc.ABC):
         :return: float
                  Default: 100ms
         """
-        return (
-            self.poll_interval if self.poll_interval else DEFAULT_POLLING_INTERVAL
-        ) / 1000
+        return (self.poll_interval if self.poll_interval else DEFAULT_POLLING_INTERVAL) / 1000
 
     def get_task_definition_name(self) -> str:
         """
@@ -76,9 +73,7 @@ class WorkerInterface(abc.ABC):
     def compute_task_definition_name(self):
         if isinstance(self.task_definition_name, list):
             task_definition_name = self.task_definition_name[self.next_task_index]
-            self.next_task_index = (self.next_task_index + 1) % len(
-                self.task_definition_name
-            )
+            self.next_task_index = (self.next_task_index + 1) % len(self.task_definition_name)
             return task_definition_name
         return self.task_definition_name
 

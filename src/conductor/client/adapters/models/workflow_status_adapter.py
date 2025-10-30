@@ -1,5 +1,8 @@
 from conductor.client.adapters.models.workflow_run_adapter import (  # shared
-    running_status, successful_status, terminal_status)
+    running_status,
+    successful_status,
+    terminal_status,
+)
 from conductor.client.codegen.models.workflow_status import WorkflowStatus
 
 

@@ -12,17 +12,11 @@ class FieldDescriptorAdapter(FieldDescriptor):
     containing_oneof: Optional["OneofDescriptorAdapter"] = Field(
         default=None, alias="containingOneof"
     )
-    containing_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="containingType"
-    )
+    containing_type: Optional["DescriptorAdapter"] = Field(default=None, alias="containingType")
     enum_type: Optional["EnumDescriptorAdapter"] = Field(default=None, alias="enumType")
-    extension_scope: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="extensionScope"
-    )
+    extension_scope: Optional["DescriptorAdapter"] = Field(default=None, alias="extensionScope")
     file: Optional["FileDescriptorAdapter"] = None
-    message_type: Optional["DescriptorAdapter"] = Field(
-        default=None, alias="messageType"
-    )
+    message_type: Optional["DescriptorAdapter"] = Field(default=None, alias="messageType")
     options: Optional["FieldOptionsAdapter"] = None
     proto: Optional["FieldDescriptorProtoAdapter"] = None
     real_containing_oneof: Optional["OneofDescriptorAdapter"] = Field(

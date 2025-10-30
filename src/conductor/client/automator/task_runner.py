@@ -53,10 +53,12 @@ class TaskRunner:
 
         while True:
             # Check if worker should stop due to 401 policy
-            if (hasattr(self.task_client, 'api_client') and 
-                hasattr(self.task_client.api_client, 'auth_401_handler') and 
-                hasattr(self.task_client.api_client.auth_401_handler, 'is_worker_stopped') and 
-                self.task_client.api_client.auth_401_handler.is_worker_stopped()):
+            if (
+                hasattr(self.task_client, "api_client")
+                and hasattr(self.task_client.api_client, "auth_401_handler")
+                and hasattr(self.task_client.api_client.auth_401_handler, "is_worker_stopped")
+                and self.task_client.api_client.auth_401_handler.is_worker_stopped()
+            ):
                 logger.error("Worker stopped due to persistent 401 authentication failures")
                 break
             self.run_once()
@@ -90,9 +92,7 @@ class TaskRunner:
             finish_time = time.time()
             time_spent = finish_time - start_time
             if self.metrics_collector is not None:
-                self.metrics_collector.record_task_poll_time(
-                    task_definition_name, time_spent
-                )
+                self.metrics_collector.record_task_poll_time(task_definition_name, time_spent)
         except AuthorizationException as auth_exception:
             if self.metrics_collector is not None:
                 self.metrics_collector.increment_task_poll_error(
@@ -113,9 +113,7 @@ class TaskRunner:
             return None
         except ApiException as e:
             if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(
-                    task_definition_name, type(e)
-                )
+                self.metrics_collector.increment_task_poll_error(task_definition_name, type(e))
             logger.error(
                 "Failed to poll task: %s, reason: %s, code: %s",
                 task_definition_name,
@@ -125,9 +123,7 @@ class TaskRunner:
             return None
         except Exception as e:
             if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(
-                    task_definition_name, type(e)
-                )
+                self.metrics_collector.increment_task_poll_error(task_definition_name, type(e))
             logger.error("Failed to poll task: %s; reason: %s", task_definition_name, e)
             return None
 
@@ -156,9 +152,7 @@ class TaskRunner:
             finish_time = time.time()
             time_spent = finish_time - start_time
             if self.metrics_collector is not None:
-                self.metrics_collector.record_task_execute_time(
-                    task_definition_name, time_spent
-                )
+                self.metrics_collector.record_task_execute_time(task_definition_name, time_spent)
                 self.metrics_collector.record_task_result_payload_size(
                     task_definition_name, sys.getsizeof(task_result)
                 )
@@ -170,9 +164,7 @@ class TaskRunner:
             )
         except Exception as e:
             if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_execution_error(
-                    task_definition_name, type(e)
-                )
+                self.metrics_collector.increment_task_execution_error(task_definition_name, type(e))
             task_result = TaskResult(
                 task_id=task.task_id,
                 workflow_instance_id=task.workflow_instance_id,
@@ -181,13 +173,10 @@ class TaskRunner:
             task_result.status = "FAILED"
             task_result.reason_for_incompletion = str(e)
             task_result.logs = [
-                TaskExecLog(
-                    traceback.format_exc(), task_result.task_id, int(time.time())
-                )
+                TaskExecLog(traceback.format_exc(), task_result.task_id, int(time.time()))
             ]
             logger.error(
-                "Failed to execute task id: %s; workflow_instance_id: %s; "
-                "task_definition_name: %s; reason: %s",
+                "Failed to execute task id: %s; workflow_instance_id: %s; task_definition_name: %s; reason: %s",
                 task.task_id,
                 task.workflow_instance_id,
                 task_definition_name,
@@ -248,9 +237,7 @@ class TaskRunner:
         else:
             self.worker.domain = self.worker.get_domain()
 
-        polling_interval = self.__get_property_value_from_env(
-            "polling_interval", task_type
-        )
+        polling_interval = self.__get_property_value_from_env("polling_interval", task_type)
 
         if polling_interval:
             try:
@@ -261,9 +248,7 @@ class TaskRunner:
                     polling_interval,
                     e,
                 )
-                self.worker.poll_interval = (
-                    self.worker.get_polling_interval_in_seconds()
-                )
+                self.worker.poll_interval = self.worker.get_polling_interval_in_seconds()
 
     def __get_property_value_from_env(self, prop, task_type):
         """

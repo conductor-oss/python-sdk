@@ -20,9 +20,7 @@ class UninterpretedOptionAdapter(UninterpretedOption):
     name_or_builder_list: Optional[List["NamePartOrBuilderAdapter"]] = Field(
         default=None, alias="nameOrBuilderList"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

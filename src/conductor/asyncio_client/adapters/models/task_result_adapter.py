@@ -24,9 +24,7 @@ class TaskResultAdapter(TaskResult):
             {
                 "callbackAfterSeconds": obj.get("callbackAfterSeconds"),
                 "extendLease": obj.get("extendLease"),
-                "externalOutputPayloadStoragePath": obj.get(
-                    "externalOutputPayloadStoragePath"
-                ),
+                "externalOutputPayloadStoragePath": obj.get("externalOutputPayloadStoragePath"),
                 "logs": (
                     [TaskExecLogAdapter.from_dict(_item) for _item in obj["logs"]]
                     if obj.get("logs") is not None

@@ -50,7 +50,7 @@ def workflow_executor(mock_configuration, mock_metadata_client, mock_task_client
          patch('conductor.asyncio_client.workflow.executor.workflow_executor.MetadataResourceApiAdapter', return_value=mock_metadata_client), \
          patch('conductor.asyncio_client.workflow.executor.workflow_executor.TaskResourceApiAdapter', return_value=mock_task_client), \
          patch('conductor.asyncio_client.workflow.executor.workflow_executor.OrkesWorkflowClient', return_value=mock_workflow_client):
-        
+
         api_client = ApiClient(mock_configuration)
         executor = AsyncWorkflowExecutor(mock_configuration, api_client=api_client)
         executor.metadata_client = mock_metadata_client
@@ -86,9 +86,9 @@ async def test_init(workflow_executor, mock_metadata_client, mock_task_client, m
 @pytest.mark.asyncio
 async def test_register_workflow(workflow_executor, mock_metadata_client, workflow_def):
     mock_metadata_client.update.return_value = {"status": "success"}
-    
+
     result = await workflow_executor.register_workflow(workflow_def, overwrite=True)
-    
+
     mock_metadata_client.update.assert_called_once_with(
         extended_workflow_def=[workflow_def], overwrite=True
     )
@@ -98,9 +98,9 @@ async def test_register_workflow(workflow_executor, mock_metadata_client, workfl
 @pytest.mark.asyncio
 async def test_register_workflow_without_overwrite(workflow_executor, mock_metadata_client, workflow_def):
     mock_metadata_client.update.return_value = {"status": "success"}
-    
+
     result = await workflow_executor.register_workflow(workflow_def)
-    
+
     mock_metadata_client.update.assert_called_once_with(
         extended_workflow_def=[workflow_def], overwrite=None
     )
@@ -110,9 +110,9 @@ async def test_register_workflow_without_overwrite(workflow_executor, mock_metad
 @pytest.mark.asyncio
 async def test_start_workflow(workflow_executor, mock_workflow_client, start_workflow_request):
     mock_workflow_client.start_workflow.return_value = "workflow_id_123"
-    
+
     result = await workflow_executor.start_workflow(start_workflow_request)
-    
+
     mock_workflow_client.start_workflow.assert_called_once_with(
         start_workflow_request=start_workflow_request
     )
@@ -123,11 +123,11 @@ async def test_start_workflow(workflow_executor, mock_workflow_client, start_wor
 async def test_start_workflows(workflow_executor, mock_workflow_client, start_workflow_request):
     request1 = StartWorkflowRequestAdapter(name="workflow1")
     request2 = StartWorkflowRequestAdapter(name="workflow2")
-    
+
     mock_workflow_client.start_workflow.side_effect = ["id1", "id2"]
-    
+
     result = await workflow_executor.start_workflows(request1, request2)
-    
+
     assert mock_workflow_client.start_workflow.call_count == 2
     assert result == ["id1", "id2"]
 
@@ -136,14 +136,14 @@ async def test_start_workflows(workflow_executor, mock_workflow_client, start_wo
 async def test_execute_workflow(workflow_executor, mock_workflow_client, start_workflow_request):
     mock_workflow_run = MagicMock(spec=WorkflowRunAdapter)
     mock_workflow_client.execute_workflow.return_value = mock_workflow_run
-    
+
     result = await workflow_executor.execute_workflow(
-        start_workflow_request, 
-        wait_until_task_ref="task1", 
+        start_workflow_request,
+        wait_until_task_ref="task1",
         wait_for_seconds=30,
         request_id="custom_request_id"
     )
-    
+
     mock_workflow_client.execute_workflow.assert_called_once_with(
         start_workflow_request=start_workflow_request,
         request_id="custom_request_id",
@@ -157,9 +157,9 @@ async def test_execute_workflow(workflow_executor, mock_workflow_client, start_w
 async def test_execute_workflow_with_defaults(workflow_executor, mock_workflow_client, start_workflow_request):
     mock_workflow_run = MagicMock(spec=WorkflowRunAdapter)
     mock_workflow_client.execute_workflow.return_value = mock_workflow_run
-    
+
     result = await workflow_executor.execute_workflow(start_workflow_request)
-    
+
     mock_workflow_client.execute_workflow.assert_called_once()
     call_args = mock_workflow_client.execute_workflow.call_args
     assert call_args[1]["start_workflow_request"] == start_workflow_request
@@ -172,14 +172,14 @@ async def test_execute_workflow_with_defaults(workflow_executor, mock_workflow_c
 async def test_execute_workflow_with_return_strategy(workflow_executor, mock_workflow_client, start_workflow_request):
     mock_workflow_run = MagicMock(spec=WorkflowRunAdapter)
     mock_workflow_client.execute_workflow_with_return_strategy.return_value = mock_workflow_run
-    
+
     result = await workflow_executor.execute_workflow_with_return_strategy(
         start_workflow_request,
         wait_until_task_ref="task1",
         wait_for_seconds=30,
         request_id="custom_request_id"
     )
-    
+
     mock_workflow_client.execute_workflow_with_return_strategy.assert_called_once_with(
         start_workflow_request=start_workflow_request,
         request_id="custom_request_id",
@@ -193,11 +193,11 @@ async def test_execute_workflow_with_return_strategy(workflow_executor, mock_wor
 async def test_execute(workflow_executor, mock_workflow_client):
     mock_workflow_run = MagicMock(spec=WorkflowRunAdapter)
     mock_workflow_client.execute_workflow.return_value = mock_workflow_run
-    
+
     with patch('conductor.asyncio_client.workflow.executor.workflow_executor.StartWorkflowRequestAdapter') as mock_request_class:
         mock_request = MagicMock()
         mock_request_class.return_value = mock_request
-        
+
         result = await workflow_executor.execute(
             name="test_workflow",
             version=2,
@@ -208,7 +208,7 @@ async def test_execute(workflow_executor, mock_workflow_client):
             correlation_id="test_correlation",
             domain="test_domain"
         )
-        
+
         mock_workflow_client.execute_workflow.assert_called_once()
         call_args = mock_workflow_client.execute_workflow.call_args
         start_request = call_args[1]["start_workflow_request"]
@@ -220,13 +220,13 @@ async def test_execute(workflow_executor, mock_workflow_client):
 async def test_execute_with_defaults(workflow_executor, mock_workflow_client):
     mock_workflow_run = MagicMock(spec=WorkflowRunAdapter)
     mock_workflow_client.execute_workflow.return_value = mock_workflow_run
-    
+
     with patch('conductor.asyncio_client.workflow.executor.workflow_executor.StartWorkflowRequestAdapter') as mock_request_class:
         mock_request = MagicMock()
         mock_request_class.return_value = mock_request
-        
+
         result = await workflow_executor.execute("test_workflow")
-        
+
         mock_workflow_client.execute_workflow.assert_called_once()
         call_args = mock_workflow_client.execute_workflow.call_args
         start_request = call_args[1]["start_workflow_request"]
@@ -237,7 +237,7 @@ async def test_execute_with_defaults(workflow_executor, mock_workflow_client):
 @pytest.mark.asyncio
 async def test_remove_workflow(workflow_executor, mock_workflow_client):
     await workflow_executor.remove_workflow("workflow_id_123", archive_workflow=True)
-    
+
     mock_workflow_client.delete_workflow.assert_called_once_with(
         workflow_id="workflow_id_123", archive_workflow=True
     )
@@ -246,7 +246,7 @@ async def test_remove_workflow(workflow_executor, mock_workflow_client):
 @pytest.mark.asyncio
 async def test_remove_workflow_without_archive(workflow_executor, mock_workflow_client):
     await workflow_executor.remove_workflow("workflow_id_123")
-    
+
     mock_workflow_client.delete_workflow.assert_called_once_with(
         workflow_id="workflow_id_123"
     )
@@ -256,9 +256,9 @@ async def test_remove_workflow_without_archive(workflow_executor, mock_workflow_
 async def test_get_workflow(workflow_executor, mock_workflow_client):
     mock_workflow = MagicMock(spec=WorkflowAdapter)
     mock_workflow_client.get_workflow.return_value = mock_workflow
-    
+
     result = await workflow_executor.get_workflow("workflow_id_123", include_tasks=True)
-    
+
     mock_workflow_client.get_workflow.assert_called_once_with(
         workflow_id="workflow_id_123", include_tasks=True
     )
@@ -269,9 +269,9 @@ async def test_get_workflow(workflow_executor, mock_workflow_client):
 async def test_get_workflow_without_include_tasks(workflow_executor, mock_workflow_client):
     mock_workflow = MagicMock(spec=WorkflowAdapter)
     mock_workflow_client.get_workflow.return_value = mock_workflow
-    
+
     result = await workflow_executor.get_workflow("workflow_id_123")
-    
+
     mock_workflow_client.get_workflow.assert_called_once_with(
         workflow_id="workflow_id_123"
     )
@@ -282,11 +282,11 @@ async def test_get_workflow_without_include_tasks(workflow_executor, mock_workfl
 async def test_get_workflow_status(workflow_executor, mock_workflow_client):
     mock_status = MagicMock(spec=WorkflowStatusAdapter)
     mock_workflow_client.get_workflow_status.return_value = mock_status
-    
+
     result = await workflow_executor.get_workflow_status(
         "workflow_id_123", include_output=True, include_variables=True
     )
-    
+
     mock_workflow_client.get_workflow_status.assert_called_once_with(
         workflow_id="workflow_id_123",
         include_output=True,
@@ -299,9 +299,9 @@ async def test_get_workflow_status(workflow_executor, mock_workflow_client):
 async def test_get_workflow_status_without_options(workflow_executor, mock_workflow_client):
     mock_status = MagicMock(spec=WorkflowStatusAdapter)
     mock_workflow_client.get_workflow_status.return_value = mock_status
-    
+
     result = await workflow_executor.get_workflow_status("workflow_id_123")
-    
+
     mock_workflow_client.get_workflow_status.assert_called_once_with(
         workflow_id="workflow_id_123",
         include_output=None,
@@ -314,7 +314,7 @@ async def test_get_workflow_status_without_options(workflow_executor, mock_workf
 async def test_search(workflow_executor, mock_workflow_client):
     mock_search_result = MagicMock(spec=ScrollableSearchResultWorkflowSummaryAdapter)
     mock_workflow_client.search.return_value = mock_search_result
-    
+
     result = await workflow_executor.search(
         start=0,
         size=10,
@@ -322,7 +322,7 @@ async def test_search(workflow_executor, mock_workflow_client):
         query="status:COMPLETED",
         skip_cache=True
     )
-    
+
     mock_workflow_client.search.assert_called_once_with(
         start=0,
         size=10,
@@ -337,9 +337,9 @@ async def test_search(workflow_executor, mock_workflow_client):
 async def test_search_with_defaults(workflow_executor, mock_workflow_client):
     mock_search_result = MagicMock(spec=ScrollableSearchResultWorkflowSummaryAdapter)
     mock_workflow_client.search.return_value = mock_search_result
-    
+
     result = await workflow_executor.search()
-    
+
     mock_workflow_client.search.assert_called_once_with(
         start=None,
         size=None,
@@ -354,14 +354,14 @@ async def test_search_with_defaults(workflow_executor, mock_workflow_client):
 async def test_get_by_correlation_ids(workflow_executor, mock_workflow_client):
     mock_workflows = [MagicMock(spec=WorkflowAdapter)]
     mock_workflow_client.get_by_correlation_ids.return_value = {"correlation1": mock_workflows}
-    
+
     result = await workflow_executor.get_by_correlation_ids(
         "test_workflow",
         ["correlation1", "correlation2"],
         include_closed=True,
         include_tasks=True
     )
-    
+
     mock_workflow_client.get_by_correlation_ids.assert_called_once_with(
         correlation_ids=["correlation1", "correlation2"],
         workflow_name="test_workflow",
@@ -376,13 +376,13 @@ async def test_get_by_correlation_ids_and_names(workflow_executor, mock_workflow
     mock_batch_request = MagicMock()
     mock_workflows = [MagicMock(spec=WorkflowAdapter)]
     mock_workflow_client.get_by_correlation_ids_in_batch.return_value = {"correlation1": mock_workflows}
-    
+
     result = await workflow_executor.get_by_correlation_ids_and_names(
         mock_batch_request,
         include_closed=True,
         include_tasks=True
     )
-    
+
     mock_workflow_client.get_by_correlation_ids_in_batch.assert_called_once_with(
         batch_request=mock_batch_request,
         include_completed=True,
@@ -394,7 +394,7 @@ async def test_get_by_correlation_ids_and_names(workflow_executor, mock_workflow
 @pytest.mark.asyncio
 async def test_pause(workflow_executor, mock_workflow_client):
     await workflow_executor.pause("workflow_id_123")
-    
+
     mock_workflow_client.pause_workflow.assert_called_once_with(
         workflow_id="workflow_id_123"
     )
@@ -403,7 +403,7 @@ async def test_pause(workflow_executor, mock_workflow_client):
 @pytest.mark.asyncio
 async def test_resume(workflow_executor, mock_workflow_client):
     await workflow_executor.resume("workflow_id_123")
-    
+
     mock_workflow_client.resume_workflow.assert_called_once_with(
         workflow_id="workflow_id_123"
     )
@@ -416,7 +416,7 @@ async def test_terminate(workflow_executor, mock_workflow_client):
         reason="Test termination",
         trigger_failure_workflow=True
     )
-    
+
     mock_workflow_client.terminate_workflow.assert_called_once_with(
         workflow_id="workflow_id_123",
         reason="Test termination",
@@ -427,7 +427,7 @@ async def test_terminate(workflow_executor, mock_workflow_client):
 @pytest.mark.asyncio
 async def test_terminate_without_options(workflow_executor, mock_workflow_client):
     await workflow_executor.terminate("workflow_id_123")
-    
+
     mock_workflow_client.terminate_workflow.assert_called_once_with(
         workflow_id="workflow_id_123",
         reason=None,
@@ -438,7 +438,7 @@ async def test_terminate_without_options(workflow_executor, mock_workflow_client
 @pytest.mark.asyncio
 async def test_restart(workflow_executor, mock_workflow_client):
     await workflow_executor.restart("workflow_id_123", use_latest_definitions=True)
-    
+
     mock_workflow_client.restart_workflow.assert_called_once_with(
         workflow_id="workflow_id_123",
         use_latest_definitions=True
@@ -448,7 +448,7 @@ async def test_restart(workflow_executor, mock_workflow_client):
 @pytest.mark.asyncio
 async def test_restart_without_options(workflow_executor, mock_workflow_client):
     await workflow_executor.restart("workflow_id_123")
-    
+
     mock_workflow_client.restart_workflow.assert_called_once_with(
         workflow_id="workflow_id_123",
         use_latest_definitions=None
@@ -458,7 +458,7 @@ async def test_restart_without_options(workflow_executor, mock_workflow_client):
 @pytest.mark.asyncio
 async def test_retry(workflow_executor, mock_workflow_client):
     await workflow_executor.retry("workflow_id_123", resume_subworkflow_tasks=True)
-    
+
     mock_workflow_client.retry_workflow.assert_called_once_with(
         workflow_id="workflow_id_123",
         resume_subworkflow_tasks=True
@@ -468,7 +468,7 @@ async def test_retry(workflow_executor, mock_workflow_client):
 @pytest.mark.asyncio
 async def test_retry_without_options(workflow_executor, mock_workflow_client):
     await workflow_executor.retry("workflow_id_123")
-    
+
     mock_workflow_client.retry_workflow.assert_called_once_with(
         workflow_id="workflow_id_123",
         resume_subworkflow_tasks=None
@@ -479,9 +479,9 @@ async def test_retry_without_options(workflow_executor, mock_workflow_client):
 async def test_rerun(workflow_executor, mock_workflow_client):
     mock_rerun_request = MagicMock(spec=RerunWorkflowRequestAdapter)
     mock_workflow_client.rerun_workflow.return_value = "new_workflow_id"
-    
+
     result = await workflow_executor.rerun(mock_rerun_request, "workflow_id_123")
-    
+
     mock_workflow_client.rerun_workflow.assert_called_once_with(
         rerun_workflow_request=mock_rerun_request,
         workflow_id="workflow_id_123"
@@ -492,13 +492,13 @@ async def test_rerun(workflow_executor, mock_workflow_client):
 @pytest.mark.asyncio
 async def test_skip_task_from_workflow(workflow_executor, mock_workflow_client):
     mock_skip_request = MagicMock(spec=SkipTaskRequestAdapter)
-    
+
     await workflow_executor.skip_task_from_workflow(
         "workflow_id_123",
         "task_ref_name",
         mock_skip_request
     )
-    
+
     mock_workflow_client.skip_task_from_workflow.assert_called_once_with(
         workflow_id="workflow_id_123",
         task_reference_name="task_ref_name",
@@ -509,7 +509,7 @@ async def test_skip_task_from_workflow(workflow_executor, mock_workflow_client):
 @pytest.mark.asyncio
 async def test_skip_task_from_workflow_without_request(workflow_executor, mock_workflow_client):
     await workflow_executor.skip_task_from_workflow("workflow_id_123", "task_ref_name")
-    
+
     mock_workflow_client.skip_task_from_workflow.assert_called_once_with(
         workflow_id="workflow_id_123",
         task_reference_name="task_ref_name",
@@ -520,14 +520,14 @@ async def test_skip_task_from_workflow_without_request(workflow_executor, mock_w
 @pytest.mark.asyncio
 async def test_update_task(workflow_executor, mock_task_client):
     mock_task_client.update_task.return_value = "task_id_123"
-    
+
     result = await workflow_executor.update_task(
         "task_id_123",
         "workflow_id_123",
         {"output": "result"},
         "COMPLETED"
     )
-    
+
     mock_task_client.update_task.assert_called_once()
     call_args = mock_task_client.update_task.call_args
     task_result = call_args[1]["task_result"]
@@ -541,14 +541,14 @@ async def test_update_task(workflow_executor, mock_task_client):
 @pytest.mark.asyncio
 async def test_update_task_by_ref_name(workflow_executor, mock_task_client):
     mock_task_client.update_task1.return_value = "task_id_123"
-    
+
     result = await workflow_executor.update_task_by_ref_name(
         {"output": "result"},
         "workflow_id_123",
         "task_ref_name",
         "COMPLETED"
     )
-    
+
     mock_task_client.update_task1.assert_called_once_with(
         request_body={"output": "result"},
         workflow_id="workflow_id_123",
@@ -562,14 +562,14 @@ async def test_update_task_by_ref_name(workflow_executor, mock_task_client):
 async def test_update_task_by_ref_name_sync(workflow_executor, mock_task_client):
     mock_workflow = MagicMock(spec=WorkflowAdapter)
     mock_task_client.update_task_sync.return_value = mock_workflow
-    
+
     result = await workflow_executor.update_task_by_ref_name_sync(
         {"output": "result"},
         "workflow_id_123",
         "task_ref_name",
         "COMPLETED"
     )
-    
+
     mock_task_client.update_task_sync.assert_called_once_with(
         request_body={"output": "result"},
         workflow_id="workflow_id_123",
@@ -582,9 +582,9 @@ async def test_update_task_by_ref_name_sync(workflow_executor, mock_task_client)
 @pytest.mark.asyncio
 async def test_get_task(workflow_executor, mock_task_client):
     mock_task_client.get_task.return_value = "task_data"
-    
+
     result = await workflow_executor.get_task("task_id_123")
-    
+
     mock_task_client.get_task.assert_called_once_with(task_id="task_id_123")
     assert result == "task_data"
 
@@ -596,7 +596,7 @@ def test_get_task_result(workflow_executor):
         {"output": "result"},
         "COMPLETED"
     )
-    
+
     assert isinstance(result, TaskResultAdapter)
     assert result.task_id == "task_id_123"
     assert result.workflow_instance_id == "workflow_id_123"
@@ -608,9 +608,9 @@ def test_get_task_result(workflow_executor):
 async def test_execute_workflow_with_uuid_generation(workflow_executor, mock_workflow_client, start_workflow_request):
     mock_workflow_run = MagicMock(spec=WorkflowRunAdapter)
     mock_workflow_client.execute_workflow.return_value = mock_workflow_run
-    
+
     result = await workflow_executor.execute_workflow(start_workflow_request)
-    
+
     call_args = mock_workflow_client.execute_workflow.call_args
     request_id = call_args[1]["request_id"]
     assert request_id is not None
@@ -621,9 +621,9 @@ async def test_execute_workflow_with_uuid_generation(workflow_executor, mock_wor
 async def test_execute_workflow_with_return_strategy_uuid_generation(workflow_executor, mock_workflow_client, start_workflow_request):
     mock_workflow_run = MagicMock(spec=WorkflowRunAdapter)
     mock_workflow_client.execute_workflow_with_return_strategy.return_value = mock_workflow_run
-    
+
     result = await workflow_executor.execute_workflow_with_return_strategy(start_workflow_request)
-    
+
     call_args = mock_workflow_client.execute_workflow_with_return_strategy.call_args
     request_id = call_args[1]["request_id"]
     assert request_id is not None
@@ -634,13 +634,13 @@ async def test_execute_workflow_with_return_strategy_uuid_generation(workflow_ex
 async def test_execute_with_uuid_generation(workflow_executor, mock_workflow_client):
     mock_workflow_run = MagicMock(spec=WorkflowRunAdapter)
     mock_workflow_client.execute_workflow.return_value = mock_workflow_run
-    
+
     with patch('conductor.asyncio_client.workflow.executor.workflow_executor.StartWorkflowRequestAdapter') as mock_request_class:
         mock_request = MagicMock()
         mock_request_class.return_value = mock_request
-        
+
         result = await workflow_executor.execute("test_workflow")
-        
+
         call_args = mock_workflow_client.execute_workflow.call_args
         request_id = call_args[1]["request_id"]
         assert request_id is not None
@@ -651,13 +651,13 @@ async def test_execute_with_uuid_generation(workflow_executor, mock_workflow_cli
 async def test_execute_with_custom_request_id(workflow_executor, mock_workflow_client):
     mock_workflow_run = MagicMock(spec=WorkflowRunAdapter)
     mock_workflow_client.execute_workflow.return_value = mock_workflow_run
-    
+
     with patch('conductor.asyncio_client.workflow.executor.workflow_executor.StartWorkflowRequestAdapter') as mock_request_class:
         mock_request = MagicMock()
         mock_request_class.return_value = mock_request
-        
+
         result = await workflow_executor.execute("test_workflow", request_id="custom_id")
-        
+
         call_args = mock_workflow_client.execute_workflow.call_args
         request_id = call_args[1]["request_id"]
-        assert request_id == "custom_id" 
+        assert request_id == "custom_id"

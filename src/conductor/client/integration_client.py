@@ -33,60 +33,55 @@ class IntegrationClient(ABC):
     """
 
     @abstractmethod
-    def associate_prompt_with_integration(self, ai_integration:str, model_name:str, prompt_name:str):
+    def associate_prompt_with_integration(
+        self, ai_integration: str, model_name: str, prompt_name: str
+    ):
         """Associate a prompt with an AI integration and model"""
         ...
 
     @abstractmethod
-    def delete_integration_api(self, api_name:str, integration_name:str):
+    def delete_integration_api(self, api_name: str, integration_name: str):
         """Delete a specific integration api for a given integration"""
         ...
 
     @abstractmethod
-    def delete_integration(self, integration_name:str):
+    def delete_integration(self, integration_name: str):
         """Delete an integration"""
 
+    @abstractmethod
+    def get_integration_api(self, api_name: str, integration_name: str) -> IntegrationApi: ...
 
     @abstractmethod
-    def get_integration_api(self, api_name:str, integration_name:str) -> IntegrationApi:
-        ...
+    def get_integration_apis(self, integration_name: str) -> List[IntegrationApi]: ...
 
     @abstractmethod
-    def get_integration_apis(self, integration_name:str) -> List[IntegrationApi]:
-        ...
-
-    @abstractmethod
-    def get_integration(self, integration_name:str) -> Integration:
-        ...
+    def get_integration(self, integration_name: str) -> Integration: ...
 
     @abstractmethod
     def get_integrations(self) -> List[Integration]:
         """Returns the list of all the available integrations"""
 
+    @abstractmethod
+    def get_prompts_with_integration(
+        self, ai_integration: str, model_name: str
+    ) -> List[PromptTemplate]: ...
 
     @abstractmethod
-    def get_prompts_with_integration(self, ai_integration:str, model_name:str) -> List[PromptTemplate]:
-        ...
+    def get_token_usage_for_integration(self, name, integration_name) -> int: ...
 
     @abstractmethod
-    def get_token_usage_for_integration(self, name, integration_name) -> int:
-        ...
+    def get_token_usage_for_integration_provider(self, name) -> dict: ...
 
     @abstractmethod
-    def get_token_usage_for_integration_provider(self, name) -> dict:
-        ...
+    def register_token_usage(self, body, name, integration_name): ...
 
     @abstractmethod
-    def register_token_usage(self, body, name, integration_name):
-        ...
+    def save_integration_api(
+        self, integration_name, api_name, api_details: IntegrationApiUpdate
+    ): ...
 
     @abstractmethod
-    def save_integration_api(self, integration_name, api_name, api_details: IntegrationApiUpdate):
-        ...
-
-    @abstractmethod
-    def save_integration(self, integration_name, integration_details: IntegrationUpdate):
-        ...
+    def save_integration(self, integration_name, integration_details: IntegrationUpdate): ...
 
     # Tags
 
@@ -94,23 +89,17 @@ class IntegrationClient(ABC):
     def delete_tag_for_integration(self, body, tag_name, integration_name):
         """Delete an integration"""
 
+    @abstractmethod
+    def delete_tag_for_integration_provider(self, body, name): ...
 
     @abstractmethod
-    def delete_tag_for_integration_provider(self, body, name):
-        ...
+    def put_tag_for_integration(self, body, name, integration_name): ...
 
     @abstractmethod
-    def put_tag_for_integration(self, body, name, integration_name):
-        ...
+    def put_tag_for_integration_provider(self, body, name): ...
 
     @abstractmethod
-    def put_tag_for_integration_provider(self, body, name):
-        ...
+    def get_tags_for_integration(self, name, integration_name): ...
 
     @abstractmethod
-    def get_tags_for_integration(self, name, integration_name):
-        ...
-
-    @abstractmethod
-    def get_tags_for_integration_provider(self, name):
-        ...
+    def get_tags_for_integration_provider(self, name): ...

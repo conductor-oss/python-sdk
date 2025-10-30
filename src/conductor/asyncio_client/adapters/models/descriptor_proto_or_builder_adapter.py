@@ -19,26 +19,26 @@ class DescriptorProtoOrBuilderAdapter(DescriptorProtoOrBuilder):
     enum_type_list: Optional[List["EnumDescriptorProtoAdapter"]] = Field(
         default=None, alias="enumTypeList"
     )
-    enum_type_or_builder_list: Optional[List["EnumDescriptorProtoOrBuilderAdapter"]] = (
-        Field(default=None, alias="enumTypeOrBuilderList")
+    enum_type_or_builder_list: Optional[List["EnumDescriptorProtoOrBuilderAdapter"]] = Field(
+        default=None, alias="enumTypeOrBuilderList"
     )
     extension_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(
         default=None, alias="extensionList"
     )
-    extension_or_builder_list: Optional[
-        List["FieldDescriptorProtoOrBuilderAdapter"]
-    ] = Field(default=None, alias="extensionOrBuilderList")
+    extension_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = Field(
+        default=None, alias="extensionOrBuilderList"
+    )
     extension_range_list: Optional[List["ExtensionRangeAdapter"]] = Field(
         default=None, alias="extensionRangeList"
     )
-    extension_range_or_builder_list: Optional[
-        List["ExtensionRangeOrBuilderAdapter"]
-    ] = Field(default=None, alias="extensionRangeOrBuilderList")
+    extension_range_or_builder_list: Optional[List["ExtensionRangeOrBuilderAdapter"]] = Field(
+        default=None, alias="extensionRangeOrBuilderList"
+    )
     field_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(
         default=None, alias="fieldList"
     )
-    field_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = (
-        Field(default=None, alias="fieldOrBuilderList")
+    field_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = Field(
+        default=None, alias="fieldOrBuilderList"
     )
     nested_type_list: Optional[List["DescriptorProtoAdapter"]] = Field(
         default=None, alias="nestedTypeList"
@@ -46,21 +46,19 @@ class DescriptorProtoOrBuilderAdapter(DescriptorProtoOrBuilder):
     oneof_decl_list: Optional[List["OneofDescriptorProtoAdapter"]] = Field(
         default=None, alias="oneofDeclList"
     )
-    oneof_decl_or_builder_list: Optional[
-        List["OneofDescriptorProtoOrBuilderAdapter"]
-    ] = Field(default=None, alias="oneofDeclOrBuilderList")
+    oneof_decl_or_builder_list: Optional[List["OneofDescriptorProtoOrBuilderAdapter"]] = Field(
+        default=None, alias="oneofDeclOrBuilderList"
+    )
     options_or_builder: Optional["MessageOptionsOrBuilderAdapter"] = Field(
         default=None, alias="optionsOrBuilder"
     )
     reserved_range_list: Optional[List["ReservedRangeAdapter"]] = Field(
         default=None, alias="reservedRangeList"
     )
-    reserved_range_or_builder_list: Optional[List["ReservedRangeOrBuilderAdapter"]] = (
-        Field(default=None, alias="reservedRangeOrBuilderList")
+    reserved_range_or_builder_list: Optional[List["ReservedRangeOrBuilderAdapter"]] = Field(
+        default=None, alias="reservedRangeOrBuilderList"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -86,10 +84,7 @@ class DescriptorProtoOrBuilderAdapter(DescriptorProtoOrBuilder):
                 ),
                 "enumTypeCount": obj.get("enumTypeCount"),
                 "enumTypeList": (
-                    [
-                        EnumDescriptorProtoAdapter.from_dict(_item)
-                        for _item in obj["enumTypeList"]
-                    ]
+                    [EnumDescriptorProtoAdapter.from_dict(_item) for _item in obj["enumTypeList"]]
                     if obj.get("enumTypeList") is not None
                     else None
                 ),
@@ -103,10 +98,7 @@ class DescriptorProtoOrBuilderAdapter(DescriptorProtoOrBuilder):
                 ),
                 "extensionCount": obj.get("extensionCount"),
                 "extensionList": (
-                    [
-                        FieldDescriptorProtoAdapter.from_dict(_item)
-                        for _item in obj["extensionList"]
-                    ]
+                    [FieldDescriptorProtoAdapter.from_dict(_item) for _item in obj["extensionList"]]
                     if obj.get("extensionList") is not None
                     else None
                 ),
@@ -120,10 +112,7 @@ class DescriptorProtoOrBuilderAdapter(DescriptorProtoOrBuilder):
                 ),
                 "extensionRangeCount": obj.get("extensionRangeCount"),
                 "extensionRangeList": (
-                    [
-                        ExtensionRangeAdapter.from_dict(_item)
-                        for _item in obj["extensionRangeList"]
-                    ]
+                    [ExtensionRangeAdapter.from_dict(_item) for _item in obj["extensionRangeList"]]
                     if obj.get("extensionRangeList") is not None
                     else None
                 ),
@@ -137,10 +126,7 @@ class DescriptorProtoOrBuilderAdapter(DescriptorProtoOrBuilder):
                 ),
                 "fieldCount": obj.get("fieldCount"),
                 "fieldList": (
-                    [
-                        FieldDescriptorProtoAdapter.from_dict(_item)
-                        for _item in obj["fieldList"]
-                    ]
+                    [FieldDescriptorProtoAdapter.from_dict(_item) for _item in obj["fieldList"]]
                     if obj.get("fieldList") is not None
                     else None
                 ),
@@ -162,19 +148,13 @@ class DescriptorProtoOrBuilderAdapter(DescriptorProtoOrBuilder):
                 ),
                 "nestedTypeCount": obj.get("nestedTypeCount"),
                 "nestedTypeList": (
-                    [
-                        DescriptorProtoAdapter.from_dict(_item)
-                        for _item in obj["nestedTypeList"]
-                    ]
+                    [DescriptorProtoAdapter.from_dict(_item) for _item in obj["nestedTypeList"]]
                     if obj.get("nestedTypeList") is not None
                     else None
                 ),
                 "oneofDeclCount": obj.get("oneofDeclCount"),
                 "oneofDeclList": (
-                    [
-                        OneofDescriptorProtoAdapter.from_dict(_item)
-                        for _item in obj["oneofDeclList"]
-                    ]
+                    [OneofDescriptorProtoAdapter.from_dict(_item) for _item in obj["oneofDeclList"]]
                     if obj.get("oneofDeclList") is not None
                     else None
                 ),
@@ -200,10 +180,7 @@ class DescriptorProtoOrBuilderAdapter(DescriptorProtoOrBuilder):
                 "reservedNameList": obj.get("reservedNameList"),
                 "reservedRangeCount": obj.get("reservedRangeCount"),
                 "reservedRangeList": (
-                    [
-                        ReservedRangeAdapter.from_dict(_item)
-                        for _item in obj["reservedRangeList"]
-                    ]
+                    [ReservedRangeAdapter.from_dict(_item) for _item in obj["reservedRangeList"]]
                     if obj.get("reservedRangeList") is not None
                     else None
                 ),

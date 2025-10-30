@@ -206,9 +206,7 @@ class AsyncConductorWorkflow:
             workflow=self.to_extended_workflow_def(),
         )
 
-    async def start_workflow(
-        self, start_workflow_request: StartWorkflowRequestAdapter
-    ) -> str:
+    async def start_workflow(self, start_workflow_request: StartWorkflowRequestAdapter) -> str:
         """
         Executes the workflow inline without registering with the server.  Useful for one-off workflows that need not be registered.
         Parameters
@@ -355,16 +353,10 @@ class AsyncConductorWorkflow:
         ]
 
         updated_task_list = []
-        for current, next_task in zip(
-            workflow_task_list, [*workflow_task_list[1:], None]
-        ):
+        for current, next_task in zip(workflow_task_list, [*workflow_task_list[1:], None]):
             updated_task_list.append(current)
 
-            if (
-                current.type == "FORK_JOIN"
-                and next_task is not None
-                and next_task.type != "JOIN"
-            ):
+            if current.type == "FORK_JOIN" and next_task is not None and next_task.type != "JOIN":
                 join_on = [ft[-1].task_reference_name for ft in current.fork_tasks]
                 join_task = JoinTask(
                     task_ref_name=f"join_{current.task_reference_name}", join_on=join_on
@@ -403,10 +395,7 @@ class AsyncConductorWorkflow:
         return self.__add_task(task)
 
     def __add_task(self, task: TaskInterface):
-        if not (
-            issubclass(type(task), TaskInterface)
-            or isinstance(task, AsyncConductorWorkflow)
-        ):
+        if not (issubclass(type(task), TaskInterface) or isinstance(task, AsyncConductorWorkflow)):
             raise Exception(
                 f"Invalid task -- if using @worker_task or @WorkerTask decorator ensure task_ref_name is passed as "
                 f"argument.  task is {type(task)}"
@@ -425,9 +414,7 @@ class AsyncConductorWorkflow:
 
         suffix = str(uuid())
 
-        fork_task = ForkTask(
-            task_ref_name="forked_" + suffix, forked_tasks=forked_tasks
-        )
+        fork_task = ForkTask(task_ref_name="forked_" + suffix, forked_tasks=forked_tasks)
         self._tasks.append(fork_task)
         return self
 

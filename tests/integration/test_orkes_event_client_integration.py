@@ -282,7 +282,7 @@ class TestOrkesEventClientIntegration:
     ):
         queue_type = "kafka"
         queue_name = f"test_queue_{test_suffix}"
-        
+
         try:
             config = event_client.get_queue_configuration(queue_type, queue_name)
             assert isinstance(config, dict)

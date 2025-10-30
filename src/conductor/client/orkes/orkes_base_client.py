@@ -22,9 +22,7 @@ from conductor.client.http.api.event_resource_api import EventResourceApi
 class OrkesBaseClient(object):
     def __init__(self, configuration: Configuration):
         self.api_client = ApiClient(configuration)
-        self.logger = logging.getLogger(
-            Configuration.get_logging_formatted_name(__name__)
-        )
+        self.logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
         self.metadataResourceApi = MetadataResourceApi(self.api_client)
         self.taskResourceApi = TaskResourceApi(self.api_client)
         self.workflowResourceApi = WorkflowResourceApi(self.api_client)

@@ -46,9 +46,7 @@ class ActionAdapter(Action):
                     else None
                 ),
                 "update_workflow_variables": (
-                    UpdateWorkflowVariablesAdapter.from_dict(
-                        obj["update_workflow_variables"]
-                    )
+                    UpdateWorkflowVariablesAdapter.from_dict(obj["update_workflow_variables"])
                     if obj.get("update_workflow_variables") is not None
                     else None
                 ),

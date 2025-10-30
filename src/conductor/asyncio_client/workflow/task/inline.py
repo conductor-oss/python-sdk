@@ -7,9 +7,7 @@ from conductor.shared.workflow.enums import TaskType
 
 
 class InlineTask(TaskInterface):
-    def __init__(
-        self, task_ref_name: str, script: str, bindings: Optional[Dict[str, str]] = None
-    ):
+    def __init__(self, task_ref_name: str, script: str, bindings: Optional[Dict[str, str]] = None):
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.INLINE,

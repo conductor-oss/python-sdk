@@ -9,9 +9,7 @@ from conductor.asyncio_client.http.models import (
 )
 
 
-class SearchResultWorkflowScheduleExecutionModelAdapter(
-    SearchResultWorkflowScheduleExecutionModel
-):
+class SearchResultWorkflowScheduleExecutionModelAdapter(SearchResultWorkflowScheduleExecutionModel):
     results: Optional[List["WorkflowScheduleExecutionModelAdapter"]] = None
 
     @classmethod

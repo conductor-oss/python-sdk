@@ -19,20 +19,20 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
     enum_type_list: Optional[List["EnumDescriptorProtoAdapter"]] = Field(
         default=None, alias="enumTypeList"
     )
-    enum_type_or_builder_list: Optional[List["EnumDescriptorProtoOrBuilderAdapter"]] = (
-        Field(default=None, alias="enumTypeOrBuilderList")
+    enum_type_or_builder_list: Optional[List["EnumDescriptorProtoOrBuilderAdapter"]] = Field(
+        default=None, alias="enumTypeOrBuilderList"
     )
     extension_list: Optional[List["FieldDescriptorProtoAdapter"]] = Field(
         default=None, alias="extensionList"
     )
-    extension_or_builder_list: Optional[
-        List["FieldDescriptorProtoOrBuilderAdapter"]
-    ] = Field(default=None, alias="extensionOrBuilderList")
+    extension_or_builder_list: Optional[List["FieldDescriptorProtoOrBuilderAdapter"]] = Field(
+        default=None, alias="extensionOrBuilderList"
+    )
     message_type_list: Optional[List["DescriptorProtoAdapter"]] = Field(
         default=None, alias="messageTypeList"
     )
-    message_type_or_builder_list: Optional[List["DescriptorProtoOrBuilderAdapter"]] = (
-        Field(default=None, alias="messageTypeOrBuilderList")
+    message_type_or_builder_list: Optional[List["DescriptorProtoOrBuilderAdapter"]] = Field(
+        default=None, alias="messageTypeOrBuilderList"
     )
     options: Optional["FileOptionsAdapter"] = None
     options_or_builder: Optional["FileOptionsOrBuilderAdapter"] = Field(
@@ -41,18 +41,16 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
     service_list: Optional[List["ServiceDescriptorProtoAdapter"]] = Field(
         default=None, alias="serviceList"
     )
-    service_or_builder_list: Optional[
-        List["ServiceDescriptorProtoOrBuilderAdapter"]
-    ] = Field(default=None, alias="serviceOrBuilderList")
+    service_or_builder_list: Optional[List["ServiceDescriptorProtoOrBuilderAdapter"]] = Field(
+        default=None, alias="serviceOrBuilderList"
+    )
     source_code_info: Optional["SourceCodeInfoAdapter"] = Field(
         default=None, alias="sourceCodeInfo"
     )
     source_code_info_or_builder: Optional["SourceCodeInfoOrBuilderAdapter"] = Field(
         default=None, alias="sourceCodeInfoOrBuilder"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -80,10 +78,7 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
                 "edition": obj.get("edition"),
                 "enumTypeCount": obj.get("enumTypeCount"),
                 "enumTypeList": (
-                    [
-                        EnumDescriptorProtoAdapter.from_dict(_item)
-                        for _item in obj["enumTypeList"]
-                    ]
+                    [EnumDescriptorProtoAdapter.from_dict(_item) for _item in obj["enumTypeList"]]
                     if obj.get("enumTypeList") is not None
                     else None
                 ),
@@ -97,10 +92,7 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
                 ),
                 "extensionCount": obj.get("extensionCount"),
                 "extensionList": (
-                    [
-                        FieldDescriptorProtoAdapter.from_dict(_item)
-                        for _item in obj["extensionList"]
-                    ]
+                    [FieldDescriptorProtoAdapter.from_dict(_item) for _item in obj["extensionList"]]
                     if obj.get("extensionList") is not None
                     else None
                 ),
@@ -117,10 +109,7 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
                 "memoizedSerializedSize": obj.get("memoizedSerializedSize"),
                 "messageTypeCount": obj.get("messageTypeCount"),
                 "messageTypeList": (
-                    [
-                        DescriptorProtoAdapter.from_dict(_item)
-                        for _item in obj["messageTypeList"]
-                    ]
+                    [DescriptorProtoAdapter.from_dict(_item) for _item in obj["messageTypeList"]]
                     if obj.get("messageTypeList") is not None
                     else None
                 ),
@@ -160,10 +149,7 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
                 "serializedSize": obj.get("serializedSize"),
                 "serviceCount": obj.get("serviceCount"),
                 "serviceList": (
-                    [
-                        ServiceDescriptorProtoAdapter.from_dict(_item)
-                        for _item in obj["serviceList"]
-                    ]
+                    [ServiceDescriptorProtoAdapter.from_dict(_item) for _item in obj["serviceList"]]
                     if obj.get("serviceList") is not None
                     else None
                 ),
@@ -181,9 +167,7 @@ class FileDescriptorProtoAdapter(FileDescriptorProto):
                     else None
                 ),
                 "sourceCodeInfoOrBuilder": (
-                    SourceCodeInfoOrBuilderAdapter.from_dict(
-                        obj["sourceCodeInfoOrBuilder"]
-                    )
+                    SourceCodeInfoOrBuilderAdapter.from_dict(obj["sourceCodeInfoOrBuilder"])
                     if obj.get("sourceCodeInfoOrBuilder") is not None
                     else None
                 ),

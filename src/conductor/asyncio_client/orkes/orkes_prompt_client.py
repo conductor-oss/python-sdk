@@ -23,9 +23,7 @@ class OrkesPromptClient(OrkesBaseClient):
         self, name: str, description: str, body: str, models: Optional[List[str]] = None
     ) -> None:
         """Create or update a message template"""
-        await self.prompt_api.save_message_template(
-            name, description, body, models=models
-        )
+        await self.prompt_api.save_message_template(name, description, body, models=models)
 
     async def get_message_template(self, name: str) -> MessageTemplateAdapter:
         """Get a message template by name"""
@@ -53,9 +51,7 @@ class OrkesPromptClient(OrkesBaseClient):
         return await self.prompt_api.test_message_template(prompt_template_test_request)
 
     # Tag Management for Prompt Templates
-    async def put_tag_for_prompt_template(
-        self, name: str, tags: List[TagAdapter]
-    ) -> None:
+    async def put_tag_for_prompt_template(self, name: str, tags: List[TagAdapter]) -> None:
         """Add tags to a prompt template"""
         await self.prompt_api.put_tag_for_prompt_template(name, tags)
 
@@ -63,16 +59,12 @@ class OrkesPromptClient(OrkesBaseClient):
         """Get tags associated with a prompt template"""
         return await self.prompt_api.get_tags_for_prompt_template(name)
 
-    async def delete_tag_for_prompt_template(
-        self, name: str, tags: List[TagAdapter]
-    ) -> None:
+    async def delete_tag_for_prompt_template(self, name: str, tags: List[TagAdapter]) -> None:
         """Delete tags from a prompt template"""
         await self.prompt_api.delete_tag_for_prompt_template(name, tags)
 
     # Convenience Methods
-    async def create_simple_template(
-        self, name: str, description: str, template_body: str
-    ) -> None:
+    async def create_simple_template(self, name: str, description: str, template_body: str) -> None:
         """Create a simple message template with basic parameters"""
         await self.save_message_template(name, description, template_body)
 
@@ -122,9 +114,7 @@ class OrkesPromptClient(OrkesBaseClient):
             target_name,
             description,
             source_template.template,
-            models=(
-                source_template.models if hasattr(source_template, "models") else None
-            ),
+            models=(source_template.models if hasattr(source_template, "models") else None),
         )
 
     async def bulk_delete_templates(self, template_names: List[str]) -> None:
@@ -136,9 +126,7 @@ class OrkesPromptClient(OrkesBaseClient):
                 continue
 
     # Legacy compatibility methods (aliasing new method names to match the original draft)
-    async def save_prompt(
-        self, name: str, description: str, prompt_template: str
-    ) -> None:
+    async def save_prompt(self, name: str, description: str, prompt_template: str) -> None:
         """Legacy method: Create or update a message template"""
         await self.save_message_template(name, description, prompt_template)
 
@@ -160,20 +148,14 @@ class OrkesPromptClient(OrkesBaseClient):
         templates = await self.get_message_templates()
         return len(templates)
 
-    async def search_templates_by_name(
-        self, name_pattern: str
-    ) -> List[MessageTemplateAdapter]:
+    async def search_templates_by_name(self, name_pattern: str) -> List[MessageTemplateAdapter]:
         """Search templates by name pattern (case-insensitive)"""
         all_templates = await self.get_message_templates()
         return [
-            template
-            for template in all_templates
-            if name_pattern.lower() in template.name.lower()
+            template for template in all_templates if name_pattern.lower() in template.name.lower()
         ]
 
-    async def get_templates_with_model(
-        self, model_name: str
-    ) -> List[MessageTemplateAdapter]:
+    async def get_templates_with_model(self, model_name: str) -> List[MessageTemplateAdapter]:
         """Get templates that use a specific AI model"""
         all_templates = await self.get_message_templates()
         matching_templates = []
@@ -181,9 +163,7 @@ class OrkesPromptClient(OrkesBaseClient):
         matching_templates = [
             template
             for template in all_templates
-            if hasattr(template, "models")
-            and template.models
-            and model_name in template.models
+            if hasattr(template, "models") and template.models and model_name in template.models
         ]
 
         return matching_templates

@@ -11,12 +11,8 @@ from conductor.asyncio_client.http.models import Task
 class TaskAdapter(Task):
     input_data: Optional[Dict[str, Any]] = Field(default=None, alias="inputData")
     output_data: Optional[Dict[str, Any]] = Field(default=None, alias="outputData")
-    task_definition: Optional["TaskDefAdapter"] = Field(
-        default=None, alias="taskDefinition"
-    )
-    workflow_task: Optional["WorkflowTaskAdapter"] = Field(
-        default=None, alias="workflowTask"
-    )
+    task_definition: Optional["TaskDefAdapter"] = Field(default=None, alias="taskDefinition")
+    workflow_task: Optional["WorkflowTaskAdapter"] = Field(default=None, alias="workflowTask")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -36,12 +32,8 @@ class TaskAdapter(Task):
                 "endTime": obj.get("endTime"),
                 "executed": obj.get("executed"),
                 "executionNameSpace": obj.get("executionNameSpace"),
-                "externalInputPayloadStoragePath": obj.get(
-                    "externalInputPayloadStoragePath"
-                ),
-                "externalOutputPayloadStoragePath": obj.get(
-                    "externalOutputPayloadStoragePath"
-                ),
+                "externalInputPayloadStoragePath": obj.get("externalInputPayloadStoragePath"),
+                "externalOutputPayloadStoragePath": obj.get("externalOutputPayloadStoragePath"),
                 "firstStartTime": obj.get("firstStartTime"),
                 "inputData": obj.get("inputData"),
                 "isolationGroupId": obj.get("isolationGroupId"),

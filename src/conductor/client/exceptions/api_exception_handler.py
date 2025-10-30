@@ -23,7 +23,6 @@ def api_exception_handler(function):
         try:
             return function(*args, **kwargs)
         except ApiException as e:
-
             if e.status == NOT_FOUND_STATUS:
                 code = APIErrorCode.NOT_FOUND
             elif e.status == FORBIDDEN_STATUS:
@@ -59,4 +58,5 @@ def for_all_methods(decorator, exclude=None):
             if callable(getattr(cls, attr)) and attr not in exclude_local:
                 setattr(cls, attr, decorator(getattr(cls, attr)))
         return cls
+
     return decorate

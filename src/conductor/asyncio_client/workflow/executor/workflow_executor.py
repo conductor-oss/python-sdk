@@ -3,34 +3,33 @@ from __future__ import annotations
 import uuid
 from typing import Any, Dict, List, Optional
 
-from conductor.asyncio_client.adapters.api.metadata_resource_api import \
-    MetadataResourceApiAdapter
-from conductor.asyncio_client.adapters.api.task_resource_api import \
-    TaskResourceApiAdapter
-from conductor.asyncio_client.adapters.models.correlation_ids_search_request_adapter import \
-    CorrelationIdsSearchRequestAdapter
-from conductor.asyncio_client.adapters.models.extended_workflow_def_adapter import \
-    ExtendedWorkflowDefAdapter
-from conductor.asyncio_client.adapters.models.rerun_workflow_request_adapter import \
-    RerunWorkflowRequestAdapter
-from conductor.asyncio_client.adapters.models.scrollable_search_result_workflow_summary_adapter import \
-    ScrollableSearchResultWorkflowSummaryAdapter
-from conductor.asyncio_client.adapters.models.skip_task_request_adapter import \
-    SkipTaskRequestAdapter
-from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import \
-    StartWorkflowRequestAdapter
-from conductor.asyncio_client.adapters.models.task_result_adapter import \
-    TaskResultAdapter
-from conductor.asyncio_client.adapters.models.workflow_adapter import \
-    WorkflowAdapter
-from conductor.asyncio_client.adapters.models.workflow_run_adapter import \
-    WorkflowRunAdapter
-from conductor.asyncio_client.adapters.models.workflow_status_adapter import \
-    WorkflowStatusAdapter
+from conductor.asyncio_client.adapters.api.metadata_resource_api import MetadataResourceApiAdapter
+from conductor.asyncio_client.adapters.api.task_resource_api import TaskResourceApiAdapter
+from conductor.asyncio_client.adapters.models.correlation_ids_search_request_adapter import (
+    CorrelationIdsSearchRequestAdapter,
+)
+from conductor.asyncio_client.adapters.models.extended_workflow_def_adapter import (
+    ExtendedWorkflowDefAdapter,
+)
+from conductor.asyncio_client.adapters.models.rerun_workflow_request_adapter import (
+    RerunWorkflowRequestAdapter,
+)
+from conductor.asyncio_client.adapters.models.scrollable_search_result_workflow_summary_adapter import (
+    ScrollableSearchResultWorkflowSummaryAdapter,
+)
+from conductor.asyncio_client.adapters.models.skip_task_request_adapter import (
+    SkipTaskRequestAdapter,
+)
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
+    StartWorkflowRequestAdapter,
+)
+from conductor.asyncio_client.adapters.models.task_result_adapter import TaskResultAdapter
+from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
+from conductor.asyncio_client.adapters.models.workflow_run_adapter import WorkflowRunAdapter
+from conductor.asyncio_client.adapters.models.workflow_status_adapter import WorkflowStatusAdapter
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.orkes.orkes_workflow_client import \
-    OrkesWorkflowClient
+from conductor.asyncio_client.orkes.orkes_workflow_client import OrkesWorkflowClient
 
 
 class AsyncWorkflowExecutor:
@@ -47,9 +46,7 @@ class AsyncWorkflowExecutor:
             extended_workflow_def=[workflow], overwrite=overwrite
         )
 
-    async def start_workflow(
-        self, start_workflow_request: StartWorkflowRequestAdapter
-    ) -> str:
+    async def start_workflow(self, start_workflow_request: StartWorkflowRequestAdapter) -> str:
         """Start a new workflow with StartWorkflowRequest, which allows task to be executed in a domain"""
         return await self.workflow_client.start_workflow(
             start_workflow_request=start_workflow_request,
@@ -140,9 +137,7 @@ class AsyncWorkflowExecutor:
         kwargs = {}
         if archive_workflow is not None:
             kwargs["archive_workflow"] = archive_workflow
-        return await self.workflow_client.delete_workflow(
-            workflow_id=workflow_id, **kwargs
-        )
+        return await self.workflow_client.delete_workflow(workflow_id=workflow_id, **kwargs)
 
     async def get_workflow(
         self, workflow_id: str, include_tasks: Optional[bool] = None
@@ -151,9 +146,7 @@ class AsyncWorkflowExecutor:
         kwargs = {}
         if include_tasks is not None:
             kwargs["include_tasks"] = include_tasks
-        return await self.workflow_client.get_workflow(
-            workflow_id=workflow_id, **kwargs
-        )
+        return await self.workflow_client.get_workflow(workflow_id=workflow_id, **kwargs)
 
     async def get_workflow_status(
         self,

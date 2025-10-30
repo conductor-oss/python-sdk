@@ -16,9 +16,7 @@ class LocationOrBuilderAdapter(LocationOrBuilder):
     descriptor_for_type: Optional["DescriptorAdapter"] = Field(
         default=None, alias="descriptorForType"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
     leading_comments_bytes: Optional["ByteStringAdapter"] = Field(
         default=None, alias="leadingCommentsBytes"
     )

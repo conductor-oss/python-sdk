@@ -27,12 +27,10 @@ class ExtensionRangeOptionsAdapter(ExtensionRangeOptions):
     uninterpreted_option_list: Optional[List["UninterpretedOptionAdapter"]] = Field(
         default=None, alias="uninterpretedOptionList"
     )
-    uninterpreted_option_or_builder_list: Optional[
-        List["UninterpretedOptionOrBuilderAdapter"]
-    ] = Field(default=None, alias="uninterpretedOptionOrBuilderList")
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
+    uninterpreted_option_or_builder_list: Optional[List["UninterpretedOptionOrBuilderAdapter"]] = (
+        Field(default=None, alias="uninterpretedOptionOrBuilderList")
     )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -49,10 +47,7 @@ class ExtensionRangeOptionsAdapter(ExtensionRangeOptions):
                 "allFieldsRaw": obj.get("allFieldsRaw"),
                 "declarationCount": obj.get("declarationCount"),
                 "declarationList": (
-                    [
-                        DeclarationAdapter.from_dict(_item)
-                        for _item in obj["declarationList"]
-                    ]
+                    [DeclarationAdapter.from_dict(_item) for _item in obj["declarationList"]]
                     if obj.get("declarationList") is not None
                     else None
                 ),
@@ -65,9 +60,7 @@ class ExtensionRangeOptionsAdapter(ExtensionRangeOptions):
                     else None
                 ),
                 "defaultInstanceForType": (
-                    ExtensionRangeOptionsAdapter.from_dict(
-                        obj["defaultInstanceForType"]
-                    )
+                    ExtensionRangeOptionsAdapter.from_dict(obj["defaultInstanceForType"])
                     if obj.get("defaultInstanceForType") is not None
                     else None
                 ),

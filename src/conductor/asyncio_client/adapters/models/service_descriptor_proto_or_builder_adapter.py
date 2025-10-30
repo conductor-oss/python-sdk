@@ -19,16 +19,14 @@ class ServiceDescriptorProtoOrBuilderAdapter(ServiceDescriptorProtoOrBuilder):
     method_list: Optional[List["MethodDescriptorProtoAdapter"]] = Field(
         default=None, alias="methodList"
     )
-    method_or_builder_list: Optional[List["MethodDescriptorProtoOrBuilderAdapter"]] = (
-        Field(default=None, alias="methodOrBuilderList")
+    method_or_builder_list: Optional[List["MethodDescriptorProtoOrBuilderAdapter"]] = Field(
+        default=None, alias="methodOrBuilderList"
     )
     options: Optional["ServiceOptionsAdapter"] = None
     options_or_builder: Optional["ServiceOptionsOrBuilderAdapter"] = Field(
         default=None, alias="optionsOrBuilder"
     )
-    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(
-        default=None, alias="unknownFields"
-    )
+    unknown_fields: Optional["UnknownFieldSetAdapter"] = Field(default=None, alias="unknownFields")
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
@@ -56,10 +54,7 @@ class ServiceDescriptorProtoOrBuilderAdapter(ServiceDescriptorProtoOrBuilder):
                 "initialized": obj.get("initialized"),
                 "methodCount": obj.get("methodCount"),
                 "methodList": (
-                    [
-                        MethodDescriptorProtoAdapter.from_dict(_item)
-                        for _item in obj["methodList"]
-                    ]
+                    [MethodDescriptorProtoAdapter.from_dict(_item) for _item in obj["methodList"]]
                     if obj.get("methodList") is not None
                     else None
                 ),
