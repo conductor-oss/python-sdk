@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from typing import Any as AnyType
-from typing import Dict, Optional
+from typing import Any as AnyType, Dict, Optional
 
 from pydantic import Field
 from typing_extensions import Self

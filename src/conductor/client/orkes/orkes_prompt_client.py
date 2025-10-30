@@ -2,10 +2,10 @@ from __future__ import absolute_import, annotations
 
 from typing import List, Optional
 
+from conductor.client.codegen.rest import ApiException
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.prompt_template import PromptTemplate
 from conductor.client.http.models.prompt_template_test_request import PromptTemplateTestRequest
-from conductor.client.codegen.rest import ApiException
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.prompt_client import PromptClient
@@ -18,7 +18,7 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
     def save_prompt(self, prompt_name: str, description: str, prompt_template: str):
         self.promptApi.save_message_template(prompt_template, description, prompt_name)
 
-    def get_prompt(self, prompt_name: str) -> PromptTemplate:
+    def get_prompt(self, prompt_name: str) -> Optional[PromptTemplate]:
         try:
             return self.promptApi.get_message_template(prompt_name)
         except ApiException as e:

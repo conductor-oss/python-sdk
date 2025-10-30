@@ -1,13 +1,340 @@
 from __future__ import annotations
 
-from typing import Dict, Any, Union, Optional, Annotated, Tuple
-from pydantic import validate_call, Field, StrictStr, StrictFloat, StrictInt
-from conductor.asyncio_client.adapters.models.workflow_adapter import Workflow
+from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
+from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr, validate_call
+
+from conductor.asyncio_client.adapters.models.correlation_ids_search_request_adapter import (
+    CorrelationIdsSearchRequestAdapter,
+)
+from conductor.asyncio_client.adapters.models.rerun_workflow_request_adapter import (
+    RerunWorkflowRequestAdapter,
+)
+from conductor.asyncio_client.adapters.models.scrollable_search_result_workflow_summary_adapter import (
+    ScrollableSearchResultWorkflowSummaryAdapter,
+)
+from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
+    StartWorkflowRequestAdapter,
+)
+from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
+from conductor.asyncio_client.adapters.models.workflow_run_adapter import WorkflowRunAdapter
+from conductor.asyncio_client.adapters.models.workflow_state_update_adapter import (
+    WorkflowStateUpdateAdapter,
+)
+from conductor.asyncio_client.adapters.models.workflow_status_adapter import WorkflowStatusAdapter
+from conductor.asyncio_client.adapters.models.workflow_test_request_adapter import (
+    WorkflowTestRequestAdapter,
+)
 from conductor.asyncio_client.http.api import WorkflowResourceApi
 
 
 class WorkflowResourceApiAdapter(WorkflowResourceApi):
+    async def execute_workflow(
+        self,
+        name: StrictStr,
+        version: StrictInt,
+        request_id: StrictStr,
+        start_workflow_request: StartWorkflowRequestAdapter,
+        wait_until_task_ref: Optional[StrictStr] = None,
+        wait_for_seconds: Optional[StrictInt] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> WorkflowRunAdapter:
+        result = await super().execute_workflow(
+            name,
+            version,
+            request_id,
+            start_workflow_request,
+            wait_until_task_ref,
+            wait_for_seconds,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
+    async def get_execution_status(
+        self,
+        workflow_id: StrictStr,
+        include_tasks: Optional[StrictBool] = None,
+        summarize: Optional[StrictBool] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> WorkflowAdapter:
+        result = await super().get_execution_status(
+            workflow_id,
+            include_tasks,
+            summarize,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
+    async def get_workflow_status_summary(
+        self,
+        workflow_id: StrictStr,
+        include_output: Optional[StrictBool] = None,
+        include_variables: Optional[StrictBool] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> WorkflowStatusAdapter:
+        result = await super().get_workflow_status_summary(
+            workflow_id,
+            include_output,
+            include_variables,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
+    async def get_running_workflow(
+        self,
+        name: StrictStr,
+        version: Optional[StrictInt] = None,
+        start_time: Optional[StrictInt] = None,
+        end_time: Optional[StrictInt] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> List[str]:
+        return await super().get_running_workflow(
+            name,
+            version,
+            start_time,
+            end_time,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+
+    async def get_workflows(
+        self,
+        name: StrictStr,
+        request_body: List[StrictStr],
+        include_closed: Optional[StrictBool] = None,
+        include_tasks: Optional[StrictBool] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> Dict[str, List[WorkflowAdapter]]:
+        result = await super().get_workflows(
+            name,
+            request_body,
+            include_closed,
+            include_tasks,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
+    async def get_workflows1(
+        self,
+        correlation_ids_search_request: CorrelationIdsSearchRequestAdapter,
+        include_closed: Optional[StrictBool] = None,
+        include_tasks: Optional[StrictBool] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> Dict[str, List[WorkflowAdapter]]:
+        result = await super().get_workflows1(
+            correlation_ids_search_request,
+            include_closed,
+            include_tasks,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
+    async def search(
+        self,
+        start: Optional[StrictInt] = None,
+        size: Optional[StrictInt] = None,
+        sort: Optional[StrictStr] = None,
+        free_text: Optional[StrictStr] = None,
+        query: Optional[StrictStr] = None,
+        skip_cache: Optional[StrictBool] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> ScrollableSearchResultWorkflowSummaryAdapter:
+        result = await super().search(
+            start,
+            size,
+            sort,
+            free_text,
+            query,
+            skip_cache,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
+    async def rerun(
+        self,
+        workflow_id: StrictStr,
+        rerun_workflow_request: RerunWorkflowRequestAdapter,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> str:
+        return await super().rerun(
+            workflow_id,
+            rerun_workflow_request,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+
+    async def restart(
+        self,
+        workflow_id: StrictStr,
+        use_latest_definitions: Optional[StrictBool] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> None:
+        await super().restart(
+            workflow_id,
+            use_latest_definitions,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+
+    async def update_workflow_and_task_state(
+        self,
+        workflow_id: StrictStr,
+        request_id: StrictStr,
+        workflow_state_update: WorkflowStateUpdateAdapter,
+        wait_until_task_ref: Optional[StrictStr] = None,
+        wait_for_seconds: Optional[StrictInt] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> WorkflowRunAdapter:
+        result = await super().update_workflow_and_task_state(
+            workflow_id,
+            request_id,
+            workflow_state_update,
+            wait_until_task_ref,
+            wait_for_seconds,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
+    async def test_workflow(
+        self,
+        workflow_test_request: WorkflowTestRequestAdapter,
+        _request_timeout: Union[  # noqa: PT019
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,  # noqa: PT019
+        _content_type: Optional[StrictStr] = None,  # noqa: PT019
+        _headers: Optional[Dict[StrictStr, Any]] = None,  # noqa: PT019
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,  # noqa: PT019
+    ) -> WorkflowAdapter:
+        result = await super().test_workflow(
+            workflow_test_request,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
     @validate_call
     async def update_workflow_state(
         self,
@@ -22,7 +349,7 @@ class WorkflowResourceApiAdapter(WorkflowResourceApi):
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> Workflow:
+    ) -> WorkflowAdapter:
         """Update workflow variables
 
         Updates the workflow variables and triggers evaluation.

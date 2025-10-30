@@ -11,11 +11,11 @@ from conductor.client.http.api.scheduler_resource_api import SchedulerResourceAp
 from conductor.client.http.api.schema_resource_api import SchemaResourceApi
 from conductor.client.http.api.secret_resource_api import SecretResourceApi
 from conductor.client.http.api.service_registry_resource_api import ServiceRegistryResourceApi
+from conductor.client.http.api.tags_api import TagsApi
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api.user_resource_api import UserResourceApi
 from conductor.client.http.api.workflow_resource_api import WorkflowResourceApi
 from conductor.client.http.api_client import ApiClient
-from conductor.client.http.api.tags_api import TagsApi
 from conductor.client.http.api.event_resource_api import EventResourceApi
 
 

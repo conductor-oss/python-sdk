@@ -9,9 +9,9 @@ class QueueConfiguration(ABC):
     WORKER_PRODUCER_KEY: ClassVar[str] = "producer"
 
     def __init__(self, queue_name: str, queue_type: str):
-        self.queue_name = queue_name
-        self.queue_type = queue_type
-        self.worker_configuration = {}
+        self.queue_name: str = queue_name
+        self.queue_type: str = queue_type
+        self.worker_configuration: Dict[str, QueueWorkerConfiguration] = {}
 
     def add_consumer(self, worker_configuration: QueueWorkerConfiguration) -> None:
         self.worker_configuration[self.WORKER_CONSUMER_KEY] = worker_configuration

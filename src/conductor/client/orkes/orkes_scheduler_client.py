@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Optional, List
+
+from typing import List, Optional, Tuple
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
@@ -19,7 +20,7 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
     def save_schedule(self, save_schedule_request: SaveScheduleRequest):
         self.schedulerResourceApi.save_schedule(save_schedule_request)
 
-    def get_schedule(self, name: str) -> WorkflowSchedule:
+    def get_schedule(self, name: str) -> Tuple[Optional[WorkflowSchedule], str]:
         return self.schedulerResourceApi.get_schedule(name)
 
     def get_all_schedules(self, workflow_name: Optional[str] = None) -> List[WorkflowSchedule]:
@@ -91,4 +92,4 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         return self.schedulerResourceApi.get_tags_for_schedule(name)
 
     def delete_scheduler_tags(self, tags: List[MetadataTag], name: str) -> List[MetadataTag]:
-        self.schedulerResourceApi.delete_tag_for_schedule(tags, name)
+        return self.schedulerResourceApi.delete_tag_for_schedule(tags, name)

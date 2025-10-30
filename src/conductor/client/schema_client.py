@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from typing import List
 
 # python 2 and python 3 compatibility library
-
 from conductor.client.http.models.schema_def import SchemaDef
 
 

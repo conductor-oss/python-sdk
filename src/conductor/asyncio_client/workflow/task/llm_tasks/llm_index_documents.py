@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from conductor.asyncio_client.workflow.task.task import TaskInterface
 from conductor.shared.workflow.enums import TaskType
@@ -41,7 +41,7 @@ class LlmIndexDocument(TaskInterface):
         metadata: Optional[dict] = None,
     ):
         metadata = metadata or {}
-        input_params = {
+        input_params: Dict[str, Any] = {
             "vectorDB": vector_db,
             "namespace": namespace,
             "index": index,
@@ -52,7 +52,7 @@ class LlmIndexDocument(TaskInterface):
             "metadata": metadata,
         }
 
-        optional_input_params = {}
+        optional_input_params: Dict[str, Any] = {}
 
         if chunk_size is not None:
             optional_input_params.update({"chunkSize": chunk_size})

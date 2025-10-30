@@ -1,6 +1,7 @@
-from __future__ import absolute_import
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 from conductor.client.http.models.integration import Integration
 from conductor.client.http.models.integration_api import IntegrationApi
@@ -49,13 +50,15 @@ class IntegrationClient(ABC):
         """Delete an integration"""
 
     @abstractmethod
-    def get_integration_api(self, api_name: str, integration_name: str) -> IntegrationApi: ...
+    def get_integration_api(
+        self, api_name: str, integration_name: str
+    ) -> Optional[IntegrationApi]: ...
 
     @abstractmethod
     def get_integration_apis(self, integration_name: str) -> List[IntegrationApi]: ...
 
     @abstractmethod
-    def get_integration(self, integration_name: str) -> Integration: ...
+    def get_integration(self, integration_name: str) -> Optional[Integration]: ...
 
     @abstractmethod
     def get_integrations(self) -> List[Integration]:

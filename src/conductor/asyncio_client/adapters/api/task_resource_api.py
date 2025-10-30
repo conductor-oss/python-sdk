@@ -1,14 +1,178 @@
 from __future__ import annotations
 
-from typing import Optional, Dict, Union, Annotated, Any, Tuple
+from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 
-from pydantic import validate_call, StrictStr, StrictFloat, Field, StrictInt
+from pydantic import Field, StrictFloat, StrictInt, StrictStr, validate_call
 
+from conductor.asyncio_client.adapters.models.poll_data_adapter import PollDataAdapter
+from conductor.asyncio_client.adapters.models.search_result_task_summary_adapter import (
+    SearchResultTaskSummaryAdapter,
+)
+from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
+from conductor.asyncio_client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
 from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
 from conductor.asyncio_client.http.api import TaskResourceApi
 
 
 class TaskResourceApiAdapter(TaskResourceApi):
+    async def poll(
+        self,
+        tasktype: StrictStr,
+        workerid: Optional[StrictStr] = None,
+        domain: Optional[StrictStr] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> Optional[TaskAdapter]:
+        result = await super().poll(
+            tasktype,
+            workerid,
+            domain,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
+    async def batch_poll(
+        self,
+        tasktype: StrictStr,
+        workerid: Optional[StrictStr] = None,
+        domain: Optional[StrictStr] = None,
+        count: Optional[StrictInt] = None,
+        timeout: Optional[StrictInt] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> List[TaskAdapter]:
+        result = await super().batch_poll(
+            tasktype,
+            workerid,
+            domain,
+            count,
+            timeout,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
+    async def get_task(
+        self,
+        task_id: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> TaskAdapter:
+        result = await super().get_task(
+            task_id,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
+    async def get_poll_data(
+        self,
+        task_type: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> List[PollDataAdapter]:
+        result = await super().get_poll_data(
+            task_type,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
+    async def get_task_logs(
+        self,
+        task_id: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> List[TaskExecLogAdapter]:
+        result = await super().get_task_logs(
+            task_id,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
+    async def search1(
+        self,
+        start: Optional[StrictInt] = None,
+        size: Optional[StrictInt] = None,
+        sort: Optional[StrictStr] = None,
+        free_text: Optional[StrictStr] = None,
+        query: Optional[StrictStr] = None,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[Annotated[StrictFloat, Field(gt=0)], Annotated[StrictFloat, Field(gt=0)]],
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> SearchResultTaskSummaryAdapter:
+        result = await super().search1(
+            start,
+            size,
+            sort,
+            free_text,
+            query,
+            _request_timeout=_request_timeout,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index,
+        )
+        return result
+
     @validate_call
     async def update_task_sync(
         self,

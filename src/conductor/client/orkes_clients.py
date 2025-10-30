@@ -1,16 +1,20 @@
+from __future__ import annotations
+
+from typing import Optional
+
 from conductor.client.authorization_client import AuthorizationClient
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.integration_client import IntegrationClient
 from conductor.client.metadata_client import MetadataClient
+from conductor.client.orkes.orkes_authorization_client import OrkesAuthorizationClient
 from conductor.client.orkes.orkes_integration_client import OrkesIntegrationClient
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.client.orkes.orkes_prompt_client import OrkesPromptClient
-from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
-from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
-from conductor.client.orkes.orkes_task_client import OrkesTaskClient
 from conductor.client.orkes.orkes_scheduler_client import OrkesSchedulerClient
+from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
 from conductor.client.orkes.orkes_secret_client import OrkesSecretClient
-from conductor.client.orkes.orkes_authorization_client import OrkesAuthorizationClient
+from conductor.client.orkes.orkes_task_client import OrkesTaskClient
+from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 from conductor.client.orkes.orkes_event_client import OrkesEventClient
 from conductor.client.prompt_client import PromptClient
 from conductor.client.scheduler_client import SchedulerClient
@@ -22,7 +26,7 @@ from conductor.client.workflow_client import WorkflowClient
 
 
 class OrkesClients:
-    def __init__(self, configuration: Configuration = None):
+    def __init__(self, configuration: Optional[Configuration] = None):
         if configuration is None:
             configuration = Configuration()
         self.configuration = configuration

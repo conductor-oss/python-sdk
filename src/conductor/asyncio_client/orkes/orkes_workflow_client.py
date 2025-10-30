@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.correlation_ids_search_request_adapter import (
     CorrelationIdsSearchRequestAdapter,
 )
@@ -27,8 +28,7 @@ from conductor.asyncio_client.adapters.models.workflow_status_adapter import Wor
 from conductor.asyncio_client.adapters.models.workflow_test_request_adapter import (
     WorkflowTestRequestAdapter,
 )
-from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.http.configuration import Configuration
+from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
@@ -72,7 +72,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         """Execute a workflow synchronously"""
         return await self.workflow_api.execute_workflow(
             name=start_workflow_request.name,
-            version=start_workflow_request.version,
+            version=start_workflow_request.version or 1,
             request_id=request_id,
             start_workflow_request=start_workflow_request,
             wait_until_task_ref=wait_until_task_ref,
@@ -228,7 +228,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         self,
         workflow_id: str,
         task_reference_name: str,
-        skip_task_request: SkipTaskRequestAdapter,
+        skip_task_request: Optional[SkipTaskRequestAdapter] = None,
     ) -> None:
         """Skip a task in a workflow"""
         await self.workflow_api.skip_task_from_workflow(
@@ -256,11 +256,10 @@ class OrkesWorkflowClient(OrkesBaseClient):
     ) -> WorkflowAdapter:
         """Update workflow state"""
         # Convert the adapter to dict for the API call
-        request_body = (
-            workflow_state_update.to_dict()
-            if hasattr(workflow_state_update, "to_dict")
-            else workflow_state_update
-        )
+        if hasattr(workflow_state_update, "to_dict"):
+            request_body: Dict[str, Any] = workflow_state_update.to_dict()
+        else:
+            request_body = cast(Dict[str, Any], workflow_state_update)
         return await self.workflow_api.update_workflow_state(
             workflow_id=workflow_id, request_body=request_body
         )

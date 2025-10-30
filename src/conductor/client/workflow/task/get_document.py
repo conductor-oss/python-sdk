@@ -1,11 +1,9 @@
-from typing_extensions import Self
-
 from conductor.client.workflow.task.task import TaskInterface
 from conductor.client.workflow.task.task_type import TaskType
 
 
 class GetDocument(TaskInterface):
-    def __init__(self, task_name: str, task_ref_name: str, url: str, media_type: str) -> Self:
+    def __init__(self, task_name: str, task_ref_name: str, url: str, media_type: str) -> None:
         super().__init__(
             task_name=task_name,
             task_reference_name=task_ref_name,

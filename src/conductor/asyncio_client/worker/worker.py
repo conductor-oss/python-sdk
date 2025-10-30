@@ -8,6 +8,7 @@ import traceback
 from copy import deepcopy
 from typing import Any, Callable, Optional, Union
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
 from conductor.asyncio_client.adapters.models.task_exec_log_adapter import (
     TaskExecLogAdapter,
@@ -16,7 +17,6 @@ from conductor.asyncio_client.adapters.models.task_result_adapter import (
     TaskResultAdapter,
 )
 from conductor.asyncio_client.configuration import Configuration
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.worker.worker_interface import WorkerInterface
 from conductor.shared.automator import utils
 from conductor.shared.automator.utils import convert_from_dict_or_list
@@ -80,7 +80,8 @@ class Worker(WorkerInterface):
                             task_input[input_name] = task.input_data[input_name]
                         else:
                             task_input[input_name] = convert_from_dict_or_list(
-                                typ, task.input_data[input_name]
+                                typ,
+                                task.input_data[input_name],
                             )
                     elif default_value is not inspect.Parameter.empty:
                         task_input[input_name] = default_value

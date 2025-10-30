@@ -1,14 +1,14 @@
 import datetime
 import logging
 import re
-from dateutil.parser import parse
 from typing import ClassVar, Dict, Tuple
 
 import six
+from dateutil.parser import parse
 from requests.structures import CaseInsensitiveDict
 
-from conductor.client.configuration.configuration import Configuration
 from conductor.client.codegen import rest
+from conductor.client.configuration.configuration import Configuration
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 

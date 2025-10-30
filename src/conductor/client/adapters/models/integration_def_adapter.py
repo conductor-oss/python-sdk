@@ -7,28 +7,12 @@ from conductor.client.codegen.models import IntegrationDef
 
 class IntegrationDefAdapter(IntegrationDef):
     swagger_types: ClassVar[Dict[str, str]] = {
-        "category": "str",
-        "category_label": "str",
-        "configuration": "list[IntegrationDefFormField]",
-        "description": "str",
-        "enabled": "bool",
-        "icon_name": "str",
-        "name": "str",
-        "tags": "list[str]",
-        "type": "str",
+        **IntegrationDef.swagger_types,
         "apis": "list[IntegrationDefApi]",
     }
 
     attribute_map: ClassVar[Dict[str, str]] = {
-        "category": "category",
-        "category_label": "categoryLabel",
-        "configuration": "configuration",
-        "description": "description",
-        "enabled": "enabled",
-        "icon_name": "iconName",
-        "name": "name",
-        "tags": "tags",
-        "type": "type",
+        **IntegrationDef.attribute_map,
         "apis": "apis",
     }
 

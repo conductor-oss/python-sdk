@@ -1,5 +1,4 @@
-from conductor.client.adapters.models.parser_adapter import ParserAdapter
+from conductor.client.codegen.models.parser import Parser
 
-Parser = ParserAdapter
 
-__all__ = ["Parser"]
+class ParserAdapter(Parser): ...

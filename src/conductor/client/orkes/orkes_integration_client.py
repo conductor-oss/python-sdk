@@ -1,16 +1,15 @@
-from __future__ import annotations
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
+from conductor.client.codegen.rest import ApiException
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.integration import Integration
 from conductor.client.http.models.integration_api import IntegrationApi
 from conductor.client.http.models.integration_api_update import IntegrationApiUpdate
-from conductor.client.http.models.integration_update import IntegrationUpdate
 from conductor.client.http.models.integration_def import IntegrationDef
+from conductor.client.http.models.integration_update import IntegrationUpdate
 from conductor.client.http.models.prompt_template import PromptTemplate
-from conductor.client.codegen.rest import ApiException
 from conductor.client.integration_client import IntegrationClient
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 
@@ -32,7 +31,7 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
     def delete_integration(self, integration_name: str):
         self.integrationApi.delete_integration_provider(integration_name)
 
-    def get_integration_api(self, api_name: str, integration_name: str) -> IntegrationApi:
+    def get_integration_api(self, api_name: str, integration_name: str) -> Optional[IntegrationApi]:
         try:
             return self.integrationApi.get_integration_api(api_name, integration_name)
         except ApiException as e:
@@ -43,7 +42,7 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
     def get_integration_apis(self, integration_name: str) -> List[IntegrationApi]:
         return self.integrationApi.get_integration_apis(integration_name)
 
-    def get_integration(self, integration_name: str) -> Integration:
+    def get_integration(self, integration_name: str) -> Optional[Integration]:
         try:
             return self.integrationApi.get_integration_provider(integration_name)
         except ApiException as e:
@@ -54,7 +53,7 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
     def get_integrations(self) -> List[Integration]:
         return self.integrationApi.get_integration_providers()
 
-    def get_integration_provider(self, name: str) -> IntegrationDef:
+    def get_integration_provider(self, name: str) -> Optional[IntegrationDef]:
         """Get integration provider by name"""
         try:
             return self.integrationApi.get_integration_provider(name)

@@ -1,8 +1,9 @@
 from __future__ import annotations
+
 import io
 import logging
 import ssl
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Union
 
 import httpx
 from httpx import HTTPStatusError, RequestError, Response, TimeoutException
@@ -132,7 +133,7 @@ class RESTClientObjectAdapter(RESTClientObject):
         body: Optional[Union[str, bytes, Dict[str, Any]]] = None,
         post_params: Optional[Dict[str, Any]] = None,
         _preload_content: bool = True,
-        _request_timeout: Optional[Union[float, Tuple[float, float]]] = None,
+        _request_timeout: Optional[float] = None,
     ) -> RESTResponse:
         """Perform HTTP request using httpx.
 
@@ -233,7 +234,7 @@ class RESTClientObjectAdapter(RESTClientObject):
         headers: Optional[Dict[str, str]] = None,
         query_params: Optional[Dict[str, Any]] = None,
         _preload_content: bool = True,
-        _request_timeout: Optional[Union[float, Tuple[float, float]]] = None,
+        _request_timeout: Optional[float] = None,
     ) -> RESTResponse:
         """Perform GET request."""
         return self.request(
@@ -251,7 +252,7 @@ class RESTClientObjectAdapter(RESTClientObject):
         headers: Optional[Dict[str, str]] = None,
         query_params: Optional[Dict[str, Any]] = None,
         _preload_content: bool = True,
-        _request_timeout: Optional[Union[float, Tuple[float, float]]] = None,
+        _request_timeout: Optional[float] = None,
     ) -> RESTResponse:
         """Perform HEAD request."""
         return self.request(
@@ -271,7 +272,7 @@ class RESTClientObjectAdapter(RESTClientObject):
         post_params: Optional[Dict[str, Any]] = None,
         body: Optional[Union[str, bytes, Dict[str, Any]]] = None,
         _preload_content: bool = True,
-        _request_timeout: Optional[Union[float, Tuple[float, float]]] = None,
+        _request_timeout: Optional[float] = None,
     ) -> RESTResponse:
         """Perform OPTIONS request."""
         return self.request(
@@ -292,7 +293,7 @@ class RESTClientObjectAdapter(RESTClientObject):
         query_params: Optional[Dict[str, Any]] = None,
         body: Optional[Union[str, bytes, Dict[str, Any]]] = None,
         _preload_content: bool = True,
-        _request_timeout: Optional[Union[float, Tuple[float, float]]] = None,
+        _request_timeout: Optional[float] = None,
     ) -> RESTResponse:
         """Perform DELETE request."""
         return self.request(
@@ -313,7 +314,7 @@ class RESTClientObjectAdapter(RESTClientObject):
         post_params: Optional[Dict[str, Any]] = None,
         body: Optional[Union[str, bytes, Dict[str, Any]]] = None,
         _preload_content: bool = True,
-        _request_timeout: Optional[Union[float, Tuple[float, float]]] = None,
+        _request_timeout: Optional[float] = None,
     ) -> RESTResponse:
         """Perform POST request."""
         return self.request(
@@ -335,7 +336,7 @@ class RESTClientObjectAdapter(RESTClientObject):
         post_params: Optional[Dict[str, Any]] = None,
         body: Optional[Union[str, bytes, Dict[str, Any]]] = None,
         _preload_content: bool = True,
-        _request_timeout: Optional[Union[float, Tuple[float, float]]] = None,
+        _request_timeout: Optional[float] = None,
     ) -> RESTResponse:
         """Perform PUT request."""
         return self.request(
@@ -357,7 +358,7 @@ class RESTClientObjectAdapter(RESTClientObject):
         post_params: Optional[Dict[str, Any]] = None,
         body: Optional[Union[str, bytes, Dict[str, Any]]] = None,
         _preload_content: bool = True,
-        _request_timeout: Optional[Union[float, Tuple[float, float]]] = None,
+        _request_timeout: Optional[float] = None,
     ) -> RESTResponse:
         """Perform PATCH request."""
         return self.request(

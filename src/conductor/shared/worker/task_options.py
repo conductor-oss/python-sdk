@@ -3,7 +3,6 @@ from __future__ import annotations
 import functools
 from typing import Callable, Optional
 
-
 _TASK_OPTIONS_ATTR = "_conductor_task_options"
 
 

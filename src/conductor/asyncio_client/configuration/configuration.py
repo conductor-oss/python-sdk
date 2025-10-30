@@ -173,7 +173,7 @@ class Configuration:
         # Proxy configuration - can be set via parameter or environment variable
         self.proxy = proxy or os.getenv("CONDUCTOR_PROXY")
         # Proxy headers - can be set via parameter or environment variable
-        self.proxy_headers = proxy_headers
+        self.proxy_headers: Optional[Dict[str, Any]] = proxy_headers
         if not self.proxy_headers and os.getenv("CONDUCTOR_PROXY_HEADERS"):
             try:
                 self.proxy_headers = json.loads(os.getenv("CONDUCTOR_PROXY_HEADERS"))
@@ -466,7 +466,7 @@ class Configuration:
 
     # Properties for commonly used HTTP configuration attributes
     @property
-    def host(self) -> str:
+    def host(self) -> Optional[str]:
         """Get server host URL."""
         if getattr(self, "_http_config", None) is not None:
             return self._http_config.host

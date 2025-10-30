@@ -28,6 +28,6 @@ class JavascriptTask(TaskInterface):
         base_path = f"{self.task_reference_name}.output.result"
         return f"${{{base_path if json_path is None else f'{base_path}.{json_path}'}}}"
 
-    def evaluator_type(self, evaluator_type: str):
+    @TaskInterface.evaluator_type.setter
+    def evaluator_type(self, evaluator_type: str) -> None:
         self.input_parameters["evaluatorType"] = evaluator_type
-        return self

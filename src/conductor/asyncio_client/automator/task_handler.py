@@ -13,7 +13,7 @@ from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.telemetry.metrics_collector import AsyncMetricsCollector
 from conductor.asyncio_client.worker.worker import Worker
 from conductor.asyncio_client.worker.worker_interface import WorkerInterface
-from conductor.shared.configuration.settings.metrics_settings import MetricsSettings
+from conductor.shared.telemetry.configuration.metrics import MetricsSettings
 
 logger = logging.getLogger(Configuration.get_logging_formatted_name(__name__))
 
@@ -51,13 +51,14 @@ def register_decorated_fn(
 class TaskHandler:
     def __init__(
         self,
-        workers: Optional[List[WorkerInterface]] = None,
-        configuration: Optional[Configuration] = None,
+        workers: List[WorkerInterface],
+        configuration: Configuration,
         metrics_settings: Optional[MetricsSettings] = None,
         scan_for_annotated_workers: bool = True,
         import_modules: Optional[List[str]] = None,
     ):
-        workers = workers or []
+        import_modules = import_modules or []
+        self.metrics_provider_process: Optional[Process] = None
         self.logger_process, self.queue = _setup_logging_queue(configuration)
 
         # imports
@@ -68,8 +69,6 @@ class TaskHandler:
                 logger.debug("Loading module %s", module)
                 importlib.import_module(module)
 
-        elif not isinstance(workers, list):
-            workers = [workers]
         if scan_for_annotated_workers is True:
             for (task_def_name, domain), record in _decorated_functions.items():
                 fn = record["func"]
@@ -124,10 +123,13 @@ class TaskHandler:
             logger.info("KeyboardInterrupt: Stopping all processes")
             self.stop_processes()
 
-    def __create_metrics_provider_process(self, metrics_settings: MetricsSettings) -> None:
+    def __create_metrics_provider_process(
+        self, metrics_settings: Optional[MetricsSettings] = None
+    ) -> None:
         if metrics_settings is None:
             self.metrics_provider_process = None
             return
+
         self.metrics_provider_process = Process(
             target=self.coroutine_as_process_target,
             args=(AsyncMetricsCollector.provide_metrics, metrics_settings),
@@ -138,9 +140,9 @@ class TaskHandler:
         self,
         workers: List[WorkerInterface],
         configuration: Configuration,
-        metrics_settings: MetricsSettings,
+        metrics_settings: Optional[MetricsSettings] = None,
     ) -> None:
-        self.task_runner_processes = []
+        self.task_runner_processes: List[Process] = []
         for worker in workers:
             self.__create_task_runner_process(worker, configuration, metrics_settings)
 
@@ -148,7 +150,7 @@ class TaskHandler:
         self,
         worker: WorkerInterface,
         configuration: Configuration,
-        metrics_settings: MetricsSettings,
+        metrics_settings: Optional[MetricsSettings] = None,
     ) -> None:
         task_runner = AsyncTaskRunner(worker, configuration, metrics_settings)
         process = Process(target=self.coroutine_as_process_target, args=(task_runner.run,))
@@ -208,7 +210,7 @@ class TaskHandler:
 
 # Setup centralized logging queue
 def _setup_logging_queue(configuration: Configuration):
-    queue = Queue()
+    queue: Queue[Optional[logging.LogRecord]] = Queue()
     if configuration:
         configuration.apply_logging_config()
         log_level = configuration.log_level

@@ -232,6 +232,9 @@ from conductor.asyncio_client.adapters.models.field_descriptor_proto_or_builder_
 from conductor.asyncio_client.adapters.models.message_adapter import (  # noqa: E402
     MessageAdapter,
 )
+from conductor.asyncio_client.adapters.models.message_options_adapter import (  # noqa: E402
+    MessageOptionsAdapter,
+)
 from conductor.asyncio_client.adapters.models.message_options_or_builder_adapter import (  # noqa: E402
     MessageOptionsOrBuilderAdapter,
 )
@@ -249,9 +252,6 @@ from conductor.asyncio_client.adapters.models.reserved_range_or_builder_adapter 
 )
 from conductor.asyncio_client.adapters.models.unknown_field_set_adapter import (  # noqa: E402
     UnknownFieldSetAdapter,
-)
-from conductor.asyncio_client.adapters.models.message_options_adapter import (  # noqa: E402
-    MessageOptionsAdapter,
 )
 
 DescriptorProtoOrBuilderAdapter.model_rebuild(raise_errors=False)

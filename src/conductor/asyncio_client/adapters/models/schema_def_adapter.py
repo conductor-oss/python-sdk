@@ -1,6 +1,6 @@
 from __future__ import annotations
-from enum import Enum
 
+from enum import Enum
 from typing import Any, Dict, Optional
 
 from conductor.asyncio_client.http.models import SchemaDef

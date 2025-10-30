@@ -1,22 +1,23 @@
 from __future__ import annotations
+
 from copy import deepcopy
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from shortuuid import uuid
 from typing_extensions import Self
 
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
+from conductor.client.http.models.sub_workflow_params import SubWorkflowParams
 from conductor.client.http.models.workflow_def import WorkflowDef
 from conductor.client.http.models.workflow_run import WorkflowRun
 from conductor.client.http.models.workflow_task import WorkflowTask
-from conductor.client.http.models.sub_workflow_params import SubWorkflowParams
-from conductor.shared.http.enums import IdempotencyStrategy
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.fork_task import ForkTask
 from conductor.client.workflow.task.join_task import JoinTask
 from conductor.client.workflow.task.task import TaskInterface
 from conductor.client.workflow.task.task_type import TaskType
 from conductor.client.workflow.task.timeout_policy import TimeoutPolicy
+from conductor.shared.http.enums import IdempotencyStrategy
 
 
 class ConductorWorkflow:
@@ -28,23 +29,23 @@ class ConductorWorkflow:
         name: str,
         version: Optional[int] = None,
         description: Optional[str] = None,
-    ) -> Self:
-        self._executor = executor
-        self.name = name
-        self.version = version
-        self.description = description
-        self._tasks = []
-        self._owner_email = None
-        self._timeout_policy = None
-        self._timeout_seconds = 60
-        self._failure_workflow = ""
-        self._input_parameters = []
-        self._output_parameters = {}
-        self._input_template = {}
-        self._variables = {}
-        self._restartable = True
-        self._workflow_status_listener_enabled = False
-        self._workflow_status_listener_sink = None
+    ) -> None:
+        self._executor: WorkflowExecutor = executor
+        self._name: str = name
+        self._version: Optional[int] = version
+        self._description: Optional[str] = description
+        self._tasks: List[TaskInterface] = []
+        self._owner_email: Optional[str] = None
+        self._timeout_policy: Optional[TimeoutPolicy] = None
+        self._timeout_seconds: int = 60
+        self._failure_workflow: str = ""
+        self._input_parameters: List[str] = []
+        self._output_parameters: Dict[str, Any] = {}
+        self._input_template: Dict[str, Any] = {}
+        self._variables: Dict[str, Any] = {}
+        self._restartable: bool = True
+        self._workflow_status_listener_enabled: bool = False
+        self._workflow_status_listener_sink: Optional[str] = None
 
     @property
     def name(self) -> str:
@@ -57,7 +58,7 @@ class ConductorWorkflow:
         self._name = deepcopy(name)
 
     @property
-    def version(self) -> int:
+    def version(self) -> Optional[int]:
         return self._version
 
     @version.setter
@@ -67,7 +68,7 @@ class ConductorWorkflow:
         self._version = deepcopy(version)
 
     @property
-    def description(self) -> str:
+    def description(self) -> Optional[str]:
         return self._description
 
     @description.setter
@@ -110,11 +111,11 @@ class ConductorWorkflow:
         self._restartable = deepcopy(restartable)
         return self
 
-    def enable_status_listener(self, sink_name: bool) -> Self:
+    def enable_status_listener(self, sink_name: str) -> None:
         self._workflow_status_listener_sink = sink_name
         self._workflow_status_listener_enabled = True
 
-    def disable_status_listener(self) -> Self:
+    def disable_status_listener(self) -> None:
         self._workflow_status_listener_sink = None
         self._workflow_status_listener_enabled = False
 
@@ -304,7 +305,7 @@ class ConductorWorkflow:
         return sub_workflow_task.to_workflow_task()
 
     def __get_workflow_task_list(self) -> List[WorkflowTask]:
-        workflow_task_list = []
+        workflow_task_list: List[WorkflowTask] = []
         for task in self._tasks:
             converted_task = task.to_workflow_task()
             if isinstance(converted_task, list):
@@ -399,7 +400,7 @@ class ConductorWorkflow:
 
 
 class InlineSubWorkflowTask(TaskInterface):
-    def __init__(self, task_ref_name: str, workflow: ConductorWorkflow) -> Self:
+    def __init__(self, task_ref_name: str, workflow: ConductorWorkflow) -> None:
         super().__init__(
             task_reference_name=task_ref_name,
             task_type=TaskType.SUB_WORKFLOW,

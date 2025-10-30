@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Optional, List, Dict
+
+from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self
 
@@ -26,11 +27,11 @@ class LlmChatComplete(TaskInterface):
         top_p: int = 1,
         instructions_template: Optional[str] = None,
         template_variables: Optional[Dict[str, object]] = None,
-    ) -> Self:
+    ) -> None:
         template_variables = template_variables or {}
         stop_words = stop_words or []
 
-        optional_input_params = {}
+        optional_input_params: Dict[str, Any] = {}
 
         if stop_words:
             optional_input_params.update({"stopWords": stop_words})
@@ -38,7 +39,7 @@ class LlmChatComplete(TaskInterface):
         if max_tokens:
             optional_input_params.update({"maxTokens": max_tokens})
 
-        input_params = {
+        input_params: Dict[str, Any] = {
             "llmProvider": llm_provider,
             "model": model,
             "promptVariables": template_variables,

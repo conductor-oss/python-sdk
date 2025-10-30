@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import List, Optional, Sequence, Union
+from typing import List, Optional, Sequence
 
 from conductor.asyncio_client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
 from conductor.asyncio_client.workflow.task.task import (
@@ -35,7 +35,7 @@ class LoopTask(DoWhileTask):
         self,
         task_ref_name: str,
         iterations: int,
-        tasks: Union[TaskInterface, Sequence[TaskInterface]],
+        tasks: List[TaskInterface],
     ):
         super().__init__(
             task_ref_name=task_ref_name,
@@ -48,7 +48,7 @@ class ForEachTask(DoWhileTask):
     def __init__(
         self,
         task_ref_name: str,
-        tasks: Union[TaskInterface, Sequence[TaskInterface]],
+        tasks: List[TaskInterface],
         iterate_over: str,
         variables: Optional[Sequence[str]] = None,
     ):

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from copy import deepcopy
-from typing import List
+from typing import Dict, List, Optional
 
 from conductor.asyncio_client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
 from conductor.asyncio_client.workflow.task.task import (
@@ -15,8 +17,8 @@ class SwitchTask(TaskInterface):
             task_reference_name=task_ref_name,
             task_type=TaskType.SWITCH,
         )
-        self._default_case = None
-        self._decision_cases = {}
+        self._default_case: Optional[List[TaskInterface]] = None
+        self._decision_cases: Dict[str, List[TaskInterface]] = {}
         self._expression = deepcopy(case_expression)
         self._use_javascript = deepcopy(use_javascript)
 

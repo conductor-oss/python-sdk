@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.poll_data_adapter import PollDataAdapter
 from conductor.asyncio_client.adapters.models.search_result_task_summary_adapter import (
     SearchResultTaskSummaryAdapter,
@@ -9,8 +10,8 @@ from conductor.asyncio_client.adapters.models.search_result_task_summary_adapter
 from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
 from conductor.asyncio_client.adapters.models.task_exec_log_adapter import TaskExecLogAdapter
 from conductor.asyncio_client.adapters.models.task_result_adapter import TaskResultAdapter
-from conductor.asyncio_client.adapters import ApiClient
-from conductor.asyncio_client.http.configuration import Configuration
+from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
+from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
@@ -77,7 +78,7 @@ class OrkesTaskClient(OrkesBaseClient):
         status: str,
         output: Dict[str, Any],
         worker_id: Optional[str] = None,
-    ) -> str:
+    ) -> WorkflowAdapter:
         """Update task synchronously by workflow ID and task reference name"""
         body = {"result": output}
         return await self.task_api.update_task_sync(

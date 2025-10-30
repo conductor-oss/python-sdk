@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Any, Dict, List, Optional
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.api.metadata_resource_api import MetadataResourceApiAdapter
 from conductor.asyncio_client.adapters.api.task_resource_api import TaskResourceApiAdapter
 from conductor.asyncio_client.adapters.models.correlation_ids_search_request_adapter import (
@@ -23,12 +24,12 @@ from conductor.asyncio_client.adapters.models.skip_task_request_adapter import (
 from conductor.asyncio_client.adapters.models.start_workflow_request_adapter import (
     StartWorkflowRequestAdapter,
 )
+from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
 from conductor.asyncio_client.adapters.models.task_result_adapter import TaskResultAdapter
 from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
 from conductor.asyncio_client.adapters.models.workflow_run_adapter import WorkflowRunAdapter
 from conductor.asyncio_client.adapters.models.workflow_status_adapter import WorkflowStatusAdapter
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.orkes.orkes_workflow_client import OrkesWorkflowClient
 
 
@@ -168,9 +169,9 @@ class AsyncWorkflowExecutor:
 
     async def search(
         self,
-        start: Optional[int] = None,
-        size: Optional[int] = None,
-        free_text: Optional[str] = None,
+        start: int = 0,
+        size: int = 100,
+        free_text: str = "*",
         query: Optional[str] = None,
         skip_cache: Optional[bool] = None,
     ) -> ScrollableSearchResultWorkflowSummaryAdapter:
@@ -187,8 +188,8 @@ class AsyncWorkflowExecutor:
         self,
         workflow_name: str,
         correlation_ids: List[str],
-        include_closed: Optional[bool] = None,
-        include_tasks: Optional[bool] = None,
+        include_closed: bool = False,
+        include_tasks: bool = False,
     ) -> Dict[str, List[WorkflowAdapter]]:
         """Lists workflows for the given correlation id list"""
         return await self.workflow_client.get_by_correlation_ids(
@@ -201,8 +202,8 @@ class AsyncWorkflowExecutor:
     async def get_by_correlation_ids_and_names(
         self,
         batch_request: CorrelationIdsSearchRequestAdapter,
-        include_closed: Optional[bool] = None,
-        include_tasks: Optional[bool] = None,
+        include_closed: bool = False,
+        include_tasks: bool = False,
     ) -> Dict[str, List[WorkflowAdapter]]:
         """
         Given the list of correlation ids and list of workflow names, find and return workflows Returns a map with
@@ -265,7 +266,7 @@ class AsyncWorkflowExecutor:
         self,
         workflow_id: str,
         task_reference_name: str,
-        skip_task_request: SkipTaskRequestAdapter = None,
+        skip_task_request: Optional[SkipTaskRequestAdapter] = None,
     ) -> None:
         """Skips a given task from a current running workflow"""
         return await self.workflow_client.skip_task_from_workflow(
@@ -313,7 +314,7 @@ class AsyncWorkflowExecutor:
             status=status,
         )
 
-    async def get_task(self, task_id: str) -> str:
+    async def get_task(self, task_id: str) -> Optional[TaskAdapter]:
         """Get task by Id"""
         return await self.task_client.get_task(task_id=task_id)
 

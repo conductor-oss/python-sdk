@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
-
-from typing_extensions import Self
+from typing import Any, Dict, Optional
 
 from conductor.client.workflow.task.llm_tasks.utils.embedding_model import EmbeddingModel
 from conductor.client.workflow.task.task import TaskInterface
@@ -41,7 +39,7 @@ class LlmIndexDocument(TaskInterface):
         doc_id: Optional[str] = None,
         task_name: Optional[str] = None,
         metadata: Optional[dict] = None,
-    ) -> Self:
+    ) -> None:
         metadata = metadata or {}
         input_params = {
             "vectorDB": vector_db,
@@ -54,7 +52,7 @@ class LlmIndexDocument(TaskInterface):
             "metadata": metadata,
         }
 
-        optional_input_params = {}
+        optional_input_params: Dict[str, Any] = {}
 
         if chunk_size is not None:
             optional_input_params.update({"chunkSize": chunk_size})

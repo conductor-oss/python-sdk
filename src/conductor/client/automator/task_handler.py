@@ -85,8 +85,10 @@ class TaskHandler:
                 logger.info("Created worker with name=%s and domain=%s", task_def_name, domain)
                 workers.append(worker)
 
-        self.__create_task_runner_processes(workers, configuration, metrics_settings)
-        self.__create_metrics_provider_process(metrics_settings)
+        self.__create_task_runner_processes(
+            workers, configuration or Configuration(), metrics_settings or MetricsSettings()
+        )
+        self.__create_metrics_provider_process(metrics_settings or MetricsSettings())
         logger.info("TaskHandler initialized")
 
     def __enter__(self):
@@ -118,9 +120,11 @@ class TaskHandler:
             logger.info("KeyboardInterrupt: Stopping all processes")
             self.stop_processes()
 
-    def __create_metrics_provider_process(self, metrics_settings: MetricsSettings) -> None:
+    def __create_metrics_provider_process(
+        self, metrics_settings: Optional[MetricsSettings] = None
+    ) -> None:
         if metrics_settings is None:
-            self.metrics_provider_process = None
+            self.metrics_provider_process: Optional[Process] = None
             return
         self.metrics_provider_process = Process(
             target=MetricsCollector.provide_metrics, args=(metrics_settings,)
@@ -133,7 +137,7 @@ class TaskHandler:
         configuration: Configuration,
         metrics_settings: MetricsSettings,
     ) -> None:
-        self.task_runner_processes = []
+        self.task_runner_processes: List[Process] = []
         for worker in workers:
             self.__create_task_runner_process(worker, configuration, metrics_settings)
 
@@ -200,8 +204,8 @@ class TaskHandler:
 
 
 # Setup centralized logging queue
-def _setup_logging_queue(configuration: Configuration):
-    queue = Queue()
+def _setup_logging_queue(configuration: Optional[Configuration]):
+    queue: Queue = Queue()
     if configuration:
         configuration.apply_logging_config()
         log_level = configuration.log_level

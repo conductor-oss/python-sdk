@@ -1,5 +1,6 @@
 import logging
 
+from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.api.application_resource_api import (
     ApplicationResourceApiAdapter,
 )
@@ -24,7 +25,6 @@ from conductor.asyncio_client.adapters.api.event_execution_resource_api import (
     EventExecutionResourceApiAdapter,
 )
 from conductor.asyncio_client.configuration.configuration import Configuration
-from conductor.asyncio_client.adapters import ApiClient
 
 
 class OrkesBaseClient:

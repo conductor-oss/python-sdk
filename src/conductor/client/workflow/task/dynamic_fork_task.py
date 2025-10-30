@@ -1,6 +1,7 @@
-from copy import deepcopy
+from __future__ import annotations
 
-from typing_extensions import Self
+from copy import deepcopy
+from typing import List, Optional
 
 from conductor.client.http.models.workflow_task import WorkflowTask
 from conductor.client.workflow.task.join_task import JoinTask
@@ -14,14 +15,14 @@ class DynamicForkTask(TaskInterface):
         task_ref_name: str,
         tasks_param: str = "dynamicTasks",
         tasks_input_param_name: str = "dynamicTasksInputs",
-        join_task: JoinTask = None,
-    ) -> Self:
+        join_task: Optional[JoinTask] = None,
+    ) -> None:
         super().__init__(task_reference_name=task_ref_name, task_type=TaskType.FORK_JOIN_DYNAMIC)
         self.tasks_param = tasks_param
         self.tasks_input_param_name = tasks_input_param_name
         self._join_task = deepcopy(join_task)
 
-    def to_workflow_task(self) -> WorkflowTask:
+    def to_workflow_task(self) -> List[WorkflowTask]:
         wf_task = super().to_workflow_task()
         wf_task.dynamic_fork_tasks_param = self.tasks_param
         wf_task.dynamic_fork_tasks_input_param_name = self.tasks_input_param_name

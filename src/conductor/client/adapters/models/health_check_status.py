@@ -1,5 +1,5 @@
-from typing import ClassVar, Dict
 import pprint
+from typing import ClassVar, Dict
 
 import six
 

@@ -1,20 +1,21 @@
 from __future__ import annotations
-from typing import Optional, List, Dict
+
 import uuid
+from typing import Dict, List, Optional
 
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.models.skip_task_request import SkipTaskRequest
-from conductor.client.http.models.workflow_status import WorkflowStatus
+from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
+from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
 from conductor.client.http.models.scrollable_search_result_workflow_summary import (
     ScrollableSearchResultWorkflowSummary,
 )
 from conductor.client.http.models.signal_response import SignalResponse
-from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
-from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
+from conductor.client.http.models.skip_task_request import SkipTaskRequest
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
 from conductor.client.http.models.workflow import Workflow
 from conductor.client.http.models.workflow_run import WorkflowRun
 from conductor.client.http.models.workflow_state_update import WorkflowStateUpdate
+from conductor.client.http.models.workflow_status import WorkflowStatus
 from conductor.client.http.models.workflow_test_request import WorkflowTestRequest
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.workflow_client import WorkflowClient
@@ -152,7 +153,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         self.workflowResourceApi.delete1(workflow_id, archive_workflow=archive_workflow)
 
     def skip_task_from_workflow(
-        self, workflow_id: str, task_reference_name: str, request: SkipTaskRequest
+        self, workflow_id: str, task_reference_name: str, request: Optional[SkipTaskRequest]
     ):
         self.workflowResourceApi.skip_task_from_workflow(workflow_id, task_reference_name, request)
 
