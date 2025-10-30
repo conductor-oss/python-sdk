@@ -106,7 +106,7 @@ class RESTClientObjectAdapter(RESTClientObject):
 
                 client_kwargs["verify"] = ssl_context
 
-            self.connection = httpx.Client(**client_kwargs)
+            self.connection = httpx.Client(**client_kwargs)  # type: ignore[arg-type]
 
     def close(self):
         """Close the HTTP client connection."""

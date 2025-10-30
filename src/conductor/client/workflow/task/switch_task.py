@@ -30,7 +30,7 @@ class SwitchTask(TaskInterface):
         )
         self._default_case: Optional[TaskInterface] = None
         self._decision_cases: Dict[str, List[TaskInterface]] = {}
-        self._expression = deepcopy(case_expression)
+        self._expression = deepcopy(case_expression)  # type: ignore[assignment]
         self._use_javascript = deepcopy(use_javascript)
 
     def switch_case(self, case_name: str, tasks: List[TaskInterface]) -> Self:
@@ -42,7 +42,7 @@ class SwitchTask(TaskInterface):
 
     def default_case(self, tasks: List[TaskInterface]) -> Self:
         if isinstance(tasks, List):
-            self._default_case = deepcopy(tasks)
+            self._default_case = deepcopy(tasks)  # type: ignore[assignment]
         else:
             self._default_case = [deepcopy(tasks)]
         return self

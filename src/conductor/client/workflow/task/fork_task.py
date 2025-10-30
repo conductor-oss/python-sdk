@@ -24,7 +24,7 @@ class ForkTask(TaskInterface):
         self._forked_tasks = deepcopy(forked_tasks)
         self._join_on = join_on
 
-    def to_workflow_task(self) -> Union[WorkflowTask, List[WorkflowTask]]:
+    def to_workflow_task(self) -> Union[WorkflowTask, List[WorkflowTask]]:  # type: ignore[override]
         tasks = []
         workflow_task = super().to_workflow_task()
         workflow_task.fork_tasks = []

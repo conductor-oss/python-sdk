@@ -1,34 +1,36 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from conductor.client.configuration.configuration import Configuration
+from conductor.client.http.models import WorkflowScheduleModel
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
 from conductor.client.http.models.search_result_workflow_schedule_execution_model import (
     SearchResultWorkflowScheduleExecutionModel,
 )
 from conductor.client.http.models.workflow_schedule import WorkflowSchedule
 from conductor.client.orkes.models.metadata_tag import MetadataTag
+from conductor.client.http.models.tag import Tag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.scheduler_client import SchedulerClient
 
 
 class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
     def __init__(self, configuration: Configuration):
-        super(OrkesSchedulerClient, self).__init__(configuration)
+        super().__init__(configuration)
 
     def save_schedule(self, save_schedule_request: SaveScheduleRequest):
-        self.schedulerResourceApi.save_schedule(save_schedule_request)
+        self._scheduler_api.save_schedule(save_schedule_request)
 
-    def get_schedule(self, name: str) -> Tuple[Optional[WorkflowSchedule], str]:
-        return self.schedulerResourceApi.get_schedule(name)
+    def get_schedule(self, name: str) -> WorkflowSchedule:
+        return self._scheduler_api.get_schedule(name)
 
-    def get_all_schedules(self, workflow_name: Optional[str] = None) -> List[WorkflowSchedule]:
+    def get_all_schedules(self, workflow_name: Optional[str] = None) -> List[WorkflowScheduleModel]:
         kwargs = {}
         if workflow_name:
             kwargs.update({"workflow_name": workflow_name})
 
-        return self.schedulerResourceApi.get_all_schedules(**kwargs)
+        return self._scheduler_api.get_all_schedules(**kwargs)
 
     def get_next_few_schedule_execution_times(
         self,
@@ -44,22 +46,22 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
             kwargs.update({"schedule_end_time": schedule_end_time})
         if limit:
             kwargs.update({"limit": limit})
-        return self.schedulerResourceApi.get_next_few_schedules(cron_expression, **kwargs)
+        return self._scheduler_api.get_next_few_schedules(cron_expression, **kwargs)
 
     def delete_schedule(self, name: str):
-        self.schedulerResourceApi.delete_schedule(name)
+        self._scheduler_api.delete_schedule(name)
 
     def pause_schedule(self, name: str):
-        self.schedulerResourceApi.pause_schedule(name)
+        self._scheduler_api.pause_schedule(name)
 
     def pause_all_schedules(self):
-        self.schedulerResourceApi.pause_all_schedules()
+        self._scheduler_api.pause_all_schedules()
 
     def resume_schedule(self, name: str):
-        self.schedulerResourceApi.resume_schedule(name)
+        self._scheduler_api.resume_schedule(name)
 
     def resume_all_schedules(self):
-        self.schedulerResourceApi.resume_all_schedules()
+        self._scheduler_api.resume_all_schedules()
 
     def search_schedule_executions(
         self,
@@ -80,16 +82,16 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
             kwargs.update({"free_text": free_text})
         if query:
             kwargs.update({"query": query})
-        return self.schedulerResourceApi.search_v2(**kwargs)
+        return self._scheduler_api.search_v2(**kwargs)
 
     def requeue_all_execution_records(self):
-        self.schedulerResourceApi.requeue_all_execution_records()
+        self._scheduler_api.requeue_all_execution_records()
 
     def set_scheduler_tags(self, tags: List[MetadataTag], name: str):
-        self.schedulerResourceApi.put_tag_for_schedule(tags, name)
+        self._scheduler_api.put_tag_for_schedule(tags, name)
 
-    def get_scheduler_tags(self, name: str) -> List[MetadataTag]:
-        return self.schedulerResourceApi.get_tags_for_schedule(name)
+    def get_scheduler_tags(self, name: str) -> List[Tag]:
+        return self._scheduler_api.get_tags_for_schedule(name)
 
-    def delete_scheduler_tags(self, tags: List[MetadataTag], name: str) -> List[MetadataTag]:
-        return self.schedulerResourceApi.delete_tag_for_schedule(tags, name)
+    def delete_scheduler_tags(self, tags: List[MetadataTag], name: str) -> None:
+        return self._scheduler_api.delete_tag_for_schedule(tags, name)

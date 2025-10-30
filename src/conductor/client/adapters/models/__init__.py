@@ -83,8 +83,6 @@ from conductor.client.adapters.models.event_handler_adapter import (
 from conductor.client.adapters.models.event_log_adapter import EventLogAdapter as EventLog
 from conductor.client.adapters.models.extended_conductor_application_adapter import (
     ExtendedConductorApplicationAdapter as ConductorApplication,
-)
-from conductor.client.adapters.models.extended_conductor_application_adapter import (
     ExtendedConductorApplicationAdapter as ExtendedConductorApplication,
 )
 from conductor.client.adapters.models.extended_event_execution_adapter import (
@@ -239,15 +237,17 @@ from conductor.client.adapters.models.rate_limit_config_adapter import (
 )
 from conductor.client.adapters.models.request_param_adapter import (
     RequestParamAdapter as RequestParam,
+    SchemaAdapter as Schema,
 )
-from conductor.client.adapters.models.request_param_adapter import SchemaAdapter as Schema
 from conductor.client.adapters.models.rerun_workflow_request_adapter import (
     RerunWorkflowRequestAdapter as RerunWorkflowRequest,
 )
 from conductor.client.adapters.models.response_adapter import ResponseAdapter as Response
 from conductor.client.adapters.models.role_adapter import RoleAdapter as Role
-from conductor.client.adapters.models.schema_def_adapter import SchemaDefAdapter as SchemaDef
-from conductor.client.adapters.models.schema_def_adapter import SchemaType
+from conductor.client.adapters.models.schema_def_adapter import (
+    SchemaDefAdapter as SchemaDef,
+    SchemaType,
+)
 from conductor.client.adapters.models.scrollable_search_result_workflow_summary_adapter import (
     ScrollableSearchResultWorkflowSummaryAdapter as ScrollableSearchResultWorkflowSummary,
 )
@@ -257,11 +257,9 @@ from conductor.client.adapters.models.search_result_workflow_schedule_execution_
 from conductor.client.adapters.models.service_method_adapter import (
     ServiceMethodAdapter as ServiceMethod,
 )
-from conductor.client.adapters.models.service_registry_adapter import ConfigAdapter as Config
 from conductor.client.adapters.models.service_registry_adapter import (
+    ConfigAdapter as Config,
     OrkesCircuitBreakerConfigAdapter as OrkesCircuitBreakerConfig,
-)
-from conductor.client.adapters.models.service_registry_adapter import (
     ServiceRegistryAdapter as ServiceRegistry,
 )
 from conductor.client.adapters.models.signal_response_adapter import (

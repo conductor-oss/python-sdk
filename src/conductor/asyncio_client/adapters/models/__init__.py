@@ -23,11 +23,11 @@ from conductor.asyncio_client.adapters.models.connectivity_test_input_adapter im
 from conductor.asyncio_client.adapters.models.connectivity_test_result_adapter import (
     ConnectivityTestResultAdapter as ConnectivityTestResult,
 )
-from conductor.asyncio_client.adapters.models.create_or_update_application_request_adapter import (
-    CreateOrUpdateApplicationRequestAdapter as CreateOrUpdateApplicationRequest,
-)
 from conductor.asyncio_client.adapters.models.correlation_ids_search_request_adapter import (
     CorrelationIdsSearchRequestAdapter as CorrelationIdsSearchRequest,
+)
+from conductor.asyncio_client.adapters.models.create_or_update_application_request_adapter import (
+    CreateOrUpdateApplicationRequestAdapter as CreateOrUpdateApplicationRequest,
 )
 from conductor.asyncio_client.adapters.models.declaration_adapter import (
     DeclarationAdapter as Declaration,
@@ -414,7 +414,6 @@ from conductor.asyncio_client.adapters.models.workflow_task_adapter import (
 from conductor.asyncio_client.adapters.models.workflow_test_request_adapter import (
     WorkflowTestRequestAdapter as WorkflowTestRequest,
 )
-
 
 __all__ = [
     "Action",
