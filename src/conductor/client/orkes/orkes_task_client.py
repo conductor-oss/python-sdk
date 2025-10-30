@@ -14,7 +14,7 @@ from conductor.client.task_client import TaskClient
 
 class OrkesTaskClient(OrkesBaseClient, TaskClient):
     def __init__(self, configuration: Configuration):
-        super(OrkesTaskClient, self).__init__(configuration)
+        super().__init__(configuration)
 
     def poll_task(
         self, task_type: str, worker_id: Optional[str] = None, domain: Optional[str] = None

@@ -26,7 +26,7 @@ from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 
 class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
     def __init__(self, configuration: Configuration):
-        super(OrkesAuthorizationClient, self).__init__(configuration)
+        super().__init__(configuration)
 
     # Applications
     def create_application(

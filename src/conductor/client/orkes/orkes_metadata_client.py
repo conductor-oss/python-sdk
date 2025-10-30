@@ -16,7 +16,7 @@ from conductor.client.http.models.extended_workflow_def import ExtendedWorkflowD
 
 class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
     def __init__(self, configuration: Configuration):
-        super(OrkesMetadataClient, self).__init__(configuration)
+        super().__init__(configuration)
 
     def register_workflow_def(
         self, workflow_def: ExtendedWorkflowDef, overwrite: Optional[bool] = True

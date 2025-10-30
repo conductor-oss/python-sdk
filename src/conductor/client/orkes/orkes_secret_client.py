@@ -8,7 +8,7 @@ from conductor.client.secret_client import SecretClient
 
 class OrkesSecretClient(OrkesBaseClient, SecretClient):
     def __init__(self, configuration: Configuration):
-        super(OrkesSecretClient, self).__init__(configuration)
+        super().__init__(configuration)
 
     def put_secret(self, key: str, value: str):
         self._secret_api.put_secret(value, key)

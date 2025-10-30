@@ -34,6 +34,10 @@ from conductor.asyncio_client.adapters.models.upsert_user_request_adapter import
 )
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
+from conductor.asyncio_client.adapters.models.created_access_key_adapter import (
+    CreatedAccessKeyAdapter,
+)
+from conductor.asyncio_client.adapters.models.access_key_adapter import AccessKeyAdapter
 
 
 class OrkesAuthorizationClient(OrkesBaseClient):
@@ -45,14 +49,49 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         """Create a new user"""
         return await self._user_api.upsert_user(id=user_id, upsert_user_request=upsert_user_request)
 
+    async def create_user_validated(
+        self, user_id: str, upsert_user_request: UpsertUserRequest, **kwargs
+    ) -> Optional[ConductorUserAdapter]:
+        """Create a new user and return a validated ConductorUserAdapter"""
+        result = await self._user_api.upsert_user(
+            id=user_id, upsert_user_request=upsert_user_request, **kwargs
+        )
+
+        result_dict = cast(Dict[str, Any], result)
+        result_model = ConductorUserAdapter.from_dict(result_dict)
+
+        return result_model
+
     async def update_user(self, user_id: str, upsert_user_request: UpsertUserRequest) -> object:
         """Update an existing user"""
         return await self._user_api.upsert_user(id=user_id, upsert_user_request=upsert_user_request)
 
-    async def get_user(self, user_id: str) -> Optional[ConductorUserAdapter]:
+    async def update_user_validated(
+        self, user_id: str, upsert_user_request: UpsertUserRequest, **kwargs
+    ) -> Optional[ConductorUserAdapter]:
+        """Update an existing user and return a validated ConductorUserAdapter"""
+        result = await self._user_api.upsert_user(
+            id=user_id, upsert_user_request=upsert_user_request, **kwargs
+        )
+
+        result_dict = cast(Dict[str, Any], result)
+        result_model = ConductorUserAdapter.from_dict(result_dict)
+
+        return result_model
+
+    async def get_user(self, user_id: str) -> object:
         """Get user by ID"""
         result = await self._user_api.get_user(id=user_id)
-        return ConductorUserAdapter.from_dict(result)  # type: ignore[arg-type]
+        return result
+
+    async def get_user_validated(self, user_id: str, **kwargs) -> Optional[ConductorUserAdapter]:
+        """Get a user and return a validated ConductorUserAdapter"""
+        result = await self._user_api.get_user(id=user_id, **kwargs)
+
+        result_dict = cast(Dict[str, Any], result)
+        result_model = ConductorUserAdapter.from_dict(result_dict)
+
+        return result_model
 
     async def delete_user(self, user_id: str) -> None:
         """Delete user by ID"""
@@ -62,31 +101,77 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         """List all users"""
         return await self._user_api.list_users(apps=include_apps)
 
+    async def list_users_validated(
+        self, include_apps: bool = False, **kwargs
+    ) -> List[Optional[ConductorUserAdapter]]:
+        """List all users and return a list of validated ConductorUserAdapters"""
+        result = await self._user_api.list_users(apps=include_apps, **kwargs)
+
+        result_dict = cast(Dict[str, Any], result)
+        result_model = [ConductorUserAdapter.from_dict(_item) for _item in result_dict]
+
+        return result_model
+
     # Application Operations
     async def create_application(
         self, application: CreateOrUpdateApplicationRequestAdapter
-    ) -> Optional[ExtendedConductorApplicationAdapter]:
+    ) -> object:
         """Create a new application"""
         result = await self._application_api.create_application(
             create_or_update_application_request=application
         )
-        return ExtendedConductorApplicationAdapter.from_dict(result)  # type: ignore[arg-type]
+        return result
+
+    async def create_application_validated(
+        self, application: CreateOrUpdateApplicationRequestAdapter, **kwargs
+    ) -> Optional[ExtendedConductorApplicationAdapter]:
+        """Create a new application and return a validated ExtendedConductorApplicationAdapter"""
+        result = await self._application_api.create_application(
+            create_or_update_application_request=application, **kwargs
+        )
+
+        result_dict = cast(Dict[str, Any], result)
+        result_model = ExtendedConductorApplicationAdapter.from_dict(result_dict)
+
+        return result_model
 
     async def update_application(
         self, application_id: str, application: CreateOrUpdateApplicationRequestAdapter
-    ) -> Optional[ExtendedConductorApplicationAdapter]:
+    ) -> object:
         """Update an existing application"""
         result = await self._application_api.update_application(
             id=application_id, create_or_update_application_request=application
         )
-        return ExtendedConductorApplicationAdapter.from_dict(result)  # type: ignore[arg-type]
+        return result
 
-    async def get_application(
-        self, application_id: str
+    async def update_application_validated(
+        self, application_id: str, application: CreateOrUpdateApplicationRequestAdapter, **kwargs
     ) -> Optional[ExtendedConductorApplicationAdapter]:
+        """Update an existing application and return a validated ExtendedConductorApplicationAdapter"""
+        result = await self._application_api.update_application(
+            id=application_id, create_or_update_application_request=application, **kwargs
+        )
+
+        result_dict = cast(Dict[str, Any], result)
+        result_model = ExtendedConductorApplicationAdapter.from_dict(result_dict)
+
+        return result_model
+
+    async def get_application(self, application_id: str) -> object:
         """Get application by ID"""
         result = await self._application_api.get_application(id=application_id)
-        return ExtendedConductorApplicationAdapter.from_dict(result)  # type: ignore[arg-type]
+        return result
+
+    async def get_application_validated(
+        self, application_id: str, **kwargs
+    ) -> Optional[ExtendedConductorApplicationAdapter]:
+        """Get an application by ID and return a validated ExtendedConductorApplicationAdapter"""
+        result = await self._application_api.get_application(id=application_id, **kwargs)
+
+        result_dict = cast(Dict[str, Any], result)
+        result_model = ExtendedConductorApplicationAdapter.from_dict(result_dict)
+
+        return result_model
 
     async def delete_application(self, application_id: str) -> None:
         """Delete application by ID"""
@@ -112,10 +197,10 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         )
         return GroupAdapter.from_dict(result)  # type: ignore[arg-type]
 
-    async def get_group(self, group_id: str) -> Optional[GroupAdapter]:
+    async def get_group(self, group_id: str) -> object:
         """Get group by ID"""
         result = await self._group_api.get_group(id=group_id)
-        return GroupAdapter.from_dict(result)  # type: ignore[arg-type]
+        return result
 
     async def delete_group(self, group_id: str) -> None:
         """Delete group by ID"""
@@ -170,48 +255,79 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return await self._group_api.get_granted_permissions1(group_id=group_id)
 
     # Convenience Methods
-    async def upsert_user(
-        self, user_id: str, upsert_user_request: UpsertUserRequest
-    ) -> Optional[ConductorUserAdapter]:
+    async def upsert_user(self, user_id: str, upsert_user_request: UpsertUserRequest) -> object:
         """Alias for create_user/update_user"""
         result = await self.create_user(user_id, upsert_user_request)
-        return ConductorUserAdapter.from_dict(result)  # type: ignore[arg-type]
+        return result
 
-    async def upsert_group(
-        self, group_id: str, upsert_group_request: UpsertGroupRequest
-    ) -> Optional[GroupAdapter]:
+    async def upsert_group(self, group_id: str, upsert_group_request: UpsertGroupRequest) -> object:
         """Alias for create_group/update_group"""
         result = await self.create_group(group_id, upsert_group_request)
         return GroupAdapter.from_dict(result)  # type: ignore[arg-type]
 
-    async def set_application_tags(self, tags: List[TagAdapter], application_id: str):
+    async def set_application_tags(self, tags: List[TagAdapter], application_id: str) -> None:
         await self._application_api.put_tag_for_application(application_id, tags)
 
     async def get_application_tags(self, application_id: str) -> List[TagAdapter]:
         return await self._application_api.get_tags_for_application(application_id)
 
-    async def delete_application_tags(self, tags: List[TagAdapter], application_id: str):
+    async def delete_application_tags(self, tags: List[TagAdapter], application_id: str) -> None:
         await self._application_api.delete_tag_for_application(application_id, tags)
 
     async def create_access_key(self, application_id: str) -> object:
         key_obj = await self._application_api.create_access_key(application_id)
         return key_obj
 
+    async def create_access_key_validated(
+        self, application_id: str, **kwargs
+    ) -> CreatedAccessKeyAdapter:
+        """Create an access key and return a validated CreatedAccessKeyAdapter"""
+        result = await self._application_api.create_access_key(application_id, **kwargs)
+
+        result_dict = cast(Dict[str, Any], result)
+        result_model = CreatedAccessKeyAdapter.from_dict(result_dict)
+
+        return result_model
+
     async def get_access_keys(self, application_id: str) -> object:
         access_keys_obj = await self._application_api.get_access_keys(application_id)
         return access_keys_obj
+
+    async def get_access_keys_validated(
+        self, application_id: str, **kwargs
+    ) -> List[AccessKeyAdapter]:
+        """Get access keys for an application and return a list of validated AccessKeyAdapters"""
+        result = await self._application_api.get_access_keys(application_id, **kwargs)
+
+        result_dict = cast(Dict[str, Any], result)
+        result_model = [AccessKeyAdapter.from_dict(_item) for _item in result_dict]
+
+        return result_model
 
     async def toggle_access_key_status(self, application_id: str, key_id: str) -> object:
         key_obj = await self._application_api.toggle_access_key_status(application_id, key_id)
         return key_obj
 
-    async def delete_access_key(self, application_id: str, key_id: str):
+    async def toggle_access_key_status_validated(
+        self, application_id: str, key_id: str, **kwargs
+    ) -> AccessKeyAdapter:
+        """Toggle the status of an access key and return a validated AccessKeyAdapter"""
+        result = await self._application_api.toggle_access_key_status(
+            application_id, key_id, **kwargs
+        )
+
+        result_dict = cast(Dict[str, Any], result)
+        result_model = AccessKeyAdapter.from_dict(result_dict)
+
+        return result_model
+
+    async def delete_access_key(self, application_id: str, key_id: str) -> None:
         await self._application_api.delete_access_key(application_id, key_id)
 
-    async def add_role_to_application_user(self, application_id: str, role: str):
+    async def add_role_to_application_user(self, application_id: str, role: str) -> None:
         await self._application_api.add_role_to_application_user(application_id, role)
 
-    async def remove_role_from_application_user(self, application_id: str, role: str):
+    async def remove_role_from_application_user(self, application_id: str, role: str) -> None:
         await self._application_api.remove_role_from_application_user(application_id, role)
 
     async def get_granted_permissions_for_group(self, group_id: str) -> List[GrantedAccess]:
@@ -231,10 +347,8 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         return granted_permissions
 
-    async def get_granted_permissions_for_user(self, user_id: str) -> List[GrantedAccess]:
-        granted_access_obj = cast(
-            Dict[str, Any], await self._user_api.get_granted_permissions(user_id)
-        )
+    async def get_granted_permissions_for_user(self, user_id: str) -> object:
+        granted_access_obj = await self._user_api.get_granted_permissions(user_id)
         granted_permissions = []
         for ga in granted_access_obj["grantedAccess"]:
             target = TargetRef(type=ga["target"]["type"], id=ga["target"]["id"])
@@ -248,4 +362,11 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         result = await self._application_api.get_app_by_access_key_id(
             access_key_id, *args, **kwargs
         )
-        return ExtendedConductorApplicationAdapter.from_dict(result)  # type: ignore[arg-type]
+
+        result_dict = cast(Dict[str, Any], result)
+        result_model = ExtendedConductorApplicationAdapter.from_dict(result_dict)
+
+        return result_model
+
+    async def check_permissions(self, user_id: str, type: str, id: str) -> object:
+        return await self._user_api.check_permissions(user_id, type, id)

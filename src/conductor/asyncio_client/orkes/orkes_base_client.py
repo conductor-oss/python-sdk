@@ -19,14 +19,11 @@ from conductor.asyncio_client.adapters.api.prompt_resource_api import PromptReso
 from conductor.asyncio_client.adapters.api.scheduler_resource_api import SchedulerResourceApiAdapter
 from conductor.asyncio_client.adapters.api.schema_resource_api import SchemaResourceApiAdapter
 from conductor.asyncio_client.adapters.api.secret_resource_api import SecretResourceApiAdapter
+from conductor.asyncio_client.adapters.api.event_resource_api import EventResourceApiAdapter
 from conductor.asyncio_client.adapters.api.tags_api import TagsApiAdapter
 from conductor.asyncio_client.adapters.api.task_resource_api import TaskResourceApiAdapter
 from conductor.asyncio_client.adapters.api.user_resource_api import UserResourceApiAdapter
 from conductor.asyncio_client.adapters.api.workflow_resource_api import WorkflowResourceApiAdapter
-from conductor.asyncio_client.adapters.api.event_resource_api import EventResourceApiAdapter
-from conductor.asyncio_client.adapters.api.event_execution_resource_api import (
-    EventExecutionResourceApiAdapter,
-)
 from conductor.asyncio_client.configuration.configuration import Configuration
 
 
@@ -68,6 +65,7 @@ class OrkesBaseClient:
         self._integration_api = IntegrationResourceApiAdapter(self.api_client)
         self._prompt_api = PromptResourceApiAdapter(self.api_client)
         self._schema_api = SchemaResourceApiAdapter(self.api_client)
+        self._event_api = EventResourceApiAdapter(self.api_client)
 
     @property
     @typing_deprecated(
@@ -354,3 +352,25 @@ class OrkesBaseClient:
             stacklevel=2,
         )
         return self._schema_api
+
+    @property
+    @typing_deprecated(
+        "event_api is deprecated; use OrkesEventClient instead. "
+        "This attribute will be removed in a future version."
+    )
+    @deprecated(
+        "event_api is deprecated; use OrkesEventClient instead. "
+        "This attribute will be removed in a future version."
+    )
+    def event_api(self) -> EventResourceApiAdapter:
+        """
+        Deprecated: attribute-style access maintained for backward compatibility.
+        Prefer using `OrkesEventClient` methods instead.
+        """
+        warnings.warn(
+            "'event_api' is deprecated and will be removed in a future release. "
+            "Use `OrkesEventClient` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._event_api

@@ -15,7 +15,7 @@ from conductor.client.service_registry_client import ServiceRegistryClient
 
 class OrkesServiceRegistryClient(OrkesBaseClient, ServiceRegistryClient):
     def __init__(self, configuration: Configuration):
-        super(OrkesServiceRegistryClient, self).__init__(configuration)
+        super().__init__(configuration)
 
     def get_registered_services(self) -> List[ServiceRegistry]:
         return self._service_registry_api.get_registered_services()

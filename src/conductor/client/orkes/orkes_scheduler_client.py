@@ -17,7 +17,7 @@ from conductor.client.scheduler_client import SchedulerClient
 
 class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
     def __init__(self, configuration: Configuration):
-        super(OrkesSchedulerClient, self).__init__(configuration)
+        super().__init__(configuration)
 
     def save_schedule(self, save_schedule_request: SaveScheduleRequest):
         self._scheduler_api.save_schedule(save_schedule_request)

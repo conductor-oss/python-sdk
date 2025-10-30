@@ -13,7 +13,7 @@ from conductor.client.prompt_client import PromptClient
 
 class OrkesPromptClient(OrkesBaseClient, PromptClient):
     def __init__(self, configuration: Configuration):
-        super(OrkesPromptClient, self).__init__(configuration)
+        super().__init__(configuration)
 
     def save_prompt(self, prompt_name: str, description: str, prompt_template: str):
         self._prompt_api.save_message_template(prompt_template, description, prompt_name)

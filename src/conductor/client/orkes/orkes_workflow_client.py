@@ -22,7 +22,7 @@ from conductor.client.workflow_client import WorkflowClient
 
 class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def __init__(self, configuration: Configuration):
-        super(OrkesWorkflowClient, self).__init__(configuration)
+        super().__init__(configuration)
 
     def start_workflow_by_name(
         self,

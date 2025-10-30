@@ -8,7 +8,7 @@ from conductor.client.schema_client import SchemaClient
 
 class OrkesSchemaClient(OrkesBaseClient, SchemaClient):
     def __init__(self, configuration: Configuration):
-        super(OrkesSchemaClient, self).__init__(configuration)
+        super().__init__(configuration)
 
     def register_schema(self, schema: SchemaDef) -> None:
         self._schema_api.save(schema)

@@ -12,7 +12,7 @@ from conductor.asyncio_client.adapters.models.extended_conductor_application_ada
     ExtendedConductorApplicationAdapter,
 )
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.adapters.utils import convert_list_to_adapter, convert_to_adapter
+from conductor.asyncio_client.adapters.utils import convert_list_to_adapter
 from conductor.asyncio_client.http.api import ApplicationResourceApi
 
 
@@ -143,11 +143,11 @@ class ApplicationResourceApiAdapter:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> Optional[ExtendedConductorApplicationAdapter]:
+    ) -> object:
         """Get application by access key_id"""
         normalized_access_key_id: Optional[StrictStr] = access_key_id or None
 
-        result = await self._api.get_app_by_access_key_id(
+        return await self._api.get_app_by_access_key_id(
             normalized_access_key_id,
             _request_timeout=_request_timeout,
             _request_auth=_request_auth,
@@ -155,7 +155,6 @@ class ApplicationResourceApiAdapter:
             _headers=_headers,
             _host_index=_host_index,
         )
-        return convert_to_adapter(result, ExtendedConductorApplicationAdapter)
 
     async def get_access_keys(
         self,

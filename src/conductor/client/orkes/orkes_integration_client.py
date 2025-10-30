@@ -16,7 +16,7 @@ from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 
 class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
     def __init__(self, configuration: Configuration):
-        super(OrkesIntegrationClient, self).__init__(configuration)
+        super().__init__(configuration)
 
     def associate_prompt_with_integration(
         self, ai_integration: str, model_name: str, prompt_name: str
