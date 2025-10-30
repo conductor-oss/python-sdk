@@ -265,6 +265,26 @@ class OrkesClients:
         """
         return OrkesSchemaClient(self.configuration, self.api_client)
 
+    def get_event_client(self) -> OrkesEventClient:
+        """
+        Create and return an event management client.
+
+        The event client manages event handlers and event processing within the
+        Conductor platform, allowing you to create, configure, and monitor
+        event-driven workflows and integrations.
+
+        Returns:
+        --------
+        OrkesEventClient
+            Client for event operations including:
+            - Creating and managing event handlers
+            - Configuring event processing rules
+            - Monitoring event executions
+            - Managing event handler tags and metadata
+            - Configuring queue settings for event processing
+        """
+        return OrkesEventClient(self.configuration, self.api_client)
+
     def get_workflow_executor(self) -> AsyncWorkflowExecutor:
         """
         Create and return an asynchronous workflow executor.

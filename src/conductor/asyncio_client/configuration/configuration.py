@@ -154,7 +154,7 @@ class Configuration:
         self.polling_interval = polling_interval or self._get_env_int(
             "CONDUCTOR_WORKER_POLL_INTERVAL", 100
         )
-        self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", "default_domain")
+        self.domain = domain or os.getenv("CONDUCTOR_WORKER_DOMAIN", None)
         self.polling_interval_seconds = polling_interval_seconds or self._get_env_int(
             "CONDUCTOR_WORKER_POLL_INTERVAL_SECONDS", 0
         )
@@ -214,6 +214,12 @@ class Configuration:
 
         http_config_kwargs.update(kwargs)
         self._http_config = HttpConfiguration(**http_config_kwargs)
+
+        # Set proxy configuration on the HTTP config
+        if self.proxy:
+            self._http_config.proxy = self.proxy
+        if self.proxy_headers:
+            self._http_config.proxy_headers = self.proxy_headers
 
         # Set proxy configuration on the HTTP config
         if self.proxy:

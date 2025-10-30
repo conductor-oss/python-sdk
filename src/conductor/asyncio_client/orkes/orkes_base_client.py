@@ -61,3 +61,5 @@ class OrkesBaseClient:
         self.integration_api = IntegrationResourceApiAdapter(self.api_client)
         self.prompt_api = PromptResourceApiAdapter(self.api_client)
         self.schema_api = SchemaResourceApiAdapter(self.api_client)
+        self.event_api = EventResourceApiAdapter(self.api_client)
+        self.event_execution_api = EventExecutionResourceApiAdapter(self.api_client)
