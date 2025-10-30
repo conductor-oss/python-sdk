@@ -13,6 +13,7 @@ from conductor.asyncio_client.orkes.orkes_schema_client import OrkesSchemaClient
 from conductor.asyncio_client.orkes.orkes_secret_client import OrkesSecretClient
 from conductor.asyncio_client.orkes.orkes_task_client import OrkesTaskClient
 from conductor.asyncio_client.orkes.orkes_workflow_client import OrkesWorkflowClient
+from conductor.asyncio_client.orkes.orkes_event_client import OrkesEventClient
 from conductor.asyncio_client.workflow.executor.workflow_executor import AsyncWorkflowExecutor
 
 

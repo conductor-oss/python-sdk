@@ -2,39 +2,36 @@ from __future__ import annotations
 
 from typing import List
 
-from conductor.asyncio_client.adapters.models.event_handler_adapter import \
-    EventHandlerAdapter
+from conductor.asyncio_client.adapters.models.event_handler_adapter import EventHandlerAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesEventClient(OrkesBaseClient):
     """Event management client for Orkes Conductor platform.
-    
+
     Provides comprehensive event handling capabilities including event handler
     management, tag operations, queue configuration, and event execution monitoring.
     """
 
     # Event Handler Operations
-    async def create_event_handler(
-        self, event_handler: List[EventHandlerAdapter]
-    ) -> None:
+    async def create_event_handler(self, event_handler: List[EventHandlerAdapter]) -> None:
         """Create a new event handler.
-        
+
         Creates one or more event handlers that will be triggered by specific events.
         Event handlers define what actions to take when certain events occur in the system.
-        
+
         Parameters:
         -----------
         event_handler : List[EventHandlerAdapter]
             List of event handler configurations to create
-            
+
         Example:
         --------
         ```python
         from conductor.asyncio_client.adapters.models.event_handler_adapter import EventHandlerAdapter
         from conductor.asyncio_client.adapters.models.action_adapter import ActionAdapter
-        
+
         # Create an event handler
         event_handler = EventHandlerAdapter(
             name="workflow_trigger",
@@ -49,7 +46,7 @@ class OrkesEventClient(OrkesBaseClient):
                 )
             ]
         )
-        
+
         await event_client.create_event_handler([event_handler])
         ```
         """
@@ -57,19 +54,19 @@ class OrkesEventClient(OrkesBaseClient):
 
     async def get_event_handler(self, name: str) -> EventHandlerAdapter:
         """Get event handler by name.
-        
+
         Retrieves a specific event handler configuration by its name.
-        
+
         Parameters:
         -----------
         name : str
             The name of the event handler to retrieve
-            
+
         Returns:
         --------
         EventHandlerAdapter
             The event handler configuration
-            
+
         Example:
         --------
         ```python
@@ -83,14 +80,14 @@ class OrkesEventClient(OrkesBaseClient):
 
     async def list_event_handlers(self) -> List[EventHandlerAdapter]:
         """List all event handlers.
-        
+
         Retrieves all event handlers configured in the system.
-        
+
         Returns:
         --------
         List[EventHandlerAdapter]
             List of all event handler configurations
-            
+
         Example:
         --------
         ```python
@@ -104,45 +101,43 @@ class OrkesEventClient(OrkesBaseClient):
 
     async def list_event_handlers_for_event(self, event: str) -> List[EventHandlerAdapter]:
         """List event handlers for a specific event.
-        
+
         Retrieves all event handlers that are configured to respond to a specific event type.
-        
+
         Parameters:
         -----------
         event : str
             The event type to filter handlers by (e.g., "workflow.completed", "task.failed")
-            
+
         Returns:
         --------
         List[EventHandlerAdapter]
             List of event handlers that respond to the specified event
-            
+
         Example:
         --------
         ```python
         # Get handlers for workflow completion events
         handlers = await event_client.list_event_handlers_for_event("workflow.completed")
         print(f"Found {len(handlers)} handlers for workflow.completed events")
-        
+
         # Get handlers for task failure events
         failure_handlers = await event_client.list_event_handlers_for_event("task.failed")
         ```
         """
         return await self.event_api.get_event_handlers_for_event(event=event)
 
-    async def update_event_handler(
-        self, event_handler: EventHandlerAdapter
-    ) -> None:
+    async def update_event_handler(self, event_handler: EventHandlerAdapter) -> None:
         """Update an existing event handler.
-        
+
         Updates the configuration of an existing event handler.
         The handler is identified by its name field.
-        
+
         Parameters:
         -----------
         event_handler : EventHandlerAdapter
             Event handler configuration to update
-            
+
         Example:
         --------
         ```python
@@ -150,7 +145,7 @@ class OrkesEventClient(OrkesBaseClient):
         handler = await event_client.get_event_handler("workflow_trigger")
         handler.active = False  # Disable the handler
         handler.condition = "payload.status == 'COMPLETED' AND payload.priority == 'HIGH'"
-        
+
         await event_client.update_event_handler(handler)
         ```
         """
@@ -158,14 +153,14 @@ class OrkesEventClient(OrkesBaseClient):
 
     async def delete_event_handler(self, name: str) -> None:
         """Delete an event handler by name.
-        
+
         Permanently removes an event handler from the system.
-        
+
         Parameters:
         -----------
         name : str
             The name of the event handler to delete
-            
+
         Example:
         --------
         ```python
@@ -179,20 +174,20 @@ class OrkesEventClient(OrkesBaseClient):
     # Event Handler Tag Operations
     async def get_event_handler_tags(self, name: str) -> List[TagAdapter]:
         """Get tags for an event handler.
-        
+
         Retrieves all tags associated with a specific event handler.
         Tags are used for organizing and categorizing event handlers.
-        
+
         Parameters:
         -----------
         name : str
             The name of the event handler
-            
+
         Returns:
         --------
         List[TagAdapter]
             List of tags associated with the event handler
-            
+
         Example:
         --------
         ```python
@@ -204,32 +199,30 @@ class OrkesEventClient(OrkesBaseClient):
         """
         return await self.event_api.get_tags_for_event_handler(name=name)
 
-    async def add_event_handler_tag(
-        self, name: str, tags: List[TagAdapter]
-    ) -> None:
+    async def add_event_handler_tag(self, name: str, tags: List[TagAdapter]) -> None:
         """Add tags to an event handler.
-        
+
         Associates one or more tags with an event handler for organization and categorization.
-        
+
         Parameters:
         -----------
         name : str
             The name of the event handler
         tags : List[TagAdapter]
             List of tags to add to the event handler
-            
+
         Example:
         --------
         ```python
         from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-        
+
         # Add tags to an event handler
         tags = [
             TagAdapter(key="environment", value="production"),
             TagAdapter(key="team", value="platform"),
             TagAdapter(key="priority", value="high")
         ]
-        
+
         await event_client.add_event_handler_tag("workflow_trigger", tags)
         ```
         """
@@ -237,31 +230,29 @@ class OrkesEventClient(OrkesBaseClient):
         # Sync API uses (tags, name) positional args due to swagger-codegen parameter ordering.
         return await self.event_api.put_tag_for_event_handler(name=name, tag=tags)
 
-    async def remove_event_handler_tag(
-        self, name: str, tags: List[TagAdapter]
-    ) -> None:
+    async def remove_event_handler_tag(self, name: str, tags: List[TagAdapter]) -> None:
         """Remove tags from an event handler.
-        
+
         Removes one or more tags from an event handler.
-        
+
         Parameters:
         -----------
         name : str
             The name of the event handler
         tags : List[TagAdapter]
             List of tags to remove from the event handler
-            
+
         Example:
         --------
         ```python
         from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-        
+
         # Remove specific tags from an event handler
         tags_to_remove = [
             TagAdapter(key="environment", value="production"),
             TagAdapter(key="priority", value="high")
         ]
-        
+
         await event_client.remove_event_handler_tag("workflow_trigger", tags_to_remove)
         ```
         """
@@ -270,25 +261,23 @@ class OrkesEventClient(OrkesBaseClient):
         return await self.event_api.delete_tag_for_event_handler(name=name, tag=tags)
 
     # Queue Configuration Operations
-    async def get_queue_configuration(
-        self, queue_type: str, queue_name: str
-    ) -> dict:
+    async def get_queue_configuration(self, queue_type: str, queue_name: str) -> dict:
         """Get queue configuration.
-        
+
         Retrieves the configuration for a specific event queue.
-        
+
         Parameters:
         -----------
         queue_type : str
             The type of queue (e.g., "kafka", "sqs", "rabbitmq")
         queue_name : str
             The name of the queue
-            
+
         Returns:
         --------
         dict
             Queue configuration settings
-            
+
         Example:
         --------
         ```python
@@ -298,24 +287,20 @@ class OrkesEventClient(OrkesBaseClient):
         print(f"Topic: {config.get('topic')}")
         ```
         """
-        return await self.event_api.get_queue_config(
-            queue_type=queue_type, queue_name=queue_name
-        )
+        return await self.event_api.get_queue_config(queue_type=queue_type, queue_name=queue_name)
 
-    async def delete_queue_configuration(
-        self, queue_type: str, queue_name: str
-    ) -> None:
+    async def delete_queue_configuration(self, queue_type: str, queue_name: str) -> None:
         """Delete queue configuration.
-        
+
         Removes the configuration for an event queue.
-        
+
         Parameters:
         -----------
         queue_type : str
             The type of queue (e.g., "kafka", "sqs", "rabbitmq")
         queue_name : str
             The name of the queue
-            
+
         Example:
         --------
         ```python

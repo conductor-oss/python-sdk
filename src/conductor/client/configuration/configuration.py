@@ -118,7 +118,8 @@ class Configuration:
         elif base_url is not None:
             if re.search(r"/api(/|$)", base_url):
                 warnings.warn(
-                    "'base_url' been passed with '/api' path. Consider using 'server_api_url' instead"
+                    "'base_url' been passed with '/api' path. Consider using 'server_api_url' instead",
+                    stacklevel=2,
                 )
             else:
                 base_url += "/api"
