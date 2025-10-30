@@ -196,25 +196,25 @@ class OrkesMetadataClient(OrkesBaseClient):
         return await self.get_workflow_defs_by_name(name)
 
     async def add_workflow_tag(self, tag: TagAdapter, workflow_name: str):
-        await self.tags_api.add_workflow_tag(workflow_name, tag)
+        await self._tags_api.add_workflow_tag(workflow_name, tag)
 
     async def delete_workflow_tag(self, tag: TagAdapter, workflow_name: str):
-        await self.tags_api.delete_workflow_tag(workflow_name, tag)
+        await self._tags_api.delete_workflow_tag(workflow_name, tag)
 
     async def get_workflow_tags(self, workflow_name: str) -> List[TagAdapter]:
-        return await self.tags_api.get_workflow_tags(workflow_name)
+        return await self._tags_api.get_workflow_tags(workflow_name)
 
     async def set_workflow_tags(self, tags: List[TagAdapter], workflow_name: str):
-        await self.tags_api.set_workflow_tags(workflow_name, tags)
+        await self._tags_api.set_workflow_tags(workflow_name, tags)
 
     async def add_task_tag(self, tag: TagAdapter, task_name: str):
-        await self.tags_api.add_task_tag(task_name, tag)
+        await self._tags_api.add_task_tag(task_name, tag)
 
     async def delete_task_tag(self, tag: TagAdapter, task_name: str):
-        await self.tags_api.delete_task_tag(task_name, tag)
+        await self._tags_api.delete_task_tag(task_name, tag)
 
     async def get_task_tags(self, task_name: str) -> List[TagAdapter]:
-        return await self.tags_api.get_task_tags(task_name)
+        return await self._tags_api.get_task_tags(task_name)
 
     async def set_task_tags(self, tags: List[TagAdapter], task_name: str):
-        await self.tags_api.set_task_tags(task_name, tags)
+        await self._tags_api.set_task_tags(task_name, tags)

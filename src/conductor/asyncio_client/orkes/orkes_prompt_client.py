@@ -23,45 +23,45 @@ class OrkesPromptClient(OrkesBaseClient):
         self, name: str, description: str, body: str, models: Optional[List[str]] = None
     ) -> None:
         """Create or update a message template"""
-        await self.prompt_api.save_message_template(name, description, body, models=models)
+        await self._prompt_api.save_message_template(name, description, body, models=models)
 
     async def get_message_template(self, name: str) -> MessageTemplateAdapter:
         """Get a message template by name"""
-        return await self.prompt_api.get_message_template(name)
+        return await self._prompt_api.get_message_template(name)
 
     async def get_message_templates(self) -> List[MessageTemplateAdapter]:
         """Get all message templates"""
-        return await self.prompt_api.get_message_templates()
+        return await self._prompt_api.get_message_templates()
 
     async def delete_message_template(self, name: str) -> None:
         """Delete a message template"""
-        await self.prompt_api.delete_message_template(name)
+        await self._prompt_api.delete_message_template(name)
 
     async def create_message_templates(
         self, message_templates: List[MessageTemplateAdapter]
     ) -> None:
         """Create multiple message templates in bulk"""
-        await self.prompt_api.create_message_templates(message_templates)
+        await self._prompt_api.create_message_templates(message_templates)
 
     # Template Testing
     async def test_message_template(
         self, prompt_template_test_request: PromptTemplateTestRequestAdapter
     ) -> str:
         """Test a prompt template with provided inputs"""
-        return await self.prompt_api.test_message_template(prompt_template_test_request)
+        return await self._prompt_api.test_message_template(prompt_template_test_request)
 
     # Tag Management for Prompt Templates
     async def put_tag_for_prompt_template(self, name: str, tags: List[TagAdapter]) -> None:
         """Add tags to a prompt template"""
-        await self.prompt_api.put_tag_for_prompt_template(name, tags)
+        await self._prompt_api.put_tag_for_prompt_template(name, tags)
 
     async def get_tags_for_prompt_template(self, name: str) -> List[TagAdapter]:
         """Get tags associated with a prompt template"""
-        return await self.prompt_api.get_tags_for_prompt_template(name)
+        return await self._prompt_api.get_tags_for_prompt_template(name)
 
     async def delete_tag_for_prompt_template(self, name: str, tags: List[TagAdapter]) -> None:
         """Delete tags from a prompt template"""
-        await self.prompt_api.delete_tag_for_prompt_template(name, tags)
+        await self._prompt_api.delete_tag_for_prompt_template(name, tags)
 
     # Convenience Methods
     async def create_simple_template(self, name: str, description: str, template_body: str) -> None:
@@ -191,4 +191,4 @@ class OrkesPromptClient(OrkesBaseClient):
             stop_words=stop_words,
             top_p=top_p,
         )
-        return await self.prompt_api.test_message_template(request)
+        return await self._prompt_api.test_message_template(request)

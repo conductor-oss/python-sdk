@@ -18,60 +18,58 @@ class OrkesServiceRegistryClient(OrkesBaseClient, ServiceRegistryClient):
         super(OrkesServiceRegistryClient, self).__init__(configuration)
 
     def get_registered_services(self) -> List[ServiceRegistry]:
-        return self.serviceRegistryResourceApi.get_registered_services()
+        return self._service_registry_api.get_registered_services()
 
     def get_service(self, name: str) -> ServiceRegistry:
-        return self.serviceRegistryResourceApi.get_service(name)
+        return self._service_registry_api.get_service(name)
 
     def add_or_update_service(self, service_registry: ServiceRegistry) -> None:
-        self.serviceRegistryResourceApi.add_or_update_service(service_registry)
+        self._service_registry_api.add_or_update_service(service_registry)
 
     def remove_service(self, name: str) -> None:
-        self.serviceRegistryResourceApi.remove_service(name)
+        self._service_registry_api.remove_service(name)
 
     def open_circuit_breaker(self, name: str) -> CircuitBreakerTransitionResponse:
-        return self.serviceRegistryResourceApi.open_circuit_breaker(name)
+        return self._service_registry_api.open_circuit_breaker(name)
 
     def close_circuit_breaker(self, name: str) -> CircuitBreakerTransitionResponse:
-        return self.serviceRegistryResourceApi.close_circuit_breaker(name)
+        return self._service_registry_api.close_circuit_breaker(name)
 
     def get_circuit_breaker_status(self, name: str) -> CircuitBreakerTransitionResponse:
-        return self.serviceRegistryResourceApi.get_circuit_breaker_status(name)
+        return self._service_registry_api.get_circuit_breaker_status(name)
 
     def add_or_update_method(self, registry_name: str, method: ServiceMethod) -> None:
-        self.serviceRegistryResourceApi.add_or_update_method(registry_name, method)
+        self._service_registry_api.add_or_update_method(registry_name, method)
 
     def remove_method(
         self, registry_name: str, service_name: str, method: str, method_type: str
     ) -> None:
-        self.serviceRegistryResourceApi.remove_method(
-            registry_name, service_name, method, method_type
-        )
+        self._service_registry_api.remove_method(registry_name, service_name, method, method_type)
 
     def get_proto_data(self, registry_name: str, filename: str) -> bytes:
-        return self.serviceRegistryResourceApi.get_proto_data(registry_name, filename)
+        return self._service_registry_api.get_proto_data(registry_name, filename)
 
     def set_proto_data(self, registry_name: str, filename: str, data: bytes) -> None:
-        self.serviceRegistryResourceApi.set_proto_data(registry_name, filename, data)
+        self._service_registry_api.set_proto_data(registry_name, filename, data)
 
     def delete_proto(self, registry_name: str, filename: str) -> None:
-        self.serviceRegistryResourceApi.delete_proto(registry_name, filename)
+        self._service_registry_api.delete_proto(registry_name, filename)
 
     def get_all_protos(self, registry_name: str) -> List[ProtoRegistryEntry]:
-        return self.serviceRegistryResourceApi.get_all_protos(registry_name)
+        return self._service_registry_api.get_all_protos(registry_name)
 
     def discover(self, name: str, create: Optional[bool] = False) -> List[ServiceMethod]:
         kwargs = {}
         if create:
             kwargs.update({"create": create})
-        return self.serviceRegistryResourceApi.discover(name, **kwargs)
+        return self._service_registry_api.discover(name, **kwargs)
 
     # Additional convenience methods can be added here if needed
     def get_queue_sizes_for_all_tasks(self) -> dict:
         """Get queue sizes for all task types"""
-        return self.taskResourceApi.all()
+        return self._task_api.all()
 
     def is_circuit_breaker_open(self, name: str) -> bool:
         """Check if circuit breaker is open for a service"""
-        status = self.get_circuit_breaker_status(name)
+        status = self._service_registry_api.get_circuit_breaker_status(name)
         return bool(status.current_state and status.current_state.upper() == "OPEN")

@@ -48,7 +48,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         x_on_conflict: Optional[str] = None,
     ) -> str:
         """Start a workflow by name with input data"""
-        return await self.workflow_api.start_workflow1(
+        return await self._workflow_api.start_workflow1(
             name=name,
             request_body=input_data,
             version=version,
@@ -60,7 +60,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
 
     async def start_workflow(self, start_workflow_request: StartWorkflowRequestAdapter) -> str:
         """Start a workflow with StartWorkflowRequest"""
-        return await self.workflow_api.start_workflow(start_workflow_request)
+        return await self._workflow_api.start_workflow(start_workflow_request)
 
     async def execute_workflow(
         self,
@@ -70,7 +70,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         wait_for_seconds: Optional[int] = None,
     ) -> WorkflowRunAdapter:
         """Execute a workflow synchronously"""
-        return await self.workflow_api.execute_workflow(
+        return await self._workflow_api.execute_workflow(
             name=start_workflow_request.name,
             version=start_workflow_request.version or 1,
             request_id=request_id,
@@ -82,17 +82,17 @@ class OrkesWorkflowClient(OrkesBaseClient):
     # Workflow Control Operations
     async def pause_workflow(self, workflow_id: str) -> None:
         """Pause a workflow execution"""
-        await self.workflow_api.pause_workflow(workflow_id=workflow_id)
+        await self._workflow_api.pause_workflow(workflow_id=workflow_id)
 
     async def resume_workflow(self, workflow_id: str) -> None:
         """Resume a paused workflow execution"""
-        await self.workflow_api.resume_workflow(workflow_id=workflow_id)
+        await self._workflow_api.resume_workflow(workflow_id=workflow_id)
 
     async def restart_workflow(
         self, workflow_id: str, use_latest_definitions: Optional[bool] = None
     ) -> None:
         """Restart a workflow execution"""
-        await self.workflow_api.restart(
+        await self._workflow_api.restart(
             workflow_id=workflow_id, use_latest_definitions=use_latest_definitions
         )
 
@@ -100,7 +100,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         self, workflow_id: str, rerun_workflow_request: RerunWorkflowRequestAdapter
     ) -> str:
         """Rerun a workflow from a specific task"""
-        return await self.workflow_api.rerun(
+        return await self._workflow_api.rerun(
             workflow_id=workflow_id, rerun_workflow_request=rerun_workflow_request
         )
 
@@ -111,7 +111,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         retry_if_retried_by_parent: Optional[bool] = None,
     ) -> None:
         """Retry a failed workflow execution"""
-        await self.workflow_api.retry(
+        await self._workflow_api.retry(
             workflow_id=workflow_id,
             resume_subworkflow_tasks=resume_subworkflow_tasks,
             retry_if_retried_by_parent=retry_if_retried_by_parent,
@@ -124,7 +124,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         trigger_failure_workflow: Optional[bool] = None,
     ) -> None:
         """Terminate a workflow execution"""
-        await self.workflow_api.terminate1(
+        await self._workflow_api.terminate1(
             workflow_id=workflow_id,
             reason=reason,
             trigger_failure_workflow=trigger_failure_workflow,
@@ -134,7 +134,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         self, workflow_id: str, archive_workflow: Optional[bool] = None
     ) -> None:
         """Delete a workflow execution"""
-        await self.workflow_api.delete1(workflow_id=workflow_id, archive_workflow=archive_workflow)
+        await self._workflow_api.delete1(workflow_id=workflow_id, archive_workflow=archive_workflow)
 
     # Workflow Information Operations
     async def get_workflow(
@@ -144,7 +144,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         summarize: Optional[bool] = None,
     ) -> WorkflowAdapter:
         """Get workflow execution status and details"""
-        return await self.workflow_api.get_execution_status(
+        return await self._workflow_api.get_execution_status(
             workflow_id=workflow_id, include_tasks=include_tasks, summarize=summarize
         )
 
@@ -155,7 +155,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         include_variables: Optional[bool] = None,
     ) -> WorkflowStatusAdapter:
         """Get workflow status summary"""
-        return await self.workflow_api.get_workflow_status_summary(
+        return await self._workflow_api.get_workflow_status_summary(
             workflow_id=workflow_id,
             include_output=include_output,
             include_variables=include_variables,
@@ -169,7 +169,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         end_time: Optional[int] = None,
     ) -> List[str]:
         """Get running workflow IDs"""
-        return await self.workflow_api.get_running_workflow(
+        return await self._workflow_api.get_running_workflow(
             name=name, version=version, start_time=start_time, end_time=end_time
         )
 
@@ -186,7 +186,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
             workflow_names=[workflow_name],
             correlation_ids=correlation_ids,
         )
-        return await self.workflow_api.get_workflows1(
+        return await self._workflow_api.get_workflows1(
             correlation_ids_search_request=search_request,
             include_closed=include_completed,
             include_tasks=include_tasks,
@@ -199,7 +199,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         include_tasks: Optional[bool] = None,
     ) -> Dict[str, List[WorkflowAdapter]]:
         """Get workflows by correlation IDs in batch"""
-        return await self.workflow_api.get_workflows1(
+        return await self._workflow_api.get_workflows1(
             batch_request, include_closed=include_completed, include_tasks=include_tasks
         )
 
@@ -214,7 +214,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         skip_cache: Optional[bool] = None,
     ) -> ScrollableSearchResultWorkflowSummaryAdapter:
         """Search for workflows based on payload and other parameters"""
-        return await self.workflow_api.search(
+        return await self._workflow_api.search(
             start=start,
             size=size,
             sort=sort,
@@ -231,7 +231,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         skip_task_request: Optional[SkipTaskRequestAdapter] = None,
     ) -> None:
         """Skip a task in a workflow"""
-        await self.workflow_api.skip_task_from_workflow(
+        await self._workflow_api.skip_task_from_workflow(
             workflow_id=workflow_id,
             task_reference_name=task_reference_name,
             skip_task_request=skip_task_request,  # type: ignore[arg-type]
@@ -244,7 +244,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         workflow_input: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Jump to a specific task in a workflow"""
-        await self.workflow_api.jump_to_task(
+        await self._workflow_api.jump_to_task(
             workflow_id=workflow_id,
             task_reference_name=task_reference_name,
             request_body=workflow_input or {},
@@ -260,7 +260,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
             request_body: Dict[str, Any] = workflow_state_update.to_dict()
         else:
             request_body = cast(Dict[str, Any], workflow_state_update)
-        return await self.workflow_api.update_workflow_state(
+        return await self._workflow_api.update_workflow_state(
             workflow_id=workflow_id, request_body=request_body
         )
 
@@ -273,7 +273,7 @@ class OrkesWorkflowClient(OrkesBaseClient):
         wait_for_seconds: Optional[int] = None,
     ) -> WorkflowRunAdapter:
         """Update workflow and task state"""
-        return await self.workflow_api.update_workflow_and_task_state(
+        return await self._workflow_api.update_workflow_and_task_state(
             workflow_id=workflow_id,
             request_id=request_id,
             workflow_state_update=workflow_state_update,
@@ -284,15 +284,15 @@ class OrkesWorkflowClient(OrkesBaseClient):
     # Advanced Operations
     async def test_workflow(self, test_request: WorkflowTestRequestAdapter) -> WorkflowAdapter:
         """Test a workflow definition"""
-        return await self.workflow_api.test_workflow(workflow_test_request=test_request)
+        return await self._workflow_api.test_workflow(workflow_test_request=test_request)
 
     async def reset_workflow(self, workflow_id: str) -> None:
         """Reset a workflow execution"""
-        await self.workflow_api.reset_workflow(workflow_id=workflow_id)
+        await self._workflow_api.reset_workflow(workflow_id=workflow_id)
 
     async def decide_workflow(self, workflow_id: str) -> None:
         """Trigger workflow decision processing"""
-        await self.workflow_api.decide(workflow_id=workflow_id)
+        await self._workflow_api.decide(workflow_id=workflow_id)
 
     # Convenience Methods (for backward compatibility)
     async def execute_workflow_with_return_strategy(

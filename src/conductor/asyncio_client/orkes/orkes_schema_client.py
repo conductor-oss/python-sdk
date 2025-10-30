@@ -17,7 +17,7 @@ class OrkesSchemaClient(OrkesBaseClient):
         self, schema_defs: List[SchemaDefAdapter], new_version: Optional[bool] = None
     ) -> None:
         """Save one or more schema definitions"""
-        await self.schema_api.save(schema_defs, new_version=new_version)
+        await self._schema_api.save(schema_defs, new_version=new_version)
 
     async def save_schema(
         self, schema_def: SchemaDefAdapter, new_version: Optional[bool] = None
@@ -27,19 +27,19 @@ class OrkesSchemaClient(OrkesBaseClient):
 
     async def get_schema(self, name: str, version: int) -> SchemaDefAdapter:
         """Get a specific schema by name and version"""
-        return await self.schema_api.get_schema_by_name_and_version(name, version)
+        return await self._schema_api.get_schema_by_name_and_version(name, version)
 
     async def get_all_schemas(self) -> List[SchemaDefAdapter]:
         """Get all schema definitions"""
-        return await self.schema_api.get_all_schemas()
+        return await self._schema_api.get_all_schemas()
 
     async def delete_schema_by_name(self, name: str) -> None:
         """Delete all versions of a schema by name"""
-        await self.schema_api.delete_schema_by_name(name)
+        await self._schema_api.delete_schema_by_name(name)
 
     async def delete_schema_by_name_and_version(self, name: str, version: int) -> None:
         """Delete a specific version of a schema"""
-        await self.schema_api.delete_schema_by_name_and_version(name, version)
+        await self._schema_api.delete_schema_by_name_and_version(name, version)
 
     # Convenience Methods
     async def create_schema(

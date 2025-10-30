@@ -56,18 +56,18 @@ class OrkesBaseClient:
 
         # Initialize all API clients
         self._metadata_api = MetadataResourceApiAdapter(self.api_client)
-        self.__task_api = TaskResourceApiAdapter(self.api_client)
-        self.__workflow_api = WorkflowResourceApiAdapter(self.api_client)
-        self.__application_api = ApplicationResourceApiAdapter(self.api_client)
-        self.__secret_api = SecretResourceApiAdapter(self.api_client)
-        self.__user_api = UserResourceApiAdapter(self.api_client)
-        self.__group_api = GroupResourceApiAdapter(self.api_client)
-        self.__authorization_api = AuthorizationResourceApiAdapter(self.api_client)
-        self.__scheduler_api = SchedulerResourceApiAdapter(self.api_client)
-        self.__tags_api = TagsApiAdapter(self.api_client)
-        self.__integration_api = IntegrationResourceApiAdapter(self.api_client)
-        self.__prompt_api = PromptResourceApiAdapter(self.api_client)
-        self.__schema_api = SchemaResourceApiAdapter(self.api_client)
+        self._task_api = TaskResourceApiAdapter(self.api_client)
+        self._workflow_api = WorkflowResourceApiAdapter(self.api_client)
+        self._application_api = ApplicationResourceApiAdapter(self.api_client)
+        self._secret_api = SecretResourceApiAdapter(self.api_client)
+        self._user_api = UserResourceApiAdapter(self.api_client)
+        self._group_api = GroupResourceApiAdapter(self.api_client)
+        self._authorization_api = AuthorizationResourceApiAdapter(self.api_client)
+        self._scheduler_api = SchedulerResourceApiAdapter(self.api_client)
+        self._tags_api = TagsApiAdapter(self.api_client)
+        self._integration_api = IntegrationResourceApiAdapter(self.api_client)
+        self._prompt_api = PromptResourceApiAdapter(self.api_client)
+        self._schema_api = SchemaResourceApiAdapter(self.api_client)
 
     @property
     @typing_deprecated(
@@ -111,7 +111,7 @@ class OrkesBaseClient:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.__task_api
+        return self._task_api
 
     @property
     @typing_deprecated(
@@ -133,7 +133,7 @@ class OrkesBaseClient:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.__workflow_api
+        return self._workflow_api
 
     @property
     @typing_deprecated(
@@ -155,7 +155,7 @@ class OrkesBaseClient:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.__application_api
+        return self._application_api
 
     @property
     @typing_deprecated(
@@ -177,7 +177,7 @@ class OrkesBaseClient:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.__secret_api
+        return self._secret_api
 
     @property
     @typing_deprecated(
@@ -199,7 +199,7 @@ class OrkesBaseClient:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.__user_api
+        return self._user_api
 
     @property
     @typing_deprecated(
@@ -221,7 +221,7 @@ class OrkesBaseClient:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.__group_api
+        return self._group_api
 
     @property
     @typing_deprecated(
@@ -243,7 +243,7 @@ class OrkesBaseClient:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.__authorization_api
+        return self._authorization_api
 
     @property
     @typing_deprecated(
@@ -265,7 +265,7 @@ class OrkesBaseClient:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.__scheduler_api
+        return self._scheduler_api
 
     @property
     @typing_deprecated(
@@ -287,7 +287,7 @@ class OrkesBaseClient:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.__tags_api
+        return self._tags_api
 
     @property
     @typing_deprecated(
@@ -309,7 +309,7 @@ class OrkesBaseClient:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.__integration_api
+        return self._integration_api
 
     @property
     @typing_deprecated(
@@ -331,7 +331,7 @@ class OrkesBaseClient:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.__prompt_api
+        return self._prompt_api
 
     @property
     @typing_deprecated(
@@ -353,4 +353,4 @@ class OrkesBaseClient:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.__schema_api
+        return self._schema_api

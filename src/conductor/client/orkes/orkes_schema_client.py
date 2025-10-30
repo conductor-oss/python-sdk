@@ -11,16 +11,16 @@ class OrkesSchemaClient(OrkesBaseClient, SchemaClient):
         super(OrkesSchemaClient, self).__init__(configuration)
 
     def register_schema(self, schema: SchemaDef) -> None:
-        self.schemaApi.save(schema)
+        self._schema_api.save(schema)
 
     def get_schema(self, schema_name: str, version: int) -> SchemaDef:
-        return self.schemaApi.get_schema_by_name_and_version(name=schema_name, version=version)
+        return self._schema_api.get_schema_by_name_and_version(name=schema_name, version=version)
 
     def get_all_schemas(self) -> List[SchemaDef]:
-        return self.schemaApi.get_all_schemas()
+        return self._schema_api.get_all_schemas()
 
     def delete_schema(self, schema_name: str, version: int) -> None:
-        self.schemaApi.delete_schema_by_name_and_version(name=schema_name, version=version)
+        self._schema_api.delete_schema_by_name_and_version(name=schema_name, version=version)
 
     def delete_schema_by_name(self, schema_name: str) -> None:
-        self.schemaApi.delete_schema_by_name(name=schema_name)
+        self._schema_api.delete_schema_by_name(name=schema_name)

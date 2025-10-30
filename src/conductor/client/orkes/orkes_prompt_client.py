@@ -16,30 +16,30 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
         super(OrkesPromptClient, self).__init__(configuration)
 
     def save_prompt(self, prompt_name: str, description: str, prompt_template: str):
-        self.promptApi.save_message_template(prompt_template, description, prompt_name)
+        self._prompt_api.save_message_template(prompt_template, description, prompt_name)
 
     def get_prompt(self, prompt_name: str) -> Optional[PromptTemplate]:  # type: ignore[override]
         try:
-            return self.promptApi.get_message_template(prompt_name)  # type: ignore[return-value]
+            return self._prompt_api.get_message_template(prompt_name)  # type: ignore[return-value]
         except ApiException as e:
             if e.is_not_found():
                 return None
             raise e
 
     def get_prompts(self):
-        return self.promptApi.get_message_templates()
+        return self._prompt_api.get_message_templates()
 
     def delete_prompt(self, prompt_name: str):
-        self.promptApi.delete_message_template(prompt_name)
+        self._prompt_api.delete_message_template(prompt_name)
 
     def get_tags_for_prompt_template(self, prompt_name: str) -> List[Tag]:
-        return self.promptApi.get_tags_for_prompt_template(prompt_name)
+        return self._prompt_api.get_tags_for_prompt_template(prompt_name)
 
     def update_tag_for_prompt_template(self, prompt_name: str, tags: List[Tag]):
-        self.promptApi.put_tag_for_prompt_template(tags, prompt_name)
+        self._prompt_api.put_tag_for_prompt_template(tags, prompt_name)
 
     def delete_tag_for_prompt_template(self, prompt_name: str, tags: List[Tag]):
-        self.promptApi.delete_tag_for_prompt_template(tags, prompt_name)
+        self._prompt_api.delete_tag_for_prompt_template(tags, prompt_name)
 
     def test_prompt(
         self,
@@ -60,4 +60,4 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
         request.top_p = top_p
         if stop_words is not None:
             request.stop_words = stop_words
-        return self.promptApi.test_message_template(request)
+        return self._prompt_api.test_message_template(request)

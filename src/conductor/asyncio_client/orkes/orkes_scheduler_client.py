@@ -30,38 +30,38 @@ class OrkesSchedulerClient(OrkesBaseClient):
     # Core Schedule Operations
     async def save_schedule(self, save_schedule_request: SaveScheduleRequestAdapter) -> object:
         """Create or update a schedule for a specified workflow"""
-        return await self.scheduler_api.save_schedule(save_schedule_request)
+        return await self._scheduler_api.save_schedule(save_schedule_request)
 
     async def get_schedule(self, name: str) -> WorkflowScheduleAdapter:
         """Get a workflow schedule by name"""
-        return await self.scheduler_api.get_schedule(name)
+        return await self._scheduler_api.get_schedule(name)
 
     async def delete_schedule(self, name: str) -> object:
         """Delete an existing workflow schedule by name"""
-        return await self.scheduler_api.delete_schedule(name)
+        return await self._scheduler_api.delete_schedule(name)
 
     async def get_all_schedules(
         self, workflow_name: Optional[str] = None
     ) -> List[WorkflowScheduleModelAdapter]:
         """Get all workflow schedules, optionally filtered by workflow name"""
-        return await self.scheduler_api.get_all_schedules(workflow_name=workflow_name)
+        return await self._scheduler_api.get_all_schedules(workflow_name=workflow_name)
 
     # Schedule Control Operations
     async def pause_schedule(self, name: str) -> object:
         """Pause a workflow schedule"""
-        return await self.scheduler_api.pause_schedule(name)
+        return await self._scheduler_api.pause_schedule(name)
 
     async def resume_schedule(self, name: str) -> object:
         """Resume a paused workflow schedule"""
-        return await self.scheduler_api.resume_schedule(name)
+        return await self._scheduler_api.resume_schedule(name)
 
     async def pause_all_schedules(self) -> Dict[str, object]:
         """Pause all workflow schedules"""
-        return await self.scheduler_api.pause_all_schedules()
+        return await self._scheduler_api.pause_all_schedules()
 
     async def resume_all_schedules(self) -> Dict[str, object]:
         """Resume all paused workflow schedules"""
-        return await self.scheduler_api.resume_all_schedules()
+        return await self._scheduler_api.resume_all_schedules()
 
     # Schedule Search and Discovery
     async def search_schedules(
@@ -73,13 +73,13 @@ class OrkesSchedulerClient(OrkesBaseClient):
         query: Optional[str] = None,
     ) -> SearchResultWorkflowScheduleExecutionModelAdapter:
         """Search for workflow schedules with advanced filtering"""
-        return await self.scheduler_api.search_v2(
+        return await self._scheduler_api.search_v2(
             start=start, size=size, sort=sort, free_text=free_text, query=query
         )
 
     async def get_schedules_by_tag(self, tag_value: str) -> List[WorkflowScheduleModelAdapter]:
         """Get schedules filtered by tag key and value"""
-        return await self.scheduler_api.get_schedules_by_tag(tag_value)
+        return await self._scheduler_api.get_schedules_by_tag(tag_value)
 
     # Schedule Planning & Analysis
     async def get_next_few_schedules(
@@ -90,7 +90,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
         limit: Optional[int] = None,
     ) -> List[int]:
         """Get the next execution times for a cron expression"""
-        return await self.scheduler_api.get_next_few_schedules(
+        return await self._scheduler_api.get_next_few_schedules(
             cron_expression=cron_expression,
             schedule_start_time=schedule_start_time,
             schedule_end_time=schedule_end_time,
@@ -100,20 +100,20 @@ class OrkesSchedulerClient(OrkesBaseClient):
     # Tag Management for Schedules
     async def put_tag_for_schedule(self, name: str, tags: List[TagAdapter]) -> None:
         """Add tags to a workflow schedule"""
-        await self.scheduler_api.put_tag_for_schedule(name, tags)
+        await self._scheduler_api.put_tag_for_schedule(name, tags)
 
     async def get_tags_for_schedule(self, name: str) -> List[TagAdapter]:
         """Get tags associated with a workflow schedule"""
-        return await self.scheduler_api.get_tags_for_schedule(name)
+        return await self._scheduler_api.get_tags_for_schedule(name)
 
     async def delete_tag_for_schedule(self, name: str, tags: List[TagAdapter]) -> None:
         """Delete specific tags from a workflow schedule"""
-        await self.scheduler_api.delete_tag_for_schedule(name, tags)
+        await self._scheduler_api.delete_tag_for_schedule(name, tags)
 
     # Schedule Execution Management
     async def requeue_all_execution_records(self) -> Dict[str, object]:
         """Requeue all execution records for scheduled workflows"""
-        return await self.scheduler_api.requeue_all_execution_records()
+        return await self._scheduler_api.requeue_all_execution_records()
 
     # Convenience Methods
     async def create_schedule(

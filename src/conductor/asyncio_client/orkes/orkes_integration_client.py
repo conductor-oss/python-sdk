@@ -29,16 +29,16 @@ class OrkesIntegrationClient(OrkesBaseClient):
         self, name: str, integration_update: IntegrationUpdateAdapter
     ) -> None:
         """Create or update an integration provider"""
-        await self.integration_api.save_integration_provider(name, integration_update)
+        await self._integration_api.save_integration_provider(name, integration_update)
 
     async def save_integration(
         self, integration_name, integration_details: IntegrationUpdateAdapter
     ) -> None:
-        await self.integration_api.save_integration_provider(integration_name, integration_details)
+        await self._integration_api.save_integration_provider(integration_name, integration_details)
 
     async def get_integration_provider(self, name: str) -> IntegrationAdapter:
         """Get integration provider by name"""
-        return await self.integration_api.get_integration_provider(name)
+        return await self._integration_api.get_integration_provider(name)
 
     async def get_integration(self, integration_name: str) -> Optional[IntegrationAdapter]:
         try:
@@ -48,55 +48,55 @@ class OrkesIntegrationClient(OrkesBaseClient):
 
     async def delete_integration_provider(self, name: str) -> None:
         """Delete an integration provider"""
-        await self.integration_api.delete_integration_provider(name)
+        await self._integration_api.delete_integration_provider(name)
 
     async def get_integration_providers(
         self, category: Optional[str] = None, active_only: Optional[bool] = None
     ) -> List[IntegrationAdapter]:
         """Get all integration providers"""
-        return await self.integration_api.get_integration_providers(
+        return await self._integration_api.get_integration_providers(
             category=category, active_only=active_only
         )
 
     async def get_integration_provider_defs(self) -> List[IntegrationDefAdapter]:
         """Get integration provider definitions"""
-        return await self.integration_api.get_integration_provider_defs()
+        return await self._integration_api.get_integration_provider_defs()
 
     # Integration API Operations
     async def save_integration_api(
         self, name: str, integration_name: str, integration_api_update: IntegrationApiUpdateAdapter
     ) -> None:
         """Create or update an integration API"""
-        await self.integration_api.save_integration_api(
+        await self._integration_api.save_integration_api(
             name, integration_name, integration_api_update
         )
 
     async def get_integration_api(self, name: str, integration_name: str) -> IntegrationApiAdapter:
         """Get integration API by name and integration name"""
-        return await self.integration_api.get_integration_api(name, integration_name)
+        return await self._integration_api.get_integration_api(name, integration_name)
 
     async def delete_integration_api(self, name: str, integration_name: str) -> None:
         """Delete an integration API"""
-        await self.integration_api.delete_integration_api(name, integration_name)
+        await self._integration_api.delete_integration_api(name, integration_name)
 
     async def get_integration_apis(self, integration_name: str) -> List[IntegrationApiAdapter]:
         """Get all APIs for a specific integration"""
-        return await self.integration_api.get_integration_apis(integration_name)
+        return await self._integration_api.get_integration_apis(integration_name)
 
     async def get_integration_available_apis(self, name: str) -> List[str]:
         """Get available APIs for an integration"""
-        return await self.integration_api.get_integration_available_apis(name)
+        return await self._integration_api.get_integration_available_apis(name)
 
     # Integration Operations
     async def save_all_integrations(self, request_body: List[IntegrationAdapter]) -> None:
         """Save all integrations"""
-        await self.integration_api.save_all_integrations(request_body)
+        await self._integration_api.save_all_integrations(request_body)
 
     async def get_all_integrations(
         self, category: Optional[str] = None, active_only: Optional[bool] = None
     ) -> List[IntegrationAdapter]:
         """Get all integrations with optional filtering"""
-        return await self.integration_api.get_all_integrations(
+        return await self._integration_api.get_all_integrations(
             category=category, active_only=active_only
         )
 
@@ -104,7 +104,7 @@ class OrkesIntegrationClient(OrkesBaseClient):
         self, integration_type: Optional[str] = None, active_only: Optional[bool] = None
     ) -> List[str]:
         """Get providers and integrations together"""
-        return await self.integration_api.get_providers_and_integrations(
+        return await self._integration_api.get_providers_and_integrations(
             type=integration_type, active_only=active_only
         )
 
@@ -113,13 +113,13 @@ class OrkesIntegrationClient(OrkesBaseClient):
         self, tags: List[TagAdapter], name: str, integration_name: str
     ) -> None:
         """Add tags to an integration"""
-        await self.integration_api.put_tag_for_integration(
+        await self._integration_api.put_tag_for_integration(
             name=name, integration_name=integration_name, tag=tags
         )
 
     async def get_tags_for_integration(self, name: str, integration_name: str) -> List[TagAdapter]:
         """Get tags for an integration"""
-        return await self.integration_api.get_tags_for_integration(
+        return await self._integration_api.get_tags_for_integration(
             name=name, integration_name=integration_name
         )
 
@@ -127,41 +127,41 @@ class OrkesIntegrationClient(OrkesBaseClient):
         self, tags: List[TagAdapter], name: str, integration_name: str
     ) -> None:
         """Delete tags from an integration"""
-        await self.integration_api.delete_tag_for_integration(
+        await self._integration_api.delete_tag_for_integration(
             name=name, integration_name=integration_name, tag=tags
         )
 
     async def put_tag_for_integration_provider(self, body: List[TagAdapter], name: str) -> None:
         """Add tags to an integration provider"""
-        await self.integration_api.put_tag_for_integration_provider(name, body)
+        await self._integration_api.put_tag_for_integration_provider(name, body)
 
     async def get_tags_for_integration_provider(self, name: str) -> List[TagAdapter]:
         """Get tags for an integration provider"""
-        return await self.integration_api.get_tags_for_integration_provider(name)
+        return await self._integration_api.get_tags_for_integration_provider(name)
 
     async def delete_tag_for_integration_provider(self, body: List[TagAdapter], name: str) -> None:
         """Delete tags from an integration provider"""
-        await self.integration_api.delete_tag_for_integration_provider(name, body)
+        await self._integration_api.delete_tag_for_integration_provider(name, body)
 
     # Token Usage Operations
     async def get_token_usage_for_integration(self, name: str, integration_name: str) -> int:
         """Get token usage for a specific integration"""
-        return await self.integration_api.get_token_usage_for_integration(name, integration_name)
+        return await self._integration_api.get_token_usage_for_integration(name, integration_name)
 
     async def get_token_usage_for_integration_provider(self, name: str) -> Dict[str, str]:
         """Get token usage for an integration provider"""
-        return await self.integration_api.get_token_usage_for_integration_provider(name)
+        return await self._integration_api.get_token_usage_for_integration_provider(name)
 
     async def register_token_usage(self, name: str, integration_name: str, tokens: int) -> None:
         """Register token usage for an integration"""
-        await self.integration_api.register_token_usage(name, integration_name, tokens)
+        await self._integration_api.register_token_usage(name, integration_name, tokens)
 
     # Prompt Integration Operations
     async def associate_prompt_with_integration(
         self, ai_prompt: str, integration_provider: str, integration_name: str
     ) -> None:
         """Associate a prompt with an integration"""
-        await self.integration_api.associate_prompt_with_integration(
+        await self._integration_api.associate_prompt_with_integration(
             ai_prompt, integration_provider, integration_name
         )
 
@@ -169,14 +169,14 @@ class OrkesIntegrationClient(OrkesBaseClient):
         self, integration_provider: str, integration_name: str
     ) -> List[MessageTemplateAdapter]:
         """Get prompts associated with an integration"""
-        return await self.integration_api.get_prompts_with_integration(
+        return await self._integration_api.get_prompts_with_integration(
             integration_provider, integration_name
         )
 
     # Event and Statistics Operations
     async def record_event_stats(self, event_type: str, event_log: List[EventLogAdapter]) -> None:
         """Record event statistics"""
-        await self.integration_api.record_event_stats(type=event_type, event_log=event_log)
+        await self._integration_api.record_event_stats(type=event_type, event_log=event_log)
 
     # Utility Methods
     async def get_integration_by_category(
