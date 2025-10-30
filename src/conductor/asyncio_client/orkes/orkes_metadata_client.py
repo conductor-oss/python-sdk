@@ -23,19 +23,19 @@ class OrkesMetadataClient(OrkesBaseClient):
     # Task Definition Operations
     async def register_task_def(self, task_def: ExtendedTaskDefAdapter) -> None:
         """Register a new task definition"""
-        await self.metadata_api.register_task_def([task_def])
+        await self._metadata_api.register_task_def([task_def])
 
     async def update_task_def(self, task_def: ExtendedTaskDefAdapter) -> None:
         """Update an existing task definition"""
-        await self.metadata_api.update_task_def(task_def)
+        await self._metadata_api.update_task_def(task_def)
 
     async def unregister_task_def(self, task_type: str) -> None:
         """Unregister a task definition"""
-        await self.metadata_api.unregister_task_def(task_type)
+        await self._metadata_api.unregister_task_def(task_type)
 
     async def get_task_def(self, task_type: str) -> object:
         """Get a task definition by task type"""
-        return await self.metadata_api.get_task_def(task_type)
+        return await self._metadata_api.get_task_def(task_type)
 
     async def get_task_defs(
         self,
@@ -45,7 +45,7 @@ class OrkesMetadataClient(OrkesBaseClient):
         tag_value: Optional[str] = None,
     ) -> List[TaskDefAdapter]:
         """Get all task definitions with optional filtering"""
-        return await self.metadata_api.get_task_defs(
+        return await self._metadata_api.get_task_defs(
             access=access, metadata=metadata, tag_key=tag_key, tag_value=tag_value
         )
 
@@ -57,7 +57,7 @@ class OrkesMetadataClient(OrkesBaseClient):
         new_version: Optional[bool] = None,
     ) -> object:
         """Create a new workflow definition"""
-        return await self.metadata_api.create(
+        return await self._metadata_api.create(
             extended_workflow_def, overwrite=overwrite, new_version=new_version
         )
 
@@ -68,7 +68,7 @@ class OrkesMetadataClient(OrkesBaseClient):
         new_version: Optional[bool] = None,
     ) -> object:
         """Create or update multiple workflow definitions"""
-        return await self.metadata_api.update(
+        return await self._metadata_api.update(
             extended_workflow_defs, overwrite=overwrite, new_version=new_version
         )
 
@@ -76,7 +76,7 @@ class OrkesMetadataClient(OrkesBaseClient):
         self, name: str, version: Optional[int] = None, metadata: Optional[bool] = None
     ) -> WorkflowDefAdapter:
         """Get a workflow definition by name and version"""
-        return await self.metadata_api.get(name, version=version, metadata=metadata)
+        return await self._metadata_api.get(name, version=version, metadata=metadata)
 
     async def get_workflow_defs(
         self,
@@ -88,7 +88,7 @@ class OrkesMetadataClient(OrkesBaseClient):
         short: Optional[bool] = None,
     ) -> List[WorkflowDefAdapter]:
         """Get all workflow definitions with optional filtering"""
-        return await self.metadata_api.get_workflow_defs(
+        return await self._metadata_api.get_workflow_defs(
             access=access,
             metadata=metadata,
             tag_key=tag_key,
@@ -99,12 +99,12 @@ class OrkesMetadataClient(OrkesBaseClient):
 
     async def unregister_workflow_def(self, name: str, version: int) -> None:
         """Unregister a workflow definition"""
-        await self.metadata_api.unregister_workflow_def(name, version)
+        await self._metadata_api.unregister_workflow_def(name, version)
 
     # Bulk Operations
     async def upload_definitions_to_s3(self) -> None:
         """Upload all workflows and tasks definitions to Object storage if configured"""
-        await self.metadata_api.upload_workflows_and_tasks_definitions_to_s3()
+        await self._metadata_api.upload_workflows_and_tasks_definitions_to_s3()
 
     # Convenience Methods
     async def get_latest_workflow_def(self, name: str) -> WorkflowDefAdapter:

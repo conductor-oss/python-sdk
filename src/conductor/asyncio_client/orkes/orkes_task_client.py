@@ -24,7 +24,9 @@ class OrkesTaskClient(OrkesBaseClient):
         self, task_type: str, worker_id: Optional[str] = None, domain: Optional[str] = None
     ) -> Optional[TaskAdapter]:
         """Poll for a single task of a certain type"""
-        return await self.task_api.poll(tasktype=task_type, workerid=worker_id, domain=domain)
+        return await self._OrkesBaseClient__task_api.poll(
+            tasktype=task_type, workerid=worker_id, domain=domain
+        )
 
     async def poll_for_task_batch(
         self,
@@ -35,7 +37,7 @@ class OrkesTaskClient(OrkesBaseClient):
         domain: Optional[str] = None,
     ) -> List[TaskAdapter]:
         """Poll for multiple tasks in batch"""
-        return await self.task_api.batch_poll(
+        return await self._OrkesBaseClient__task_api.batch_poll(
             tasktype=task_type,
             workerid=worker_id,
             count=count,
@@ -46,11 +48,11 @@ class OrkesTaskClient(OrkesBaseClient):
     # Task Operations
     async def get_task(self, task_id: str) -> TaskAdapter:
         """Get task by ID"""
-        return await self.task_api.get_task(task_id=task_id)
+        return await self._OrkesBaseClient__task_api.get_task(task_id=task_id)
 
     async def update_task(self, task_result: TaskResultAdapter) -> str:
         """Update task with result"""
-        return await self.task_api.update_task(task_result=task_result)
+        return await self._OrkesBaseClient__task_api.update_task(task_result=task_result)
 
     async def update_task_by_ref_name(
         self,
@@ -63,7 +65,7 @@ class OrkesTaskClient(OrkesBaseClient):
         """Update task by workflow ID and task reference name"""
         body = {"result": output}
 
-        return await self.task_api.update_task1(
+        return await self._OrkesBaseClient__task_api.update_task1(
             workflow_id=workflow_id,
             task_ref_name=task_ref_name,
             status=status,
@@ -81,7 +83,7 @@ class OrkesTaskClient(OrkesBaseClient):
     ) -> WorkflowAdapter:
         """Update task synchronously by workflow ID and task reference name"""
         body = {"result": output}
-        return await self.task_api.update_task_sync(
+        return await self._OrkesBaseClient__task_api.update_task_sync(
             workflow_id=workflow_id,
             task_ref_name=task_ref_name,
             status=status,
@@ -92,7 +94,7 @@ class OrkesTaskClient(OrkesBaseClient):
     # Task Queue Operations
     async def get_task_queue_sizes(self) -> Dict[str, int]:
         """Get the size of all task queues"""
-        return await self.task_api.all()
+        return await self._OrkesBaseClient__task_api.all()
 
     async def get_task_queue_sizes_verbose(
         self,
@@ -111,7 +113,7 @@ class OrkesTaskClient(OrkesBaseClient):
         last_poll_time_opt: Optional[str] = None,
     ) -> Dict[str, object]:
         """Get the last poll data for all task types"""
-        return await self.task_api.get_all_poll_data(
+        return await self._OrkesBaseClient__task_api.get_all_poll_data(
             worker_size=worker_size,
             worker_opt=worker_opt,
             queue_size=queue_size,
@@ -122,16 +124,16 @@ class OrkesTaskClient(OrkesBaseClient):
 
     async def get_poll_data(self, task_type: str) -> List[PollDataAdapter]:
         """Get the last poll data for a specific task type"""
-        return await self.task_api.get_poll_data(task_type=task_type)
+        return await self._OrkesBaseClient__task_api.get_poll_data(task_type=task_type)
 
     # Task Logging Operations
     async def get_task_logs(self, task_id: str) -> List[TaskExecLogAdapter]:
         """Get task execution logs"""
-        return await self.task_api.get_task_logs(task_id=task_id)
+        return await self._OrkesBaseClient__task_api.get_task_logs(task_id=task_id)
 
     async def log_task(self, task_id: str, log_message: str) -> None:
         """Log task execution details"""
-        await self.task_api.log(task_id=task_id, body=log_message)
+        await self._OrkesBaseClient__task_api.log(task_id=task_id, body=log_message)
 
     # Task Search Operations
     async def search_tasks(
@@ -151,16 +153,16 @@ class OrkesTaskClient(OrkesBaseClient):
             free_text: Free text search
             query: Query string
         """
-        return await self.task_api.search1(
+        return await self._OrkesBaseClient__task_api.search1(
             start=start, size=size, sort=sort, free_text=free_text, query=query
         )
 
     # Task Queue Management
     async def requeue_pending_tasks(self, task_type: str) -> str:
         """Requeue all pending tasks of a given task type"""
-        return await self.task_api.requeue_pending_task(task_type=task_type)
+        return await self._OrkesBaseClient__task_api.requeue_pending_task(task_type=task_type)
 
     # Utility Methods
     async def get_queue_size_for_task_type(self, task_type: List[str]) -> Dict[str, int]:
         """Get queue size for a specific task type"""
-        return await self.task_api.size(task_type=task_type)
+        return await self._OrkesBaseClient__task_api.size(task_type=task_type)
