@@ -30,6 +30,12 @@ from conductor.asyncio_client.adapters.models.workflow_test_request_adapter impo
 )
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
+from conductor.asyncio_client.adapters.models.task_list_search_result_summary_adapter import (
+    TaskListSearchResultSummaryAdapter,
+)
+from conductor.asyncio_client.adapters.models.upgrade_workflow_request_adapter import (
+    UpgradeWorkflowRequestAdapter,
+)
 
 
 class OrkesWorkflowClient(OrkesBaseClient):
@@ -393,4 +399,113 @@ class OrkesWorkflowClient(OrkesBaseClient):
             workflow_id=workflow_id,
             include_output=include_output,
             include_variables=include_variables,
+        )
+
+    async def execute_workflow_as_api(
+        self,
+        name: str,
+        request_body: Dict[str, Dict[str, Any]],
+        version: Optional[int] = None,
+        request_id: Optional[str] = None,
+        wait_until_task_ref: Optional[str] = None,
+        wait_for_seconds: Optional[int] = None,
+        x_idempotency_key: Optional[str] = None,
+        x_on_conflict: Optional[str] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Execute a workflow as an API call"""
+        return await self._workflow_api.execute_workflow_as_api(
+            name=name,
+            request_body=request_body,
+            version=version,
+            request_id=request_id,
+            wait_until_task_ref=wait_until_task_ref,
+            wait_for_seconds=wait_for_seconds,
+            x_idempotency_key=x_idempotency_key,
+            x_on_conflict=x_on_conflict,
+            **kwargs,
+        )
+
+    async def execute_workflow_as_get_api(
+        self,
+        name: str,
+        version: Optional[int] = None,
+        request_id: Optional[str] = None,
+        wait_until_task_ref: Optional[str] = None,
+        wait_for_seconds: Optional[int] = None,
+        x_idempotency_key: Optional[str] = None,
+        x_on_conflict: Optional[str] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Execute a workflow as a GET API call"""
+        return await self._workflow_api.execute_workflow_as_get_api(
+            name=name,
+            version=version,
+            request_id=request_id,
+            wait_until_task_ref=wait_until_task_ref,
+            wait_for_seconds=wait_for_seconds,
+            x_idempotency_key=x_idempotency_key,
+            x_on_conflict=x_on_conflict,
+            **kwargs,
+        )
+
+    async def get_execution_status_task_list(
+        self,
+        workflow_id: str,
+        start: Optional[int] = None,
+        count: Optional[int] = None,
+        status: Optional[List[str]] = None,
+        **kwargs,
+    ) -> TaskListSearchResultSummaryAdapter:
+        """Get the execution status task list"""
+        return await self._workflow_api.get_execution_status_task_list(
+            workflow_id=workflow_id,
+            start=start,
+            count=count,
+            status=status,
+            **kwargs,
+        )
+
+    async def get_workflows(
+        self,
+        name: str,
+        request_body: List[str],
+        include_closed: Optional[bool] = None,
+        include_tasks: Optional[bool] = None,
+        **kwargs,
+    ) -> Dict[str, List[WorkflowAdapter]]:
+        """Get workflows"""
+        return await self._workflow_api.get_workflows(
+            name=name,
+            request_body=request_body,
+            include_closed=include_closed,
+            include_tasks=include_tasks,
+            **kwargs,
+        )
+
+    async def get_workflows_by_correlation_id(
+        self,
+        name: str,
+        correlation_id: str,
+        include_closed: Optional[bool] = None,
+        include_tasks: Optional[bool] = None,
+        **kwargs,
+    ) -> List[WorkflowAdapter]:
+        """Get workflows"""
+        return await self._workflow_api.get_workflows2(
+            name=name,
+            correlation_id=correlation_id,
+            include_closed=include_closed,
+            include_tasks=include_tasks,
+            **kwargs,
+        )
+
+    async def upgrade_running_workflow_to_version(
+        self, workflow_id: str, upgrade_workflow_request: UpgradeWorkflowRequestAdapter, **kwargs
+    ) -> None:
+        """Upgrade a running workflow to a new version"""
+        await self._workflow_api.upgrade_running_workflow_to_version(
+            workflow_id=workflow_id,
+            upgrade_workflow_request=upgrade_workflow_request,
+            **kwargs,
         )

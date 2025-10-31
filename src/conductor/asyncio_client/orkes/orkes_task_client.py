@@ -98,7 +98,7 @@ class OrkesTaskClient(OrkesBaseClient):
         self,
     ) -> Dict[str, Dict[str, Dict[str, int]]]:
         """Get detailed information about all task queues"""
-        return await self.task_api.all_verbose()
+        return await self._task_api.all_verbose()
 
     # Poll Data Operations
     async def get_all_poll_data(

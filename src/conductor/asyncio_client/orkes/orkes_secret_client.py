@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Dict, List
 
+from deprecated import deprecated
+from typing_extensions import deprecated as typing_deprecated
+
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.extended_secret_adapter import ExtendedSecretAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
@@ -14,21 +17,40 @@ class OrkesSecretClient(OrkesBaseClient):
         super().__init__(configuration, api_client)
 
     # Core Secret Operations
+    @deprecated("put_secret is deprecated; use put_secret_validated instead")
+    @typing_deprecated("put_secret is deprecated; use put_secret_validated instead")
     async def put_secret(self, key: str, secret: str) -> object:
         """Store a secret value by key"""
         return await self._secret_api.put_secret(key, secret)
+
+    async def put_secret_validated(self, key: str, secret: str, **kwargs) -> None:
+        """Store a secret value by key"""
+        await self._secret_api.put_secret(key, secret, **kwargs)
 
     async def get_secret(self, key: str) -> str:
         """Get a secret value by key"""
         return await self._secret_api.get_secret(key)
 
+    @deprecated("delete_secret is deprecated; use delete_secret_validated instead")
+    @typing_deprecated("delete_secret is deprecated; use delete_secret_validated instead")
     async def delete_secret(self, key: str) -> object:
         """Delete a secret by key"""
         return await self._secret_api.delete_secret(key)
 
+    async def delete_secret_validated(self, key: str) -> None:
+        """Delete a secret by key"""
+        await self._secret_api.delete_secret(key)
+
+    @deprecated("secret_exists is deprecated; use secret_exists_validated instead")
+    @typing_deprecated("secret_exists is deprecated; use secret_exists_validated instead")
     async def secret_exists(self, key: str) -> object:
         """Check if a secret exists by key"""
         return await self._secret_api.secret_exists(key)
+
+    async def secret_exists_validated(self, key: str, **kwargs) -> bool:
+        """Check if a secret exists by key"""
+        result = await self._secret_api.secret_exists(key, **kwargs)
+        return bool(result)
 
     # Secret Listing Operations
     async def list_all_secret_names(self) -> List[str]:
@@ -59,23 +81,47 @@ class OrkesSecretClient(OrkesBaseClient):
         await self._secret_api.delete_tag_for_secret(key, tags)
 
     # Cache Operations
+    @deprecated("clear_local_cache is deprecated; use clear_local_cache_validated instead")
+    @typing_deprecated("clear_local_cache is deprecated; use clear_local_cache_validated instead")
     async def clear_local_cache(self) -> Dict[str, str]:
         """Clear local cache"""
         return await self._secret_api.clear_local_cache()
 
+    async def clear_local_cache_validated(self, **kwargs) -> None:
+        """Clear local cache"""
+        await self._secret_api.clear_local_cache(**kwargs)
+
+    @deprecated("clear_redis_cache is deprecated; use clear_redis_cache_validated instead")
+    @typing_deprecated("clear_redis_cache is deprecated; use clear_redis_cache_validated instead")
     async def clear_redis_cache(self) -> Dict[str, str]:
         """Clear Redis cache"""
         return await self._secret_api.clear_redis_cache()
+
+    async def clear_redis_cache_validated(self, **kwargs) -> None:
+        """Clear Redis cache"""
+        await self._secret_api.clear_redis_cache(**kwargs)
 
     # Convenience Methods
     async def list_secrets(self) -> List[str]:
         """Alias for list_all_secret_names for backward compatibility"""
         return await self.list_all_secret_names()
 
+    @deprecated("update_secret is deprecated; use update_secret_validated instead")
+    @typing_deprecated("update_secret is deprecated; use update_secret_validated instead")
     async def update_secret(self, key: str, secret: str) -> object:
         """Alias for put_secret for consistency with other clients"""
         return await self.put_secret(key, secret)
 
+    async def update_secret_validated(self, key: str, secret: str, **kwargs) -> None:
+        """Alias for put_secret_validated for consistency with other clients"""
+        await self.put_secret_validated(key, secret, **kwargs)
+
+    @deprecated("has_secret is deprecated; use has_secret_validated instead")
+    @typing_deprecated("has_secret is deprecated; use has_secret_validated instead")
     async def has_secret(self, key: str) -> object:
         """Alias for secret_exists for consistency"""
         return await self.secret_exists(key)
+
+    async def has_secret_validated(self, key: str, **kwargs) -> bool:
+        """Alias for secret_exists_validated for consistency"""
+        return await self.secret_exists_validated(key, **kwargs)
