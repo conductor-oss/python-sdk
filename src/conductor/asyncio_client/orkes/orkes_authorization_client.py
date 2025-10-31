@@ -106,13 +106,13 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         return result_model
 
-    async def delete_user(self, user_id: str) -> None:
+    async def delete_user(self, user_id: str, **kwargs) -> None:
         """Delete user by ID"""
-        await self._user_api.delete_user(id=user_id)
+        await self._user_api.delete_user(id=user_id, **kwargs)
 
-    async def list_users(self, include_apps: bool = False) -> List[ConductorUserAdapter]:
+    async def list_users(self, include_apps: bool = False, **kwargs) -> List[ConductorUserAdapter]:
         """List all users"""
-        return await self._user_api.list_users(apps=include_apps)
+        return await self._user_api.list_users(apps=include_apps, **kwargs)
 
     async def get_user_permissions(
         self, user_id: str, **kwargs
@@ -192,13 +192,13 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         return result_model
 
-    async def delete_application(self, application_id: str) -> None:
+    async def delete_application(self, application_id: str, **kwargs) -> None:
         """Delete application by ID"""
-        await self._application_api.delete_application(id=application_id)
+        await self._application_api.delete_application(id=application_id, **kwargs)
 
-    async def list_applications(self) -> List[ExtendedConductorApplicationAdapter]:
+    async def list_applications(self, **kwargs) -> List[ExtendedConductorApplicationAdapter]:
         """List all applications"""
-        return await self._application_api.list_applications()
+        return await self._application_api.list_applications(**kwargs)
 
     # Group Operations
     @deprecated("create_group is deprecated; use create_group_validated instead")
@@ -212,11 +212,11 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         )
 
     async def create_group_validated(
-        self, group_id: str, upsert_group_request: UpsertGroupRequestAdapter
+        self, group_id: str, upsert_group_request: UpsertGroupRequestAdapter, **kwargs
     ) -> Optional[GroupAdapter]:
         """Create a new group and return a validated GroupAdapter"""
         result = await self._group_api.upsert_group(
-            id=group_id, upsert_group_request=upsert_group_request
+            id=group_id, upsert_group_request=upsert_group_request, **kwargs
         )
 
         result_dict = cast(Dict[str, Any], result)
@@ -225,11 +225,11 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return result_model
 
     async def update_group(
-        self, group_id: str, upsert_group_request: UpsertGroupRequestAdapter
+        self, group_id: str, upsert_group_request: UpsertGroupRequestAdapter, **kwargs
     ) -> Optional[GroupAdapter]:
         """Update an existing group"""
         result = await self._group_api.upsert_group(
-            id=group_id, upsert_group_request=upsert_group_request
+            id=group_id, upsert_group_request=upsert_group_request, **kwargs
         )
 
         result_dict = cast(Dict[str, Any], result)
@@ -253,13 +253,13 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         return result_model
 
-    async def delete_group(self, group_id: str) -> None:
+    async def delete_group(self, group_id: str, **kwargs) -> None:
         """Delete group by ID"""
-        await self._group_api.delete_group(id=group_id)
+        await self._group_api.delete_group(id=group_id, **kwargs)
 
-    async def list_groups(self) -> List[GroupAdapter]:
+    async def list_groups(self, **kwargs) -> List[GroupAdapter]:
         """List all groups"""
-        return await self._group_api.list_groups()
+        return await self._group_api.list_groups(**kwargs)
 
     # Group User Management Operations
     @deprecated("add_user_to_group is deprecated; use add_user_to_group_validated instead")
@@ -298,10 +298,10 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         """Add multiple users to a group and return None"""
         await self._group_api.add_users_to_group(group_id=group_id, request_body=user_ids, **kwargs)
 
-    async def remove_users_from_group(self, group_id: str, user_ids: List[str]) -> None:
+    async def remove_users_from_group(self, group_id: str, user_ids: List[str], **kwargs) -> None:
         """Remove multiple users from a group"""
         return await self._group_api.remove_users_from_group(
-            group_id=group_id, request_body=user_ids
+            group_id=group_id, request_body=user_ids, **kwargs
         )
 
     @deprecated("get_users_in_group is deprecated; use get_users_in_group_validated instead")
@@ -377,9 +377,9 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         return permissions
 
-    async def get_group_permissions(self, group_id: str) -> GrantedAccessResponseAdapter:
+    async def get_group_permissions(self, group_id: str, **kwargs) -> GrantedAccessResponseAdapter:
         """Get permissions granted to a group"""
-        return await self._group_api.get_granted_permissions1(group_id=group_id)
+        return await self._group_api.get_granted_permissions1(group_id=group_id, **kwargs)
 
     # Convenience Methods
     @deprecated("upsert_user is deprecated; use upsert_user_validated instead")
@@ -392,27 +392,31 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return result
 
     async def upsert_user_validated(
-        self, user_id: str, upsert_user_request: UpsertUserRequestAdapter
+        self, user_id: str, upsert_user_request: UpsertUserRequestAdapter, **kwargs
     ) -> Optional[ConductorUserAdapter]:
         """Alias for create_user_validated/update_user_validated"""
-        result = await self.create_user_validated(user_id, upsert_user_request)
+        result = await self.create_user_validated(user_id, upsert_user_request, **kwargs)
         return result
 
     async def upsert_group(
-        self, group_id: str, upsert_group_request: UpsertGroupRequestAdapter
+        self, group_id: str, upsert_group_request: UpsertGroupRequestAdapter, **kwargs
     ) -> Optional[GroupAdapter]:
         """Alias for create_group/update_group"""
-        result = await self.create_group_validated(group_id, upsert_group_request)
+        result = await self.create_group_validated(group_id, upsert_group_request, **kwargs)
         return result
 
-    async def set_application_tags(self, tags: List[TagAdapter], application_id: str) -> None:
-        await self._application_api.put_tag_for_application(application_id, tags)
+    async def set_application_tags(
+        self, tags: List[TagAdapter], application_id: str, **kwargs
+    ) -> None:
+        await self._application_api.put_tag_for_application(application_id, tags, **kwargs)
 
-    async def get_application_tags(self, application_id: str) -> List[TagAdapter]:
-        return await self._application_api.get_tags_for_application(application_id)
+    async def get_application_tags(self, application_id: str, **kwargs) -> List[TagAdapter]:
+        return await self._application_api.get_tags_for_application(application_id, **kwargs)
 
-    async def delete_application_tags(self, tags: List[TagAdapter], application_id: str) -> None:
-        await self._application_api.delete_tag_for_application(application_id, tags)
+    async def delete_application_tags(
+        self, tags: List[TagAdapter], application_id: str, **kwargs
+    ) -> None:
+        await self._application_api.delete_tag_for_application(application_id, tags, **kwargs)
 
     @deprecated("create_access_key is deprecated; use create_access_key_validated instead")
     @typing_deprecated("create_access_key is deprecated; use create_access_key_validated instead")
@@ -471,17 +475,23 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         return result_model
 
-    async def delete_access_key(self, application_id: str, key_id: str) -> None:
-        await self._application_api.delete_access_key(application_id, key_id)
+    async def delete_access_key(self, application_id: str, key_id: str, **kwargs) -> None:
+        await self._application_api.delete_access_key(application_id, key_id, **kwargs)
 
-    async def add_role_to_application_user(self, application_id: str, role: str) -> None:
-        await self._application_api.add_role_to_application_user(application_id, role)
+    async def add_role_to_application_user(self, application_id: str, role: str, **kwargs) -> None:
+        await self._application_api.add_role_to_application_user(application_id, role, **kwargs)
 
-    async def remove_role_from_application_user(self, application_id: str, role: str) -> None:
-        await self._application_api.remove_role_from_application_user(application_id, role)
+    async def remove_role_from_application_user(
+        self, application_id: str, role: str, **kwargs
+    ) -> None:
+        await self._application_api.remove_role_from_application_user(
+            application_id, role, **kwargs
+        )
 
-    async def get_granted_permissions_for_group(self, group_id: str) -> List[GrantedAccessAdapter]:
-        granted_access_obj = await self.get_group_permissions(group_id)
+    async def get_granted_permissions_for_group(
+        self, group_id: str, **kwargs
+    ) -> List[GrantedAccessAdapter]:
+        granted_access_obj = await self.get_group_permissions(group_id, **kwargs)
 
         if not granted_access_obj.granted_access:
             return []
@@ -497,8 +507,10 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         return granted_permissions
 
-    async def get_granted_permissions_for_user(self, user_id: str) -> List[GrantedAccessAdapter]:
-        granted_access_obj = await self.get_user_permissions(user_id)
+    async def get_granted_permissions_for_user(
+        self, user_id: str, **kwargs
+    ) -> List[GrantedAccessAdapter]:
+        granted_access_obj = await self.get_user_permissions(user_id, **kwargs)
 
         if not granted_access_obj.granted_access:
             return []
@@ -523,8 +535,10 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         return result_model
 
-    async def check_permissions(self, user_id: str, type: str, id: str) -> Dict[str, bool]:
-        result = await self._user_api.check_permissions(user_id, type, id)
+    async def check_permissions(
+        self, user_id: str, type: str, id: str, **kwargs
+    ) -> Dict[str, bool]:
+        result = await self._user_api.check_permissions(user_id, type, id, **kwargs)
 
         result_dict = cast(Dict[str, Any], result)
         result_model = {k: v for k, v in result_dict.items() if isinstance(v, bool)}

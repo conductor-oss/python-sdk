@@ -1,10 +1,16 @@
 from __future__ import annotations
 
-from typing import List
+from typing import Any, Dict, List
 
 from conductor.asyncio_client.adapters.models.event_handler_adapter import EventHandlerAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
+from conductor.asyncio_client.adapters.models.connectivity_test_input_adapter import (
+    ConnectivityTestInputAdapter,
+)
+from conductor.asyncio_client.adapters.models.connectivity_test_result_adapter import (
+    ConnectivityTestResultAdapter,
+)
 
 
 class OrkesEventClient(OrkesBaseClient):
@@ -15,7 +21,9 @@ class OrkesEventClient(OrkesBaseClient):
     """
 
     # Event Handler Operations
-    async def create_event_handler(self, event_handler: List[EventHandlerAdapter]) -> None:
+    async def create_event_handler(
+        self, event_handler: List[EventHandlerAdapter], **kwargs
+    ) -> None:
         """Create a new event handler.
 
         Creates one or more event handlers that will be triggered by specific events.
@@ -50,9 +58,9 @@ class OrkesEventClient(OrkesBaseClient):
         await event_client.create_event_handler([event_handler])
         ```
         """
-        return await self.event_api.add_event_handler(event_handler)
+        return await self._event_api.add_event_handler(event_handler, **kwargs)
 
-    async def get_event_handler(self, name: str) -> EventHandlerAdapter:
+    async def get_event_handler(self, name: str, **kwargs) -> EventHandlerAdapter:
         """Get event handler by name.
 
         Retrieves a specific event handler configuration by its name.
@@ -76,9 +84,9 @@ class OrkesEventClient(OrkesBaseClient):
         print(f"Handler active: {handler.active}")
         ```
         """
-        return await self.event_api.get_event_handler_by_name(name=name)
+        return await self._event_api.get_event_handler_by_name(name=name, **kwargs)
 
-    async def list_event_handlers(self) -> List[EventHandlerAdapter]:
+    async def list_event_handlers(self, **kwargs) -> List[EventHandlerAdapter]:
         """List all event handlers.
 
         Retrieves all event handlers configured in the system.
@@ -97,9 +105,11 @@ class OrkesEventClient(OrkesBaseClient):
             print(f"Handler: {handler.name}, Event: {handler.event}, Active: {handler.active}")
         ```
         """
-        return await self.event_api.get_event_handlers()
+        return await self._event_api.get_event_handlers(**kwargs)
 
-    async def list_event_handlers_for_event(self, event: str) -> List[EventHandlerAdapter]:
+    async def list_event_handlers_for_event(
+        self, event: str, **kwargs
+    ) -> List[EventHandlerAdapter]:
         """List event handlers for a specific event.
 
         Retrieves all event handlers that are configured to respond to a specific event type.
@@ -125,9 +135,9 @@ class OrkesEventClient(OrkesBaseClient):
         failure_handlers = await event_client.list_event_handlers_for_event("task.failed")
         ```
         """
-        return await self.event_api.get_event_handlers_for_event(event=event)
+        return await self._event_api.get_event_handlers_for_event(event=event, **kwargs)
 
-    async def update_event_handler(self, event_handler: EventHandlerAdapter) -> None:
+    async def update_event_handler(self, event_handler: EventHandlerAdapter, **kwargs) -> None:
         """Update an existing event handler.
 
         Updates the configuration of an existing event handler.
@@ -149,7 +159,7 @@ class OrkesEventClient(OrkesBaseClient):
         await event_client.update_event_handler(handler)
         ```
         """
-        return await self.event_api.update_event_handler(event_handler)
+        return await self._event_api.update_event_handler(event_handler, **kwargs)
 
     async def delete_event_handler(self, name: str) -> None:
         """Delete an event handler by name.
@@ -169,10 +179,10 @@ class OrkesEventClient(OrkesBaseClient):
         print("Event handler deleted successfully")
         ```
         """
-        return await self.event_api.remove_event_handler_status(name=name)
+        return await self._event_api.remove_event_handler_status(name=name)
 
     # Event Handler Tag Operations
-    async def get_event_handler_tags(self, name: str) -> List[TagAdapter]:
+    async def get_event_handler_tags(self, name: str, **kwargs) -> List[TagAdapter]:
         """Get tags for an event handler.
 
         Retrieves all tags associated with a specific event handler.
@@ -197,9 +207,9 @@ class OrkesEventClient(OrkesBaseClient):
             print(f"Tag: {tag.key} = {tag.value}")
         ```
         """
-        return await self.event_api.get_tags_for_event_handler(name=name)
+        return await self._event_api.get_tags_for_event_handler(name=name, **kwargs)
 
-    async def add_event_handler_tag(self, name: str, tags: List[TagAdapter]) -> None:
+    async def add_event_handler_tag(self, name: str, tags: List[TagAdapter], **kwargs) -> None:
         """Add tags to an event handler.
 
         Associates one or more tags with an event handler for organization and categorization.
@@ -228,9 +238,9 @@ class OrkesEventClient(OrkesBaseClient):
         """
         # Note: Async API uses (name=name, tag=tags) keyword args to match the server signature.
         # Sync API uses (tags, name) positional args due to swagger-codegen parameter ordering.
-        return await self.event_api.put_tag_for_event_handler(name=name, tag=tags)
+        return await self._event_api.put_tag_for_event_handler(name=name, tag=tags, **kwargs)
 
-    async def remove_event_handler_tag(self, name: str, tags: List[TagAdapter]) -> None:
+    async def remove_event_handler_tag(self, name: str, tags: List[TagAdapter], **kwargs) -> None:
         """Remove tags from an event handler.
 
         Removes one or more tags from an event handler.
@@ -258,10 +268,12 @@ class OrkesEventClient(OrkesBaseClient):
         """
         # Note: Async API uses (name=name, tag=tags) keyword args to match the server signature.
         # Sync API uses (tags, name) positional args due to swagger-codegen parameter ordering.
-        return await self.event_api.delete_tag_for_event_handler(name=name, tag=tags)
+        return await self._event_api.delete_tag_for_event_handler(name=name, tag=tags, **kwargs)
 
     # Queue Configuration Operations
-    async def get_queue_configuration(self, queue_type: str, queue_name: str) -> dict:
+    async def get_queue_configuration(
+        self, queue_type: str, queue_name: str, **kwargs
+    ) -> Dict[str, object]:
         """Get queue configuration.
 
         Retrieves the configuration for a specific event queue.
@@ -275,7 +287,7 @@ class OrkesEventClient(OrkesBaseClient):
 
         Returns:
         --------
-        dict
+        Dict[str, object]
             Queue configuration settings
 
         Example:
@@ -287,9 +299,11 @@ class OrkesEventClient(OrkesBaseClient):
         print(f"Topic: {config.get('topic')}")
         ```
         """
-        return await self.event_api.get_queue_config(queue_type=queue_type, queue_name=queue_name)
+        return await self._event_api.get_queue_config(
+            queue_type=queue_type, queue_name=queue_name, **kwargs
+        )
 
-    async def delete_queue_configuration(self, queue_type: str, queue_name: str) -> None:
+    async def delete_queue_configuration(self, queue_type: str, queue_name: str, **kwargs) -> None:
         """Delete queue configuration.
 
         Removes the configuration for an event queue.
@@ -309,6 +323,78 @@ class OrkesEventClient(OrkesBaseClient):
         print("Queue configuration deleted")
         ```
         """
-        return await self.event_api.delete_queue_config(
-            queue_type=queue_type, queue_name=queue_name
+        return await self._event_api.delete_queue_config(
+            queue_type=queue_type, queue_name=queue_name, **kwargs
+        )
+
+    async def get_queue_names(self, **kwargs) -> Dict[str, str]:
+        """Get all queue names.
+
+        Retrieves all queue names configured in the system.
+
+        Returns:
+        --------
+        Dict[str, str]
+            Dictionary of queue names and their types
+        """
+        return await self._event_api.get_queue_names(**kwargs)
+
+    async def handle_incoming_event(
+        self, request_body: Dict[str, Dict[str, Any]], **kwargs
+    ) -> None:
+        """Handle an incoming event.
+
+        Handles an incoming event from the system.
+
+        Parameters:
+        -----------
+        request_body : Dict[str, Dict[str, Any]]
+            The incoming event request body
+        """
+        return await self._event_api.handle_incoming_event(request_body=request_body, **kwargs)
+
+    async def put_queue_configuration(
+        self, queue_type: str, queue_name: str, body: str, **kwargs
+    ) -> None:
+        """Put queue configuration.
+
+        Updates the configuration for an event queue.
+
+        Parameters:
+        -----------
+        queue_type : str
+            The type of queue (e.g., "kafka", "sqs", "rabbitmq")
+        queue_name : str
+            The name of the queue
+        body : str
+            The body of the queue configuration
+        """
+        return await self._event_api.put_queue_config(
+            queue_type=queue_type, queue_name=queue_name, body=body, **kwargs
+        )
+
+    async def test(self, **kwargs) -> EventHandlerAdapter:
+        """Test the event handler.
+
+        Tests the event handler.
+
+        Parameters:
+        -----------
+        """
+        return await self._event_api.test(**kwargs)
+
+    async def test_connectivity(
+        self, connectivity_test_input: ConnectivityTestInputAdapter, **kwargs
+    ) -> ConnectivityTestResultAdapter:
+        """Test connectivity.
+
+        Tests the connectivity of the event handler.
+
+        Parameters:
+        -----------
+        connectivity_test_input : ConnectivityTestInputAdapter
+            The connectivity test input
+        """
+        return await self._event_api.test_connectivity(
+            connectivity_test_input=connectivity_test_input, **kwargs
         )
