@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.poll_data import PollData
@@ -10,6 +10,9 @@ from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.workflow import Workflow
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.task_client import TaskClient
+from conductor.client.http.models.search_result_task_summary import SearchResultTaskSummary
+from conductor.client.http.models.signal_response import SignalResponse
+from conductor.client.http.models.search_result_task import SearchResultTask
 
 
 class OrkesTaskClient(OrkesBaseClient, TaskClient):
@@ -18,7 +21,7 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
 
     def poll_task(
         self, task_type: str, worker_id: Optional[str] = None, domain: Optional[str] = None
-    ) -> Optional[Task]:
+    ) -> Task:
         kwargs = {}
         if worker_id:
             kwargs.update({"workerid": worker_id})
@@ -47,11 +50,11 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
 
         return self._task_api.batch_poll(task_type, **kwargs)
 
-    def get_task(self, task_id: str) -> Task:
-        return self._task_api.get_task(task_id)
+    def get_task(self, task_id: str, **kwargs) -> Task:
+        return self._task_api.get_task(task_id, **kwargs)
 
-    def update_task(self, task_result: TaskResult) -> str:
-        return self._task_api.update_task(task_result)
+    def update_task(self, task_result: TaskResult, **kwargs) -> str:
+        return self._task_api.update_task(task_result, **kwargs)
 
     def update_task_by_ref_name(
         self,
@@ -83,16 +86,82 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
             kwargs.update({"workerid": worker_id})
         return self._task_api.update_task_sync(body, workflow_id, task_ref_name, status, **kwargs)
 
-    def get_queue_size_for_task(self, task_type: str) -> int:
-        queueSizesByTaskType = self._task_api.size(task_type=[task_type])
+    def get_queue_size_for_task(self, task_type: str, **kwargs) -> int:
+        queueSizesByTaskType = self._task_api.size(task_type=[task_type], **kwargs)
         queueSize = queueSizesByTaskType.get(task_type, 0)
         return queueSize
 
-    def add_task_log(self, task_id: str, log_message: str):
-        self._task_api.log(body=log_message, task_id=task_id)
+    def add_task_log(self, task_id: str, log_message: str, **kwargs) -> None:
+        self._task_api.log(body=log_message, task_id=task_id, **kwargs)
 
-    def get_task_logs(self, task_id: str) -> List[TaskExecLog]:
-        return self._task_api.get_task_logs(task_id)
+    def get_task_logs(self, task_id: str, **kwargs) -> List[TaskExecLog]:
+        return self._task_api.get_task_logs(task_id, **kwargs)
 
-    def get_task_poll_data(self, task_type: str) -> List[PollData]:
-        return self._task_api.get_poll_data(task_type=task_type)
+    def get_task_poll_data(self, task_type: str, **kwargs) -> List[PollData]:
+        return self._task_api.get_poll_data(task_type=task_type, **kwargs)
+
+    def get_all_poll_data(self, **kwargs) -> Dict[str, object]:
+        return self._task_api.get_all_poll_data(**kwargs)
+
+    def requeue_pending_task(self, task_type: str, **kwargs) -> str:
+        return self._task_api.requeue_pending_task(task_type=task_type, **kwargs)
+
+    def search_tasks(
+        self,
+        start: int = 0,
+        size: int = 100,
+        sort: Optional[str] = None,
+        free_text: Optional[str] = None,
+        query: Optional[str] = None,
+    ) -> SearchResultTaskSummary:
+        """Search for tasks based on payload and other parameters
+
+        Args:
+            start: Start index for pagination
+            size: Page size
+            sort: Sort options as sort=<field>:ASC|DESC e.g. sort=name&sort=workflowId:DESC
+            free_text: Free text search
+            query: Query string
+        """
+        return self._task_api.search1(
+            start=start, size=size, sort=sort, free_text=free_text, query=query
+        )
+
+    def search_tasks_v2(
+        self,
+        start: int = 0,
+        size: int = 100,
+        sort: Optional[str] = None,
+        free_text: Optional[str] = None,
+        query: Optional[str] = None,
+    ) -> SearchResultTask:
+        """Search for tasks based on payload and other parameters
+
+        Args:
+            start: Start index for pagination
+            size: Page size
+            sort: Sort options as sort=<field>:ASC|DESC e.g. sort=name&sort=workflowId:DESC
+            free_text: Free text search
+            query: Query string
+        """
+        return self._task_api.search_v21(
+            start=start, size=size, sort=sort, free_text=free_text, query=query
+        )
+
+    def signal_workflow_task_async(
+        self, workflow_id: str, status: str, body: Dict[str, object], **kwargs
+    ) -> None:
+        self._task_api.signal_workflow_task_async(workflow_id, status, body, **kwargs)
+
+    def signal_workflow_task_sync(
+        self, workflow_id: str, status: str, body: Dict[str, object], **kwargs
+    ) -> SignalResponse:
+        return self._task_api.signal_workflow_task_sync(workflow_id, status, body, **kwargs)
+
+    def get_task_queue_sizes(self, **kwargs) -> Dict[str, int]:
+        """Get the size of all task queues"""
+        return self._task_api.all(**kwargs)
+
+    def get_task_queue_sizes_verbose(self, **kwargs) -> Dict[str, Dict[str, Dict[str, int]]]:
+        """Get detailed information about all task queues"""
+        return self._task_api.all_verbose(**kwargs)

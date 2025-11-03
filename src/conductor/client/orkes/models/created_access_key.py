@@ -1,3 +1,6 @@
+from typing import Dict, Any
+
+
 class CreatedAccessKey:
     def __init__(self, id: str, secret: str) -> None:
         self._id: str = id
@@ -49,3 +52,10 @@ class CreatedAccessKey:
     def __ne__(self, other: object) -> bool:
         """Returns true if both objects are not equal"""
         return not self == other
+
+    @classmethod
+    def from_dict(cls, obj: Dict[str, Any]) -> "CreatedAccessKey":
+        return cls(
+            id=obj["id"],
+            secret=obj["secret"],
+        )

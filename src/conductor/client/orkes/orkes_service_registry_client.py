@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.circuit_breaker_transition_response import (
@@ -17,46 +17,48 @@ class OrkesServiceRegistryClient(OrkesBaseClient, ServiceRegistryClient):
     def __init__(self, configuration: Configuration):
         super().__init__(configuration)
 
-    def get_registered_services(self) -> List[ServiceRegistry]:
-        return self._service_registry_api.get_registered_services()
+    def get_registered_services(self, **kwargs) -> List[ServiceRegistry]:
+        return self._service_registry_api.get_registered_services(**kwargs)
 
-    def get_service(self, name: str) -> ServiceRegistry:
-        return self._service_registry_api.get_service(name)
+    def get_service(self, name: str, **kwargs) -> ServiceRegistry:
+        return self._service_registry_api.get_service(name, **kwargs)
 
-    def add_or_update_service(self, service_registry: ServiceRegistry) -> None:
-        self._service_registry_api.add_or_update_service(service_registry)
+    def add_or_update_service(self, service_registry: ServiceRegistry, **kwargs) -> None:
+        self._service_registry_api.add_or_update_service(service_registry, **kwargs)
 
-    def remove_service(self, name: str) -> None:
-        self._service_registry_api.remove_service(name)
+    def remove_service(self, name: str, **kwargs) -> None:
+        self._service_registry_api.remove_service(name, **kwargs)
 
-    def open_circuit_breaker(self, name: str) -> CircuitBreakerTransitionResponse:
-        return self._service_registry_api.open_circuit_breaker(name)
+    def open_circuit_breaker(self, name: str, **kwargs) -> CircuitBreakerTransitionResponse:
+        return self._service_registry_api.open_circuit_breaker(name, **kwargs)
 
-    def close_circuit_breaker(self, name: str) -> CircuitBreakerTransitionResponse:
-        return self._service_registry_api.close_circuit_breaker(name)
+    def close_circuit_breaker(self, name: str, **kwargs) -> CircuitBreakerTransitionResponse:
+        return self._service_registry_api.close_circuit_breaker(name, **kwargs)
 
-    def get_circuit_breaker_status(self, name: str) -> CircuitBreakerTransitionResponse:
-        return self._service_registry_api.get_circuit_breaker_status(name)
+    def get_circuit_breaker_status(self, name: str, **kwargs) -> CircuitBreakerTransitionResponse:
+        return self._service_registry_api.get_circuit_breaker_status(name, **kwargs)
 
-    def add_or_update_method(self, registry_name: str, method: ServiceMethod) -> None:
-        self._service_registry_api.add_or_update_method(registry_name, method)
+    def add_or_update_method(self, registry_name: str, method: ServiceMethod, **kwargs) -> None:
+        self._service_registry_api.add_or_update_method(registry_name, method, **kwargs)
 
     def remove_method(
-        self, registry_name: str, service_name: str, method: str, method_type: str
+        self, registry_name: str, service_name: str, method: str, method_type: str, **kwargs
     ) -> None:
-        self._service_registry_api.remove_method(registry_name, service_name, method, method_type)
+        self._service_registry_api.remove_method(
+            registry_name, service_name, method, method_type, **kwargs
+        )
 
-    def get_proto_data(self, registry_name: str, filename: str) -> bytes:
-        return self._service_registry_api.get_proto_data(registry_name, filename)
+    def get_proto_data(self, registry_name: str, filename: str, **kwargs) -> bytes:
+        return self._service_registry_api.get_proto_data(registry_name, filename, **kwargs)
 
-    def set_proto_data(self, registry_name: str, filename: str, data: bytes) -> None:
-        self._service_registry_api.set_proto_data(registry_name, filename, data)
+    def set_proto_data(self, registry_name: str, filename: str, data: bytes, **kwargs) -> None:
+        self._service_registry_api.set_proto_data(registry_name, filename, data, **kwargs)
 
-    def delete_proto(self, registry_name: str, filename: str) -> None:
-        self._service_registry_api.delete_proto(registry_name, filename)
+    def delete_proto(self, registry_name: str, filename: str, **kwargs) -> None:
+        self._service_registry_api.delete_proto(registry_name, filename, **kwargs)
 
-    def get_all_protos(self, registry_name: str) -> List[ProtoRegistryEntry]:
-        return self._service_registry_api.get_all_protos(registry_name)
+    def get_all_protos(self, registry_name: str, **kwargs) -> List[ProtoRegistryEntry]:
+        return self._service_registry_api.get_all_protos(registry_name, **kwargs)
 
     def discover(self, name: str, create: Optional[bool] = False) -> List[ServiceMethod]:
         kwargs = {}
@@ -65,11 +67,11 @@ class OrkesServiceRegistryClient(OrkesBaseClient, ServiceRegistryClient):
         return self._service_registry_api.discover(name, **kwargs)
 
     # Additional convenience methods can be added here if needed
-    def get_queue_sizes_for_all_tasks(self) -> dict:
+    def get_queue_sizes_for_all_tasks(self, **kwargs) -> Dict[str, int]:
         """Get queue sizes for all task types"""
-        return self._task_api.all()
+        return self._task_api.all(**kwargs)
 
-    def is_circuit_breaker_open(self, name: str) -> bool:
+    def is_circuit_breaker_open(self, name: str, **kwargs) -> bool:
         """Check if circuit breaker is open for a service"""
-        status = self._service_registry_api.get_circuit_breaker_status(name)
+        status = self._service_registry_api.get_circuit_breaker_status(name, **kwargs)
         return bool(status.current_state and status.current_state.upper() == "OPEN")

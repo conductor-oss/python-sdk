@@ -13,19 +13,23 @@ from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.http.models.tag import Tag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.scheduler_client import SchedulerClient
+from deprecated import deprecated
+from typing_extensions import deprecated as typing_deprecated
 
 
 class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
     def __init__(self, configuration: Configuration):
         super().__init__(configuration)
 
-    def save_schedule(self, save_schedule_request: SaveScheduleRequest):
-        self._scheduler_api.save_schedule(save_schedule_request)
+    def save_schedule(self, save_schedule_request: SaveScheduleRequest, **kwargs) -> None:
+        self._scheduler_api.save_schedule(save_schedule_request, **kwargs)
 
-    def get_schedule(self, name: str) -> WorkflowSchedule:
-        return self._scheduler_api.get_schedule(name)
+    def get_schedule(self, name: str, **kwargs) -> WorkflowSchedule:
+        return self._scheduler_api.get_schedule(name, **kwargs)
 
-    def get_all_schedules(self, workflow_name: Optional[str] = None) -> List[WorkflowScheduleModel]:
+    def get_all_schedules(
+        self, workflow_name: Optional[str] = None, **kwargs
+    ) -> List[WorkflowScheduleModel]:
         kwargs = {}
         if workflow_name:
             kwargs.update({"workflow_name": workflow_name})
@@ -48,20 +52,20 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
             kwargs.update({"limit": limit})
         return self._scheduler_api.get_next_few_schedules(cron_expression, **kwargs)
 
-    def delete_schedule(self, name: str):
-        self._scheduler_api.delete_schedule(name)
+    def delete_schedule(self, name: str, **kwargs) -> None:
+        self._scheduler_api.delete_schedule(name, **kwargs)
 
-    def pause_schedule(self, name: str):
-        self._scheduler_api.pause_schedule(name)
+    def pause_schedule(self, name: str, **kwargs) -> None:
+        self._scheduler_api.pause_schedule(name, **kwargs)
 
-    def pause_all_schedules(self):
-        self._scheduler_api.pause_all_schedules()
+    def pause_all_schedules(self, **kwargs) -> None:
+        self._scheduler_api.pause_all_schedules(**kwargs)
 
-    def resume_schedule(self, name: str):
-        self._scheduler_api.resume_schedule(name)
+    def resume_schedule(self, name: str, **kwargs) -> None:
+        self._scheduler_api.resume_schedule(name, **kwargs)
 
-    def resume_all_schedules(self):
-        self._scheduler_api.resume_all_schedules()
+    def resume_all_schedules(self, **kwargs) -> None:
+        self._scheduler_api.resume_all_schedules(**kwargs)
 
     def search_schedule_executions(
         self,
@@ -84,14 +88,29 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
             kwargs.update({"query": query})
         return self._scheduler_api.search_v2(**kwargs)
 
-    def requeue_all_execution_records(self):
-        self._scheduler_api.requeue_all_execution_records()
+    def requeue_all_execution_records(self, **kwargs) -> None:
+        self._scheduler_api.requeue_all_execution_records(**kwargs)
 
-    def set_scheduler_tags(self, tags: List[MetadataTag], name: str):
-        self._scheduler_api.put_tag_for_schedule(tags, name)
+    @deprecated("set_scheduler_tags is deprecated; use set_scheduler_tags_validated instead")
+    @typing_deprecated("set_scheduler_tags is deprecated; use set_scheduler_tags_validated instead")
+    def set_scheduler_tags(self, tags: List[MetadataTag], name: str, **kwargs) -> None:
+        self._scheduler_api.put_tag_for_schedule(tags, name, **kwargs)
 
-    def get_scheduler_tags(self, name: str) -> List[Tag]:
-        return self._scheduler_api.get_tags_for_schedule(name)
+    def set_scheduler_tags_validated(self, tags: List[Tag], name: str, **kwargs) -> None:
+        self._scheduler_api.put_tag_for_schedule(tags, name, **kwargs)
 
-    def delete_scheduler_tags(self, tags: List[MetadataTag], name: str) -> None:
+    def get_scheduler_tags(self, name: str, **kwargs) -> List[Tag]:
+        return self._scheduler_api.get_tags_for_schedule(name, **kwargs)
+
+    @deprecated("delete_scheduler_tags is deprecated; use delete_scheduler_tags_validated instead")
+    @typing_deprecated(
+        "delete_scheduler_tags is deprecated; use delete_scheduler_tags_validated instead"
+    )
+    def delete_scheduler_tags(self, tags: List[MetadataTag], name: str, **kwargs) -> None:
         return self._scheduler_api.delete_tag_for_schedule(tags, name)
+
+    def delete_scheduler_tags_validated(self, tags: List[Tag], name: str, **kwargs) -> None:
+        self._scheduler_api.delete_tag_for_schedule(tags, name)
+
+    def get_schedules_by_tag_validated(self, tag: str, **kwargs) -> List[WorkflowScheduleModel]:
+        return self._scheduler_api.get_schedules_by_tag(tag, **kwargs)
