@@ -32,15 +32,15 @@ class OrkesMetadataClient(OrkesBaseClient):
         self, extended_task_def: List[ExtendedTaskDefAdapter], **kwargs
     ) -> None:
         """Register a new task definition and return None"""
-        await self._metadata_api.register_task_def(extended_task_def, **kwargs)
+        await self._metadata_api.register_task_def(extended_task_def=extended_task_def, **kwargs)
 
     async def update_task_def(self, task_def: ExtendedTaskDefAdapter, **kwargs) -> None:
         """Update an existing task definition"""
-        await self._metadata_api.update_task_def(task_def, **kwargs)
+        await self._metadata_api.update_task_def(extended_task_def=task_def, **kwargs)
 
     async def unregister_task_def(self, task_type: str, **kwargs) -> None:
         """Unregister a task definition"""
-        await self._metadata_api.unregister_task_def(task_type, **kwargs)
+        await self._metadata_api.unregister_task_def(tasktype=task_type, **kwargs)
 
     @deprecated("get_task_def is deprecated; use get_task_def_validated instead")
     @typing_deprecated("get_task_def is deprecated; use get_task_def_validated instead")
@@ -50,7 +50,7 @@ class OrkesMetadataClient(OrkesBaseClient):
 
     async def get_task_def_validated(self, task_type: str, **kwargs) -> Optional[TaskDefAdapter]:
         """Get a task definition by task type and return a validated TaskDefAdapter"""
-        result = await self._metadata_api.get_task_def(task_type, **kwargs)
+        result = await self._metadata_api.get_task_def(tasktype=task_type, **kwargs)
 
         result_dict = cast(Dict[str, Any], result)
         result_model = TaskDefAdapter.from_dict(result_dict)
@@ -281,25 +281,46 @@ class OrkesMetadataClient(OrkesBaseClient):
         return await self.get_workflow_defs_by_name(name, **kwargs)
 
     async def add_workflow_tag(self, tag: TagAdapter, workflow_name: str, **kwargs) -> None:
-        await self._tags_api.add_workflow_tag(workflow_name, tag, **kwargs)
+        await self._tags_api.add_workflow_tag(name=workflow_name, tag=tag, **kwargs)
 
     async def delete_workflow_tag(self, tag: TagAdapter, workflow_name: str, **kwargs) -> None:
-        await self._tags_api.delete_workflow_tag(workflow_name, tag, **kwargs)
+        await self._tags_api.delete_workflow_tag(name=workflow_name, tag=tag, **kwargs)
 
     async def get_workflow_tags(self, workflow_name: str, **kwargs) -> List[TagAdapter]:
-        return await self._tags_api.get_workflow_tags(workflow_name, **kwargs)
+        return await self._tags_api.get_workflow_tags(name=workflow_name, **kwargs)
 
     async def set_workflow_tags(self, tags: List[TagAdapter], workflow_name: str, **kwargs) -> None:
-        await self._tags_api.set_workflow_tags(workflow_name, tags, **kwargs)
+        await self._tags_api.set_workflow_tags(name=workflow_name, tag=tags, **kwargs)
 
     async def add_task_tag(self, tag: TagAdapter, task_name: str, **kwargs) -> None:
-        await self._tags_api.add_task_tag(task_name, tag, **kwargs)
+        await self._tags_api.add_task_tag(task_name=task_name, tag=tag, **kwargs)
 
     async def delete_task_tag(self, tag: TagAdapter, task_name: str, **kwargs) -> None:
-        await self._tags_api.delete_task_tag(task_name, tag, **kwargs)
+        await self._tags_api.delete_task_tag(task_name=task_name, tag=tag, **kwargs)
 
     async def get_task_tags(self, task_name: str, **kwargs) -> List[TagAdapter]:
-        return await self._tags_api.get_task_tags(task_name, **kwargs)
+        return await self._tags_api.get_task_tags(task_name=task_name, **kwargs)
 
     async def set_task_tags(self, tags: List[TagAdapter], task_name: str, **kwargs) -> None:
-        await self._tags_api.set_task_tags(task_name, tags, **kwargs)
+        await self._tags_api.set_task_tags(task_name=task_name, tag=tags, **kwargs)
+
+    async def set_workflow_rate_limit(self, rate_limit: str, workflow_name: str) -> None:
+        await self.remove_workflow_rate_limit(workflow_name=workflow_name)
+        rate_limit_tag = TagAdapter(key=workflow_name, type="RATE_LIMIT", value=rate_limit)
+        await self._tags_api.add_workflow_tag(name=workflow_name, tag=rate_limit_tag)
+
+    async def get_workflow_rate_limit(self, workflow_name: str) -> Optional[str]:
+        tags = await self._tags_api.get_workflow_tags(name=workflow_name)
+        for tag in tags:
+            if tag.type == "RATE_LIMIT" and tag.key == workflow_name:
+                return tag.value
+
+        return None
+
+    async def remove_workflow_rate_limit(self, workflow_name: str) -> None:
+        current_rate_limit = await self.get_workflow_rate_limit(workflow_name=workflow_name)
+        if current_rate_limit:
+            rate_limit_tag = TagAdapter(
+                key=workflow_name, type="RATE_LIMIT", value=current_rate_limit
+            )
+            await self._tags_api.delete_workflow_tag(name=workflow_name, tag=rate_limit_tag)

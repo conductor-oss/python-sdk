@@ -36,6 +36,8 @@ from conductor.asyncio_client.adapters.models.task_list_search_result_summary_ad
 from conductor.asyncio_client.adapters.models.upgrade_workflow_request_adapter import (
     UpgradeWorkflowRequestAdapter,
 )
+from deprecated import deprecated
+from typing_extensions import deprecated as typing_deprecated
 
 
 class OrkesWorkflowClient(OrkesBaseClient):
@@ -296,9 +298,15 @@ class OrkesWorkflowClient(OrkesBaseClient):
         """Reset a workflow execution"""
         await self._workflow_api.reset_workflow(workflow_id=workflow_id)
 
+    @deprecated("decide_workflow is deprecated; use decide instead")
+    @typing_deprecated("decide_workflow is deprecated; use decide instead")
     async def decide_workflow(self, workflow_id: str) -> None:
         """Trigger workflow decision processing"""
         await self._workflow_api.decide(workflow_id=workflow_id)
+
+    async def decide(self, workflow_id: str, **kwargs) -> None:
+        """Trigger workflow decision processing"""
+        await self._workflow_api.decide(workflow_id=workflow_id, **kwargs)
 
     # Convenience Methods (for backward compatibility)
     async def execute_workflow_with_return_strategy(

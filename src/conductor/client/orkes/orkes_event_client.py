@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Dict
 
 from conductor.client.adapters.models.event_handler_adapter import EventHandlerAdapter
 from conductor.client.adapters.models.tag_adapter import TagAdapter
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
+from conductor.client.http.models.event_handler import EventHandler
+from conductor.client.http.models.connectivity_test_input import ConnectivityTestInput
+from conductor.client.http.models.connectivity_test_result import ConnectivityTestResult
 
 
 class OrkesEventClient(OrkesBaseClient):
@@ -50,7 +53,7 @@ class OrkesEventClient(OrkesBaseClient):
         event_client.create_event_handler([event_handler])
         ```
         """
-        return self.eventResourceApi.add_event_handler(event_handler)
+        return self._event_api.add_event_handler(event_handler)
 
     def get_event_handler(self, name: str) -> EventHandlerAdapter:
         """Get event handler by name.
@@ -76,7 +79,7 @@ class OrkesEventClient(OrkesBaseClient):
         print(f"Handler active: {handler.active}")
         ```
         """
-        return self.eventResourceApi.get_event_handler_by_name(name=name)
+        return self._event_api.get_event_handler_by_name(name=name)
 
     def list_event_handlers(self) -> List[EventHandlerAdapter]:
         """List all event handlers.
@@ -97,7 +100,7 @@ class OrkesEventClient(OrkesBaseClient):
             print(f"Handler: {handler.name}, Event: {handler.event}, Active: {handler.active}")
         ```
         """
-        return self.eventResourceApi.get_event_handlers()
+        return self._event_api.get_event_handlers()
 
     def list_event_handlers_for_event(self, event: str) -> List[EventHandlerAdapter]:
         """List event handlers for a specific event.
@@ -125,7 +128,7 @@ class OrkesEventClient(OrkesBaseClient):
         failure_handlers = event_client.list_event_handlers_for_event("task.failed")
         ```
         """
-        return self.eventResourceApi.get_event_handlers_for_event(event=event)
+        return self._event_api.get_event_handlers_for_event(event=event)
 
     def update_event_handler(self, event_handler: EventHandlerAdapter) -> None:
         """Update an existing event handler.
@@ -149,7 +152,7 @@ class OrkesEventClient(OrkesBaseClient):
         event_client.update_event_handler(handler)
         ```
         """
-        return self.eventResourceApi.update_event_handler(event_handler)
+        return self._event_api.update_event_handler(event_handler)
 
     def delete_event_handler(self, name: str) -> None:
         """Delete an event handler by name.
@@ -169,7 +172,7 @@ class OrkesEventClient(OrkesBaseClient):
         print("Event handler deleted successfully")
         ```
         """
-        return self.eventResourceApi.remove_event_handler_status(name=name)
+        return self._event_api.remove_event_handler_status(name=name)
 
     # Event Handler Tag Operations
     def get_event_handler_tags(self, name: str) -> List[TagAdapter]:
@@ -197,7 +200,7 @@ class OrkesEventClient(OrkesBaseClient):
             print(f"Tag: {tag.key} = {tag.value}")
         ```
         """
-        return self.eventResourceApi.get_tags_for_event_handler(name=name)
+        return self._event_api.get_tags_for_event_handler(name=name)
 
     def add_event_handler_tag(self, name: str, tags: List[TagAdapter]) -> None:
         """Add tags to an event handler.
@@ -228,7 +231,7 @@ class OrkesEventClient(OrkesBaseClient):
         """
         # Note: Sync API uses (tags, name) parameter order due to swagger-codegen placing
         # body params before path params. Async API uses (name=name, tag=tags) instead.
-        return self.eventResourceApi.put_tag_for_event_handler(tags, name)
+        return self._event_api.put_tag_for_event_handler(tags, name)
 
     def remove_event_handler_tag(self, name: str, tags: List[TagAdapter]) -> None:
         """Remove tags from an event handler.
@@ -258,7 +261,7 @@ class OrkesEventClient(OrkesBaseClient):
         """
         # Note: Sync API uses (tags, name) parameter order due to swagger-codegen placing
         # body params before path params. Async API uses (name=name, tag=tags) instead.
-        return self.eventResourceApi.delete_tag_for_event_handler(tags, name)
+        return self._event_api.delete_tag_for_event_handler(tags, name)
 
     # Queue Configuration Operations
     def get_queue_configuration(self, queue_type: str, queue_name: str) -> dict:
@@ -287,7 +290,7 @@ class OrkesEventClient(OrkesBaseClient):
         print(f"Topic: {config.get('topic')}")
         ```
         """
-        return self.eventResourceApi.get_queue_config(queue_type=queue_type, queue_name=queue_name)
+        return self._event_api.get_queue_config(queue_type=queue_type, queue_name=queue_name)
 
     def delete_queue_configuration(self, queue_type: str, queue_name: str) -> None:
         """Delete queue configuration.
@@ -309,6 +312,24 @@ class OrkesEventClient(OrkesBaseClient):
         print("Queue configuration deleted")
         ```
         """
-        return self.eventResourceApi.delete_queue_config(
-            queue_type=queue_type, queue_name=queue_name
-        )
+        return self._event_api.delete_queue_config(queue_type=queue_type, queue_name=queue_name)
+
+    def get_queue_names(self, **kwargs) -> Dict[str, str]:
+        """Get all queue names"""
+        return self._event_api.get_queue_names(**kwargs)
+
+    def handle_incoming_event(self, body: Dict[str, object], **kwargs) -> None:
+        """Handle an incoming event"""
+        return self._event_api.handle_incoming_event(body, **kwargs)
+
+    def put_queue_config(self, body: str, queue_type: str, queue_name: str, **kwargs) -> None:
+        """Put a queue config"""
+        return self._event_api.put_queue_config(body, queue_type, queue_name, **kwargs)
+
+    def test(self, **kwargs) -> EventHandler:
+        """Test the event handler"""
+        return self._event_api.test(**kwargs)
+
+    def test_connectivity(self, body: ConnectivityTestInput, **kwargs) -> ConnectivityTestResult:
+        """Test the connectivity of an event handler"""
+        return self._event_api.test_connectivity(body, **kwargs)

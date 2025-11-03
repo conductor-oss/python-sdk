@@ -40,11 +40,13 @@ class OrkesSchedulerClient(OrkesBaseClient):
         self, save_schedule_request: SaveScheduleRequestAdapter, **kwargs
     ) -> None:
         """Create or update a schedule for a specified workflow and return None"""
-        await self._scheduler_api.save_schedule(save_schedule_request, **kwargs)
+        await self._scheduler_api.save_schedule(
+            save_schedule_request=save_schedule_request, **kwargs
+        )
 
     async def get_schedule(self, name: str, **kwargs) -> WorkflowScheduleAdapter:
         """Get a workflow schedule by name"""
-        return await self._scheduler_api.get_schedule(name, **kwargs)
+        return await self._scheduler_api.get_schedule(name=name, **kwargs)
 
     @deprecated("delete_schedule is deprecated; use delete_schedule_validated instead")
     @typing_deprecated("delete_schedule is deprecated; use delete_schedule_validated instead")
@@ -54,7 +56,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
 
     async def delete_schedule_validated(self, name: str, **kwargs) -> None:
         """Delete an existing workflow schedule by name and return None"""
-        await self._scheduler_api.delete_schedule(name, **kwargs)
+        await self._scheduler_api.delete_schedule(name=name, **kwargs)
 
     async def get_all_schedules(
         self, workflow_name: Optional[str] = None, **kwargs
@@ -71,7 +73,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
 
     async def pause_schedule_validated(self, name: str, **kwargs) -> None:
         """Pause a workflow schedule and return None"""
-        await self._scheduler_api.pause_schedule(name, **kwargs)
+        await self._scheduler_api.pause_schedule(name=name, **kwargs)
 
     @deprecated("resume_schedule is deprecated; use resume_schedule_validated instead")
     @typing_deprecated("resume_schedule is deprecated; use resume_schedule_validated instead")
@@ -81,7 +83,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
 
     async def resume_schedule_validated(self, name: str, **kwargs) -> None:
         """Resume a paused workflow schedule and return None"""
-        await self._scheduler_api.resume_schedule(name, **kwargs)
+        await self._scheduler_api.resume_schedule(name=name, **kwargs)
 
     @deprecated("pause_all_schedules is deprecated; use pause_all_schedules_validated instead")
     @typing_deprecated(
@@ -99,15 +101,17 @@ class OrkesSchedulerClient(OrkesBaseClient):
     @typing_deprecated(
         "resume_all_schedules is deprecated; use resume_all_schedules_validated instead"
     )
-    async def resume_all_schedules(self) -> Dict[str, object]:
+    async def resume_all_schedules(self, **kwargs) -> Dict[str, object]:
         """Resume all paused workflow schedules"""
-        return await self._scheduler_api.resume_all_schedules()
+        return await self._scheduler_api.resume_all_schedules(**kwargs)
 
     async def resume_all_schedules_validated(self, **kwargs) -> None:
         """Resume all paused workflow schedules and return None"""
         await self._scheduler_api.resume_all_schedules(**kwargs)
 
     # Schedule Search and Discovery
+    @deprecated("search_schedules is deprecated; use search_schedule_executions instead")
+    @typing_deprecated("search_schedules is deprecated; use search_schedule_executions instead")
     async def search_schedules(
         self,
         start: int = 0,
@@ -122,6 +126,27 @@ class OrkesSchedulerClient(OrkesBaseClient):
             start=start, size=size, sort=sort, free_text=free_text, query=query, **kwargs
         )
 
+    async def search_schedule_executions(
+        self,
+        start: Optional[int] = None,
+        size: Optional[int] = None,
+        sort: Optional[str] = None,
+        free_text: Optional[str] = None,
+        query: Optional[str] = None,
+    ) -> SearchResultWorkflowScheduleExecutionModelAdapter:
+        kwargs = {}
+        if start:
+            kwargs.update({"start": start})
+        if size:
+            kwargs.update({"size": size})
+        if sort:
+            kwargs.update({"sort": sort})
+        if free_text:
+            kwargs.update({"free_text": free_text})
+        if query:
+            kwargs.update({"query": query})
+        return await self._scheduler_api.search_v2(**kwargs)
+
     async def get_schedules_by_tag(
         self, tag_value: str, **kwargs
     ) -> List[WorkflowScheduleModelAdapter]:
@@ -129,6 +154,12 @@ class OrkesSchedulerClient(OrkesBaseClient):
         return await self._scheduler_api.get_schedules_by_tag(tag_value, **kwargs)
 
     # Schedule Planning & Analysis
+    @deprecated(
+        "get_next_few_schedules is deprecated; use get_next_few_schedule_execution_times instead"
+    )
+    @typing_deprecated(
+        "get_next_few_schedules is deprecated; use get_next_few_schedule_execution_times instead"
+    )
     async def get_next_few_schedules(
         self,
         cron_expression: str,
@@ -147,17 +178,33 @@ class OrkesSchedulerClient(OrkesBaseClient):
         )
 
     # Tag Management for Schedules
+    @deprecated("put_tag_for_schedule is deprecated; use set_tags_for_schedule instead")
+    @typing_deprecated("put_tag_for_schedule is deprecated; use set_tags_for_schedule instead")
     async def put_tag_for_schedule(self, name: str, tags: List[TagAdapter], **kwargs) -> None:
         """Add tags to a workflow schedule"""
         await self._scheduler_api.put_tag_for_schedule(name, tags, **kwargs)
 
+    async def set_tags_for_schedule(self, name: str, tags: List[TagAdapter], **kwargs) -> None:
+        """Set tags for a workflow schedule"""
+        await self._scheduler_api.set_tags_for_schedule(name=name, tags=tags, **kwargs)
+
+    @deprecated("get_tags_for_schedule is deprecated; use get_scheduler_tags instead")
+    @typing_deprecated("get_tags_for_schedule is deprecated; use get_scheduler_tags instead")
     async def get_tags_for_schedule(self, name: str, **kwargs) -> List[TagAdapter]:
         """Get tags associated with a workflow schedule"""
         return await self._scheduler_api.get_tags_for_schedule(name, **kwargs)
 
+    async def get_scheduler_tags(self, name: str, **kwargs) -> List[TagAdapter]:
+        return await self._scheduler_api.get_tags_for_schedule(name=name, **kwargs)
+
+    @deprecated("delete_tag_for_schedule is deprecated; use delete_scheduler_tags instead")
+    @typing_deprecated("delete_tag_for_schedule is deprecated; use delete_scheduler_tags instead")
     async def delete_tag_for_schedule(self, name: str, tags: List[TagAdapter], **kwargs) -> None:
         """Delete specific tags from a workflow schedule"""
         await self._scheduler_api.delete_tag_for_schedule(name, tags, **kwargs)
+
+    async def delete_scheduler_tags(self, tags: List[TagAdapter], name: str, **kwargs) -> None:
+        await self._scheduler_api.delete_tag_for_schedule(tags, name, **kwargs)
 
     # Schedule Execution Management
     @deprecated(
@@ -386,3 +433,21 @@ class OrkesSchedulerClient(OrkesBaseClient):
     ) -> List[WorkflowScheduleModelAdapter]:
         """Get schedules that have a specific tag (alias for get_schedules_by_tag)"""
         return await self.get_schedules_by_tag(tag_value, **kwargs)
+
+    async def get_next_few_schedule_execution_times(
+        self,
+        cron_expression: str,
+        schedule_start_time: Optional[int] = None,
+        schedule_end_time: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> List[int]:
+        kwargs = {}
+        if schedule_start_time:
+            kwargs.update({"schedule_start_time": schedule_start_time})
+        if schedule_end_time:
+            kwargs.update({"schedule_end_time": schedule_end_time})
+        if limit:
+            kwargs.update({"limit": limit})
+        return await self._scheduler_api.get_next_few_schedules(
+            cron_expression=cron_expression, **kwargs
+        )

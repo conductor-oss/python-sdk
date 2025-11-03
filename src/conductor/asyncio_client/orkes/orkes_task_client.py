@@ -13,6 +13,8 @@ from conductor.asyncio_client.adapters.models.task_result_adapter import TaskRes
 from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
+from deprecated import deprecated
+from typing_extensions import deprecated as typing_deprecated
 
 
 class OrkesTaskClient(OrkesBaseClient):
@@ -20,13 +22,40 @@ class OrkesTaskClient(OrkesBaseClient):
         super().__init__(configuration, api_client)
 
     # Task Polling Operations
+    @deprecated("poll_for_task is deprecated; use poll_task instead")
+    @typing_deprecated("poll_for_task is deprecated; use poll_task instead")
     async def poll_for_task(
         self, task_type: str, worker_id: Optional[str] = None, domain: Optional[str] = None
     ) -> Optional[TaskAdapter]:
         """Poll for a single task of a certain type"""
         return await self._task_api.poll(tasktype=task_type, workerid=worker_id, domain=domain)
 
+    async def poll_task(
+        self, task_type: str, worker_id: Optional[str] = None, domain: Optional[str] = None
+    ) -> Optional[TaskAdapter]:
+        """Poll for a single task of a certain type"""
+        return await self._task_api.poll(tasktype=task_type, workerid=worker_id, domain=domain)
+
+    @deprecated("poll_for_task_batch is deprecated; use batch_poll_tasks instead")
+    @typing_deprecated("poll_for_task_batch is deprecated; use batch_poll_tasks instead")
     async def poll_for_task_batch(
+        self,
+        task_type: str,
+        worker_id: Optional[str] = None,
+        count: int = 1,
+        timeout: int = 100,
+        domain: Optional[str] = None,
+    ) -> List[TaskAdapter]:
+        """Poll for multiple tasks in batch"""
+        return await self._task_api.batch_poll(
+            tasktype=task_type,
+            workerid=worker_id,
+            count=count,
+            timeout=timeout,
+            domain=domain,
+        )
+
+    async def batch_poll_tasks(
         self,
         task_type: str,
         worker_id: Optional[str] = None,
@@ -120,17 +149,29 @@ class OrkesTaskClient(OrkesBaseClient):
             last_poll_time_opt=last_poll_time_opt,
         )
 
+    @deprecated("get_poll_data is deprecated; use get_task_poll_data instead")
+    @typing_deprecated("get_poll_data is deprecated; use get_task_poll_data instead")
     async def get_poll_data(self, task_type: str) -> List[PollDataAdapter]:
         """Get the last poll data for a specific task type"""
         return await self._task_api.get_poll_data(task_type=task_type)
+
+    async def get_task_poll_data(self, task_type: str, **kwargs) -> List[PollDataAdapter]:
+        """Get the last poll data for a specific task type"""
+        return await self._task_api.get_poll_data(task_type=task_type, **kwargs)
 
     # Task Logging Operations
     async def get_task_logs(self, task_id: str) -> List[TaskExecLogAdapter]:
         """Get task execution logs"""
         return await self._task_api.get_task_logs(task_id=task_id)
 
+    @deprecated("log_task is deprecated; use add_task_log instead")
+    @typing_deprecated("log_task is deprecated; use add_task_log instead")
     async def log_task(self, task_id: str, log_message: str) -> None:
         """Log task execution details"""
+        await self._task_api.log(task_id=task_id, body=log_message)
+
+    async def add_task_log(self, task_id: str, log_message: str) -> None:
+        """Add a task log"""
         await self._task_api.log(task_id=task_id, body=log_message)
 
     # Task Search Operations
@@ -161,6 +202,16 @@ class OrkesTaskClient(OrkesBaseClient):
         return await self._task_api.requeue_pending_task(task_type=task_type)
 
     # Utility Methods
+    @deprecated("get_queue_size_for_task_type is deprecated; use get_queue_size_for_task instead")
+    @typing_deprecated(
+        "get_queue_size_for_task_type is deprecated; use get_queue_size_for_task instead"
+    )
     async def get_queue_size_for_task_type(self, task_type: List[str]) -> Dict[str, int]:
         """Get queue size for a specific task type"""
         return await self._task_api.size(task_type=task_type)
+
+    async def get_queue_size_for_task(self, task_type: List[str]) -> int:
+        """Get queue size for a specific task type"""
+        queue_sizes_by_task_type = await self._task_api.size(task_type=task_type)
+        queue_size = queue_sizes_by_task_type.get(task_type, 0)
+        return queue_size

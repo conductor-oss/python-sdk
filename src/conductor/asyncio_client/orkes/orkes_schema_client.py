@@ -7,31 +7,50 @@ from conductor.asyncio_client.adapters.models.schema_def_adapter import SchemaDe
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
+from deprecated import deprecated
+from typing_extensions import deprecated as typing_deprecated
+
 
 class OrkesSchemaClient(OrkesBaseClient):
     def __init__(self, configuration: Configuration, api_client: ApiClient):
         super().__init__(configuration, api_client)
 
     # Core Schema Operations
+    @deprecated("save_schemas is deprecated; use register_schema instead")
+    @typing_deprecated("save_schemas is deprecated; use register_schema instead")
     async def save_schemas(
         self, schema_defs: List[SchemaDefAdapter], new_version: Optional[bool] = None
     ) -> None:
         """Save one or more schema definitions"""
         await self._schema_api.save(schema_defs, new_version=new_version)
 
+    async def register_schemas(
+        self, schema_defs: List[SchemaDefAdapter], new_version: Optional[bool] = None, **kwargs
+    ) -> None:
+        """Register a schema definition"""
+        await self._schema_api.save(schema_defs, new_version=new_version, **kwargs)
+
+    @deprecated("save_schema is deprecated; use register_schema instead")
+    @typing_deprecated("save_schema is deprecated; use register_schema instead")
     async def save_schema(
         self, schema_def: SchemaDefAdapter, new_version: Optional[bool] = None
     ) -> None:
         """Save a single schema definition"""
         await self.save_schemas([schema_def], new_version=new_version)
 
-    async def get_schema(self, name: str, version: int) -> SchemaDefAdapter:
-        """Get a specific schema by name and version"""
-        return await self._schema_api.get_schema_by_name_and_version(name, version)
+    async def register_schema(
+        self, schema_def: SchemaDefAdapter, new_version: Optional[bool] = None, **kwargs
+    ) -> None:
+        """Register a schema definition"""
+        await self.register_schemas(schema_defs=[schema_def], new_version=new_version, **kwargs)
 
-    async def get_all_schemas(self) -> List[SchemaDefAdapter]:
+    async def get_schema(self, name: str, version: int, **kwargs) -> SchemaDefAdapter:
+        """Get a specific schema by name and version"""
+        return await self._schema_api.get_schema_by_name_and_version(name, version, **kwargs)
+
+    async def get_all_schemas(self, **kwargs) -> List[SchemaDefAdapter]:
         """Get all schema definitions"""
-        return await self._schema_api.get_all_schemas()
+        return await self._schema_api.get_all_schemas(**kwargs)
 
     async def delete_schema_by_name(self, name: str) -> None:
         """Delete all versions of a schema by name"""
@@ -73,7 +92,7 @@ class OrkesSchemaClient(OrkesBaseClient):
             data=schema_definition,
             type=schema_type,
         )
-        await self.save_schema(schema_def, new_version=create_new_version)
+        await self.register_schema(schema_def, new_version=create_new_version)
 
     async def schema_exists(self, name: str, version: int) -> bool:
         """Check if a specific schema version exists"""

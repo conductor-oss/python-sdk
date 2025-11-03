@@ -12,6 +12,8 @@ from conductor.asyncio_client.adapters.models.prompt_template_test_request_adapt
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
+from deprecated import deprecated
+from typing_extensions import deprecated as typing_deprecated
 
 
 class OrkesPromptClient(OrkesBaseClient):
@@ -43,7 +45,9 @@ class OrkesPromptClient(OrkesBaseClient):
         self, message_templates: List[MessageTemplateAdapter], **kwargs
     ) -> None:
         """Create multiple message templates in bulk"""
-        await self._prompt_api.create_message_templates(message_templates, **kwargs)
+        await self._prompt_api.create_message_templates(
+            message_template=message_templates, **kwargs
+        )
 
     # Template Testing
     async def test_message_template(
@@ -53,6 +57,12 @@ class OrkesPromptClient(OrkesBaseClient):
         return await self._prompt_api.test_message_template(prompt_template_test_request, **kwargs)
 
     # Tag Management for Prompt Templates
+    @deprecated(
+        "put_tag_for_prompt_template is deprecated; use update_tag_for_prompt_template instead"
+    )
+    @typing_deprecated(
+        "put_tag_for_prompt_template is deprecated; use update_tag_for_prompt_template instead"
+    )
     async def put_tag_for_prompt_template(
         self, name: str, tags: List[TagAdapter], **kwargs
     ) -> None:
@@ -61,13 +71,18 @@ class OrkesPromptClient(OrkesBaseClient):
 
     async def get_tags_for_prompt_template(self, name: str, **kwargs) -> List[TagAdapter]:
         """Get tags associated with a prompt template"""
-        return await self._prompt_api.get_tags_for_prompt_template(name, **kwargs)
+        return await self._prompt_api.get_tags_for_prompt_template(name=name, **kwargs)
+
+    async def update_tag_for_prompt_template(
+        self, prompt_name: str, tags: List[TagAdapter]
+    ) -> None:
+        await self._prompt_api.put_tag_for_prompt_template(name=prompt_name, tag=tags)
 
     async def delete_tag_for_prompt_template(
         self, name: str, tags: List[TagAdapter], **kwargs
     ) -> None:
         """Delete tags from a prompt template"""
-        await self._prompt_api.delete_tag_for_prompt_template(name, tags, **kwargs)
+        await self._prompt_api.delete_tag_for_prompt_template(name=name, tag=tags, **kwargs)
 
     # Convenience Methods
     async def create_simple_template(
@@ -142,15 +157,20 @@ class OrkesPromptClient(OrkesBaseClient):
         self, name: str, description: str, prompt_template: str, **kwargs
     ) -> None:
         """Legacy method: Create or update a message template"""
-        await self.save_message_template(name, description, prompt_template, **kwargs)
+        await self.save_message_template(
+            name=name, description=description, body=prompt_template, **kwargs
+        )
 
     async def get_prompt(self, name: str, **kwargs) -> MessageTemplateAdapter:
         """Legacy method: Get a message template by name"""
-        return await self.get_message_template(name, **kwargs)
+        return await self.get_message_template(name=name, **kwargs)
+
+    async def get_prompts(self, **kwargs) -> List[MessageTemplateAdapter]:
+        return await self._prompt_api.get_message_templates(**kwargs)
 
     async def delete_prompt(self, name: str, **kwargs) -> None:
         """Legacy method: Delete a message template"""
-        await self.delete_message_template(name, **kwargs)
+        await self.delete_message_template(name=name, **kwargs)
 
     async def list_prompts(self, **kwargs) -> List[MessageTemplateAdapter]:
         """Legacy method: Get all message templates"""
@@ -208,4 +228,6 @@ class OrkesPromptClient(OrkesBaseClient):
             stop_words=stop_words,
             top_p=top_p,
         )
-        return await self._prompt_api.test_message_template(request, **kwargs)
+        return await self._prompt_api.test_message_template(
+            prompt_template_test_request=request, **kwargs
+        )

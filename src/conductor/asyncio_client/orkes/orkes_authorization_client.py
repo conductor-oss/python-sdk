@@ -129,11 +129,11 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     @deprecated("create_application is deprecated; use create_application_validated instead")
     @typing_deprecated("create_application is deprecated; use create_application_validated instead")
     async def create_application(
-        self, application: CreateOrUpdateApplicationRequestAdapter
+        self, create_or_update_application_request: CreateOrUpdateApplicationRequestAdapter
     ) -> object:
         """Create a new application"""
         result = await self._application_api.create_application(
-            create_or_update_application_request=application
+            create_or_update_application_request=create_or_update_application_request
         )
         return result
 
@@ -156,17 +156,20 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         self, application_id: str, application: CreateOrUpdateApplicationRequestAdapter
     ) -> object:
         """Update an existing application"""
-        result = await self._application_api.update_application(
-            id=application_id, create_or_update_application_request=application
-        )
+        result = await self._application_api.update_application(application_id, application)
         return result
 
     async def update_application_validated(
-        self, application_id: str, application: CreateOrUpdateApplicationRequestAdapter, **kwargs
+        self,
+        application_id: str,
+        create_or_update_application_request: CreateOrUpdateApplicationRequestAdapter,
+        **kwargs,
     ) -> Optional[ExtendedConductorApplicationAdapter]:
         """Update an existing application and return a validated ExtendedConductorApplicationAdapter"""
         result = await self._application_api.update_application(
-            id=application_id, create_or_update_application_request=application, **kwargs
+            id=application_id,
+            create_or_update_application_request=create_or_update_application_request,
+            **kwargs,
         )
 
         result_dict = cast(Dict[str, Any], result)
@@ -363,11 +366,11 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return await self._authorization_api.get_permissions(type=entity_type, id=entity_id)
 
     async def get_permissions_validated(
-        self, entity_type: str, entity_id: str, **kwargs
+        self, target: TargetRefAdapter, **kwargs
     ) -> Dict[str, List[SubjectRefAdapter]]:
         """Get permissions for a specific entity (user, group, or application) and return a dictionary of access types and validated SubjectRefAdapters"""
         result = await self._authorization_api.get_permissions(
-            type=entity_type, id=entity_id, **kwargs
+            type=target.type, id=target.id, **kwargs
         )
 
         permissions = {}
@@ -408,15 +411,17 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     async def set_application_tags(
         self, tags: List[TagAdapter], application_id: str, **kwargs
     ) -> None:
-        await self._application_api.put_tag_for_application(application_id, tags, **kwargs)
+        await self._application_api.put_tag_for_application(id=application_id, tag=tags, **kwargs)
 
     async def get_application_tags(self, application_id: str, **kwargs) -> List[TagAdapter]:
-        return await self._application_api.get_tags_for_application(application_id, **kwargs)
+        return await self._application_api.get_tags_for_application(id=application_id, **kwargs)
 
     async def delete_application_tags(
         self, tags: List[TagAdapter], application_id: str, **kwargs
     ) -> None:
-        await self._application_api.delete_tag_for_application(application_id, tags, **kwargs)
+        await self._application_api.delete_tag_for_application(
+            id=application_id, tag=tags, **kwargs
+        )
 
     @deprecated("create_access_key is deprecated; use create_access_key_validated instead")
     @typing_deprecated("create_access_key is deprecated; use create_access_key_validated instead")
@@ -428,7 +433,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         self, application_id: str, **kwargs
     ) -> CreatedAccessKeyAdapter:
         """Create an access key and return a validated CreatedAccessKeyAdapter"""
-        result = await self._application_api.create_access_key(application_id, **kwargs)
+        result = await self._application_api.create_access_key(id=application_id, **kwargs)
 
         result_dict = cast(Dict[str, Any], result)
         result_model = CreatedAccessKeyAdapter.from_dict(result_dict)
@@ -467,7 +472,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     ) -> AccessKeyAdapter:
         """Toggle the status of an access key and return a validated AccessKeyAdapter"""
         result = await self._application_api.toggle_access_key_status(
-            application_id, key_id, **kwargs
+            application_id=application_id, key_id=key_id, **kwargs
         )
 
         result_dict = cast(Dict[str, Any], result)
@@ -476,22 +481,26 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return result_model
 
     async def delete_access_key(self, application_id: str, key_id: str, **kwargs) -> None:
-        await self._application_api.delete_access_key(application_id, key_id, **kwargs)
+        await self._application_api.delete_access_key(
+            application_id=application_id, key_id=key_id, **kwargs
+        )
 
     async def add_role_to_application_user(self, application_id: str, role: str, **kwargs) -> None:
-        await self._application_api.add_role_to_application_user(application_id, role, **kwargs)
+        await self._application_api.add_role_to_application_user(
+            application_id=application_id, role=role, **kwargs
+        )
 
     async def remove_role_from_application_user(
         self, application_id: str, role: str, **kwargs
     ) -> None:
         await self._application_api.remove_role_from_application_user(
-            application_id, role, **kwargs
+            application_id=application_id, role=role, **kwargs
         )
 
     async def get_granted_permissions_for_group(
         self, group_id: str, **kwargs
     ) -> List[GrantedAccessAdapter]:
-        granted_access_obj = await self.get_group_permissions(group_id, **kwargs)
+        granted_access_obj = await self.get_group_permissions(group_id=group_id, **kwargs)
 
         if not granted_access_obj.granted_access:
             return []
@@ -510,7 +519,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     async def get_granted_permissions_for_user(
         self, user_id: str, **kwargs
     ) -> List[GrantedAccessAdapter]:
-        granted_access_obj = await self.get_user_permissions(user_id, **kwargs)
+        granted_access_obj = await self.get_user_permissions(user_id=user_id, **kwargs)
 
         if not granted_access_obj.granted_access:
             return []
@@ -524,10 +533,10 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return granted_permissions
 
     async def get_app_by_access_key_id(
-        self, access_key_id: str, *args, **kwargs
+        self, access_key_id: str, **kwargs
     ) -> Optional[ExtendedConductorApplicationAdapter]:
         result = await self._application_api.get_app_by_access_key_id(
-            access_key_id, *args, **kwargs
+            access_key_id=access_key_id, **kwargs
         )
 
         result_dict = cast(Dict[str, Any], result)
@@ -538,7 +547,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     async def check_permissions(
         self, user_id: str, type: str, id: str, **kwargs
     ) -> Dict[str, bool]:
-        result = await self._user_api.check_permissions(user_id, type, id, **kwargs)
+        result = await self._user_api.check_permissions(user_id=user_id, type=type, id=id, **kwargs)
 
         result_dict = cast(Dict[str, Any], result)
         result_model = {k: v for k, v in result_dict.items() if isinstance(v, bool)}

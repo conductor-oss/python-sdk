@@ -58,7 +58,7 @@ class OrkesEventClient(OrkesBaseClient):
         await event_client.create_event_handler([event_handler])
         ```
         """
-        return await self._event_api.add_event_handler(event_handler, **kwargs)
+        return await self._event_api.add_event_handler(event_handler=event_handler, **kwargs)
 
     async def get_event_handler(self, name: str, **kwargs) -> EventHandlerAdapter:
         """Get event handler by name.
@@ -159,9 +159,9 @@ class OrkesEventClient(OrkesBaseClient):
         await event_client.update_event_handler(handler)
         ```
         """
-        return await self._event_api.update_event_handler(event_handler, **kwargs)
+        return await self._event_api.update_event_handler(event_handler=event_handler, **kwargs)
 
-    async def delete_event_handler(self, name: str) -> None:
+    async def delete_event_handler(self, name: str, **kwargs) -> None:
         """Delete an event handler by name.
 
         Permanently removes an event handler from the system.
@@ -179,7 +179,7 @@ class OrkesEventClient(OrkesBaseClient):
         print("Event handler deleted successfully")
         ```
         """
-        return await self._event_api.remove_event_handler_status(name=name)
+        return await self._event_api.remove_event_handler_status(name=name, **kwargs)
 
     # Event Handler Tag Operations
     async def get_event_handler_tags(self, name: str, **kwargs) -> List[TagAdapter]:

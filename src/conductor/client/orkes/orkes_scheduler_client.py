@@ -110,7 +110,7 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         return self._scheduler_api.delete_tag_for_schedule(tags, name)
 
     def delete_scheduler_tags_validated(self, tags: List[Tag], name: str, **kwargs) -> None:
-        self._scheduler_api.delete_tag_for_schedule(tags, name)
+        self._scheduler_api.delete_tag_for_schedule(tags, name, **kwargs)
 
-    def get_schedules_by_tag_validated(self, tag: str, **kwargs) -> List[WorkflowScheduleModel]:
+    def get_schedules_by_tag(self, tag: str, **kwargs) -> List[WorkflowScheduleModel]:
         return self._scheduler_api.get_schedules_by_tag(tag, **kwargs)
