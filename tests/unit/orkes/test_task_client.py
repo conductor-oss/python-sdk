@@ -60,7 +60,7 @@ def tasks():
 
 def test_init(task_client):
     message = "taskResourceApi is not of type TaskResourceApi"
-    assert isinstance(task_client.taskResourceApi, TaskResourceApi), message
+    assert isinstance(task_client._task_api, TaskResourceApi), message
 
 
 def test_poll_task(mocker, task_client, tasks):

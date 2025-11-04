@@ -88,9 +88,9 @@ def wf_tag_obj():
 
 def test_init(metadata_client):
     message = "metadata_api is not of type MetadataResourceApiAdapter"
-    assert isinstance(metadata_client.metadata_api, MetadataResourceApiAdapter), message
+    assert isinstance(metadata_client._metadata_api, MetadataResourceApiAdapter), message
     message = "tags_api is not of type TagsApi"
-    assert isinstance(metadata_client.tags_api, TagsApiAdapter), message
+    assert isinstance(metadata_client._tags_api, TagsApiAdapter), message
 
 
 @pytest.mark.asyncio

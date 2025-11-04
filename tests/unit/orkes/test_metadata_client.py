@@ -48,7 +48,7 @@ def wf_tag_obj():
 
 def test_init(metadata_client):
     message = "metadataResourceApi is not of type MetadataResourceApi"
-    assert isinstance(metadata_client.metadataResourceApi, MetadataResourceApi), message
+    assert isinstance(metadata_client._metadata_api, MetadataResourceApi), message
 
 
 def test_register_workflow_def(mocker, metadata_client, workflow_def):

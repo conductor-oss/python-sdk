@@ -61,7 +61,7 @@ def tag():
 
 def test_init(prompt_client):
     message = "prompt_api is not of type PromptResourceApiAdapter"
-    assert isinstance(prompt_client.prompt_api, PromptResourceApiAdapter), message
+    assert isinstance(prompt_client._prompt_api, PromptResourceApiAdapter), message
 
 
 @pytest.mark.asyncio

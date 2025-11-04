@@ -76,7 +76,7 @@ def poll_data_adapter():
 @pytest.mark.asyncio
 async def test_init(task_client):
     message = "task_api is not of type TaskResourceApiAdapter"
-    assert isinstance(task_client.task_api, TaskResourceApiAdapter), message
+    assert isinstance(task_client._task_api, TaskResourceApiAdapter), message
 
 
 @pytest.mark.asyncio

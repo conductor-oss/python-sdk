@@ -41,7 +41,7 @@ def workflow_input():
 
 def test_init(workflow_client):
     message = "workflowResourceApi is not of type WorkflowResourceApi"
-    assert isinstance(workflow_client.workflowResourceApi, WorkflowResourceApi), message
+    assert isinstance(workflow_client._workflow_api, WorkflowResourceApi), message
 
 
 def test_start_workflow_by_name(mocker, workflow_client, workflow_input):

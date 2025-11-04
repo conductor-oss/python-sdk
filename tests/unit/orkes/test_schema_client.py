@@ -31,7 +31,7 @@ def schema_def():
 
 def test_init(schema_client):
     message = "schemaApi is not of type SchemaApi"
-    assert isinstance(schema_client.schemaApi, SchemaResourceApi), message
+    assert isinstance(schema_client._schema_api, SchemaResourceApi), message
 
 
 def test_register_schema(mocker, schema_client, schema_def):

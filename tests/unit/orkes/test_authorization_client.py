@@ -138,13 +138,13 @@ def disable_logging():
 
 def test_init(authorization_client):
     message = "applicationResourceApi is not of type ApplicationResourceApi"
-    assert isinstance(authorization_client.applicationResourceApi, ApplicationResourceApi), message
+    assert isinstance(authorization_client._application_api, ApplicationResourceApi), message
     message = "userResourceApi is not of type UserResourceApi"
-    assert isinstance(authorization_client.userResourceApi, UserResourceApi), message
+    assert isinstance(authorization_client._user_api, UserResourceApi), message
     message = "groupResourceApi is not of type GroupResourceApi"
-    assert isinstance(authorization_client.groupResourceApi, GroupResourceApi), message
+    assert isinstance(authorization_client._group_api, GroupResourceApi), message
     message = "authorizationResourceApi is not of type AuthorizationResourceApi"
-    assert isinstance(authorization_client.authorizationResourceApi, AuthorizationResourceApi), (
+    assert isinstance(authorization_client._authorization_api, AuthorizationResourceApi), (
         message
     )
 
@@ -637,3 +637,18 @@ def test_delete_tag_for_application_empty_strings_convert_to_none(mocker, author
     mock = mocker.patch.object(ApplicationResourceApi, "delete_tag_for_application")
     authorization_client.delete_application_tags([], "")
     mock.assert_called_with(None, None)
+
+
+def test_check_permissions(mocker, authorization_client):
+    mock = mocker.patch.object(UserResourceApi, "check_permissions")
+    permissions_result = {
+        "READ": True,
+        "EXECUTE": False,
+        "UPDATE": True,
+    }
+    mock.return_value = permissions_result
+    result = authorization_client.check_permissions(USER_ID, "WORKFLOW_DEF", WF_NAME)
+    mock.assert_called_with(user_id=USER_ID, type="WORKFLOW_DEF", id=WF_NAME)
+    assert result["READ"] is True
+    assert result["EXECUTE"] is False
+    assert result["UPDATE"] is True

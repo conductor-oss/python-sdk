@@ -54,7 +54,7 @@ def save_schedule_request():
 async def test_init(scheduler_client):
     message = "scheduler_api is not of type SchedulerResourceApiAdapter"
     assert isinstance(
-        scheduler_client.scheduler_api, SchedulerResourceApiAdapter
+        scheduler_client._scheduler_api, SchedulerResourceApiAdapter
     ), message
 
 

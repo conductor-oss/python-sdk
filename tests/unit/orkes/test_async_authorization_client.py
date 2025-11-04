@@ -154,13 +154,13 @@ def disable_logging():
 
 def test_init(authorization_client):
     message = "application_api is not of type ApplicationResourceApi"
-    assert isinstance(authorization_client.application_api, ApplicationResourceApiAdapter), message
+    assert isinstance(authorization_client._application_api, ApplicationResourceApiAdapter), message
     message = "user_api is not of type UserResourceApi"
-    assert isinstance(authorization_client.user_api, UserResourceApiAdapter), message
+    assert isinstance(authorization_client._user_api, UserResourceApiAdapter), message
     message = "group_api is not of type GroupResourceApi"
-    assert isinstance(authorization_client.group_api, GroupResourceApiAdapter), message
+    assert isinstance(authorization_client._group_api, GroupResourceApiAdapter), message
     message = "authorization_api is not of type AuthorizationResourceApi"
-    assert isinstance(authorization_client.authorization_api, AuthorizationResourceApiAdapter), (
+    assert isinstance(authorization_client._authorization_api, AuthorizationResourceApiAdapter), (
         message
     )
 

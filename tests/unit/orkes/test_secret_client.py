@@ -27,7 +27,7 @@ def disable_logging():
 
 def test_init(secret_client):
     message = "secretResourceApi is not of type SecretResourceApi"
-    assert isinstance(secret_client.secretResourceApi, SecretResourceApi), message
+    assert isinstance(secret_client._secret_api, SecretResourceApi), message
 
 
 def test_put_secret(mocker, secret_client):

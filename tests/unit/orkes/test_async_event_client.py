@@ -53,7 +53,7 @@ def disable_logging():
 
 def test_init(event_client):
     message = "event_api is not of type EventResourceApiAdapter"
-    assert isinstance(event_client.event_api, EventResourceApiAdapter), message
+    assert isinstance(event_client._event_api, EventResourceApiAdapter), message
 
 
 @pytest.mark.asyncio

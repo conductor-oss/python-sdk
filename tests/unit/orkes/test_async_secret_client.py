@@ -53,7 +53,7 @@ def extended_secret():
 @pytest.mark.asyncio
 async def test_init(secret_client):
     message = "secret_api is not of type SecretResourceApiAdapter"
-    assert isinstance(secret_client.secret_api, SecretResourceApiAdapter), message
+    assert isinstance(secret_client._secret_api, SecretResourceApiAdapter), message
 
 
 @pytest.mark.asyncio

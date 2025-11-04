@@ -44,7 +44,7 @@ def workflow_input():
 @pytest.mark.asyncio
 async def test_init(workflow_client):
     message = "workflowResourceApi is not of type WorkflowResourceApiAdapter"
-    assert isinstance(workflow_client.workflow_api, WorkflowResourceApiAdapter), message
+    assert isinstance(workflow_client._workflow_api, WorkflowResourceApiAdapter), message
 
 
 @pytest.mark.asyncio

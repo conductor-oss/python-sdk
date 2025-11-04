@@ -40,7 +40,7 @@ def schema_def_adapter():
 @pytest.mark.asyncio
 async def test_init(schema_client):
     message = "schema_api is not of type SchemaResourceApiAdapter"
-    assert isinstance(schema_client.schema_api, SchemaResourceApiAdapter), message
+    assert isinstance(schema_client._schema_api, SchemaResourceApiAdapter), message
 
 
 @pytest.mark.asyncio
