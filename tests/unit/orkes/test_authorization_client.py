@@ -206,7 +206,7 @@ def test_update_application(mocker, authorization_client, conductor_application)
         "createTime": 1699236095031,
         "updateTime": 1699236095031,
     }
-    app = authorization_client.update_application(APP_ID, updateReq)
+    app = authorization_client.update_application(updateReq, APP_ID)
     assert app == conductor_application
     mock.assert_called_with(id=APP_ID, body=updateReq)
 
@@ -304,7 +304,7 @@ def test_upsert_user(mocker, authorization_client, conductor_user, roles):
     mock = mocker.patch.object(UserResourceApi, "upsert_user")
     upsertReq = UpsertUserRequest(USER_NAME, ["ADMIN"])
     mock.return_value = conductor_user.to_dict()
-    user = authorization_client.upsert_user(USER_ID, upsertReq)
+    user = authorization_client.upsert_user(upsertReq, USER_ID)
     mock.assert_called_with(id=USER_ID, upsert_user_request=upsertReq)
     assert user.name == USER_NAME
     assert user.id == USER_ID
@@ -317,7 +317,7 @@ def test_upsert_user_with_empty_string(mocker, authorization_client, conductor_u
     mock = mocker.patch.object(UserResourceApi, "upsert_user")
     upsert_req = UpsertUserRequest(USER_NAME, ["ADMIN"])
     mock.return_value = conductor_user.to_dict()
-    authorization_client.upsert_user("", upsert_req)
+    authorization_client.upsert_user(upsert_req,"")
     mock.assert_called_with(id=None, body=upsert_req)
 
 
@@ -373,7 +373,7 @@ def test_upsert_group(mocker, authorization_client, conductor_group, group_roles
     mock = mocker.patch.object(GroupResourceApi, "upsert_group")
     upsertReq = UpsertGroupRequest(GROUP_NAME, ["USER"])
     mock.return_value = conductor_group.to_dict()
-    group = authorization_client.upsert_group(GROUP_ID, upsertReq)
+    group = authorization_client.upsert_group(upsertReq, GROUP_ID)
     mock.assert_called_with(id=GROUP_ID, body=upsertReq)
     assert group == conductor_group
     assert group.description == GROUP_NAME

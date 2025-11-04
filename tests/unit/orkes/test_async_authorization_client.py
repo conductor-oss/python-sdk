@@ -694,7 +694,7 @@ async def test_get_user_validated(mocker, authorization_client, conductor_user_a
         "encryptedIdDisplayValue": USER_ID,
     }
     mock.return_value = user_dict
-    user = await authorization_client.get_user_validated(USER_ID)
+    user = await authorization_client.get_user(USER_ID)
     mock.assert_called_with(id=USER_ID)
     assert user.name == USER_NAME
     assert user.id == USER_ID
@@ -731,7 +731,7 @@ async def test_create_application_validated(mocker, authorization_client, extend
         "updatedBy": USER_ID,
     }
     mock.return_value = app_dict
-    app = await authorization_client.create_application_validated(extended_conductor_application_adapter)
+    app = await authorization_client.create_application(extended_conductor_application_adapter)
     mock.assert_called_with(create_or_update_application_request=extended_conductor_application_adapter)
     assert app.name == APP_NAME
     assert app.id == APP_ID
@@ -749,7 +749,7 @@ async def test_update_application_validated(mocker, authorization_client, extend
         "updatedBy": USER_ID,
     }
     mock.return_value = app_dict
-    app = await authorization_client.update_application_validated(APP_ID, extended_conductor_application_adapter)
+    app = await authorization_client.update_application(APP_ID, extended_conductor_application_adapter)
     mock.assert_called_with(id=APP_ID, create_or_update_application_request=extended_conductor_application_adapter)
     assert app.name == APP_NAME
     assert app.id == APP_ID
@@ -767,7 +767,7 @@ async def test_get_application_validated(mocker, authorization_client, extended_
         "updatedBy": USER_ID,
     }
     mock.return_value = app_dict
-    app = await authorization_client.get_application_validated(APP_ID)
+    app = await authorization_client.get_application(APP_ID)
     mock.assert_called_with(id=APP_ID)
     assert app.name == APP_NAME
     assert app.id == APP_ID
@@ -798,7 +798,7 @@ async def test_get_group_validated(mocker, authorization_client, group_adapter):
         "roles": [{"name": "USER", "permissions": []}],
     }
     mock.return_value = group_dict
-    group = await authorization_client.get_group_validated(GROUP_ID)
+    group = await authorization_client.get_group(GROUP_ID)
     mock.assert_called_with(id=GROUP_ID)
     assert group.description == GROUP_NAME
     assert group.id == GROUP_ID
@@ -899,7 +899,7 @@ async def test_upsert_user_validated(mocker, authorization_client, conductor_use
     mock = mocker.patch.object(authorization_client, "create_user_validated")
     upsert_req = UpsertUserRequestAdapter(name=USER_NAME, roles=["ADMIN"])
     mock.return_value = conductor_user_adapter
-    user = await authorization_client.upsert_user_validated(USER_ID, upsert_req)
+    user = await authorization_client.upsert_user(USER_ID, upsert_req)
     mock.assert_called_with(USER_ID, upsert_req)
     assert user == conductor_user_adapter
 
