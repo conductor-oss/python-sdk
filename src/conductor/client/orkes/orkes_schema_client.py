@@ -14,7 +14,7 @@ class OrkesSchemaClient(OrkesBaseClient, SchemaClient):
         super().__init__(configuration)
 
     def register_schema(self, schema: SchemaDef, **kwargs) -> None:
-        self._schema_api.save(schema, **kwargs)
+        self._schema_api.save(body=schema, **kwargs)
 
     def get_schema(self, schema_name: str, version: int, **kwargs) -> SchemaDef:
         return self._schema_api.get_schema_by_name_and_version(

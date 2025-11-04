@@ -151,7 +151,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
         self, tag_value: str, **kwargs
     ) -> List[WorkflowScheduleModelAdapter]:
         """Get schedules filtered by tag key and value"""
-        return await self._scheduler_api.get_schedules_by_tag(tag_value, **kwargs)
+        return await self._scheduler_api.get_schedules_by_tag(tag=tag_value, **kwargs)
 
     # Schedule Planning & Analysis
     @deprecated(
@@ -182,11 +182,11 @@ class OrkesSchedulerClient(OrkesBaseClient):
     @typing_deprecated("put_tag_for_schedule is deprecated; use set_tags_for_schedule instead")
     async def put_tag_for_schedule(self, name: str, tags: List[TagAdapter], **kwargs) -> None:
         """Add tags to a workflow schedule"""
-        await self._scheduler_api.put_tag_for_schedule(name, tags, **kwargs)
+        await self._scheduler_api.put_tag_for_schedule(name=name, tag=tags, **kwargs)
 
     async def set_tags_for_schedule(self, name: str, tags: List[TagAdapter], **kwargs) -> None:
         """Set tags for a workflow schedule"""
-        await self._scheduler_api.set_tags_for_schedule(name=name, tags=tags, **kwargs)
+        await self._scheduler_api.put_tag_for_schedule(name=name, tag=tags, **kwargs)
 
     @deprecated("get_tags_for_schedule is deprecated; use get_scheduler_tags instead")
     @typing_deprecated("get_tags_for_schedule is deprecated; use get_scheduler_tags instead")
@@ -204,7 +204,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
         await self._scheduler_api.delete_tag_for_schedule(name, tags, **kwargs)
 
     async def delete_scheduler_tags(self, tags: List[TagAdapter], name: str, **kwargs) -> None:
-        await self._scheduler_api.delete_tag_for_schedule(tags, name, **kwargs)
+        await self._scheduler_api.delete_tag_for_schedule(name=name, tag=tags, **kwargs)
 
     # Schedule Execution Management
     @deprecated(
@@ -293,7 +293,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
             run_catch_up=run_catch_up,
             timezone=timezone,
         )
-        await self.save_schedule_validated(save_request, **kwargs)
+        await self.save_schedule_validated(save_schedule_request=save_request, **kwargs)
 
     @deprecated("update_schedule is deprecated; use update_schedule_validated instead")
     @typing_deprecated("update_schedule is deprecated; use update_schedule_validated instead")
@@ -336,7 +336,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
         **kwargs,
     ) -> None:
         """Update an existing schedule with new parameters and return None"""
-        existing_schedule = await self.get_schedule(name, **kwargs)
+        existing_schedule = await self.get_schedule(name=name, **kwargs)
 
         # Create updated save request
         save_request = SaveScheduleRequestAdapter(
@@ -352,12 +352,12 @@ class OrkesSchedulerClient(OrkesBaseClient):
             zone_id=timezone or existing_schedule.zone_id,
         )
 
-        await self.save_schedule_validated(save_request, **kwargs)
+        await self.save_schedule_validated(save_schedule_request=save_request, **kwargs)
 
     async def schedule_exists(self, name: str, **kwargs) -> bool:
         """Check if a schedule exists"""
         try:
-            await self.get_schedule(name, **kwargs)
+            await self.get_schedule(name=name, **kwargs)
             return True
         except Exception:
             return False
@@ -382,7 +382,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
         """Pause multiple schedules in bulk"""
         for name in schedule_names:
             try:
-                await self.pause_schedule_validated(name, **kwargs)
+                await self.pause_schedule_validated(name=name, **kwargs)
             except Exception:  # noqa: PERF203
                 continue
 
@@ -390,7 +390,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
         """Resume multiple schedules in bulk"""
         for name in schedule_names:
             try:
-                await self.resume_schedule_validated(name, **kwargs)
+                await self.resume_schedule_validated(name=name, **kwargs)
             except Exception:  # noqa: PERF203
                 continue
 
@@ -398,7 +398,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
         """Delete multiple schedules in bulk"""
         for name in schedule_names:
             try:
-                await self.delete_schedule_validated(name, **kwargs)
+                await self.delete_schedule_validated(name=name, **kwargs)
             except Exception:  # noqa: PERF203
                 continue
 
@@ -406,13 +406,15 @@ class OrkesSchedulerClient(OrkesBaseClient):
         self, cron_expression: str, limit: int = 5, **kwargs
     ) -> List[int]:
         """Validate a cron expression by getting its next execution times"""
-        return await self.get_next_few_schedules(cron_expression, limit=limit, **kwargs)
+        return await self.get_next_few_schedule_execution_times(
+            cron_expression=cron_expression, limit=limit, **kwargs
+        )
 
     async def search_schedules_by_workflow(
         self, workflow_name: str, start: int = 0, size: int = 100, **kwargs
     ) -> SearchResultWorkflowScheduleExecutionModelAdapter:
         """Search schedules for a specific workflow"""
-        return await self.search_schedules(
+        return await self.search_schedule_executions(
             start=start, size=size, query=f"workflowName:{workflow_name}", **kwargs
         )
 
@@ -421,7 +423,9 @@ class OrkesSchedulerClient(OrkesBaseClient):
     ) -> SearchResultWorkflowScheduleExecutionModelAdapter:
         """Search schedules by their status (paused/active)"""
         status_query = "paused:true" if paused else "paused:false"
-        return await self.search_schedules(start=start, size=size, query=status_query, **kwargs)
+        return await self.search_schedule_executions(
+            start=start, size=size, query=status_query, **kwargs
+        )
 
     async def get_schedule_count(self, **kwargs) -> int:
         """Get the total number of schedules"""
@@ -432,7 +436,7 @@ class OrkesSchedulerClient(OrkesBaseClient):
         self, tag_value: str, **kwargs
     ) -> List[WorkflowScheduleModelAdapter]:
         """Get schedules that have a specific tag (alias for get_schedules_by_tag)"""
-        return await self.get_schedules_by_tag(tag_value, **kwargs)
+        return await self.get_schedules_by_tag(tag_value=tag_value, **kwargs)
 
     async def get_next_few_schedule_execution_times(
         self,

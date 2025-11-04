@@ -15,31 +15,35 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
     def __init__(self, configuration: Configuration):
         super().__init__(configuration)
 
-    def save_prompt(self, prompt_name: str, description: str, prompt_template: str) -> None:
-        self._prompt_api.save_message_template(prompt_template, description, prompt_name)
+    def save_prompt(
+        self, prompt_name: str, description: str, prompt_template: str, **kwargs
+    ) -> None:
+        self._prompt_api.save_message_template(
+            body=prompt_template, description=description, name=prompt_name, **kwargs
+        )
 
-    def get_prompt(self, prompt_name: str) -> Optional[MessageTemplate]:
+    def get_prompt(self, prompt_name: str, **kwargs) -> Optional[MessageTemplate]:
         try:
-            return self._prompt_api.get_message_template(prompt_name)
+            return self._prompt_api.get_message_template(name=prompt_name, **kwargs)
         except ApiException as e:
             if e.is_not_found():
                 return None
             raise e
 
-    def get_prompts(self) -> List[MessageTemplate]:
-        return self._prompt_api.get_message_templates()
+    def get_prompts(self, **kwargs) -> List[MessageTemplate]:
+        return self._prompt_api.get_message_templates(**kwargs)
 
-    def delete_prompt(self, prompt_name: str) -> None:
-        self._prompt_api.delete_message_template(prompt_name)
+    def delete_prompt(self, prompt_name: str, **kwargs) -> None:
+        self._prompt_api.delete_message_template(name=prompt_name, **kwargs)
 
-    def get_tags_for_prompt_template(self, prompt_name: str) -> List[Tag]:
-        return self._prompt_api.get_tags_for_prompt_template(prompt_name)
+    def get_tags_for_prompt_template(self, prompt_name: str, **kwargs) -> List[Tag]:
+        return self._prompt_api.get_tags_for_prompt_template(name=prompt_name, **kwargs)
 
-    def update_tag_for_prompt_template(self, prompt_name: str, tags: List[Tag]) -> None:
-        self._prompt_api.put_tag_for_prompt_template(tags, prompt_name)
+    def update_tag_for_prompt_template(self, prompt_name: str, tags: List[Tag], **kwargs) -> None:
+        self._prompt_api.put_tag_for_prompt_template(body=tags, name=prompt_name, **kwargs)
 
-    def delete_tag_for_prompt_template(self, prompt_name: str, tags: List[Tag]) -> None:
-        self._prompt_api.delete_tag_for_prompt_template(tags, prompt_name)
+    def delete_tag_for_prompt_template(self, prompt_name: str, tags: List[Tag], **kwargs) -> None:
+        self._prompt_api.delete_tag_for_prompt_template(body=tags, name=prompt_name, **kwargs)
 
     def test_prompt(
         self,
@@ -50,6 +54,7 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
         temperature: float = 0.1,
         top_p: float = 0.9,
         stop_words: Optional[List[str]] = None,
+        **kwargs,
     ) -> str:
         request = PromptTemplateTestRequest()
         request.prompt = prompt_text
@@ -60,7 +65,7 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
         request.top_p = top_p
         if stop_words is not None:
             request.stop_words = stop_words
-        return self._prompt_api.test_message_template(request)
+        return self._prompt_api.test_message_template(request, **kwargs)
 
     def create_message_templates(self, body: List[MessageTemplate], **kwargs) -> None:
-        self._prompt_api.create_message_templates(body, **kwargs)
+        self._prompt_api.create_message_templates(body=body, **kwargs)

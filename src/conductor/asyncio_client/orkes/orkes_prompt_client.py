@@ -26,12 +26,12 @@ class OrkesPromptClient(OrkesBaseClient):
     ) -> None:
         """Create or update a message template"""
         await self._prompt_api.save_message_template(
-            name, description, body, models=models, **kwargs
+            name=name, description=description, body=body, models=models, **kwargs
         )
 
     async def get_message_template(self, name: str, **kwargs) -> MessageTemplateAdapter:
         """Get a message template by name"""
-        return await self._prompt_api.get_message_template(name, **kwargs)
+        return await self._prompt_api.get_message_template(name=name, **kwargs)
 
     async def get_message_templates(self, **kwargs) -> List[MessageTemplateAdapter]:
         """Get all message templates"""
@@ -39,7 +39,7 @@ class OrkesPromptClient(OrkesBaseClient):
 
     async def delete_message_template(self, name: str, **kwargs) -> None:
         """Delete a message template"""
-        await self._prompt_api.delete_message_template(name, **kwargs)
+        await self._prompt_api.delete_message_template(name=name, **kwargs)
 
     async def create_message_templates(
         self, message_templates: List[MessageTemplateAdapter], **kwargs
@@ -54,7 +54,9 @@ class OrkesPromptClient(OrkesBaseClient):
         self, prompt_template_test_request: PromptTemplateTestRequestAdapter, **kwargs
     ) -> str:
         """Test a prompt template with provided inputs"""
-        return await self._prompt_api.test_message_template(prompt_template_test_request, **kwargs)
+        return await self._prompt_api.test_message_template(
+            prompt_template_test_request=prompt_template_test_request, **kwargs
+        )
 
     # Tag Management for Prompt Templates
     @deprecated(
@@ -74,9 +76,9 @@ class OrkesPromptClient(OrkesBaseClient):
         return await self._prompt_api.get_tags_for_prompt_template(name=name, **kwargs)
 
     async def update_tag_for_prompt_template(
-        self, prompt_name: str, tags: List[TagAdapter]
+        self, prompt_name: str, tags: List[TagAdapter], **kwargs
     ) -> None:
-        await self._prompt_api.put_tag_for_prompt_template(name=prompt_name, tag=tags)
+        await self._prompt_api.put_tag_for_prompt_template(name=prompt_name, tag=tags, **kwargs)
 
     async def delete_tag_for_prompt_template(
         self, name: str, tags: List[TagAdapter], **kwargs
@@ -137,9 +139,9 @@ class OrkesPromptClient(OrkesBaseClient):
         description = new_description or f"Clone of {source_template.description}"
 
         await self.save_message_template(
-            target_name,
-            description,
-            source_template.template or "",
+            name=target_name,
+            description=description,
+            body=source_template.template or "",
             models=(source_template.models if hasattr(source_template, "models") else None),
             **kwargs,
         )
@@ -148,7 +150,7 @@ class OrkesPromptClient(OrkesBaseClient):
         """Delete multiple templates in bulk"""
         for name in template_names:
             try:
-                await self.delete_message_template(name, **kwargs)
+                await self.delete_message_template(name=name, **kwargs)
             except Exception:  # noqa: PERF203
                 continue
 

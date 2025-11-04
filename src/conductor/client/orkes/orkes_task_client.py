@@ -20,15 +20,18 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
         super().__init__(configuration)
 
     def poll_task(
-        self, task_type: str, worker_id: Optional[str] = None, domain: Optional[str] = None
+        self,
+        task_type: str,
+        worker_id: Optional[str] = None,
+        domain: Optional[str] = None,
+        **kwargs,
     ) -> Task:
-        kwargs = {}
         if worker_id:
             kwargs.update({"workerid": worker_id})
         if domain:
             kwargs.update({"domain": domain})
 
-        return self._task_api.poll(task_type, **kwargs)
+        return self._task_api.poll(tasktype=task_type, **kwargs)
 
     def batch_poll_tasks(
         self,
@@ -37,8 +40,8 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
         count: Optional[int] = None,
         timeout_in_millisecond: Optional[int] = None,
         domain: Optional[str] = None,
+        **kwargs,
     ) -> List[Task]:
-        kwargs = {}
         if worker_id:
             kwargs.update({"workerid": worker_id})
         if count:
@@ -47,14 +50,13 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
             kwargs.update({"timeout": timeout_in_millisecond})
         if domain:
             kwargs.update({"domain": domain})
-
-        return self._task_api.batch_poll(task_type, **kwargs)
+        return self._task_api.batch_poll(tasktype=task_type, **kwargs)
 
     def get_task(self, task_id: str, **kwargs) -> Task:
-        return self._task_api.get_task(task_id, **kwargs)
+        return self._task_api.get_task(task_id=task_id, **kwargs)
 
     def update_task(self, task_result: TaskResult, **kwargs) -> str:
-        return self._task_api.update_task(task_result, **kwargs)
+        return self._task_api.update_task(body=task_result, **kwargs)
 
     def update_task_by_ref_name(
         self,
@@ -63,12 +65,14 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
         status: str,
         output: object,
         worker_id: Optional[str] = None,
+        **kwargs,
     ) -> str:
         body = {"result": output}
-        kwargs = {}
         if worker_id:
             kwargs.update({"workerid": worker_id})
-        return self._task_api.update_task1(body, workflow_id, task_ref_name, status, **kwargs)
+        return self._task_api.update_task1(
+            body=body, workflow_id=workflow_id, task_ref_name=task_ref_name, status=status, **kwargs
+        )
 
     def update_task_sync(
         self,
@@ -77,14 +81,16 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
         status: str,
         output: object,
         worker_id: Optional[str] = None,
+        **kwargs,
     ) -> Workflow:
         if not isinstance(output, dict):
             output = {"result": output}
         body = output
-        kwargs = {}
         if worker_id:
             kwargs.update({"workerid": worker_id})
-        return self._task_api.update_task_sync(body, workflow_id, task_ref_name, status, **kwargs)
+        return self._task_api.update_task_sync(
+            body=body, workflow_id=workflow_id, task_ref_name=task_ref_name, status=status, **kwargs
+        )
 
     def get_queue_size_for_task(self, task_type: str, **kwargs) -> int:
         queueSizesByTaskType = self._task_api.size(task_type=[task_type], **kwargs)
@@ -95,7 +101,7 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
         self._task_api.log(body=log_message, task_id=task_id, **kwargs)
 
     def get_task_logs(self, task_id: str, **kwargs) -> List[TaskExecLog]:
-        return self._task_api.get_task_logs(task_id, **kwargs)
+        return self._task_api.get_task_logs(task_id=task_id, **kwargs)
 
     def get_task_poll_data(self, task_type: str, **kwargs) -> List[PollData]:
         return self._task_api.get_poll_data(task_type=task_type, **kwargs)
@@ -113,6 +119,7 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
         sort: Optional[str] = None,
         free_text: Optional[str] = None,
         query: Optional[str] = None,
+        **kwargs,
     ) -> SearchResultTaskSummary:
         """Search for tasks based on payload and other parameters
 
@@ -124,7 +131,7 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
             query: Query string
         """
         return self._task_api.search1(
-            start=start, size=size, sort=sort, free_text=free_text, query=query
+            start=start, size=size, sort=sort, free_text=free_text, query=query, **kwargs
         )
 
     def search_tasks_v2(
@@ -134,6 +141,7 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
         sort: Optional[str] = None,
         free_text: Optional[str] = None,
         query: Optional[str] = None,
+        **kwargs,
     ) -> SearchResultTask:
         """Search for tasks based on payload and other parameters
 
@@ -145,18 +153,22 @@ class OrkesTaskClient(OrkesBaseClient, TaskClient):
             query: Query string
         """
         return self._task_api.search_v21(
-            start=start, size=size, sort=sort, free_text=free_text, query=query
+            start=start, size=size, sort=sort, free_text=free_text, query=query, **kwargs
         )
 
     def signal_workflow_task_async(
         self, workflow_id: str, status: str, body: Dict[str, object], **kwargs
     ) -> None:
-        self._task_api.signal_workflow_task_async(workflow_id, status, body, **kwargs)
+        self._task_api.signal_workflow_task_async(
+            workflow_id=workflow_id, status=status, body=body, **kwargs
+        )
 
     def signal_workflow_task_sync(
         self, workflow_id: str, status: str, body: Dict[str, object], **kwargs
     ) -> SignalResponse:
-        return self._task_api.signal_workflow_task_sync(workflow_id, status, body, **kwargs)
+        return self._task_api.signal_workflow_task_sync(
+            workflow_id=workflow_id, status=status, body=body, **kwargs
+        )
 
     def get_task_queue_sizes(self, **kwargs) -> Dict[str, int]:
         """Get the size of all task queues"""

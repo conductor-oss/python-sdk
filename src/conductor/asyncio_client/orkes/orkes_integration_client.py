@@ -44,9 +44,11 @@ class OrkesIntegrationClient(OrkesBaseClient):
         """Get integration provider by name"""
         return await self._integration_api.get_integration_provider(name=name, **kwargs)
 
-    async def get_integration(self, integration_name: str) -> Optional[IntegrationAdapter]:
+    async def get_integration(
+        self, integration_name: str, **kwargs
+    ) -> Optional[IntegrationAdapter]:
         try:
-            return await self.get_integration_provider(integration_name)
+            return await self.get_integration_provider(name=integration_name, **kwargs)
         except NotFoundException:
             return None
 

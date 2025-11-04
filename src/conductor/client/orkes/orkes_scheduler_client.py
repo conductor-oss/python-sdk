@@ -22,18 +22,16 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         super().__init__(configuration)
 
     def save_schedule(self, save_schedule_request: SaveScheduleRequest, **kwargs) -> None:
-        self._scheduler_api.save_schedule(save_schedule_request, **kwargs)
+        self._scheduler_api.save_schedule(body=save_schedule_request, **kwargs)
 
     def get_schedule(self, name: str, **kwargs) -> WorkflowSchedule:
-        return self._scheduler_api.get_schedule(name, **kwargs)
+        return self._scheduler_api.get_schedule(name=name, **kwargs)
 
     def get_all_schedules(
         self, workflow_name: Optional[str] = None, **kwargs
     ) -> List[WorkflowScheduleModel]:
-        kwargs = {}
         if workflow_name:
             kwargs.update({"workflow_name": workflow_name})
-
         return self._scheduler_api.get_all_schedules(**kwargs)
 
     def get_next_few_schedule_execution_times(
@@ -42,27 +40,27 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         schedule_start_time: Optional[int] = None,
         schedule_end_time: Optional[int] = None,
         limit: Optional[int] = None,
+        **kwargs,
     ) -> List[int]:
-        kwargs = {}
         if schedule_start_time:
             kwargs.update({"schedule_start_time": schedule_start_time})
         if schedule_end_time:
             kwargs.update({"schedule_end_time": schedule_end_time})
         if limit:
             kwargs.update({"limit": limit})
-        return self._scheduler_api.get_next_few_schedules(cron_expression, **kwargs)
+        return self._scheduler_api.get_next_few_schedules(cron_expression=cron_expression, **kwargs)
 
     def delete_schedule(self, name: str, **kwargs) -> None:
-        self._scheduler_api.delete_schedule(name, **kwargs)
+        self._scheduler_api.delete_schedule(name=name, **kwargs)
 
     def pause_schedule(self, name: str, **kwargs) -> None:
-        self._scheduler_api.pause_schedule(name, **kwargs)
+        self._scheduler_api.pause_schedule(name=name, **kwargs)
 
     def pause_all_schedules(self, **kwargs) -> None:
         self._scheduler_api.pause_all_schedules(**kwargs)
 
     def resume_schedule(self, name: str, **kwargs) -> None:
-        self._scheduler_api.resume_schedule(name, **kwargs)
+        self._scheduler_api.resume_schedule(name=name, **kwargs)
 
     def resume_all_schedules(self, **kwargs) -> None:
         self._scheduler_api.resume_all_schedules(**kwargs)
@@ -74,8 +72,8 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         sort: Optional[str] = None,
         free_text: Optional[str] = None,
         query: Optional[str] = None,
+        **kwargs,
     ) -> SearchResultWorkflowScheduleExecutionModel:
-        kwargs = {}
         if start:
             kwargs.update({"start": start})
         if size:
@@ -97,10 +95,10 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         self._scheduler_api.put_tag_for_schedule(tags, name, **kwargs)
 
     def set_scheduler_tags_validated(self, tags: List[Tag], name: str, **kwargs) -> None:
-        self._scheduler_api.put_tag_for_schedule(tags, name, **kwargs)
+        self._scheduler_api.put_tag_for_schedule(body=tags, name=name, **kwargs)
 
     def get_scheduler_tags(self, name: str, **kwargs) -> List[Tag]:
-        return self._scheduler_api.get_tags_for_schedule(name, **kwargs)
+        return self._scheduler_api.get_tags_for_schedule(name=name, **kwargs)
 
     @deprecated("delete_scheduler_tags is deprecated; use delete_scheduler_tags_validated instead")
     @typing_deprecated(
@@ -110,7 +108,7 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         return self._scheduler_api.delete_tag_for_schedule(tags, name)
 
     def delete_scheduler_tags_validated(self, tags: List[Tag], name: str, **kwargs) -> None:
-        self._scheduler_api.delete_tag_for_schedule(tags, name, **kwargs)
+        self._scheduler_api.delete_tag_for_schedule(body=tags, name=name, **kwargs)
 
     def get_schedules_by_tag(self, tag: str, **kwargs) -> List[WorkflowScheduleModel]:
-        return self._scheduler_api.get_schedules_by_tag(tag, **kwargs)
+        return self._scheduler_api.get_schedules_by_tag(tag=tag, **kwargs)

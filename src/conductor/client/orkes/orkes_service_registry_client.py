@@ -21,50 +21,61 @@ class OrkesServiceRegistryClient(OrkesBaseClient, ServiceRegistryClient):
         return self._service_registry_api.get_registered_services(**kwargs)
 
     def get_service(self, name: str, **kwargs) -> ServiceRegistry:
-        return self._service_registry_api.get_service(name, **kwargs)
+        return self._service_registry_api.get_service(name=name, **kwargs)
 
     def add_or_update_service(self, service_registry: ServiceRegistry, **kwargs) -> None:
-        self._service_registry_api.add_or_update_service(service_registry, **kwargs)
+        self._service_registry_api.add_or_update_service(body=service_registry, **kwargs)
 
     def remove_service(self, name: str, **kwargs) -> None:
-        self._service_registry_api.remove_service(name, **kwargs)
+        self._service_registry_api.remove_service(name=name, **kwargs)
 
     def open_circuit_breaker(self, name: str, **kwargs) -> CircuitBreakerTransitionResponse:
-        return self._service_registry_api.open_circuit_breaker(name, **kwargs)
+        return self._service_registry_api.open_circuit_breaker(name=name, **kwargs)
 
     def close_circuit_breaker(self, name: str, **kwargs) -> CircuitBreakerTransitionResponse:
-        return self._service_registry_api.close_circuit_breaker(name, **kwargs)
+        return self._service_registry_api.close_circuit_breaker(name=name, **kwargs)
 
     def get_circuit_breaker_status(self, name: str, **kwargs) -> CircuitBreakerTransitionResponse:
-        return self._service_registry_api.get_circuit_breaker_status(name, **kwargs)
+        return self._service_registry_api.get_circuit_breaker_status(name=name, **kwargs)
 
     def add_or_update_method(self, registry_name: str, method: ServiceMethod, **kwargs) -> None:
-        self._service_registry_api.add_or_update_method(registry_name, method, **kwargs)
+        self._service_registry_api.add_or_update_method(
+            registry_name=registry_name, body=method, **kwargs
+        )
 
     def remove_method(
         self, registry_name: str, service_name: str, method: str, method_type: str, **kwargs
     ) -> None:
         self._service_registry_api.remove_method(
-            registry_name, service_name, method, method_type, **kwargs
+            registry_name=registry_name,
+            service_name=service_name,
+            method=method,
+            method_type=method_type,
+            **kwargs,
         )
 
     def get_proto_data(self, registry_name: str, filename: str, **kwargs) -> bytes:
-        return self._service_registry_api.get_proto_data(registry_name, filename, **kwargs)
+        return self._service_registry_api.get_proto_data(
+            registry_name=registry_name, filename=filename, **kwargs
+        )
 
     def set_proto_data(self, registry_name: str, filename: str, data: bytes, **kwargs) -> None:
-        self._service_registry_api.set_proto_data(registry_name, filename, data, **kwargs)
+        self._service_registry_api.set_proto_data(
+            registry_name=registry_name, filename=filename, data=data, **kwargs
+        )
 
     def delete_proto(self, registry_name: str, filename: str, **kwargs) -> None:
-        self._service_registry_api.delete_proto(registry_name, filename, **kwargs)
+        self._service_registry_api.delete_proto(
+            registry_name=registry_name, filename=filename, **kwargs
+        )
 
     def get_all_protos(self, registry_name: str, **kwargs) -> List[ProtoRegistryEntry]:
-        return self._service_registry_api.get_all_protos(registry_name, **kwargs)
+        return self._service_registry_api.get_all_protos(registry_name=registry_name, **kwargs)
 
-    def discover(self, name: str, create: Optional[bool] = False) -> List[ServiceMethod]:
-        kwargs = {}
+    def discover(self, name: str, create: Optional[bool] = False, **kwargs) -> List[ServiceMethod]:
         if create:
             kwargs.update({"create": create})
-        return self._service_registry_api.discover(name, **kwargs)
+        return self._service_registry_api.discover(name=name, **kwargs)
 
     # Additional convenience methods can be added here if needed
     def get_queue_sizes_for_all_tasks(self, **kwargs) -> Dict[str, int]:
@@ -73,5 +84,5 @@ class OrkesServiceRegistryClient(OrkesBaseClient, ServiceRegistryClient):
 
     def is_circuit_breaker_open(self, name: str, **kwargs) -> bool:
         """Check if circuit breaker is open for a service"""
-        status = self._service_registry_api.get_circuit_breaker_status(name, **kwargs)
+        status = self._service_registry_api.get_circuit_breaker_status(name=name, **kwargs)
         return bool(status.current_state and status.current_state.upper() == "OPEN")

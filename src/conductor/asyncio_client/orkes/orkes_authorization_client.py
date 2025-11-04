@@ -138,11 +138,13 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return result
 
     async def create_application_validated(
-        self, application: CreateOrUpdateApplicationRequestAdapter, **kwargs
+        self,
+        create_or_update_application_request: CreateOrUpdateApplicationRequestAdapter,
+        **kwargs,
     ) -> Optional[ExtendedConductorApplicationAdapter]:
         """Create a new application and return a validated ExtendedConductorApplicationAdapter"""
         result = await self._application_api.create_application(
-            create_or_update_application_request=application, **kwargs
+            create_or_update_application_request=create_or_update_application_request, **kwargs
         )
 
         result_dict = cast(Dict[str, Any], result)

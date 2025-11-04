@@ -122,14 +122,17 @@ class OrkesMetadataClient(OrkesBaseClient):
     ) -> None:
         """Create or update multiple workflow definitions and return None"""
         await self._metadata_api.update(
-            extended_workflow_defs, overwrite=overwrite, new_version=new_version, **kwargs
+            extended_workflow_def=extended_workflow_defs,
+            overwrite=overwrite,
+            new_version=new_version,
+            **kwargs,
         )
 
     async def get_workflow_def(
         self, name: str, version: Optional[int] = None, metadata: Optional[bool] = None, **kwargs
     ) -> WorkflowDefAdapter:
         """Get a workflow definition by name and version"""
-        return await self._metadata_api.get(name, version=version, metadata=metadata, **kwargs)
+        return await self._metadata_api.get(name=name, version=version, metadata=metadata, **kwargs)
 
     async def get_workflow_defs(
         self,
@@ -154,7 +157,7 @@ class OrkesMetadataClient(OrkesBaseClient):
 
     async def unregister_workflow_def(self, name: str, version: int, **kwargs) -> None:
         """Unregister a workflow definition"""
-        await self._metadata_api.unregister_workflow_def(name, version, **kwargs)
+        await self._metadata_api.unregister_workflow_def(name=name, version=version, **kwargs)
 
     # Bulk Operations
     async def upload_definitions_to_s3(self, **kwargs) -> None:
@@ -164,13 +167,13 @@ class OrkesMetadataClient(OrkesBaseClient):
     # Convenience Methods
     async def get_latest_workflow_def(self, name: str, **kwargs) -> WorkflowDefAdapter:
         """Get the latest version of a workflow definition"""
-        return await self.get_workflow_def(name, **kwargs)
+        return await self.get_workflow_def(name=name, **kwargs)
 
     async def get_workflow_def_with_metadata(
         self, name: str, version: Optional[int] = None, **kwargs
     ) -> WorkflowDefAdapter:
         """Get workflow definition with metadata included"""
-        return await self.get_workflow_def(name, version=version, metadata=True, **kwargs)
+        return await self.get_workflow_def(name=name, version=version, metadata=True, **kwargs)
 
     async def get_all_task_defs(self, **kwargs) -> List[TaskDefAdapter]:
         """Get all task definitions"""
@@ -235,7 +238,7 @@ class OrkesMetadataClient(OrkesBaseClient):
     ) -> None:
         """Register a new workflow definition and return None (alias for create_workflow_def_validated)"""
         await self.create_workflow_def_validated(
-            extended_workflow_def, overwrite=overwrite, **kwargs
+            extended_workflow_def=extended_workflow_def, overwrite=overwrite, **kwargs
         )
 
     @deprecated("update_workflow_def is deprecated; use update_workflow_def_validated instead")
@@ -253,18 +256,18 @@ class OrkesMetadataClient(OrkesBaseClient):
     ) -> None:
         """Update a workflow definition and return None (alias for create_workflow_def_validated with overwrite)"""
         await self.create_workflow_def_validated(
-            extended_workflow_def, overwrite=overwrite, **kwargs
+            extended_workflow_def=extended_workflow_def, overwrite=overwrite, **kwargs
         )
 
     # Legacy compatibility methods
     async def get_workflow_def_versions(self, name: str, **kwargs) -> List[int]:
         """Get all version numbers for a workflow definition"""
-        workflow_defs = await self.get_workflow_defs_by_name(name, **kwargs)
+        workflow_defs = await self.get_workflow_defs_by_name(name=name, **kwargs)
         return [wd.version for wd in workflow_defs if wd.version is not None]
 
     async def get_workflow_def_latest_version(self, name: str, **kwargs) -> WorkflowDefAdapter:
         """Get the latest version workflow definition"""
-        return await self.get_latest_workflow_def(name, **kwargs)
+        return await self.get_latest_workflow_def(name=name, **kwargs)
 
     async def get_workflow_def_latest_versions(self, **kwargs) -> List[WorkflowDefAdapter]:
         """Get the latest version of all workflow definitions"""
@@ -274,11 +277,11 @@ class OrkesMetadataClient(OrkesBaseClient):
         self, name: str, version: int, **kwargs
     ) -> WorkflowDefAdapter:
         """Get workflow definition by name and specific version"""
-        return await self.get_workflow_def(name, version=version, **kwargs)
+        return await self.get_workflow_def(name=name, version=version, **kwargs)
 
     async def get_workflow_def_by_name(self, name: str, **kwargs) -> List[WorkflowDefAdapter]:
         """Get all versions of workflow definition by name"""
-        return await self.get_workflow_defs_by_name(name, **kwargs)
+        return await self.get_workflow_defs_by_name(name=name, **kwargs)
 
     async def add_workflow_tag(self, tag: TagAdapter, workflow_name: str, **kwargs) -> None:
         await self._tags_api.add_workflow_tag(name=workflow_name, tag=tag, **kwargs)

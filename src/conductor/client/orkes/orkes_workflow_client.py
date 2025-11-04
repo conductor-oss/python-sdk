@@ -21,11 +21,20 @@ from conductor.client.workflow_client import WorkflowClient
 from conductor.client.http.models.task_list_search_result_summary import TaskListSearchResultSummary
 from conductor.client.http.models.upgrade_workflow_request import UpgradeWorkflowRequest
 
+from deprecated import deprecated
+from typing_extensions import deprecated as typing_deprecated
+
 
 class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def __init__(self, configuration: Configuration):
         super().__init__(configuration)
 
+    @deprecated(
+        "start_workflow_by_name is deprecated; use start_workflow_by_name_validated instead"
+    )
+    @typing_deprecated(
+        "start_workflow_by_name is deprecated; use start_workflow_by_name_validated instead"
+    )
     def start_workflow_by_name(
         self,
         name: str,
@@ -44,8 +53,26 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
 
         return self._workflow_api.start_workflow1(input, name, **kwargs)
 
+    def start_workflow_by_name_validated(
+        self,
+        name: str,
+        input: Dict[str, object],
+        version: Optional[int] = None,
+        correlation_id: Optional[str] = None,
+        priority: Optional[int] = None,
+        **kwargs,
+    ) -> str:
+        if version:
+            kwargs.update({"version": version})
+        if correlation_id:
+            kwargs.update({"correlation_id": correlation_id})
+        if priority:
+            kwargs.update({"priority": priority})
+
+        return self._workflow_api.start_workflow1(input=input, name=name, **kwargs)
+
     def start_workflow(self, start_workflow_request: StartWorkflowRequest, **kwargs) -> str:
-        return self._workflow_api.start_workflow(start_workflow_request)
+        return self._workflow_api.start_workflow(body=start_workflow_request, **kwargs)
 
     def execute_workflow(
         self,
@@ -104,64 +131,71 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         )
 
     def pause_workflow(self, workflow_id: str, **kwargs) -> None:
-        self._workflow_api.pause_workflow(workflow_id, **kwargs)
+        self._workflow_api.pause_workflow(workflow_id=workflow_id, **kwargs)
 
     def resume_workflow(self, workflow_id: str, **kwargs) -> None:
-        self._workflow_api.resume_workflow(workflow_id, **kwargs)
+        self._workflow_api.resume_workflow(workflow_id=workflow_id, **kwargs)
 
-    def restart_workflow(self, workflow_id: str, use_latest_def: Optional[bool] = False) -> None:
-        kwargs = {}
-
+    def restart_workflow(
+        self, workflow_id: str, use_latest_def: Optional[bool] = False, **kwargs
+    ) -> None:
         if use_latest_def:
-            kwargs["use_latest_definitions"] = use_latest_def
+            kwargs.update({"use_latest_definitions": use_latest_def})
 
-        self._workflow_api.restart(workflow_id, **kwargs)
+        self._workflow_api.restart(workflow_id=workflow_id, **kwargs)
 
     def rerun_workflow(
         self, workflow_id: str, rerun_workflow_request: RerunWorkflowRequest, **kwargs
     ) -> str:
         rerun_workflow_request.re_run_from_workflow_id = workflow_id
-        return self._workflow_api.rerun(rerun_workflow_request, workflow_id, **kwargs)
+        return self._workflow_api.rerun(
+            body=rerun_workflow_request, workflow_id=workflow_id, **kwargs
+        )
 
     def retry_workflow(
-        self, workflow_id: str, resume_subworkflow_tasks: Optional[bool] = False
+        self, workflow_id: str, resume_subworkflow_tasks: Optional[bool] = False, **kwargs
     ) -> None:
-        kwargs = {}
         if resume_subworkflow_tasks:
-            kwargs["resume_subworkflow_tasks"] = resume_subworkflow_tasks
-        self._workflow_api.retry(workflow_id, **kwargs)
+            kwargs.update({"resume_subworkflow_tasks": resume_subworkflow_tasks})
+        self._workflow_api.retry(workflow_id=workflow_id, **kwargs)
 
     def terminate_workflow(
-        self, workflow_id: str, reason: Optional[str] = None, trigger_failure_workflow: bool = False
+        self,
+        workflow_id: str,
+        reason: Optional[str] = None,
+        trigger_failure_workflow: bool = False,
+        **kwargs,
     ) -> None:
-        kwargs = {}
         if reason:
-            kwargs["reason"] = reason
+            kwargs.update({"reason": reason})
         if trigger_failure_workflow:
-            kwargs["trigger_failure_workflow"] = trigger_failure_workflow  # type: ignore[assignment]
-        self._workflow_api.terminate1(workflow_id, **kwargs)
+            kwargs.update({"trigger_failure_workflow": trigger_failure_workflow})
+        self._workflow_api.terminate1(workflow_id=workflow_id, **kwargs)
 
-    def get_workflow(self, workflow_id: str, include_tasks: Optional[bool] = True) -> Workflow:
-        kwargs = {}
+    def get_workflow(
+        self, workflow_id: str, include_tasks: Optional[bool] = True, **kwargs
+    ) -> Workflow:
         if include_tasks:
-            kwargs["include_tasks"] = include_tasks
-        return self._workflow_api.get_execution_status(workflow_id, **kwargs)
+            kwargs.update({"include_tasks": include_tasks})
+        return self._workflow_api.get_execution_status(workflow_id=workflow_id, **kwargs)
 
     def get_workflow_status(
         self,
         workflow_id: str,
         include_output: Optional[bool] = None,
         include_variables: Optional[bool] = None,
+        **kwargs,
     ) -> WorkflowStatus:
-        kwargs = {}
         if include_output is not None:
-            kwargs["include_output"] = include_output
+            kwargs.update({"include_output": include_output})
         if include_variables is not None:
-            kwargs["include_variables"] = include_variables
-        return self._workflow_api.get_workflow_status_summary(workflow_id, **kwargs)
+            kwargs.update({"include_variables": include_variables})
+        return self._workflow_api.get_workflow_status_summary(workflow_id=workflow_id, **kwargs)
 
-    def delete_workflow(self, workflow_id: str, archive_workflow: Optional[bool] = True):
-        self._workflow_api.delete1(workflow_id, archive_workflow=archive_workflow)
+    def delete_workflow(self, workflow_id: str, archive_workflow: Optional[bool] = True, **kwargs):
+        self._workflow_api.delete1(
+            workflow_id=workflow_id, archive_workflow=archive_workflow, **kwargs
+        )
 
     def skip_task_from_workflow(
         self,
@@ -171,11 +205,11 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         **kwargs,
     ) -> None:
         self._workflow_api.skip_task_from_workflow(
-            workflow_id, task_reference_name, request, **kwargs
+            workflow_id=workflow_id, task_reference_name=task_reference_name, body=request, **kwargs
         )
 
     def test_workflow(self, test_request: WorkflowTestRequest, **kwargs) -> Workflow:
-        return self._workflow_api.test_workflow(test_request, **kwargs)
+        return self._workflow_api.test_workflow(body=test_request, **kwargs)
 
     def search(
         self,
@@ -185,21 +219,20 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         query: Optional[str] = None,
         query_id: Optional[str] = None,
         skip_cache: bool = False,
+        **kwargs,
     ) -> ScrollableSearchResultWorkflowSummary:
-        kwargs = {}
-
         if start is not None:
-            kwargs["start"] = start
+            kwargs.update({"start": start})
         if size is not None:
-            kwargs["size"] = size
+            kwargs.update({"size": size})
         if free_text is not None:
-            kwargs["free_text"] = free_text
+            kwargs.update({"free_text": free_text})
         if query is not None:
-            kwargs["query"] = query
+            kwargs.update({"query": query})
         if query_id is not None:
-            kwargs["query_id"] = query_id
+            kwargs.update({"query_id": query_id})
         if skip_cache is not None:
-            kwargs["skip_cache"] = skip_cache
+            kwargs.update({"skip_cache": skip_cache})
 
         return self._workflow_api.search(**kwargs)
 
@@ -208,17 +241,15 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         batch_request: CorrelationIdsSearchRequest,
         include_completed: bool = False,
         include_tasks: bool = False,
+        **kwargs,
     ) -> Dict[str, List[Workflow]]:
         """Given the list of correlation ids and list of workflow names, find and return workflows
         Returns a map with key as correlationId and value as a list of Workflows
         When IncludeClosed is set to true, the return value also includes workflows that are completed otherwise only running workflows are returned"""
-        kwargs = {}
-
-        kwargs["body"] = batch_request
         if include_tasks:
-            kwargs["include_tasks"] = include_tasks
+            kwargs.update({"include_tasks": include_tasks})
         if include_completed:
-            kwargs["include_closed"] = include_completed
+            kwargs.update({"include_closed": include_completed})
         return self._workflow_api.get_workflows1(**kwargs)
 
     def get_by_correlation_ids(
@@ -227,24 +258,26 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         correlation_ids: List[str],
         include_completed: bool = False,
         include_tasks: bool = False,
+        **kwargs,
     ) -> Dict[str, List[Workflow]]:
         """Lists workflows for the given correlation id list"""
-        kwargs = {}
         if include_tasks:
-            kwargs["include_tasks"] = include_tasks
+            kwargs.update({"include_tasks": include_tasks})
         if include_completed:
-            kwargs["include_closed"] = include_completed
+            kwargs.update({"include_closed": include_completed})
 
         return self._workflow_api.get_workflows(body=correlation_ids, name=workflow_name, **kwargs)
 
-    def remove_workflow(self, workflow_id: str):
-        self._workflow_api.delete1(workflow_id)
+    def remove_workflow(self, workflow_id: str, **kwargs):
+        self._workflow_api.delete1(workflow_id=workflow_id, **kwargs)
 
     def update_variables(
         self, workflow_id: str, variables: Optional[Dict[str, object]] = None, **kwargs
     ) -> None:
         variables = variables or {}
-        self._workflow_api.update_workflow_state(variables, workflow_id, **kwargs)
+        self._workflow_api.update_workflow_state(
+            variables=variables, workflow_id=workflow_id, **kwargs
+        )
 
     def update_state(
         self,
@@ -252,56 +285,56 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         update_request: WorkflowStateUpdate,
         wait_until_task_ref_names: Optional[List[str]] = None,
         wait_for_seconds: Optional[int] = None,
+        **kwargs,
     ) -> WorkflowRun:
-        kwargs = {}
         request_id = str(uuid.uuid4())
         if wait_until_task_ref_names is not None:
-            kwargs["wait_until_task_ref"] = ",".join(wait_until_task_ref_names)
+            kwargs.update({"wait_until_task_ref": ",".join(wait_until_task_ref_names)})
         if wait_for_seconds is not None:
-            kwargs["wait_for_seconds"] = wait_for_seconds
+            kwargs.update({"wait_for_seconds": wait_for_seconds})
 
         return self._workflow_api.update_workflow_and_task_state(
             body=update_request, workflow_id=workflow_id, request_id=request_id, **kwargs
         )
 
     def decide(self, workflow_id: str, **kwargs) -> None:
-        self._workflow_api.decide(workflow_id, **kwargs)
+        self._workflow_api.decide(workflow_id=workflow_id, **kwargs)
 
     def execute_workflow_as_api(
         self, body: Dict[str, object], name: str, **kwargs
     ) -> Dict[str, Any]:
-        return self._workflow_api.execute_workflow_as_api(body, name, **kwargs)
+        return self._workflow_api.execute_workflow_as_api(body=body, name=name, **kwargs)
 
     def execute_workflow_as_get_api(self, name: str, **kwargs) -> Dict[str, Any]:
-        return self._workflow_api.execute_workflow_as_get_api(name, **kwargs)
+        return self._workflow_api.execute_workflow_as_get_api(name=name, **kwargs)
 
     def get_execution_status_task_list(
         self, workflow_id: str, **kwargs
     ) -> TaskListSearchResultSummary:
-        return self._workflow_api.get_execution_status_task_list(workflow_id, **kwargs)
+        return self._workflow_api.get_execution_status_task_list(workflow_id=workflow_id, **kwargs)
 
     def get_running_workflow(self, name: str, **kwargs) -> List[str]:
-        return self._workflow_api.get_running_workflow(name, **kwargs)
+        return self._workflow_api.get_running_workflow(name=name, **kwargs)
 
     def get_workflows_by_correlation_id(
         self, name: str, correlation_id: str, **kwargs
     ) -> List[Workflow]:
-        return self._workflow_api.get_workflows2(name, correlation_id, **kwargs)
+        return self._workflow_api.get_workflows2(name=name, correlation_id=correlation_id, **kwargs)
 
     def jump_to_task(
-        self, body: Dict[str, object], workflow_id: str, task_reference_name: str
+        self, body: Dict[str, object], workflow_id: str, task_reference_name: str, **kwargs
     ) -> None:
-        kwargs = {}
-
         if task_reference_name is not None:
-            kwargs["task_reference_name"] = task_reference_name
+            kwargs.update({"task_reference_name": task_reference_name})
 
-        return self._workflow_api.jump_to_task(body, workflow_id, **kwargs)
+        return self._workflow_api.jump_to_task(body=body, workflow_id=workflow_id, **kwargs)
 
     def reset_workflow(self, workflow_id: str, **kwargs) -> None:
-        self._workflow_api.reset_workflow(workflow_id, **kwargs)
+        self._workflow_api.reset_workflow(workflow_id=workflow_id, **kwargs)
 
     def upgrade_running_workflow_to_version(
         self, body: UpgradeWorkflowRequest, workflow_id: str, **kwargs
     ) -> None:
-        return self._workflow_api.upgrade_running_workflow_to_version(body, workflow_id, **kwargs)
+        return self._workflow_api.upgrade_running_workflow_to_version(
+            body=body, workflow_id=workflow_id, **kwargs
+        )

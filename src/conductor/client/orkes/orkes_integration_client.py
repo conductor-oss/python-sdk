@@ -24,31 +24,38 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
         self, ai_integration: str, model_name: str, prompt_name: str, **kwargs
     ) -> None:
         self._integration_api.associate_prompt_with_integration(
-            ai_integration, model_name, prompt_name, **kwargs
+            integration_provider=ai_integration,
+            integration_name=model_name,
+            prompt_name=prompt_name,
+            **kwargs,
         )
 
     def delete_integration_api(self, api_name: str, integration_name: str, **kwargs) -> None:
-        self._integration_api.delete_integration_api(api_name, integration_name, **kwargs)
+        self._integration_api.delete_integration_api(
+            name=api_name, integration_name=integration_name, **kwargs
+        )
 
     def delete_integration(self, integration_name: str, **kwargs) -> None:
-        self._integration_api.delete_integration_provider(integration_name, **kwargs)
+        self._integration_api.delete_integration_provider(name=integration_name, **kwargs)
 
     def get_integration_api(
         self, api_name: str, integration_name: str, **kwargs
     ) -> Optional[IntegrationApi]:
         try:
-            return self._integration_api.get_integration_api(api_name, integration_name, **kwargs)
+            return self._integration_api.get_integration_api(
+                name=api_name, integration_name=integration_name, **kwargs
+            )
         except ApiException as e:
             if e.is_not_found():
                 return None
             raise e
 
     def get_integration_apis(self, integration_name: str, **kwargs) -> List[IntegrationApi]:
-        return self._integration_api.get_integration_apis(integration_name, **kwargs)
+        return self._integration_api.get_integration_apis(name=integration_name, **kwargs)
 
     def get_integration(self, integration_name: str, **kwargs) -> Optional[Integration]:
         try:
-            return self._integration_api.get_integration_provider(integration_name, **kwargs)
+            return self._integration_api.get_integration_provider(name=integration_name, **kwargs)
         except ApiException as e:
             if e.is_not_found():
                 return None
@@ -60,17 +67,16 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
     def get_integration_provider(self, name: str, **kwargs) -> Optional[Integration]:
         """Get integration provider by name"""
         try:
-            return self._integration_api.get_integration_provider(name, **kwargs)
+            return self._integration_api.get_integration_provider(name=name, **kwargs)
         except ApiException as e:
             if e.is_not_found():
                 return None
             raise e
 
     def get_integration_providers(
-        self, category: Optional[str] = None, active_only: Optional[bool] = None
+        self, category: Optional[str] = None, active_only: Optional[bool] = None, **kwargs
     ) -> List[Integration]:
         """Get all integration providers with optional filtering"""
-        kwargs = {}
         if category is not None:
             kwargs["category"] = category
         if active_only is not None:
@@ -86,7 +92,7 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
     ) -> List[MessageTemplate]:
         """Get prompts with integration"""
         return self._integration_api.get_prompts_with_integration(
-            ai_integration, model_name, **kwargs
+            integration_provider=ai_integration, integration_name=model_name, **kwargs
         )
 
     def save_integration_api(
@@ -102,28 +108,32 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
     ) -> None:
         """Save integration"""
         self._integration_api.save_integration_provider(
-            integration_details, integration_name, **kwargs
+            body=integration_details, name=integration_name, **kwargs
         )
 
     def save_integration_provider(
         self, name: str, integration_details: IntegrationUpdate, **kwargs
     ) -> None:
         """Create or update an integration provider"""
-        self._integration_api.save_integration_provider(integration_details, name, **kwargs)
+        self._integration_api.save_integration_provider(
+            body=integration_details, name=name, **kwargs
+        )
 
     def get_token_usage_for_integration(self, name: str, integration_name: str, **kwargs) -> int:
         """Get token usage for integration"""
         return self._integration_api.get_token_usage_for_integration(
-            name, integration_name, **kwargs
+            name=name, integration_name=integration_name, **kwargs
         )
 
     def get_token_usage_for_integration_provider(self, name: str, **kwargs) -> Dict[str, str]:
         """Get token usage for integration provider"""
-        return self._integration_api.get_token_usage_for_integration_provider(name, **kwargs)
+        return self._integration_api.get_token_usage_for_integration_provider(name=name, **kwargs)
 
     def register_token_usage(self, body: int, name: str, integration_name: str, **kwargs) -> None:
         """Register token usage"""
-        return self._integration_api.register_token_usage(body, name, integration_name, **kwargs)
+        return self._integration_api.register_token_usage(
+            body=body, name=name, integration_name=integration_name, **kwargs
+        )
 
     # Tags
 
@@ -132,30 +142,38 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
     ) -> None:
         """Delete tag for integration"""
         return self._integration_api.delete_tag_for_integration(
-            body, tag_name, integration_name, **kwargs
+            body=body, name=tag_name, integration_name=integration_name, **kwargs
         )
 
     def delete_tag_for_integration_provider(self, body: List[Tag], name: str, **kwargs) -> None:
         """Delete tag for integration provider"""
-        return self._integration_api.delete_tag_for_integration_provider(body, name, **kwargs)
+        return self._integration_api.delete_tag_for_integration_provider(
+            body=body, name=name, **kwargs
+        )
 
     def put_tag_for_integration(
         self, body: List[Tag], name: str, integration_name: str, **kwargs
     ) -> None:
         """Put tag for integration"""
-        return self._integration_api.put_tag_for_integration(body, name, integration_name, **kwargs)
+        return self._integration_api.put_tag_for_integration(
+            body=body, name=name, integration_name=integration_name, **kwargs
+        )
 
     def put_tag_for_integration_provider(self, body: List[Tag], name: str, **kwargs) -> None:
         """Put tag for integration provider"""
-        return self._integration_api.put_tag_for_integration_provider(body, name, **kwargs)
+        return self._integration_api.put_tag_for_integration_provider(
+            body=body, name=name, **kwargs
+        )
 
     def get_tags_for_integration(self, name: str, integration_name: str, **kwargs) -> List[Tag]:
         """Get tags for integration"""
-        return self._integration_api.get_tags_for_integration(name, integration_name, **kwargs)
+        return self._integration_api.get_tags_for_integration(
+            name=name, integration_name=integration_name, **kwargs
+        )
 
     def get_tags_for_integration_provider(self, name: str, **kwargs) -> List[Tag]:
         """Get tags for integration provider"""
-        return self._integration_api.get_tags_for_integration_provider(name, **kwargs)
+        return self._integration_api.get_tags_for_integration_provider(name=name, **kwargs)
 
     # Utility Methods for Integration Provider Management
     def get_integration_provider_by_category(
@@ -170,19 +188,16 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
 
     def get_integration_available_apis(self, name: str, **kwargs) -> List[str]:
         """Get available APIs for an integration"""
-        return self._integration_api.get_integration_available_apis(name, **kwargs)
+        return self._integration_api.get_integration_available_apis(name=name, **kwargs)
 
     def save_all_integrations(self, request_body: List[Integration], **kwargs) -> None:
         """Save all integrations"""
-        self._integration_api.save_all_integrations(request_body, **kwargs)
+        self._integration_api.save_all_integrations(body=request_body, **kwargs)
 
     def get_all_integrations(
-        self,
-        category: Optional[str] = None,
-        active_only: Optional[bool] = None,
+        self, category: Optional[str] = None, active_only: Optional[bool] = None, **kwargs
     ) -> List[Integration]:
         """Get all integrations with optional filtering"""
-        kwargs = {}
         if category is not None:
             kwargs["category"] = category
         if active_only is not None:
@@ -193,7 +208,6 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
         self, integration_type: Optional[str] = None, active_only: Optional[bool] = None, **kwargs
     ) -> List[str]:
         """Get providers and integrations together"""
-        kwargs = {}
         if integration_type is not None:
             kwargs["type"] = integration_type
         if active_only is not None:
@@ -202,4 +216,4 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
 
     def record_event_stats(self, body: List[EventLog], type: str, **kwargs) -> None:
         """Record event stats"""
-        self._integration_api.record_event_stats(body, type, **kwargs)
+        self._integration_api.record_event_stats(body=body, type=type, **kwargs)

@@ -16,10 +16,10 @@ class OrkesSecretClient(OrkesBaseClient, SecretClient):
         super().__init__(configuration)
 
     def put_secret(self, key: str, value: str, **kwargs) -> None:
-        self._secret_api.put_secret(value, key, **kwargs)
+        self._secret_api.put_secret(body=value, key=key, **kwargs)
 
     def get_secret(self, key: str, **kwargs) -> str:
-        return self._secret_api.get_secret(key, **kwargs)
+        return self._secret_api.get_secret(key=key, **kwargs)
 
     @deprecated("list_all_secret_names is deprecated; use list_all_secret_names_validated instead")
     @typing_deprecated(
@@ -35,10 +35,10 @@ class OrkesSecretClient(OrkesBaseClient, SecretClient):
         return self._secret_api.list_secrets_that_user_can_grant_access_to(**kwargs)
 
     def delete_secret(self, key: str, **kwargs) -> None:
-        self._secret_api.delete_secret(key, **kwargs)
+        self._secret_api.delete_secret(key=key, **kwargs)
 
     def secret_exists(self, key: str, **kwargs) -> object:
-        return self._secret_api.secret_exists(key, **kwargs)
+        return self._secret_api.secret_exists(key=key, **kwargs)
 
     @deprecated("set_secret_tags is deprecated; use put_tag_for_secret instead")
     @typing_deprecated("set_secret_tags is deprecated; use put_tag_for_secret instead")
@@ -46,7 +46,7 @@ class OrkesSecretClient(OrkesBaseClient, SecretClient):
         self._secret_api.put_tag_for_secret(tags, key)
 
     def put_tag_for_secret(self, tags: List[Tag], key: str, **kwargs) -> None:
-        self._secret_api.put_tag_for_secret(tags, key, **kwargs)
+        self._secret_api.put_tag_for_secret(body=tags, key=key, **kwargs)
 
     @deprecated("get_secret_tags is deprecated; use get_tags instead")
     @typing_deprecated("get_secret_tags is deprecated; use get_tags instead")
@@ -54,15 +54,15 @@ class OrkesSecretClient(OrkesBaseClient, SecretClient):
         return self._secret_api.get_tags(key)
 
     def get_tags(self, key: str, **kwargs) -> List[Tag]:
-        return self._secret_api.get_tags(key, **kwargs)
+        return self._secret_api.get_tags(key=key, **kwargs)
 
     @deprecated("delete_secret_tags is deprecated; use delete_tag_for_secret instead")
     @typing_deprecated("delete_secret_tags is deprecated; use delete_tag_for_secret instead")
     def delete_secret_tags(self, tags: List[Tag], key: str) -> None:
         return self._secret_api.delete_tag_for_secret(tags, key)
 
-    def delete_tag_for_secret(self, tags: List[Tag], key: str) -> None:
-        self._secret_api.delete_tag_for_secret(tags, key)
+    def delete_tag_for_secret(self, tags: List[Tag], key: str, **kwargs) -> None:
+        self._secret_api.delete_tag_for_secret(body=tags, key=key, **kwargs)
 
     def clear_local_cache(self, **kwargs) -> None:
         self._secret_api.clear_local_cache(**kwargs)
