@@ -1,10 +1,10 @@
 from typing import List
 
-from conductor.client.codegen.api.group_resource_api import GroupResourceApi
 from conductor.client.adapters.api_client_adapter import ApiClientAdapter
-from conductor.client.http.models.response import Response
+from conductor.client.codegen.api.group_resource_api import GroupResourceApi
 from conductor.client.http.models.granted_access_response import GrantedAccessResponse
 from conductor.client.http.models.group import Group
+from conductor.client.http.models.response import Response
 from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
 
 

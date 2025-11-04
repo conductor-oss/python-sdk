@@ -1,6 +1,7 @@
-from conductor.client.codegen.api.schema_resource_api import SchemaResourceApi
-from conductor.client.adapters.api_client_adapter import ApiClientAdapter
 from typing import List
+
+from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.schema_resource_api import SchemaResourceApi
 from conductor.client.http.models.schema_def import SchemaDef
 
 

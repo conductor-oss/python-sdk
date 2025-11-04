@@ -1,12 +1,12 @@
 from typing import List
 
-from conductor.client.codegen.api.application_resource_api import ApplicationResourceApi
-from conductor.client.http.models.extended_conductor_application import ExtendedConductorApplication
-from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.application_resource_api import ApplicationResourceApi
 from conductor.client.http.models.create_or_update_application_request import (
     CreateOrUpdateApplicationRequest,
 )
+from conductor.client.http.models.extended_conductor_application import ExtendedConductorApplication
+from conductor.client.orkes.models.metadata_tag import MetadataTag
 
 
 class ApplicationResourceApiAdapter:

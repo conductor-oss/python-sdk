@@ -1,5 +1,5 @@
-from conductor.client.codegen.api.token_resource_api import TokenResourceApi
 from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.token_resource_api import TokenResourceApi
 from conductor.client.http.models.generate_token_request import GenerateTokenRequest
 from conductor.client.http.models.response import Response
 

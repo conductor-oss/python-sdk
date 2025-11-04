@@ -1,7 +1,7 @@
-from conductor.client.codegen.api.authorization_resource_api import AuthorizationResourceApi
 from conductor.client.adapters.api_client_adapter import ApiClientAdapter
-from conductor.client.http.models.response import Response
+from conductor.client.codegen.api.authorization_resource_api import AuthorizationResourceApi
 from conductor.client.http.models.authorization_request import AuthorizationRequest
+from conductor.client.http.models.response import Response
 
 
 class AuthorizationResourceApiAdapter:

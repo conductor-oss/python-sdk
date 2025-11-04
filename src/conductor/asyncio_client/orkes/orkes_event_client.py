@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from conductor.asyncio_client.adapters.models.event_handler_adapter import EventHandlerAdapter
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
-from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.asyncio_client.adapters.models.connectivity_test_input_adapter import (
     ConnectivityTestInputAdapter,
 )
 from conductor.asyncio_client.adapters.models.connectivity_test_result_adapter import (
     ConnectivityTestResultAdapter,
 )
+from conductor.asyncio_client.adapters.models.event_handler_adapter import EventHandlerAdapter
+from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesEventClient(OrkesBaseClient):

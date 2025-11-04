@@ -1,8 +1,9 @@
-from conductor.client.codegen.api.user_resource_api import UserResourceApi
-from conductor.client.adapters.api_client_adapter import ApiClientAdapter
-from conductor.client.http.models.response import Response
-from conductor.client.http.models.conductor_user import ConductorUser
 from typing import List
+
+from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.user_resource_api import UserResourceApi
+from conductor.client.http.models.conductor_user import ConductorUser
+from conductor.client.http.models.response import Response
 from conductor.client.http.models.upsert_user_request import UpsertUserRequest
 
 

@@ -5,15 +5,15 @@ from typing import Dict, List, Optional
 from conductor.client.codegen.rest import ApiException
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models import MessageTemplate
+from conductor.client.http.models.event_log import EventLog
 from conductor.client.http.models.integration import Integration
 from conductor.client.http.models.integration_api import IntegrationApi
 from conductor.client.http.models.integration_api_update import IntegrationApiUpdate
 from conductor.client.http.models.integration_def import IntegrationDef
 from conductor.client.http.models.integration_update import IntegrationUpdate
+from conductor.client.http.models.tag import Tag
 from conductor.client.integration_client import IntegrationClient
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
-from conductor.client.http.models.tag import Tag
-from conductor.client.http.models.event_log import EventLog
 
 
 class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):

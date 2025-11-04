@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, cast
+
 from deprecated import deprecated
 from typing_extensions import deprecated as typing_deprecated
 
 from conductor.asyncio_client.adapters import ApiClient
+from conductor.asyncio_client.adapters.models.access_key_adapter import AccessKeyAdapter
 from conductor.asyncio_client.adapters.models.authorization_request_adapter import (
     AuthorizationRequestAdapter,
 )
@@ -13,6 +15,9 @@ from conductor.asyncio_client.adapters.models.conductor_user_adapter import (
 )
 from conductor.asyncio_client.adapters.models.create_or_update_application_request_adapter import (
     CreateOrUpdateApplicationRequestAdapter,
+)
+from conductor.asyncio_client.adapters.models.created_access_key_adapter import (
+    CreatedAccessKeyAdapter,
 )
 from conductor.asyncio_client.adapters.models.extended_conductor_application_adapter import (
     ExtendedConductorApplicationAdapter,
@@ -24,6 +29,7 @@ from conductor.asyncio_client.adapters.models.granted_access_response_adapter im
     GrantedAccessResponseAdapter,
 )
 from conductor.asyncio_client.adapters.models.group_adapter import GroupAdapter
+from conductor.asyncio_client.adapters.models.subject_ref_adapter import SubjectRefAdapter
 from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
 from conductor.asyncio_client.adapters.models.target_ref_adapter import (
     TargetRefAdapter,
@@ -36,11 +42,6 @@ from conductor.asyncio_client.adapters.models.upsert_user_request_adapter import
 )
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
-from conductor.asyncio_client.adapters.models.created_access_key_adapter import (
-    CreatedAccessKeyAdapter,
-)
-from conductor.asyncio_client.adapters.models.access_key_adapter import AccessKeyAdapter
-from conductor.asyncio_client.adapters.models.subject_ref_adapter import SubjectRefAdapter
 
 
 class OrkesAuthorizationClient(OrkesBaseClient):

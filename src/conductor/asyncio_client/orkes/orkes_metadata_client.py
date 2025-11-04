@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any, cast
+from typing import Any, Dict, List, Optional, cast
+
 from deprecated import deprecated
 from typing_extensions import deprecated as typing_deprecated
+
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.extended_task_def_adapter import (
     ExtendedTaskDefAdapter,

@@ -1,7 +1,7 @@
 from typing import List
 
-from conductor.client.codegen.api.environment_resource_api import EnvironmentResourceApi
 from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.environment_resource_api import EnvironmentResourceApi
 from conductor.client.http.models.environment_variable import EnvironmentVariable
 from conductor.client.http.models.tag import Tag
 

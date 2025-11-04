@@ -1,5 +1,6 @@
 import logging
 import warnings
+
 from deprecated import deprecated
 from typing_extensions import deprecated as typing_deprecated
 
@@ -10,6 +11,7 @@ from conductor.asyncio_client.adapters.api.application_resource_api import (
 from conductor.asyncio_client.adapters.api.authorization_resource_api import (
     AuthorizationResourceApiAdapter,
 )
+from conductor.asyncio_client.adapters.api.event_resource_api import EventResourceApiAdapter
 from conductor.asyncio_client.adapters.api.group_resource_api import GroupResourceApiAdapter
 from conductor.asyncio_client.adapters.api.integration_resource_api import (
     IntegrationResourceApiAdapter,
@@ -19,7 +21,6 @@ from conductor.asyncio_client.adapters.api.prompt_resource_api import PromptReso
 from conductor.asyncio_client.adapters.api.scheduler_resource_api import SchedulerResourceApiAdapter
 from conductor.asyncio_client.adapters.api.schema_resource_api import SchemaResourceApiAdapter
 from conductor.asyncio_client.adapters.api.secret_resource_api import SecretResourceApiAdapter
-from conductor.asyncio_client.adapters.api.event_resource_api import EventResourceApiAdapter
 from conductor.asyncio_client.adapters.api.tags_api import TagsApiAdapter
 from conductor.asyncio_client.adapters.api.task_resource_api import TaskResourceApiAdapter
 from conductor.asyncio_client.adapters.api.user_resource_api import UserResourceApiAdapter

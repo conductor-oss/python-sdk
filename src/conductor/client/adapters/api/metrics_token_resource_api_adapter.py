@@ -1,5 +1,5 @@
-from conductor.client.codegen.api.metrics_token_resource_api import MetricsTokenResourceApi
 from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.metrics_token_resource_api import MetricsTokenResourceApi
 from conductor.client.http.models.metrics_token import MetricsToken
 
 

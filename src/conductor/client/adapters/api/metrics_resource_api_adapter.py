@@ -1,6 +1,7 @@
-from conductor.client.codegen.api.metrics_resource_api import MetricsResourceApi
-from conductor.client.adapters.api_client_adapter import ApiClientAdapter
 from typing import Dict
+
+from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.metrics_resource_api import MetricsResourceApi
 from conductor.client.http.models.json_node import JsonNode
 
 

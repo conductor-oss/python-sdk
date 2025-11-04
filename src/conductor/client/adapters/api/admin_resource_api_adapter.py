@@ -1,8 +1,8 @@
 from typing import Dict, List
 
+from conductor.client.adapters.api_client_adapter import ApiClientAdapter
 from conductor.client.codegen.api.admin_resource_api import AdminResourceApi
 from conductor.client.http.models.task import Task
-from conductor.client.adapters.api_client_adapter import ApiClientAdapter
 
 
 class AdminResourceApiAdapter:

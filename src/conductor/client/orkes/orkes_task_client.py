@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.poll_data import PollData
+from conductor.client.http.models.search_result_task import SearchResultTask
+from conductor.client.http.models.search_result_task_summary import SearchResultTaskSummary
+from conductor.client.http.models.signal_response import SignalResponse
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.workflow import Workflow
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.task_client import TaskClient
-from conductor.client.http.models.search_result_task_summary import SearchResultTaskSummary
-from conductor.client.http.models.signal_response import SignalResponse
-from conductor.client.http.models.search_result_task import SearchResultTask
 
 
 class OrkesTaskClient(OrkesBaseClient, TaskClient):

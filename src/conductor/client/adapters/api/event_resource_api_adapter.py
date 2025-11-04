@@ -1,11 +1,11 @@
-from typing import List, Dict
+from typing import Dict, List
 
-from conductor.client.codegen.api.event_resource_api import EventResourceApi
 from conductor.client.adapters.api_client_adapter import ApiClientAdapter
-from conductor.client.http.models.event_handler import EventHandler
-from conductor.client.http.models.tag import Tag
+from conductor.client.codegen.api.event_resource_api import EventResourceApi
 from conductor.client.http.models.connectivity_test_input import ConnectivityTestInput
 from conductor.client.http.models.connectivity_test_result import ConnectivityTestResult
+from conductor.client.http.models.event_handler import EventHandler
+from conductor.client.http.models.tag import Tag
 
 
 class EventResourceApiAdapter:

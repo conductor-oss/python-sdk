@@ -1,6 +1,7 @@
-from conductor.client.codegen.api.queue_admin_resource_api import QueueAdminResourceApi
-from conductor.client.adapters.api_client_adapter import ApiClientAdapter
 from typing import Dict
+
+from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.queue_admin_resource_api import QueueAdminResourceApi
 
 
 class QueueAdminResourceApiAdapter:

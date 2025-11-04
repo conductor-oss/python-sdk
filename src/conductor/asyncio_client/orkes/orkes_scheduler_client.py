@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Dict, List, Optional
+
 from deprecated import deprecated
 from typing_extensions import deprecated as typing_deprecated
 

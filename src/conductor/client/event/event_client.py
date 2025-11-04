@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from conductor.client.event.queue.queue_configuration import QueueConfiguration
 from conductor.client.adapters.models.tag_adapter import TagAdapter
+from conductor.client.event.queue.queue_configuration import QueueConfiguration
 from conductor.client.http.api import EventResourceApi
 from conductor.client.http.api_client import ApiClient
 

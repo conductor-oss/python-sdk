@@ -1,15 +1,15 @@
-from typing import List, Dict
+from typing import Dict, List
 
-from conductor.client.codegen.api.integration_resource_api import IntegrationResourceApi
 from conductor.client.adapters.api_client_adapter import ApiClientAdapter
-from conductor.client.http.models.tag import Tag
+from conductor.client.codegen.api.integration_resource_api import IntegrationResourceApi
+from conductor.client.http.models.event_log import EventLog
 from conductor.client.http.models.integration import Integration
 from conductor.client.http.models.integration_api import IntegrationApi
-from conductor.client.http.models.integration_def import IntegrationDef
-from conductor.client.http.models.message_template import MessageTemplate
-from conductor.client.http.models.event_log import EventLog
 from conductor.client.http.models.integration_api_update import IntegrationApiUpdate
+from conductor.client.http.models.integration_def import IntegrationDef
 from conductor.client.http.models.integration_update import IntegrationUpdate
+from conductor.client.http.models.message_template import MessageTemplate
+from conductor.client.http.models.tag import Tag
 
 
 class IntegrationResourceApiAdapter:

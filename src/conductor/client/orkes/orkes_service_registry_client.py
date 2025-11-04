@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.circuit_breaker_transition_response import (

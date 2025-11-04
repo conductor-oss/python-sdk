@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from typing import List, Optional
 
+from deprecated import deprecated
+from typing_extensions import deprecated as typing_deprecated
+
 from conductor.client.configuration.configuration import Configuration
+from conductor.client.http.models.extended_task_def import ExtendedTaskDef
+from conductor.client.http.models.extended_workflow_def import ExtendedWorkflowDef
+from conductor.client.http.models.incoming_bpmn_file import IncomingBpmnFile
+from conductor.client.http.models.tag import Tag
 from conductor.client.http.models.tag_string import TagString
 from conductor.client.http.models.task_def import TaskDef
 from conductor.client.http.models.workflow_def import WorkflowDef
@@ -10,12 +17,6 @@ from conductor.client.metadata_client import MetadataClient
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.orkes.models.ratelimit_tag import RateLimitTag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
-from conductor.client.http.models.extended_task_def import ExtendedTaskDef
-from conductor.client.http.models.extended_workflow_def import ExtendedWorkflowDef
-from deprecated import deprecated
-from typing_extensions import deprecated as typing_deprecated
-from conductor.client.http.models.incoming_bpmn_file import IncomingBpmnFile
-from conductor.client.http.models.tag import Tag
 
 
 class OrkesMetadataClient(OrkesBaseClient, MetadataClient):

@@ -1,6 +1,7 @@
-from conductor.client.codegen.api.scheduler_bulk_resource_api import SchedulerBulkResourceApi
-from conductor.client.adapters.api_client_adapter import ApiClientAdapter
 from typing import List
+
+from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.scheduler_bulk_resource_api import SchedulerBulkResourceApi
 from conductor.client.http.models.bulk_response import BulkResponse
 
 

@@ -1,11 +1,13 @@
 import logging
 import warnings
+
 from deprecated import deprecated
 from typing_extensions import deprecated as typing_deprecated
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.application_resource_api import ApplicationResourceApi
 from conductor.client.http.api.authorization_resource_api import AuthorizationResourceApi
+from conductor.client.http.api.event_resource_api import EventResourceApi
 from conductor.client.http.api.group_resource_api import GroupResourceApi
 from conductor.client.http.api.integration_resource_api import IntegrationResourceApi
 from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
@@ -19,7 +21,6 @@ from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api.user_resource_api import UserResourceApi
 from conductor.client.http.api.workflow_resource_api import WorkflowResourceApi
 from conductor.client.http.api_client import ApiClient
-from conductor.client.http.api.event_resource_api import EventResourceApi
 
 
 class OrkesBaseClient(object):

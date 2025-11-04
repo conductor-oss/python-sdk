@@ -1,14 +1,15 @@
+from typing import Dict, List
+
 from conductor.client.adapters.api_client_adapter import ApiClientAdapter
 from conductor.client.codegen.api.task_resource_api import TaskResourceApi
-from typing import Dict, List
-from conductor.client.http.models.task import Task
 from conductor.client.http.models.poll_data import PollData
-from conductor.client.http.models.task_exec_log import TaskExecLog
-from conductor.client.http.models.search_result_task_summary import SearchResultTaskSummary
 from conductor.client.http.models.search_result_task import SearchResultTask
+from conductor.client.http.models.search_result_task_summary import SearchResultTaskSummary
+from conductor.client.http.models.signal_response import SignalResponse
+from conductor.client.http.models.task import Task
+from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.workflow import Workflow
-from conductor.client.http.models.signal_response import SignalResponse
 
 
 class TaskResourceApiAdapter:

@@ -1,14 +1,13 @@
 from typing import List, Set
 
-from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.models.tag import Tag
-from conductor.client.orkes.orkes_base_client import OrkesBaseClient
-from conductor.client.secret_client import SecretClient
-
 from deprecated import deprecated
 from typing_extensions import deprecated as typing_deprecated
 
+from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.extended_secret import ExtendedSecret
+from conductor.client.http.models.tag import Tag
+from conductor.client.orkes.orkes_base_client import OrkesBaseClient
+from conductor.client.secret_client import SecretClient
 
 
 class OrkesSecretClient(OrkesBaseClient, SecretClient):

@@ -1,12 +1,12 @@
 from typing import List
 
+from deprecated import deprecated
+from typing_extensions import deprecated as typing_deprecated
+
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.schema_def import SchemaDef
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.schema_client import SchemaClient
-
-from deprecated import deprecated
-from typing_extensions import deprecated as typing_deprecated
 
 
 class OrkesSchemaClient(OrkesBaseClient, SchemaClient):

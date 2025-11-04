@@ -1,11 +1,11 @@
 from typing import List
 
-from conductor.client.codegen.api.event_execution_resource_api import EventExecutionResourceApi
 from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.event_execution_resource_api import EventExecutionResourceApi
+from conductor.client.http.models.extended_event_execution import ExtendedEventExecution
 from conductor.client.http.models.search_result_handled_event_response import (
     SearchResultHandledEventResponse,
 )
-from conductor.client.http.models.extended_event_execution import ExtendedEventExecution
 
 
 class EventExecutionResourceApiAdapter:

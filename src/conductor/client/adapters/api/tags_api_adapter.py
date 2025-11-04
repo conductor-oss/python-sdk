@@ -1,6 +1,6 @@
-from conductor.client.orkes.api.tags_api import TagsApi
 from conductor.client.adapters.api_client_adapter import ApiClientAdapter
 from conductor.client.http.models.tag import Tag
+from conductor.client.orkes.api.tags_api import TagsApi
 
 
 class TagsApiAdapter:

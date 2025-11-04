@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import List, Dict
+from typing import Dict, List
 
 from conductor.client.adapters.models.event_handler_adapter import EventHandlerAdapter
 from conductor.client.adapters.models.tag_adapter import TagAdapter
-from conductor.client.orkes.orkes_base_client import OrkesBaseClient
-from conductor.client.http.models.event_handler import EventHandler
 from conductor.client.http.models.connectivity_test_input import ConnectivityTestInput
 from conductor.client.http.models.connectivity_test_result import ConnectivityTestResult
+from conductor.client.http.models.event_handler import EventHandler
+from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 
 
 class OrkesEventClient(OrkesBaseClient):

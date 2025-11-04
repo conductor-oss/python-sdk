@@ -1,6 +1,7 @@
-from conductor.client.codegen.api.incoming_webhook_resource_api import IncomingWebhookResourceApi
-from conductor.client.adapters.api_client_adapter import ApiClientAdapter
 from typing import Dict
+
+from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.incoming_webhook_resource_api import IncomingWebhookResourceApi
 
 
 class IncomingWebhookResourceApiAdapter:

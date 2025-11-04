@@ -1,5 +1,5 @@
-from conductor.client.codegen.api.version_resource_api import VersionResourceApi
 from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.version_resource_api import VersionResourceApi
 
 
 class VersionResourceApiAdapter:

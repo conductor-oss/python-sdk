@@ -2,19 +2,20 @@ from __future__ import annotations
 
 from typing import List, Optional
 
+from deprecated import deprecated
+from typing_extensions import deprecated as typing_deprecated
+
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models import WorkflowScheduleModel
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
 from conductor.client.http.models.search_result_workflow_schedule_execution_model import (
     SearchResultWorkflowScheduleExecutionModel,
 )
+from conductor.client.http.models.tag import Tag
 from conductor.client.http.models.workflow_schedule import WorkflowSchedule
 from conductor.client.orkes.models.metadata_tag import MetadataTag
-from conductor.client.http.models.tag import Tag
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.scheduler_client import SchedulerClient
-from deprecated import deprecated
-from typing_extensions import deprecated as typing_deprecated
 
 
 class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):

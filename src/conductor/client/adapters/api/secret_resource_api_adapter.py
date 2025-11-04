@@ -1,8 +1,9 @@
-from conductor.client.codegen.api.secret_resource_api import SecretResourceApi
-from conductor.client.adapters.api_client_adapter import ApiClientAdapter
 from typing import Dict, List
-from conductor.client.http.models.tag import Tag
+
+from conductor.client.adapters.api_client_adapter import ApiClientAdapter
+from conductor.client.codegen.api.secret_resource_api import SecretResourceApi
 from conductor.client.http.models.extended_secret import ExtendedSecret
+from conductor.client.http.models.tag import Tag
 
 
 class SecretResourceApiAdapter:

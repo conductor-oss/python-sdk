@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from deprecated import deprecated
+from typing_extensions import deprecated as typing_deprecated
+
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.adapters.models.poll_data_adapter import PollDataAdapter
 from conductor.asyncio_client.adapters.models.search_result_task_summary_adapter import (
@@ -13,8 +16,6 @@ from conductor.asyncio_client.adapters.models.task_result_adapter import TaskRes
 from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_base_client import OrkesBaseClient
-from deprecated import deprecated
-from typing_extensions import deprecated as typing_deprecated
 
 
 class OrkesTaskClient(OrkesBaseClient):
