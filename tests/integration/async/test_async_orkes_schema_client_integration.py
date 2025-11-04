@@ -405,3 +405,48 @@ class TestOrkesSchemaClientIntegration:
             print(
                 f"Warning: {len(remaining_schemas)} schemas could not be verified as deleted: {remaining_schemas}"
             )
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_schema_register_methods(
+        self, schema_client: OrkesSchemaClient, test_suffix: str, json_schema_data: dict
+    ):
+        """Test register schema methods."""
+        schema_name = f"register_schema_{test_suffix}"
+
+        try:
+            schema_def = SchemaDef(
+                name=schema_name,
+                version=1,
+                type=SchemaType.JSON,
+                data=json_schema_data,
+            )
+
+            await schema_client.register_schema(schema_def)
+
+            retrieved_schema = await schema_client.get_schema(schema_name, 1)
+            assert retrieved_schema is not None
+            assert retrieved_schema.name == schema_name
+            assert retrieved_schema.version == 1
+
+            schema_def_v2 = SchemaDef(
+                name=schema_name,
+                version=2,
+                type=SchemaType.JSON,
+                data=json_schema_data,
+            )
+
+            await schema_client.register_schemas([schema_def_v2], new_version=True)
+
+            retrieved_schema_v2 = await schema_client.get_schema(schema_name, 2)
+            assert retrieved_schema_v2 is not None
+            assert retrieved_schema_v2.version == 2
+        except Exception as e:
+            print(f"Exception in test_schema_register_methods: {str(e)}")
+            raise
+        finally:
+            try:
+                await schema_client.delete_schema_by_name(schema_name)
+            except Exception:
+                pass

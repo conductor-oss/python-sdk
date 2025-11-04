@@ -561,3 +561,66 @@ class TestOrkesSchedulerClientIntegration:
             print(
                 f"Warning: {len(remaining_schedules)} schedules could not be verified as deleted: {remaining_schedules}"
             )
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_schedule_validated_methods(
+        self, scheduler_client: OrkesSchedulerClient, test_suffix: str
+    ):
+        """Test validated schedule methods."""
+        schedule_name = f"validated_schedule_{test_suffix}"
+
+        try:
+            start_workflow_request = StartWorkflowRequest(
+                name="test_workflow",
+                version=1,
+                input={"test": "validated"},
+            )
+
+            schedule_request = SaveScheduleRequest(
+                name=schedule_name,
+                cron_expression="0 0 * * * ?",
+                description="Validated schedule test",
+                start_workflow_request=start_workflow_request,
+                paused=False,
+            )
+
+            await scheduler_client.save_schedule_validated(schedule_request)
+
+            retrieved_schedule = await scheduler_client.get_schedule(schedule_name)
+            assert retrieved_schedule is not None
+            assert retrieved_schedule.name == schedule_name
+
+            await scheduler_client.pause_schedule_validated(schedule_name)
+
+            paused_schedule = await scheduler_client.get_schedule(schedule_name)
+            assert paused_schedule.paused is True
+
+            await scheduler_client.resume_schedule_validated(schedule_name)
+
+            resumed_schedule = await scheduler_client.get_schedule(schedule_name)
+            assert resumed_schedule.paused is False
+
+            await scheduler_client.delete_schedule_validated(schedule_name)
+        except Exception as e:
+            print(f"Exception in test_schedule_validated_methods: {str(e)}")
+            raise
+        finally:
+            try:
+                await scheduler_client.delete_schedule(schedule_name)
+            except Exception:
+                pass
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_pause_resume_all_schedules_validated(
+        self, scheduler_client: OrkesSchedulerClient
+    ):
+        """Test pause and resume all schedules validated methods."""
+        try:
+            await scheduler_client.pause_all_schedules_validated()
+            await scheduler_client.resume_all_schedules_validated()
+        except Exception as e:
+            print(f"Bulk schedule operations may not be fully supported: {str(e)}")

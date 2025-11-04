@@ -254,3 +254,40 @@ class TestOrkesPromptClientIntegration:
                 await prompt_client.delete_prompt(prompt_name)
             except Exception as e:
                 print(f"Warning: Failed to cleanup prompt {prompt_name}: {str(e)}")
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_prompt_tag_update_method(
+        self, prompt_client: OrkesPromptClient, test_suffix: str
+    ):
+        """Test update_tag_for_prompt_template method."""
+        prompt_name = f"test_tag_update_prompt_{test_suffix}"
+
+        try:
+            await prompt_client.save_prompt(
+                prompt_name,
+                "Test prompt for tag update",
+                "Hello {{name}}"
+            )
+
+            tags = [
+                MetadataTag(key="version", value="1.0", type="METADATA"),
+                MetadataTag(key="environment", value="test", type="METADATA"),
+            ]
+
+            await prompt_client.update_tag_for_prompt_template(prompt_name, tags)
+
+            retrieved_tags = await prompt_client.get_tags_for_prompt_template(prompt_name)
+            assert len(retrieved_tags) == 2
+            tag_keys = [tag.key for tag in retrieved_tags]
+            assert "version" in tag_keys
+            assert "environment" in tag_keys
+        except Exception as e:
+            print(f"Exception in test_prompt_tag_update_method: {str(e)}")
+            raise
+        finally:
+            try:
+                await prompt_client.delete_prompt(prompt_name)
+            except Exception:
+                pass

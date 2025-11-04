@@ -69,7 +69,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if priority:
             kwargs.update({"priority": priority})
 
-        return self._workflow_api.start_workflow1(input=input, name=name, **kwargs)
+        return self._workflow_api.start_workflow1(body=input, name=name, **kwargs)
 
     def start_workflow(self, start_workflow_request: StartWorkflowRequest, **kwargs) -> str:
         return self._workflow_api.start_workflow(body=start_workflow_request, **kwargs)
@@ -250,7 +250,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
             kwargs.update({"include_tasks": include_tasks})
         if include_completed:
             kwargs.update({"include_closed": include_completed})
-        return self._workflow_api.get_workflows1(**kwargs)
+        return self._workflow_api.get_workflows1(body=batch_request, **kwargs)
 
     def get_by_correlation_ids(
         self,
@@ -275,9 +275,7 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         self, workflow_id: str, variables: Optional[Dict[str, object]] = None, **kwargs
     ) -> None:
         variables = variables or {}
-        self._workflow_api.update_workflow_state(
-            variables=variables, workflow_id=workflow_id, **kwargs
-        )
+        self._workflow_api.update_workflow_state(body=variables, workflow_id=workflow_id, **kwargs)
 
     def update_state(
         self,

@@ -355,3 +355,35 @@ class TestOrkesIntegrationClientIntegration:
             integration_client.delete_integration_api(api_name, integration_name)
         except Exception as e:
             print(f"Warning: Failed to cleanup integration API {api_name}: {str(e)}")
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_save_and_get_integration(
+        self, integration_client: OrkesIntegrationClient, test_suffix: str, simple_integration_config: dict
+    ):
+        """Test save_integration and get_integration methods."""
+        integration_name = f"test_save_integration_{test_suffix}"
+
+        try:
+            integration_update = IntegrationUpdate(
+                category="AI_MODEL",
+                type="openai",
+                description="Test save_integration method",
+                enabled=True,
+                configuration=simple_integration_config,
+            )
+
+            await integration_client.save_integration(integration_name, integration_update)
+
+            retrieved_integration = await integration_client.get_integration(integration_name)
+            assert retrieved_integration is not None
+            assert retrieved_integration.enabled is True
+
+            non_existent = await integration_client.get_integration(f"non_existent_{test_suffix}")
+            assert non_existent is None
+        except Exception as e:
+            print(f"Exception in test_save_and_get_integration: {str(e)}")
+            raise
+        finally:
+            await self._cleanup_integration(integration_client, integration_name)

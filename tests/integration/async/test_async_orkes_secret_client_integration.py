@@ -332,3 +332,52 @@ class TestOrkesSecretClientIntegration:
             print(
                 f"Warning: {len(remaining_secrets)} secrets could not be verified as deleted: {remaining_secrets}"
             )
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_secret_validated_methods(
+        self, secret_client: OrkesSecretClient, test_suffix: str
+    ):
+        """Test validated secret methods."""
+        secret_key = f"validated_secret_{test_suffix}"
+        secret_value = "validated_secret_value"
+
+        try:
+            await secret_client.put_secret_validated(secret_key, secret_value)
+
+            exists = await secret_client.secret_exists_validated(secret_key)
+            assert exists is True
+
+            has_secret = await secret_client.has_secret_validated(secret_key)
+            assert has_secret is True
+
+            retrieved_value = await secret_client.get_secret(secret_key)
+            assert retrieved_value == '"validated_secret_value"'
+
+            new_value = "updated_secret_value"
+            await secret_client.update_secret_validated(secret_key, new_value)
+
+            await secret_client.delete_secret_validated(secret_key)
+
+            exists_after_delete = await secret_client.secret_exists_validated(secret_key)
+            assert exists_after_delete is False
+        except Exception as e:
+            print(f"Exception in test_secret_validated_methods: {str(e)}")
+            raise
+        finally:
+            try:
+                await secret_client.delete_secret_validated(secret_key)
+            except Exception:
+                pass
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_cache_validated_methods(self, secret_client: OrkesSecretClient):
+        """Test validated cache methods."""
+        try:
+            await secret_client.clear_local_cache_validated()
+            await secret_client.clear_redis_cache_validated()
+        except Exception as e:
+            print(f"Cache operations may not be supported: {str(e)}")

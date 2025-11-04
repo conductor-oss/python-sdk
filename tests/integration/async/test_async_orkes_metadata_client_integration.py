@@ -737,3 +737,69 @@ class TestOrkesMetadataClientIntegration:
             print(
                 f"Warning: {len(remaining_workflows)} workflows and {len(remaining_tasks)} tasks could not be verified as deleted: {remaining_workflows}, {remaining_tasks}"
             )
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_task_def_validated_methods(
+        self, metadata_client: OrkesMetadataClient, test_suffix: str
+    ):
+        """Test validated task definition methods."""
+        task_name = f"validated_task_{test_suffix}"
+
+        try:
+            task_def = TaskDef(
+                name=task_name,
+                timeout_seconds=30,
+                total_timeout_seconds=60,
+                retry_count=2,
+                response_timeout_seconds=30,
+            )
+
+            await metadata_client.register_task_def_validated([task_def])
+
+            fetched_task = await metadata_client.get_task_def_validated(task_name)
+            assert fetched_task is not None
+            assert fetched_task.name == task_name
+        finally:
+            try:
+                await metadata_client.unregister_task_def(task_name)
+            except Exception:
+                pass
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_workflow_def_validated_methods(
+        self, metadata_client: OrkesMetadataClient, test_suffix: str
+    ):
+        """Test validated workflow definition methods."""
+        workflow_name = f"validated_workflow_{test_suffix}"
+
+        try:
+            from conductor.asyncio_client.adapters.models.workflow_task_adapter import WorkflowTaskAdapter
+
+            workflow_def = WorkflowDef(
+                name=workflow_name,
+                version=1,
+                tasks=[
+                    WorkflowTaskAdapter(
+                        name="simple_task",
+                        task_reference_name="simple_task_ref",
+                    )
+                ],
+            )
+
+            await metadata_client.create_workflow_def_validated(workflow_def, overwrite=False)
+
+            fetched_workflow = await metadata_client.get_workflow_def(workflow_name, version=1)
+            assert fetched_workflow is not None
+            assert fetched_workflow.name == workflow_name
+
+            workflow_def.description = "Updated description"
+            await metadata_client.update_workflow_defs_validated([workflow_def])
+        finally:
+            try:
+                await metadata_client.unregister_workflow_def(workflow_name, 1)
+            except Exception:
+                pass

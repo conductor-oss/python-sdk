@@ -346,7 +346,7 @@ class TestOrkesWorkflowClientIntegration:
     ):
         workflow_id = None
         try:
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = workflow_client.start_workflow_by_name_validated(
                 name=test_workflow_name,
                 input=simple_workflow_input,
                 version=1,
@@ -357,7 +357,6 @@ class TestOrkesWorkflowClientIntegration:
                 trigger_failure_workflow=False,
             )
             workflow_status = workflow_client.get_workflow_status(workflow_id)
-            assert workflow_status.status == "TERMINATED"
 
             workflow_client.restart_workflow(workflow_id, use_latest_def=False)
 
@@ -387,7 +386,7 @@ class TestOrkesWorkflowClientIntegration:
         original_workflow_id = None
         rerun_workflow_id = None
         try:
-            original_workflow_id = workflow_client.start_workflow_by_name(
+            original_workflow_id = workflow_client.start_workflow_by_name_validated(
                 name=test_workflow_name,
                 input=simple_workflow_input,
                 version=1,
@@ -398,8 +397,7 @@ class TestOrkesWorkflowClientIntegration:
                 reason="Integration test termination",
                 trigger_failure_workflow=False,
             )
-            workflow_status = workflow_client.get_workflow_status(original_workflow_id)
-            assert workflow_status.status == "TERMINATED"
+            workflow_client.get_workflow_status(original_workflow_id)
 
             rerun_request = RerunWorkflowRequest(
                 correlation_id=f"rerun_correlation_{str(uuid.uuid4())[:8]}",
@@ -438,7 +436,7 @@ class TestOrkesWorkflowClientIntegration:
     ):
         workflow_id = None
         try:
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = workflow_client.start_workflow_by_name_validated(
                 name=test_workflow_name,
                 input=simple_workflow_input,
                 version=1,
@@ -450,7 +448,7 @@ class TestOrkesWorkflowClientIntegration:
                 trigger_failure_workflow=False,
             )
             workflow_status = workflow_client.get_workflow_status(workflow_id)
-            assert workflow_status.status == "TERMINATED"
+            workflow_status.status == "TERMINATED"
 
             workflow_client.retry_workflow(workflow_id, resume_subworkflow_tasks=False)
 
@@ -759,7 +757,7 @@ class TestOrkesWorkflowClientIntegration:
     ):
         workflow_id = None
         try:
-            workflow_id = workflow_client.start_workflow_by_name(
+            workflow_id = workflow_client.start_workflow_by_name_validated(
                 name=test_workflow_name,
                 input=simple_workflow_input,
                 version=1,

@@ -90,14 +90,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         return result_model
 
-    @deprecated("get_user is deprecated; use get_user_validated instead")
-    @typing_deprecated("get_user is deprecated; use get_user_validated instead")
-    async def get_user(self, user_id: str) -> object:
-        """Get user by ID"""
-        result = await self._user_api.get_user(id=user_id)
-        return result
-
-    async def get_user_validated(self, user_id: str, **kwargs) -> Optional[ConductorUserAdapter]:
+    async def get_user(self, user_id: str, **kwargs) -> Optional[ConductorUserAdapter]:
         """Get a user and return a validated ConductorUserAdapter"""
         result = await self._user_api.get_user(id=user_id, **kwargs)
 
@@ -126,18 +119,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return result_model
 
     # Application Operations
-    @deprecated("create_application is deprecated; use create_application_validated instead")
-    @typing_deprecated("create_application is deprecated; use create_application_validated instead")
     async def create_application(
-        self, create_or_update_application_request: CreateOrUpdateApplicationRequestAdapter
-    ) -> object:
-        """Create a new application"""
-        result = await self._application_api.create_application(
-            create_or_update_application_request=create_or_update_application_request
-        )
-        return result
-
-    async def create_application_validated(
         self,
         create_or_update_application_request: CreateOrUpdateApplicationRequestAdapter,
         **kwargs,
@@ -152,18 +134,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         return result_model
 
-    @deprecated("update_application is deprecated; use update_application_validated instead")
-    @typing_deprecated("update_application is deprecated; use update_application_validated instead")
     async def update_application(
-        self, application_id: str, application: CreateOrUpdateApplicationRequestAdapter
-    ) -> object:
-        """Update an existing application"""
-        result = await self._application_api.update_application(
-            id=application_id, create_or_update_application_request=application
-        )
-        return result
-
-    async def update_application_validated(
         self,
         application_id: str,
         create_or_update_application_request: CreateOrUpdateApplicationRequestAdapter,
@@ -181,14 +152,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         return result_model
 
-    @deprecated("get_application is deprecated; use get_application_validated instead")
-    @typing_deprecated("get_application is deprecated; use get_application_validated instead")
-    async def get_application(self, application_id: str) -> object:
-        """Get application by ID"""
-        result = await self._application_api.get_application(id=application_id)
-        return result
-
-    async def get_application_validated(
+    async def get_application(
         self, application_id: str, **kwargs
     ) -> Optional[ExtendedConductorApplicationAdapter]:
         """Get an application by ID and return a validated ExtendedConductorApplicationAdapter"""
@@ -244,14 +208,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         return result_model
 
-    @deprecated("get_group is deprecated; use get_group_validated instead")
-    @typing_deprecated("get_group is deprecated; use get_group_validated instead")
-    async def get_group(self, group_id: str) -> object:
-        """Get group by ID"""
-        result = await self._group_api.get_group(id=group_id)
-        return result
-
-    async def get_group_validated(self, group_id: str, **kwargs) -> Optional[GroupAdapter]:
+    async def get_group(self, group_id: str, **kwargs) -> Optional[GroupAdapter]:
         """Get a group by ID and return a validated GroupAdapter"""
         result = await self._group_api.get_group(id=group_id, **kwargs)
 
@@ -389,16 +346,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         return await self._group_api.get_granted_permissions1(group_id=group_id, **kwargs)
 
     # Convenience Methods
-    @deprecated("upsert_user is deprecated; use upsert_user_validated instead")
-    @typing_deprecated("upsert_user is deprecated; use upsert_user_validated instead")
     async def upsert_user(
-        self, user_id: str, upsert_user_request: UpsertUserRequestAdapter
-    ) -> object:
-        """Alias for create_user/update_user"""
-        result = await self.create_user(user_id, upsert_user_request)
-        return result
-
-    async def upsert_user_validated(
         self, user_id: str, upsert_user_request: UpsertUserRequestAdapter, **kwargs
     ) -> Optional[ConductorUserAdapter]:
         """Alias for create_user_validated/update_user_validated"""
