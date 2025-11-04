@@ -305,3 +305,33 @@ async def test_search_schemas_by_name_case_insensitive(mocker, schema_client):
     mock.return_value = schemas
     result = await schema_client.search_schemas_by_name("user")
     assert result == [schemas[0]]
+
+
+@pytest.mark.asyncio
+async def test_register_schema(mocker, schema_client, schema_def_adapter):
+    mock = mocker.patch.object(schema_client, "register_schemas")
+    await schema_client.register_schema(schema_def_adapter)
+    mock.assert_called_with(schema_defs=[schema_def_adapter], new_version=None)
+
+
+@pytest.mark.asyncio
+async def test_register_schema_with_new_version(mocker, schema_client, schema_def_adapter):
+    mock = mocker.patch.object(schema_client, "register_schemas")
+    await schema_client.register_schema(schema_def_adapter, new_version=True)
+    mock.assert_called_with(schema_defs=[schema_def_adapter], new_version=True)
+
+
+@pytest.mark.asyncio
+async def test_register_schemas(mocker, schema_client, schema_def_adapter):
+    mock = mocker.patch.object(SchemaResourceApiAdapter, "save")
+    schemas = [schema_def_adapter]
+    await schema_client.register_schemas(schemas)
+    mock.assert_called_with(schema_def=schemas, new_version=None)
+
+
+@pytest.mark.asyncio
+async def test_register_schemas_with_new_version(mocker, schema_client, schema_def_adapter):
+    mock = mocker.patch.object(SchemaResourceApiAdapter, "save")
+    schemas = [schema_def_adapter]
+    await schema_client.register_schemas(schemas, new_version=True)
+    mock.assert_called_with(schema_def=schemas, new_version=True)

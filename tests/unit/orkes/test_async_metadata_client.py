@@ -499,3 +499,66 @@ async def test_get_workflow_def_by_name(mocker, metadata_client, workflow_def):
         tag_value=None,
     )
     assert len(workflows) == 1
+
+
+@pytest.mark.asyncio
+async def test_register_task_def_validated(mocker, metadata_client, extended_task_def):
+    mock = mocker.patch.object(MetadataResourceApiAdapter, "register_task_def")
+    await metadata_client.register_task_def_validated([extended_task_def])
+    mock.assert_called_with(extended_task_def=[extended_task_def])
+
+
+@pytest.mark.asyncio
+async def test_get_task_def_validated(mocker, metadata_client, task_def):
+    mock = mocker.patch.object(MetadataResourceApiAdapter, "get_task_def")
+    task_dict = {
+        "name": TASK_NAME,
+        "timeoutSeconds": 1,
+        "totalTimeoutSeconds": 1,
+    }
+    mock.return_value = task_dict
+    task = await metadata_client.get_task_def_validated(TASK_NAME)
+    mock.assert_called_with(tasktype=TASK_NAME)
+    assert task.name == TASK_NAME
+
+
+@pytest.mark.asyncio
+async def test_create_workflow_def_validated(mocker, metadata_client, extended_workflow_def):
+    mock = mocker.patch.object(MetadataResourceApiAdapter, "create")
+    await metadata_client.create_workflow_def_validated(extended_workflow_def)
+    mock.assert_called_with(extended_workflow_def, overwrite=None, new_version=None)
+
+
+@pytest.mark.asyncio
+async def test_create_workflow_def_validated_with_params(mocker, metadata_client, extended_workflow_def):
+    mock = mocker.patch.object(MetadataResourceApiAdapter, "create")
+    await metadata_client.create_workflow_def_validated(extended_workflow_def, overwrite=True, new_version=False)
+    mock.assert_called_with(extended_workflow_def, overwrite=True, new_version=False)
+
+
+@pytest.mark.asyncio
+async def test_update_workflow_defs_validated(mocker, metadata_client, extended_workflow_def):
+    mock = mocker.patch.object(MetadataResourceApiAdapter, "update")
+    await metadata_client.update_workflow_defs_validated([extended_workflow_def])
+    mock.assert_called_with(extended_workflow_def=[extended_workflow_def], overwrite=None, new_version=None)
+
+
+@pytest.mark.asyncio
+async def test_update_workflow_defs_validated_with_params(mocker, metadata_client, extended_workflow_def):
+    mock = mocker.patch.object(MetadataResourceApiAdapter, "update")
+    await metadata_client.update_workflow_defs_validated([extended_workflow_def], overwrite=True, new_version=False)
+    mock.assert_called_with(extended_workflow_def=[extended_workflow_def], overwrite=True, new_version=False)
+
+
+@pytest.mark.asyncio
+async def test_register_workflow_def_validated(mocker, metadata_client, extended_workflow_def):
+    mock = mocker.patch.object(metadata_client, "create_workflow_def_validated")
+    await metadata_client.register_workflow_def_validated(extended_workflow_def)
+    mock.assert_called_with(extended_workflow_def=extended_workflow_def, overwrite=False)
+
+
+@pytest.mark.asyncio
+async def test_update_workflow_def_validated(mocker, metadata_client, extended_workflow_def):
+    mock = mocker.patch.object(metadata_client, "create_workflow_def_validated")
+    await metadata_client.update_workflow_def_validated(extended_workflow_def)
+    mock.assert_called_with(extended_workflow_def=extended_workflow_def, overwrite=True)

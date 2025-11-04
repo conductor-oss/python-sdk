@@ -491,3 +491,11 @@ async def test_get_templates_with_model_no_models_attribute(mocker, prompt_clien
     assert mock.called
     mock.assert_called_with()
     assert len(result) == 0
+
+
+@pytest.mark.asyncio
+async def test_update_tag_for_prompt_template(mocker, prompt_client, tag):
+    mock = mocker.patch.object(PromptResourceApiAdapter, "put_tag_for_prompt_template")
+    tags = [tag]
+    await prompt_client.update_tag_for_prompt_template(TEMPLATE_NAME, tags)
+    mock.assert_called_with(name=TEMPLATE_NAME, tag=tags)

@@ -482,3 +482,51 @@ async def test_get_all_poll_data_with_parameters(mocker, task_client):
         last_poll_time_opt="desc"
     )
     assert result == expected_data
+
+
+@pytest.mark.asyncio
+async def test_poll_task(mocker, task_client, task_adapter):
+    mock = mocker.patch.object(TaskResourceApiAdapter, "poll")
+    mock.return_value = task_adapter
+    result = await task_client.poll_task(TASK_NAME, WORKER_ID)
+    mock.assert_called_with(tasktype=TASK_NAME, workerid=WORKER_ID, domain=None)
+    assert result == task_adapter
+
+
+@pytest.mark.asyncio
+async def test_poll_task_with_domain(mocker, task_client, task_adapter):
+    mock = mocker.patch.object(TaskResourceApiAdapter, "poll")
+    mock.return_value = task_adapter
+    result = await task_client.poll_task(TASK_NAME, WORKER_ID, DOMAIN)
+    mock.assert_called_with(tasktype=TASK_NAME, workerid=WORKER_ID, domain=DOMAIN)
+    assert result == task_adapter
+
+
+@pytest.mark.asyncio
+async def test_batch_poll_tasks(mocker, task_client, task_adapter):
+    mock = mocker.patch.object(TaskResourceApiAdapter, "batch_poll")
+    mock.return_value = [task_adapter]
+    result = await task_client.batch_poll_tasks(TASK_NAME, WORKER_ID, 3, 200)
+    mock.assert_called_with(
+        tasktype=TASK_NAME,
+        workerid=WORKER_ID,
+        count=3,
+        timeout=200,
+        domain=None
+    )
+    assert result == [task_adapter]
+
+
+@pytest.mark.asyncio
+async def test_batch_poll_tasks_with_domain(mocker, task_client, task_adapter):
+    mock = mocker.patch.object(TaskResourceApiAdapter, "batch_poll")
+    mock.return_value = [task_adapter]
+    result = await task_client.batch_poll_tasks(TASK_NAME, WORKER_ID, 3, 200, DOMAIN)
+    mock.assert_called_with(
+        tasktype=TASK_NAME,
+        workerid=WORKER_ID,
+        count=3,
+        timeout=200,
+        domain=DOMAIN
+    )
+    assert result == [task_adapter]

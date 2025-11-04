@@ -379,7 +379,7 @@ class OrkesAuthorizationClient(OrkesBaseClient):
 
         permissions = {}
         for access_type, subjects in result.items():
-            subject_list = [SubjectRefAdapter(sub["id"], sub["type"]) for sub in subjects]
+            subject_list = [SubjectRefAdapter(id=sub["id"], type=sub["type"]) for sub in subjects]
             permissions[access_type] = subject_list
 
         return permissions

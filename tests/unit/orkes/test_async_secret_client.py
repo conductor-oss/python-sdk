@@ -385,3 +385,74 @@ async def test_list_secrets_with_tags_that_user_can_grant_access_to_empty(
     result = await secret_client.list_secrets_with_tags_that_user_can_grant_access_to()
     assert mock.called
     assert result == []
+
+
+@pytest.mark.asyncio
+async def test_put_secret_validated(mocker, secret_client):
+    mock = mocker.patch.object(SecretResourceApiAdapter, "put_secret")
+    await secret_client.put_secret_validated(SECRET_KEY, SECRET_VALUE)
+    mock.assert_called_with(key=SECRET_KEY, body=SECRET_VALUE)
+
+
+@pytest.mark.asyncio
+async def test_delete_secret_validated(mocker, secret_client):
+    mock = mocker.patch.object(SecretResourceApiAdapter, "delete_secret")
+    await secret_client.delete_secret_validated(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
+
+
+@pytest.mark.asyncio
+async def test_secret_exists_validated_true(mocker, secret_client):
+    mock = mocker.patch.object(SecretResourceApiAdapter, "secret_exists")
+    mock.return_value = True
+    result = await secret_client.secret_exists_validated(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_secret_exists_validated_false(mocker, secret_client):
+    mock = mocker.patch.object(SecretResourceApiAdapter, "secret_exists")
+    mock.return_value = False
+    result = await secret_client.secret_exists_validated(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_clear_local_cache_validated(mocker, secret_client):
+    mock = mocker.patch.object(SecretResourceApiAdapter, "clear_local_cache")
+    await secret_client.clear_local_cache_validated()
+    assert mock.called
+
+
+@pytest.mark.asyncio
+async def test_clear_redis_cache_validated(mocker, secret_client):
+    mock = mocker.patch.object(SecretResourceApiAdapter, "clear_redis_cache")
+    await secret_client.clear_redis_cache_validated()
+    assert mock.called
+
+
+@pytest.mark.asyncio
+async def test_update_secret_validated(mocker, secret_client):
+    mock = mocker.patch.object(secret_client, "put_secret_validated")
+    await secret_client.update_secret_validated(SECRET_KEY, SECRET_VALUE)
+    mock.assert_called_with(key=SECRET_KEY, secret=SECRET_VALUE)
+
+
+@pytest.mark.asyncio
+async def test_has_secret_validated_true(mocker, secret_client):
+    mock = mocker.patch.object(secret_client, "secret_exists_validated")
+    mock.return_value = True
+    result = await secret_client.has_secret_validated(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_has_secret_validated_false(mocker, secret_client):
+    mock = mocker.patch.object(secret_client, "secret_exists_validated")
+    mock.return_value = False
+    result = await secret_client.has_secret_validated(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
+    assert result is False

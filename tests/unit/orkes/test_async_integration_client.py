@@ -541,3 +541,29 @@ async def test_get_active_integration_providers(
     assert mock.called
     mock.assert_called_with(category=None, active_only=True)
     assert result == [integration_def]
+
+
+@pytest.mark.asyncio
+async def test_save_integration(mocker, integration_client, integration_update):
+    mock = mocker.patch.object(IntegrationResourceApiAdapter, "save_integration_provider")
+    await integration_client.save_integration(INTEGRATION_NAME, integration_update)
+    mock.assert_called_with(name=INTEGRATION_NAME, integration_update=integration_update)
+
+
+@pytest.mark.asyncio
+async def test_get_integration(mocker, integration_client, integration):
+    mock = mocker.patch.object(integration_client, "get_integration_provider")
+    mock.return_value = integration
+    result = await integration_client.get_integration(INTEGRATION_NAME)
+    mock.assert_called_with(name=INTEGRATION_NAME)
+    assert result == integration
+
+
+@pytest.mark.asyncio
+async def test_get_integration_not_found(mocker, integration_client):
+    from conductor.asyncio_client.http.exceptions import NotFoundException
+    mock = mocker.patch.object(integration_client, "get_integration_provider")
+    mock.side_effect = NotFoundException()
+    result = await integration_client.get_integration(INTEGRATION_NAME)
+    mock.assert_called_with(name=INTEGRATION_NAME)
+    assert result is None
