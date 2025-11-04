@@ -33,14 +33,14 @@ def test_init(secret_client):
 def test_put_secret(mocker, secret_client):
     mock = mocker.patch.object(SecretResourceApi, "put_secret")
     secret_client.put_secret(SECRET_KEY, SECRET_VALUE)
-    mock.assert_called_with(SECRET_VALUE, SECRET_KEY)
+    mock.assert_called_with(body=SECRET_VALUE, key=SECRET_KEY)
 
 
 def test_get_secret(mocker, secret_client):
     mock = mocker.patch.object(SecretResourceApi, "get_secret")
     mock.return_value = SECRET_VALUE
     secret = secret_client.get_secret(SECRET_KEY)
-    mock.assert_called_with(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
     assert secret == SECRET_VALUE
 
 
@@ -67,14 +67,14 @@ def test_list_secrets_that_user_can_grant_access_to(mocker, secret_client):
 def test_delete_secret(mocker, secret_client):
     mock = mocker.patch.object(SecretResourceApi, "delete_secret")
     secret_client.delete_secret(SECRET_KEY)
-    mock.assert_called_with(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
 
 
 def test_secret_exists(mocker, secret_client):
     mock = mocker.patch.object(SecretResourceApi, "secret_exists")
     mock.return_value = True
     assert secret_client.secret_exists(SECRET_KEY) is True
-    mock.assert_called_with(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
 
 
 def test_set_secret_tags(mocker, secret_client):

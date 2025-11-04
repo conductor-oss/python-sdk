@@ -104,7 +104,7 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
         return self._metadata_api.get_task_defs(**kwargs)
 
     def add_workflow_tag(self, tag: MetadataTag, workflow_name: str, **kwargs) -> None:
-        self._tags_api.add_workflow_tag(tag=tag, name=workflow_name, **kwargs)
+        self._tags_api.add_workflow_tag(body=tag, name=workflow_name, **kwargs)
 
     def delete_workflow_tag(self, tag: MetadataTag, workflow_name: str, **kwargs) -> None:
         tag_str = TagString(tag.key, tag.type, tag.value)

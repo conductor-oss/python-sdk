@@ -38,7 +38,7 @@ def test_register_schema(mocker, schema_client, schema_def):
     mock = mocker.patch.object(SchemaResourceApi, "save")
     schema_client.register_schema(schema_def)
     assert mock.called
-    mock.assert_called_with(schema_def)
+    mock.assert_called_with(body=schema_def)
 
 
 def test_get_schema(mocker, schema_client, schema_def):

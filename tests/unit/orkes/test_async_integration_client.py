@@ -119,7 +119,7 @@ async def test_save_integration_provider(
         INTEGRATION_NAME, integration_update
     )
     assert mock.called
-    mock.assert_called_with(INTEGRATION_NAME, integration_update)
+    mock.assert_called_with(name=INTEGRATION_NAME, integration_update=integration_update)
 
 
 @pytest.mark.asyncio
@@ -131,7 +131,7 @@ async def test_get_integration_provider(mocker, integration_client, integration_
     )
     result = await integration_client.get_integration_provider(INTEGRATION_NAME)
     assert mock.called
-    mock.assert_called_with(INTEGRATION_NAME)
+    mock.assert_called_with(name=INTEGRATION_NAME)
     assert result == integration_def
 
 
@@ -142,7 +142,7 @@ async def test_delete_integration_provider(mocker, integration_client):
     )
     await integration_client.delete_integration_provider(INTEGRATION_NAME)
     assert mock.called
-    mock.assert_called_with(INTEGRATION_NAME)
+    mock.assert_called_with(name=INTEGRATION_NAME)
 
 
 @pytest.mark.asyncio
@@ -197,7 +197,8 @@ async def test_save_integration_api(mocker, integration_client, integration_api_
     )
     assert mock.called
     mock.assert_called_with(
-        INTEGRATION_API_NAME, INTEGRATION_NAME, integration_api_update
+        name=INTEGRATION_API_NAME, integration_name=INTEGRATION_NAME,
+        integration_api_update=integration_api_update,
     )
 
 
@@ -212,7 +213,7 @@ async def test_get_integration_api(mocker, integration_client, integration_api):
         INTEGRATION_API_NAME, INTEGRATION_NAME
     )
     assert mock.called
-    mock.assert_called_with(INTEGRATION_API_NAME, INTEGRATION_NAME)
+    mock.assert_called_with(name=INTEGRATION_API_NAME, integration_name=INTEGRATION_NAME)
     assert result == integration_api
 
 
@@ -223,7 +224,7 @@ async def test_delete_integration_api(mocker, integration_client):
         INTEGRATION_API_NAME, INTEGRATION_NAME
     )
     assert mock.called
-    mock.assert_called_with(INTEGRATION_API_NAME, INTEGRATION_NAME)
+    mock.assert_called_with(name=INTEGRATION_API_NAME, integration_name=INTEGRATION_NAME)
 
 
 @pytest.mark.asyncio
@@ -235,7 +236,7 @@ async def test_get_integration_apis(mocker, integration_client, integration_api)
     )
     result = await integration_client.get_integration_apis(INTEGRATION_NAME)
     assert mock.called
-    mock.assert_called_with(INTEGRATION_NAME)
+    mock.assert_called_with(name=INTEGRATION_NAME)
     assert result == [integration_api]
 
 
@@ -250,7 +251,7 @@ async def test_get_integration_available_apis(
     )
     result = await integration_client.get_integration_available_apis(INTEGRATION_NAME)
     assert mock.called
-    mock.assert_called_with(INTEGRATION_NAME)
+    mock.assert_called_with(name=INTEGRATION_NAME)
     assert result == [integration_api]
 
 
@@ -259,7 +260,7 @@ async def test_save_all_integrations(mocker, integration_client, integration_upd
     mock = mocker.patch.object(IntegrationResourceApiAdapter, "save_all_integrations")
     await integration_client.save_all_integrations([integration_update])
     assert mock.called
-    mock.assert_called_with([integration_update])
+    mock.assert_called_with(integration=[integration_update])
 
 
 @pytest.mark.asyncio
@@ -372,7 +373,7 @@ async def test_put_tag_for_integration_provider(mocker, integration_client, tag)
     )
     await integration_client.put_tag_for_integration_provider([tag], INTEGRATION_NAME)
     assert mock.called
-    mock.assert_called_with(INTEGRATION_NAME, [tag])
+    mock.assert_called_with(name=INTEGRATION_NAME, tag=[tag])
 
 
 @pytest.mark.asyncio
@@ -386,7 +387,7 @@ async def test_get_tags_for_integration_provider(mocker, integration_client, tag
         INTEGRATION_NAME
     )
     assert mock.called
-    mock.assert_called_with(INTEGRATION_NAME)
+    mock.assert_called_with(name=INTEGRATION_NAME)
     assert result == [tag]
 
 
@@ -399,7 +400,7 @@ async def test_delete_tag_for_integration_provider(mocker, integration_client, t
         [tag], INTEGRATION_NAME
     )
     assert mock.called
-    mock.assert_called_with(INTEGRATION_NAME,[tag])
+    mock.assert_called_with(name=INTEGRATION_NAME, tag=[tag])
 
 
 @pytest.mark.asyncio
@@ -414,7 +415,7 @@ async def test_get_token_usage_for_integration(mocker, integration_client):
         INTEGRATION_API_NAME, INTEGRATION_NAME
     )
     assert mock.called
-    mock.assert_called_with(INTEGRATION_API_NAME, INTEGRATION_NAME)
+    mock.assert_called_with(name=INTEGRATION_API_NAME, integration_name=INTEGRATION_NAME)
     assert result == expected_usage
 
 
@@ -430,7 +431,7 @@ async def test_get_token_usage_for_integration_provider(mocker, integration_clie
         INTEGRATION_NAME
     )
     assert mock.called
-    mock.assert_called_with(INTEGRATION_NAME)
+    mock.assert_called_with(name=INTEGRATION_NAME)
     assert result == expected_usage
 
 
@@ -442,7 +443,7 @@ async def test_register_token_usage(mocker, integration_client):
         INTEGRATION_API_NAME, INTEGRATION_NAME, tokens
     )
     assert mock.called
-    mock.assert_called_with(INTEGRATION_API_NAME, INTEGRATION_NAME, tokens)
+    mock.assert_called_with(name=INTEGRATION_API_NAME, integration_name=INTEGRATION_NAME, body=tokens)
 
 
 @pytest.mark.asyncio
@@ -454,7 +455,7 @@ async def test_associate_prompt_with_integration(mocker, integration_client):
         AI_PROMPT, INTEGRATION_PROVIDER, INTEGRATION_NAME
     )
     assert mock.called
-    mock.assert_called_with(AI_PROMPT, INTEGRATION_PROVIDER, INTEGRATION_NAME)
+    mock.assert_called_with(prompt_name=AI_PROMPT, integration_provider=INTEGRATION_PROVIDER, integration_name=INTEGRATION_NAME)
 
 
 @pytest.mark.asyncio
@@ -472,7 +473,7 @@ async def test_get_prompts_with_integration(mocker, integration_client):
         INTEGRATION_PROVIDER, INTEGRATION_NAME
     )
     assert mock.called
-    mock.assert_called_with(INTEGRATION_PROVIDER, INTEGRATION_NAME)
+    mock.assert_called_with(integration_provider=INTEGRATION_PROVIDER, integration_name=INTEGRATION_NAME)
     assert result == expected_prompts
 
 

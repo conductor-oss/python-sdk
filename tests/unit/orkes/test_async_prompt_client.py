@@ -72,7 +72,7 @@ async def test_save_message_template(mocker, prompt_client):
     )
     assert mock.called
     mock.assert_called_with(
-        TEMPLATE_NAME, TEMPLATE_DESCRIPTION, TEMPLATE_BODY, models=[MODEL_NAME]
+        name=TEMPLATE_NAME, description=TEMPLATE_DESCRIPTION, body=TEMPLATE_BODY, models=[MODEL_NAME]
     )
 
 
@@ -84,7 +84,7 @@ async def test_save_message_template_without_models(mocker, prompt_client):
     )
     assert mock.called
     mock.assert_called_with(
-        TEMPLATE_NAME, TEMPLATE_DESCRIPTION, TEMPLATE_BODY, models=None
+        name=TEMPLATE_NAME, description=TEMPLATE_DESCRIPTION, body=TEMPLATE_BODY, models=None
     )
 
 
@@ -97,7 +97,7 @@ async def test_get_message_template(mocker, prompt_client, message_template):
     )
     result = await prompt_client.get_message_template(TEMPLATE_NAME)
     assert mock.called
-    mock.assert_called_with(TEMPLATE_NAME)
+    mock.assert_called_with(name=TEMPLATE_NAME)
     assert result == message_template
 
 
@@ -119,7 +119,7 @@ async def test_delete_message_template(mocker, prompt_client):
     mock = mocker.patch.object(PromptResourceApiAdapter, "delete_message_template")
     await prompt_client.delete_message_template(TEMPLATE_NAME)
     assert mock.called
-    mock.assert_called_with(TEMPLATE_NAME)
+    mock.assert_called_with(name=TEMPLATE_NAME)
 
 
 @pytest.mark.asyncio
@@ -127,7 +127,7 @@ async def test_create_message_templates(mocker, prompt_client, message_template)
     mock = mocker.patch.object(PromptResourceApiAdapter, "create_message_templates")
     await prompt_client.create_message_templates([message_template])
     assert mock.called
-    mock.assert_called_with([message_template])
+    mock.assert_called_with(message_template=[message_template])
 
 
 @pytest.mark.asyncio
@@ -142,7 +142,7 @@ async def test_test_message_template(
     )
     result = await prompt_client.test_message_template(prompt_template_test_request)
     assert mock.called
-    mock.assert_called_with(prompt_template_test_request)
+    mock.assert_called_with(prompt_template_test_request=prompt_template_test_request)
     assert result == expected_result
 
 
@@ -163,7 +163,7 @@ async def test_get_tags_for_prompt_template(mocker, prompt_client, tag):
     )
     result = await prompt_client.get_tags_for_prompt_template(TEMPLATE_NAME)
     assert mock.called
-    mock.assert_called_with(TEMPLATE_NAME)
+    mock.assert_called_with(name=TEMPLATE_NAME)
     assert result == [tag]
 
 
@@ -174,7 +174,7 @@ async def test_delete_tag_for_prompt_template(mocker, prompt_client, tag):
     )
     await prompt_client.delete_tag_for_prompt_template(TEMPLATE_NAME, [tag])
     assert mock.called
-    mock.assert_called_with(TEMPLATE_NAME, [tag])
+    mock.assert_called_with(name=TEMPLATE_NAME, tag=[tag])
 
 
 @pytest.mark.asyncio
@@ -185,7 +185,7 @@ async def test_create_simple_template(mocker, prompt_client):
     )
     assert mock.called
     mock.assert_called_with(
-        TEMPLATE_NAME, TEMPLATE_DESCRIPTION, TEMPLATE_BODY, models=None
+        name=TEMPLATE_NAME, description=TEMPLATE_DESCRIPTION, body=TEMPLATE_BODY, models=None
     )
 
 
@@ -197,7 +197,7 @@ async def test_update_template(mocker, prompt_client):
     )
     assert mock.called
     mock.assert_called_with(
-        TEMPLATE_NAME, TEMPLATE_DESCRIPTION, TEMPLATE_BODY, models=[MODEL_NAME]
+        name=TEMPLATE_NAME, description=TEMPLATE_DESCRIPTION, body=TEMPLATE_BODY, models=[MODEL_NAME]
     )
 
 
@@ -210,7 +210,7 @@ async def test_template_exists_true(mocker, prompt_client, message_template):
     )
     result = await prompt_client.template_exists(TEMPLATE_NAME)
     assert mock.called
-    mock.assert_called_with(TEMPLATE_NAME)
+    mock.assert_called_with(name=TEMPLATE_NAME)
     assert result is True
 
 
@@ -223,7 +223,7 @@ async def test_template_exists_false(mocker, prompt_client):
     )
     result = await prompt_client.template_exists(TEMPLATE_NAME)
     assert mock.called
-    mock.assert_called_with(TEMPLATE_NAME)
+    mock.assert_called_with(name=TEMPLATE_NAME)
     assert result is False
 
 
@@ -278,12 +278,12 @@ async def test_clone_template(mocker, prompt_client, message_template):
     await prompt_client.clone_template(TEMPLATE_NAME, target_name)
 
     assert mock_get_template.called
-    mock_get_template.assert_called_with(TEMPLATE_NAME)
+    mock_get_template.assert_called_with(name=TEMPLATE_NAME)
     assert mock_save_template.called
     mock_save_template.assert_called_with(
-        target_name,
-        f"Clone of {TEMPLATE_DESCRIPTION}",
-        TEMPLATE_BODY,
+        name=target_name,
+        description=f"Clone of {TEMPLATE_DESCRIPTION}",
+        body=TEMPLATE_BODY,
         models=None,
     )
 
@@ -304,12 +304,12 @@ async def test_clone_template_with_description(mocker, prompt_client, message_te
     await prompt_client.clone_template(TEMPLATE_NAME, target_name, new_description)
 
     assert mock_get_template.called
-    mock_get_template.assert_called_with(TEMPLATE_NAME)
+    mock_get_template.assert_called_with(name=TEMPLATE_NAME)
     assert mock_save_template.called
     mock_save_template.assert_called_with(
-        target_name,
-        new_description,
-        TEMPLATE_BODY,
+        name=target_name,
+        description=new_description,
+        body=TEMPLATE_BODY,
         models=None,
     )
 
@@ -324,7 +324,7 @@ async def test_bulk_delete_templates(mocker, prompt_client):
     await prompt_client.bulk_delete_templates(template_names)
 
     assert mock_delete.call_count == 3
-    expected_calls = [mocker.call(name) for name in template_names]
+    expected_calls = [mocker.call(name=name) for name in template_names]
     mock_delete.assert_has_calls(expected_calls)
 
 
@@ -348,7 +348,7 @@ async def test_save_prompt(mocker, prompt_client):
     await prompt_client.save_prompt(TEMPLATE_NAME, TEMPLATE_DESCRIPTION, TEMPLATE_BODY)
     assert mock.called
     mock.assert_called_with(
-        TEMPLATE_NAME, TEMPLATE_DESCRIPTION, TEMPLATE_BODY, models=None
+        name=TEMPLATE_NAME, description=TEMPLATE_DESCRIPTION, body=TEMPLATE_BODY, models=None
     )
 
 
@@ -361,7 +361,7 @@ async def test_get_prompt(mocker, prompt_client, message_template):
     )
     result = await prompt_client.get_prompt(TEMPLATE_NAME)
     assert mock.called
-    mock.assert_called_with(TEMPLATE_NAME)
+    mock.assert_called_with(name=TEMPLATE_NAME)
     assert result == message_template
 
 
@@ -370,7 +370,7 @@ async def test_delete_prompt(mocker, prompt_client):
     mock = mocker.patch.object(PromptResourceApiAdapter, "delete_message_template")
     await prompt_client.delete_prompt(TEMPLATE_NAME)
     assert mock.called
-    mock.assert_called_with(TEMPLATE_NAME)
+    mock.assert_called_with(name=TEMPLATE_NAME)
 
 
 @pytest.mark.asyncio

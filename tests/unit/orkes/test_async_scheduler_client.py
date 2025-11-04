@@ -73,7 +73,7 @@ async def test_get_schedule(mocker, scheduler_client, workflow_schedule):
     schedule = await scheduler_client.get_schedule(SCHEDULE_NAME)
     assert schedule == workflow_schedule
     assert mock.called
-    mock.assert_called_with(SCHEDULE_NAME)
+    mock.assert_called_with(name=SCHEDULE_NAME)
 
 
 @pytest.mark.asyncio
@@ -214,7 +214,7 @@ async def test_put_tag_for_schedule(mocker, scheduler_client):
     tag2 = TagAdapter(key="tag2", value="val2")
     tags = [tag1, tag2]
     await scheduler_client.put_tag_for_schedule(SCHEDULE_NAME, tags)
-    mock.assert_called_with(SCHEDULE_NAME, tags)
+    mock.assert_called_with(name=SCHEDULE_NAME, tag=tags)
 
 
 @pytest.mark.asyncio

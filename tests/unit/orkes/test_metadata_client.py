@@ -83,7 +83,7 @@ def test_unregister_workflow_def(mocker, metadata_client):
     mock = mocker.patch.object(MetadataResourceApi, "unregister_workflow_def")
     metadata_client.unregister_workflow_def(WORKFLOW_NAME, 1)
     assert mock.called
-    mock.assert_called_with(WORKFLOW_NAME, 1)
+    mock.assert_called_with(name=WORKFLOW_NAME, version=1)
 
 
 def test_get_workflow_def_without_version(mocker, metadata_client, workflow_def):
@@ -92,7 +92,7 @@ def test_get_workflow_def_without_version(mocker, metadata_client, workflow_def)
     wf = metadata_client.get_workflow_def(WORKFLOW_NAME)
     assert wf == workflow_def
     assert mock.called
-    mock.assert_called_with(WORKFLOW_NAME)
+    mock.assert_called_with(name=WORKFLOW_NAME)
 
 
 def test_get_workflow_def_with_version(mocker, metadata_client, workflow_def):
@@ -100,7 +100,7 @@ def test_get_workflow_def_with_version(mocker, metadata_client, workflow_def):
     mock.return_value = workflow_def
     wf = metadata_client.get_workflow_def(WORKFLOW_NAME, 1)
     assert wf == workflow_def
-    mock.assert_called_with(WORKFLOW_NAME, version=1)
+    mock.assert_called_with(name=WORKFLOW_NAME, version=1)
 
 
 def test_get_workflow_def_non_existent(mocker, metadata_client, workflow_def):
@@ -134,14 +134,14 @@ def test_update_task_def(mocker, metadata_client, task_def):
     mock = mocker.patch.object(MetadataResourceApi, "update_task_def")
     metadata_client.update_task_def(task_def)
     assert mock.called
-    mock.assert_called_with(task_def)
+    mock.assert_called_with(body=task_def)
 
 
 def test_unregister_task_def(mocker, metadata_client):
     mock = mocker.patch.object(MetadataResourceApi, "unregister_task_def")
     metadata_client.unregister_task_def(TASK_NAME)
     assert mock.called
-    mock.assert_called_with(TASK_NAME)
+    mock.assert_called_with(tasktype=TASK_NAME)
 
 
 def test_get_task_def(mocker, metadata_client, task_def):

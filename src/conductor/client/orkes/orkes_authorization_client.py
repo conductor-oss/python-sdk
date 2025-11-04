@@ -52,8 +52,8 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
 
     def update_application(
         self,
-        create_or_update_application_request: CreateOrUpdateApplicationRequest,
         application_id: str,
+        create_or_update_application_request: CreateOrUpdateApplicationRequest,
         **kwargs,
     ) -> ConductorApplication:
         app_obj = self._application_api.update_application(
@@ -120,7 +120,7 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
 
     # Users
     def upsert_user(
-        self, upsert_user_request: UpsertUserRequest, user_id: str, **kwargs
+        self, user_id: str, upsert_user_request: UpsertUserRequest, **kwargs
     ) -> ConductorUser:
         user_obj = self._user_api.upsert_user(
             upsert_user_request=upsert_user_request, id=user_id, **kwargs
@@ -140,7 +140,7 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
 
     # Groups
     def upsert_group(
-        self, upsert_group_request: UpsertGroupRequest, group_id: str, **kwargs
+        self, group_id: str, upsert_group_request: UpsertGroupRequest, **kwargs
     ) -> Group:
         group_obj = self._group_api.upsert_group(body=upsert_group_request, id=group_id, **kwargs)
         return self.api_client.deserialize_class(group_obj, "Group")

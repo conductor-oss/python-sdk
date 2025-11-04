@@ -158,7 +158,9 @@ class OrkesAuthorizationClient(OrkesBaseClient):
         self, application_id: str, application: CreateOrUpdateApplicationRequestAdapter
     ) -> object:
         """Update an existing application"""
-        result = await self._application_api.update_application(application_id, application)
+        result = await self._application_api.update_application(
+            id=application_id, create_or_update_application_request=application
+        )
         return result
 
     async def update_application_validated(

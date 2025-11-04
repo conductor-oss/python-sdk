@@ -70,7 +70,7 @@ async def test_get_secret(mocker, secret_client):
     mock = mocker.patch.object(SecretResourceApiAdapter, "get_secret")
     mock.return_value = SECRET_VALUE
     result = await secret_client.get_secret(SECRET_KEY)
-    mock.assert_called_with(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
     assert result == SECRET_VALUE
 
 
@@ -144,7 +144,7 @@ async def test_list_secrets_with_tags_that_user_can_grant_access_to(
 async def test_put_tag_for_secret(mocker, secret_client, tag_list):
     mock = mocker.patch.object(SecretResourceApiAdapter, "put_tag_for_secret")
     await secret_client.put_tag_for_secret(SECRET_KEY, tag_list)
-    mock.assert_called_with(SECRET_KEY, tag_list)
+    mock.assert_called_with(key=SECRET_KEY, tag=tag_list)
 
 
 @pytest.mark.asyncio
@@ -152,7 +152,7 @@ async def test_get_tags(mocker, secret_client, tag_list):
     mock = mocker.patch.object(SecretResourceApiAdapter, "get_tags")
     mock.return_value = tag_list
     result = await secret_client.get_tags(SECRET_KEY)
-    mock.assert_called_with(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
     assert result == tag_list
 
 
@@ -160,7 +160,7 @@ async def test_get_tags(mocker, secret_client, tag_list):
 async def test_delete_tag_for_secret(mocker, secret_client, tag_list):
     mock = mocker.patch.object(SecretResourceApiAdapter, "delete_tag_for_secret")
     await secret_client.delete_tag_for_secret(SECRET_KEY, tag_list)
-    mock.assert_called_with(SECRET_KEY, tag_list)
+    mock.assert_called_with(key=SECRET_KEY, tag=tag_list)
 
 
 @pytest.mark.asyncio
@@ -215,7 +215,7 @@ async def test_get_secret_api_exception(mocker, secret_client):
     mock.side_effect = ApiException(status=404, body=ERROR_BODY)
     with pytest.raises(ApiException):
         await secret_client.get_secret(SECRET_KEY)
-    mock.assert_called_with(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
 
 
 @pytest.mark.asyncio
@@ -242,7 +242,7 @@ async def test_put_tag_for_secret_api_exception(mocker, secret_client, tag_list)
     mock.side_effect = ApiException(status=400, body="Bad request")
     with pytest.raises(ApiException):
         await secret_client.put_tag_for_secret(SECRET_KEY, tag_list)
-    mock.assert_called_with(SECRET_KEY, tag_list)
+    mock.assert_called_with(key=SECRET_KEY, tag=tag_list)
 
 
 @pytest.mark.asyncio
@@ -251,7 +251,7 @@ async def test_get_tags_api_exception(mocker, secret_client):
     mock.side_effect = ApiException(status=404, body=ERROR_BODY)
     with pytest.raises(ApiException):
         await secret_client.get_tags(SECRET_KEY)
-    mock.assert_called_with(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
 
 
 @pytest.mark.asyncio
@@ -260,7 +260,7 @@ async def test_delete_tag_for_secret_api_exception(mocker, secret_client, tag_li
     mock.side_effect = ApiException(status=400, body="Bad request")
     with pytest.raises(ApiException):
         await secret_client.delete_tag_for_secret(SECRET_KEY, tag_list)
-    mock.assert_called_with(SECRET_KEY, tag_list)
+    mock.assert_called_with(key=SECRET_KEY, tag=tag_list)
 
 
 @pytest.mark.asyncio
@@ -303,7 +303,7 @@ async def test_get_secret_empty_list(mocker, secret_client):
 async def test_put_tag_for_secret_empty_tags(mocker, secret_client):
     mock = mocker.patch.object(SecretResourceApiAdapter, "put_tag_for_secret")
     await secret_client.put_tag_for_secret(SECRET_KEY, [])
-    mock.assert_called_with(SECRET_KEY, [])
+    mock.assert_called_with(key=SECRET_KEY, tag=[])
 
 
 @pytest.mark.asyncio
@@ -345,7 +345,7 @@ async def test_get_tags_with_multiple_tags(mocker, secret_client):
     ]
     mock.return_value = multiple_tags
     result = await secret_client.get_tags(SECRET_KEY)
-    mock.assert_called_with(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
     assert result == multiple_tags
 
 
@@ -353,14 +353,14 @@ async def test_get_tags_with_multiple_tags(mocker, secret_client):
 async def test_put_tag_for_secret_single_tag(mocker, secret_client, tag_adapter):
     mock = mocker.patch.object(SecretResourceApiAdapter, "put_tag_for_secret")
     await secret_client.put_tag_for_secret(SECRET_KEY, [tag_adapter])
-    mock.assert_called_with(SECRET_KEY, [tag_adapter])
+    mock.assert_called_with(key=SECRET_KEY, tag=[tag_adapter])
 
 
 @pytest.mark.asyncio
 async def test_delete_tag_for_secret_single_tag(mocker, secret_client, tag_adapter):
     mock = mocker.patch.object(SecretResourceApiAdapter, "delete_tag_for_secret")
     await secret_client.delete_tag_for_secret(SECRET_KEY, [tag_adapter])
-    mock.assert_called_with(SECRET_KEY, [tag_adapter])
+    mock.assert_called_with(key=SECRET_KEY, tag=[tag_adapter])
 
 
 @pytest.mark.asyncio

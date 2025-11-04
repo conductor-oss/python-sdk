@@ -161,7 +161,7 @@ def test_create_application(mocker, authorization_client, conductor_application)
         "updateTime": 1699236095031,
     }
     app = authorization_client.create_application(createReq)
-    mock.assert_called_with(createReq)
+    mock.assert_called_with(body=createReq)
 
     assert app == conductor_application
 
@@ -177,7 +177,7 @@ def test_get_application(mocker, authorization_client, conductor_application):
         "updateTime": 1699236095031,
     }
     app = authorization_client.get_application(APP_ID)
-    mock.assert_called_with(APP_ID)
+    mock.assert_called_with(id=APP_ID)
     assert app == conductor_application
 
 
@@ -192,7 +192,7 @@ def test_list_applications(mocker, authorization_client, conductor_application):
 def test_delete_application(mocker, authorization_client):
     mock = mocker.patch.object(ApplicationResourceApi, "delete_application")
     authorization_client.delete_application(APP_ID)
-    mock.assert_called_with(APP_ID)
+    mock.assert_called_with(id=APP_ID)
 
 
 def test_update_application(mocker, authorization_client, conductor_application):
@@ -208,19 +208,19 @@ def test_update_application(mocker, authorization_client, conductor_application)
     }
     app = authorization_client.update_application(APP_ID, updateReq)
     assert app == conductor_application
-    mock.assert_called_with(APP_ID, updateReq)
+    mock.assert_called_with(id=APP_ID, body=updateReq)
 
 
 def test_add_role_to_application_user(mocker, authorization_client):
     mock = mocker.patch.object(ApplicationResourceApi, "add_role_to_application_user")
     authorization_client.add_role_to_application_user(APP_ID, "USER")
-    mock.assert_called_with(APP_ID, "USER")
+    mock.assert_called_with(application_id=APP_ID, role="USER")
 
 
 def test_remove_role_from_application_user(mocker, authorization_client):
     mock = mocker.patch.object(ApplicationResourceApi, "remove_role_from_application_user")
     authorization_client.remove_role_from_application_user(APP_ID, "USER")
-    mock.assert_called_with(APP_ID, "USER")
+    mock.assert_called_with(application_id=APP_ID, role="USER")
 
 
 def test_set_application_tags(mocker, authorization_client, conductor_application):
@@ -229,7 +229,7 @@ def test_set_application_tags(mocker, authorization_client, conductor_applicatio
     tag2 = MetadataTag("tag2", "val2")
     tags = [tag1, tag2]
     authorization_client.set_application_tags(tags, APP_ID)
-    mock.assert_called_with(tags, APP_ID)
+    mock.assert_called_with(tag=tags, id=APP_ID)
 
 
 def test_get_application_tags(mocker, authorization_client, conductor_application):
@@ -239,7 +239,7 @@ def test_get_application_tags(mocker, authorization_client, conductor_applicatio
     tag2 = MetadataTag("tag2", "val2")
     mock.return_value = [tag1, tag2]
     tags = authorization_client.get_application_tags(APP_ID)
-    mock.assert_called_with(APP_ID)
+    mock.assert_called_with(application_id=APP_ID)
     assert len(tags) == expected_application_tags_len
 
 
@@ -249,7 +249,7 @@ def test_delete_application_tags(mocker, authorization_client, conductor_applica
     tag2 = MetadataTag("tag2", "val2")
     tags = [tag1, tag2]
     authorization_client.delete_application_tags(tags, APP_ID)
-    mock.assert_called_with(tags, APP_ID)
+    mock.assert_called_with(tag=tags, id=APP_ID)
 
 
 def test_create_access_key(mocker, authorization_client, access_key):
@@ -259,7 +259,7 @@ def test_create_access_key(mocker, authorization_client, access_key):
         "secret": ACCESS_KEY_SECRET,
     }
     created_key = authorization_client.create_access_key(APP_ID)
-    mock.assert_called_with(APP_ID)
+    mock.assert_called_with(id=APP_ID)
     assert created_key == access_key
 
 
@@ -278,7 +278,7 @@ def test_get_access_keys(mocker, authorization_client, app_keys):
         },
     ]
     access_keys = authorization_client.get_access_keys(APP_ID)
-    mock.assert_called_with(APP_ID)
+    mock.assert_called_with(id=APP_ID)
     assert access_keys == app_keys
 
 
@@ -290,14 +290,14 @@ def test_toggle_access_key_status(mocker, authorization_client, access_key):
         "status": "INACTIVE",
     }
     access_key = authorization_client.toggle_access_key_status(APP_ID, ACCESS_KEY_ID)
-    mock.assert_called_with(APP_ID, ACCESS_KEY_ID)
+    mock.assert_called_with(application_id=APP_ID, key_id=ACCESS_KEY_ID)
     assert access_key.status == AccessKeyStatus.INACTIVE
 
 
 def test_delete_access_key(mocker, authorization_client):
     mock = mocker.patch.object(ApplicationResourceApi, "delete_access_key")
     authorization_client.delete_access_key(APP_ID, ACCESS_KEY_ID)
-    mock.assert_called_with(APP_ID, ACCESS_KEY_ID)
+    mock.assert_called_with(application_id=APP_ID, key_id=ACCESS_KEY_ID)
 
 
 def test_upsert_user(mocker, authorization_client, conductor_user, roles):
@@ -305,7 +305,7 @@ def test_upsert_user(mocker, authorization_client, conductor_user, roles):
     upsertReq = UpsertUserRequest(USER_NAME, ["ADMIN"])
     mock.return_value = conductor_user.to_dict()
     user = authorization_client.upsert_user(USER_ID, upsertReq)
-    mock.assert_called_with(USER_ID, upsertReq)
+    mock.assert_called_with(id=USER_ID, upsert_user_request=upsertReq)
     assert user.name == USER_NAME
     assert user.id == USER_ID
     assert user.uuid == USER_UUID
@@ -317,7 +317,7 @@ def test_upsert_user_with_empty_string(mocker, authorization_client, conductor_u
     mock = mocker.patch.object(UserResourceApi, "upsert_user")
     upsert_req = UpsertUserRequest(USER_NAME, ["ADMIN"])
     mock.return_value = conductor_user.to_dict()
-    authorization_client.upsert_user(upsert_req, "")
+    authorization_client.upsert_user("", upsert_req)
     mock.assert_called_with(id=None, body=upsert_req)
 
 
@@ -325,7 +325,7 @@ def test_get_user(mocker, authorization_client, conductor_user, roles):
     mock = mocker.patch.object(UserResourceApi, "get_user")
     mock.return_value = conductor_user.to_dict()
     user = authorization_client.get_user(USER_ID)
-    mock.assert_called_with(USER_ID)
+    mock.assert_called_with(id=USER_ID)
     assert user.name == USER_NAME
     assert user.id == USER_ID
     assert user.uuid == USER_UUID
@@ -359,7 +359,7 @@ def test_list_users(mocker, authorization_client, conductor_user):
 def test_delete_user(mocker, authorization_client):
     mock = mocker.patch.object(UserResourceApi, "delete_user")
     authorization_client.delete_user(USER_ID)
-    mock.assert_called_with(USER_ID)
+    mock.assert_called_with(id=USER_ID)
 
 
 def test_delete_user_with_empty_string(mocker, authorization_client):
@@ -374,7 +374,7 @@ def test_upsert_group(mocker, authorization_client, conductor_group, group_roles
     upsertReq = UpsertGroupRequest(GROUP_NAME, ["USER"])
     mock.return_value = conductor_group.to_dict()
     group = authorization_client.upsert_group(GROUP_ID, upsertReq)
-    mock.assert_called_with(GROUP_ID, upsertReq)
+    mock.assert_called_with(id=GROUP_ID, body=upsertReq)
     assert group == conductor_group
     assert group.description == GROUP_NAME
     assert group.id == GROUP_ID
@@ -385,7 +385,7 @@ def test_get_group(mocker, authorization_client, conductor_group, group_roles):
     mock = mocker.patch.object(GroupResourceApi, "get_group")
     mock.return_value = conductor_group.to_dict()
     group = authorization_client.get_group(GROUP_ID)
-    mock.assert_called_with(GROUP_ID)
+    mock.assert_called_with(id=GROUP_ID)
     assert group == conductor_group
     assert group.description == GROUP_NAME
     assert group.id == GROUP_ID
@@ -403,21 +403,21 @@ def test_list_groups(mocker, authorization_client, conductor_group):
 def test_delete_group(mocker, authorization_client):
     mock = mocker.patch.object(GroupResourceApi, "delete_group")
     authorization_client.delete_group(GROUP_ID)
-    mock.assert_called_with(GROUP_ID)
+    mock.assert_called_with(id=GROUP_ID)
 
 
 def test_add_user_to_group(mocker, authorization_client, conductor_group):
     mock = mocker.patch.object(GroupResourceApi, "add_user_to_group")
     mock.return_value = conductor_group
     authorization_client.add_user_to_group(GROUP_ID, USER_ID)
-    mock.assert_called_with(GROUP_ID, USER_ID)
+    mock.assert_called_with(group_id=GROUP_ID, user_id=USER_ID)
 
 
 def test_get_users_in_group(mocker, authorization_client, conductor_user, roles):
     mock = mocker.patch.object(GroupResourceApi, "get_users_in_group")
     mock.return_value = [conductor_user.to_dict()]
     users = authorization_client.get_users_in_group(GROUP_ID)
-    mock.assert_called_with(GROUP_ID)
+    mock.assert_called_with(id=GROUP_ID)
     assert len(users) == 1
     assert users[0].name == USER_NAME
     assert users[0].id == USER_ID
@@ -428,7 +428,7 @@ def test_get_users_in_group(mocker, authorization_client, conductor_user, roles)
 def test_remove_user_from_group(mocker, authorization_client):
     mock = mocker.patch.object(GroupResourceApi, "remove_user_from_group")
     authorization_client.remove_user_from_group(GROUP_ID, USER_ID)
-    mock.assert_called_with(GROUP_ID, USER_ID)
+    mock.assert_called_with(group_id=GROUP_ID, user_id=USER_ID)
 
 
 def test_get_granted_permissions_for_group(mocker, authorization_client):
@@ -443,7 +443,7 @@ def test_get_granted_permissions_for_group(mocker, authorization_client):
     )
 
     perms = authorization_client.get_granted_permissions_for_group(GROUP_ID)
-    mock.assert_called_with(GROUP_ID)
+    mock.assert_called_with(group_id=GROUP_ID)
     expected_perm = GrantedPermission(
         target=TargetRef(WF_NAME, TargetType.WORKFLOW_DEF.value),
         access=["EXECUTE", "UPDATE", "READ"],
@@ -469,7 +469,7 @@ def test_get_granted_permissions_for_user(mocker, authorization_client):
         ]
     }
     perms = authorization_client.get_granted_permissions_for_user(USER_ID)
-    mock.assert_called_with(USER_ID)
+    mock.assert_called_with(user_id=USER_ID)
     expected_perm = GrantedPermission(
         target=TargetRef(id=WF_NAME, type=TargetType.WORKFLOW_DEF.value),
         access=["EXECUTE", "UPDATE", "READ"],
@@ -497,7 +497,7 @@ def test_get_permissions(mocker, authorization_client):
         ],
     }
     permissions = authorization_client.get_permissions(TargetRef(WF_NAME, TargetType.WORKFLOW_DEF))
-    mock.assert_called_with(TargetType.WORKFLOW_DEF.name, "workflow_name")
+    mock.assert_called_with(type=TargetType.WORKFLOW_DEF.name, id="workflow_name")
     expected_permissions_dict = {
         AccessType.EXECUTE.name: [
             SubjectRef(USER_ID, SubjectType.USER),
@@ -516,7 +516,7 @@ def test_grant_permissions(mocker, authorization_client):
     target = TargetRef(WF_NAME, TargetType.WORKFLOW_DEF)
     access = [AccessType.READ, AccessType.EXECUTE]
     authorization_client.grant_permissions(subject, target, access)
-    mock.assert_called_with(AuthorizationRequest(subject, target, access))
+    mock.assert_called_with(body=AuthorizationRequest(subject, target, access))
 
 
 def test_remove_permissions(mocker, authorization_client):
@@ -525,7 +525,7 @@ def test_remove_permissions(mocker, authorization_client):
     target = TargetRef(WF_NAME, TargetType.WORKFLOW_DEF)
     access = [AccessType.READ, AccessType.EXECUTE]
     authorization_client.remove_permissions(subject, target, access)
-    mock.assert_called_with(AuthorizationRequest(subject, target, access))
+    mock.assert_called_with(body=AuthorizationRequest(subject, target, access))
 
 
 def test_create_access_key_empty_string_converts_to_none(mocker, authorization_client):
