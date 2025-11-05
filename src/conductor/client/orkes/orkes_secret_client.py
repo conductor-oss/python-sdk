@@ -152,21 +152,7 @@ class OrkesSecretClient(OrkesBaseClient, SecretClient):
         """
         return self._secret_api.secret_exists(key=key, **kwargs)
 
-    @deprecated("set_secret_tags is deprecated; use put_tag_for_secret instead")
-    @typing_deprecated("set_secret_tags is deprecated; use put_tag_for_secret instead")
-    def set_secret_tags(self, tags: List[Tag], key: str):
-        """Set tags for a secret.
-
-        .. deprecated::
-            Use put_tag_for_secret() instead.
-
-        Args:
-            tags: List of tags to set
-            key: Unique key for the secret
-        """
-        self._secret_api.put_tag_for_secret(tags, key)
-
-    def put_tag_for_secret(self, tags: List[Tag], key: str, **kwargs) -> None:
+    def set_secret_tags(self, tags: List[Tag], key: str, **kwargs) -> None:
         """Set tags for a secret.
 
         Args:
@@ -185,28 +171,12 @@ class OrkesSecretClient(OrkesBaseClient, SecretClient):
                 Tag(key="environment", value="production"),
                 Tag(key="type", value="database")
             ]
-            secret_client.put_tag_for_secret(tags, "db_password")
+            secret_client.set_secret_tags(tags, "db_password")
             ```
         """
         self._secret_api.put_tag_for_secret(body=tags, key=key, **kwargs)
 
-    @deprecated("get_secret_tags is deprecated; use get_tags instead")
-    @typing_deprecated("get_secret_tags is deprecated; use get_tags instead")
-    def get_secret_tags(self, key: str) -> List[Tag]:
-        """Get tags for a secret.
-
-        .. deprecated::
-            Use get_tags() instead.
-
-        Args:
-            key: Unique key for the secret
-
-        Returns:
-            List of Tag instances
-        """
-        return self._secret_api.get_tags(key)
-
-    def get_tags(self, key: str, **kwargs) -> List[Tag]:
+    def get_secret_tags(self, key: str, **kwargs) -> List[Tag]:
         """Get tags for a secret.
 
         Args:
@@ -218,31 +188,14 @@ class OrkesSecretClient(OrkesBaseClient, SecretClient):
 
         Example:
             ```python
-            tags = secret_client.get_tags("db_password")
+            tags = secret_client.get_secret_tags("db_password")
             for tag in tags:
                 print(f"Tag: {tag.key}={tag.value}")
             ```
         """
         return self._secret_api.get_tags(key=key, **kwargs)
 
-    @deprecated("delete_secret_tags is deprecated; use delete_tag_for_secret instead")
-    @typing_deprecated("delete_secret_tags is deprecated; use delete_tag_for_secret instead")
-    def delete_secret_tags(self, tags: List[Tag], key: str) -> None:
-        """Delete tags for a secret.
-
-        .. deprecated::
-            Use delete_tag_for_secret() instead.
-
-        Args:
-            tags: List of tags to delete
-            key: Unique key for the secret
-
-        Returns:
-            None
-        """
-        return self._secret_api.delete_tag_for_secret(tags, key)
-
-    def delete_tag_for_secret(self, tags: List[Tag], key: str, **kwargs) -> None:
+    def delete_secret_tags(self, tags: List[Tag], key: str, **kwargs) -> None:
         """Delete tags for a secret.
 
         Args:
@@ -258,7 +211,7 @@ class OrkesSecretClient(OrkesBaseClient, SecretClient):
             from conductor.client.http.models.tag import Tag
 
             tags_to_delete = [Tag(key="environment", value="staging")]
-            secret_client.delete_tag_for_secret(tags_to_delete, "db_password")
+            secret_client.delete_secret_tags(tags_to_delete, "db_password")
             ```
         """
         self._secret_api.delete_tag_for_secret(body=tags, key=key, **kwargs)

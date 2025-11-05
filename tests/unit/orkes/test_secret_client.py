@@ -83,7 +83,7 @@ def test_set_secret_tags(mocker, secret_client):
     tag2 = MetadataTag("tag2", "val2")
     tags = [tag1, tag2]
     secret_client.set_secret_tags(tags, SECRET_KEY)
-    mock.assert_called_with(tags, SECRET_KEY)
+    mock.assert_called_with(body=tags, key=SECRET_KEY)
 
 
 def test_get_secret_tags(mocker, secret_client):
@@ -93,7 +93,7 @@ def test_get_secret_tags(mocker, secret_client):
     tag2 = MetadataTag("tag2", "val2")
     mock.return_value = [tag1, tag2]
     tags = secret_client.get_secret_tags(SECRET_KEY)
-    mock.assert_called_with(SECRET_KEY)
+    mock.assert_called_with(key=SECRET_KEY)
     assert len(tags) == expected_tags_len
 
 
@@ -103,4 +103,4 @@ def test_delete_secret_tags(mocker, secret_client):
     tag2 = MetadataTag("tag2", "val2")
     tags = [tag1, tag2]
     secret_client.delete_secret_tags(tags, SECRET_KEY)
-    mock.assert_called_with(tags, SECRET_KEY)
+    mock.assert_called_with(body=tags, key=SECRET_KEY)
