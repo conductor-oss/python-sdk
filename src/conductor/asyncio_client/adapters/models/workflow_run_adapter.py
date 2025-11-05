@@ -14,16 +14,16 @@ class WorkflowRunAdapter(WorkflowRun):
     variables: Optional[Dict[str, Any]] = None
 
     @property
-    def current_task(self) -> TaskAdapter:
+    def current_task(self) -> TaskAdapter:  # type: ignore[override]
         current = None
-        for task in self.tasks:
+        for task in self.tasks or []:
             if task.status in ("SCHEDULED", "IN_PROGRESS"):
                 current = task
-        return current
+        return current  # type: ignore[return-value]
 
     def get_task(
         self, name: Optional[str] = None, task_reference_name: Optional[str] = None
-    ) -> TaskAdapter:
+    ) -> TaskAdapter:  # type: ignore[override]
         if name is None and task_reference_name is None:
             raise Exception(
                 "ONLY one of name or task_reference_name MUST be provided.  None were provided"
@@ -34,13 +34,13 @@ class WorkflowRunAdapter(WorkflowRun):
             )
 
         current = None
-        for task in self.tasks:
-            if (
-                task.task_def_name == name
-                or task.workflow_task.task_reference_name == task_reference_name
+        for task in self.tasks or []:
+            if task.task_def_name == name or (
+                task.workflow_task is not None
+                and task.workflow_task.task_reference_name == task_reference_name
             ):
                 current = task
-        return current
+        return current  # type: ignore[return-value]
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:

@@ -40,7 +40,7 @@ def schema_def_adapter():
 @pytest.mark.asyncio
 async def test_init(schema_client):
     message = "schema_api is not of type SchemaResourceApiAdapter"
-    assert isinstance(schema_client.schema_api, SchemaResourceApiAdapter), message
+    assert isinstance(schema_client._schema_api, SchemaResourceApiAdapter), message
 
 
 @pytest.mark.asyncio
@@ -70,7 +70,7 @@ async def test_get_schema(mocker, schema_client, schema_def_adapter):
     mock = mocker.patch.object(SchemaResourceApiAdapter, "get_schema_by_name_and_version")
     mock.return_value = schema_def_adapter
     result = await schema_client.get_schema(SCHEMA_NAME, SCHEMA_VERSION)
-    mock.assert_called_with(SCHEMA_NAME, SCHEMA_VERSION)
+    mock.assert_called_with(name=SCHEMA_NAME, version=SCHEMA_VERSION)
     assert result == schema_def_adapter
 
 
@@ -88,14 +88,14 @@ async def test_get_all_schemas(mocker, schema_client, schema_def_adapter):
 async def test_delete_schema_by_name_and_version(mocker, schema_client):
     mock = mocker.patch.object(SchemaResourceApiAdapter, "delete_schema_by_name_and_version")
     await schema_client.delete_schema_by_name_and_version(SCHEMA_NAME, SCHEMA_VERSION)
-    mock.assert_called_with(SCHEMA_NAME, SCHEMA_VERSION)
+    mock.assert_called_with(name=SCHEMA_NAME, version=SCHEMA_VERSION)
 
 
 @pytest.mark.asyncio
 async def test_delete_schema_by_name(mocker, schema_client):
     mock = mocker.patch.object(SchemaResourceApiAdapter, "delete_schema_by_name")
     await schema_client.delete_schema_by_name(SCHEMA_NAME)
-    mock.assert_called_with(SCHEMA_NAME)
+    mock.assert_called_with(name=SCHEMA_NAME)
 
 
 @pytest.mark.asyncio
@@ -186,7 +186,7 @@ async def test_get_unique_schema_names(mocker, schema_client):
 async def test_delete_all_schema_versions(mocker, schema_client):
     mock = mocker.patch.object(schema_client, "delete_schema_by_name")
     await schema_client.delete_all_schema_versions(SCHEMA_NAME)
-    mock.assert_called_with(SCHEMA_NAME)
+    mock.assert_called_with(name=SCHEMA_NAME)
 
 
 @pytest.mark.asyncio
@@ -229,14 +229,14 @@ async def test_list_schemas(mocker, schema_client):
 async def test_delete_schema_with_version(mocker, schema_client):
     mock = mocker.patch.object(schema_client, "delete_schema_by_name_and_version")
     await schema_client.delete_schema(SCHEMA_NAME, SCHEMA_VERSION)
-    mock.assert_called_with(SCHEMA_NAME, SCHEMA_VERSION)
+    mock.assert_called_with(name=SCHEMA_NAME, version=SCHEMA_VERSION)
 
 
 @pytest.mark.asyncio
 async def test_delete_schema_without_version(mocker, schema_client):
     mock = mocker.patch.object(schema_client, "delete_schema_by_name")
     await schema_client.delete_schema(SCHEMA_NAME)
-    mock.assert_called_with(SCHEMA_NAME)
+    mock.assert_called_with(name=SCHEMA_NAME)
 
 
 @pytest.mark.asyncio
@@ -246,7 +246,7 @@ async def test_create_schema_version(mocker, schema_client):
     mock_versions.return_value = [1, 2, 3]
     schema_definition = {"type": "object", "properties": {"name": {"type": "string"}}}
     await schema_client.create_schema_version(SCHEMA_NAME, schema_definition, "New version")
-    mock_create.assert_called_with(SCHEMA_NAME, 4, schema_definition, "New version")
+    mock_create.assert_called_with(name=SCHEMA_NAME, version=4, schema_definition=schema_definition, schema_type="New version")
 
 
 @pytest.mark.asyncio
@@ -256,7 +256,7 @@ async def test_create_schema_version_first_version(mocker, schema_client):
     mock_versions.return_value = []
     schema_definition = {"type": "object", "properties": {"name": {"type": "string"}}}
     await schema_client.create_schema_version(SCHEMA_NAME, schema_definition, "First version")
-    mock_create.assert_called_with(SCHEMA_NAME, 1, schema_definition, "First version")
+    mock_create.assert_called_with(name=SCHEMA_NAME, version=1, schema_definition=schema_definition, schema_type="First version")
 
 
 @pytest.mark.asyncio
@@ -265,7 +265,7 @@ async def test_get_schema_api_exception(mocker, schema_client):
     mock.side_effect = ApiException(status=404, body="Schema not found")
     with pytest.raises(ApiException):
         await schema_client.get_schema(SCHEMA_NAME, SCHEMA_VERSION)
-    mock.assert_called_with(SCHEMA_NAME, SCHEMA_VERSION)
+    mock.assert_called_with(name=SCHEMA_NAME, version=SCHEMA_VERSION)
 
 
 @pytest.mark.asyncio
@@ -283,7 +283,7 @@ async def test_delete_schema_api_exception(mocker, schema_client):
     mock.side_effect = ApiException(status=404, body="Schema not found")
     with pytest.raises(ApiException):
         await schema_client.delete_schema_by_name_and_version(SCHEMA_NAME, SCHEMA_VERSION)
-    mock.assert_called_with(SCHEMA_NAME, SCHEMA_VERSION)
+    mock.assert_called_with(name=SCHEMA_NAME, version=SCHEMA_VERSION)
 
 
 @pytest.mark.asyncio
@@ -305,3 +305,33 @@ async def test_search_schemas_by_name_case_insensitive(mocker, schema_client):
     mock.return_value = schemas
     result = await schema_client.search_schemas_by_name("user")
     assert result == [schemas[0]]
+
+
+@pytest.mark.asyncio
+async def test_register_schema(mocker, schema_client, schema_def_adapter):
+    mock = mocker.patch.object(schema_client, "register_schemas")
+    await schema_client.register_schema(schema_def_adapter)
+    mock.assert_called_with(schema_defs=[schema_def_adapter], new_version=None)
+
+
+@pytest.mark.asyncio
+async def test_register_schema_with_new_version(mocker, schema_client, schema_def_adapter):
+    mock = mocker.patch.object(schema_client, "register_schemas")
+    await schema_client.register_schema(schema_def_adapter, new_version=True)
+    mock.assert_called_with(schema_defs=[schema_def_adapter], new_version=True)
+
+
+@pytest.mark.asyncio
+async def test_register_schemas(mocker, schema_client, schema_def_adapter):
+    mock = mocker.patch.object(SchemaResourceApiAdapter, "save")
+    schemas = [schema_def_adapter]
+    await schema_client.register_schemas(schemas)
+    mock.assert_called_with(schema_def=schemas, new_version=None)
+
+
+@pytest.mark.asyncio
+async def test_register_schemas_with_new_version(mocker, schema_client, schema_def_adapter):
+    mock = mocker.patch.object(SchemaResourceApiAdapter, "save")
+    schemas = [schema_def_adapter]
+    await schema_client.register_schemas(schemas, new_version=True)
+    mock.assert_called_with(schema_def=schemas, new_version=True)

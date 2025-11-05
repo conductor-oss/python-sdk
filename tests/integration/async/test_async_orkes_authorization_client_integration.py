@@ -762,3 +762,125 @@ class TestOrkesAuthorizationClientIntegration:
                 await auth_client.delete_application(app_id)
             except Exception as e:
                 print(f"Warning: Failed to delete application {app_id}: {str(e)}")
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_user_validated_methods(
+        self, auth_client: OrkesAuthorizationClient, test_user_id: str
+    ):
+        """Test validated user methods."""
+        try:
+            upsert_request = UpsertUserRequest(name="Test User Validated", roles=["USER"])
+
+            created_user = await auth_client.create_user_validated(test_user_id, upsert_request)
+            assert created_user is not None
+            assert created_user.id == test_user_id
+            assert created_user.name == "Test User Validated"
+
+            fetched_user = await auth_client.get_user(test_user_id)
+            assert fetched_user is not None
+            assert fetched_user.id == test_user_id
+
+            upsert_request.name = "Test User Updated"
+            updated_user = await auth_client.update_user_validated(test_user_id, upsert_request)
+            assert updated_user is not None
+            assert updated_user.name == "Test User Updated"
+
+            upserted_user = await auth_client.upsert_user(test_user_id, upsert_request)
+            assert upserted_user is not None
+            assert upserted_user.id == test_user_id
+        finally:
+            try:
+                await auth_client.delete_user(test_user_id)
+            except Exception:
+                pass
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_application_methods(
+        self, auth_client: OrkesAuthorizationClient, test_application_name: str
+    ):
+        """Test validated application methods."""
+        try:
+            create_request = CreateOrUpdateApplicationRequest(name=test_application_name)
+
+            created_app = await auth_client.create_application(create_request)
+            assert created_app is not None
+            assert created_app.name == test_application_name
+            app_id = created_app.id
+
+            fetched_app = await auth_client.get_application(app_id)
+            assert fetched_app is not None
+            assert fetched_app.id == app_id
+
+            update_request = CreateOrUpdateApplicationRequest(name=test_application_name)
+            updated_app = await auth_client.update_application(app_id, update_request)
+            assert updated_app is not None
+            assert updated_app.id == app_id
+        finally:
+            try:
+                if 'app_id' in locals():
+                    await auth_client.delete_application(app_id)
+            except Exception:
+                pass
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_group_validated_methods(
+        self, auth_client: OrkesAuthorizationClient, test_group_id: str
+    ):
+        """Test validated group methods."""
+        try:
+            upsert_request = UpsertGroupRequest(description="Test Group Validated", roles=["USER"])
+
+            created_group = await auth_client.create_group_validated(test_group_id, upsert_request)
+            assert created_group is not None
+            assert created_group.id == test_group_id
+
+            fetched_group = await auth_client.get_group(test_group_id)
+            assert fetched_group is not None
+            assert fetched_group.id == test_group_id
+
+            upserted_group = await auth_client.upsert_group(test_group_id, upsert_request)
+            assert upserted_group is not None
+            assert upserted_group.id == test_group_id
+        finally:
+            try:
+                await auth_client.delete_group(test_group_id)
+            except Exception:
+                pass
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_access_key_validated_methods(
+        self, auth_client: OrkesAuthorizationClient, test_application_name: str
+    ):
+        """Test validated access key methods."""
+        try:
+            create_request = CreateOrUpdateApplicationRequest(name=test_application_name)
+            created_app = await auth_client.create_application(create_request)
+            app_id = created_app.id
+
+            created_key = await auth_client.create_access_key_validated(app_id)
+            assert created_key is not None
+            assert created_key.id is not None
+            key_id = created_key.id
+
+            keys = await auth_client.get_access_keys_validated(app_id)
+            assert keys is not None
+            assert len(keys) > 0
+
+            toggled_key = await auth_client.toggle_access_key_status_validated(app_id, key_id)
+            assert toggled_key is not None
+
+            await auth_client.delete_access_key(app_id, key_id)
+        finally:
+            try:
+                if 'app_id' in locals():
+                    await auth_client.delete_application(app_id)
+            except Exception:
+                pass

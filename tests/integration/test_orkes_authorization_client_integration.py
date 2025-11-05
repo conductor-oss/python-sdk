@@ -758,3 +758,22 @@ class TestOrkesAuthorizationClientIntegration:
                 auth_client.delete_application(app_id)
             except Exception as e:
                 print(f"Warning: Failed to delete application {app_id}: {str(e)}")
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    def test_check_permissions_method(
+        self, auth_client: OrkesAuthorizationClient, test_user_id: str, test_workflow_name: str
+    ):
+        """Test check_permissions method."""
+        try:
+            upsert_request = UpsertUserRequest(name="Test User Permissions", roles=["USER"])
+            auth_client.upsert_user(upsert_request, test_user_id)
+
+            permissions = auth_client.check_permissions(test_user_id, "WORKFLOW_DEF", test_workflow_name)
+            assert permissions is not None
+            assert isinstance(permissions, dict)
+        finally:
+            try:
+                auth_client.delete_user(test_user_id)
+            except Exception:
+                pass

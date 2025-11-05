@@ -54,7 +54,7 @@ def save_schedule_request():
 async def test_init(scheduler_client):
     message = "scheduler_api is not of type SchedulerResourceApiAdapter"
     assert isinstance(
-        scheduler_client.scheduler_api, SchedulerResourceApiAdapter
+        scheduler_client._scheduler_api, SchedulerResourceApiAdapter
     ), message
 
 
@@ -73,7 +73,7 @@ async def test_get_schedule(mocker, scheduler_client, workflow_schedule):
     schedule = await scheduler_client.get_schedule(SCHEDULE_NAME)
     assert schedule == workflow_schedule
     assert mock.called
-    mock.assert_called_with(SCHEDULE_NAME)
+    mock.assert_called_with(name=SCHEDULE_NAME)
 
 
 @pytest.mark.asyncio
@@ -214,7 +214,7 @@ async def test_put_tag_for_schedule(mocker, scheduler_client):
     tag2 = TagAdapter(key="tag2", value="val2")
     tags = [tag1, tag2]
     await scheduler_client.put_tag_for_schedule(SCHEDULE_NAME, tags)
-    mock.assert_called_with(SCHEDULE_NAME, tags)
+    mock.assert_called_with(name=SCHEDULE_NAME, tag=tags)
 
 
 @pytest.mark.asyncio
@@ -237,3 +237,45 @@ async def test_delete_tag_for_schedule(mocker, scheduler_client):
     tags = [tag1, tag2]
     await scheduler_client.delete_tag_for_schedule(SCHEDULE_NAME, tags)
     mock.assert_called_with(SCHEDULE_NAME, tags)
+
+
+@pytest.mark.asyncio
+async def test_save_schedule_validated(mocker, scheduler_client, save_schedule_request):
+    mock = mocker.patch.object(SchedulerResourceApiAdapter, "save_schedule")
+    await scheduler_client.save_schedule_validated(save_schedule_request)
+    mock.assert_called_with(save_schedule_request=save_schedule_request)
+
+
+@pytest.mark.asyncio
+async def test_delete_schedule_validated(mocker, scheduler_client):
+    mock = mocker.patch.object(SchedulerResourceApiAdapter, "delete_schedule")
+    await scheduler_client.delete_schedule_validated(SCHEDULE_NAME)
+    mock.assert_called_with(name=SCHEDULE_NAME)
+
+
+@pytest.mark.asyncio
+async def test_pause_schedule_validated(mocker, scheduler_client):
+    mock = mocker.patch.object(SchedulerResourceApiAdapter, "pause_schedule")
+    await scheduler_client.pause_schedule_validated(SCHEDULE_NAME)
+    mock.assert_called_with(name=SCHEDULE_NAME)
+
+
+@pytest.mark.asyncio
+async def test_resume_schedule_validated(mocker, scheduler_client):
+    mock = mocker.patch.object(SchedulerResourceApiAdapter, "resume_schedule")
+    await scheduler_client.resume_schedule_validated(SCHEDULE_NAME)
+    mock.assert_called_with(name=SCHEDULE_NAME)
+
+
+@pytest.mark.asyncio
+async def test_pause_all_schedules_validated(mocker, scheduler_client):
+    mock = mocker.patch.object(SchedulerResourceApiAdapter, "pause_all_schedules")
+    await scheduler_client.pause_all_schedules_validated()
+    assert mock.called
+
+
+@pytest.mark.asyncio
+async def test_resume_all_schedules_validated(mocker, scheduler_client):
+    mock = mocker.patch.object(SchedulerResourceApiAdapter, "resume_all_schedules")
+    await scheduler_client.resume_all_schedules_validated()
+    assert mock.called

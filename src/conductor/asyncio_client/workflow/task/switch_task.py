@@ -31,7 +31,7 @@ class SwitchTask(TaskInterface):
 
     def default_case(self, tasks: List[TaskInterface]):
         if isinstance(tasks, List):
-            self._default_case = deepcopy(tasks)
+            self._default_case = deepcopy(tasks)  # type: ignore[assignment]
         else:
             self._default_case = [deepcopy(tasks)]
         return self
@@ -43,6 +43,8 @@ class SwitchTask(TaskInterface):
             workflow.expression = self._expression
         else:
             workflow.evaluator_type = EvaluatorType.VALUE_PARAM
+            if workflow.input_parameters is None:
+                workflow.input_parameters = {}
             workflow.input_parameters["switchCaseValue"] = self._expression
             workflow.expression = "switchCaseValue"
         workflow.decision_cases = {}

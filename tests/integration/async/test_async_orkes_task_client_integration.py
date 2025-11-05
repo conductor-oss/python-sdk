@@ -738,3 +738,55 @@ class TestOrkesTaskClientIntegration:
                 print(
                     f"Warning: Failed to delete task definition {task_type}: {str(e)}"
                 )
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    @pytest.mark.asyncio
+    async def test_poll_task_and_batch_poll_methods(
+        self,
+        task_client: OrkesTaskClient,
+        metadata_client: OrkesMetadataClient,
+        test_task_type: str,
+        test_worker_id: str,
+        test_domain: str,
+    ):
+        """Test poll_task and batch_poll_tasks methods."""
+        try:
+            task_def = TaskDef(
+                name=test_task_type,
+                description="Test task for new polling methods",
+                owner_email="test@example.com",
+                timeout_seconds=30,
+                response_timeout_seconds=20,
+            )
+            await metadata_client.register_task_def_validated([task_def])
+
+            polled_task = await task_client.poll_task(test_task_type)
+            assert polled_task is None or polled_task.task_type == test_task_type
+
+            polled_task_with_worker = await task_client.poll_task(
+                test_task_type, worker_id=test_worker_id
+            )
+            assert polled_task_with_worker is None or polled_task_with_worker.task_type == test_task_type
+
+            polled_task_with_domain = await task_client.poll_task(
+                test_task_type, worker_id=test_worker_id, domain=test_domain
+            )
+            assert polled_task_with_domain is None or polled_task_with_domain.task_type == test_task_type
+
+            batch_tasks = await task_client.batch_poll_tasks(test_task_type, count=3)
+            assert isinstance(batch_tasks, list)
+
+            batch_tasks_with_params = await task_client.batch_poll_tasks(
+                test_task_type,
+                worker_id=test_worker_id,
+                count=5,
+                timeout=1000,
+                domain=test_domain,
+            )
+            assert isinstance(batch_tasks_with_params, list)
+        finally:
+            try:
+                await metadata_client.unregister_task_def(test_task_type)
+            except Exception:
+                pass

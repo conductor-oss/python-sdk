@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from conductor.client.orkes.models.access_key_status import AccessKeyStatus
 
@@ -69,3 +69,11 @@ class AccessKey:
     def __ne__(self, other: object) -> bool:
         """Returns true if both objects are not equal"""
         return not self == other
+
+    @classmethod
+    def from_dict(cls, obj: Dict[str, Any]) -> "AccessKey":
+        return cls(
+            id=obj["id"],
+            status=obj["status"],
+            created_at=obj["createdAt"],
+        )

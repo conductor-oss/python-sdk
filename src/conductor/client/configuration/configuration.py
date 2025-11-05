@@ -5,8 +5,8 @@ import logging
 import os
 import re
 import time
-from typing import Dict, Optional, Union
 import warnings
+from typing import Dict, Optional, Union
 
 from conductor.shared.configuration.settings.authentication_settings import (
     AuthenticationSettings,
@@ -144,7 +144,7 @@ class Configuration:
             if key is not None and secret is not None:
                 self.authentication_settings = AuthenticationSettings(key_id=key, key_secret=secret)
             else:
-                self.authentication_settings = None
+                self.authentication_settings = None  # type: ignore[assignment]
 
         # Debug switch
         self.debug = debug

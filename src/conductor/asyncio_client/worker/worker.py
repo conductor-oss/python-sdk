@@ -75,7 +75,7 @@ class Worker(WorkerInterface):
                 for input_name in params:
                     typ = params[input_name].annotation
                     default_value = params[input_name].default
-                    if input_name in task.input_data:
+                    if task.input_data is not None and input_name in task.input_data:
                         if typ in utils.simple_types:
                             task_input[input_name] = task.input_data[input_name]
                         else:
@@ -87,7 +87,7 @@ class Worker(WorkerInterface):
                         task_input[input_name] = default_value
                     else:
                         task_input[input_name] = None
-                task_output = self.execute_function(**task_input)
+                task_output = self.execute_function(**task_input)  # type: ignore[call-arg]
 
             if isinstance(task_output, TaskResultAdapter):
                 task_output.task_id = task.task_id
@@ -120,7 +120,11 @@ class Worker(WorkerInterface):
             if len(ne.args) > 0:
                 task_result.reason_for_incompletion = ne.args[0]
 
-        if dataclasses.is_dataclass(type(task_result.output_data)):
+        if (
+            task_result.output_data is not None
+            and dataclasses.is_dataclass(task_result.output_data)
+            and not isinstance(task_result.output_data, type)
+        ):
             task_output = dataclasses.asdict(task_result.output_data)
             task_result.output_data = task_output
             return task_result

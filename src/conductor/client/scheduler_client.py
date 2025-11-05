@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
 from conductor.client.http.models.search_result_workflow_schedule_execution_model import (
     SearchResultWorkflowScheduleExecutionModel,
 )
+from conductor.client.http.models.tag import Tag
 from conductor.client.http.models.workflow_schedule import WorkflowSchedule
+from conductor.client.http.models.workflow_schedule_model import WorkflowScheduleModel
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 
 
@@ -17,11 +19,13 @@ class SchedulerClient(ABC):
         pass
 
     @abstractmethod
-    def get_schedule(self, name: str) -> Tuple[Optional[WorkflowSchedule], str]:
+    def get_schedule(self, name: str, **kwargs) -> WorkflowSchedule:
         pass
 
     @abstractmethod
-    def get_all_schedules(self, workflow_name: Optional[str] = None) -> List[WorkflowSchedule]:
+    def get_all_schedules(
+        self, workflow_name: Optional[str] = None, **kwargs
+    ) -> List[WorkflowScheduleModel]:
         pass
 
     @abstractmethod
@@ -74,9 +78,9 @@ class SchedulerClient(ABC):
         pass
 
     @abstractmethod
-    def get_scheduler_tags(self, name: str) -> List[MetadataTag]:
+    def get_scheduler_tags(self, name: str, **kwargs) -> List[Tag]:
         pass
 
     @abstractmethod
-    def delete_scheduler_tags(self, tags: List[MetadataTag], name: str) -> List[MetadataTag]:
+    def delete_scheduler_tags(self, tags: List[MetadataTag], name: str, **kwargs) -> None:
         pass

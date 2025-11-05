@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
+from conductor.client.http.models.extended_workflow_def import ExtendedWorkflowDef
 from conductor.client.http.models.task_def import TaskDef
 from conductor.client.http.models.workflow_def import WorkflowDef
 from conductor.client.orkes.models.metadata_tag import MetadataTag
@@ -10,15 +11,19 @@ from conductor.client.orkes.models.metadata_tag import MetadataTag
 
 class MetadataClient(ABC):
     @abstractmethod
-    def register_workflow_def(self, workflow_def: WorkflowDef, overwrite: Optional[bool]):
+    def register_workflow_def(
+        self, workflow_def: ExtendedWorkflowDef, overwrite: Optional[bool] = True
+    ) -> None:
         pass
 
     @abstractmethod
-    def update_workflow_def(self, workflow_def: WorkflowDef, overwrite: Optional[bool]):
+    def update_workflow_def(
+        self, workflow_def: ExtendedWorkflowDef, overwrite: Optional[bool] = True, **kwargs
+    ) -> None:
         pass
 
     @abstractmethod
-    def unregister_workflow_def(self, workflow_name: str, version: int):
+    def unregister_workflow_def(self, name: str, version: int) -> None:
         pass
 
     @abstractmethod

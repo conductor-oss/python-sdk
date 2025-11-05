@@ -7,7 +7,7 @@ from conductor.client.http.models.integration import Integration
 from conductor.client.http.models.integration_api import IntegrationApi
 from conductor.client.http.models.integration_api_update import IntegrationApiUpdate
 from conductor.client.http.models.integration_update import IntegrationUpdate
-from conductor.client.http.models.prompt_template import PromptTemplate
+from conductor.client.http.models.message_template import MessageTemplate
 
 
 class IntegrationClient(ABC):
@@ -67,7 +67,7 @@ class IntegrationClient(ABC):
     @abstractmethod
     def get_prompts_with_integration(
         self, ai_integration: str, model_name: str
-    ) -> List[PromptTemplate]: ...
+    ) -> List[MessageTemplate]: ...
 
     @abstractmethod
     def get_token_usage_for_integration(self, name, integration_name) -> int: ...

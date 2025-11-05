@@ -5,6 +5,7 @@ from typing import Optional
 from conductor.asyncio_client.adapters import ApiClient
 from conductor.asyncio_client.configuration.configuration import Configuration
 from conductor.asyncio_client.orkes.orkes_authorization_client import OrkesAuthorizationClient
+from conductor.asyncio_client.orkes.orkes_event_client import OrkesEventClient
 from conductor.asyncio_client.orkes.orkes_integration_client import OrkesIntegrationClient
 from conductor.asyncio_client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.asyncio_client.orkes.orkes_prompt_client import OrkesPromptClient
@@ -13,7 +14,6 @@ from conductor.asyncio_client.orkes.orkes_schema_client import OrkesSchemaClient
 from conductor.asyncio_client.orkes.orkes_secret_client import OrkesSecretClient
 from conductor.asyncio_client.orkes.orkes_task_client import OrkesTaskClient
 from conductor.asyncio_client.orkes.orkes_workflow_client import OrkesWorkflowClient
-from conductor.asyncio_client.orkes.orkes_event_client import OrkesEventClient
 from conductor.asyncio_client.workflow.executor.workflow_executor import AsyncWorkflowExecutor
 
 

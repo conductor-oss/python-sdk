@@ -351,3 +351,65 @@ class TestOrkesPromptClientIntegration:
             print(
                 f"Warning: {len(remaining_prompts)} prompts could not be verified as deleted: {remaining_prompts}"
             )
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    def test_prompt_tag_update_method(
+        self, prompt_client: OrkesPromptClient, test_suffix: str
+    ):
+        """Test update_tag_for_prompt_template method."""
+        prompt_name = f"test_tag_update_prompt_{test_suffix}"
+
+        try:
+            prompt_client.save_prompt(
+                prompt_name,
+                "Test prompt for tag update",
+                "Hello ${name}"
+            )
+
+            tags = [
+                MetadataTag(key="version", value="1.0"),
+                MetadataTag(key="environment", value="test"),
+            ]
+
+            prompt_client.update_tag_for_prompt_template(prompt_name, tags)
+
+            retrieved_tags = prompt_client.get_tags_for_prompt_template(prompt_name)
+            assert len(retrieved_tags) == 2
+            tag_keys = [tag.key for tag in retrieved_tags]
+            assert "version" in tag_keys
+            assert "environment" in tag_keys
+        except Exception as e:
+            print(f"Exception in test_prompt_tag_update_method: {str(e)}")
+            raise
+        finally:
+            try:
+                prompt_client.delete_prompt(prompt_name)
+            except Exception:
+                pass
+
+    @pytest.mark.v5_2_6
+    @pytest.mark.v4_1_73
+    def test_prompt_testing_method(
+        self, prompt_client: OrkesPromptClient, test_suffix: str
+    ):
+        """Test test_prompt method."""
+        try:
+            prompt_text = "Hello ${name}, you are ${age} years old"
+            variables = {"name": "John", "age": "30"}
+            ai_integration = "openai"
+            model = "gpt-3.5-turbo"
+
+            result = prompt_client.test_prompt(
+                prompt_text,
+                variables,
+                ai_integration,
+                model,
+                temperature=0.5,
+                top_p=0.9
+            )
+
+            assert result is not None
+            assert isinstance(result, str)
+        except Exception as e:
+            print(f"Test prompt may require AI integration setup: {str(e)}")

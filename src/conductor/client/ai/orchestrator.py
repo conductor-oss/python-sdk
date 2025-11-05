@@ -9,7 +9,7 @@ from conductor.client.orkes_clients import OrkesClients
 
 if TYPE_CHECKING:
     from conductor.client.configuration.configuration import Configuration
-    from conductor.client.http.models import PromptTemplate
+    from conductor.client.http.models.message_template import MessageTemplate
     from conductor.shared.ai.configuration.interfaces.integration_config import IntegrationConfig
     from conductor.shared.ai.enums import LLMProvider, VectorDB
 
@@ -35,9 +35,9 @@ class AIOrchestrator:
         self.prompt_client.save_prompt(name, description, prompt_template)
         return self
 
-    def get_prompt_template(self, template_name: str) -> Optional[PromptTemplate]:
+    def get_prompt_template(self, template_name: str, **kwargs) -> Optional[MessageTemplate]:
         try:
-            return self.prompt_client.get_prompt(template_name)
+            return self.prompt_client.get_prompt(template_name, **kwargs)
         except ApiException as e:
             if e.code == NOT_FOUND_STATUS:
                 return None

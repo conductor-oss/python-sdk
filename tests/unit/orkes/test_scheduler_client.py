@@ -43,7 +43,7 @@ def save_schedule_request():
 def test_init(scheduler_client):
     message = "schedulerResourceApi is not of type SchedulerResourceApi"
     assert isinstance(
-        scheduler_client.schedulerResourceApi, SchedulerResourceApi
+        scheduler_client._scheduler_api, SchedulerResourceApi
     ), message
 
 
@@ -51,7 +51,7 @@ def test_save_schedule(mocker, scheduler_client, save_schedule_request):
     mock = mocker.patch.object(SchedulerResourceApi, "save_schedule")
     scheduler_client.save_schedule(save_schedule_request)
     assert mock.called
-    mock.assert_called_with(save_schedule_request)
+    mock.assert_called_with(body=save_schedule_request)
 
 
 def test_get_schedule(mocker, scheduler_client, workflow_schedule):
@@ -60,7 +60,7 @@ def test_get_schedule(mocker, scheduler_client, workflow_schedule):
     schedule = scheduler_client.get_schedule(SCHEDULE_NAME)
     assert schedule == workflow_schedule
     assert mock.called
-    mock.assert_called_with(SCHEDULE_NAME)
+    mock.assert_called_with(name=SCHEDULE_NAME)
 
 
 def test_get_schedule_non_existing(mocker, scheduler_client):
@@ -98,7 +98,7 @@ def test_get_next_few_schedule_execution_times(mocker, scheduler_client):
     mock.return_value = [1698093000000, 1698093300000, 1698093600000]
     times = scheduler_client.get_next_few_schedule_execution_times(cron_expression)
     assert len(times) == expected_next_few_schedule_execution_times
-    mock.assert_called_with(cron_expression)
+    mock.assert_called_with(cron_expression=cron_expression)
 
 
 def test_get_next_few_schedule_execution_times_with_optional_params(
@@ -113,7 +113,7 @@ def test_get_next_few_schedule_execution_times_with_optional_params(
     )
     assert len(times) == expected_next_few_schedule_execution_times
     mock.assert_called_with(
-        cron_expression,
+        cron_expression=cron_expression,
         schedule_start_time=1698093300000,
         schedule_end_time=1698093600000,
         limit=2,
@@ -123,13 +123,13 @@ def test_get_next_few_schedule_execution_times_with_optional_params(
 def test_delete_schedule(mocker, scheduler_client):
     mock = mocker.patch.object(SchedulerResourceApi, "delete_schedule")
     scheduler_client.delete_schedule(SCHEDULE_NAME)
-    mock.assert_called_with(SCHEDULE_NAME)
+    mock.assert_called_with(name=SCHEDULE_NAME)
 
 
 def test_pause_schedule(mocker, scheduler_client):
     mock = mocker.patch.object(SchedulerResourceApi, "pause_schedule")
     scheduler_client.pause_schedule(SCHEDULE_NAME)
-    mock.assert_called_with(SCHEDULE_NAME)
+    mock.assert_called_with(name=SCHEDULE_NAME)
 
 
 def test_pause_all_schedules(mocker, scheduler_client):
@@ -141,7 +141,7 @@ def test_pause_all_schedules(mocker, scheduler_client):
 def test_resume_schedule(mocker, scheduler_client):
     mock = mocker.patch.object(SchedulerResourceApi, "resume_schedule")
     scheduler_client.resume_schedule(SCHEDULE_NAME)
-    mock.assert_called_with(SCHEDULE_NAME)
+    mock.assert_called_with(name=SCHEDULE_NAME)
 
 
 def test_resume_all_schedules(mocker, scheduler_client):
@@ -193,7 +193,7 @@ def test_get_scheduler_tags(mocker, scheduler_client):
     tag2 = MetadataTag("tag2", "val2")
     mock.return_value = [tag1, tag2]
     tags = scheduler_client.get_scheduler_tags(SCHEDULE_NAME)
-    mock.assert_called_with(SCHEDULE_NAME)
+    mock.assert_called_with(name=SCHEDULE_NAME)
     assert len(tags) == expected_tags_len
 
 

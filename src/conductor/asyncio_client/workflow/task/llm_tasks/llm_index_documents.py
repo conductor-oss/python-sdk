@@ -63,7 +63,7 @@ class LlmIndexDocument(TaskInterface):
         if doc_id is not None:
             optional_input_params.update({"docId": doc_id})
 
-        input_params.update(optional_input_params)
+        input_params.update(optional_input_params)  # type: ignore[arg-type]
         if task_name is None:
             task_name = "llm_index_document"
 

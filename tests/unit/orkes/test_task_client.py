@@ -60,14 +60,14 @@ def tasks():
 
 def test_init(task_client):
     message = "taskResourceApi is not of type TaskResourceApi"
-    assert isinstance(task_client.taskResourceApi, TaskResourceApi), message
+    assert isinstance(task_client._task_api, TaskResourceApi), message
 
 
 def test_poll_task(mocker, task_client, tasks):
     mock = mocker.patch.object(TaskResourceApi, "poll")
     mock.return_value = tasks[0]
     polled_task = task_client.poll_task(TASK_NAME)
-    mock.assert_called_with(TASK_NAME)
+    mock.assert_called_with(tasktype=TASK_NAME)
     assert polled_task == tasks[0]
 
 
@@ -75,7 +75,7 @@ def test_poll_task_with_worker_and_domain(mocker, task_client, tasks):
     mock = mocker.patch.object(TaskResourceApi, "poll")
     mock.return_value = tasks[0]
     polled_task = task_client.poll_task(TASK_NAME, WORKER_ID, DOMAIN)
-    mock.assert_called_with(TASK_NAME, workerid=WORKER_ID, domain=DOMAIN)
+    mock.assert_called_with(tasktype=TASK_NAME, workerid=WORKER_ID, domain=DOMAIN)
     assert polled_task == tasks[0]
 
 
@@ -83,7 +83,7 @@ def test_poll_task_no_tasks(mocker, task_client):
     mock = mocker.patch.object(TaskResourceApi, "poll")
     mock.return_value = None
     polled_task = task_client.poll_task(TASK_NAME)
-    mock.assert_called_with(TASK_NAME)
+    mock.assert_called_with(tasktype=TASK_NAME)
     assert polled_task is None
 
 
@@ -91,7 +91,7 @@ def test_batch_poll_tasks(mocker, task_client, tasks):
     mock = mocker.patch.object(TaskResourceApi, "batch_poll")
     mock.return_value = tasks
     polled_tasks = task_client.batch_poll_tasks(TASK_NAME, WORKER_ID, 3, 200)
-    mock.assert_called_with(TASK_NAME, workerid=WORKER_ID, count=3, timeout=200)
+    mock.assert_called_with(tasktype=TASK_NAME, workerid=WORKER_ID, count=3, timeout=200)
     assert len(polled_tasks) == len(tasks)
 
 
@@ -100,7 +100,7 @@ def test_batch_poll_tasks_in_domain(mocker, task_client, tasks):
     mock.return_value = tasks
     polled_tasks = task_client.batch_poll_tasks(TASK_NAME, WORKER_ID, 3, 200, DOMAIN)
     mock.assert_called_with(
-        TASK_NAME, workerid=WORKER_ID, domain=DOMAIN, count=3, timeout=200
+        tasktype=TASK_NAME, workerid=WORKER_ID, domain=DOMAIN, count=3, timeout=200
     )
     assert len(polled_tasks) == len(tasks)
 
@@ -109,7 +109,7 @@ def test_get_task(mocker, task_client, tasks):
     mock = mocker.patch.object(TaskResourceApi, "get_task")
     mock.return_value = tasks[0]
     task = task_client.get_task(TASK_ID)
-    mock.assert_called_with(TASK_ID)
+    mock.assert_called_with(task_id=TASK_ID)
     assert task.task_id == TASK_ID
 
 
@@ -127,7 +127,7 @@ def test_update_task(mocker, task_client):
     mock = mocker.patch.object(TaskResourceApi, "update_task")
     task_result_status = TaskResult(task_id=TASK_ID, status=TaskResultStatus.COMPLETED)
     task_client.update_task(task_result_status)
-    mock.assert_called_with(task_result_status)
+    mock.assert_called_with(body=task_result_status)
 
 
 def test_update_task_by_ref_name(mocker, task_client):
@@ -135,7 +135,7 @@ def test_update_task_by_ref_name(mocker, task_client):
     status = TaskResultStatus.COMPLETED
     output = {"a": 56}
     task_client.update_task_by_ref_name("wf_id", "test_task_ref_name", status, output)
-    mock.assert_called_with({"result": output}, "wf_id", "test_task_ref_name", status)
+    mock.assert_called_with(body={"result": output}, workflow_id="wf_id", task_ref_name="test_task_ref_name", status=status)
 
 
 def test_update_task_by_ref_name_with_worker_id(mocker, task_client):
@@ -146,7 +146,7 @@ def test_update_task_by_ref_name_with_worker_id(mocker, task_client):
         "wf_id", "test_task_ref_name", status, output, "worker_id"
     )
     mock.assert_called_with(
-        {"result": output}, "wf_id", "test_task_ref_name", status, workerid="worker_id"
+        body={"result": output}, workflow_id="wf_id", task_ref_name="test_task_ref_name", status=status, workerid="worker_id"
     )
 
 
@@ -160,7 +160,7 @@ def test_update_task_sync(mocker, task_client):
     returned_workflow = task_client.update_task_sync(
         workflow_id, "test_task_ref_name", status, output
     )
-    mock.assert_called_with(output, workflow_id, "test_task_ref_name", status)
+    mock.assert_called_with(body=output, workflow_id=workflow_id, task_ref_name="test_task_ref_name", status=status)
     assert returned_workflow == workflow
 
 
@@ -175,7 +175,7 @@ def test_update_task_sync_with_worker_id(mocker, task_client):
         workflow_id, "test_task_ref_name", status, output, "worker_id"
     )
     mock.assert_called_with(
-        output, workflow_id, "test_task_ref_name", status, workerid="worker_id"
+        body=output, workflow_id=workflow_id, task_ref_name="test_task_ref_name", status=status, workerid="worker_id"
     )
     assert returned_workflow == workflow
 
@@ -211,5 +211,5 @@ def test_get_task_logs(mocker, task_client):
     task_exec_log2 = TaskExecLog("Test log 2", TASK_ID)
     mock.return_value = [task_exec_log1, task_exec_log2]
     logs = task_client.get_task_logs(TASK_ID)
-    mock.assert_called_with(TASK_ID)
+    mock.assert_called_with(task_id=TASK_ID)
     assert len(logs) == expected_log_len

@@ -41,7 +41,7 @@ def workflow_input():
 
 def test_init(workflow_client):
     message = "workflowResourceApi is not of type WorkflowResourceApi"
-    assert isinstance(workflow_client.workflowResourceApi, WorkflowResourceApi), message
+    assert isinstance(workflow_client._workflow_api, WorkflowResourceApi), message
 
 
 def test_start_workflow_by_name(mocker, workflow_client, workflow_input):
@@ -93,7 +93,7 @@ def test_start_workflow(mocker, workflow_client):
     mock.return_value = WORKFLOW_UUID
     start_workflow_req = StartWorkflowRequest()
     wf_id = workflow_client.start_workflow(start_workflow_req)
-    mock.assert_called_with(start_workflow_req)
+    mock.assert_called_with(body=start_workflow_req)
     assert wf_id == WORKFLOW_UUID
 
 
@@ -121,64 +121,64 @@ def test_execute_workflow(mocker, workflow_client):
 def test_pause_workflow(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "pause_workflow")
     workflow_client.pause_workflow(WORKFLOW_UUID)
-    mock.assert_called_with(WORKFLOW_UUID)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID)
 
 
 def test_resume_workflow(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "resume_workflow")
     workflow_client.resume_workflow(WORKFLOW_UUID)
-    mock.assert_called_with(WORKFLOW_UUID)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID)
 
 
 def test_restart_workflow(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "restart")
     workflow_client.restart_workflow(WORKFLOW_UUID)
-    mock.assert_called_with(WORKFLOW_UUID)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID)
 
 
 def test_restart_workflow_with_latest_wf_def(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "restart")
     workflow_client.restart_workflow(WORKFLOW_UUID, True)
-    mock.assert_called_with(WORKFLOW_UUID, use_latest_definitions=True)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID, use_latest_definitions=True)
 
 
 def test_rerun_workflow(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "rerun")
     re_run_req = RerunWorkflowRequest()
     workflow_client.rerun_workflow(WORKFLOW_UUID, re_run_req)
-    mock.assert_called_with(re_run_req, WORKFLOW_UUID)
+    mock.assert_called_with(body=re_run_req, workflow_id=WORKFLOW_UUID)
 
 
 def test_retry_workflow(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "retry")
     workflow_client.retry_workflow(WORKFLOW_UUID)
-    mock.assert_called_with(WORKFLOW_UUID)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID)
 
 
 def test_retry_workflow_with_resume_subworkflow_tasks(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "retry")
     workflow_client.retry_workflow(WORKFLOW_UUID, True)
-    mock.assert_called_with(WORKFLOW_UUID, resume_subworkflow_tasks=True)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID, resume_subworkflow_tasks=True)
 
 
 def test_terminate_workflow(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "terminate1")
     workflow_client.terminate_workflow(WORKFLOW_UUID)
-    mock.assert_called_with(WORKFLOW_UUID)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID)
 
 
 def test_terminate_workflow_with_reason(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "terminate1")
     reason = "Unit test failed"
     workflow_client.terminate_workflow(WORKFLOW_UUID, reason)
-    mock.assert_called_with(WORKFLOW_UUID, reason=reason)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID, reason=reason)
 
 
 def test_get_workflow(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "get_execution_status")
     mock.return_value = Workflow(workflow_id=WORKFLOW_UUID)
     workflow = workflow_client.get_workflow(WORKFLOW_UUID)
-    mock.assert_called_with(WORKFLOW_UUID, include_tasks=True)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID, include_tasks=True)
     assert workflow.workflow_id == WORKFLOW_UUID
 
 
@@ -186,7 +186,7 @@ def test_get_workflow_without_tasks(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "get_execution_status")
     mock.return_value = Workflow(workflow_id=WORKFLOW_UUID)
     workflow = workflow_client.get_workflow(WORKFLOW_UUID, False)
-    mock.assert_called_with(WORKFLOW_UUID)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID)
     assert workflow.workflow_id == WORKFLOW_UUID
 
 
@@ -203,13 +203,13 @@ def test_get_workflow_non_existent(mocker, workflow_client):
 def test_delete_workflow(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "delete1")
     workflow_client.delete_workflow(WORKFLOW_UUID)
-    mock.assert_called_with(WORKFLOW_UUID, archive_workflow=True)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID, archive_workflow=True)
 
 
 def test_delete_workflow_without_archival(mocker, workflow_client):
     mock = mocker.patch.object(WorkflowResourceApi, "delete1")
     workflow_client.delete_workflow(WORKFLOW_UUID, False)
-    mock.assert_called_with(WORKFLOW_UUID, archive_workflow=False)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID, archive_workflow=False)
 
 
 def test_skip_task_from_workflow(mocker, workflow_client):
@@ -217,7 +217,7 @@ def test_skip_task_from_workflow(mocker, workflow_client):
     task_ref_name = TASK_NAME + "_ref"
     request = SkipTaskRequest()
     workflow_client.skip_task_from_workflow(WORKFLOW_UUID, task_ref_name, request)
-    mock.assert_called_with(WORKFLOW_UUID, task_ref_name, request)
+    mock.assert_called_with(workflow_id=WORKFLOW_UUID, task_reference_name=task_ref_name, body=request)
 
 
 def test_test_workflow(mocker, workflow_client):
@@ -227,5 +227,5 @@ def test_test_workflow(mocker, workflow_client):
         workflow_def=WorkflowDef(name=WORKFLOW_NAME, version=1), name=WORKFLOW_NAME
     )
     workflow = workflow_client.test_workflow(test_request)
-    mock.assert_called_with(test_request)
+    mock.assert_called_with(body=test_request)
     assert workflow.workflow_id == WORKFLOW_UUID

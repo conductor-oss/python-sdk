@@ -8,7 +8,6 @@ from conductor.client.http.models.rerun_workflow_request import RerunWorkflowReq
 from conductor.client.http.models.scrollable_search_result_workflow_summary import (
     ScrollableSearchResultWorkflowSummary,
 )
-from conductor.client.http.models.signal_response import SignalResponse
 from conductor.client.http.models.skip_task_request import SkipTaskRequest
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
 from conductor.client.http.models.workflow import Workflow
@@ -65,7 +64,7 @@ class WorkflowClient(ABC):
         wait_for_seconds: int = 30,
         consistency: Optional[str] = None,
         return_strategy: Optional[str] = None,
-    ) -> SignalResponse:
+    ) -> WorkflowRun:
         pass
 
     @abstractmethod
@@ -137,8 +136,9 @@ class WorkflowClient(ABC):
     def update_state(
         self,
         workflow_id: str,
-        update_requesst: WorkflowStateUpdate,
+        update_request: WorkflowStateUpdate,
         wait_until_task_ref_names: Optional[List[str]] = None,
         wait_for_seconds: Optional[int] = None,
+        **kwargs,
     ) -> WorkflowRun:
         pass
