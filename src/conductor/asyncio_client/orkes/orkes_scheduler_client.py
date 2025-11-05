@@ -134,8 +134,8 @@ class OrkesSchedulerClient(OrkesBaseClient):
         sort: Optional[str] = None,
         free_text: Optional[str] = None,
         query: Optional[str] = None,
+        **kwargs,
     ) -> SearchResultWorkflowScheduleExecutionModelAdapter:
-        kwargs = {}
         if start:
             kwargs.update({"start": start})
         if size:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from deprecated import deprecated
 from typing_extensions import deprecated as typing_deprecated
@@ -227,5 +227,13 @@ class OrkesTaskClient(OrkesBaseClient):
     async def get_queue_size_for_task(self, task_type: List[str], **kwargs) -> int:
         """Get queue size for a specific task type"""
         queue_sizes_by_task_type = await self._task_api.size(task_type=task_type, **kwargs)
-        queue_size = queue_sizes_by_task_type.get(task_type, 0)
+
+        if isinstance(task_type, list) and task_type:
+            actual_task_type = task_type[0]
+        else:
+            actual_task_type = task_type
+
+        queue_sizes_dict = cast(Dict[str, int], queue_sizes_by_task_type)
+        queue_size = queue_sizes_dict.get(actual_task_type, 0)
+
         return queue_size

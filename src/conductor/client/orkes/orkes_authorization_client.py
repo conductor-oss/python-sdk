@@ -203,8 +203,11 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
 
     def get_granted_permissions_for_user(self, user_id: str, **kwargs) -> List[GrantedPermission]:
         granted_access_obj = self._user_api.get_granted_permissions(user_id=user_id, **kwargs)
+
+        granted_access_obj_dict = cast(Dict[str, Any], granted_access_obj)
+
         granted_permissions = []
-        for ga in granted_access_obj["grantedAccess"]:
+        for ga in granted_access_obj_dict["grantedAccess"]:
             target = TargetRef(ga["target"]["id"], ga["target"]["type"])
             access = ga["access"]
             granted_permissions.append(GrantedPermission(target, access))

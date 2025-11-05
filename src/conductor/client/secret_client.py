@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Set
 
-from conductor.client.orkes.models.metadata_tag import MetadataTag
+from conductor.client.http.models.tag import Tag
 
 
 class SecretClient(ABC):
@@ -26,17 +26,17 @@ class SecretClient(ABC):
         pass
 
     @abstractmethod
-    def secret_exists(self, key: str) -> bool:
+    def secret_exists(self, key: str, **kwargs) -> bool:
         pass
 
     @abstractmethod
-    def set_secret_tags(self, tags: List[MetadataTag], key: str):
+    def set_secret_tags(self, tags: List[Tag], key: str) -> None:
         pass
 
     @abstractmethod
-    def get_secret_tags(self, key: str) -> List[MetadataTag]:
+    def get_secret_tags(self, key: str) -> List[Tag]:
         pass
 
     @abstractmethod
-    def delete_secret_tags(self, tags: List[MetadataTag], key: str) -> List[MetadataTag]:
+    def delete_secret_tags(self, tags: List[Tag], key: str) -> None:
         pass

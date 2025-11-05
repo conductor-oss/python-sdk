@@ -219,14 +219,8 @@ plugins = [
 disable_error_code = [
     "assignment",
     "arg-type",
-    "override",
-    "dict-item",
-    "index",
-    "operator",
-    "call-overload",
     "misc",
     "attr-defined",
-    "union-attr",
     "name-defined",
 ]
 

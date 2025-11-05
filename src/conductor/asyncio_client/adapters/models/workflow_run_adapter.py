@@ -16,7 +16,7 @@ class WorkflowRunAdapter(WorkflowRun):
     @property
     def current_task(self) -> TaskAdapter:  # type: ignore[override]
         current = None
-        for task in self.tasks:
+        for task in self.tasks or []:
             if task.status in ("SCHEDULED", "IN_PROGRESS"):
                 current = task
         return current  # type: ignore[return-value]
@@ -34,10 +34,10 @@ class WorkflowRunAdapter(WorkflowRun):
             )
 
         current = None
-        for task in self.tasks:
-            if (
-                task.task_def_name == name
-                or task.workflow_task.task_reference_name == task_reference_name
+        for task in self.tasks or []:
+            if task.task_def_name == name or (
+                task.workflow_task is not None
+                and task.workflow_task.task_reference_name == task_reference_name
             ):
                 current = task
         return current  # type: ignore[return-value]

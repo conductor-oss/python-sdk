@@ -474,11 +474,14 @@ class OrkesAuthorizationClient(OrkesBaseClient):
     ) -> List[GrantedAccessAdapter]:
         granted_access_obj = await self.get_user_permissions(user_id=user_id, **kwargs)
 
-        if not granted_access_obj.granted_access:
+        if granted_access_obj is None or granted_access_obj.granted_access is None:
             return []
 
         granted_permissions = []
         for ga in granted_access_obj.granted_access:
+            if ga.target is None:
+                continue
+
             target = TargetRefAdapter(type=ga.target.type, id=ga.target.id)
             access = ga.access
             granted_permissions.append(GrantedAccessAdapter(target=target, access=access))

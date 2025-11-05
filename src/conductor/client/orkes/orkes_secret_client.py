@@ -36,7 +36,7 @@ class OrkesSecretClient(OrkesBaseClient, SecretClient):
     def delete_secret(self, key: str, **kwargs) -> None:
         self._secret_api.delete_secret(key=key, **kwargs)
 
-    def secret_exists(self, key: str, **kwargs) -> object:
+    def secret_exists(self, key: str, **kwargs) -> object:  # type: ignore[override]
         return self._secret_api.secret_exists(key=key, **kwargs)
 
     @deprecated("set_secret_tags is deprecated; use put_tag_for_secret instead")

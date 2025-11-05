@@ -42,8 +42,8 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         version: Optional[int] = None,
         correlationId: Optional[str] = None,
         priority: Optional[int] = None,
+        **kwargs,
     ) -> str:
-        kwargs = {}
         if version:
             kwargs.update({"version": version})
         if correlationId:

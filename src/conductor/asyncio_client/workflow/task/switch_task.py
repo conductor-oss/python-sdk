@@ -43,6 +43,8 @@ class SwitchTask(TaskInterface):
             workflow.expression = self._expression
         else:
             workflow.evaluator_type = EvaluatorType.VALUE_PARAM
+            if workflow.input_parameters is None:
+                workflow.input_parameters = {}
             workflow.input_parameters["switchCaseValue"] = self._expression
             workflow.expression = "switchCaseValue"
         workflow.decision_cases = {}

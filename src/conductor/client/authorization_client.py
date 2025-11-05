@@ -8,6 +8,7 @@ from conductor.client.http.models.conductor_user import ConductorUser
 from conductor.client.http.models.create_or_update_application_request import (
     CreateOrUpdateApplicationRequest,
 )
+from conductor.client.http.models.extended_conductor_application import ExtendedConductorApplication
 from conductor.client.http.models.group import Group
 from conductor.client.http.models.subject_ref import SubjectRef
 from conductor.client.http.models.target_ref import TargetRef
@@ -33,7 +34,7 @@ class AuthorizationClient(ABC):
         pass
 
     @abstractmethod
-    def list_applications(self) -> List[ConductorApplication]:
+    def list_applications(self) -> List[ExtendedConductorApplication]:
         pass
 
     @abstractmethod

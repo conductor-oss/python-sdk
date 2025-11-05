@@ -27,7 +27,7 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
     @typing_deprecated(
         "register_workflow_def is deprecated; use register_workflow_def_validated instead"
     )
-    def register_workflow_def(
+    def register_workflow_def(  # type: ignore[override]
         self, workflow_def: ExtendedWorkflowDef, overwrite: Optional[bool] = True
     ) -> object:
         return self._metadata_api.create(workflow_def, overwrite=overwrite)
@@ -47,8 +47,11 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
     @typing_deprecated(
         "update_workflow_def is deprecated; use update_workflow_def_validated instead"
     )
-    def update_workflow_def(
-        self, workflow_def: ExtendedWorkflowDef, overwrite: Optional[bool] = True, **kwargs
+    def update_workflow_def(  # type: ignore[override]
+        self,
+        workflow_def: ExtendedWorkflowDef,
+        overwrite: Optional[bool] = True,
+        **kwargs,
     ) -> object:
         return self._metadata_api.update([workflow_def], overwrite=overwrite, **kwargs)
 
@@ -80,7 +83,7 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
 
     @deprecated("register_task_def is deprecated; use register_task_def_validated instead")
     @typing_deprecated("register_task_def is deprecated; use register_task_def_validated instead")
-    def register_task_def(self, task_def: ExtendedTaskDef) -> object:
+    def register_task_def(self, task_def: ExtendedTaskDef) -> object:  # type: ignore[override]
         return self._metadata_api.register_task_def([task_def])
 
     def register_task_def_validated(self, task_def: List[ExtendedTaskDef], **kwargs) -> None:
@@ -94,7 +97,7 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
 
     @deprecated("get_task_def is deprecated; use get_task_def_validated instead")
     @typing_deprecated("get_task_def is deprecated; use get_task_def_validated instead")
-    def get_task_def(self, task_type: str) -> object:
+    def get_task_def(self, task_type: str) -> object:  # type: ignore[override]
         return self._metadata_api.get_task_def(task_type)
 
     def get_task_def_validated(self, task_type: str, **kwargs) -> TaskDef:
@@ -113,7 +116,7 @@ class OrkesMetadataClient(OrkesBaseClient, MetadataClient):
 
     @deprecated("get_workflow_tags is deprecated; use get_workflow_tags_validated instead")
     @typing_deprecated("get_workflow_tags is deprecated; use get_workflow_tags_validated instead")
-    def get_workflow_tags(self, workflow_name: str) -> object:
+    def get_workflow_tags(self, workflow_name: str) -> object:  # type: ignore[override]
         return self._tags_api.get_workflow_tags(workflow_name)
 
     def get_workflow_tags_validated(self, workflow_name: str, **kwargs) -> List[Tag]:
