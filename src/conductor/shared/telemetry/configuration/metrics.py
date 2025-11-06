@@ -14,10 +14,10 @@ def get_default_temporary_folder() -> str:
 
 class MetricsSettings:
     """
-    Async metrics settings adapter for Orkes Conductor Asyncio Client.
+    Metrics settings adapter for Orkes Conductor Client.
 
-    This adapter provides configuration for metrics collection in async environments,
-    following the same pattern as other async adapters in the asyncio client.
+    This adapter provides configuration for metrics collection in environments,
+    following the same pattern as other adapters in the client.
     """
 
     def __init__(

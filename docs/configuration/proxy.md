@@ -177,35 +177,6 @@ config = Configuration(
 )
 ```
 
-### Async Client Proxy Configuration
-
-```python
-import asyncio
-import httpx
-from conductor.asyncio_client.configuration import Configuration
-from conductor.asyncio_client.adapters import ApiClient
-
-async def main():
-    # Create async HTTP client with proxy
-    async_client = httpx.AsyncClient(
-        proxies={
-            "http://": "http://proxy.company.com:8080",
-            "https://": "http://proxy.company.com:8080"
-        }
-    )
-    
-    config = Configuration(
-        server_url="https://api.orkes.io/api",
-        http_connection=async_client
-    )
-    
-    async with ApiClient(config) as api_client:
-        # Use the client with proxy configuration
-        pass
-
-asyncio.run(main())
-```
-
 ## Troubleshooting
 
 ### Common Proxy Issues

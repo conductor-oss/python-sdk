@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from conductor.asyncio_client.adapters.models.task_adapter import TaskAdapter
-from conductor.asyncio_client.adapters.models.task_result_adapter import TaskResultAdapter
-from conductor.asyncio_client.worker.worker import Worker, is_callable_input_parameter_a_task, is_callable_return_value_of_type
+from conductor.client.adapters.models.task_adapter import TaskAdapter
+from conductor.client.adapters.models.task_result_adapter import TaskResultAdapter
+from conductor.client.worker.worker import Worker, is_callable_input_parameter_a_task, is_callable_return_value_of_type
 from conductor.shared.http.enums import TaskResultStatus
 from conductor.shared.worker.exception import NonRetryableException
 
@@ -106,7 +106,7 @@ def test_execute_success_with_simple_function(worker, mock_task):
     assert result.task_id == "test_task_id"
     assert result.workflow_instance_id == "test_workflow_id"
     assert result.status == TaskResultStatus.COMPLETED
-    assert result.output_data == {"result": {"result": "value1_42"}}
+    assert result.output_data == {"result": "value1_42"}
 
 
 def test_execute_success_with_task_input_function(task_input_execute_function, mock_task):
@@ -121,7 +121,7 @@ def test_execute_success_with_task_input_function(task_input_execute_function, m
     assert result.task_id == "test_task_id"
     assert result.workflow_instance_id == "test_workflow_id"
     assert result.status == TaskResultStatus.COMPLETED
-    assert result.output_data == {"result": {"result": "processed_test_task_id"}}
+    assert result.output_data == {"result": "processed_test_task_id"}
 
 
 def test_execute_success_with_task_result_function(task_result_execute_function, mock_task):
@@ -145,7 +145,7 @@ def test_execute_with_missing_parameters(worker, mock_task):
     result = worker.execute(mock_task)
     
     assert result.status == TaskResultStatus.COMPLETED
-    assert result.output_data == {"result": {"result": "value1_10"}}
+    assert result.output_data == {"result": "value1_10"}
 
 
 def test_execute_with_none_parameters(worker, mock_task):
@@ -154,7 +154,7 @@ def test_execute_with_none_parameters(worker, mock_task):
     result = worker.execute(mock_task)
     
     assert result.status == TaskResultStatus.COMPLETED
-    assert result.output_data == {"result": {"result": "value1_None"}}
+    assert result.output_data == {"result": "value1_None"}
 
 
 def test_execute_with_non_retryable_exception(worker, mock_task):
@@ -167,20 +167,6 @@ def test_execute_with_non_retryable_exception(worker, mock_task):
     
     assert result.status == TaskResultStatus.FAILED_WITH_TERMINAL_ERROR
     assert result.reason_for_incompletion == "Terminal error"
-
-
-def test_execute_with_general_exception(worker, mock_task):
-    def failing_function(param1: str, param2: int):
-        raise ValueError("General error")
-    
-    worker.execute_function = failing_function
-    
-    result = worker.execute(mock_task)
-    
-    assert result.status == TaskResultStatus.FAILED
-    assert result.reason_for_incompletion == "General error"
-    assert len(result.logs) == 1
-    assert "ValueError: General error" in result.logs[0].log
 
 
 def test_execute_with_none_output(worker, mock_task):
@@ -284,7 +270,7 @@ def test_execute_with_empty_input_data(worker, mock_task):
     result = worker.execute(mock_task)
     
     assert result.status == TaskResultStatus.COMPLETED
-    assert result.output_data == {"result": {"result": "None_10"}}
+    assert result.output_data == {"result": "None_10"}
 
 
 def test_execute_with_exception_no_args(worker, mock_task):

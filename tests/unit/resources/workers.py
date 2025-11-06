@@ -4,7 +4,7 @@ from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
 from conductor.shared.http.enums import TaskResultStatus
 from conductor.client.worker.worker_interface import WorkerInterface as OldWorkerInterface
-from conductor.asyncio_client.worker.worker_interface import WorkerInterface
+from conductor.client.worker.worker_interface import WorkerInterface
 
 
 class UserInfo:
