@@ -4,7 +4,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from conductor.asyncio_client.adapters.models.tag_adapter import TagAdapter
+from conductor.client.adapters.models.tag_adapter import TagAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

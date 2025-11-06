@@ -4,7 +4,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from conductor.asyncio_client.adapters.models.upsert_group_request_adapter import UpsertGroupRequestAdapter
+from conductor.client.adapters.models.upsert_group_request_adapter import UpsertGroupRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

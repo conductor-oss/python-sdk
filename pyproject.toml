@@ -34,9 +34,6 @@ shortuuid = ">=1.0.11"
 dacite = ">=1.8.1"
 deprecated = ">=1.2.14"
 python-dateutil = "^2.8.2"
-pydantic = "2.11.7"
-aiohttp = "3.12.15"
-aiohttp-retry = "2.9.1"
 httpx = {extras = ["http2"], version = "^0.28.1"}
 
 [tool.poetry.group.dev.dependencies]
@@ -48,7 +45,6 @@ pre-commit = "^4.2.0"
 setuptools = "^80.9.0"
 pytest = "^8.4.1"
 pytest-mock = "^3.14.1"
-pytest-asyncio = "^1.1.0"
 
 [tool.ruff]
 target-version = "py39"
@@ -157,7 +153,6 @@ line-ending = "auto"
 "src/conductor/client/orkes/api/*.py" = ["ALL"]
 "tests/**/*.py" = ["B", "C4", "SIM", "PLR2004"]
 "examples/**/*.py" = ["B", "C4", "SIM"]
-"src/conductor/asyncio_client/http/**/*.py" = ["ALL"]
 
 [tool.coverage.run]
 source = ["src/conductor"]
@@ -165,7 +160,6 @@ omit = [
     "tests/*",
     "examples/*",
     "*/__init__.py",
-    "src/conductor/asyncio_client/http/*",
     "src/conductor/client/http/*",
     "src/conductor/client/orkes/api/*",
     "src/conductor/client/codegen/*"

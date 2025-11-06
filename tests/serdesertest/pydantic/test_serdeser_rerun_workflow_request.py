@@ -3,7 +3,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from conductor.asyncio_client.adapters.models.rerun_workflow_request_adapter import RerunWorkflowRequestAdapter
+from conductor.client.adapters.models.rerun_workflow_request_adapter import RerunWorkflowRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

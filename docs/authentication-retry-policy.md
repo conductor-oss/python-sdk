@@ -14,54 +14,13 @@ When a request receives a 401 (Unauthorized) response, the SDK automatically:
 4. **Retries the request** with the new token
 5. **Tracks attempts per endpoint** to handle persistent failures gracefully
 
-### Race Condition Protection (Async Client)
 
-The async client includes built-in protection against race conditions when multiple concurrent requests receive 401 errors:
-
-- Uses an async lock (`asyncio.Lock`) to synchronize token refresh operations
-- Checks if another coroutine already refreshed the token before performing a refresh
-- Validates token freshness using `token_update_time` and `auth_token_ttl_sec`
-- Ensures only one token refresh occurs even with multiple simultaneous 401 responses
-
-### Synchronous vs Asynchronous Behavior
-
-**Async Client (`conductor.asyncio_client`)**:
-- Uses `asyncio.sleep()` for non-blocking delays
-- Includes race condition protection with `asyncio.Lock`
-- Ideal for high-concurrency scenarios and modern async applications
-
-**Sync Client (`conductor.client`)**:
+**Client (`conductor.client`)**:
 - Uses `time.sleep()` for delays (blocks the current thread)
 - Simpler implementation without lock-based synchronization
 - Suitable for traditional synchronous applications and scripts
 
 ## Configuration
-
-Both sync and async clients share the same configuration parameters.
-
-### Async Client Configuration
-
-For the async client (`conductor.asyncio_client`), configure the retry policy during initialization:
-
-```python
-from conductor.asyncio_client.configuration import Configuration
-
-configuration = Configuration(
-    server_url="https://your-conductor-server.com/api",
-    auth_key="your_key_id",
-    auth_secret="your_key_secret",
-    # 401 retry configuration
-    auth_401_max_attempts=5,              # Maximum retry attempts per endpoint
-    auth_401_base_delay_ms=1000.0,        # Base delay in milliseconds
-    auth_401_max_delay_ms=60000.0,        # Maximum delay cap in milliseconds
-    auth_401_jitter_percent=0.2,          # Random jitter (20%)
-    auth_401_stop_behavior="stop_worker"  # Behavior after max attempts
-)
-```
-
-### Sync Client Configuration
-
-For the sync client (`conductor.client`), configuration is identical:
 
 ```python
 from conductor.client.configuration.configuration import Configuration
@@ -130,39 +89,6 @@ With default configuration (`base_delay_ms=1000`, `jitter_percent=0.2`, `max_del
 
 ## Usage Examples
 
-### Basic Usage with Async Client
-
-```python
-import asyncio
-from conductor.asyncio_client.configuration import Configuration
-from conductor.asyncio_client.workflow_client import WorkflowClient
-
-async def main():
-    # Configuration with custom retry policy
-    config = Configuration(
-        server_url="https://your-server.com/api",
-        auth_key="your_key",
-        auth_secret="your_secret",
-        auth_401_max_attempts=3,
-        auth_401_base_delay_ms=500.0
-    )
-    
-    workflow_client = WorkflowClient(config)
-    
-    # The retry policy is automatically applied to all API calls
-    workflow = await workflow_client.start_workflow(
-        name="my_workflow",
-        version=1,
-        input={"key": "value"}
-    )
-    
-    print(f"Started workflow: {workflow.workflow_id}")
-
-asyncio.run(main())
-```
-
-### Basic Usage with Sync Client
-
 ```python
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.workflow_client import WorkflowClient
@@ -188,66 +114,10 @@ workflow_id = workflow_client.start_workflow(
 print(f"Started workflow: {workflow_id}")
 ```
 
-### Handling Multiple Concurrent Requests (Async Client)
-
-The async client handles concurrent requests efficiently with race condition protection:
-
-```python
-import asyncio
-from conductor.asyncio_client.configuration import Configuration
-from conductor.asyncio_client.workflow_client import WorkflowClient
-
-async def start_multiple_workflows():
-    config = Configuration(
-        server_url="https://your-server.com/api",
-        auth_key="your_key",
-        auth_secret="your_secret"
-    )
-    
-    workflow_client = WorkflowClient(config)
-    
-    # Start multiple workflows concurrently
-    # If all receive 401, only one token refresh will occur
-    tasks = [
-        workflow_client.start_workflow(name="workflow1", version=1, input={}),
-        workflow_client.start_workflow(name="workflow2", version=1, input={}),
-        workflow_client.start_workflow(name="workflow3", version=1, input={})
-    ]
-    
-    results = await asyncio.gather(*tasks)
-    return results
-
-asyncio.run(start_multiple_workflows())
-```
-
 ### Working with Task Workers
 
 Both sync and async workers benefit from the retry policy:
 
-**Async Worker:**
-```python
-from conductor.asyncio_client.configuration import Configuration
-from conductor.asyncio_client.worker.worker import Worker
-from conductor.asyncio_client.worker.worker_task import WorkerTask
-
-config = Configuration(
-    server_url="https://your-server.com/api",
-    auth_key="your_key",
-    auth_secret="your_secret",
-    auth_401_max_attempts=8,  # More attempts for long-running workers
-    auth_401_base_delay_ms=1000.0
-)
-
-@WorkerTask(task_definition_name="example_task", worker_id="worker1", domain="test")
-async def example_task(task):
-    return {"status": "completed"}
-
-# Workers automatically benefit from retry policy
-worker = Worker(config)
-worker.start_polling()
-```
-
-**Sync Worker:**
 ```python
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.worker.worker import Worker
@@ -292,7 +162,7 @@ For development environments where you want faster feedback (works for both sync
 
 ```python
 # Async client
-from conductor.asyncio_client.configuration import Configuration
+from conductor.client.configuration import Configuration
 # OR Sync client
 # from conductor.client.configuration.configuration import Configuration
 
@@ -413,32 +283,15 @@ When `auth_401_max_attempts` is reached:
 3. Verify network connectivity to auth service
 4. Check server-side auth service logs
 
-### Issue: Concurrent Requests Causing Multiple Token Refreshes (Async Client)
-
-**Symptom**: Multiple token refresh operations for simultaneous requests (should not happen with race condition protection in async client)
-
-**Solutions**:
-1. Verify you're using the SDK version with race condition fixes (async client only)
-2. Check if you're sharing the same `Configuration` instance across requests
-3. Ensure `asyncio.Lock` is working correctly in your environment
-4. Note: Sync client doesn't have this protection as it's not designed for concurrent requests
-
 ## Technical Details
 
 ### Implementation
 
 The retry policy is implemented in:
-- **Async Client**: `src/conductor/asyncio_client/adapters/api_client_adapter.py`
-- **Sync Client**: `src/conductor/client/adapters/api_client_adapter.py`
+- **Client**: `src/conductor/client/adapters/api_client_adapter.py`
 - **Shared Policy**: `src/conductor/client/exceptions/auth_401_policy.py` - Policy configuration and backoff calculation
 
 ### Thread Safety and Concurrency
-
-**Async Client:**
-- Uses `asyncio.Lock` for token refresh synchronization
-- Safe for concurrent coroutines
-- Tokens are checked and refreshed atomically
-- Race condition protection prevents duplicate token refreshes
 
 **Sync Client:**
 - Designed for single-threaded sequential execution
@@ -454,56 +307,10 @@ The retry policy is implemented in:
 - Jitter prevents synchronized retry storms
 - Per-endpoint attempt tracking allows independent retry logic
 
-**Async Client Specific:**
-- Non-blocking delays don't prevent other operations from executing
-- Ideal for high-concurrency scenarios (workers polling multiple tasks)
-- Lower overall latency in concurrent scenarios
-
-**Sync Client Specific:**
+**Client Specific:**
 - Blocking delays pause the current thread
 - Simpler to reason about (sequential execution)
 - More suitable for scripts and batch processing
-
-## Choosing Between Sync and Async
-
-Use the **Async Client** when:
-- Building high-concurrency applications (web servers, API gateways)
-- Running workers that poll multiple tasks simultaneously
-- Need non-blocking I/O operations
-- Want maximum throughput with concurrent requests
-- Working with modern async frameworks (FastAPI, aiohttp, etc.)
-
-Use the **Sync Client** when:
-- Writing simple scripts or batch jobs
-- Working with traditional synchronous code
-- Don't need concurrent request handling
-- Prefer simpler, more straightforward code
-- Integrating with existing sync-only libraries
-
-Both clients provide the same retry policy functionality with identical configuration options.
-
-## Migration Between Sync and Async
-
-The configuration is compatible between both clients, making migration easier:
-
-```python
-# Shared configuration
-config_params = {
-    "server_url": "https://your-server.com/api",
-    "auth_key": "your_key",
-    "auth_secret": "your_secret",
-    "auth_401_max_attempts": 5,
-    "auth_401_base_delay_ms": 1000.0,
-}
-
-# Use with async client
-from conductor.asyncio_client.configuration import Configuration as AsyncConfig
-async_config = AsyncConfig(**config_params)
-
-# Or with sync client
-from conductor.client.configuration.configuration import Configuration as SyncConfig
-sync_config = SyncConfig(**config_params)
-```
 
 ## Related Documentation
 

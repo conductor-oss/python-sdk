@@ -307,19 +307,6 @@ health = health_check_workflow(workflow)
 print(f"Workflow health: {health['health']}")
 ```
 
-## Async Client Usage
-
-The async client (`conductor.asyncio_client.adapters.models.workflow_adapter.WorkflowAdapter`) provides the same helper methods:
-
-```python
-from conductor.asyncio_client.adapters.models.workflow_adapter import WorkflowAdapter
-
-# All the same methods are available
-workflow = WorkflowAdapter(status="RUNNING")
-print(workflow.is_running())  # True
-print(workflow.current_task)  # None or current task
-```
-
 ## Best Practices
 
 1. **Always check for None**: When using `current_task` or `get_task_by_reference_name()`, always check if the result is None.

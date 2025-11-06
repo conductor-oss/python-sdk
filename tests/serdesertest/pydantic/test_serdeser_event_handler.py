@@ -3,7 +3,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from conductor.asyncio_client.adapters.models.event_handler_adapter import EventHandlerAdapter
+from conductor.client.adapters.models.event_handler_adapter import EventHandlerAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

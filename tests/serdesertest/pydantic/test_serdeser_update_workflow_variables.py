@@ -4,7 +4,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from conductor.asyncio_client.adapters.models.update_workflow_variables_adapter import UpdateWorkflowVariablesAdapter
+from conductor.client.adapters.models.update_workflow_variables_adapter import UpdateWorkflowVariablesAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

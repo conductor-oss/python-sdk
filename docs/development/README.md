@@ -49,9 +49,9 @@ This section covers development setup, client regeneration, and contributing to 
 
 ## Client Regeneration
 
-When updating to a new Orkes version, you may need to regenerate the client code to support new APIs and features. The SDK provides comprehensive guides for regenerating both sync and async clients:
+When updating to a new Orkes version, you may need to regenerate the client code to support new APIs and features.
 
-### Sync Client Regeneration
+### Client Regeneration Guide
 
 For the synchronous client (`conductor.client`), see the [Client Regeneration Guide](../../src/conductor/client/CLIENT_REGENERATION_GUIDE.md) which covers:
 
@@ -61,36 +61,18 @@ For the synchronous client (`conductor.client`), see the [Client Regeneration Gu
 - Creating adapters and updating the proxy package
 - Running backward compatibility, serialization, and integration tests
 
-### Async Client Regeneration
-
-For the asynchronous client (`conductor.asyncio_client`), see the [Async Client Regeneration Guide](../../src/conductor/asyncio_client/ASYNC_CLIENT_REGENERATION_GUIDE.md) which covers:
-
-- Creating swagger.json files for new Orkes versions
-- Generating async client code using OpenAPI Generator
-- Replacing models and API clients in the http folder
-- Creating adapters for backward compatibility
-- Running async-specific tests and handling breaking changes
-
-Both guides include detailed troubleshooting sections, best practices, and step-by-step instructions to ensure a smooth regeneration process while maintaining backward compatibility.
+The guide includes detailed troubleshooting sections, best practices, and step-by-step instructions to ensure a smooth regeneration process while maintaining backward compatibility.
 
 ### Quick Regeneration Steps
 
 1. **Generate swagger.json**
    ```bash
-   # For sync client
    python scripts/generate_swagger.py --version 3.15.0 --output src/conductor/client/swagger.json
-   
-   # For async client
-   python scripts/generate_swagger.py --version 3.15.0 --output src/conductor/asyncio_client/swagger.json
    ```
 
 2. **Generate client code**
    ```bash
-   # Sync client
    swagger-codegen generate -i src/conductor/client/swagger.json -l python -o src/conductor/client/codegen/
-   
-   # Async client
-   openapi-generator generate -i src/conductor/asyncio_client/swagger.json -g python -o src/conductor/asyncio_client/http/
    ```
 
 3. **Update adapters and run tests**

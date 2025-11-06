@@ -3,7 +3,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from conductor.asyncio_client.adapters.models.search_result_workflow_schedule_execution_model_adapter import SearchResultWorkflowScheduleExecutionModelAdapter
+from conductor.client.adapters.models.search_result_workflow_schedule_execution_model_adapter import SearchResultWorkflowScheduleExecutionModelAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

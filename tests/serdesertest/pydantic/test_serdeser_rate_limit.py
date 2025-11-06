@@ -3,7 +3,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from conductor.asyncio_client.adapters.models.rate_limit_config_adapter import RateLimitConfigAdapter
+from conductor.client.adapters.models.rate_limit_config_adapter import RateLimitConfigAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 

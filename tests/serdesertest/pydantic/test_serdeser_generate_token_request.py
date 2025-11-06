@@ -3,7 +3,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from conductor.asyncio_client.adapters.models.generate_token_request_adapter import GenerateTokenRequestAdapter
+from conductor.client.adapters.models.generate_token_request_adapter import GenerateTokenRequestAdapter
 from tests.serdesertest.util.serdeser_json_resolver_utility import JsonTemplateResolver
 
 
