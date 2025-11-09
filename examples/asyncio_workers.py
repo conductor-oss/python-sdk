@@ -91,12 +91,12 @@ async def fetch_user(user_id: str) -> dict:
     """
     try:
         import httpx
-        print(f'fetching user {user_id}')
+        # print(f'fetching user {user_id}')
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f'https://jsonplaceholder.typicode.com/users/{user_id}'
             )
-            print(f'response {response.json()}')
+            # print(f'response {response.json()}')
             return response.json()
 
     except Exception as e:
@@ -111,12 +111,12 @@ async def process_user(user: User) -> dict:
     """
     try:
         import httpx
-        print(f'fetching user details for {user.id}')
+        # print(f'fetching user details for {user.id}')
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f'https://jsonplaceholder.typicode.com/users/{user.id + 1}'
             )
-            print(f'response {response.json()}')
+            # print(f'response {response.json()}')
             return response.json()
 
     except Exception as e:

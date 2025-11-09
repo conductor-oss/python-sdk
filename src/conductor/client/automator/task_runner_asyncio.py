@@ -116,6 +116,10 @@ class TaskRunnerAsyncIO:
         # Track background tasks for proper cleanup
         self._background_tasks = set()
 
+        # Auth failure backoff tracking to prevent retry storms
+        self._auth_failures = 0
+        self._last_auth_failure = 0
+
         self._running = False
         self._owns_client = http_client is None
 
@@ -131,9 +135,9 @@ class TaskRunnerAsyncIO:
         if self.configuration.authentication_settings is None:
             return headers
 
-        # Use ApiClient's private method to get auth headers
+        # Use ApiClient's method to get auth headers
         # This handles token generation and refresh automatically
-        auth_headers = self._api_client._ApiClient__get_authentication_headers()
+        auth_headers = self._api_client.get_authentication_headers()
 
         if auth_headers and 'header' in auth_headers:
             headers.update(auth_headers['header'])
@@ -243,6 +247,18 @@ class TaskRunnerAsyncIO:
             logger.debug("Worker paused for: %s", task_definition_name)
             return None
 
+        # Apply exponential backoff if we have recent auth failures
+        if self._auth_failures > 0:
+            now = time.time()
+            # Exponential backoff: 2^failures seconds (2s, 4s, 8s, 16s, 32s)
+            backoff_seconds = min(2 ** self._auth_failures, 60)  # Cap at 60s
+            time_since_last_failure = now - self._last_auth_failure
+
+            if time_since_last_failure < backoff_seconds:
+                # Still in backoff period - skip polling
+                await asyncio.sleep(0.1)  # Small sleep to prevent tight loop
+                return None
+
         if self.metrics_collector is not None:
             self.metrics_collector.increment_task_poll(task_definition_name)
 
@@ -283,22 +299,88 @@ class TaskRunnerAsyncIO:
             # Convert to Task object using cached ApiClient
             task = self._api_client.deserialize_class(task_data, Task) if task_data else None
 
+            # Success - reset auth failure counter
             if task is not None:
+                self._auth_failures = 0
                 logger.debug(
                     "Polled task: %s, worker_id: %s, domain: %s",
                     task_definition_name,
                     self.worker.get_identity(),
                     self.worker.get_domain()
                 )
+            else:
+                # No task available (204) - also reset auth failures
+                self._auth_failures = 0
 
             return task
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                logger.fatal(
-                    "Authentication failed for task %s: %s",
-                    task_definition_name, e
-                )
+                # Check if this is a token expiry/invalid token (renewable) vs invalid credentials
+                error_code = None
+                try:
+                    response_data = e.response.json()
+                    error_code = response_data.get('error', '')
+                except Exception:
+                    pass
+
+                # If token is expired or invalid, try to renew it
+                if error_code in ('EXPIRED_TOKEN', 'INVALID_TOKEN'):
+                    token_status = "expired" if error_code == 'EXPIRED_TOKEN' else "invalid"
+                    logger.info(
+                        "Authentication token is %s, renewing token... (task: %s)",
+                        token_status,
+                        task_definition_name
+                    )
+
+                    # Force token refresh (skip backoff - this is a legitimate renewal)
+                    success = self._api_client.force_refresh_auth_token()
+
+                    if success:
+                        logger.info('Authentication token successfully renewed')
+                        # Retry the poll request with new token
+                        try:
+                            headers = self._get_auth_headers()
+                            response = await self.http_client.get(
+                                f"/tasks/poll/{task_definition_name}",
+                                params=params,
+                                headers=headers if headers else None
+                            )
+
+                            if response.status_code == 204:
+                                return None
+
+                            response.raise_for_status()
+                            task_data = response.json()
+                            task = self._api_client.deserialize_class(task_data, Task) if task_data else None
+
+                            # Success - reset auth failures
+                            self._auth_failures = 0
+                            return task
+                        except Exception as retry_error:
+                            logger.error(
+                                "Failed to poll task %s after token renewal: %s",
+                                task_definition_name,
+                                retry_error
+                            )
+                            return None
+                    else:
+                        logger.error('Failed to renew authentication token')
+                else:
+                    # Not a token expiry - invalid credentials, apply backoff
+                    self._auth_failures += 1
+                    self._last_auth_failure = time.time()
+                    backoff_seconds = min(2 ** self._auth_failures, 60)
+
+                    logger.error(
+                        "Authentication failed for task %s (failure #%d): %s. "
+                        "Will retry with exponential backoff (%ds). "
+                        "Please check your CONDUCTOR_AUTH_KEY and CONDUCTOR_AUTH_SECRET.",
+                        task_definition_name,
+                        self._auth_failures,
+                        e,
+                        backoff_seconds
+                    )
             else:
                 logger.error(
                     "HTTP error polling task %s: %s",
@@ -614,6 +696,67 @@ class TaskRunnerAsyncIO:
                 )
 
                 return result
+
+            except httpx.HTTPStatusError as e:
+                # Handle 401 authentication errors specially
+                if e.response.status_code == 401:
+                    # Check if this is a token expiry/invalid token (renewable) vs invalid credentials
+                    error_code = None
+                    try:
+                        response_data = e.response.json()
+                        error_code = response_data.get('error', '')
+                    except Exception:
+                        pass
+
+                    # If token is expired or invalid, try to renew it and retry
+                    if error_code in ('EXPIRED_TOKEN', 'INVALID_TOKEN'):
+                        token_status = "expired" if error_code == 'EXPIRED_TOKEN' else "invalid"
+                        logger.info(
+                            "Authentication token is %s, renewing token... (updating task: %s)",
+                            token_status,
+                            task_result.task_id
+                        )
+
+                        # Force token refresh (skip backoff - this is a legitimate renewal)
+                        success = self._api_client.force_refresh_auth_token()
+
+                        if success:
+                            logger.info('Authentication token successfully renewed, retrying update')
+                            # Retry the update request with new token once
+                            try:
+                                headers = self._get_auth_headers()
+                                response = await self.http_client.post(
+                                    "/tasks",
+                                    json=task_result_dict,
+                                    headers=headers if headers else None
+                                )
+                                response.raise_for_status()
+                                return response.text
+                            except Exception as retry_error:
+                                logger.error(
+                                    "Failed to update task after token renewal: %s",
+                                    retry_error
+                                )
+                                # Continue to retry loop
+                        else:
+                            logger.error('Failed to renew authentication token')
+                            # Continue to retry loop
+
+                # Fall through to generic exception handling for retries
+                if self.metrics_collector is not None:
+                    self.metrics_collector.increment_task_update_error(
+                        task_definition_name, type(e)
+                    )
+
+                logger.error(
+                    "Failed to update task (attempt %d/4), id: %s, "
+                    "workflow_instance_id: %s, task_definition_name: %s, reason: %s",
+                    attempt + 1,
+                    task_result.task_id,
+                    task_result.workflow_instance_id,
+                    task_definition_name,
+                    traceback.format_exc()
+                )
 
             except Exception as e:
                 if self.metrics_collector is not None:

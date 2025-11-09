@@ -47,6 +47,10 @@ class TaskRunner:
             )
         )
 
+        # Auth failure backoff tracking to prevent retry storms
+        self._auth_failures = 0
+        self._last_auth_failure = 0
+
     def run(self) -> None:
         if self.configuration is not None:
             self.configuration.apply_logging_config()
@@ -80,6 +84,19 @@ class TaskRunner:
         if self.worker.paused():
             logger.debug("Stop polling task for: %s", task_definition_name)
             return None
+
+        # Apply exponential backoff if we have recent auth failures
+        if self._auth_failures > 0:
+            now = time.time()
+            # Exponential backoff: 2^failures seconds (2s, 4s, 8s, 16s, 32s)
+            backoff_seconds = min(2 ** self._auth_failures, 60)  # Cap at 60s
+            time_since_last_failure = now - self._last_auth_failure
+
+            if time_since_last_failure < backoff_seconds:
+                # Still in backoff period - skip polling
+                time.sleep(0.1)  # Small sleep to prevent tight loop
+                return None
+
         if self.metrics_collector is not None:
             self.metrics_collector.increment_task_poll(
                 task_definition_name
@@ -97,12 +114,25 @@ class TaskRunner:
             if self.metrics_collector is not None:
                 self.metrics_collector.record_task_poll_time(task_definition_name, time_spent)
         except AuthorizationException as auth_exception:
+            # Track auth failure for backoff
+            self._auth_failures += 1
+            self._last_auth_failure = time.time()
+            backoff_seconds = min(2 ** self._auth_failures, 60)
+
             if self.metrics_collector is not None:
                 self.metrics_collector.increment_task_poll_error(task_definition_name, type(auth_exception))
+
             if auth_exception.invalid_token:
-                logger.fatal(f"failed to poll task {task_definition_name} due to invalid auth token")
+                logger.error(
+                    f"Failed to poll task {task_definition_name} due to invalid auth token "
+                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s). "
+                    "Please check your CONDUCTOR_AUTH_KEY and CONDUCTOR_AUTH_SECRET."
+                )
             else:
-                logger.fatal(f"failed to poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code}")
+                logger.error(
+                    f"Failed to poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code} "
+                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s)."
+                )
             return None
         except Exception as e:
             if self.metrics_collector is not None:
@@ -113,13 +143,20 @@ class TaskRunner:
                 traceback.format_exc()
             )
             return None
+
+        # Success - reset auth failure counter
         if task is not None:
+            self._auth_failures = 0
             logger.debug(
                 "Polled task: %s, worker_id: %s, domain: %s",
                 task_definition_name,
                 self.worker.get_identity(),
                 self.worker.get_domain()
             )
+        else:
+            # No task available - also reset auth failures since poll succeeded
+            self._auth_failures = 0
+
         return task
 
     def __execute_task(self, task: Task) -> TaskResult:
