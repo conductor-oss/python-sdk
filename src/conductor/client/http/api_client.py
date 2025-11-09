@@ -1,3 +1,4 @@
+import base64
 import datetime
 import logging
 import mimetypes
@@ -179,6 +180,7 @@ class ApiClient(object):
 
         If obj is None, return None.
         If obj is str, int, long, float, bool, return directly.
+        If obj is bytes, decode to string (UTF-8) or base64 if binary.
         If obj is datetime.datetime, datetime.date
             convert to string in iso8601 format.
         If obj is list, sanitize each element in the list.
@@ -190,6 +192,13 @@ class ApiClient(object):
         """
         if obj is None:
             return None
+        elif isinstance(obj, bytes):
+            # Handle bytes: try UTF-8 decode, fallback to base64 for binary data
+            try:
+                return obj.decode('utf-8')
+            except UnicodeDecodeError:
+                # Binary data - encode as base64 string
+                return base64.b64encode(obj).decode('ascii')
         elif isinstance(obj, self.PRIMITIVE_TYPES):
             return obj
         elif isinstance(obj, list):

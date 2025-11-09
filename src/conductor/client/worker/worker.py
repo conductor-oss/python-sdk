@@ -126,9 +126,25 @@ class Worker(WorkerInterface):
             return task_result
         if not isinstance(task_result.output_data, dict):
             task_output = task_result.output_data
-            task_result.output_data = self.api_client.sanitize_for_serialization(task_output)
-            if not isinstance(task_result.output_data, dict):
-                task_result.output_data = {"result": task_result.output_data}
+            try:
+                task_result.output_data = self.api_client.sanitize_for_serialization(task_output)
+                if not isinstance(task_result.output_data, dict):
+                    task_result.output_data = {"result": task_result.output_data}
+            except (RecursionError, TypeError, AttributeError) as e:
+                # Object cannot be serialized (e.g., httpx.Response, requests.Response)
+                # Convert to string representation with helpful error message
+                logger.warning(
+                    "Task output of type %s could not be serialized: %s. "
+                    "Converting to string. Consider returning serializable data "
+                    "(e.g., response.json() instead of response object).",
+                    type(task_output).__name__,
+                    str(e)[:100]
+                )
+                task_result.output_data = {
+                    "result": str(task_output),
+                    "type": type(task_output).__name__,
+                    "error": "Object could not be serialized. Please return JSON-serializable data."
+                }
 
         return task_result
 
