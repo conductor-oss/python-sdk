@@ -16,6 +16,10 @@ class WorkerInterface(abc.ABC):
         self._task_definition_name_cache = None
         self._domain = None
         self._poll_interval = DEFAULT_POLLING_INTERVAL
+        self.thread_count = 1
+        self.register_task_def = False
+        self.poll_timeout = 100  # milliseconds
+        self.lease_extend_enabled = True
 
     @abc.abstractmethod
     def execute(self, task: Task) -> TaskResult:

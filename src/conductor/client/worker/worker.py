@@ -54,6 +54,10 @@ class Worker(WorkerInterface):
                  poll_interval: Optional[float] = None,
                  domain: Optional[str] = None,
                  worker_id: Optional[str] = None,
+                 thread_count: int = 1,
+                 register_task_def: bool = False,
+                 poll_timeout: int = 100,
+                 lease_extend_enabled: bool = True
                  ) -> Self:
         super().__init__(task_definition_name)
         self.api_client = ApiClient()
@@ -67,6 +71,10 @@ class Worker(WorkerInterface):
         else:
             self.worker_id = deepcopy(worker_id)
         self.execute_function = deepcopy(execute_function)
+        self.thread_count = thread_count
+        self.register_task_def = register_task_def
+        self.poll_timeout = poll_timeout
+        self.lease_extend_enabled = lease_extend_enabled
 
     def execute(self, task: Task) -> TaskResult:
         task_input = {}

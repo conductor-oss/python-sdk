@@ -33,13 +33,19 @@ if not _mp_fork_set:
     if platform == "darwin":
         os.environ["no_proxy"] = "*"
 
-def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func):
+def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func,
+                         thread_count: int = 1, register_task_def: bool = False,
+                         poll_timeout: int = 100, lease_extend_enabled: bool = True):
     logger.info("decorated %s", name)
     _decorated_functions[(name, domain)] = {
         "func": func,
         "poll_interval": poll_interval,
         "domain": domain,
-        "worker_id": worker_id
+        "worker_id": worker_id,
+        "thread_count": thread_count,
+        "register_task_def": register_task_def,
+        "poll_timeout": poll_timeout,
+        "lease_extend_enabled": lease_extend_enabled
     }
 
 
@@ -70,13 +76,21 @@ class TaskHandler:
                 fn = record["func"]
                 worker_id = record["worker_id"]
                 poll_interval = record["poll_interval"]
+                thread_count = record.get("thread_count", 1)
+                register_task_def = record.get("register_task_def", False)
+                poll_timeout = record.get("poll_timeout", 100)
+                lease_extend_enabled = record.get("lease_extend_enabled", True)
 
                 worker = Worker(
                     task_definition_name=task_def_name,
                     execute_function=fn,
                     worker_id=worker_id,
                     domain=domain,
-                    poll_interval=poll_interval)
+                    poll_interval=poll_interval,
+                    thread_count=thread_count,
+                    register_task_def=register_task_def,
+                    poll_timeout=poll_timeout,
+                    lease_extend_enabled=lease_extend_enabled)
                 logger.info("created worker with name=%s and domain=%s", task_def_name, domain)
                 workers.append(worker)
 

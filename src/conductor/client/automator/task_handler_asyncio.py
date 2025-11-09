@@ -85,7 +85,8 @@ class TaskHandlerAsyncIO:
         configuration: Optional[Configuration] = None,
         metrics_settings: Optional[MetricsSettings] = None,
         scan_for_annotated_workers: bool = True,
-        import_modules: Optional[List[str]] = None
+        import_modules: Optional[List[str]] = None,
+        use_v2_api: bool = True
     ):
         if httpx is None:
             raise ImportError(
@@ -95,6 +96,7 @@ class TaskHandlerAsyncIO:
 
         self.configuration = configuration or Configuration()
         self.metrics_settings = metrics_settings
+        self.use_v2_api = use_v2_api
 
         # Shared HTTP client for all workers (connection pooling)
         self.http_client = httpx.AsyncClient(
@@ -127,13 +129,21 @@ class TaskHandlerAsyncIO:
                 fn = record["func"]
                 worker_id = record["worker_id"]
                 poll_interval = record["poll_interval"]
+                thread_count = record.get("thread_count", 1)
+                register_task_def = record.get("register_task_def", False)
+                poll_timeout = record.get("poll_timeout", 100)
+                lease_extend_enabled = record.get("lease_extend_enabled", True)
 
                 worker = Worker(
                     task_definition_name=task_def_name,
                     execute_function=fn,
                     worker_id=worker_id,
                     domain=domain,
-                    poll_interval=poll_interval
+                    poll_interval=poll_interval,
+                    thread_count=thread_count,
+                    register_task_def=register_task_def,
+                    poll_timeout=poll_timeout,
+                    lease_extend_enabled=lease_extend_enabled
                 )
                 logger.info("Created worker with name=%s and domain=%s", task_def_name, domain)
                 workers.append(worker)
@@ -145,7 +155,8 @@ class TaskHandlerAsyncIO:
                 worker=worker,
                 configuration=self.configuration,
                 metrics_settings=self.metrics_settings,
-                http_client=self.http_client
+                http_client=self.http_client,
+                use_v2_api=self.use_v2_api
             )
             self.task_runners.append(task_runner)
 
@@ -211,7 +222,7 @@ class TaskHandlerAsyncIO:
 
         # Signal workers to stop
         for task_runner in self.task_runners:
-            task_runner.stop()
+            await task_runner.stop()
 
         # Cancel all tasks
         for task in self._worker_tasks:
