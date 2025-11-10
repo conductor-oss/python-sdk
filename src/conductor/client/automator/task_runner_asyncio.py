@@ -508,7 +508,7 @@ class TaskRunnerAsyncIO:
                 # If token is expired or invalid, try to renew it
                 if error_code in ('EXPIRED_TOKEN', 'INVALID_TOKEN'):
                     token_status = "expired" if error_code == 'EXPIRED_TOKEN' else "invalid"
-                    logger.info(
+                    logger.debug(
                         "Authentication token is %s, renewing token... (task: %s)",
                         token_status,
                         task_definition_name
@@ -518,7 +518,7 @@ class TaskRunnerAsyncIO:
                     success = self._api_client.force_refresh_auth_token()
 
                     if success:
-                        logger.info('Authentication token successfully renewed')
+                        logger.debug('Authentication token successfully renewed')
                         # Retry the poll request with new token once
                         try:
                             headers = self._get_auth_headers()
@@ -1252,7 +1252,7 @@ class TaskRunnerAsyncIO:
                         success = self._api_client.force_refresh_auth_token()
 
                         if success:
-                            logger.info('Authentication token successfully renewed, retrying update')
+                            logger.debug('Authentication token successfully renewed, retrying update')
                             # Retry the update request with new token once
                             try:
                                 headers = self._get_auth_headers()

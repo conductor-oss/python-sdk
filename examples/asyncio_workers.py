@@ -10,6 +10,7 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.context import get_task_context, TaskInProgress
 from conductor.client.worker.worker_task import worker_task
+from examples.task_listener_example import TaskExecutionLogger
 
 
 @worker_task(
@@ -122,7 +123,7 @@ async def main():
             metrics_settings=metrics_settings,
             scan_for_annotated_workers=True,
             import_modules=["helloworld.greetings_worker", "user_example.user_workers"],
-            event_listeners= []
+            event_listeners= [TaskExecutionLogger()]
         ) as task_handler:
             # Set up graceful shutdown on SIGTERM
             loop = asyncio.get_running_loop()

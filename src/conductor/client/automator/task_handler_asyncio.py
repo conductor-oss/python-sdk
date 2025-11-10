@@ -31,6 +31,9 @@ logger = logging.getLogger(
     Configuration.get_logging_formatted_name(__name__)
 )
 
+# Suppress verbose httpx INFO logs (HTTP requests should be at DEBUG/TRACE level)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
 
 class TaskHandlerAsyncIO:
     """

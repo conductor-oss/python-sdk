@@ -92,7 +92,7 @@ class ApiClient(object):
                 # if the token has expired or is invalid, lets refresh the token
                 success = self.__force_refresh_auth_token()
                 if success:
-                    logger.info('Authentication token successfully renewed')
+                    logger.debug('Authentication token successfully renewed')
                     # and now retry the same request
                     return self.__call_api_no_retry(
                         resource_path=resource_path, method=method, path_params=path_params,
@@ -750,7 +750,7 @@ class ApiClient(object):
             token = self.__get_new_token(skip_backoff=True)
             self.configuration.update_token(token)
             if token:
-                logger.info('Authentication token successfully renewed')
+                logger.debug('Authentication token successfully renewed')
 
         return {
             'header': {
