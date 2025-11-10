@@ -57,7 +57,7 @@ class ApiClient(object):
         )
 
         self.cookie = cookie
-        self.__refresh_auth_token()
+        self.__ensure_auth_token()
 
     def __call_api(
             self, resource_path, method, path_params=None,
@@ -680,7 +680,8 @@ class ApiClient(object):
             }
         }
 
-    def __refresh_auth_token(self) -> None:
+    def __ensure_auth_token(self) -> None:
+        """Initializes auth token if one doesn't exist yet (only fetches if AUTH_TOKEN is None)."""
         if self.configuration.AUTH_TOKEN is not None:
             return
         if self.configuration.authentication_settings is None:
@@ -690,7 +691,8 @@ class ApiClient(object):
 
     def __force_refresh_auth_token(self) -> None:
         """
-        Forces the token refresh.  Unlike the __refresh_auth_token method above
+        Forces the token refresh.  Unlike the __ensure_auth_token method above,
+        this always fetches a new token regardless of whether one already exists.
         """
         if self.configuration.authentication_settings is None:
             return
