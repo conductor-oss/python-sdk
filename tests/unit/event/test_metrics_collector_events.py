@@ -45,8 +45,8 @@ class TestMetricsCollectorEvents(unittest.TestCase):
             )
             self.collector.on_poll_completed(event)
 
-            # Duration should be converted from ms to seconds
-            mock_record.assert_called_once_with("test_task", 0.25)
+            # Duration should be converted from ms to seconds, status added
+            mock_record.assert_called_once_with("test_task", 0.25, status="SUCCESS")
 
     def test_on_poll_failure(self):
         """Test on_poll_failure event handler"""
@@ -87,8 +87,8 @@ class TestMetricsCollectorEvents(unittest.TestCase):
             )
             self.collector.on_task_execution_completed(event)
 
-            # Duration should be converted from ms to seconds
-            mock_time.assert_called_once_with("test_task", 0.5)
+            # Duration should be converted from ms to seconds, status added
+            mock_time.assert_called_once_with("test_task", 0.5, status="SUCCESS")
             mock_size.assert_called_once_with("test_task", 1024)
 
     def test_on_task_execution_completed_no_output_size(self):
@@ -106,7 +106,7 @@ class TestMetricsCollectorEvents(unittest.TestCase):
             )
             self.collector.on_task_execution_completed(event)
 
-            mock_time.assert_called_once_with("test_task", 0.5)
+            mock_time.assert_called_once_with("test_task", 0.5, status="SUCCESS")
             # Should not record size if None
             mock_size.assert_not_called()
 
