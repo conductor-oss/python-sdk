@@ -3,8 +3,6 @@ import re  # noqa: F401
 import six
 from dataclasses import dataclass, field, fields
 from typing import Dict, List, Optional, Any
-from deprecated import deprecated
-
 
 @dataclass
 class IntegrationApi:
@@ -136,7 +134,6 @@ class IntegrationApi:
         self._configuration = configuration
 
     @property
-    @deprecated
     def created_by(self):
         """Gets the created_by of this IntegrationApi.  # noqa: E501
 
@@ -147,7 +144,6 @@ class IntegrationApi:
         return self._created_by
 
     @created_by.setter
-    @deprecated
     def created_by(self, created_by):
         """Sets the created_by of this IntegrationApi.
 
@@ -159,7 +155,6 @@ class IntegrationApi:
         self._created_by = created_by
 
     @property
-    @deprecated
     def created_on(self):
         """Gets the created_on of this IntegrationApi.  # noqa: E501
 
@@ -170,7 +165,6 @@ class IntegrationApi:
         return self._created_on
 
     @created_on.setter
-    @deprecated
     def created_on(self, created_on):
         """Sets the created_on of this IntegrationApi.
 
@@ -266,7 +260,6 @@ class IntegrationApi:
         self._tags = tags
 
     @property
-    @deprecated
     def updated_by(self):
         """Gets the updated_by of this IntegrationApi.  # noqa: E501
 
@@ -277,7 +270,6 @@ class IntegrationApi:
         return self._updated_by
 
     @updated_by.setter
-    @deprecated
     def updated_by(self, updated_by):
         """Sets the updated_by of this IntegrationApi.
 
@@ -289,7 +281,6 @@ class IntegrationApi:
         self._updated_by = updated_by
 
     @property
-    @deprecated
     def updated_on(self):
         """Gets the updated_on of this IntegrationApi.  # noqa: E501
 
@@ -300,7 +291,6 @@ class IntegrationApi:
         return self._updated_on
 
     @updated_on.setter
-    @deprecated
     def updated_on(self, updated_on):
         """Sets the updated_on of this IntegrationApi.
 
