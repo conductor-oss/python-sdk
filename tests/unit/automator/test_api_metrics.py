@@ -85,8 +85,8 @@ class TestAPIMetrics(unittest.TestCase):
             runner.http_client = AsyncMock()
             runner.http_client.get = AsyncMock(return_value=mock_response)
 
-            # Call poll
-            await runner.poll_and_execute_task()
+            # Call poll using the internal method
+            await runner._poll_tasks_from_server(count=1)
 
             # Verify API timing was recorded
             runner.metrics_collector.record_api_request_time.assert_called()
@@ -106,8 +106,11 @@ class TestAPIMetrics(unittest.TestCase):
         runner = TaskRunnerAsyncIO(
             worker=self.worker,
             configuration=self.config,
-            metrics_collector=self.metrics_collector
+            metrics_settings=self.metrics_settings
         )
+
+        # Mock the metrics_collector\'s record method
+        runner.metrics_collector.record_api_request_time = Mock()
 
         # Mock HTTP error with response
         mock_response = Mock()
@@ -120,13 +123,13 @@ class TestAPIMetrics(unittest.TestCase):
 
             # Call poll (should handle exception)
             try:
-                await runner.poll_and_execute_task()
+                await runner._poll_tasks_from_server(count=1)
             except:
                 pass
 
             # Verify API timing was recorded with error status
-            self.metrics_collector.record_api_request_time.assert_called()
-            call_args = self.metrics_collector.record_api_request_time.call_args
+            runner.metrics_collector.record_api_request_time.assert_called()
+            call_args = runner.metrics_collector.record_api_request_time.call_args
 
             self.assertEqual(call_args.kwargs['method'], 'GET')
             self.assertEqual(call_args.kwargs['status'], '500')
@@ -139,8 +142,11 @@ class TestAPIMetrics(unittest.TestCase):
         runner = TaskRunnerAsyncIO(
             worker=self.worker,
             configuration=self.config,
-            metrics_collector=self.metrics_collector
+            metrics_settings=self.metrics_settings
         )
+
+        # Mock the metrics_collector\'s record method
+        runner.metrics_collector.record_api_request_time = Mock()
 
         # Mock generic network error
         error = httpx.ConnectError("Connection refused")
@@ -151,13 +157,13 @@ class TestAPIMetrics(unittest.TestCase):
 
             # Call poll
             try:
-                await runner.poll_and_execute_task()
+                await runner._poll_tasks_from_server(count=1)
             except:
                 pass
 
             # Verify API timing was recorded with "error" status
-            self.metrics_collector.record_api_request_time.assert_called()
-            call_args = self.metrics_collector.record_api_request_time.call_args
+            runner.metrics_collector.record_api_request_time.assert_called()
+            call_args = runner.metrics_collector.record_api_request_time.call_args
 
             self.assertEqual(call_args.kwargs['method'], 'GET')
             self.assertEqual(call_args.kwargs['status'], 'error')
@@ -169,13 +175,16 @@ class TestAPIMetrics(unittest.TestCase):
         runner = TaskRunnerAsyncIO(
             worker=self.worker,
             configuration=self.config,
-            metrics_collector=self.metrics_collector
+            metrics_settings=self.metrics_settings
         )
 
-        # Create task and result
-        task = Task(task_id='task1', task_def_name='test_task')
+        # Mock the metrics_collector's record method
+        runner.metrics_collector.record_api_request_time = Mock()
+
+        # Create task result
         task_result = TaskResult(
             task_id='task1',
+            workflow_instance_id='wf1',
             status=TaskResultStatus.COMPLETED,
             output_data={'result': 'success'}
         )
@@ -189,12 +198,12 @@ class TestAPIMetrics(unittest.TestCase):
             runner.http_client = AsyncMock()
             runner.http_client.post = AsyncMock(return_value=mock_response)
 
-            # Call update
-            await runner._update_task(task, task_result)
+            # Call update (only needs task_result)
+            await runner._update_task(task_result)
 
             # Verify API timing was recorded
-            self.metrics_collector.record_api_request_time.assert_called()
-            call_args = self.metrics_collector.record_api_request_time.call_args
+            runner.metrics_collector.record_api_request_time.assert_called()
+            call_args = runner.metrics_collector.record_api_request_time.call_args
 
             self.assertEqual(call_args.kwargs['method'], 'POST')
             self.assertIn('/tasks/update', call_args.kwargs['uri'])
@@ -208,12 +217,16 @@ class TestAPIMetrics(unittest.TestCase):
         runner = TaskRunnerAsyncIO(
             worker=self.worker,
             configuration=self.config,
-            metrics_collector=self.metrics_collector
+            metrics_settings=self.metrics_settings
         )
 
-        task = Task(task_id='task1', task_def_name='test_task')
+        # Mock the metrics_collector's record method
+        runner.metrics_collector.record_api_request_time = Mock()
+
+        # Create task result with required fields
         task_result = TaskResult(
             task_id='task1',
+            workflow_instance_id='wf1',
             status=TaskResultStatus.COMPLETED
         )
 
@@ -226,15 +239,15 @@ class TestAPIMetrics(unittest.TestCase):
             runner.http_client = AsyncMock()
             runner.http_client.post = AsyncMock(side_effect=error)
 
-            # Call update
+            # Call update (only needs task_result)
             try:
-                await runner._update_task(task, task_result)
+                await runner._update_task(task_result)
             except:
                 pass
 
             # Verify API timing was recorded
-            self.metrics_collector.record_api_request_time.assert_called()
-            call_args = self.metrics_collector.record_api_request_time.call_args
+            runner.metrics_collector.record_api_request_time.assert_called()
+            call_args = runner.metrics_collector.record_api_request_time.call_args
 
             self.assertEqual(call_args.kwargs['method'], 'POST')
             self.assertEqual(call_args.kwargs['status'], '503')
@@ -246,8 +259,11 @@ class TestAPIMetrics(unittest.TestCase):
         runner = TaskRunnerAsyncIO(
             worker=self.worker,
             configuration=self.config,
-            metrics_collector=self.metrics_collector
+            metrics_settings=self.metrics_settings
         )
+
+        # Mock the metrics_collector's record method
+        runner.metrics_collector.record_api_request_time = Mock()
 
         mock_response = Mock()
         mock_response.status_code = 200
@@ -258,15 +274,15 @@ class TestAPIMetrics(unittest.TestCase):
             runner.http_client.get = AsyncMock(return_value=mock_response)
 
             # Poll 3 times
-            await runner.poll_and_execute_task()
-            await runner.poll_and_execute_task()
-            await runner.poll_and_execute_task()
+            await runner._poll_tasks_from_server(count=1)
+            await runner._poll_tasks_from_server(count=1)
+            await runner._poll_tasks_from_server(count=1)
 
             # Should have 3 API timing records
-            self.assertEqual(self.metrics_collector.record_api_request_time.call_count, 3)
+            self.assertEqual(runner.metrics_collector.record_api_request_time.call_count, 3)
 
             # All should be successful
-            for call in self.metrics_collector.record_api_request_time.call_args_list:
+            for call in runner.metrics_collector.record_api_request_time.call_args_list:
                 self.assertEqual(call.kwargs['status'], '200')
 
         asyncio.run(run_test())
@@ -275,8 +291,7 @@ class TestAPIMetrics(unittest.TestCase):
         """Test that API requests work without metrics collector"""
         runner = TaskRunnerAsyncIO(
             worker=self.worker,
-            configuration=self.config,
-            metrics_collector=None
+            configuration=self.config
         )
 
         mock_response = Mock()
@@ -288,7 +303,7 @@ class TestAPIMetrics(unittest.TestCase):
             runner.http_client.get = AsyncMock(return_value=mock_response)
 
             # Should not raise exception
-            await runner.poll_and_execute_task()
+            await runner._poll_tasks_from_server(count=1)
 
             # No metrics recorded (metrics_collector is None)
             # Just verify no exception was raised
@@ -300,8 +315,11 @@ class TestAPIMetrics(unittest.TestCase):
         runner = TaskRunnerAsyncIO(
             worker=self.worker,
             configuration=self.config,
-            metrics_collector=self.metrics_collector
+            metrics_settings=self.metrics_settings
         )
+
+        # Mock the metrics_collector\'s record method
+        runner.metrics_collector.record_api_request_time = Mock()
 
         # Mock fast response
         mock_response = Mock()
@@ -318,10 +336,10 @@ class TestAPIMetrics(unittest.TestCase):
 
             runner.http_client.get = mock_get
 
-            await runner.poll_and_execute_task()
+            await runner._poll_tasks_from_server(count=1)
 
             # Verify timing captured sub-second precision
-            call_args = self.metrics_collector.record_api_request_time.call_args
+            call_args = runner.metrics_collector.record_api_request_time.call_args
             time_spent = call_args.kwargs['time_spent']
 
             # Should be at least 1ms, but less than 100ms
@@ -335,8 +353,11 @@ class TestAPIMetrics(unittest.TestCase):
         runner = TaskRunnerAsyncIO(
             worker=self.worker,
             configuration=self.config,
-            metrics_collector=self.metrics_collector
+            metrics_settings=self.metrics_settings
         )
+
+        # Mock the metrics_collector's record method
+        runner.metrics_collector.record_api_request_time = Mock()
 
         mock_response = Mock()
         mock_response.status_code = 401
@@ -347,12 +368,12 @@ class TestAPIMetrics(unittest.TestCase):
             runner.http_client.get = AsyncMock(side_effect=error)
 
             try:
-                await runner.poll_and_execute_task()
+                await runner._poll_tasks_from_server(count=1)
             except:
                 pass
 
             # Verify 401 status captured
-            call_args = self.metrics_collector.record_api_request_time.call_args
+            call_args = runner.metrics_collector.record_api_request_time.call_args
             self.assertEqual(call_args.kwargs['status'], '401')
 
         asyncio.run(run_test())
@@ -362,8 +383,11 @@ class TestAPIMetrics(unittest.TestCase):
         runner = TaskRunnerAsyncIO(
             worker=self.worker,
             configuration=self.config,
-            metrics_collector=self.metrics_collector
+            metrics_settings=self.metrics_settings
         )
+
+        # Mock the metrics_collector's record method
+        runner.metrics_collector.record_api_request_time = Mock()
 
         error = httpx.TimeoutException("Request timeout")
 
@@ -372,12 +396,12 @@ class TestAPIMetrics(unittest.TestCase):
             runner.http_client.get = AsyncMock(side_effect=error)
 
             try:
-                await runner.poll_and_execute_task()
+                await runner._poll_tasks_from_server(count=1)
             except:
                 pass
 
             # Verify "error" status for timeout
-            call_args = self.metrics_collector.record_api_request_time.call_args
+            call_args = runner.metrics_collector.record_api_request_time.call_args
             self.assertEqual(call_args.kwargs['status'], 'error')
 
         asyncio.run(run_test())
@@ -387,8 +411,11 @@ class TestAPIMetrics(unittest.TestCase):
         runner = TaskRunnerAsyncIO(
             worker=self.worker,
             configuration=self.config,
-            metrics_collector=self.metrics_collector
+            metrics_settings=self.metrics_settings
         )
+
+        # Mock the metrics_collector's record method
+        runner.metrics_collector.record_api_request_time = Mock()
 
         mock_response = Mock()
         mock_response.status_code = 200
@@ -400,11 +427,11 @@ class TestAPIMetrics(unittest.TestCase):
 
             # Run 5 concurrent polls
             await asyncio.gather(*[
-                runner.poll_and_execute_task() for _ in range(5)
+                runner._poll_tasks_from_server(count=1) for _ in range(5)
             ])
 
             # Should have 5 timing records
-            self.assertEqual(self.metrics_collector.record_api_request_time.call_count, 5)
+            self.assertEqual(runner.metrics_collector.record_api_request_time.call_count, 5)
 
         asyncio.run(run_test())
 
