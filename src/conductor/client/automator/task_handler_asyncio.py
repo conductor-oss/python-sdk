@@ -16,6 +16,10 @@ from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.worker.worker import Worker
 from conductor.client.worker.worker_interface import WorkerInterface
 from conductor.client.worker.worker_config import resolve_worker_config
+from conductor.client.event.event_dispatcher import EventDispatcher
+from conductor.client.event.task_runner_events import TaskRunnerEvent
+from conductor.client.event.listener_register import register_task_runner_listener
+from conductor.client.event.listeners import TaskRunnerEventsListener
 
 # Import decorator registry from existing module
 from conductor.client.automator.task_handler import (
@@ -87,7 +91,8 @@ class TaskHandlerAsyncIO:
         metrics_settings: Optional[MetricsSettings] = None,
         scan_for_annotated_workers: bool = True,
         import_modules: Optional[List[str]] = None,
-        use_v2_api: bool = True
+        use_v2_api: bool = True,
+        event_listeners: Optional[List[TaskRunnerEventsListener]] = None
     ):
         if httpx is None:
             raise ImportError(
@@ -98,6 +103,7 @@ class TaskHandlerAsyncIO:
         self.configuration = configuration or Configuration()
         self.metrics_settings = metrics_settings
         self.use_v2_api = use_v2_api
+        self.event_listeners = event_listeners or []
 
         # Shared HTTP client for all workers (connection pooling)
         self.http_client = httpx.AsyncClient(
@@ -108,6 +114,12 @@ class TaskHandlerAsyncIO:
                 max_connections=100
             )
         )
+
+        # Create shared event dispatcher for all task runners
+        self._event_dispatcher = EventDispatcher[TaskRunnerEvent]()
+
+        # Register event listeners (including MetricsCollector if provided)
+        self._registered_listeners = []
 
         # Discover workers
         workers = workers or []
@@ -160,7 +172,7 @@ class TaskHandlerAsyncIO:
                 logger.info("Created worker with name=%s and domain=%s", task_def_name, resolved_config['domain'])
                 workers.append(worker)
 
-        # Create task runners
+        # Create task runners with shared event dispatcher
         self.task_runners = []
         for worker in workers:
             task_runner = TaskRunnerAsyncIO(
@@ -168,7 +180,8 @@ class TaskHandlerAsyncIO:
                 configuration=self.configuration,
                 metrics_settings=self.metrics_settings,
                 http_client=self.http_client,
-                use_v2_api=self.use_v2_api
+                use_v2_api=self.use_v2_api,
+                event_dispatcher=self._event_dispatcher
             )
             self.task_runners.append(task_runner)
 
@@ -229,8 +242,9 @@ class TaskHandlerAsyncIO:
             # Build single-line parsable format
             domain_str = f" | domain={domain}" if domain else ""
             lease_str = "Y" if lease_extend else "N"
+            paused_str = "Y" if worker.paused() else "N"
 
-            print(f"  [{idx:2d}] {task_name} | type={func_type} | concurrency={thread_count} | poll_interval={poll_interval}ms | poll_timeout={poll_timeout}ms | lease_extension={lease_str} | source={source_location}{domain_str}")
+            print(f"  [{idx:2d}] {task_name} | type={func_type} | concurrency={thread_count} | poll_interval={poll_interval}ms | poll_timeout={poll_timeout}ms | lease_extension={lease_str} | paused={paused_str} | source={source_location}{domain_str}")
 
         print("=" * 80)
         print()
@@ -258,13 +272,22 @@ class TaskHandlerAsyncIO:
         self._running = True
         logger.info("Starting AsyncIO workers...")
 
+        # Register event listeners with the shared event dispatcher
+        for listener in self.event_listeners:
+            await register_task_runner_listener(listener, self._event_dispatcher)
+            self._registered_listeners.append(listener)
+            logger.debug(f"Registered event listener: {listener.__class__.__name__}")
+
         # Start worker coroutines
         for task_runner in self.task_runners:
+            task_name = task_runner.worker.get_task_definition_name()
+            paused_status = "PAUSED" if task_runner.worker.paused() else "ACTIVE"
             task = asyncio.create_task(
                 task_runner.run(),
-                name=f"worker-{task_runner.worker.get_task_definition_name()}"
+                name=f"worker-{task_name}"
             )
             self._worker_tasks.append(task)
+            logger.info("Started worker '%s' [%s]", task_name, paused_status)
 
         # Start metrics coroutine (if configured)
         if self.metrics_settings is not None:
@@ -273,7 +296,7 @@ class TaskHandlerAsyncIO:
                 name="metrics-provider"
             )
 
-        logger.info("Started %d AsyncIO worker tasks", len(self._worker_tasks))
+        logger.info("Started %d AsyncIO worker task(s)", len(self._worker_tasks))
 
     async def stop(self) -> None:
         """
@@ -360,21 +383,25 @@ class TaskHandlerAsyncIO:
         Coroutine to periodically write Prometheus metrics.
 
         Runs in a separate task and writes metrics to a file at regular intervals.
+
+        For AsyncIO mode (single process), we use MetricsCollector's shared registry.
+        For multiprocessing mode, MetricsCollector.provide_metrics() should be used instead.
         """
         if self.metrics_settings is None:
             return
 
         import os
-        from prometheus_client import CollectorRegistry, write_to_textfile
-        from prometheus_client.multiprocess import MultiProcessCollector
+        from prometheus_client import write_to_textfile
+        from conductor.client.telemetry.metrics_collector import MetricsCollector
 
         OUTPUT_FILE_PATH = os.path.join(
             self.metrics_settings.directory,
             self.metrics_settings.file_name
         )
 
-        registry = CollectorRegistry()
-        MultiProcessCollector(registry)
+        # Use MetricsCollector's shared class-level registry
+        # This registry contains all the counters and gauges created by MetricsCollector instances
+        registry = MetricsCollector.registry
 
         try:
             while self._running:

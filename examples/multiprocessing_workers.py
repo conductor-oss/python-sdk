@@ -1,8 +1,12 @@
+import os
+import shutil
 import signal
+import tempfile
 from typing import Union
 
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
+from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.context import get_task_context, TaskInProgress
 from conductor.client.worker.worker_task import worker_task
 
@@ -88,12 +92,30 @@ def main():
     # - CONDUCTOR_AUTH_SECRET: API secret
     api_config = Configuration()
 
-    print("\nStarting multiprocessing workers... Press Ctrl+C to stop\n")
+    # Configure metrics publishing (optional)
+    # Create a dedicated directory for metrics to avoid conflicts
+    metrics_dir = os.path.join(tempfile.gettempdir(), 'conductor_metrics')
+
+    # Clean up any stale metrics data from previous runs
+    if os.path.exists(metrics_dir):
+        shutil.rmtree(metrics_dir)
+    os.makedirs(metrics_dir, exist_ok=True)
+
+    # Prometheus metrics will be written to the metrics directory every 10 seconds
+    metrics_settings = MetricsSettings(
+        directory=metrics_dir,
+        file_name='conductor_metrics.prom',
+        update_interval=10
+    )
+
+    print("\nStarting multiprocessing workers... Press Ctrl+C to stop")
+    print(f"Metrics will be published to: {metrics_dir}/conductor_metrics.prom\n")
 
     try:
         # Create TaskHandler with worker discovery
         task_handler = TaskHandler(
             configuration=api_config,
+            metrics_settings=metrics_settings,
             scan_for_annotated_workers=True,
             import_modules=["helloworld.greetings_worker", "user_example.user_workers"]
         )
@@ -125,6 +147,28 @@ if __name__ == '__main__':
 
     To run:
         python examples/multiprocessing_workers.py
+
+    Metrics Available:
+    ------------------
+    The metrics file will contain Prometheus-formatted metrics including:
+    - conductor_task_poll: Number of task polls
+    - conductor_task_poll_time: Time spent polling for tasks
+    - conductor_task_poll_error: Number of poll errors
+    - conductor_task_execute_time: Time spent executing tasks
+    - conductor_task_execute_error: Number of task execution errors
+    - conductor_task_result_size: Size of task results
+
+    To view metrics:
+        cat /tmp/conductor_metrics/conductor_metrics.prom
+
+    To scrape with Prometheus:
+        scrape_configs:
+          - job_name: 'conductor-workers'
+            static_configs:
+              - targets: ['localhost:9090']
+            file_sd_configs:
+              - files:
+                  - /tmp/conductor_metrics/conductor_metrics.prom
     """
     try:
         main()

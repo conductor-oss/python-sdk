@@ -187,10 +187,12 @@ class TaskHandler:
             metrics_settings: MetricsSettings
     ) -> None:
         self.task_runner_processes = []
+        self.workers = []
         for worker in workers:
             self.__create_task_runner_process(
                 worker, configuration, metrics_settings
             )
+            self.workers.append(worker)
 
     def __create_task_runner_process(
             self,
@@ -210,10 +212,13 @@ class TaskHandler:
 
     def __start_task_runner_processes(self):
         n = 0
-        for task_runner_process in self.task_runner_processes:
+        for i, task_runner_process in enumerate(self.task_runner_processes):
             task_runner_process.start()
+            worker = self.workers[i]
+            paused_status = "PAUSED" if worker.paused() else "ACTIVE"
+            logger.info("Started worker '%s' [%s]", worker.get_task_definition_name(), paused_status)
             n = n + 1
-        logger.info("Started %s TaskRunner process", n)
+        logger.info("Started %s TaskRunner process(es)", n)
 
     def __join_metrics_provider_process(self):
         if self.metrics_provider_process is None:

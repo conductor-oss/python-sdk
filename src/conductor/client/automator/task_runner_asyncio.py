@@ -31,6 +31,16 @@ from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.worker.worker_interface import WorkerInterface
 from conductor.client.automator import utils
 from conductor.client.worker.exception import NonRetryableException
+from conductor.client.event.event_dispatcher import EventDispatcher
+from conductor.client.event.task_runner_events import (
+    TaskRunnerEvent,
+    PollStarted,
+    PollCompleted,
+    PollFailure,
+    TaskExecutionStarted,
+    TaskExecutionCompleted,
+    TaskExecutionFailure,
+)
 
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(__name__)
@@ -76,7 +86,8 @@ class TaskRunnerAsyncIO:
         configuration: Configuration = None,
         metrics_settings: Optional[MetricsSettings] = None,
         http_client: Optional['httpx.AsyncClient'] = None,
-        use_v2_api: bool = True
+        use_v2_api: bool = True,
+        event_dispatcher: Optional[EventDispatcher[TaskRunnerEvent]] = None
     ):
         if httpx is None:
             raise ImportError(
@@ -91,8 +102,17 @@ class TaskRunnerAsyncIO:
         self.configuration = configuration or Configuration()
         self.metrics_collector = None
 
+        # Event dispatcher for observability (optional)
+        self._event_dispatcher = event_dispatcher or EventDispatcher[TaskRunnerEvent]()
+
+        # Create MetricsCollector and register it as an event listener
         if metrics_settings is not None:
             self.metrics_collector = MetricsCollector(metrics_settings)
+            # Register metrics collector to receive events
+            # Note: Registration happens in the run() method to ensure async context
+            self._register_metrics_collector = True
+        else:
+            self._register_metrics_collector = False
 
         # Get thread count from worker (default = 1)
         thread_count = getattr(worker, 'thread_count', 1)
@@ -121,7 +141,7 @@ class TaskRunnerAsyncIO:
         )
 
         # Cached ApiClient (created once, reused)
-        self._api_client = ApiClient(self.configuration)
+        self._api_client = ApiClient(self.configuration, metrics_collector=self.metrics_collector)
 
         # Explicit ThreadPoolExecutor for sync workers
         self._executor = ThreadPoolExecutor(
@@ -176,6 +196,12 @@ class TaskRunnerAsyncIO:
         Runs until stop() is called or an unhandled exception occurs.
         """
         self._running = True
+
+        # Register MetricsCollector as event listener if configured
+        if self._register_metrics_collector and self.metrics_collector is not None:
+            from conductor.client.event.listener_register import register_task_runner_listener
+            await register_task_runner_listener(self.metrics_collector, self._event_dispatcher)
+            logger.debug("Registered MetricsCollector as event listener")
 
         task_names = ",".join(self.worker.task_definition_names)
         logger.info(
@@ -351,6 +377,8 @@ class TaskRunnerAsyncIO:
 
         if self.worker.paused():
             logger.debug("Worker paused for: %s", task_definition_name)
+            if self.metrics_collector is not None:
+                self.metrics_collector.increment_task_paused(task_definition_name)
             return []
 
         # Apply exponential backoff if we have recent auth failures
@@ -365,6 +393,13 @@ class TaskRunnerAsyncIO:
 
         if self.metrics_collector is not None:
             self.metrics_collector.increment_task_poll(task_definition_name)
+
+        # Publish poll started event
+        self._event_dispatcher.publish(PollStarted(
+            task_type=task_definition_name,
+            worker_id=self.worker.get_identity(),
+            poll_count=count
+        ))
 
         try:
             start_time = time.time()
@@ -383,11 +418,36 @@ class TaskRunnerAsyncIO:
             headers = self._get_auth_headers()
 
             # Async HTTP request for batch poll
-            response = await self.http_client.get(
-                f"/tasks/poll/batch/{task_definition_name}",
-                params=params,
-                headers=headers if headers else None
-            )
+            api_start = time.time()
+            uri = f"/tasks/poll/batch/{task_definition_name}"
+            try:
+                response = await self.http_client.get(
+                    uri,
+                    params=params,
+                    headers=headers if headers else None
+                )
+
+                # Record API request time
+                if self.metrics_collector is not None:
+                    api_elapsed = time.time() - api_start
+                    self.metrics_collector.record_api_request_time(
+                        method="GET",
+                        uri=uri,
+                        status=str(response.status_code),
+                        time_spent=api_elapsed
+                    )
+            except Exception as e:
+                # Record API request time for errors
+                if self.metrics_collector is not None:
+                    api_elapsed = time.time() - api_start
+                    status = str(e.response.status_code) if hasattr(e, 'response') and hasattr(e.response, 'status_code') else "error"
+                    self.metrics_collector.record_api_request_time(
+                        method="GET",
+                        uri=uri,
+                        status=status,
+                        time_spent=api_elapsed
+                    )
+                raise
 
             finish_time = time.time()
             time_spent = finish_time - start_time
@@ -416,6 +476,13 @@ class TaskRunnerAsyncIO:
 
             # Success - reset auth failure counter
             self._auth_failures = 0
+
+            # Publish poll completed event
+            self._event_dispatcher.publish(PollCompleted(
+                task_type=task_definition_name,
+                duration_ms=time_spent * 1000,
+                tasks_received=len(tasks)
+            ))
 
             if tasks:
                 logger.debug(
@@ -455,11 +522,23 @@ class TaskRunnerAsyncIO:
                         # Retry the poll request with new token once
                         try:
                             headers = self._get_auth_headers()
+                            retry_api_start = time.time()
+                            retry_uri = f"/tasks/poll/batch/{task_definition_name}"
                             response = await self.http_client.get(
-                                f"/tasks/poll/batch/{task_definition_name}",
+                                retry_uri,
                                 params=params,
                                 headers=headers if headers else None
                             )
+
+                            # Record API request time for retry
+                            if self.metrics_collector is not None:
+                                retry_api_elapsed = time.time() - retry_api_start
+                                self.metrics_collector.record_api_request_time(
+                                    method="GET",
+                                    uri=retry_uri,
+                                    status=str(response.status_code),
+                                    time_spent=retry_api_elapsed
+                                )
 
                             if response.status_code == 204:
                                 return []
@@ -525,6 +604,14 @@ class TaskRunnerAsyncIO:
                     task_definition_name, type(e)
                 )
 
+            # Publish poll failure event
+            poll_duration_ms = (time.time() - start_time) * 1000 if 'start_time' in locals() else 0
+            self._event_dispatcher.publish(PollFailure(
+                task_type=task_definition_name,
+                duration_ms=poll_duration_ms,
+                cause=e
+            ))
+
             return []
 
         except Exception as e:
@@ -532,6 +619,15 @@ class TaskRunnerAsyncIO:
                 self.metrics_collector.increment_task_poll_error(
                     task_definition_name, type(e)
                 )
+
+            # Publish poll failure event
+            poll_duration_ms = (time.time() - start_time) * 1000 if 'start_time' in locals() else 0
+            self._event_dispatcher.publish(PollFailure(
+                task_type=task_definition_name,
+                duration_ms=poll_duration_ms,
+                cause=e
+            ))
+
             logger.error(
                 "Failed to poll tasks for: %s, reason: %s",
                 task_definition_name,
@@ -658,6 +754,14 @@ class TaskRunnerAsyncIO:
             task_definition_name
         )
 
+        # Publish task execution started event
+        self._event_dispatcher.publish(TaskExecutionStarted(
+            task_type=task_definition_name,
+            task_id=task.task_id,
+            worker_id=self.worker.get_identity(),
+            workflow_instance_id=task.workflow_instance_id
+        ))
+
         # Create initial task result for context
         initial_task_result = TaskResult(
             task_id=task.task_id,
@@ -694,6 +798,16 @@ class TaskRunnerAsyncIO:
                     task_definition_name, sys.getsizeof(task_result)
                 )
 
+            # Publish task execution completed event
+            self._event_dispatcher.publish(TaskExecutionCompleted(
+                task_type=task_definition_name,
+                task_id=task.task_id,
+                worker_id=self.worker.get_identity(),
+                workflow_instance_id=task.workflow_instance_id,
+                duration_ms=time_spent * 1000,
+                output_size_bytes=sys.getsizeof(task_result)
+            ))
+
             logger.debug(
                 "Executed task, id: %s, workflow_instance_id: %s, task_definition_name: %s, duration: %.2fs",
                 task.task_id,
@@ -717,6 +831,17 @@ class TaskRunnerAsyncIO:
                 self.metrics_collector.increment_task_execution_error(
                     task_definition_name, asyncio.TimeoutError
                 )
+
+            # Publish task execution failure event
+            exec_duration_ms = (time.time() - start_time) * 1000 if 'start_time' in locals() else 0
+            self._event_dispatcher.publish(TaskExecutionFailure(
+                task_type=task_definition_name,
+                task_id=task.task_id,
+                worker_id=self.worker.get_identity(),
+                workflow_instance_id=task.workflow_instance_id,
+                cause=asyncio.TimeoutError(f"Execution timeout ({timeout_duration}s)"),
+                duration_ms=exec_duration_ms
+            ))
 
             # Create failed task result
             task_result = TaskResult(
@@ -748,6 +873,17 @@ class TaskRunnerAsyncIO:
                     task_definition_name, type(e)
                 )
 
+            # Publish task execution failure event
+            exec_duration_ms = (time.time() - start_time) * 1000 if 'start_time' in locals() else 0
+            self._event_dispatcher.publish(TaskExecutionFailure(
+                task_type=task_definition_name,
+                task_id=task.task_id,
+                worker_id=self.worker.get_identity(),
+                workflow_instance_id=task.workflow_instance_id,
+                cause=e,
+                duration_ms=exec_duration_ms
+            ))
+
             task_result = TaskResult(
                 task_id=task.task_id,
                 workflow_instance_id=task.workflow_instance_id,
@@ -765,6 +901,17 @@ class TaskRunnerAsyncIO:
                 self.metrics_collector.increment_task_execution_error(
                     task_definition_name, type(e)
                 )
+
+            # Publish task execution failure event
+            exec_duration_ms = (time.time() - start_time) * 1000 if 'start_time' in locals() else 0
+            self._event_dispatcher.publish(TaskExecutionFailure(
+                task_type=task_definition_name,
+                task_id=task.task_id,
+                worker_id=self.worker.get_identity(),
+                workflow_instance_id=task.workflow_instance_id,
+                cause=e,
+                duration_ms=exec_duration_ms
+            ))
 
             task_result = TaskResult(
                 task_id=task.task_id,
@@ -1008,14 +1155,47 @@ class TaskRunnerAsyncIO:
                 # Choose API endpoint based on V2 flag
                 endpoint = "/tasks/update-v2" if self._use_v2_api else "/tasks"
 
-                response = await self.http_client.post(
-                    endpoint,
-                    json=task_result_dict,
-                    headers=headers if headers else None
-                )
+                # Track update time
+                update_start = time.time()
+                api_start = time.time()
+                try:
+                    response = await self.http_client.post(
+                        endpoint,
+                        json=task_result_dict,
+                        headers=headers if headers else None
+                    )
 
-                response.raise_for_status()
-                result = response.text
+                    response.raise_for_status()
+                    result = response.text
+
+                    # Record API request time
+                    if self.metrics_collector is not None:
+                        api_elapsed = time.time() - api_start
+                        self.metrics_collector.record_api_request_time(
+                            method="POST",
+                            uri=endpoint,
+                            status=str(response.status_code),
+                            time_spent=api_elapsed
+                        )
+
+                    # Record update time histogram with success status
+                    if self.metrics_collector is not None and not is_lease_extension:
+                        update_time = time.time() - update_start
+                        self.metrics_collector.record_task_update_time_histogram(
+                            task_definition_name, update_time, status="SUCCESS"
+                        )
+                except Exception as e:
+                    # Record API request time for errors
+                    if self.metrics_collector is not None:
+                        api_elapsed = time.time() - api_start
+                        status = str(e.response.status_code) if hasattr(e, 'response') and hasattr(e.response, 'status_code') else "error"
+                        self.metrics_collector.record_api_request_time(
+                            method="POST",
+                            uri=endpoint,
+                            status=status,
+                            time_spent=api_elapsed
+                        )
+                    raise
 
                 if not is_lease_extension:
                     logger.debug(
@@ -1076,12 +1256,31 @@ class TaskRunnerAsyncIO:
                             # Retry the update request with new token once
                             try:
                                 headers = self._get_auth_headers()
+                                retry_start = time.time()
+                                retry_api_start = time.time()
                                 response = await self.http_client.post(
                                     endpoint,
                                     json=task_result_dict,
                                     headers=headers if headers else None
                                 )
                                 response.raise_for_status()
+
+                                # Record API request time for retry
+                                if self.metrics_collector is not None:
+                                    retry_api_elapsed = time.time() - retry_api_start
+                                    self.metrics_collector.record_api_request_time(
+                                        method="POST",
+                                        uri=endpoint,
+                                        status=str(response.status_code),
+                                        time_spent=retry_api_elapsed
+                                    )
+
+                                # Record update time histogram with success status
+                                if self.metrics_collector is not None and not is_lease_extension:
+                                    update_time = time.time() - retry_start
+                                    self.metrics_collector.record_task_update_time_histogram(
+                                        task_definition_name, update_time, status="SUCCESS"
+                                    )
                                 return response.text
                             except Exception as retry_error:
                                 logger.error(
@@ -1110,6 +1309,12 @@ class TaskRunnerAsyncIO:
                     self.metrics_collector.increment_task_update_error(
                         task_definition_name, type(e)
                     )
+                    # Record update time with failure status
+                    if not is_lease_extension:
+                        update_time = time.time() - update_start
+                        self.metrics_collector.record_task_update_time_histogram(
+                            task_definition_name, update_time, status="FAILURE"
+                        )
 
                 if not is_lease_extension:
                     logger.error(
@@ -1127,6 +1332,12 @@ class TaskRunnerAsyncIO:
                     self.metrics_collector.increment_task_update_error(
                         task_definition_name, type(e)
                     )
+                    # Record update time with failure status
+                    if not is_lease_extension:
+                        update_time = time.time() - update_start
+                        self.metrics_collector.record_task_update_time_histogram(
+                            task_definition_name, update_time, status="FAILURE"
+                        )
 
                 if not is_lease_extension:
                     logger.error(

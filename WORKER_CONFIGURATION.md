@@ -28,6 +28,7 @@ The following properties can be configured via environment variables:
 | `register_task_def` | bool | Auto-register task definition | `true` |
 | `poll_timeout` | int | Poll request timeout in milliseconds | `100` |
 | `lease_extend_enabled` | bool | Enable automatic lease extension | `true` |
+| `paused` | bool | Pause worker from polling/executing tasks | `true` |
 
 ## Environment Variable Format
 
@@ -140,6 +141,43 @@ export conductor.worker.all.domain=staging
 
 All workers use staging domain, but keep their code-defined poll intervals, thread counts, etc.
 
+### Pausing Workers
+
+Temporarily disable workers without stopping the process:
+
+```bash
+# Pause all workers (maintenance mode)
+export conductor.worker.all.paused=true
+
+# Pause specific worker only
+export conductor.worker.process_order.paused=true
+```
+
+When a worker is paused:
+- It stops polling for new tasks
+- Already-executing tasks complete normally
+- The `task_paused_total` metric is incremented for each skipped poll
+- No code changes or process restarts required
+
+**Use cases:**
+- **Maintenance**: Pause workers during database migrations or system maintenance
+- **Debugging**: Pause problematic workers while investigating issues
+- **Gradual rollout**: Pause old workers while testing new deployment
+- **Resource management**: Temporarily reduce load by pausing non-critical workers
+
+**Unpause workers** by removing or setting the variable to false:
+```bash
+unset conductor.worker.all.paused
+# or
+export conductor.worker.all.paused=false
+```
+
+**Monitor paused workers** using the `task_paused_total` metric:
+```promql
+# Check how many times workers were paused
+task_paused_total{taskType="process_order"}
+```
+
 ### Multi-Region Deployment
 
 Route different workers to different regions using domains:
@@ -171,13 +209,14 @@ export conductor.worker.canary_worker.domain=staging
 
 Boolean properties accept multiple formats:
 
-**True values**: `true`, `True`, `TRUE`, `1`, `yes`, `YES`, `on`
-**False values**: `false`, `False`, `FALSE`, `0`, `no`, `NO`, `off`
+**True values**: `true`, `1`, `yes`
+**False values**: `false`, `0`, `no`
 
 ```bash
 export conductor.worker.all.lease_extend_enabled=true
 export conductor.worker.critical_task.register_task_def=1
 export conductor.worker.background_task.lease_extend_enabled=false
+export conductor.worker.maintenance_task.paused=true
 ```
 
 ## Docker/Kubernetes Example

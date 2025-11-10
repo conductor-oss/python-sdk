@@ -45,7 +45,8 @@ class ApiClient(object):
             configuration=None,
             header_name=None,
             header_value=None,
-            cookie=None
+            cookie=None,
+            metrics_collector=None
     ):
         if configuration is None:
             configuration = Configuration()
@@ -63,6 +64,9 @@ class ApiClient(object):
         self._token_refresh_failures = 0
         self._last_token_refresh_attempt = 0
         self._max_token_refresh_failures = 5  # Stop after 5 consecutive failures
+
+        # Metrics collector for API request tracking
+        self.metrics_collector = metrics_collector
 
         self.__refresh_auth_token()
 
@@ -386,62 +390,112 @@ class ApiClient(object):
                 post_params=None, body=None, _preload_content=True,
                 _request_timeout=None):
         """Makes the HTTP request using RESTClient."""
-        if method == "GET":
-            return self.rest_client.GET(url,
-                                        query_params=query_params,
-                                        _preload_content=_preload_content,
-                                        _request_timeout=_request_timeout,
-                                        headers=headers)
-        elif method == "HEAD":
-            return self.rest_client.HEAD(url,
-                                         query_params=query_params,
-                                         _preload_content=_preload_content,
-                                         _request_timeout=_request_timeout,
-                                         headers=headers)
-        elif method == "OPTIONS":
-            return self.rest_client.OPTIONS(url,
+        # Extract URI path from URL (remove query params and domain)
+        try:
+            from urllib.parse import urlparse
+            parsed_url = urlparse(url)
+            uri = parsed_url.path or url
+        except:
+            uri = url
+
+        # Start timing
+        start_time = time.time()
+        status_code = "unknown"
+
+        try:
+            if method == "GET":
+                response = self.rest_client.GET(url,
+                                            query_params=query_params,
+                                            _preload_content=_preload_content,
+                                            _request_timeout=_request_timeout,
+                                            headers=headers)
+            elif method == "HEAD":
+                response = self.rest_client.HEAD(url,
+                                             query_params=query_params,
+                                             _preload_content=_preload_content,
+                                             _request_timeout=_request_timeout,
+                                             headers=headers)
+            elif method == "OPTIONS":
+                response = self.rest_client.OPTIONS(url,
+                                                query_params=query_params,
+                                                headers=headers,
+                                                post_params=post_params,
+                                                _preload_content=_preload_content,
+                                                _request_timeout=_request_timeout,
+                                                body=body)
+            elif method == "POST":
+                response = self.rest_client.POST(url,
+                                             query_params=query_params,
+                                             headers=headers,
+                                             post_params=post_params,
+                                             _preload_content=_preload_content,
+                                             _request_timeout=_request_timeout,
+                                             body=body)
+            elif method == "PUT":
+                response = self.rest_client.PUT(url,
                                             query_params=query_params,
                                             headers=headers,
                                             post_params=post_params,
                                             _preload_content=_preload_content,
                                             _request_timeout=_request_timeout,
                                             body=body)
-        elif method == "POST":
-            return self.rest_client.POST(url,
-                                         query_params=query_params,
-                                         headers=headers,
-                                         post_params=post_params,
-                                         _preload_content=_preload_content,
-                                         _request_timeout=_request_timeout,
-                                         body=body)
-        elif method == "PUT":
-            return self.rest_client.PUT(url,
-                                        query_params=query_params,
-                                        headers=headers,
-                                        post_params=post_params,
-                                        _preload_content=_preload_content,
-                                        _request_timeout=_request_timeout,
-                                        body=body)
-        elif method == "PATCH":
-            return self.rest_client.PATCH(url,
-                                          query_params=query_params,
-                                          headers=headers,
-                                          post_params=post_params,
-                                          _preload_content=_preload_content,
-                                          _request_timeout=_request_timeout,
-                                          body=body)
-        elif method == "DELETE":
-            return self.rest_client.DELETE(url,
-                                           query_params=query_params,
-                                           headers=headers,
-                                           _preload_content=_preload_content,
-                                           _request_timeout=_request_timeout,
-                                           body=body)
-        else:
-            raise ValueError(
-                "http method must be `GET`, `HEAD`, `OPTIONS`,"
-                " `POST`, `PATCH`, `PUT` or `DELETE`."
-            )
+            elif method == "PATCH":
+                response = self.rest_client.PATCH(url,
+                                              query_params=query_params,
+                                              headers=headers,
+                                              post_params=post_params,
+                                              _preload_content=_preload_content,
+                                              _request_timeout=_request_timeout,
+                                              body=body)
+            elif method == "DELETE":
+                response = self.rest_client.DELETE(url,
+                                               query_params=query_params,
+                                               headers=headers,
+                                               _preload_content=_preload_content,
+                                               _request_timeout=_request_timeout,
+                                               body=body)
+            else:
+                raise ValueError(
+                    "http method must be `GET`, `HEAD`, `OPTIONS`,"
+                    " `POST`, `PATCH`, `PUT` or `DELETE`."
+                )
+
+            # Extract status code from response
+            status_code = str(response.status) if hasattr(response, 'status') else "200"
+
+            # Record metrics
+            if self.metrics_collector is not None:
+                elapsed_time = time.time() - start_time
+                self.metrics_collector.record_api_request_time(
+                    method=method,
+                    uri=uri,
+                    status=status_code,
+                    time_spent=elapsed_time
+                )
+
+            return response
+
+        except Exception as e:
+            # Extract status code from exception if available
+            if hasattr(e, 'status'):
+                status_code = str(e.status)
+            elif hasattr(e, 'code'):
+                status_code = str(e.code)
+            else:
+                status_code = "error"
+
+            # Record metrics for failed requests
+            if self.metrics_collector is not None:
+                elapsed_time = time.time() - start_time
+                self.metrics_collector.record_api_request_time(
+                    method=method,
+                    uri=uri,
+                    status=status_code,
+                    time_spent=elapsed_time
+                )
+
+            # Re-raise the exception
+            raise
 
     def parameters_to_tuples(self, params, collection_formats):
         """Get parameters as list of tuples, formatting collections.
