@@ -1,5 +1,6 @@
 from __future__ import annotations
 import asyncio
+import contextvars
 import dataclasses
 import inspect
 import logging
@@ -20,6 +21,7 @@ except ImportError:
 from conductor.client.automator.utils import convert_from_dict_or_list
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
+from conductor.client.context.task_context import _set_task_context, _clear_task_context, TaskInProgress
 from conductor.client.http.api_client import ApiClient
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_exec_log import TaskExecLog
@@ -46,15 +48,22 @@ class TaskRunnerAsyncIO:
     Key features matching Java SDK:
     - Semaphore-based dynamic batch polling (batch size = available threads)
     - Zero-polling when all threads busy
-    - In-memory queue for V2 API chained tasks
+    - V2 API poll/execute with immediate task execution
     - Automatic lease extension at 80% of task timeout
     - Adaptive batch sizing based on thread availability
 
-    Architecture:
+    V2 API Architecture (poll/execute):
+    - Server returns next task in update response
+    - Tasks execute immediately if worker threads available (fast path)
+    - Tasks queue only when all threads busy (overflow buffer)
+    - Queue naturally bounded by execution rate and thread_count
+    - Queue drains before next server poll (prevents unbounded growth)
+
+    Concurrency Control:
     - One coroutine per worker type for polling
     - Thread pool (size = worker.thread_count) for task execution
     - Semaphore with thread_count permits controls concurrency
-    - In-memory queue drains before server polling
+    - Backpressure via semaphore prevents unbounded queueing
 
     Usage:
         runner = TaskRunnerAsyncIO(worker, configuration)
@@ -92,7 +101,8 @@ class TaskRunnerAsyncIO:
         # Each permit represents one available execution thread
         self._semaphore = asyncio.Semaphore(thread_count)
 
-        # In-memory queue for V2 API chained tasks (Java SDK: tasksTobeExecuted)
+        # Overflow queue for V2 API tasks when all threads busy (Java SDK: tasksTobeExecuted)
+        # Queue is naturally bounded by: (1) semaphore backpressure, (2) draining before polls
         self._task_queue: asyncio.Queue[Task] = asyncio.Queue()
 
         # AsyncIO HTTP client (shared across requests)
@@ -305,12 +315,15 @@ class TaskRunnerAsyncIO:
 
     async def _poll_tasks(self, poll_count: int) -> List[Task]:
         """
-        Poll tasks from in-memory queue first, then from server.
+        Poll tasks from overflow queue first, then from server.
 
-        Java SDK logic:
-        1. Drain in-memory queue first (V2 API chained tasks)
-        2. If queue empty, call server batch_poll
+        V2 API logic:
+        1. Drain overflow queue first (V2 API tasks queued when threads were busy)
+        2. If queue empty or insufficient tasks, poll remaining from server
         3. Return up to poll_count tasks
+
+        This prevents unbounded queue growth by prioritizing queued tasks
+        before polling server for more work.
         """
         tasks = []
 
@@ -472,7 +485,20 @@ class TaskRunnerAsyncIO:
                             )
                             return []
                     else:
-                        logger.error('Failed to renew authentication token')
+                        # Token renewal failed - apply exponential backoff
+                        self._auth_failures += 1
+                        self._last_auth_failure = time.time()
+                        backoff_seconds = min(2 ** self._auth_failures, 60)
+
+                        logger.error(
+                            'Failed to renew authentication token for task %s (failure #%d). '
+                            'Will retry with exponential backoff (%ds). '
+                            'Please check your credentials.',
+                            task_definition_name,
+                            self._auth_failures,
+                            backoff_seconds
+                        )
+                        return []
                 else:
                     # Not a token expiry - invalid credentials, apply backoff
                     self._auth_failures += 1
@@ -632,6 +658,16 @@ class TaskRunnerAsyncIO:
             task_definition_name
         )
 
+        # Create initial task result for context
+        initial_task_result = TaskResult(
+            task_id=task.task_id,
+            workflow_instance_id=task.workflow_instance_id,
+            worker_id=self.worker.get_identity()
+        )
+
+        # Set task context (similar to Java SDK's TaskContext.set(task))
+        _set_task_context(task, initial_task_result)
+
         try:
             start_time = time.time()
 
@@ -641,8 +677,11 @@ class TaskRunnerAsyncIO:
             # Call user's function and await if needed
             task_output = await self._call_execute_function(task, timeout)
 
-            # Create TaskResult from output
+            # Create TaskResult from output, merging with context modifications
             task_result = self._create_task_result(task, task_output)
+
+            # Merge any context modifications (logs, callback_after, etc.)
+            self._merge_context_modifications(task_result, initial_task_result)
 
             finish_time = time.time()
             time_spent = finish_time - start_time
@@ -746,6 +785,10 @@ class TaskRunnerAsyncIO:
             )
             return task_result
 
+        finally:
+            # Always clear task context after execution (similar to Java SDK cleanup)
+            _clear_task_context()
+
     async def _call_execute_function(self, task: Task, timeout: float):
         """
         Call the user's execute function and await if it's async.
@@ -765,10 +808,11 @@ class TaskRunnerAsyncIO:
                 # Async function - await it with timeout
                 result = await asyncio.wait_for(execute_func(task), timeout=timeout)
             else:
-                # Sync function - run in executor
+                # Sync function - run in executor with context propagation
                 loop = asyncio.get_running_loop()
+                ctx = contextvars.copy_context()
                 result = await asyncio.wait_for(
-                    loop.run_in_executor(self._executor, execute_func, task),
+                    loop.run_in_executor(self._executor, ctx.run, execute_func, task),
                     timeout=timeout
                 )
             return result
@@ -801,11 +845,13 @@ class TaskRunnerAsyncIO:
                     timeout=timeout
                 )
             else:
-                # Sync function - run in executor
+                # Sync function - run in executor with context propagation
                 loop = asyncio.get_running_loop()
+                ctx = contextvars.copy_context()
                 result = await asyncio.wait_for(
                     loop.run_in_executor(
                         self._executor,
+                        ctx.run,
                         lambda: execute_func(**task_input)
                     ),
                     timeout=timeout
@@ -834,7 +880,7 @@ class TaskRunnerAsyncIO:
     def _create_task_result(self, task: Task, task_output) -> TaskResult:
         """
         Create TaskResult from task output.
-        Handles various output types (TaskResult, dict, primitive, etc.)
+        Handles various output types (TaskResult, TaskInProgress, dict, primitive, etc.)
         """
         if isinstance(task_output, TaskResult):
             # Already a TaskResult
@@ -842,39 +888,86 @@ class TaskRunnerAsyncIO:
             task_output.workflow_instance_id = task.workflow_instance_id
             return task_output
 
-        # Create new TaskResult
-        task_result = TaskResult(
-            task_id=task.task_id,
-            workflow_instance_id=task.workflow_instance_id,
-            worker_id=self.worker.get_identity()
-        )
-        task_result.status = TaskResultStatus.COMPLETED
-
-        # Handle output serialization based on type
-        # - dict/object: Use as-is (valid JSON document)
-        # - primitives/arrays: Wrap in {"result": ...}
-        #
-        # IMPORTANT: Must sanitize first to handle dataclasses/objects,
-        # then check if result is dict
-        try:
-            sanitized_output = self._api_client.sanitize_for_serialization(task_output)
-
-            if isinstance(sanitized_output, dict):
-                # Dict (or object that serialized to dict) - use as-is
-                task_result.output_data = sanitized_output
-            else:
-                # Primitive or array - wrap in {"result": ...}
-                task_result.output_data = {"result": sanitized_output}
-
-        except Exception as e:
-            logger.warning(
-                "Failed to serialize task output for task %s: %s. Using string representation.",
-                task.task_id,
-                e
+        if isinstance(task_output, TaskInProgress):
+            # Task is still in progress - create IN_PROGRESS result
+            # Note: Don't return early - we need to merge context modifications (logs, etc.)
+            task_result = TaskResult(
+                task_id=task.task_id,
+                workflow_instance_id=task.workflow_instance_id,
+                worker_id=self.worker.get_identity()
             )
-            task_result.output_data = {"result": str(task_output)}
+            task_result.status = TaskResultStatus.IN_PROGRESS
+            task_result.callback_after_seconds = task_output.callback_after_seconds
+            task_result.output_data = task_output.output
+            # Continue to merge context modifications instead of returning early
+        else:
+            # Create new TaskResult
+            task_result = TaskResult(
+                task_id=task.task_id,
+                workflow_instance_id=task.workflow_instance_id,
+                worker_id=self.worker.get_identity()
+            )
+            task_result.status = TaskResultStatus.COMPLETED
+
+            # Handle output serialization based on type
+            # - dict/object: Use as-is (valid JSON document)
+            # - primitives/arrays: Wrap in {"result": ...}
+            #
+            # IMPORTANT: Must sanitize first to handle dataclasses/objects,
+            # then check if result is dict
+            try:
+                sanitized_output = self._api_client.sanitize_for_serialization(task_output)
+
+                if isinstance(sanitized_output, dict):
+                    # Dict (or object that serialized to dict) - use as-is
+                    task_result.output_data = sanitized_output
+                else:
+                    # Primitive or array - wrap in {"result": ...}
+                    task_result.output_data = {"result": sanitized_output}
+
+            except Exception as e:
+                logger.warning(
+                    "Failed to serialize task output for task %s: %s. Using string representation.",
+                    task.task_id,
+                    e
+                )
+                task_result.output_data = {"result": str(task_output)}
 
         return task_result
+
+    def _merge_context_modifications(self, task_result: TaskResult, context_result: TaskResult) -> None:
+        """
+        Merge modifications made via TaskContext into the final task result.
+
+        This allows workers to use TaskContext.add_log(), set_callback_after(), etc.
+        and have those changes reflected in the final result.
+
+        Args:
+            task_result: The final task result created from worker output
+            context_result: The task result that was passed to TaskContext
+        """
+        # Merge logs
+        if hasattr(context_result, 'logs') and context_result.logs:
+            if not hasattr(task_result, 'logs') or task_result.logs is None:
+                task_result.logs = []
+            task_result.logs.extend(context_result.logs)
+
+        # Merge callback_after_seconds
+        if hasattr(context_result, 'callback_after_seconds') and context_result.callback_after_seconds:
+            task_result.callback_after_seconds = context_result.callback_after_seconds
+
+        # If context set output_data explicitly, prefer it over the function return
+        # (unless function returned a TaskResult, which takes precedence)
+        if (hasattr(context_result, 'output_data') and
+            context_result.output_data and
+            not isinstance(task_result, TaskResult)):
+            # Merge output data - context data + function result
+            if hasattr(task_result, 'output_data') and task_result.output_data:
+                # Both have output - merge them
+                merged_output = {**context_result.output_data, **task_result.output_data}
+                task_result.output_data = merged_output
+            else:
+                task_result.output_data = context_result.output_data
 
     async def _update_task(self, task_result: TaskResult, is_lease_extension: bool = False) -> Optional[str]:
         """
@@ -997,7 +1090,19 @@ class TaskRunnerAsyncIO:
                                 )
                                 # Continue to retry loop
                         else:
-                            logger.error('Failed to renew authentication token')
+                            # Token renewal failed - apply exponential backoff
+                            self._auth_failures += 1
+                            self._last_auth_failure = time.time()
+                            backoff_seconds = min(2 ** self._auth_failures, 60)
+
+                            logger.error(
+                                'Failed to renew authentication token for task update %s (failure #%d). '
+                                'Will retry with exponential backoff (%ds). '
+                                'Please check your credentials.',
+                                task_result.task_id,
+                                self._auth_failures,
+                                backoff_seconds
+                            )
                             # Continue to retry loop
 
                 # Fall through to generic exception handling for retries
@@ -1043,14 +1148,21 @@ class TaskRunnerAsyncIO:
 
     async def _try_immediate_execution(self, task: Task) -> None:
         """
-        Try to execute task immediately if semaphore permit available.
-        If no permit available, add to queue as fallback.
+        V2 API immediate execution optimization (poll/execute).
 
-        This optimization eliminates the latency of waiting for the next
-        run_once() iteration to poll the queue.
+        Attempts to execute the next task immediately when server returns it,
+        avoiding queueing latency. This is the "fast path" for V2 API.
+
+        Flow:
+        1. Try to acquire semaphore permit (non-blocking)
+        2. If permit acquired: Execute task immediately (fast path)
+        3. If no permit: Queue task for next polling cycle (overflow buffer)
+
+        The queue only grows when tasks arrive faster than execution rate,
+        and is naturally bounded by semaphore backpressure.
 
         Args:
-            task: The task to execute
+            task: The next task returned by server in update response
         """
         try:
             # Try non-blocking permit acquisition

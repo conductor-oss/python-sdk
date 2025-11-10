@@ -1188,6 +1188,479 @@ class TestImmediateExecution(unittest.TestCase):
 
         self.run_async(test())
 
+    def test_worker_returns_task_result_used_as_is(self):
+        """When worker returns TaskResult, it should be used as-is without JSON conversion"""
+
+        # Create a worker that returns a custom TaskResult with specific fields
+        def worker_returns_task_result(task):
+            result = TaskResult()
+            result.status = TaskResultStatus.COMPLETED
+            result.output_data = {
+                "custom_field": "custom_value",
+                "nested": {"data": [1, 2, 3]}
+            }
+            # Add custom logs and callback
+            from conductor.client.http.models.task_exec_log import TaskExecLog
+            result.logs = [
+                TaskExecLog(log="Custom log 1", task_id="test", created_time=1234567890),
+                TaskExecLog(log="Custom log 2", task_id="test", created_time=1234567891)
+            ]
+            result.callback_after_seconds = 300
+            result.reason_for_incompletion = None
+            return result
+
+        worker = Worker(
+            task_definition_name='task_result_test',
+            execute_function=worker_returns_task_result,
+            thread_count=1
+        )
+        runner = TaskRunnerAsyncIO(worker, self.config)
+
+        async def test():
+            # Create test task
+            task = Task()
+            task.task_id = 'test_task_123'
+            task.workflow_instance_id = 'workflow_456'
+            task.task_def_name = 'task_result_test'
+
+            # Execute the task
+            result = await runner._execute_task(task)
+
+            # Verify the result is a TaskResult (not converted to dict)
+            self.assertIsInstance(result, TaskResult)
+
+            # Verify task_id and workflow_instance_id are set correctly
+            self.assertEqual(result.task_id, 'test_task_123')
+            self.assertEqual(result.workflow_instance_id, 'workflow_456')
+
+            # Verify custom fields are preserved (not wrapped or converted)
+            self.assertEqual(result.output_data['custom_field'], 'custom_value')
+            self.assertEqual(result.output_data['nested']['data'], [1, 2, 3])
+
+            # Verify status is preserved
+            self.assertEqual(result.status, TaskResultStatus.COMPLETED)
+
+            # Verify logs are preserved
+            self.assertIsNotNone(result.logs)
+            self.assertEqual(len(result.logs), 2)
+            self.assertEqual(result.logs[0].log, 'Custom log 1')
+            self.assertEqual(result.logs[1].log, 'Custom log 2')
+
+            # Verify callback_after_seconds is preserved
+            self.assertEqual(result.callback_after_seconds, 300)
+
+            # Verify reason_for_incompletion is preserved
+            self.assertIsNone(result.reason_for_incompletion)
+
+        self.run_async(test())
+
+    def test_worker_returns_task_result_async(self):
+        """Async worker returning TaskResult should also work correctly"""
+
+        async def async_worker_returns_task_result(task):
+            await asyncio.sleep(0.01)  # Simulate async work
+            result = TaskResult()
+            result.status = TaskResultStatus.COMPLETED
+            result.output_data = {"async_result": True, "value": 42}
+            return result
+
+        worker = Worker(
+            task_definition_name='async_task_result_test',
+            execute_function=async_worker_returns_task_result,
+            thread_count=1
+        )
+        runner = TaskRunnerAsyncIO(worker, self.config)
+
+        async def test():
+            task = Task()
+            task.task_id = 'async_task_789'
+            task.workflow_instance_id = 'workflow_999'
+            task.task_def_name = 'async_task_result_test'
+
+            # Execute the async task
+            result = await runner._execute_task(task)
+
+            # Verify it's a TaskResult
+            self.assertIsInstance(result, TaskResult)
+
+            # Verify IDs are set
+            self.assertEqual(result.task_id, 'async_task_789')
+            self.assertEqual(result.workflow_instance_id, 'workflow_999')
+
+            # Verify output is not wrapped
+            self.assertEqual(result.output_data['async_result'], True)
+            self.assertEqual(result.output_data['value'], 42)
+            self.assertNotIn('result', result.output_data)  # Should NOT be wrapped
+
+        self.run_async(test())
+
+    def test_worker_returns_dict_gets_wrapped(self):
+        """Contrast test: dict return should be wrapped in output_data"""
+
+        def worker_returns_dict(task):
+            return {"raw": "dict", "value": 123}
+
+        worker = Worker(
+            task_definition_name='dict_test',
+            execute_function=worker_returns_dict,
+            thread_count=1
+        )
+        runner = TaskRunnerAsyncIO(worker, self.config)
+
+        async def test():
+            task = Task()
+            task.task_id = 'dict_task'
+            task.workflow_instance_id = 'workflow_123'
+            task.task_def_name = 'dict_test'
+
+            result = await runner._execute_task(task)
+
+            # Should be a TaskResult
+            self.assertIsInstance(result, TaskResult)
+
+            # Dict should be in output_data directly (not wrapped in "result")
+            self.assertIn('raw', result.output_data)
+            self.assertEqual(result.output_data['raw'], 'dict')
+            self.assertEqual(result.output_data['value'], 123)
+
+        self.run_async(test())
+
+    def test_worker_returns_primitive_gets_wrapped(self):
+        """Primitive return values should be wrapped in result field"""
+
+        def worker_returns_string(task):
+            return "simple string"
+
+        worker = Worker(
+            task_definition_name='primitive_test',
+            execute_function=worker_returns_string,
+            thread_count=1
+        )
+        runner = TaskRunnerAsyncIO(worker, self.config)
+
+        async def test():
+            task = Task()
+            task.task_id = 'primitive_task'
+            task.workflow_instance_id = 'workflow_456'
+            task.task_def_name = 'primitive_test'
+
+            result = await runner._execute_task(task)
+
+            # Should be a TaskResult
+            self.assertIsInstance(result, TaskResult)
+
+            # Primitive should be wrapped in "result" field
+            self.assertIn('result', result.output_data)
+            self.assertEqual(result.output_data['result'], 'simple string')
+
+        self.run_async(test())
+
+    def test_long_running_task_with_callback_after(self):
+        """
+        Test long-running task pattern using TaskResult with callback_after.
+
+        Simulates a task that needs to poll 3 times before completion:
+        - Poll 1: IN_PROGRESS with callback_after=1s
+        - Poll 2: IN_PROGRESS with callback_after=1s
+        - Poll 3: COMPLETED with final result
+        """
+
+        def long_running_worker(task):
+            """Worker that uses poll_count to track progress"""
+            poll_count = task.poll_count if task.poll_count else 0
+
+            result = TaskResult()
+            result.output_data = {
+                "poll_count": poll_count,
+                "message": f"Processing attempt {poll_count}"
+            }
+
+            # Complete after 3 polls
+            if poll_count >= 3:
+                result.status = TaskResultStatus.COMPLETED
+                result.output_data["message"] = "Task completed!"
+                result.output_data["final_result"] = "success"
+            else:
+                # Still in progress - ask Conductor to callback after 1 second
+                result.status = TaskResultStatus.IN_PROGRESS
+                result.callback_after_seconds = 1
+                result.output_data["message"] = f"Still working... (poll {poll_count})"
+
+            return result
+
+        worker = Worker(
+            task_definition_name='long_running_task',
+            execute_function=long_running_worker,
+            thread_count=1
+        )
+        runner = TaskRunnerAsyncIO(worker, self.config)
+
+        async def test():
+            # Test Poll 1 (poll_count=1)
+            task1 = Task()
+            task1.task_id = 'long_task_1'
+            task1.workflow_instance_id = 'workflow_1'
+            task1.task_def_name = 'long_running_task'
+            task1.poll_count = 1
+
+            result1 = await runner._execute_task(task1)
+
+            # Should be IN_PROGRESS with callback_after
+            self.assertIsInstance(result1, TaskResult)
+            self.assertEqual(result1.status, TaskResultStatus.IN_PROGRESS)
+            self.assertEqual(result1.callback_after_seconds, 1)
+            self.assertEqual(result1.output_data['poll_count'], 1)
+            self.assertIn('Still working', result1.output_data['message'])
+
+            # Test Poll 2 (poll_count=2)
+            task2 = Task()
+            task2.task_id = 'long_task_1'
+            task2.workflow_instance_id = 'workflow_1'
+            task2.task_def_name = 'long_running_task'
+            task2.poll_count = 2
+
+            result2 = await runner._execute_task(task2)
+
+            # Still IN_PROGRESS with callback_after
+            self.assertEqual(result2.status, TaskResultStatus.IN_PROGRESS)
+            self.assertEqual(result2.callback_after_seconds, 1)
+            self.assertEqual(result2.output_data['poll_count'], 2)
+
+            # Test Poll 3 (poll_count=3) - Final completion
+            task3 = Task()
+            task3.task_id = 'long_task_1'
+            task3.workflow_instance_id = 'workflow_1'
+            task3.task_def_name = 'long_running_task'
+            task3.poll_count = 3
+
+            result3 = await runner._execute_task(task3)
+
+            # Should be COMPLETED now
+            self.assertEqual(result3.status, TaskResultStatus.COMPLETED)
+            self.assertIsNone(result3.callback_after_seconds)  # No more callbacks needed
+            self.assertEqual(result3.output_data['poll_count'], 3)
+            self.assertEqual(result3.output_data['final_result'], 'success')
+            self.assertIn('completed', result3.output_data['message'].lower())
+
+        self.run_async(test())
+
+
+    def test_long_running_task_with_union_approach(self):
+        """
+        Test Union approach: return Union[dict, TaskInProgress].
+
+        This is the cleanest approach - semantically correct (not an exception),
+        explicit in type signature, and better type checking.
+        """
+        from conductor.client.context import TaskInProgress, get_task_context
+        from typing import Union
+
+        def long_running_union(job_id: str, max_polls: int = 3) -> Union[dict, TaskInProgress]:
+            """
+            Worker with Union return type - most Pythonic approach.
+
+            Return TaskInProgress when still working.
+            Return dict when complete.
+            """
+            ctx = get_task_context()
+            poll_count = ctx.get_poll_count()
+
+            ctx.add_log(f"Processing job {job_id}, poll {poll_count}/{max_polls}")
+
+            if poll_count < max_polls:
+                # Still working - return TaskInProgress (NOT an error!)
+                return TaskInProgress(
+                    callback_after_seconds=1,
+                    output={
+                        'status': 'processing',
+                        'job_id': job_id,
+                        'poll_count': poll_count,
+                        'progress': int((poll_count / max_polls) * 100)
+                    }
+                )
+
+            # Complete - return normal dict
+            return {
+                'status': 'completed',
+                'job_id': job_id,
+                'result': 'success',
+                'total_polls': poll_count
+            }
+
+        worker = Worker(
+            task_definition_name='long_running_union',
+            execute_function=long_running_union,
+            thread_count=1
+        )
+        runner = TaskRunnerAsyncIO(worker, self.config)
+
+        async def test():
+            # Poll 1 - in progress
+            task1 = Task()
+            task1.task_id = 'union_task_1'
+            task1.workflow_instance_id = 'workflow_1'
+            task1.task_def_name = 'long_running_union'
+            task1.poll_count = 1
+            task1.input_data = {'job_id': 'job123', 'max_polls': 3}
+
+            result1 = await runner._execute_task(task1)
+
+            # Should be IN_PROGRESS
+            self.assertIsInstance(result1, TaskResult)
+            self.assertEqual(result1.status, TaskResultStatus.IN_PROGRESS)
+            self.assertEqual(result1.callback_after_seconds, 1)
+            self.assertEqual(result1.output_data['status'], 'processing')
+            self.assertEqual(result1.output_data['poll_count'], 1)
+            self.assertEqual(result1.output_data['progress'], 33)
+            # Logs should be present
+            self.assertIsNotNone(result1.logs)
+            self.assertTrue(any('Processing job' in log.log for log in result1.logs))
+
+            # Poll 2 - still in progress
+            task2 = Task()
+            task2.task_id = 'union_task_1'
+            task2.workflow_instance_id = 'workflow_1'
+            task2.task_def_name = 'long_running_union'
+            task2.poll_count = 2
+            task2.input_data = {'job_id': 'job123', 'max_polls': 3}
+
+            result2 = await runner._execute_task(task2)
+
+            self.assertEqual(result2.status, TaskResultStatus.IN_PROGRESS)
+            self.assertEqual(result2.output_data['poll_count'], 2)
+            self.assertEqual(result2.output_data['progress'], 66)
+
+            # Poll 3 - completes
+            task3 = Task()
+            task3.task_id = 'union_task_1'
+            task3.workflow_instance_id = 'workflow_1'
+            task3.task_def_name = 'long_running_union'
+            task3.poll_count = 3
+            task3.input_data = {'job_id': 'job123', 'max_polls': 3}
+
+            result3 = await runner._execute_task(task3)
+
+            # Should be COMPLETED with dict result
+            self.assertEqual(result3.status, TaskResultStatus.COMPLETED)
+            self.assertIsNone(result3.callback_after_seconds)
+            self.assertEqual(result3.output_data['status'], 'completed')
+            self.assertEqual(result3.output_data['result'], 'success')
+            self.assertEqual(result3.output_data['total_polls'], 3)
+
+        self.run_async(test())
+
+    def test_async_worker_with_union_approach(self):
+        """Test Union approach with async worker"""
+        from conductor.client.context import TaskInProgress, get_task_context
+        from typing import Union
+
+        async def async_union_worker(value: int) -> Union[dict, TaskInProgress]:
+            """Async worker with Union return type"""
+            ctx = get_task_context()
+            poll_count = ctx.get_poll_count()
+
+            await asyncio.sleep(0.01)  # Simulate async work
+
+            ctx.add_log(f"Async processing, poll {poll_count}")
+
+            if poll_count < 2:
+                return TaskInProgress(
+                    callback_after_seconds=2,
+                    output={'status': 'working', 'poll': poll_count}
+                )
+
+            return {'status': 'done', 'result': value * 2}
+
+        worker = Worker(
+            task_definition_name='async_union_worker',
+            execute_function=async_union_worker,
+            thread_count=1
+        )
+        runner = TaskRunnerAsyncIO(worker, self.config)
+
+        async def test():
+            # Poll 1
+            task1 = Task()
+            task1.task_id = 'async_union_1'
+            task1.workflow_instance_id = 'wf_1'
+            task1.task_def_name = 'async_union_worker'
+            task1.poll_count = 1
+            task1.input_data = {'value': 42}
+
+            result1 = await runner._execute_task(task1)
+
+            self.assertEqual(result1.status, TaskResultStatus.IN_PROGRESS)
+            self.assertEqual(result1.callback_after_seconds, 2)
+            self.assertEqual(result1.output_data['status'], 'working')
+
+            # Poll 2 - completes
+            task2 = Task()
+            task2.task_id = 'async_union_1'
+            task2.workflow_instance_id = 'wf_1'
+            task2.task_def_name = 'async_union_worker'
+            task2.poll_count = 2
+            task2.input_data = {'value': 42}
+
+            result2 = await runner._execute_task(task2)
+
+            self.assertEqual(result2.status, TaskResultStatus.COMPLETED)
+            self.assertEqual(result2.output_data['status'], 'done')
+            self.assertEqual(result2.output_data['result'], 84)
+
+        self.run_async(test())
+
+    def test_union_approach_logs_merged(self):
+        """Test that logs added via context are merged with TaskInProgress"""
+        from conductor.client.context import TaskInProgress, get_task_context
+        from typing import Union
+
+        def worker_with_logs(data: str) -> Union[dict, TaskInProgress]:
+            ctx = get_task_context()
+            poll_count = ctx.get_poll_count()
+
+            # Add multiple logs
+            ctx.add_log("Step 1: Initializing")
+            ctx.add_log(f"Step 2: Processing {data}")
+            ctx.add_log("Step 3: Validating")
+
+            if poll_count < 2:
+                return TaskInProgress(
+                    callback_after_seconds=5,
+                    output={'stage': 'in_progress'}
+                )
+
+            return {'stage': 'completed', 'data': data}
+
+        worker = Worker(
+            task_definition_name='worker_with_logs',
+            execute_function=worker_with_logs,
+            thread_count=1
+        )
+        runner = TaskRunnerAsyncIO(worker, self.config)
+
+        async def test():
+            task = Task()
+            task.task_id = 'log_test'
+            task.workflow_instance_id = 'wf_log'
+            task.task_def_name = 'worker_with_logs'
+            task.poll_count = 1
+            task.input_data = {'data': 'test_data'}
+
+            result = await runner._execute_task(task)
+
+            # Should be IN_PROGRESS with all logs merged
+            self.assertEqual(result.status, TaskResultStatus.IN_PROGRESS)
+            self.assertIsNotNone(result.logs)
+            self.assertEqual(len(result.logs), 3)
+
+            # Check all logs are present
+            log_messages = [log.log for log in result.logs]
+            self.assertIn("Step 1: Initializing", log_messages)
+            self.assertIn("Step 2: Processing test_data", log_messages)
+            self.assertIn("Step 3: Validating", log_messages)
+
+        self.run_async(test())
+
 
 if __name__ == '__main__':
     unittest.main()

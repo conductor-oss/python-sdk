@@ -1,0 +1,1 @@
+"""Worker discovery example package"""

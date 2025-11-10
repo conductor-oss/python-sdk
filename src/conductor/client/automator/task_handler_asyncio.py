@@ -15,6 +15,7 @@ from conductor.client.configuration.settings.metrics_settings import MetricsSett
 from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.worker.worker import Worker
 from conductor.client.worker.worker_interface import WorkerInterface
+from conductor.client.worker.worker_config import resolve_worker_config
 
 # Import decorator registry from existing module
 from conductor.client.automator.task_handler import (
@@ -127,25 +128,36 @@ class TaskHandlerAsyncIO:
         if scan_for_annotated_workers:
             for (task_def_name, domain), record in _decorated_functions.items():
                 fn = record["func"]
-                worker_id = record["worker_id"]
-                poll_interval = record["poll_interval"]
-                thread_count = record.get("thread_count", 1)
-                register_task_def = record.get("register_task_def", False)
-                poll_timeout = record.get("poll_timeout", 100)
-                lease_extend_enabled = record.get("lease_extend_enabled", True)
+
+                # Get code-level configuration from decorator
+                code_config = {
+                    'poll_interval': record["poll_interval"],
+                    'domain': domain,
+                    'worker_id': record["worker_id"],
+                    'thread_count': record.get("thread_count", 1),
+                    'register_task_def': record.get("register_task_def", False),
+                    'poll_timeout': record.get("poll_timeout", 100),
+                    'lease_extend_enabled': record.get("lease_extend_enabled", True)
+                }
+
+                # Resolve configuration with environment variable overrides
+                resolved_config = resolve_worker_config(
+                    worker_name=task_def_name,
+                    **code_config
+                )
 
                 worker = Worker(
                     task_definition_name=task_def_name,
                     execute_function=fn,
-                    worker_id=worker_id,
-                    domain=domain,
-                    poll_interval=poll_interval,
-                    thread_count=thread_count,
-                    register_task_def=register_task_def,
-                    poll_timeout=poll_timeout,
-                    lease_extend_enabled=lease_extend_enabled
+                    worker_id=resolved_config['worker_id'],
+                    domain=resolved_config['domain'],
+                    poll_interval=resolved_config['poll_interval'],
+                    thread_count=resolved_config['thread_count'],
+                    register_task_def=resolved_config['register_task_def'],
+                    poll_timeout=resolved_config['poll_timeout'],
+                    lease_extend_enabled=resolved_config['lease_extend_enabled']
                 )
-                logger.info("Created worker with name=%s and domain=%s", task_def_name, domain)
+                logger.info("Created worker with name=%s and domain=%s", task_def_name, resolved_config['domain'])
                 workers.append(worker)
 
         # Create task runners
@@ -165,7 +177,63 @@ class TaskHandlerAsyncIO:
         self._metrics_task: Optional[asyncio.Task] = None
         self._running = False
 
-        logger.info("TaskHandlerAsyncIO initialized with %d workers", len(self.task_runners))
+        # Print worker summary
+        self._print_worker_summary()
+
+    def _print_worker_summary(self):
+        """Print detailed information about registered workers"""
+        import asyncio
+        import inspect
+
+        if not self.task_runners:
+            print("No workers registered")
+            return
+
+        print("=" * 80)
+        print(f"TaskHandlerAsyncIO - {len(self.task_runners)} worker(s) | Server: {self.configuration.host} | V2 API: {'enabled' if self.use_v2_api else 'disabled'}")
+        print("=" * 80)
+
+        for idx, task_runner in enumerate(self.task_runners, 1):
+            worker = task_runner.worker
+            task_name = worker.get_task_definition_name()
+            domain = worker.domain if worker.domain else None
+            poll_interval = worker.poll_interval
+            thread_count = worker.thread_count if hasattr(worker, 'thread_count') else 1
+            poll_timeout = worker.poll_timeout if hasattr(worker, 'poll_timeout') else 100
+            lease_extend = worker.lease_extend_enabled if hasattr(worker, 'lease_extend_enabled') else True
+
+            # Get function details - handle both new API (_execute_function/execute_function) and old API (execute method)
+            func = None
+            if hasattr(worker, '_execute_function'):
+                func = worker._execute_function
+            elif hasattr(worker, 'execute_function'):
+                func = worker.execute_function
+            elif hasattr(worker, 'execute'):
+                func = worker.execute
+
+            if func:
+                is_async = asyncio.iscoroutinefunction(func)
+                func_type = "async" if is_async else "sync "
+
+                # Get module and function name
+                try:
+                    module_name = inspect.getmodule(func).__name__
+                    func_name = func.__name__
+                    source_location = f"{module_name}.{func_name}"
+                except:
+                    source_location = func.__name__ if hasattr(func, '__name__') else "unknown"
+            else:
+                func_type = "sync "
+                source_location = "unknown"
+
+            # Build single-line parsable format
+            domain_str = f" | domain={domain}" if domain else ""
+            lease_str = "Y" if lease_extend else "N"
+
+            print(f"  [{idx:2d}] {task_name} | type={func_type} | concurrency={thread_count} | poll_interval={poll_interval}ms | poll_timeout={poll_timeout}ms | lease_extension={lease_str} | source={source_location}{domain_str}")
+
+        print("=" * 80)
+        print()
 
     async def __aenter__(self):
         """Async context manager entry"""

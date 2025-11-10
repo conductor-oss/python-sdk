@@ -1,7 +1,7 @@
 # Orkes Conductor Examples
 
 Examples in this folder uses features that are available in the Orkes Conductor.
-To run these examples, you need an account on Playground (https://play.orkes.io) or an Orkes Cloud account. 
+To run these examples, you need an account on Playground (https://developer.orkescloud.com) or an Orkes Cloud account. 
 
 ### Setup SDK
 
@@ -12,7 +12,7 @@ python3 -m pip install conductor-python
 ### Add environment variables pointing to the conductor server
 
 ```shell
-export CONDUCTOR_SERVER_URL=http://play.orkes.io/api
+export CONDUCTOR_SERVER_URL=http://developer.orkescloud.com/api
 export CONDUCTOR_AUTH_KEY=YOUR_AUTH_KEY
 export CONDUCTOR_AUTH_SECRET=YOUR_AUTH_SECRET
 ```

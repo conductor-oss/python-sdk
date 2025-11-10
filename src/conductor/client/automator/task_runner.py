@@ -6,11 +6,13 @@ import traceback
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
+from conductor.client.context.task_context import _set_task_context, _clear_task_context, TaskInProgress
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api_client import ApiClient
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
+from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.http.rest import AuthorizationException
 from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.worker.worker_interface import WorkerInterface
@@ -169,9 +171,60 @@ class TaskRunner:
             task.workflow_instance_id,
             task_definition_name
         )
+
+        # Create initial task result for context
+        initial_task_result = TaskResult(
+            task_id=task.task_id,
+            workflow_instance_id=task.workflow_instance_id,
+            worker_id=self.worker.get_identity()
+        )
+
+        # Set task context (similar to AsyncIO implementation)
+        _set_task_context(task, initial_task_result)
+
         try:
             start_time = time.time()
-            task_result = self.worker.execute(task)
+            task_output = self.worker.execute(task)
+
+            # Handle different return types
+            if isinstance(task_output, TaskResult):
+                # Already a TaskResult - use as-is
+                task_result = task_output
+            elif isinstance(task_output, TaskInProgress):
+                # Long-running task - create IN_PROGRESS result
+                task_result = TaskResult(
+                    task_id=task.task_id,
+                    workflow_instance_id=task.workflow_instance_id,
+                    worker_id=self.worker.get_identity()
+                )
+                task_result.status = TaskResultStatus.IN_PROGRESS
+                task_result.callback_after_seconds = task_output.callback_after_seconds
+                task_result.output_data = task_output.output
+            else:
+                # Regular return value - worker.execute() should have returned TaskResult
+                # but if it didn't, treat the output as TaskResult
+                if hasattr(task_output, 'status'):
+                    task_result = task_output
+                else:
+                    # Shouldn't happen, but handle gracefully
+                    logger.warning(
+                        "Worker returned unexpected type: %s, wrapping in TaskResult",
+                        type(task_output)
+                    )
+                    task_result = TaskResult(
+                        task_id=task.task_id,
+                        workflow_instance_id=task.workflow_instance_id,
+                        worker_id=self.worker.get_identity()
+                    )
+                    task_result.status = TaskResultStatus.COMPLETED
+                    if isinstance(task_output, dict):
+                        task_result.output_data = task_output
+                    else:
+                        task_result.output_data = {"result": task_output}
+
+            # Merge context modifications (logs, callback_after, etc.)
+            self.__merge_context_modifications(task_result, initial_task_result)
+
             finish_time = time.time()
             time_spent = finish_time - start_time
             if self.metrics_collector is not None:
@@ -211,7 +264,44 @@ class TaskRunner:
                 task_definition_name,
                 traceback.format_exc()
             )
+        finally:
+            # Always clear task context after execution
+            _clear_task_context()
+
         return task_result
+
+    def __merge_context_modifications(self, task_result: TaskResult, context_result: TaskResult) -> None:
+        """
+        Merge modifications made via TaskContext into the final task result.
+
+        This allows workers to use TaskContext.add_log(), set_callback_after(), etc.
+        and have those modifications reflected in the final result.
+
+        Args:
+            task_result: The task result to merge into
+            context_result: The context result with modifications
+        """
+        # Merge logs
+        if hasattr(context_result, 'logs') and context_result.logs:
+            if not hasattr(task_result, 'logs') or task_result.logs is None:
+                task_result.logs = []
+            task_result.logs.extend(context_result.logs)
+
+        # Merge callback_after_seconds (context takes precedence if both set)
+        if hasattr(context_result, 'callback_after_seconds') and context_result.callback_after_seconds:
+            if not task_result.callback_after_seconds:
+                task_result.callback_after_seconds = context_result.callback_after_seconds
+
+        # Merge output_data if context set it (shouldn't normally happen, but handle it)
+        if (hasattr(context_result, 'output_data') and
+            context_result.output_data and
+            not isinstance(task_result.output_data, dict)):
+            if hasattr(task_result, 'output_data') and task_result.output_data:
+                # Merge both dicts (task_result takes precedence)
+                merged_output = {**context_result.output_data, **task_result.output_data}
+                task_result.output_data = merged_output
+            else:
+                task_result.output_data = context_result.output_data
 
     def __update_task(self, task_result: TaskResult):
         if not isinstance(task_result, TaskResult):

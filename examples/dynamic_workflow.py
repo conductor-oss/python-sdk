@@ -24,7 +24,7 @@ def send_email(email: str, subject: str, body: str):
 
 def main():
     # defaults to reading the configuration using following env variables
-    # CONDUCTOR_SERVER_URL : conductor server e.g. https://play.orkes.io/api
+    # CONDUCTOR_SERVER_URL : conductor server e.g. https://developer.orkescloud.com/api
     # CONDUCTOR_AUTH_KEY : API Authentication Key
     # CONDUCTOR_AUTH_SECRET: API Auth Secret
     api_config = Configuration()

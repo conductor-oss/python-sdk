@@ -14,17 +14,18 @@ def execute_shell(command: str, args: List[str]) -> str:
 
     return str(result.stdout)
 
+
 @worker_task(task_definition_name='task_with_retries2')
 def execute_shell() -> str:
     return "hello"
 
+
 def main():
     # defaults to reading the configuration using following env variables
-    # CONDUCTOR_SERVER_URL : conductor server e.g. https://play.orkes.io/api
+    # CONDUCTOR_SERVER_URL : conductor server e.g. https://developer.orkescloud.com/api
     # CONDUCTOR_AUTH_KEY : API Authentication Key
     # CONDUCTOR_AUTH_SECRET: API Auth Secret
     api_config = Configuration()
-
 
     task_handler = TaskHandler(configuration=api_config)
     task_handler.start_processes()

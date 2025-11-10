@@ -101,9 +101,20 @@ class Worker(WorkerInterface):
                         task_input[input_name] = None
                 task_output = self.execute_function(**task_input)
 
+            # If the function is async (coroutine), run it synchronously using asyncio.run()
+            # This allows async workers to work in multiprocessing mode
+            if inspect.iscoroutine(task_output):
+                import asyncio
+                task_output = asyncio.run(task_output)
+
             if isinstance(task_output, TaskResult):
                 task_output.task_id = task.task_id
                 task_output.workflow_instance_id = task.workflow_instance_id
+                return task_output
+            # Import here to avoid circular dependency
+            from conductor.client.context.task_context import TaskInProgress
+            if isinstance(task_output, TaskInProgress):
+                # Return TaskInProgress as-is for TaskRunner to handle
                 return task_output
             else:
                 task_result.status = TaskResultStatus.COMPLETED
