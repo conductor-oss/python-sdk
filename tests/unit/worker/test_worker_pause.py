@@ -251,7 +251,7 @@ class TestWorkerPause(unittest.TestCase):
             runner.http_client.get = Mock()
 
             # Poll should return empty without HTTP call
-            tasks = await runner.poll_and_execute_task()
+            tasks = await runner._poll_tasks_from_server(count=1)
 
             # Should return empty list
             self.assertEqual(tasks, [])
@@ -303,7 +303,7 @@ class TestWorkerPause(unittest.TestCase):
             runner.http_client.get = AsyncMock(return_value=mock_response)
 
             # Poll should make HTTP call
-            await runner.poll_and_execute_task()
+            await runner._poll_tasks_from_server(count=1)
 
             # HTTP client should be called
             runner.http_client.get.assert_called()
