@@ -7,3 +7,4 @@ astor >= 0.8.1
 shortuuid >= 1.0.11
 dacite >= 1.8.1
 deprecated >= 1.2.14
+httpx >=0.26.0
