@@ -27,9 +27,9 @@ class ApiClientAdapter(ApiClient):
             header_name, header_value
         )
         self.cookie = cookie
-        self._ApiClient__refresh_auth_token()
 
-        # Initialize 401 policy handler
+        # Initialize 401 policy handler BEFORE calling refresh_auth_token
+        # because refresh_auth_token can trigger call_api which needs auth_401_handler
         auth_401_policy = Auth401Policy(
             max_attempts=self.configuration.auth_401_max_attempts,
             base_delay_ms=self.configuration.auth_401_base_delay_ms,
@@ -38,6 +38,9 @@ class ApiClientAdapter(ApiClient):
             stop_behavior=self.configuration.auth_401_stop_behavior,
         )
         self.auth_401_handler = Auth401Handler(auth_401_policy)
+
+        # Call refresh_auth_token AFTER auth_401_handler is initialized
+        self._ApiClient__refresh_auth_token()
 
     def call_api(
         self,
