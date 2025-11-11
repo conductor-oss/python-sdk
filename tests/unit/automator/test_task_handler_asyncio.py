@@ -351,7 +351,7 @@ class TestTaskHandlerAsyncIO(unittest.TestCase):
         self.run_async(handler.start())
 
         async def stop_after_delay():
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.01)  # Reduced from 0.1
             await handler.stop()
 
         async def wait_and_measure():
@@ -365,8 +365,8 @@ class TestTaskHandlerAsyncIO(unittest.TestCase):
 
         elapsed = self.run_async(wait_and_measure())
 
-        # Should have waited for at least 0.1 seconds
-        self.assertGreater(elapsed, 0.05)
+        # Should have waited for at least 0.01 seconds
+        self.assertGreater(elapsed, 0.005)
 
     def test_join_tasks_is_alias_for_wait(self):
         """Test that join_tasks() works same as wait()"""
@@ -467,7 +467,7 @@ class TestTaskHandlerAsyncIO(unittest.TestCase):
 
         # Run for short time
         async def run_briefly():
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.01)  # Reduced from 0.1
 
         self.run_async(run_briefly())
 
@@ -552,7 +552,7 @@ class TestTaskHandlerAsyncIO(unittest.TestCase):
 
         # Let it run one cycle
         async def run_one_cycle():
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.01)  # Reduced from 0.1
 
         self.run_async(run_one_cycle())
 
