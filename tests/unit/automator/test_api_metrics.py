@@ -84,20 +84,22 @@ class TestAPIMetrics(unittest.TestCase):
 
     def test_api_timing_successful_poll(self):
         """Test API request timing is recorded on successful poll"""
-        runner = TaskRunnerAsyncIO(
-            worker=self.worker,
-            configuration=self.config,
-            metrics_settings=self.metrics_settings
-        )
-
         # Mock successful HTTP response
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = []
 
         async def run_test():
-            runner.http_client = AsyncMock()
-            runner.http_client.get = AsyncMock(return_value=mock_response)
+            # Create mock HTTP client to avoid real client initialization
+            mock_http_client = AsyncMock()
+            mock_http_client.get = AsyncMock(return_value=mock_response)
+
+            runner = TaskRunnerAsyncIO(
+                worker=self.worker,
+                configuration=self.config,
+                metrics_settings=self.metrics_settings,
+                http_client=mock_http_client
+            )
 
             # Call poll using the internal method
             await runner._poll_tasks_from_server(count=1)
@@ -117,20 +119,21 @@ class TestAPIMetrics(unittest.TestCase):
 
     def test_api_timing_failed_poll_with_status_code(self):
         """Test API request timing is recorded on failed poll with status code"""
-        runner = TaskRunnerAsyncIO(
-            worker=self.worker,
-            configuration=self.config,
-            metrics_settings=self.metrics_settings
-        )
-
         # Mock HTTP error with response
         mock_response = Mock()
         mock_response.status_code = 500
         error = httpx.HTTPStatusError("Server error", request=Mock(), response=mock_response)
 
         async def run_test():
-            runner.http_client = AsyncMock()
-            runner.http_client.get = AsyncMock(side_effect=error)
+            mock_http_client = AsyncMock()
+            mock_http_client.get = AsyncMock(side_effect=error)
+
+            runner = TaskRunnerAsyncIO(
+                worker=self.worker,
+                configuration=self.config,
+                metrics_settings=self.metrics_settings,
+                http_client=mock_http_client
+            )
 
             # Call poll (should handle exception)
             try:
@@ -150,18 +153,19 @@ class TestAPIMetrics(unittest.TestCase):
 
     def test_api_timing_failed_poll_without_status_code(self):
         """Test API request timing with generic error (no response attribute)"""
-        runner = TaskRunnerAsyncIO(
-            worker=self.worker,
-            configuration=self.config,
-            metrics_settings=self.metrics_settings
-        )
-
         # Mock generic network error
         error = httpx.ConnectError("Connection refused")
 
         async def run_test():
-            runner.http_client = AsyncMock()
-            runner.http_client.get = AsyncMock(side_effect=error)
+            mock_http_client = AsyncMock()
+            mock_http_client.get = AsyncMock(side_effect=error)
+
+            runner = TaskRunnerAsyncIO(
+                worker=self.worker,
+                configuration=self.config,
+                metrics_settings=self.metrics_settings,
+                http_client=mock_http_client
+            )
 
             # Call poll
             try:
@@ -180,13 +184,6 @@ class TestAPIMetrics(unittest.TestCase):
 
     def test_api_timing_successful_update(self):
         """Test API request timing is recorded on successful task update"""
-        runner = TaskRunnerAsyncIO(
-            worker=self.worker,
-            configuration=self.config,
-            metrics_settings=self.metrics_settings
-        )
-
-
         # Create task result
         task_result = TaskResult(
             task_id='task1',
@@ -201,8 +198,15 @@ class TestAPIMetrics(unittest.TestCase):
         mock_response.text = ''
 
         async def run_test():
-            runner.http_client = AsyncMock()
-            runner.http_client.post = AsyncMock(return_value=mock_response)
+            mock_http_client = AsyncMock()
+            mock_http_client.post = AsyncMock(return_value=mock_response)
+
+            runner = TaskRunnerAsyncIO(
+                worker=self.worker,
+                configuration=self.config,
+                metrics_settings=self.metrics_settings,
+                http_client=mock_http_client
+            )
 
             # Call update (only needs task_result)
             await runner._update_task(task_result)
@@ -220,12 +224,6 @@ class TestAPIMetrics(unittest.TestCase):
 
     def test_api_timing_failed_update(self):
         """Test API request timing is recorded on failed task update"""
-        runner = TaskRunnerAsyncIO(
-            worker=self.worker,
-            configuration=self.config,
-            metrics_settings=self.metrics_settings
-        )
-
         # Create task result with required fields
         task_result = TaskResult(
             task_id='task1',
@@ -243,9 +241,16 @@ class TestAPIMetrics(unittest.TestCase):
         mock_success_response.text = ''
 
         async def run_test():
-            runner.http_client = AsyncMock()
+            mock_http_client = AsyncMock()
             # First call fails with 503, second call succeeds (to avoid 14s of retries)
-            runner.http_client.post = AsyncMock(side_effect=[error, mock_success_response])
+            mock_http_client.post = AsyncMock(side_effect=[error, mock_success_response])
+
+            runner = TaskRunnerAsyncIO(
+                worker=self.worker,
+                configuration=self.config,
+                metrics_settings=self.metrics_settings,
+                http_client=mock_http_client
+            )
 
             # Mock asyncio.sleep to avoid waiting during retry
             with patch('asyncio.sleep', new_callable=AsyncMock):
@@ -265,20 +270,20 @@ class TestAPIMetrics(unittest.TestCase):
 
     def test_api_timing_multiple_requests(self):
         """Test API timing tracks multiple requests correctly"""
-        runner = TaskRunnerAsyncIO(
-            worker=self.worker,
-            configuration=self.config,
-            metrics_settings=self.metrics_settings
-        )
-
-
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = []
 
         async def run_test():
-            runner.http_client = AsyncMock()
-            runner.http_client.get = AsyncMock(return_value=mock_response)
+            mock_http_client = AsyncMock()
+            mock_http_client.get = AsyncMock(return_value=mock_response)
+
+            runner = TaskRunnerAsyncIO(
+                worker=self.worker,
+                configuration=self.config,
+                metrics_settings=self.metrics_settings,
+                http_client=mock_http_client
+            )
 
             # Poll 3 times
             await runner._poll_tasks_from_server(count=1)
@@ -296,18 +301,19 @@ class TestAPIMetrics(unittest.TestCase):
 
     def test_api_timing_without_metrics_collector(self):
         """Test that API requests work without metrics collector"""
-        runner = TaskRunnerAsyncIO(
-            worker=self.worker,
-            configuration=self.config
-        )
-
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = []
 
         async def run_test():
-            runner.http_client = AsyncMock()
-            runner.http_client.get = AsyncMock(return_value=mock_response)
+            mock_http_client = AsyncMock()
+            mock_http_client.get = AsyncMock(return_value=mock_response)
+
+            runner = TaskRunnerAsyncIO(
+                worker=self.worker,
+                configuration=self.config,
+                http_client=mock_http_client
+            )
 
             # Should not raise exception
             await runner._poll_tasks_from_server(count=1)
@@ -319,26 +325,27 @@ class TestAPIMetrics(unittest.TestCase):
 
     def test_api_timing_precision(self):
         """Test that API timing has sufficient precision"""
-        runner = TaskRunnerAsyncIO(
-            worker=self.worker,
-            configuration=self.config,
-            metrics_settings=self.metrics_settings
-        )
-
         # Mock fast response
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = []
 
         async def run_test():
-            runner.http_client = AsyncMock()
+            mock_http_client = AsyncMock()
 
             # Add tiny delay to simulate fast request
             async def mock_get(*args, **kwargs):
                 await asyncio.sleep(0.001)  # 1ms
                 return mock_response
 
-            runner.http_client.get = mock_get
+            mock_http_client.get = mock_get
+
+            runner = TaskRunnerAsyncIO(
+                worker=self.worker,
+                configuration=self.config,
+                metrics_settings=self.metrics_settings,
+                http_client=mock_http_client
+            )
 
             await runner._poll_tasks_from_server(count=1)
 
@@ -354,20 +361,20 @@ class TestAPIMetrics(unittest.TestCase):
 
     def test_api_timing_auth_error_401(self):
         """Test API timing on 401 authentication error"""
-        runner = TaskRunnerAsyncIO(
-            worker=self.worker,
-            configuration=self.config,
-            metrics_settings=self.metrics_settings
-        )
-
-
         mock_response = Mock()
         mock_response.status_code = 401
         error = httpx.HTTPStatusError("Unauthorized", request=Mock(), response=mock_response)
 
         async def run_test():
-            runner.http_client = AsyncMock()
-            runner.http_client.get = AsyncMock(side_effect=error)
+            mock_http_client = AsyncMock()
+            mock_http_client.get = AsyncMock(side_effect=error)
+
+            runner = TaskRunnerAsyncIO(
+                worker=self.worker,
+                configuration=self.config,
+                metrics_settings=self.metrics_settings,
+                http_client=mock_http_client
+            )
 
             try:
                 await runner._poll_tasks_from_server(count=1)
@@ -382,18 +389,18 @@ class TestAPIMetrics(unittest.TestCase):
 
     def test_api_timing_timeout_error(self):
         """Test API timing on timeout error"""
-        runner = TaskRunnerAsyncIO(
-            worker=self.worker,
-            configuration=self.config,
-            metrics_settings=self.metrics_settings
-        )
-
-
         error = httpx.TimeoutException("Request timeout")
 
         async def run_test():
-            runner.http_client = AsyncMock()
-            runner.http_client.get = AsyncMock(side_effect=error)
+            mock_http_client = AsyncMock()
+            mock_http_client.get = AsyncMock(side_effect=error)
+
+            runner = TaskRunnerAsyncIO(
+                worker=self.worker,
+                configuration=self.config,
+                metrics_settings=self.metrics_settings,
+                http_client=mock_http_client
+            )
 
             try:
                 await runner._poll_tasks_from_server(count=1)
@@ -408,20 +415,20 @@ class TestAPIMetrics(unittest.TestCase):
 
     def test_api_timing_concurrent_requests(self):
         """Test API timing with concurrent requests from multiple coroutines"""
-        runner = TaskRunnerAsyncIO(
-            worker=self.worker,
-            configuration=self.config,
-            metrics_settings=self.metrics_settings
-        )
-
-
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = []
 
         async def run_test():
-            runner.http_client = AsyncMock()
-            runner.http_client.get = AsyncMock(return_value=mock_response)
+            mock_http_client = AsyncMock()
+            mock_http_client.get = AsyncMock(return_value=mock_response)
+
+            runner = TaskRunnerAsyncIO(
+                worker=self.worker,
+                configuration=self.config,
+                metrics_settings=self.metrics_settings,
+                http_client=mock_http_client
+            )
 
             # Run 5 concurrent polls
             await asyncio.gather(*[
