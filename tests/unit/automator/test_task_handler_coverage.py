@@ -48,6 +48,16 @@ class TestTaskHandlerInitialization(unittest.TestCase):
     def tearDown(self):
         # Clean up decorated functions
         _decorated_functions.clear()
+        # Clean up any lingering processes
+        import multiprocessing
+        for process in multiprocessing.active_children():
+            try:
+                process.terminate()
+                process.join(timeout=0.5)
+                if process.is_alive():
+                    process.kill()
+            except Exception:
+                pass
 
     @patch('conductor.client.automator.task_handler._setup_logging_queue')
     @patch('conductor.client.automator.task_handler.importlib.import_module')
@@ -1154,6 +1164,27 @@ class TestEdgeCases(unittest.TestCase):
 
         # Should not raise exception when metrics_provider_process is None
         handler.join_processes()
+
+
+def tearDownModule():
+    """Module-level teardown to ensure all processes are cleaned up."""
+    import multiprocessing
+    import time
+
+    # Give a moment for processes to clean up naturally
+    time.sleep(0.1)
+
+    # Force cleanup of any remaining child processes
+    for process in multiprocessing.active_children():
+        try:
+            if process.is_alive():
+                process.terminate()
+                process.join(timeout=1)
+                if process.is_alive():
+                    process.kill()
+                    process.join(timeout=0.5)
+        except Exception:
+            pass
 
 
 if __name__ == '__main__':
