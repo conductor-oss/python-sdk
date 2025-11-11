@@ -259,7 +259,8 @@ class TestSemaphoreBatchPolling(unittest.TestCase):
         worker = SimpleWorker()
         worker.thread_count = 2
 
-        runner = TaskRunnerAsyncIO(worker, self.config)
+        mock_http_client = AsyncMock()
+        runner = TaskRunnerAsyncIO(worker, self.config, http_client=mock_http_client)
 
         async def test():
             # Hold all permits
@@ -449,7 +450,7 @@ class TestConcurrency(unittest.TestCase):
 
         async def mock_execute(task):
             execution_count.append(1)
-            await asyncio.sleep(0.1)  # Simulate work
+            await asyncio.sleep(0.01)  # Simulate work
             execution_count.pop()
             return TaskResult(
                 task_id=task.task_id,
@@ -969,7 +970,7 @@ class TestImmediateExecution(unittest.TestCase):
             await runner._try_immediate_execution(task)
 
             # Give background task time to execute and fail
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.02)
 
             # Permit should be released even though task failed
             final_permits = runner._semaphore._value
@@ -1142,7 +1143,7 @@ class TestImmediateExecution(unittest.TestCase):
 
         # Create a slow worker so we can observe background tasks before completion
         async def slow_worker(task):
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.03)
             return {'result': 'done'}
 
         worker = Worker(
@@ -1174,13 +1175,13 @@ class TestImmediateExecution(unittest.TestCase):
             await runner._try_immediate_execution(task2)
 
             # Give time to start (but not complete)
-            await asyncio.sleep(0.02)
+            await asyncio.sleep(0.01)
 
             # Should have 2 background tasks
             self.assertEqual(len(runner._background_tasks), 2)
 
             # Wait for tasks to complete
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.05)
 
             # Background tasks should be cleaned up after completion
             # (done_callback removes them from the set)
