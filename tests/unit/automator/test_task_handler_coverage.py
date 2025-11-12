@@ -116,7 +116,7 @@ class TestTaskHandlerInitialization(unittest.TestCase):
         self.assertEqual(len(handler.task_runner_processes), 3)
 
     @patch('conductor.client.automator.task_handler._setup_logging_queue')
-    @patch('conductor.client.automator.task_handler.importlib.import_module')
+    @patch('importlib.import_module')
     def test_initialization_with_import_modules(self, mock_import, mock_logging):
         """Test initialization with custom module imports."""
         mock_queue = Mock()
@@ -579,17 +579,21 @@ class TestTaskHandlerContextManager(unittest.TestCase):
         _decorated_functions.clear()
 
     @patch('conductor.client.automator.task_handler._setup_logging_queue')
-    @patch('conductor.client.automator.task_handler.importlib.import_module')
+    @patch('importlib.import_module')
     @patch('conductor.client.automator.task_handler.Process')
     def test_context_manager_enter(self, mock_process_class, mock_import, mock_logging):
         """Test context manager __enter__ method."""
         mock_queue = Mock()
         mock_logger_process = Mock()
+        mock_logger_process.terminate = Mock()
+        mock_logger_process.is_alive = Mock(return_value=False)
         mock_logging.return_value = (mock_logger_process, mock_queue)
 
         # Mock Process for task runners
         mock_process = Mock()
         mock_process.terminate = Mock()
+        mock_process.kill = Mock()
+        mock_process.is_alive = Mock(return_value=False)
         mock_process_class.return_value = mock_process
 
         worker = ClassWorker('test_task')
@@ -602,13 +606,23 @@ class TestTaskHandlerContextManager(unittest.TestCase):
         # Override the queue, logger_process, and metrics_provider_process with fresh mocks
         handler.queue = Mock()
         handler.logger_process = Mock()
+        handler.logger_process.terminate = Mock()
+        handler.logger_process.is_alive = Mock(return_value=False)
         handler.metrics_provider_process = Mock()
+        handler.metrics_provider_process.terminate = Mock()
+        handler.metrics_provider_process.is_alive = Mock(return_value=False)
+
+        # Also need to ensure task_runner_processes have proper mocks
+        for proc in handler.task_runner_processes:
+            proc.terminate = Mock()
+            proc.kill = Mock()
+            proc.is_alive = Mock(return_value=False)
 
         with handler as h:
             self.assertIs(h, handler)
 
     @patch('conductor.client.automator.task_handler._setup_logging_queue')
-    @patch('conductor.client.automator.task_handler.importlib.import_module')
+    @patch('importlib.import_module')
     def test_context_manager_exit(self, mock_import, mock_logging):
         """Test context manager __exit__ method."""
         mock_queue = Mock()
@@ -648,6 +662,7 @@ class TestSetupLoggingQueue(unittest.TestCase):
         mock_queue_class.return_value = mock_queue
 
         mock_process = Mock()
+        mock_process.start = Mock()  # Ensure start is a Mock
         mock_process_class.return_value = mock_process
 
         config = Configuration()
@@ -658,7 +673,7 @@ class TestSetupLoggingQueue(unittest.TestCase):
         config.apply_logging_config.assert_called_once()
         # Verify Process was called and start was invoked on the returned mock
         mock_process_class.assert_called_once()
-        self.assertTrue(mock_process.start.called)
+        mock_process.start.assert_called_once()
         self.assertEqual(queue, mock_queue)
         self.assertEqual(logger_process, mock_process)
 
@@ -670,13 +685,14 @@ class TestSetupLoggingQueue(unittest.TestCase):
         mock_queue_class.return_value = mock_queue
 
         mock_process = Mock()
+        mock_process.start = Mock()  # Ensure start is a Mock
         mock_process_class.return_value = mock_process
 
         logger_process, queue = _setup_logging_queue(None)
 
         # Verify Process was called and start was invoked on the returned mock
         mock_process_class.assert_called_once()
-        self.assertTrue(mock_process.start.called)
+        mock_process.start.assert_called_once()
         self.assertEqual(queue, mock_queue)
         self.assertEqual(logger_process, mock_process)
 
