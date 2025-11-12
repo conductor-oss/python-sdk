@@ -668,7 +668,8 @@ class TestSetupLoggingQueue(unittest.TestCase):
         config = Configuration()
         config.apply_logging_config = Mock()
 
-        logger_process, queue = _setup_logging_queue(config)
+        # Call through module to ensure patch is applied
+        logger_process, queue = task_handler_module._setup_logging_queue(config)
 
         config.apply_logging_config.assert_called_once()
         # Verify Process was called and start was invoked on the returned mock
@@ -688,7 +689,8 @@ class TestSetupLoggingQueue(unittest.TestCase):
         mock_process.start = Mock()  # Ensure start is a Mock
         mock_process_class.return_value = mock_process
 
-        logger_process, queue = _setup_logging_queue(None)
+        # Call through module to ensure patch is applied
+        logger_process, queue = task_handler_module._setup_logging_queue(None)
 
         # Verify Process was called and start was invoked on the returned mock
         mock_process_class.assert_called_once()
