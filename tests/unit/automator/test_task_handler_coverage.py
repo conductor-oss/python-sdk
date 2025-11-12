@@ -654,49 +654,47 @@ class TestTaskHandlerContextManager(unittest.TestCase):
 class TestSetupLoggingQueue(unittest.TestCase):
     """Test logging queue setup."""
 
-    @patch('conductor.client.automator.task_handler.Process')
-    @patch('conductor.client.automator.task_handler.Queue')
-    def test_setup_logging_queue_with_configuration(self, mock_queue_class, mock_process_class):
+    def test_setup_logging_queue_with_configuration(self):
         """Test logging queue setup with configuration."""
-        mock_queue = Mock()
-        mock_queue_class.return_value = mock_queue
-
-        mock_process = Mock()
-        mock_process.start = Mock()  # Ensure start is a Mock
-        mock_process_class.return_value = mock_process
-
         config = Configuration()
         config.apply_logging_config = Mock()
 
-        # Call through module to ensure patch is applied
+        # Call _setup_logging_queue which creates real Process and Queue
         logger_process, queue = task_handler_module._setup_logging_queue(config)
 
-        config.apply_logging_config.assert_called_once()
-        # Verify Process was called and start was invoked on the returned mock
-        mock_process_class.assert_called_once()
-        mock_process.start.assert_called_once()
-        self.assertEqual(queue, mock_queue)
-        self.assertEqual(logger_process, mock_process)
+        try:
+            # Verify configuration was applied
+            config.apply_logging_config.assert_called_once()
 
-    @patch('conductor.client.automator.task_handler.Process')
-    @patch('conductor.client.automator.task_handler.Queue')
-    def test_setup_logging_queue_without_configuration(self, mock_queue_class, mock_process_class):
+            # Verify process and queue were created
+            self.assertIsNotNone(logger_process)
+            self.assertIsNotNone(queue)
+
+            # Verify process is running
+            self.assertTrue(logger_process.is_alive())
+        finally:
+            # Cleanup: terminate the process
+            if logger_process and logger_process.is_alive():
+                logger_process.terminate()
+                logger_process.join(timeout=1)
+
+    def test_setup_logging_queue_without_configuration(self):
         """Test logging queue setup without configuration."""
-        mock_queue = Mock()
-        mock_queue_class.return_value = mock_queue
-
-        mock_process = Mock()
-        mock_process.start = Mock()  # Ensure start is a Mock
-        mock_process_class.return_value = mock_process
-
-        # Call through module to ensure patch is applied
+        # Call with None configuration
         logger_process, queue = task_handler_module._setup_logging_queue(None)
 
-        # Verify Process was called and start was invoked on the returned mock
-        mock_process_class.assert_called_once()
-        mock_process.start.assert_called_once()
-        self.assertEqual(queue, mock_queue)
-        self.assertEqual(logger_process, mock_process)
+        try:
+            # Verify process and queue were created
+            self.assertIsNotNone(logger_process)
+            self.assertIsNotNone(queue)
+
+            # Verify process is running
+            self.assertTrue(logger_process.is_alive())
+        finally:
+            # Cleanup: terminate the process
+            if logger_process and logger_process.is_alive():
+                logger_process.terminate()
+                logger_process.join(timeout=1)
 
 
 class TestPlatformSpecificBehavior(unittest.TestCase):

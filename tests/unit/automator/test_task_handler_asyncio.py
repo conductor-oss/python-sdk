@@ -30,8 +30,18 @@ class TestTaskHandlerAsyncIO(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
+        # Patch httpx.AsyncClient to avoid real HTTP client creation delays
+        self.httpx_patcher = patch('conductor.client.automator.task_handler_asyncio.httpx.AsyncClient')
+        self.mock_async_client_class = self.httpx_patcher.start()
+
+        # Create a mock client instance
+        self.mock_http_client = AsyncMock()
+        self.mock_http_client.aclose = AsyncMock()
+        self.mock_async_client_class.return_value = self.mock_http_client
+
     def tearDown(self):
         logging.disable(logging.NOTSET)
+        self.httpx_patcher.stop()
         self.loop.close()
 
     def run_async(self, coro):
