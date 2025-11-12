@@ -252,8 +252,11 @@ class TestAPIMetrics(unittest.TestCase):
                 http_client=mock_http_client
             )
 
-            # Mock asyncio.sleep to avoid waiting during retry
-            with patch('asyncio.sleep', new_callable=AsyncMock):
+            # Reset counter before test
+            self.metrics_collector_mock.record_api_request_time.reset_mock()
+
+            # Mock asyncio.sleep in the task_runner_asyncio module to avoid waiting during retry
+            with patch('conductor.client.automator.task_runner_asyncio.asyncio.sleep', new_callable=AsyncMock):
                 # Call update - will fail once then succeed on retry
                 await runner._update_task(task_result)
 
@@ -285,13 +288,16 @@ class TestAPIMetrics(unittest.TestCase):
                 http_client=mock_http_client
             )
 
+            # Reset counter before test
+            self.metrics_collector_mock.record_api_request_time.reset_mock()
+
             # Poll 3 times
             await runner._poll_tasks_from_server(count=1)
             await runner._poll_tasks_from_server(count=1)
             await runner._poll_tasks_from_server(count=1)
 
             # Should have 3 API timing records
-            self.assertEqual(self.metrics_collector_mock.record_api_request_time.call_count,3)
+            self.assertEqual(self.metrics_collector_mock.record_api_request_time.call_count, 3)
 
             # All should be successful
             for call in self.metrics_collector_mock.record_api_request_time.call_args_list:

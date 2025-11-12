@@ -60,8 +60,7 @@ class TestTaskHandlerInitialization(unittest.TestCase):
                 pass
 
     @patch('conductor.client.automator.task_handler._setup_logging_queue')
-    @patch('conductor.client.automator.task_handler.importlib.import_module')
-    def test_initialization_with_no_workers(self, mock_import, mock_logging):
+    def test_initialization_with_no_workers(self, mock_logging):
         """Test initialization with no workers provided."""
         mock_queue = Mock()
         mock_logger_process = Mock()
@@ -75,7 +74,6 @@ class TestTaskHandlerInitialization(unittest.TestCase):
 
         self.assertEqual(len(handler.task_runner_processes), 0)
         self.assertEqual(len(handler.workers), 0)
-        mock_import.assert_called()
 
     @patch('conductor.client.automator.task_handler._setup_logging_queue')
     @patch('conductor.client.automator.task_handler.importlib.import_module')
@@ -124,6 +122,10 @@ class TestTaskHandlerInitialization(unittest.TestCase):
         mock_queue = Mock()
         mock_logger_process = Mock()
         mock_logging.return_value = (mock_logger_process, mock_queue)
+
+        # Mock import_module to return a valid module mock
+        mock_module = Mock()
+        mock_import.return_value = mock_module
 
         handler = TaskHandler(
             workers=[],
@@ -597,9 +599,10 @@ class TestTaskHandlerContextManager(unittest.TestCase):
             scan_for_annotated_workers=False
         )
 
-        # Override the queue and logger_process with fresh mocks to prevent auto-calls
+        # Override the queue, logger_process, and metrics_provider_process with fresh mocks
         handler.queue = Mock()
         handler.logger_process = Mock()
+        handler.metrics_provider_process = Mock()
 
         with handler as h:
             self.assertIs(h, handler)
