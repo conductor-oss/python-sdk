@@ -1,5 +1,6 @@
 from __future__ import annotations
 import abc
+import os
 import socket
 from typing import Union
 
@@ -9,6 +10,16 @@ from conductor.client.http.models.task_result import TaskResult
 DEFAULT_POLLING_INTERVAL = 100  # ms
 
 
+def _get_env_bool(key: str, default: bool = False) -> bool:
+    """Get boolean value from environment variable."""
+    value = os.getenv(key, '').lower()
+    if value in ('true', '1', 'yes'):
+        return True
+    elif value in ('false', '0', 'no'):
+        return False
+    return default
+
+
 class WorkerInterface(abc.ABC):
     def __init__(self, task_definition_name: Union[str, list]):
         self.task_definition_name = task_definition_name
@@ -16,6 +27,10 @@ class WorkerInterface(abc.ABC):
         self._task_definition_name_cache = None
         self._domain = None
         self._poll_interval = DEFAULT_POLLING_INTERVAL
+        self.thread_count = 1
+        self.register_task_def = False
+        self.poll_timeout = 100  # milliseconds
+        self.lease_extend_enabled = True
 
     @abc.abstractmethod
     def execute(self, task: Task) -> TaskResult:
@@ -99,8 +114,23 @@ class WorkerInterface(abc.ABC):
 
     def paused(self) -> bool:
         """
-        Override this method to pause the worker from polling.
+        Check if the worker is paused from polling.
+
+        Workers can be paused via environment variables:
+        - conductor.worker.all.paused=true - pauses all workers
+        - conductor.worker.<taskType>.paused=true - pauses specific worker
+
+        Override this method to implement custom pause logic.
         """
+        # Check task-specific pause first
+        task_name = self.get_task_definition_name()
+        if task_name and _get_env_bool(f'conductor.worker.{task_name}.paused'):
+            return True
+
+        # Check global pause
+        if _get_env_bool('conductor.worker.all.paused'):
+            return True
+
         return False
 
     @property

@@ -18,28 +18,28 @@ class TestConfiguration(unittest.TestCase):
 
     def test_initialization_with_base_url(self):
         configuration = Configuration(
-            base_url='https://play.orkes.io'
+            base_url='https://developer.orkescloud.com'
         )
         self.assertEqual(
             configuration.host,
-            'https://play.orkes.io/api'
+            'https://developer.orkescloud.com/api'
         )
 
     def test_initialization_with_server_api_url(self):
         configuration = Configuration(
-            server_api_url='https://play.orkes.io/api'
+            server_api_url='https://developer.orkescloud.com/api'
         )
         self.assertEqual(
             configuration.host,
-            'https://play.orkes.io/api'
+            'https://developer.orkescloud.com/api'
         )
 
     def test_initialization_with_basic_auth_server_api_url(self):
         configuration = Configuration(
-            server_api_url="https://user:password@play.orkes.io/api"
+            server_api_url="https://user:password@developer.orkescloud.com/api"
         )
         basic_auth = "user:password"
-        expected_host = f"https://{basic_auth}@play.orkes.io/api"
+        expected_host = f"https://{basic_auth}@developer.orkescloud.com/api"
         self.assertEqual(
             configuration.host, expected_host,
         )

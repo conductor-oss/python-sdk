@@ -54,6 +54,10 @@ class Worker(WorkerInterface):
                  poll_interval: Optional[float] = None,
                  domain: Optional[str] = None,
                  worker_id: Optional[str] = None,
+                 thread_count: int = 1,
+                 register_task_def: bool = False,
+                 poll_timeout: int = 100,
+                 lease_extend_enabled: bool = True
                  ) -> Self:
         super().__init__(task_definition_name)
         self.api_client = ApiClient()
@@ -67,6 +71,10 @@ class Worker(WorkerInterface):
         else:
             self.worker_id = deepcopy(worker_id)
         self.execute_function = deepcopy(execute_function)
+        self.thread_count = thread_count
+        self.register_task_def = register_task_def
+        self.poll_timeout = poll_timeout
+        self.lease_extend_enabled = lease_extend_enabled
 
     def execute(self, task: Task) -> TaskResult:
         task_input = {}
@@ -93,9 +101,20 @@ class Worker(WorkerInterface):
                         task_input[input_name] = None
                 task_output = self.execute_function(**task_input)
 
+            # If the function is async (coroutine), run it synchronously using asyncio.run()
+            # This allows async workers to work in multiprocessing mode
+            if inspect.iscoroutine(task_output):
+                import asyncio
+                task_output = asyncio.run(task_output)
+
             if isinstance(task_output, TaskResult):
                 task_output.task_id = task.task_id
                 task_output.workflow_instance_id = task.workflow_instance_id
+                return task_output
+            # Import here to avoid circular dependency
+            from conductor.client.context.task_context import TaskInProgress
+            if isinstance(task_output, TaskInProgress):
+                # Return TaskInProgress as-is for TaskRunner to handle
                 return task_output
             else:
                 task_result.status = TaskResultStatus.COMPLETED
@@ -126,9 +145,25 @@ class Worker(WorkerInterface):
             return task_result
         if not isinstance(task_result.output_data, dict):
             task_output = task_result.output_data
-            task_result.output_data = self.api_client.sanitize_for_serialization(task_output)
-            if not isinstance(task_result.output_data, dict):
-                task_result.output_data = {"result": task_result.output_data}
+            try:
+                task_result.output_data = self.api_client.sanitize_for_serialization(task_output)
+                if not isinstance(task_result.output_data, dict):
+                    task_result.output_data = {"result": task_result.output_data}
+            except (RecursionError, TypeError, AttributeError) as e:
+                # Object cannot be serialized (e.g., httpx.Response, requests.Response)
+                # Convert to string representation with helpful error message
+                logger.warning(
+                    "Task output of type %s could not be serialized: %s. "
+                    "Converting to string. Consider returning serializable data "
+                    "(e.g., response.json() instead of response object).",
+                    type(task_output).__name__,
+                    str(e)[:100]
+                )
+                task_result.output_data = {
+                    "result": str(task_output),
+                    "type": type(task_output).__name__,
+                    "error": "Object could not be serialized. Please return JSON-serializable data."
+                }
 
         return task_result
 

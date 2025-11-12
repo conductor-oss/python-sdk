@@ -12,6 +12,7 @@ from conductor.client.configuration.settings.metrics_settings import MetricsSett
 from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.worker.worker import Worker
 from conductor.client.worker.worker_interface import WorkerInterface
+from conductor.client.worker.worker_config import resolve_worker_config
 
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(
@@ -33,14 +34,51 @@ if not _mp_fork_set:
     if platform == "darwin":
         os.environ["no_proxy"] = "*"
 
-def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func):
+def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func,
+                         thread_count: int = 1, register_task_def: bool = False,
+                         poll_timeout: int = 100, lease_extend_enabled: bool = True):
     logger.info("decorated %s", name)
     _decorated_functions[(name, domain)] = {
         "func": func,
         "poll_interval": poll_interval,
         "domain": domain,
-        "worker_id": worker_id
+        "worker_id": worker_id,
+        "thread_count": thread_count,
+        "register_task_def": register_task_def,
+        "poll_timeout": poll_timeout,
+        "lease_extend_enabled": lease_extend_enabled
     }
+
+
+def get_registered_workers() -> List[Worker]:
+    """
+    Get all registered workers from decorated functions.
+
+    Returns:
+        List of Worker instances created from @worker_task decorated functions
+    """
+    workers = []
+    for (task_def_name, domain), record in _decorated_functions.items():
+        worker = Worker(
+            task_definition_name=task_def_name,
+            execute_function=record["func"],
+            poll_interval=record["poll_interval"],
+            domain=domain,
+            worker_id=record["worker_id"],
+            thread_count=record.get("thread_count", 1)
+        )
+        workers.append(worker)
+    return workers
+
+
+def get_registered_worker_names() -> List[str]:
+    """
+    Get names of all registered workers.
+
+    Returns:
+        List of task definition names
+    """
+    return [name for (name, domain) in _decorated_functions.keys()]
 
 
 class TaskHandler:
@@ -68,16 +106,35 @@ class TaskHandler:
         if scan_for_annotated_workers is True:
             for (task_def_name, domain), record in _decorated_functions.items():
                 fn = record["func"]
-                worker_id = record["worker_id"]
-                poll_interval = record["poll_interval"]
+
+                # Get code-level configuration from decorator
+                code_config = {
+                    'poll_interval': record["poll_interval"],
+                    'domain': domain,
+                    'worker_id': record["worker_id"],
+                    'thread_count': record.get("thread_count", 1),
+                    'register_task_def': record.get("register_task_def", False),
+                    'poll_timeout': record.get("poll_timeout", 100),
+                    'lease_extend_enabled': record.get("lease_extend_enabled", True)
+                }
+
+                # Resolve configuration with environment variable overrides
+                resolved_config = resolve_worker_config(
+                    worker_name=task_def_name,
+                    **code_config
+                )
 
                 worker = Worker(
                     task_definition_name=task_def_name,
                     execute_function=fn,
-                    worker_id=worker_id,
-                    domain=domain,
-                    poll_interval=poll_interval)
-                logger.info("created worker with name=%s and domain=%s", task_def_name, domain)
+                    worker_id=resolved_config['worker_id'],
+                    domain=resolved_config['domain'],
+                    poll_interval=resolved_config['poll_interval'],
+                    thread_count=resolved_config['thread_count'],
+                    register_task_def=resolved_config['register_task_def'],
+                    poll_timeout=resolved_config['poll_timeout'],
+                    lease_extend_enabled=resolved_config['lease_extend_enabled'])
+                logger.info("created worker with name=%s and domain=%s", task_def_name, resolved_config['domain'])
                 workers.append(worker)
 
         self.__create_task_runner_processes(workers, configuration, metrics_settings)
@@ -130,10 +187,12 @@ class TaskHandler:
             metrics_settings: MetricsSettings
     ) -> None:
         self.task_runner_processes = []
+        self.workers = []
         for worker in workers:
             self.__create_task_runner_process(
                 worker, configuration, metrics_settings
             )
+            self.workers.append(worker)
 
     def __create_task_runner_process(
             self,
@@ -153,10 +212,13 @@ class TaskHandler:
 
     def __start_task_runner_processes(self):
         n = 0
-        for task_runner_process in self.task_runner_processes:
+        for i, task_runner_process in enumerate(self.task_runner_processes):
             task_runner_process.start()
+            worker = self.workers[i]
+            paused_status = "PAUSED" if worker.paused() else "ACTIVE"
+            logger.info("Started worker '%s' [%s]", worker.get_task_definition_name(), paused_status)
             n = n + 1
-        logger.info("Started %s TaskRunner process", n)
+        logger.info("Started %s TaskRunner process(es)", n)
 
     def __join_metrics_provider_process(self):
         if self.metrics_provider_process is None:

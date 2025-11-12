@@ -6,11 +6,13 @@ import traceback
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
+from conductor.client.context.task_context import _set_task_context, _clear_task_context, TaskInProgress
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api_client import ApiClient
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
+from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.http.rest import AuthorizationException
 from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.worker.worker_interface import WorkerInterface
@@ -47,6 +49,10 @@ class TaskRunner:
             )
         )
 
+        # Auth failure backoff tracking to prevent retry storms
+        self._auth_failures = 0
+        self._last_auth_failure = 0
+
     def run(self) -> None:
         if self.configuration is not None:
             self.configuration.apply_logging_config()
@@ -80,6 +86,19 @@ class TaskRunner:
         if self.worker.paused():
             logger.debug("Stop polling task for: %s", task_definition_name)
             return None
+
+        # Apply exponential backoff if we have recent auth failures
+        if self._auth_failures > 0:
+            now = time.time()
+            # Exponential backoff: 2^failures seconds (2s, 4s, 8s, 16s, 32s)
+            backoff_seconds = min(2 ** self._auth_failures, 60)  # Cap at 60s
+            time_since_last_failure = now - self._last_auth_failure
+
+            if time_since_last_failure < backoff_seconds:
+                # Still in backoff period - skip polling
+                time.sleep(0.1)  # Small sleep to prevent tight loop
+                return None
+
         if self.metrics_collector is not None:
             self.metrics_collector.increment_task_poll(
                 task_definition_name
@@ -97,12 +116,25 @@ class TaskRunner:
             if self.metrics_collector is not None:
                 self.metrics_collector.record_task_poll_time(task_definition_name, time_spent)
         except AuthorizationException as auth_exception:
+            # Track auth failure for backoff
+            self._auth_failures += 1
+            self._last_auth_failure = time.time()
+            backoff_seconds = min(2 ** self._auth_failures, 60)
+
             if self.metrics_collector is not None:
                 self.metrics_collector.increment_task_poll_error(task_definition_name, type(auth_exception))
+
             if auth_exception.invalid_token:
-                logger.fatal(f"failed to poll task {task_definition_name} due to invalid auth token")
+                logger.error(
+                    f"Failed to poll task {task_definition_name} due to invalid auth token "
+                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s). "
+                    "Please check your CONDUCTOR_AUTH_KEY and CONDUCTOR_AUTH_SECRET."
+                )
             else:
-                logger.fatal(f"failed to poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code}")
+                logger.error(
+                    f"Failed to poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code} "
+                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s)."
+                )
             return None
         except Exception as e:
             if self.metrics_collector is not None:
@@ -113,13 +145,20 @@ class TaskRunner:
                 traceback.format_exc()
             )
             return None
+
+        # Success - reset auth failure counter
         if task is not None:
+            self._auth_failures = 0
             logger.debug(
                 "Polled task: %s, worker_id: %s, domain: %s",
                 task_definition_name,
                 self.worker.get_identity(),
                 self.worker.get_domain()
             )
+        else:
+            # No task available - also reset auth failures since poll succeeded
+            self._auth_failures = 0
+
         return task
 
     def __execute_task(self, task: Task) -> TaskResult:
@@ -132,9 +171,60 @@ class TaskRunner:
             task.workflow_instance_id,
             task_definition_name
         )
+
+        # Create initial task result for context
+        initial_task_result = TaskResult(
+            task_id=task.task_id,
+            workflow_instance_id=task.workflow_instance_id,
+            worker_id=self.worker.get_identity()
+        )
+
+        # Set task context (similar to AsyncIO implementation)
+        _set_task_context(task, initial_task_result)
+
         try:
             start_time = time.time()
-            task_result = self.worker.execute(task)
+            task_output = self.worker.execute(task)
+
+            # Handle different return types
+            if isinstance(task_output, TaskResult):
+                # Already a TaskResult - use as-is
+                task_result = task_output
+            elif isinstance(task_output, TaskInProgress):
+                # Long-running task - create IN_PROGRESS result
+                task_result = TaskResult(
+                    task_id=task.task_id,
+                    workflow_instance_id=task.workflow_instance_id,
+                    worker_id=self.worker.get_identity()
+                )
+                task_result.status = TaskResultStatus.IN_PROGRESS
+                task_result.callback_after_seconds = task_output.callback_after_seconds
+                task_result.output_data = task_output.output
+            else:
+                # Regular return value - worker.execute() should have returned TaskResult
+                # but if it didn't, treat the output as TaskResult
+                if hasattr(task_output, 'status'):
+                    task_result = task_output
+                else:
+                    # Shouldn't happen, but handle gracefully
+                    logger.warning(
+                        "Worker returned unexpected type: %s, wrapping in TaskResult",
+                        type(task_output)
+                    )
+                    task_result = TaskResult(
+                        task_id=task.task_id,
+                        workflow_instance_id=task.workflow_instance_id,
+                        worker_id=self.worker.get_identity()
+                    )
+                    task_result.status = TaskResultStatus.COMPLETED
+                    if isinstance(task_output, dict):
+                        task_result.output_data = task_output
+                    else:
+                        task_result.output_data = {"result": task_output}
+
+            # Merge context modifications (logs, callback_after, etc.)
+            self.__merge_context_modifications(task_result, initial_task_result)
+
             finish_time = time.time()
             time_spent = finish_time - start_time
             if self.metrics_collector is not None:
@@ -174,7 +264,44 @@ class TaskRunner:
                 task_definition_name,
                 traceback.format_exc()
             )
+        finally:
+            # Always clear task context after execution
+            _clear_task_context()
+
         return task_result
+
+    def __merge_context_modifications(self, task_result: TaskResult, context_result: TaskResult) -> None:
+        """
+        Merge modifications made via TaskContext into the final task result.
+
+        This allows workers to use TaskContext.add_log(), set_callback_after(), etc.
+        and have those modifications reflected in the final result.
+
+        Args:
+            task_result: The task result to merge into
+            context_result: The context result with modifications
+        """
+        # Merge logs
+        if hasattr(context_result, 'logs') and context_result.logs:
+            if not hasattr(task_result, 'logs') or task_result.logs is None:
+                task_result.logs = []
+            task_result.logs.extend(context_result.logs)
+
+        # Merge callback_after_seconds (context takes precedence if both set)
+        if hasattr(context_result, 'callback_after_seconds') and context_result.callback_after_seconds:
+            if not task_result.callback_after_seconds:
+                task_result.callback_after_seconds = context_result.callback_after_seconds
+
+        # Merge output_data if context set it (shouldn't normally happen, but handle it)
+        if (hasattr(context_result, 'output_data') and
+            context_result.output_data and
+            not isinstance(task_result.output_data, dict)):
+            if hasattr(task_result, 'output_data') and task_result.output_data:
+                # Merge both dicts (task_result takes precedence)
+                merged_output = {**context_result.output_data, **task_result.output_data}
+                task_result.output_data = merged_output
+            else:
+                task_result.output_data = context_result.output_data
 
     def __update_task(self, task_result: TaskResult):
         if not isinstance(task_result, TaskResult):

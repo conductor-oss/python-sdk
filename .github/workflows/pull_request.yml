@@ -16,64 +16,62 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build test image
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
         run: |
-          DOCKER_BUILDKIT=1 docker build . \
-            --target python_test_base \
-            -t conductor-sdk-test:latest
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest pytest-cov coverage
 
       - name: Prepare coverage directory
         run: |
           mkdir -p ${{ env.COVERAGE_DIR }}
-          chmod 777 ${{ env.COVERAGE_DIR }}
-          touch ${{ env.COVERAGE_FILE }}
-          chmod 666 ${{ env.COVERAGE_FILE }}
 
       - name: Run unit tests
         id: unit_tests
         continue-on-error: true
+        env:
+          CONDUCTOR_AUTH_KEY: ${{ secrets.CONDUCTOR_AUTH_KEY }}
+          CONDUCTOR_AUTH_SECRET: ${{ secrets.CONDUCTOR_AUTH_SECRET }}
+          CONDUCTOR_SERVER_URL: ${{ secrets.CONDUCTOR_SERVER_URL }}
+          COVERAGE_FILE: ${{ env.COVERAGE_DIR }}/.coverage.unit
         run: |
-          docker run --rm \
-            -e CONDUCTOR_AUTH_KEY=${{ secrets.CONDUCTOR_AUTH_KEY }} \
-            -e CONDUCTOR_AUTH_SECRET=${{ secrets.CONDUCTOR_AUTH_SECRET }} \
-            -e CONDUCTOR_SERVER_URL=${{ secrets.CONDUCTOR_SERVER_URL }} \
-            -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
-            conductor-sdk-test:latest \
-            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.unit coverage run -m pytest tests/unit -v"
+          coverage run -m pytest tests/unit -v
 
       - name: Run backward compatibility tests
         id: bc_tests
         continue-on-error: true
+        env:
+          CONDUCTOR_AUTH_KEY: ${{ secrets.CONDUCTOR_AUTH_KEY }}
+          CONDUCTOR_AUTH_SECRET: ${{ secrets.CONDUCTOR_AUTH_SECRET }}
+          CONDUCTOR_SERVER_URL: ${{ secrets.CONDUCTOR_SERVER_URL }}
+          COVERAGE_FILE: ${{ env.COVERAGE_DIR }}/.coverage.bc
         run: |
-          docker run --rm \
-            -e CONDUCTOR_AUTH_KEY=${{ secrets.CONDUCTOR_AUTH_KEY }} \
-            -e CONDUCTOR_AUTH_SECRET=${{ secrets.CONDUCTOR_AUTH_SECRET }} \
-            -e CONDUCTOR_SERVER_URL=${{ secrets.CONDUCTOR_SERVER_URL }} \
-            -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
-            conductor-sdk-test:latest \
-            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.bc coverage run -m pytest tests/backwardcompatibility -v"
+          coverage run -m pytest tests/backwardcompatibility -v
 
       - name: Run serdeser tests
         id: serdeser_tests
         continue-on-error: true
+        env:
+          CONDUCTOR_AUTH_KEY: ${{ secrets.CONDUCTOR_AUTH_KEY }}
+          CONDUCTOR_AUTH_SECRET: ${{ secrets.CONDUCTOR_AUTH_SECRET }}
+          CONDUCTOR_SERVER_URL: ${{ secrets.CONDUCTOR_SERVER_URL }}
+          COVERAGE_FILE: ${{ env.COVERAGE_DIR }}/.coverage.serdeser
         run: |
-          docker run --rm \
-            -e CONDUCTOR_AUTH_KEY=${{ secrets.CONDUCTOR_AUTH_KEY }} \
-            -e CONDUCTOR_AUTH_SECRET=${{ secrets.CONDUCTOR_AUTH_SECRET }} \
-            -e CONDUCTOR_SERVER_URL=${{ secrets.CONDUCTOR_SERVER_URL }} \
-            -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
-            conductor-sdk-test:latest \
-            /bin/sh -c "cd /package && COVERAGE_FILE=/package/${{ env.COVERAGE_DIR }}/.coverage.serdeser coverage run -m pytest tests/serdesertest -v"
+          coverage run -m pytest tests/serdesertest -v
 
       - name: Generate coverage report
         id: coverage_report
         continue-on-error: true
         run: |
-          docker run --rm \
-            -v ${{ github.workspace }}/${{ env.COVERAGE_DIR }}:/package/${{ env.COVERAGE_DIR }}:rw \
-            -v ${{ github.workspace }}/${{ env.COVERAGE_FILE }}:/package/${{ env.COVERAGE_FILE }}:rw \
-            conductor-sdk-test:latest \
-            /bin/sh -c "cd /package && coverage combine /package/${{ env.COVERAGE_DIR }}/.coverage.* && coverage report && coverage xml"
+          coverage combine ${{ env.COVERAGE_DIR }}/.coverage.*
+          coverage report
+          coverage xml
 
       - name: Verify coverage file
         id: verify_coverage
