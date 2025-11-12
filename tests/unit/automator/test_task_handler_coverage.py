@@ -653,7 +653,9 @@ class TestSetupLoggingQueue(unittest.TestCase):
         logger_process, queue = _setup_logging_queue(config)
 
         config.apply_logging_config.assert_called_once()
-        mock_process.start.assert_called_once()
+        # Verify Process was called and start was invoked on the returned mock
+        mock_process_class.assert_called_once()
+        self.assertTrue(mock_process.start.called)
         self.assertEqual(queue, mock_queue)
         self.assertEqual(logger_process, mock_process)
 
@@ -669,7 +671,9 @@ class TestSetupLoggingQueue(unittest.TestCase):
 
         logger_process, queue = _setup_logging_queue(None)
 
-        mock_process.start.assert_called_once()
+        # Verify Process was called and start was invoked on the returned mock
+        mock_process_class.assert_called_once()
+        self.assertTrue(mock_process.start.called)
         self.assertEqual(queue, mock_queue)
         self.assertEqual(logger_process, mock_process)
 

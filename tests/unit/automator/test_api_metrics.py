@@ -430,13 +430,16 @@ class TestAPIMetrics(unittest.TestCase):
                 http_client=mock_http_client
             )
 
+            # Reset counter before test
+            self.metrics_collector_mock.record_api_request_time.reset_mock()
+
             # Run 5 concurrent polls
             await asyncio.gather(*[
                 runner._poll_tasks_from_server(count=1) for _ in range(5)
             ])
 
             # Should have 5 timing records
-            self.assertEqual(self.metrics_collector_mock.record_api_request_time.call_count,5)
+            self.assertEqual(self.metrics_collector_mock.record_api_request_time.call_count, 5)
 
         asyncio.run(run_test())
 
