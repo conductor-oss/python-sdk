@@ -68,18 +68,18 @@ Worker for task type "process_image":
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    TaskRunnerAsyncIO                         │
-│                                                              │
-│  ┌────────────────┐         ┌────────────────┐             │
-│  │  In-Memory     │         │   Semaphore    │             │
-│  │  Task Queue    │◄────────┤  (thread_count)│             │
-│  │ (asyncio.Queue)│         └────────────────┘             │
+│                    TaskRunnerAsyncIO                        │
+│                                                             │
+│  ┌────────────────┐         ┌────────────────┐              │
+│  │  In-Memory     │         │   Semaphore    │              │
+│  │  Task Queue    │◄────────┤  (thread_count)│              │
+│  │ (asyncio.Queue)│         └────────────────┘              │
 │  └────────────────┘                                         │
-│         ▲                                                    │
-│         │                                                    │
+│         ▲                                                   │
+│         │                                                   │
 │         │ 2. Add next task                                  │
-│         │                                                    │
-│  ┌──────┴───────────────────────────────┐                  │
+│         │                                                   │
+│  ┌──────┴───────────────────────────────┐                   │
 │  │        Task Update Flow               │                  │
 │  │                                       │                  │
 │  │  1. Update task result                │                  │
@@ -89,7 +89,7 @@ Worker for task type "process_image":
 │  │     → If next task: add to queue      │                  │
 │  │                                       │                  │
 │  └───────────────────────────────────────┘                  │
-│                                                              │
+│                                                             │
 │  ┌───────────────────────────────────────┐                  │
 │  │        Task Poll Flow                 │                  │
 │  │                                       │                  │

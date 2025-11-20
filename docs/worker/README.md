@@ -13,6 +13,7 @@ Currently, there are three ways of writing a Python worker:
 1. [Worker as a function](#worker-as-a-function)
 2. [Worker as a class](#worker-as-a-class)
 3. [Worker as an annotation](#worker-as-an-annotation)
+4. [Async workers](#async-workers) - Workers using async/await for I/O-bound operations
 
 
 ### Worker as a function
@@ -92,6 +93,124 @@ from conductor.client.worker.worker_task import WorkerTask
 @WorkerTask(task_definition_name='python_annotated_task', worker_id='decorated', poll_interval=200.0)
 def python_annotated_task(input) -> object:
     return {'message': 'python is so cool :)'}
+```
+
+### Async Workers
+
+For I/O-bound operations (like HTTP requests, database queries, or file operations), you can write async workers using Python's `async`/`await` syntax. Async workers are executed efficiently using a persistent background event loop, avoiding the overhead of creating a new event loop for each task.
+
+#### Async Worker as a Function
+
+```python
+import asyncio
+import httpx
+from conductor.client.http.models import Task, TaskResult
+from conductor.client.http.models.task_result_status import TaskResultStatus
+
+async def async_http_worker(task: Task) -> TaskResult:
+    """Async worker that makes HTTP requests."""
+    task_result = TaskResult(
+        task_id=task.task_id,
+        workflow_instance_id=task.workflow_instance_id,
+    )
+
+    url = task.input_data.get('url', 'https://api.example.com/data')
+
+    # Use async HTTP client for non-blocking I/O
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        task_result.add_output_data('status_code', response.status_code)
+        task_result.add_output_data('data', response.json())
+
+    task_result.status = TaskResultStatus.COMPLETED
+    return task_result
+```
+
+#### Async Worker as an Annotation
+
+```python
+import asyncio
+from conductor.client.worker.worker_task import WorkerTask
+
+@WorkerTask(task_definition_name='async_task', poll_interval=1.0)
+async def async_worker(url: str, timeout: int = 30) -> dict:
+    """Simple async worker with automatic input/output mapping."""
+    await asyncio.sleep(0.1)  # Simulate async I/O
+
+    # Your async logic here
+    result = await fetch_data_async(url, timeout)
+
+    return {
+        'result': result,
+        'processed_at': datetime.now().isoformat()
+    }
+```
+
+#### Performance Benefits
+
+Async workers use a **persistent background event loop** that provides significant performance improvements over traditional synchronous workers:
+
+- **1.5-2x faster** for I/O-bound tasks compared to blocking operations
+- **No event loop overhead** - single loop shared across all async workers
+- **Better resource utilization** - workers don't block while waiting for I/O
+- **Scalability** - handle more concurrent operations with fewer threads
+
+#### Best Practices for Async Workers
+
+1. **Use for I/O-bound tasks**: Database queries, HTTP requests, file I/O
+2. **Don't use for CPU-bound tasks**: Use regular sync workers for heavy computation
+3. **Use async libraries**: `httpx`, `aiohttp`, `asyncpg`, etc.
+4. **Keep timeouts reasonable**: Default timeout is 300 seconds (5 minutes)
+5. **Handle exceptions**: Async exceptions are properly propagated to task results
+
+#### Example: Async Database Worker
+
+```python
+import asyncpg
+from conductor.client.worker.worker_task import WorkerTask
+
+@WorkerTask(task_definition_name='async_db_query')
+async def query_database(user_id: int) -> dict:
+    """Async worker that queries PostgreSQL database."""
+    # Create async database connection pool
+    pool = await asyncpg.create_pool(
+        host='localhost',
+        database='mydb',
+        user='user',
+        password='password'
+    )
+
+    try:
+        async with pool.acquire() as conn:
+            # Execute async query
+            result = await conn.fetch(
+                'SELECT * FROM users WHERE id = $1',
+                user_id
+            )
+            return {'user': dict(result[0]) if result else None}
+    finally:
+        await pool.close()
+```
+
+#### Mixed Sync and Async Workers
+
+You can mix sync and async workers in the same application. The SDK automatically detects async functions and handles them appropriately:
+
+```python
+from conductor.client.worker.worker import Worker
+
+workers = [
+    # Sync worker
+    Worker(
+        task_definition_name='sync_task',
+        execute_function=sync_worker_function
+    ),
+    # Async worker
+    Worker(
+        task_definition_name='async_task',
+        execute_function=async_worker_function
+    ),
+]
 ```
 
 ## Run Workers

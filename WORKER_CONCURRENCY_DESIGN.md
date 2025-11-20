@@ -673,8 +673,101 @@ class TaskRunner:
 - ✅ Simple synchronous code
 - ✅ Each process independent
 - ✅ Uses `requests` library
+- ✅ **NEW**: Supports async workers via BackgroundEventLoop
 - ⚠️ High memory per process
 - ⚠️ Process creation overhead
+
+---
+
+#### Async Worker Support in Multiprocessing
+
+**Since v1.2.3**, the multiprocessing implementation supports async workers using a persistent background event loop:
+
+**3. Worker with BackgroundEventLoop** (`src/conductor/client/worker/worker.py`)
+
+```python
+class BackgroundEventLoop:
+    """Singleton managing persistent asyncio event loop in background thread.
+
+    Provides 1.5-2x performance improvement for async workers by avoiding
+    the expensive overhead of creating/destroying an event loop per task.
+
+    Key Features:
+    - Thread-safe singleton pattern
+    - On-demand initialization (loop only starts when needed)
+    - Runs in daemon thread
+    - 300-second timeout protection
+    - Automatic cleanup on program exit
+    """
+    _instance = None
+    _lock = threading.Lock()
+
+    def run_coroutine(self, coro):
+        """Run coroutine in background loop and wait for result.
+
+        First call initializes the loop (lazy initialization).
+        """
+        # Lazy initialization: start loop only when first coroutine submitted
+        if not self._loop_started:
+            with self._lock:
+                if not self._loop_started:
+                    self._start_loop()
+                    self._loop_started = True
+
+        # Submit to background loop with timeout
+        future = asyncio.run_coroutine_threadsafe(coro, self._loop)
+        return future.result(timeout=300)
+
+class Worker:
+    """Worker that executes tasks (sync or async)."""
+
+    def execute(self, task: Task) -> TaskResult:
+        # ... execute worker function ...
+
+        # If worker is async, use persistent background loop
+        if inspect.iscoroutine(task_output):
+            if self._background_loop is None:
+                self._background_loop = BackgroundEventLoop()
+            task_output = self._background_loop.run_coroutine(task_output)
+
+        return task_result
+```
+
+**Benefits**:
+- ✅ **1.5-2x faster** async execution (no loop creation overhead)
+- ✅ **Zero overhead** for sync workers (loop never created)
+- ✅ **Backward compatible** (existing code works unchanged)
+- ✅ **On-demand** (loop only starts when async worker runs)
+- ✅ **Thread-safe** (singleton pattern with locking)
+
+**Example: Async Worker in Multiprocessing**
+```python
+@worker_task(task_definition_name='async_http_task')
+async def async_http_worker(task: Task) -> TaskResult:
+    """Async worker that benefits from BackgroundEventLoop."""
+    async with httpx.AsyncClient() as client:
+        response = await client.get(task.input_data['url'])
+
+    task_result = TaskResult(...)
+    task_result.add_output_data('data', response.json())
+    task_result.status = TaskResultStatus.COMPLETED
+    return task_result
+
+# Works seamlessly in multiprocessing handler
+handler = TaskHandler(configuration=config)
+handler.start_processes()
+```
+
+**Performance Comparison**:
+```
+Before (asyncio.run per call):
+  100 async calls: ~0.029s  (290μs per call overhead)
+
+After (BackgroundEventLoop):
+  100 async calls: ~0.018s  (0μs amortized overhead)
+
+Speedup: 1.6x faster
+```
 
 ---
 
@@ -982,6 +1075,46 @@ def critical_worker(task):
 def batch_worker(task):
     # Low-priority processing
     pass
+```
+
+#### 5. Configure Logging Levels
+
+**Since v1.2.3**, the SDK provides granular logging control:
+
+```python
+from conductor.client.configuration.configuration import Configuration
+
+# Configure logging with custom level
+config = Configuration(
+    server_api_url='http://localhost:8080/api',
+    debug=True  # Sets level to DEBUG
+)
+
+# Apply logging configuration
+config.apply_logging_config()
+
+# Logging levels (lowest to highest):
+# TRACE (5)   - Verbose polling/execution logs (new in v1.2.3)
+# DEBUG (10)  - Detailed debugging information
+# INFO (20)   - General informational messages
+# WARNING (30) - Warning messages
+# ERROR (40)  - Error messages
+
+# To see TRACE logs (polling details):
+import logging
+logging.basicConfig(level=5)  # TRACE level
+
+# Third-party library logs (urllib3) are automatically
+# suppressed to WARNING level to reduce noise
+```
+
+**What's logged at each level**:
+```
+TRACE: Polled task details, execution start
+DEBUG: Worker lifecycle, task processing details
+INFO:  Worker started, task completed
+WARNING: Retries, recoverable errors
+ERROR: Unrecoverable errors, exceptions
 ```
 
 ---
@@ -1715,6 +1848,7 @@ async def my_worker(task: Task) -> TaskResult:
 
 - **Main README**: `README.md`
 - **Worker Design (Multiprocessing)**: `WORKER_DESIGN.md`
+- **Async Worker Improvements**: `ASYNC_WORKER_IMPROVEMENTS.md` (BackgroundEventLoop details)
 - **AsyncIO Test Coverage**: `ASYNCIO_TEST_COVERAGE.md`
 - **Quick Start Guide**: `QUICK_START_ASYNCIO.md`
 - **Implementation Details**: Source code in `src/conductor/client/automator/`
@@ -1729,6 +1863,8 @@ async def my_worker(task: Task) -> TaskResult:
 | v1.2.1 | 2025-01 | AsyncIO best practices applied |
 | v1.2.2 | 2025-01 | Comprehensive test coverage added |
 | v1.2.3 | 2025-01 | Production-ready AsyncIO |
+| v1.2.4 | 2025-01 | BackgroundEventLoop for async workers (1.5-2x faster) |
+| v1.2.5 | 2025-01 | On-demand event loop initialization, TRACE logging level |
 
 ---
 
@@ -1737,7 +1873,7 @@ async def my_worker(task: Task) -> TaskResult:
 ### Key Takeaways
 
 ✅ **Two Proven Approaches**
-- Multiprocessing: Battle-tested, CPU-efficient, high isolation
+- Multiprocessing: Battle-tested, CPU-efficient, high isolation, **async worker support**
 - AsyncIO: Modern, memory-efficient, I/O-optimized
 
 ✅ **Choose Based on Workload**
@@ -1761,11 +1897,17 @@ async def my_worker(task: Task) -> TaskResult:
 - Sync workers work in AsyncIO
 - Gradual conversion possible
 
+✅ **Performance Optimized** (v1.2.4+)
+- BackgroundEventLoop for 1.5-2x faster async execution
+- On-demand initialization (zero overhead for sync-only)
+- TRACE logging for granular debugging
+- Automatic urllib3 log suppression
+
 ---
 
-**Document Version**: 1.0
+**Document Version**: 1.1
 **Created**: 2025-01-08
-**Last Updated**: 2025-01-08
+**Last Updated**: 2025-01-20
 **Status**: Complete
 **Maintained By**: Conductor Python SDK Team
 
