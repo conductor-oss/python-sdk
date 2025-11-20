@@ -123,7 +123,7 @@ async def main():
             metrics_settings=metrics_settings,
             scan_for_annotated_workers=True,
             import_modules=["helloworld.greetings_worker", "user_example.user_workers"],
-            event_listeners= [TaskExecutionLogger()]
+            event_listeners= []
         ) as task_handler:
             # Set up graceful shutdown on SIGTERM
             loop = asyncio.get_running_loop()

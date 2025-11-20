@@ -149,7 +149,7 @@ class TaskRunner:
         # Success - reset auth failure counter
         if task is not None:
             self._auth_failures = 0
-            logger.debug(
+            logger.trace(
                 "Polled task: %s, worker_id: %s, domain: %s",
                 task_definition_name,
                 self.worker.get_identity(),
@@ -165,7 +165,7 @@ class TaskRunner:
         if not isinstance(task, Task):
             return None
         task_definition_name = self.worker.get_task_definition_name()
-        logger.debug(
+        logger.trace(
             "Executing task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
             task.task_id,
             task.workflow_instance_id,

@@ -6,6 +6,20 @@ from typing import Optional
 
 from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
 
+# Define custom TRACE logging level (below DEBUG which is 10)
+TRACE_LEVEL = 5
+logging.addLevelName(TRACE_LEVEL, 'TRACE')
+
+
+def trace(self, message, *args, **kwargs):
+    """Log a message with severity 'TRACE' on this logger."""
+    if self.isEnabledFor(TRACE_LEVEL):
+        self._log(TRACE_LEVEL, message, args, **kwargs)
+
+
+# Add trace method to Logger class
+logging.Logger.trace = trace
+
 
 class Configuration:
     AUTH_TOKEN = None
@@ -149,6 +163,10 @@ class Configuration:
             format=log_format,
             level=level
         )
+
+        # Suppress verbose DEBUG logs from third-party libraries
+        logging.getLogger('urllib3').setLevel(logging.WARNING)
+        logging.getLogger('urllib3.connectionpool').setLevel(logging.WARNING)
 
     @staticmethod
     def get_logging_formatted_name(name):
