@@ -1,11 +1,8 @@
-import asyncio
 import os
 import shutil
-import signal
-import tempfile
 from typing import Union
 
-from conductor.client.automator.task_handler_asyncio import TaskHandlerAsyncIO
+from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.context import get_task_context, TaskInProgress
@@ -85,9 +82,9 @@ def long_running_task(job_id: str) -> Union[dict, TaskInProgress]:
     }
 
 
-async def main():
+def main():
     """
-    Main entry point demonstrating AsyncIO task handler with Java SDK architecture.
+    Main entry point demonstrating unified TaskHandler with asyncio execution mode.
     """
 
     # Configuration - defaults to reading from environment variables:
@@ -115,29 +112,17 @@ async def main():
     print("\nStarting workers... Press Ctrl+C to stop")
     print(f"Metrics will be published to: {metrics_dir}/conductor_metrics.prom\n")
 
-    # Option 1: Using async context manager (recommended)
+    # Using unified TaskHandler with asyncio=True for dedicated event loop per worker
     try:
-        # from helloworld import greetings_worker
-        async with TaskHandlerAsyncIO(
+        with TaskHandler(
             configuration=api_config,
             metrics_settings=metrics_settings,
             scan_for_annotated_workers=True,
             import_modules=["helloworld.greetings_worker", "user_example.user_workers"],
-            event_listeners= []
+            asyncio=True  # Use dedicated event loop for async workers
         ) as task_handler:
-            # Set up graceful shutdown on SIGTERM
-            loop = asyncio.get_running_loop()
-
-            def signal_handler():
-                print("\n\nReceived shutdown signal, stopping workers...")
-                loop.create_task(task_handler.stop())
-
-            # Register signal handlers
-            for sig in (signal.SIGTERM, signal.SIGINT):
-                loop.add_signal_handler(sig, signal_handler)
-
-            # Wait for workers to complete (blocks until stopped)
-            await task_handler.wait()
+            task_handler.start_processes()
+            task_handler.join_processes()
 
     except KeyboardInterrupt:
         print("\n\nShutting down gracefully...")
@@ -146,30 +131,12 @@ async def main():
         print(f"\n\nError: {e}")
         raise
 
-    # Option 2: Manual start/stop (alternative)
-    # task_handler = TaskHandlerAsyncIO(configuration=api_config)
-    # await task_handler.start()
-    # try:
-    #     await asyncio.sleep(60)  # Run for 60 seconds
-    # finally:
-    #     await task_handler.stop()
-
-    # Option 3: Run with timeout (for testing)
-    # from conductor.client.automator.task_handler_asyncio import run_workers_async
-    # await run_workers_async(
-    #     configuration=api_config,
-    #     stop_after_seconds=60  # Auto-stop after 60 seconds
-    # )
-
     print("\nWorkers stopped. Goodbye!")
 
 
 if __name__ == '__main__':
     """
-    Run the async main function.
-
-    Python 3.7+: asyncio.run(main())
-    Python 3.6: asyncio.get_event_loop().run_until_complete(main())
+    Run the main function with unified TaskHandler.
 
     Metrics Available:
     ------------------
@@ -194,12 +161,6 @@ if __name__ == '__main__':
                   - /tmp/conductor_metrics/conductor_metrics.prom
     """
     try:
-        # Run main demo
-        asyncio.run(main())
-
-        # Uncomment to run other demos:
-        # asyncio.run(demo_v2_api())
-        # asyncio.run(demo_zero_polling())
-
+        main()
     except KeyboardInterrupt:
         pass

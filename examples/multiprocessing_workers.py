@@ -139,7 +139,7 @@ if __name__ == '__main__':
     Run the multiprocessing workers.
 
     Key differences from AsyncIO:
-    - Uses TaskHandler instead of TaskHandlerAsyncIO
+    - Uses TaskHandler instead of TaskHandler
     - Each worker runs in its own process (true parallelism)
     - Better for CPU-bound tasks (bypasses GIL)
     - Higher memory footprint but better CPU utilization

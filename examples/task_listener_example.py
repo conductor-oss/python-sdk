@@ -22,7 +22,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from conductor.client.automator.task_handler_asyncio import TaskHandlerAsyncIO
+from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.event.task_runner_events import (
     TaskExecutionStarted,
@@ -266,7 +266,7 @@ async def main():
     tracing_listener = DistributedTracingListener()
 
     # Create task handler with multiple listeners
-    async with TaskHandlerAsyncIO(
+    async with TaskHandler(
         configuration=config,
         scan_for_annotated_workers=True,
         import_modules=[__name__],

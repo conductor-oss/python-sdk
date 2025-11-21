@@ -16,7 +16,7 @@ Run:
 
 import asyncio
 import signal
-from conductor.client.automator.task_handler_asyncio import TaskHandlerAsyncIO
+from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.context.task_context import get_task_context
 from conductor.client.worker.worker_task import worker_task
@@ -260,7 +260,7 @@ async def main():
     print("\nStarting workers... Press Ctrl+C to stop\n")
 
     try:
-        async with TaskHandlerAsyncIO(configuration=api_config) as task_handler:
+        async with TaskHandler(configuration=api_config) as task_handler:
             loop = asyncio.get_running_loop()
 
             def signal_handler():

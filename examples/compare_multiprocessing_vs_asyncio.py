@@ -1,21 +1,20 @@
 """
-Performance Comparison: Multiprocessing vs AsyncIO
+Performance Comparison: asyncio=False vs asyncio=True
 
-This script demonstrates the differences between multiprocessing and asyncio
-implementations and helps you choose the right one for your workload.
+This script demonstrates the differences between execution modes in the unified
+TaskHandler and helps you choose the right one for your workload.
 
 Run:
     python examples/compare_multiprocessing_vs_asyncio.py
 """
 
-import asyncio
 import time
 import psutil
 import os
 from conductor.client.automator.task_handler import TaskHandler
-from conductor.client.automator.task_handler_asyncio import TaskHandlerAsyncIO
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.worker.worker_task import worker_task
+import asyncio
 
 
 # I/O-bound worker (simulates API call)
@@ -42,35 +41,10 @@ def measure_memory():
     return process.memory_info().rss / 1024 / 1024
 
 
-async def test_asyncio(config: Configuration, duration: int = 10):
-    """Test AsyncIO implementation"""
+def test_asyncio_mode(config: Configuration, duration: int = 10):
+    """Test asyncio=True execution mode"""
     print("\n" + "=" * 60)
-    print("Testing AsyncIO Implementation")
-    print("=" * 60)
-
-    start_memory = measure_memory()
-    print(f"Starting memory: {start_memory:.2f} MB")
-
-    start_time = time.time()
-
-    async with TaskHandlerAsyncIO(configuration=config) as handler:
-        # Run for specified duration
-        await asyncio.sleep(duration)
-
-    elapsed = time.time() - start_time
-    end_memory = measure_memory()
-
-    print(f"\nResults:")
-    print(f"  Duration: {elapsed:.2f}s")
-    print(f"  Ending memory: {end_memory:.2f} MB")
-    print(f"  Memory used: {end_memory - start_memory:.2f} MB")
-    print(f"  Process count: 1 (single process)")
-
-
-def test_multiprocessing(config: Configuration, duration: int = 10):
-    """Test Multiprocessing implementation"""
-    print("\n" + "=" * 60)
-    print("Testing Multiprocessing Implementation")
+    print("Testing asyncio=True Execution Mode")
     print("=" * 60)
 
     start_memory = measure_memory()
@@ -78,11 +52,10 @@ def test_multiprocessing(config: Configuration, duration: int = 10):
 
     # Count child processes
     parent = psutil.Process(os.getpid())
-    initial_children = len(parent.children(recursive=True))
 
     start_time = time.time()
 
-    handler = TaskHandler(configuration=config)
+    handler = TaskHandler(configuration=config, asyncio=True)
     handler.start_processes()
 
     # Let it run for specified duration
@@ -102,27 +75,63 @@ def test_multiprocessing(config: Configuration, duration: int = 10):
     print(f"  Ending memory: {end_memory:.2f} MB")
     print(f"  Memory used: {end_memory - start_memory:.2f} MB")
     print(f"  Process count: {process_count}")
+    print(f"  Mode: Dedicated event loop per worker process")
+
+
+def test_default_mode(config: Configuration, duration: int = 10):
+    """Test asyncio=False (default) execution mode"""
+    print("\n" + "=" * 60)
+    print("Testing asyncio=False (Default) Execution Mode")
+    print("=" * 60)
+
+    start_memory = measure_memory()
+    print(f"Starting memory: {start_memory:.2f} MB")
+
+    # Count child processes
+    parent = psutil.Process(os.getpid())
+
+    start_time = time.time()
+
+    handler = TaskHandler(configuration=config, asyncio=False)
+    handler.start_processes()
+
+    # Let it run for specified duration
+    time.sleep(duration)
+
+    # Count processes
+    children = parent.children(recursive=True)
+    process_count = len(children) + 1  # +1 for parent
+
+    handler.stop_processes()
+
+    elapsed = time.time() - start_time
+    end_memory = measure_memory()
+
+    print(f"\nResults:")
+    print(f"  Duration: {elapsed:.2f}s")
+    print(f"  Ending memory: {end_memory:.2f} MB")
+    print(f"  Memory used: {end_memory - start_memory:.2f} MB")
+    print(f"  Process count: {process_count}")
+    print(f"  Mode: BackgroundEventLoop for async workers")
 
 
 def print_comparison_table():
     """Print feature comparison table"""
     print("\n" + "=" * 80)
-    print("FEATURE COMPARISON")
+    print("EXECUTION MODE COMPARISON")
     print("=" * 80)
 
     comparison = [
-        ("Aspect", "Multiprocessing", "AsyncIO"),
-        ("─" * 30, "─" * 20, "─" * 20),
-        ("Memory (10 workers)", "~500-1000 MB", "~50-100 MB"),
-        ("I/O-bound throughput", "Good", "Excellent"),
-        ("CPU-bound throughput", "Excellent", "Limited (GIL)"),
-        ("Fault isolation", "Yes (process crash)", "No (shared fate)"),
-        ("Debugging", "Complex (multiple processes)", "Simple (single process)"),
-        ("Context switching", "OS-level (expensive)", "Coroutine (cheap)"),
-        ("Concurrency model", "True parallelism", "Cooperative"),
-        ("Scaling", "Linear memory cost", "Minimal memory cost"),
-        ("Dependencies", "None (stdlib)", "httpx (external)"),
-        ("Best for", "CPU-bound tasks", "I/O-bound tasks"),
+        ("Aspect", "asyncio=False (default)", "asyncio=True"),
+        ("─" * 30, "─" * 25, "─" * 25),
+        ("Architecture", "Multiprocessing", "Multiprocessing"),
+        ("Polling", "Sync (requests)", "Sync (requests)"),
+        ("Async execution", "BackgroundEventLoop", "Dedicated event loop"),
+        ("Sync execution", "Direct", "Thread pool"),
+        ("Memory overhead", "~60 MB per worker", "~60 MB + thread pool"),
+        ("Best for", "Most use cases", "Pure async workloads"),
+        ("Async perf", "1.5-2x faster", "Slightly faster"),
+        ("Fault isolation", "Yes (process crash)", "Yes (process crash)"),
     ]
 
     for row in comparison:
@@ -135,39 +144,27 @@ def print_recommendations():
     print("RECOMMENDATIONS")
     print("=" * 80)
 
-    print("\n✅ Use AsyncIO when:")
-    print("   • Tasks are primarily I/O-bound (HTTP calls, DB queries, file I/O)")
-    print("   • You need 10+ workers")
-    print("   • Memory is constrained")
-    print("   • You want simpler debugging")
-    print("   • You're comfortable with async/await syntax")
+    print("\n✅ Use asyncio=False (default) when:")
+    print("   • General use cases")
+    print("   • Mixed sync and async workers")
+    print("   • CPU-bound tasks")
+    print("   • You want simplicity")
 
-    print("\n✅ Use Multiprocessing when:")
-    print("   • Tasks are CPU-bound (image processing, ML inference)")
-    print("   • You need absolute fault isolation")
-    print("   • You have complex shared state requirements")
-    print("   • You want battle-tested stability")
+    print("\n✅ Use asyncio=True when:")
+    print("   • Pure async workload")
+    print("   • You want dedicated event loop per worker")
+    print("   • Fine-tuned async control needed")
 
-    print("\n⚠️  Consider Hybrid Approach when:")
-    print("   • You have both I/O-bound and CPU-bound tasks")
-    print("   • Use AsyncIO with ProcessPoolExecutor for CPU work")
-    print("   • See examples/asyncio_workers.py for implementation")
+    print("\n💡 Key Insight:")
+    print("   Both modes use multiprocessing (one process per worker)")
+    print("   The difference is only in how async workers are executed")
 
 
-async def main():
+def main():
     """Run comparison tests"""
     print("\n" + "=" * 80)
-    print("Conductor Python SDK: Multiprocessing vs AsyncIO Comparison")
+    print("Conductor Python SDK: Execution Mode Comparison")
     print("=" * 80)
-
-    # Check dependencies
-    try:
-        import httpx
-        asyncio_available = True
-    except ImportError:
-        asyncio_available = False
-        print("\n⚠️  WARNING: httpx not installed. AsyncIO test will be skipped.")
-        print("   Install with: pip install httpx")
 
     config = Configuration()
 
@@ -179,10 +176,8 @@ async def main():
     print(f"  Test duration: {test_duration}s per implementation")
 
     # Run tests
-    if asyncio_available:
-        await test_asyncio(config, test_duration)
-
-    test_multiprocessing(config, test_duration)
+    test_default_mode(config, test_duration)
+    test_asyncio_mode(config, test_duration)
 
     # Print comparison
     print_comparison_table()
@@ -195,6 +190,6 @@ async def main():
 
 if __name__ == '__main__':
     try:
-        asyncio.run(main())
+        main()
     except KeyboardInterrupt:
         print("\n\nTest interrupted")

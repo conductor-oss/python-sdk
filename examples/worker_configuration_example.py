@@ -28,7 +28,7 @@ Usage:
 
 import asyncio
 import os
-from conductor.client.automator.task_handler_asyncio import TaskHandlerAsyncIO
+from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.worker.worker_task import worker_task
 from conductor.client.worker.worker_config import resolve_worker_config, get_worker_config_summary

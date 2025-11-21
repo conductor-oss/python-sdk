@@ -82,15 +82,70 @@ def get_registered_worker_names() -> List[str]:
 
 
 class TaskHandler:
+    """
+    Unified task handler that manages worker processes.
+
+    Architecture:
+        - Always uses multiprocessing: One Python process per worker
+        - Each process continuously polls for tasks (non-blocking)
+        - Tasks execute in thread pool (controlled by thread_count parameter)
+        - Polling continues while tasks are executing in background
+        - Polling and updates are always synchronous (requests library)
+
+    Execution Modes (asyncio parameter):
+
+        asyncio=False (default) - Recommended:
+            - Sync workers: Execute directly in the worker process
+            - Async workers: Execute via BackgroundEventLoop (1.5-2x faster)
+            - Best for: All use cases
+
+        asyncio=True (deprecated, works same as False):
+            - Kept for compatibility, but behaves identically to asyncio=False
+            - Both sync and async workers use the same execution path
+            - Recommendation: Use default (asyncio=False)
+
+    Usage:
+        # Default mode (asyncio=False)
+        handler = TaskHandler(configuration=config)
+        handler.start_processes()
+        handler.join_processes()
+
+        # AsyncIO execution mode
+        handler = TaskHandler(configuration=config, asyncio=True)
+        handler.start_processes()
+        handler.join_processes()
+
+        # Context manager (recommended)
+        with TaskHandler(configuration=config) as handler:
+            handler.start_processes()
+            handler.join_processes()
+
+    Worker Examples:
+        # Async worker (works with both modes)
+        @worker_task(task_definition_name='fetch_data')
+        async def fetch_data(url: str) -> dict:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url)
+            return {'data': response.json()}
+
+        # Sync worker (works with both modes)
+        @worker_task(task_definition_name='process_data')
+        def process_data(data: dict) -> dict:
+            result = expensive_computation(data)
+            return {'result': result}
+    """
+
     def __init__(
             self,
             workers: Optional[List[WorkerInterface]] = None,
             configuration: Optional[Configuration] = None,
             metrics_settings: Optional[MetricsSettings] = None,
             scan_for_annotated_workers: bool = True,
-            import_modules: Optional[List[str]] = None
+            import_modules: Optional[List[str]] = None,
+            asyncio: bool = False
     ):
         workers = workers or []
+        self.asyncio = asyncio
         self.logger_process, self.queue = _setup_logging_queue(configuration)
 
         # imports
@@ -200,7 +255,7 @@ class TaskHandler:
             configuration: Configuration,
             metrics_settings: MetricsSettings
     ) -> None:
-        task_runner = TaskRunner(worker, configuration, metrics_settings)
+        task_runner = TaskRunner(worker, configuration, metrics_settings, asyncio=self.asyncio)
         process = Process(target=task_runner.run)
         self.task_runner_processes.append(process)
 

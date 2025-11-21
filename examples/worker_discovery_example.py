@@ -31,7 +31,7 @@ examples_dir = Path(__file__).parent
 if str(examples_dir) not in sys.path:
     sys.path.insert(0, str(examples_dir))
 
-from conductor.client.automator.task_handler_asyncio import TaskHandlerAsyncIO
+from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.worker.worker_loader import (
     WorkerLoader,
@@ -154,7 +154,7 @@ async def example_5_run_with_discovered_workers():
 
     # Start task handler with discovered workers
     try:
-        async with TaskHandlerAsyncIO(configuration=api_config) as task_handler:
+        async with TaskHandler(configuration=api_config) as task_handler:
             # Set up graceful shutdown
             loop = asyncio.get_running_loop()
 

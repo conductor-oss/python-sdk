@@ -4,7 +4,7 @@ Worker Discovery: Sync vs Async Example
 Demonstrates that worker discovery is execution-model agnostic.
 Workers can be discovered once and used with either:
 - TaskHandler (sync, multiprocessing-based)
-- TaskHandlerAsyncIO (async, asyncio-based)
+- TaskHandler (async, asyncio-based)
 
 The discovery mechanism just imports Python modules - it doesn't care
 whether the workers are sync or async functions.
@@ -61,10 +61,10 @@ def demonstrate_sync_compatibility():
 
 def demonstrate_async_compatibility():
     """
-    Demonstrate that discovered workers work with async TaskHandlerAsyncIO
+    Demonstrate that discovered workers work with async TaskHandler
     """
     print("\n" + "=" * 70)
-    print("Async TaskHandlerAsyncIO Compatibility")
+    print("Async TaskHandler Compatibility")
     print("=" * 70)
 
     # Discover workers (same discovery process)
@@ -76,19 +76,19 @@ def demonstrate_async_compatibility():
     print(f"\n✓ Discovered {loader.get_worker_count()} workers")
     print(f"✓ Workers: {', '.join(loader.get_worker_names())}\n")
 
-    # Workers can be used with async TaskHandlerAsyncIO
-    from conductor.client.automator.task_handler_asyncio import TaskHandlerAsyncIO
+    # Workers can be used with async TaskHandler
+    from conductor.client.automator.task_handler import TaskHandler
 
     try:
-        # Create TaskHandlerAsyncIO with discovered workers
-        handler = TaskHandlerAsyncIO(
+        # Create TaskHandler with discovered workers
+        handler = TaskHandler(
             configuration=Configuration()
             # Automatically uses discovered workers
         )
 
-        print("✓ TaskHandlerAsyncIO (async) created successfully")
+        print("✓ TaskHandler (async) created successfully")
         print("✓ Discovered workers are compatible with async execution")
-        print("✓ Both sync and async workers can run in TaskHandlerAsyncIO")
+        print("✓ Both sync and async workers can run in TaskHandler")
         print("  - Sync workers: Run in thread pool")
         print("  - Async workers: Run natively in event loop")
 
@@ -149,7 +149,7 @@ def demonstrate_execution_model_agnostic():
     print("    - Uses multiprocessing")
     print("    - Sync workers run directly")
     print("    - Async workers run in event loop")
-    print("\n  • TaskHandlerAsyncIO (async):")
+    print("\n  • TaskHandler (async):")
     print("    - Uses asyncio")
     print("    - Sync workers run in thread pool")
     print("    - Async workers run natively")

@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
@@ -29,11 +30,13 @@ class TaskRunner:
             self,
             worker: WorkerInterface,
             configuration: Configuration = None,
-            metrics_settings: MetricsSettings = None
+            metrics_settings: MetricsSettings = None,
+            asyncio: bool = False
     ):
         if not isinstance(worker, WorkerInterface):
             raise Exception("Invalid worker")
         self.worker = worker
+        self.asyncio = asyncio
         self.__set_worker_properties()
         if not isinstance(configuration, Configuration):
             configuration = Configuration()
@@ -52,6 +55,15 @@ class TaskRunner:
         # Auth failure backoff tracking to prevent retry storms
         self._auth_failures = 0
         self._last_auth_failure = 0
+
+        # Thread pool for concurrent task execution
+        # thread_count from worker configuration controls concurrency
+        max_workers = getattr(worker, 'thread_count', 1)
+        self._executor = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix=f"worker-{worker.get_task_definition_name()}")
+        self._running_tasks = set()  # Track futures of running tasks
+        self._max_workers = max_workers
+        self._last_poll_time = 0  # Track last poll to avoid excessive polling when queue is empty
+        self._consecutive_empty_polls = 0  # Track empty polls to implement backoff
 
     def run(self) -> None:
         if self.configuration is not None:
@@ -72,14 +84,143 @@ class TaskRunner:
 
     def run_once(self) -> None:
         try:
-            task = self.__poll_task()
-            if task is not None and task.task_id is not None:
-                task_result = self.__execute_task(task)
-                self.__update_task(task_result)
-            self.__wait_for_polling_interval()
+            # Cleanup completed tasks immediately - this is critical for detecting available slots
+            self.__cleanup_completed_tasks()
+
+            # Check if we can accept more tasks (based on thread_count)
+            current_capacity = len(self._running_tasks)
+            if current_capacity >= self._max_workers:
+                # At capacity - sleep briefly then return to check again
+                time.sleep(0.001)  # 1ms - just enough to prevent CPU spinning
+                return
+
+            # Calculate how many tasks we can accept
+            available_slots = self._max_workers - current_capacity
+
+            # Adaptive backoff: if queue is empty, don't poll too aggressively
+            if self._consecutive_empty_polls > 0:
+                now = time.time()
+                time_since_last_poll = now - self._last_poll_time
+
+                # Exponential backoff for empty polls (1ms, 2ms, 4ms, 8ms, up to poll_interval)
+                # Cap exponent at 10 to prevent overflow (2^10 = 1024ms = 1s)
+                capped_empty_polls = min(self._consecutive_empty_polls, 10)
+                min_poll_delay = min(0.001 * (2 ** capped_empty_polls), self.worker.get_polling_interval_in_seconds())
+
+                if time_since_last_poll < min_poll_delay:
+                    # Too soon to poll again - sleep the remaining time
+                    time.sleep(min_poll_delay - time_since_last_poll)
+                    return
+
+            # Always use batch poll (even for 1 task) for consistency
+            tasks = self.__batch_poll_tasks(available_slots)
+            self._last_poll_time = time.time()
+
+            if tasks:
+                # Got tasks - reset backoff and submit to executor
+                self._consecutive_empty_polls = 0
+                for task in tasks:
+                    if task and task.task_id:
+                        future = self._executor.submit(self.__execute_and_update_task, task)
+                        self._running_tasks.add(future)
+                # Continue immediately - don't sleep!
+            else:
+                # No tasks available - increment backoff counter
+                self._consecutive_empty_polls += 1
+
             self.worker.clear_task_definition_name_cache()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("Error in run_once: %s", traceback.format_exc())
+
+    def __cleanup_completed_tasks(self) -> None:
+        """Remove completed task futures from tracking set"""
+        # Fast path: use difference_update for better performance
+        self._running_tasks = {f for f in self._running_tasks if not f.done()}
+
+    def __execute_and_update_task(self, task: Task) -> None:
+        """Execute task and update result (runs in thread pool)"""
+        try:
+            task_result = self.__execute_task(task)
+            self.__update_task(task_result)
+        except Exception as e:
+            logger.error(
+                "Error executing/updating task %s: %s",
+                task.task_id if task else "unknown",
+                traceback.format_exc()
+            )
+
+    def __batch_poll_tasks(self, count: int) -> list:
+        """Poll for multiple tasks at once (more efficient than polling one at a time)"""
+        task_definition_name = self.worker.get_task_definition_name()
+        if self.worker.paused():
+            logger.debug("Stop polling task for: %s", task_definition_name)
+            return []
+
+        # Apply exponential backoff if we have recent auth failures
+        if self._auth_failures > 0:
+            now = time.time()
+            backoff_seconds = min(2 ** self._auth_failures, 60)
+            time_since_last_failure = now - self._last_auth_failure
+            if time_since_last_failure < backoff_seconds:
+                time.sleep(0.1)
+                return []
+
+        if self.metrics_collector is not None:
+            self.metrics_collector.increment_task_poll(task_definition_name)
+
+        try:
+            start_time = time.time()
+            domain = self.worker.get_domain()
+            params = {
+                "workerid": self.worker.get_identity(),
+                "count": count,
+                "timeout": 100  # ms
+            }
+            if domain is not None:
+                params["domain"] = domain
+
+            tasks = self.task_client.batch_poll(tasktype=task_definition_name, **params)
+
+            finish_time = time.time()
+            time_spent = finish_time - start_time
+            if self.metrics_collector is not None:
+                self.metrics_collector.record_task_poll_time(task_definition_name, time_spent)
+
+            # Success - reset auth failure counter
+            if tasks:
+                self._auth_failures = 0
+
+            return tasks if tasks else []
+
+        except AuthorizationException as auth_exception:
+            self._auth_failures += 1
+            self._last_auth_failure = time.time()
+            backoff_seconds = min(2 ** self._auth_failures, 60)
+
+            if self.metrics_collector is not None:
+                self.metrics_collector.increment_task_poll_error(task_definition_name, type(auth_exception))
+
+            if auth_exception.invalid_token:
+                logger.error(
+                    f"Failed to batch poll task {task_definition_name} due to invalid auth token "
+                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s). "
+                    "Please check your CONDUCTOR_AUTH_KEY and CONDUCTOR_AUTH_SECRET."
+                )
+            else:
+                logger.error(
+                    f"Failed to batch poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code} "
+                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s)."
+                )
+            return []
+        except Exception as e:
+            if self.metrics_collector is not None:
+                self.metrics_collector.increment_task_poll_error(task_definition_name, type(e))
+            logger.error(
+                "Failed to batch poll task for: %s, reason: %s",
+                task_definition_name,
+                traceback.format_exc()
+            )
+            return []
 
     def __poll_task(self) -> Task:
         task_definition_name = self.worker.get_task_definition_name()
@@ -184,6 +325,8 @@ class TaskRunner:
 
         try:
             start_time = time.time()
+
+            # Execute worker function - worker.execute() handles both sync and async correctly
             task_output = self.worker.execute(task)
 
             # Handle different return types
