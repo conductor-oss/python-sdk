@@ -6,7 +6,8 @@ import logging
 import typing
 from typing import List
 
-from dacite import from_dict
+from dacite import from_dict, Config
+from dacite.exceptions import MissingValueError, WrongTypeError
 from requests.structures import CaseInsensitiveDict
 
 from conductor.client.configuration.configuration import Configuration
@@ -48,7 +49,78 @@ def convert_from_dict(cls: type, data: dict) -> object:
         return data
 
     if dataclasses.is_dataclass(cls):
-        return from_dict(data_class=cls, data=data)
+        try:
+            # First try with strict conversion
+            return from_dict(data_class=cls, data=data)
+        except MissingValueError as e:
+            # Lenient mode: Create partial object with only available fields
+            # Use manual construction to bypass dacite's strict validation
+            missing_field = str(e).replace('missing value for field ', '').strip('"')
+
+            logger.warning(
+                f"Missing fields in task input for {cls.__name__}. "
+                f"Creating partial object with available fields only. "
+                f"Available: {list(data.keys()) if isinstance(data, dict) else []}, "
+                f"Missing: {missing_field}"
+            )
+
+            # Build kwargs with available fields only, set missing to None
+            kwargs = {}
+            type_hints = typing.get_type_hints(cls)
+
+            for field in dataclasses.fields(cls):
+                if field.name in data:
+                    # Field is present - convert it properly
+                    field_type = type_hints.get(field.name, field.type)
+                    value = data[field.name]
+
+                    # Handle nested dataclasses
+                    if dataclasses.is_dataclass(field_type) and isinstance(value, dict):
+                        try:
+                            kwargs[field.name] = convert_from_dict(field_type, value)
+                        except Exception:
+                            # If nested conversion fails, use None
+                            kwargs[field.name] = None
+                    else:
+                        kwargs[field.name] = value
+                else:
+                    # Field is missing - set to None regardless of type
+                    kwargs[field.name] = None
+
+            # Construct object directly, bypassing dacite
+            try:
+                return cls(**kwargs)
+            except TypeError as te:
+                # Some fields may not accept None - try with empty defaults
+                logger.warning(f"Failed to create {cls.__name__} with None values, trying empty defaults: {te}")
+
+                for field in dataclasses.fields(cls):
+                    if field.name not in data and kwargs.get(field.name) is None:
+                        field_type = type_hints.get(field.name, field.type)
+
+                        # Provide type-appropriate empty defaults
+                        if field_type == str or field_type == 'str':
+                            kwargs[field.name] = ''
+                        elif field_type in (int, float):
+                            kwargs[field.name] = 0
+                        elif field_type == bool:
+                            kwargs[field.name] = False
+                        elif field_type == list or typing.get_origin(field_type) == list:
+                            kwargs[field.name] = []
+                        elif field_type == dict or typing.get_origin(field_type) == dict:
+                            kwargs[field.name] = {}
+                        # else: keep None
+
+                try:
+                    return cls(**kwargs)
+                except Exception as final_e:
+                    # Last resort: log error but don't crash
+                    logger.error(
+                        f"Cannot create {cls.__name__} even with defaults. "
+                        f"Available fields: {list(data.keys()) if isinstance(data, dict) else []}. "
+                        f"Error: {final_e}. Returning None."
+                    )
+                    return None
 
     typ = type(data)
     if not ((str(typ).startswith("dict[") or

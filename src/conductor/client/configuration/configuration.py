@@ -164,9 +164,14 @@ class Configuration:
             level=level
         )
 
-        # Suppress verbose DEBUG logs from third-party libraries
+        # Suppress verbose logs from third-party HTTP libraries
         logging.getLogger('urllib3').setLevel(logging.WARNING)
         logging.getLogger('urllib3.connectionpool').setLevel(logging.WARNING)
+
+        # Suppress httpx INFO logs for poll/execute/update requests
+        # Set to WARNING so only errors are shown (not routine HTTP requests)
+        logging.getLogger('httpx').setLevel(logging.WARNING)
+        logging.getLogger('httpcore').setLevel(logging.WARNING)
 
     @staticmethod
     def get_logging_formatted_name(name):

@@ -5,6 +5,8 @@ These workers are in a separate package to showcase worker discovery.
 """
 import json
 import time
+
+from conductor.client.context import get_task_context
 from conductor.client.worker.worker_task import worker_task
 from user_example.models import User
 
@@ -61,6 +63,8 @@ async def update_user(user: User) -> dict:
         dict: Result with user ID
     """
     # Simulate some processing
+    ctx = get_task_context()
+    print(f'user name is {user.username} and workflow {ctx.get_workflow_instance_id()}')
     time.sleep(0.1)
 
     return {
