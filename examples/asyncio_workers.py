@@ -12,7 +12,7 @@ from examples.task_listener_example import TaskExecutionLogger
 
 @worker_task(
     task_definition_name='calculate',
-    thread_count=10,  # Lower concurrency for CPU-bound tasks
+    thread_count=100,  # Lower concurrency for CPU-bound tasks
     poll_timeout=10,
     lease_extend_enabled=False
 )
@@ -84,7 +84,7 @@ def long_running_task(job_id: str) -> Union[dict, TaskInProgress]:
 
 def main():
     """
-    Main entry point demonstrating unified TaskHandler with asyncio execution mode.
+    Main entry point demonstrating TaskHandler with async workers.
     """
 
     # Configuration - defaults to reading from environment variables:
@@ -112,14 +112,14 @@ def main():
     print("\nStarting workers... Press Ctrl+C to stop")
     print(f"Metrics will be published to: {metrics_dir}/conductor_metrics.prom\n")
 
-    # Using unified TaskHandler with asyncio=True for dedicated event loop per worker
+    # Using TaskHandler with async workers
+    # Async workers automatically use BackgroundEventLoop for efficient async execution
     try:
         with TaskHandler(
             configuration=api_config,
             metrics_settings=metrics_settings,
             scan_for_annotated_workers=True,
-            import_modules=["helloworld.greetings_worker", "user_example.user_workers"],
-            asyncio=True  # Use dedicated event loop for async workers
+            import_modules=["helloworld.greetings_worker", "user_example.user_workers"]
         ) as task_handler:
             task_handler.start_processes()
             task_handler.join_processes()
@@ -136,7 +136,13 @@ def main():
 
 if __name__ == '__main__':
     """
-    Run the main function with unified TaskHandler.
+    Run the main function with TaskHandler.
+
+    Async Execution:
+    ----------------
+    - Async workers use BackgroundEventLoop (persistent event loop in background thread)
+    - 1.5-2x faster than creating new event loops per task
+    - For non-blocking async (10-100x better concurrency), use non_blocking_async=True in decorator
 
     Metrics Available:
     ------------------

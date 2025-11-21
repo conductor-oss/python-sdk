@@ -30,13 +30,11 @@ class TaskRunner:
             self,
             worker: WorkerInterface,
             configuration: Configuration = None,
-            metrics_settings: MetricsSettings = None,
-            asyncio: bool = False
+            metrics_settings: MetricsSettings = None
     ):
         if not isinstance(worker, WorkerInterface):
             raise Exception("Invalid worker")
         self.worker = worker
-        self.asyncio = asyncio
         self.__set_worker_properties()
         if not isinstance(configuration, Configuration):
             configuration = Configuration()
@@ -84,11 +82,16 @@ class TaskRunner:
 
     def run_once(self) -> None:
         try:
+            # Check completed async tasks first (non-blocking)
+            self.__check_completed_async_tasks()
+
             # Cleanup completed tasks immediately - this is critical for detecting available slots
             self.__cleanup_completed_tasks()
 
             # Check if we can accept more tasks (based on thread_count)
-            current_capacity = len(self._running_tasks)
+            # Account for pending async tasks in capacity calculation
+            pending_async_count = len(getattr(self.worker, '_pending_async_tasks', {}))
+            current_capacity = len(self._running_tasks) + pending_async_count
             if current_capacity >= self._max_workers:
                 # At capacity - sleep briefly then return to check again
                 time.sleep(0.001)  # 1ms - just enough to prevent CPU spinning
@@ -137,10 +140,34 @@ class TaskRunner:
         # Fast path: use difference_update for better performance
         self._running_tasks = {f for f in self._running_tasks if not f.done()}
 
+    def __check_completed_async_tasks(self) -> None:
+        """Check for completed async tasks and update Conductor"""
+        if not hasattr(self.worker, 'check_completed_async_tasks'):
+            return
+
+        completed = self.worker.check_completed_async_tasks()
+        for task_id, task_result in completed:
+            try:
+                self.__update_task(task_result)
+            except Exception as e:
+                logger.error(
+                    "Error updating completed async task %s: %s",
+                    task_id,
+                    traceback.format_exc()
+                )
+
     def __execute_and_update_task(self, task: Task) -> None:
         """Execute task and update result (runs in thread pool)"""
         try:
             task_result = self.__execute_task(task)
+            # If task returned None, it's running async - don't update yet
+            if task_result is None:
+                logger.debug("Task %s is running async, will update when complete", task.task_id)
+                return
+            # If task returned TaskInProgress, it's running async - don't update yet
+            if isinstance(task_result, TaskInProgress):
+                logger.debug("Task %s is in progress, will update when complete", task.task_id)
+                return
             self.__update_task(task_result)
         except Exception as e:
             logger.error(

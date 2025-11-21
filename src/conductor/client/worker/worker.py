@@ -113,8 +113,60 @@ class BackgroundEventLoop:
             finally:
                 self._loop.close()
 
+    def submit_coroutine(self, coro):
+        """Submit a coroutine to run in the background event loop WITHOUT blocking.
+
+        This is the non-blocking version that returns a Future immediately.
+        The coroutine runs concurrently in the background loop.
+
+        Args:
+            coro: The coroutine to run
+
+        Returns:
+            concurrent.futures.Future: Future that will contain the result
+
+        Raises:
+            RuntimeError: If background loop cannot be started
+        """
+        # Lazy initialization: start the loop only when first coroutine is submitted
+        if not self._loop_started:
+            with self._lock:
+                # Double-check pattern to avoid race condition
+                if not self._loop_started:
+                    if self._shutdown:
+                        logger.error("Background loop is shut down, cannot submit coroutine")
+                        coro.close()
+                        raise RuntimeError("Background loop is shut down")
+                    self._start_loop()
+                    self._loop_started = True
+
+        # Check if we're shutting down or loop is not available
+        if self._shutdown or not self._loop or self._loop.is_closed():
+            logger.error("Background loop not available, cannot submit coroutine")
+            coro.close()
+            raise RuntimeError("Background loop not available")
+
+        if not self._loop.is_running():
+            logger.error("Background loop not running, cannot submit coroutine")
+            coro.close()
+            raise RuntimeError("Background loop not running")
+
+        # Submit the coroutine to the background loop and return Future immediately
+        # This does NOT block - the coroutine runs concurrently in the background
+        try:
+            future = asyncio.run_coroutine_threadsafe(coro, self._loop)
+            return future
+        except Exception as e:
+            # Failed to submit coroutine to event loop
+            logger.error(f"Failed to submit coroutine to background loop: {e}")
+            coro.close()
+            raise RuntimeError(f"Failed to submit coroutine: {e}") from e
+
     def run_coroutine(self, coro):
         """Run a coroutine in the background event loop and wait for the result.
+
+        This is the blocking version that waits for the result.
+        For non-blocking execution, use submit_coroutine() instead.
 
         Args:
             coro: The coroutine to run
@@ -163,18 +215,25 @@ class BackgroundEventLoop:
                 coro.close()
                 raise
 
+        # Submit the coroutine to the background loop
         try:
-            # Submit the coroutine to the background loop and wait for result
-            # Use timeout to prevent indefinite blocking
             future = asyncio.run_coroutine_threadsafe(coro, self._loop)
+        except Exception as e:
+            # Failed to submit coroutine to event loop
+            logger.error(f"Failed to submit coroutine to background loop: {e}")
+            coro.close()
+            raise
+
+        # Wait for result with timeout
+        try:
             # 300 second timeout (5 minutes) - tasks should complete faster
             return future.result(timeout=300)
         except TimeoutError:
             logger.error("Coroutine execution timed out after 300 seconds")
-            future.cancel()
+            future.cancel()  # Safe: future was successfully created above
             raise
         except Exception as e:
-            # Propagate exceptions from the coroutine
+            # Propagate exceptions from the coroutine execution
             logger.debug(f"Exception in coroutine: {type(e).__name__}: {e}")
             raise
 
@@ -230,7 +289,8 @@ class Worker(WorkerInterface):
                  thread_count: int = 1,
                  register_task_def: bool = False,
                  poll_timeout: int = 100,
-                 lease_extend_enabled: bool = True
+                 lease_extend_enabled: bool = True,
+                 non_blocking_async: bool = False
                  ) -> Self:
         super().__init__(task_definition_name)
         self.api_client = ApiClient()
@@ -248,9 +308,13 @@ class Worker(WorkerInterface):
         self.register_task_def = register_task_def
         self.poll_timeout = poll_timeout
         self.lease_extend_enabled = lease_extend_enabled
+        self.non_blocking_async = non_blocking_async
 
         # Initialize background event loop for async workers
         self._background_loop = None
+
+        # Track pending async tasks: {task_id -> (future, task, submit_time)}
+        self._pending_async_tasks = {}
 
     def execute(self, task: Task) -> TaskResult:
         task_input = {}
@@ -278,12 +342,26 @@ class Worker(WorkerInterface):
                 task_output = self.execute_function(**task_input)
 
             # If the function is async (coroutine), run it in the background event loop
-            # This avoids the expensive overhead of starting/stopping an event loop per call
             if inspect.iscoroutine(task_output):
                 # Lazy-initialize the background loop only when needed
                 if self._background_loop is None:
                     self._background_loop = BackgroundEventLoop()
-                task_output = self._background_loop.run_coroutine(task_output)
+
+                if self.non_blocking_async:
+                    # Non-blocking mode: Submit coroutine and return None
+                    # This allows worker to continue polling while async tasks run concurrently
+                    future = self._background_loop.submit_coroutine(task_output)
+
+                    # Store future for later retrieval
+                    self._pending_async_tasks[task.task_id] = (future, task, time.time())
+
+                    # Return None to signal that this task is being handled asynchronously
+                    # The TaskRunner will check for completed async tasks separately
+                    return None
+                else:
+                    # Blocking mode (default): Wait for result (backward compatible)
+                    # This avoids the expensive overhead of starting/stopping an event loop per call
+                    task_output = self._background_loop.run_coroutine(task_output)
 
             if isinstance(task_output, TaskResult):
                 task_output.task_id = task.task_id
@@ -344,6 +422,92 @@ class Worker(WorkerInterface):
                 }
 
         return task_result
+
+    def check_completed_async_tasks(self) -> list:
+        """Check which async tasks have completed and return their results.
+
+        This is non-blocking - just checks if futures are done.
+
+        Returns:
+            List of (task_id, TaskResult) tuples for completed tasks
+        """
+        completed_results = []
+        tasks_to_remove = []
+
+        for task_id, (future, task, submit_time) in list(self._pending_async_tasks.items()):
+            if future.done():  # Non-blocking check
+                task_result: TaskResult = self.get_task_result_from_task(task)
+
+                try:
+                    # Get result (won't block since future is done)
+                    task_output = future.result(timeout=0)
+
+                    # Process result same as sync execution
+                    if isinstance(task_output, TaskResult):
+                        task_output.task_id = task.task_id
+                        task_output.workflow_instance_id = task.workflow_instance_id
+                        completed_results.append((task_id, task_output))
+                        tasks_to_remove.append(task_id)
+                        continue
+
+                    # Handle output data
+                    task_result.status = TaskResultStatus.COMPLETED
+                    task_result.output_data = task_output
+
+                    # Serialize output data
+                    if dataclasses.is_dataclass(type(task_result.output_data)):
+                        task_output = dataclasses.asdict(task_result.output_data)
+                        task_result.output_data = task_output
+                    elif not isinstance(task_result.output_data, dict):
+                        task_output = task_result.output_data
+                        try:
+                            task_result.output_data = self.api_client.sanitize_for_serialization(task_output)
+                            if not isinstance(task_result.output_data, dict):
+                                task_result.output_data = {"result": task_result.output_data}
+                        except (RecursionError, TypeError, AttributeError) as e:
+                            logger.warning(
+                                "Task output of type %s could not be serialized: %s. "
+                                "Converting to string. Consider returning serializable data "
+                                "(e.g., response.json() instead of response object).",
+                                type(task_output).__name__,
+                                str(e)[:100]
+                            )
+                            task_result.output_data = {
+                                "result": str(task_output),
+                                "type": type(task_output).__name__,
+                                "error": "Object could not be serialized. Please return JSON-serializable data."
+                            }
+
+                    completed_results.append((task_id, task_result))
+                    tasks_to_remove.append(task_id)
+
+                except NonRetryableException as ne:
+                    task_result.status = TaskResultStatus.FAILED_WITH_TERMINAL_ERROR
+                    if len(ne.args) > 0:
+                        task_result.reason_for_incompletion = ne.args[0]
+                    completed_results.append((task_id, task_result))
+                    tasks_to_remove.append(task_id)
+
+                except Exception as e:
+                    logger.error(
+                        "Error in async task %s with id %s. error = %s",
+                        task.task_def_name,
+                        task.task_id,
+                        traceback.format_exc()
+                    )
+                    task_result.logs = [TaskExecLog(
+                        traceback.format_exc(), task_result.task_id, int(time.time()))]
+                    task_result.status = TaskResultStatus.FAILED
+                    if len(e.args) > 0:
+                        task_result.reason_for_incompletion = e.args[0]
+                    completed_results.append((task_id, task_result))
+                    tasks_to_remove.append(task_id)
+
+        # Remove completed tasks
+        for task_id in tasks_to_remove:
+            del self._pending_async_tasks[task_id]
+
+        return completed_results
 
     def get_identity(self) -> str:
         return self.worker_id

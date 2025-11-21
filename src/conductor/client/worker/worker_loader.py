@@ -6,7 +6,7 @@ similar to Spring's component scanning in Java.
 
 Usage:
     from conductor.client.worker.worker_loader import WorkerLoader
-    from conductor.client.automator.task_handler_asyncio import TaskHandlerAsyncIO
+    from conductor.client.automator.task_handler import TaskHandler
 
     # Scan packages for workers
     loader = WorkerLoader()
@@ -19,8 +19,8 @@ Usage:
     workers = loader.get_workers()
 
     # Start task handler with discovered workers
-    task_handler = TaskHandlerAsyncIO(configuration=config)
-    await task_handler.start()
+    task_handler = TaskHandler(configuration=config, workers=workers)
+    task_handler.start_processes()
 """
 
 from __future__ import annotations
@@ -269,8 +269,9 @@ def scan_for_workers(*package_names: str, recursive: bool = True) -> WorkerLoade
         loader.print_summary()
 
         # Start task handler
-        async with TaskHandlerAsyncIO(configuration=config) as handler:
-            await handler.wait()
+        with TaskHandler(configuration=config) as handler:
+            handler.start_processes()
+            handler.join_processes()
     """
     loader = WorkerLoader()
     loader.scan_packages(list(package_names), recursive=recursive)
@@ -308,8 +309,9 @@ def auto_discover_workers(
         )
 
         # Start task handler with discovered workers
-        async with TaskHandlerAsyncIO(configuration=config) as handler:
-            await handler.wait()
+        with TaskHandler(configuration=config) as handler:
+            handler.start_processes()
+            handler.join_processes()
     """
     loader = WorkerLoader()
 

@@ -36,7 +36,8 @@ if not _mp_fork_set:
 
 def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func,
                          thread_count: int = 1, register_task_def: bool = False,
-                         poll_timeout: int = 100, lease_extend_enabled: bool = True):
+                         poll_timeout: int = 100, lease_extend_enabled: bool = True,
+                         non_blocking_async: bool = False):
     logger.info("decorated %s", name)
     _decorated_functions[(name, domain)] = {
         "func": func,
@@ -46,7 +47,8 @@ def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id:
         "thread_count": thread_count,
         "register_task_def": register_task_def,
         "poll_timeout": poll_timeout,
-        "lease_extend_enabled": lease_extend_enabled
+        "lease_extend_enabled": lease_extend_enabled,
+        "non_blocking_async": non_blocking_async
     }
 
 
@@ -65,7 +67,8 @@ def get_registered_workers() -> List[Worker]:
             poll_interval=record["poll_interval"],
             domain=domain,
             worker_id=record["worker_id"],
-            thread_count=record.get("thread_count", 1)
+            thread_count=record.get("thread_count", 1),
+            non_blocking_async=record.get("non_blocking_async", False)
         )
         workers.append(worker)
     return workers
@@ -92,26 +95,22 @@ class TaskHandler:
         - Polling continues while tasks are executing in background
         - Polling and updates are always synchronous (requests library)
 
-    Execution Modes (asyncio parameter):
+    Async Execution:
+        - Sync workers: Execute directly in worker threads
+        - Async workers: Execute via BackgroundEventLoop (1.5-2x faster than creating new loops)
 
-        asyncio=False (default) - Recommended:
-            - Sync workers: Execute directly in the worker process
-            - Async workers: Execute via BackgroundEventLoop (1.5-2x faster)
-            - Best for: All use cases
+        Blocking mode (default):
+            - Async tasks block worker thread until complete
+            - Simple and predictable
 
-        asyncio=True (deprecated, works same as False):
-            - Kept for compatibility, but behaves identically to asyncio=False
-            - Both sync and async workers use the same execution path
-            - Recommendation: Use default (asyncio=False)
+        Non-blocking mode (opt-in via Worker.non_blocking_async=True):
+            - Async tasks run concurrently in background
+            - Worker thread continues polling
+            - 10-100x better async concurrency
 
     Usage:
-        # Default mode (asyncio=False)
+        # Default configuration
         handler = TaskHandler(configuration=config)
-        handler.start_processes()
-        handler.join_processes()
-
-        # AsyncIO execution mode
-        handler = TaskHandler(configuration=config, asyncio=True)
         handler.start_processes()
         handler.join_processes()
 
@@ -141,11 +140,9 @@ class TaskHandler:
             configuration: Optional[Configuration] = None,
             metrics_settings: Optional[MetricsSettings] = None,
             scan_for_annotated_workers: bool = True,
-            import_modules: Optional[List[str]] = None,
-            asyncio: bool = False
+            import_modules: Optional[List[str]] = None
     ):
         workers = workers or []
-        self.asyncio = asyncio
         self.logger_process, self.queue = _setup_logging_queue(configuration)
 
         # imports
@@ -170,7 +167,8 @@ class TaskHandler:
                     'thread_count': record.get("thread_count", 1),
                     'register_task_def': record.get("register_task_def", False),
                     'poll_timeout': record.get("poll_timeout", 100),
-                    'lease_extend_enabled': record.get("lease_extend_enabled", True)
+                    'lease_extend_enabled': record.get("lease_extend_enabled", True),
+                    'non_blocking_async': record.get("non_blocking_async", False)
                 }
 
                 # Resolve configuration with environment variable overrides
@@ -188,7 +186,8 @@ class TaskHandler:
                     thread_count=resolved_config['thread_count'],
                     register_task_def=resolved_config['register_task_def'],
                     poll_timeout=resolved_config['poll_timeout'],
-                    lease_extend_enabled=resolved_config['lease_extend_enabled'])
+                    lease_extend_enabled=resolved_config['lease_extend_enabled'],
+                    non_blocking_async=resolved_config.get('non_blocking_async', False))
                 logger.info("created worker with name=%s and domain=%s", task_def_name, resolved_config['domain'])
                 workers.append(worker)
 
@@ -255,7 +254,7 @@ class TaskHandler:
             configuration: Configuration,
             metrics_settings: MetricsSettings
     ) -> None:
-        task_runner = TaskRunner(worker, configuration, metrics_settings, asyncio=self.asyncio)
+        task_runner = TaskRunner(worker, configuration, metrics_settings)
         process = Process(target=task_runner.run)
         self.task_runner_processes.append(process)
 

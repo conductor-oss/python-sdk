@@ -31,10 +31,9 @@ def WorkerTask(task_definition_name: str, poll_interval: int = 100, domain: Opti
         worker_id: Optional unique identifier for this worker instance.
             - Default: None (auto-generated)
 
-        thread_count: Maximum concurrent tasks this worker can execute (AsyncIO workers only).
+        thread_count: Maximum concurrent tasks this worker can execute.
             - Default: 1
-            - Only applicable when using TaskHandlerAsyncIO
-            - Ignored for synchronous TaskHandler (use worker_process_count instead)
+            - Controls thread pool size for concurrent task execution
             - Choose based on workload:
               * CPU-bound: 1-4 (limited by GIL)
               * I/O-bound: 10-50 (network calls, database queries, etc.)
@@ -80,7 +79,8 @@ def WorkerTask(task_definition_name: str, poll_interval: int = 100, domain: Opti
 
 
 def worker_task(task_definition_name: str, poll_interval_millis: int = 100, domain: Optional[str] = None, worker_id: Optional[str] = None,
-                thread_count: int = 1, register_task_def: bool = False, poll_timeout: int = 100, lease_extend_enabled: bool = True):
+                thread_count: int = 1, register_task_def: bool = False, poll_timeout: int = 100, lease_extend_enabled: bool = True,
+                non_blocking_async: bool = False):
     """
     Decorator to register a function as a Conductor worker task.
 
@@ -101,10 +101,9 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
             - Default: None (auto-generated)
             - Useful for debugging and tracking which worker executed which task
 
-        thread_count: Maximum concurrent tasks this worker can execute (AsyncIO workers only).
+        thread_count: Maximum concurrent tasks this worker can execute.
             - Default: 1
-            - Only applicable when using TaskHandlerAsyncIO
-            - Ignored for synchronous TaskHandler (use worker_process_count instead)
+            - Controls thread pool size for concurrent task execution
             - Higher values allow more concurrent task execution
             - Choose based on workload:
               * CPU-bound: 1-4 (limited by GIL)
@@ -130,6 +129,14 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
             - Disable for fast tasks (<1s) to reduce unnecessary API calls
             - Enable for long tasks (>30s) to prevent premature timeout
 
+        non_blocking_async: Enable non-blocking async execution for async workers.
+            - Default: False (blocking mode - backward compatible)
+            - When False: Async tasks block worker thread until complete
+            - When True: Async tasks run concurrently in background, worker continues polling
+            - Only affects async def functions (sync functions unaffected)
+            - Benefits: 10-100x better async concurrency
+            - Use for: I/O-bound async workloads with many concurrent tasks
+
     Returns:
         Decorated function that can be called normally or used as a workflow task
 
@@ -149,7 +156,7 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
         register_decorated_fn(name=task_definition_name, poll_interval=poll_interval_millis, domain=domain,
                               worker_id=worker_id, thread_count=thread_count, register_task_def=register_task_def,
                               poll_timeout=poll_timeout, lease_extend_enabled=lease_extend_enabled,
-                              func=func)
+                              non_blocking_async=non_blocking_async, func=func)
 
         @functools.wraps(func)
         def wrapper_func(*args, **kwargs):
