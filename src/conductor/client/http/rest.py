@@ -29,8 +29,17 @@ class RESTClientObject(object):
             status_forcelist=[429, 500, 502, 503, 504],
             allowed_methods=["HEAD", "GET", "OPTIONS", "DELETE"],  # all the methods that are supposed to be idempotent
         )
-        self.connection.mount("https://", HTTPAdapter(max_retries=retry_strategy))
-        self.connection.mount("http://", HTTPAdapter(max_retries=retry_strategy))
+
+        # Increase connection pool size to support concurrent execution
+        # pool_connections: number of connection pools (one per host)
+        # pool_maxsize: max connections per pool (supports high concurrency)
+        adapter = HTTPAdapter(
+            max_retries=retry_strategy,
+            pool_connections=10,
+            pool_maxsize=100  # Support up to 100 concurrent connections
+        )
+        self.connection.mount("https://", adapter)
+        self.connection.mount("http://", adapter)
 
     def request(self, method, url, query_params=None, headers=None,
                 body=None, post_params=None, _preload_content=True,
