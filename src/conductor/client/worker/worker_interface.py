@@ -1,5 +1,6 @@
 from __future__ import annotations
 import abc
+import os
 import socket
 from typing import Union
 
@@ -9,22 +10,79 @@ from conductor.client.http.models.task_result import TaskResult
 DEFAULT_POLLING_INTERVAL = 100  # ms
 
 
+def _get_env_bool(key: str, default: bool = False) -> bool:
+    """Get boolean value from environment variable."""
+    value = os.getenv(key, '').lower()
+    if value in ('true', '1', 'yes'):
+        return True
+    elif value in ('false', '0', 'no'):
+        return False
+    return default
+
+
 class WorkerInterface(abc.ABC):
+    """
+    Abstract base class for implementing Conductor workers.
+
+    RECOMMENDED: Use @worker_task decorator instead of implementing this interface directly.
+    The decorator provides automatic worker registration, configuration management, and
+    cleaner syntax.
+
+    Example using @worker_task (RECOMMENDED):
+        from conductor.client.worker.worker_task import worker_task
+
+        @worker_task(task_definition_name='my_task', thread_count=10)
+        def my_worker(input_value: int) -> dict:
+            return {'result': input_value * 2}
+
+    Example implementing WorkerInterface (for advanced use cases):
+        class MyWorker(WorkerInterface):
+            def execute(self, task: Task) -> TaskResult:
+                task_result = self.get_task_result_from_task(task)
+                task_result.status = TaskResultStatus.COMPLETED
+                return task_result
+    """
     def __init__(self, task_definition_name: Union[str, list]):
         self.task_definition_name = task_definition_name
         self.next_task_index = 0
         self._task_definition_name_cache = None
         self._domain = None
         self._poll_interval = DEFAULT_POLLING_INTERVAL
+        self.thread_count = 1
+        self.register_task_def = False
+        self.poll_timeout = 100  # milliseconds
+        self.lease_extend_enabled = True
 
     @abc.abstractmethod
     def execute(self, task: Task) -> TaskResult:
         """
         Executes a task and returns the updated task.
 
-        :param Task: (required)
-        :return: TaskResult
-                 If the task is not completed yet, return with the status as IN_PROGRESS.
+        Execution Mode (automatically detected):
+        ----------------------------------------
+        - Sync (def): Execute in thread pool, return TaskResult directly
+        - Async (async def): Execute as non-blocking coroutine in BackgroundEventLoop
+
+        Sync Example:
+            def execute(self, task: Task) -> TaskResult:
+                # Executes in ThreadPoolExecutor
+                # Concurrency limited by self.thread_count
+                result = process_task(task)
+                task_result = self.get_task_result_from_task(task)
+                task_result.status = TaskResultStatus.COMPLETED
+                return task_result
+
+        Async Example:
+            async def execute(self, task: Task) -> TaskResult:
+                # Executes as non-blocking coroutine
+                # 10-100x better concurrency for I/O-bound workloads
+                result = await async_api_call(task)
+                task_result = self.get_task_result_from_task(task)
+                task_result.status = TaskResultStatus.COMPLETED
+                return task_result
+
+        :param task: Task to execute (required)
+        :return: TaskResult with status COMPLETED, FAILED, or IN_PROGRESS
         """
         ...
 
@@ -99,8 +157,23 @@ class WorkerInterface(abc.ABC):
 
     def paused(self) -> bool:
         """
-        Override this method to pause the worker from polling.
+        Check if the worker is paused from polling.
+
+        Workers can be paused via environment variables:
+        - conductor.worker.all.paused=true - pauses all workers
+        - conductor.worker.<taskType>.paused=true - pauses specific worker
+
+        Override this method to implement custom pause logic.
         """
+        # Check task-specific pause first
+        task_name = self.get_task_definition_name()
+        if task_name and _get_env_bool(f'conductor.worker.{task_name}.paused'):
+            return True
+
+        # Check global pause
+        if _get_env_bool('conductor.worker.all.paused'):
+            return True
+
         return False
 
     @property

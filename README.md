@@ -102,6 +102,30 @@ The SDK requires Python 3.9+. To install the SDK, use the following command:
 python3 -m pip install conductor-python
 ```
 
+## ⚡ Performance Features (v1.2.5+)
+
+The Python SDK includes ultra-low latency optimizations for high-performance production workloads:
+
+- **2-5ms average polling delay** (down from 15-90ms) - 10-18x improvement!
+- **HTTP/2 enabled by default** - 40-60% higher throughput, request multiplexing
+- **Batch polling** - 60-70% fewer API calls
+- **Adaptive backoff** - Prevents API hammering when queue is empty
+- **Concurrent execution** - ThreadPoolExecutor with configurable `thread_count`
+- **Connection pooling** - 100 connections with 50 keep-alive
+- **250+ tasks/sec throughput** with 80-85% efficiency (thread_count=10)
+
+See [POLLING_LOOP_OPTIMIZATIONS.md](POLLING_LOOP_OPTIMIZATIONS.md) and [HTTP2_MIGRATION.md](HTTP2_MIGRATION.md) for details.
+
+## 📚 Key Documentation
+
+- **[Worker Architecture](WORKER_ARCHITECTURE.md)** - Overview of worker architecture and design
+- **[Worker Concurrency Design](WORKER_CONCURRENCY_DESIGN.md)** - Multiprocessing vs AsyncIO comparison
+- **[Polling Loop Optimizations](POLLING_LOOP_OPTIMIZATIONS.md)** - Ultra-low latency polling details
+- **[HTTP/2 Migration](HTTP2_MIGRATION.md)** - HTTP/2 benefits and connection pooling
+- **[Lease Extension](LEASE_EXTENSION.md)** - How to handle long-running tasks
+- **[Worker Configuration](WORKER_CONFIGURATION.md)** - Environment-based configuration
+- **[Worker Documentation](docs/worker/README.md)** - Complete worker usage guide
+
 ## Hello World Application Using Conductor
 
 In this section, we will create a simple "Hello World" application that executes a "greetings" workflow managed by Conductor.
@@ -264,7 +288,7 @@ export CONDUCTOR_SERVER_URL=https://[cluster-name].orkesconductor.io/api
 - If you want to run the workflow on the Orkes Conductor Playground, set the Conductor Server variable as follows:
 
 ```shell
-export CONDUCTOR_SERVER_URL=https://play.orkes.io/api
+export CONDUCTOR_SERVER_URL=https://developer.orkescloud.com/api
 ```
 
 - Orkes Conductor requires authentication. [Obtain the key and secret from the Conductor server](https://orkes.io/content/how-to-videos/access-key-and-secret) and set the following environment variables.
@@ -562,7 +586,7 @@ def send_email(email: str, subject: str, body: str):
 def main():
 
     # defaults to reading the configuration using following env variables
-    # CONDUCTOR_SERVER_URL : conductor server e.g. https://play.orkes.io/api
+    # CONDUCTOR_SERVER_URL : conductor server e.g. https://developer.orkescloud.com/api
     # CONDUCTOR_AUTH_KEY : API Authentication Key
     # CONDUCTOR_AUTH_SECRET: API Auth Secret
     api_config = Configuration()

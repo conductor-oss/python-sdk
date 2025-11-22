@@ -33,7 +33,7 @@ class SubTest:
         print(f'ba is: {self.ba} and all are {self.__dict__}')
 
 
-class Test:
+class SampleModel:
 
     def __init__(self, a, b: List[SubTest], d: list[UserInfo], g: CaseInsensitiveDict[str, UserInfo]) -> None:
         self.a = a
@@ -57,9 +57,9 @@ class TestTaskRunner(unittest.TestCase):
         dictionary = {'a': 123, 'b': [{'ba': 2}, {'ba': 21}],
                       'd': [{'name': 'conductor', 'id': 123}, {'F': 3}],
                       'g': {'userA': {'name': 'userA', 'id': 100}, 'userB': {'name': 'userB', 'id': 101}}}
-        value = convert_from_dict(Test, dictionary)
+        value = convert_from_dict(SampleModel, dictionary)
 
-        self.assertEqual(Test, type(value))
+        self.assertEqual(SampleModel, type(value))
         self.assertEqual(123, value.a)
         self.assertEqual(2, len(value.b))
         self.assertEqual(21, value.b[1].ba)

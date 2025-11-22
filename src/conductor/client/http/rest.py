@@ -2,19 +2,42 @@ import io
 import json
 import re
 
-import requests
-from requests.adapters import HTTPAdapter
+import httpx
 from six.moves.urllib.parse import urlencode
-from urllib3 import Retry
 
 
 class RESTResponse(io.IOBase):
 
     def __init__(self, resp):
         self.status = resp.status_code
-        self.reason = resp.reason
+        # httpx.Response doesn't have reason attribute, derive it from status_code
+        self.reason = resp.reason_phrase if hasattr(resp, 'reason_phrase') else self._get_reason_phrase(resp.status_code)
         self.resp = resp
         self.headers = resp.headers
+
+    def _get_reason_phrase(self, status_code):
+        """Get HTTP reason phrase from status code."""
+        phrases = {
+            200: 'OK',
+            201: 'Created',
+            202: 'Accepted',
+            204: 'No Content',
+            301: 'Moved Permanently',
+            302: 'Found',
+            304: 'Not Modified',
+            400: 'Bad Request',
+            401: 'Unauthorized',
+            403: 'Forbidden',
+            404: 'Not Found',
+            405: 'Method Not Allowed',
+            409: 'Conflict',
+            429: 'Too Many Requests',
+            500: 'Internal Server Error',
+            502: 'Bad Gateway',
+            503: 'Service Unavailable',
+            504: 'Gateway Timeout',
+        }
+        return phrases.get(status_code, 'Unknown')
 
     def getheaders(self):
         return self.headers
@@ -22,20 +45,55 @@ class RESTResponse(io.IOBase):
 
 class RESTClientObject(object):
     def __init__(self, connection=None):
-        self.connection = connection or requests.Session()
-        retry_strategy = Retry(
-            total=3,
-            backoff_factor=2,
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["HEAD", "GET", "OPTIONS", "DELETE"],  # all the methods that are supposed to be idempotent
-        )
-        self.connection.mount("https://", HTTPAdapter(max_retries=retry_strategy))
-        self.connection.mount("http://", HTTPAdapter(max_retries=retry_strategy))
+        if connection is None:
+            # Create httpx client with HTTP/2 support and connection pooling
+            # HTTP/2 provides:
+            # - Request/response multiplexing (multiple requests over single connection)
+            # - Header compression (HPACK)
+            # - Server push capability
+            # - Binary protocol (more efficient than HTTP/1.1 text)
+            limits = httpx.Limits(
+                max_connections=100,      # Total connections across all hosts
+                max_keepalive_connections=50,  # Persistent connections to keep alive
+                keepalive_expiry=30.0     # Keep connections alive for 30 seconds
+            )
+
+            # Retry configuration for transient failures
+            transport = httpx.HTTPTransport(
+                retries=3,  # Retry up to 3 times
+                http2=True  # Enable HTTP/2 support
+            )
+
+            self.connection = httpx.Client(
+                limits=limits,
+                transport=transport,
+                timeout=httpx.Timeout(120.0, connect=10.0),  # 120s total, 10s connect
+                follow_redirects=True,
+                http2=True  # Enable HTTP/2 globally
+            )
+            self._owns_connection = True
+        else:
+            self.connection = connection
+            self._owns_connection = False
+
+    def __del__(self):
+        """Cleanup httpx client on object destruction."""
+        if hasattr(self, '_owns_connection') and self._owns_connection:
+            if hasattr(self, 'connection') and self.connection is not None:
+                try:
+                    self.connection.close()
+                except Exception:
+                    pass
+
+    def close(self):
+        """Explicitly close the httpx client."""
+        if self._owns_connection and self.connection is not None:
+            self.connection.close()
 
     def request(self, method, url, query_params=None, headers=None,
                 body=None, post_params=None, _preload_content=True,
                 _request_timeout=None):
-        """Perform requests.
+        """Perform requests using httpx with HTTP/2 support.
 
         :param method: http request method
         :param url: http request url
@@ -45,7 +103,7 @@ class RESTClientObject(object):
         :param post_params: request post parameters,
                             `application/x-www-form-urlencoded`
                             and `multipart/form-data`
-        :param _preload_content: if False, the urllib3.HTTPResponse object will
+        :param _preload_content: if False, the httpx.Response object will
                                  be returned without reading/decoding response
                                  data. Default is True.
         :param _request_timeout: timeout setting for this request. If one
@@ -65,7 +123,14 @@ class RESTClientObject(object):
         post_params = post_params or {}
         headers = headers or {}
 
-        timeout = _request_timeout if _request_timeout is not None else (120, 120)
+        # Convert timeout to httpx format
+        if _request_timeout is not None:
+            if isinstance(_request_timeout, tuple):
+                timeout = httpx.Timeout(_request_timeout[1], connect=_request_timeout[0])
+            else:
+                timeout = httpx.Timeout(_request_timeout)
+        else:
+            timeout = None  # Use client default
 
         if 'Content-Type' not in headers:
             headers['Content-Type'] = 'application/json'
@@ -83,7 +148,7 @@ class RESTClientObject(object):
                             request_body = request_body.strip('"')
                     r = self.connection.request(
                         method, url,
-                        data=request_body,
+                        content=request_body,
                         timeout=timeout,
                         headers=headers
                     )
@@ -101,6 +166,12 @@ class RESTClientObject(object):
                     timeout=timeout,
                     headers=headers
                 )
+        except httpx.TimeoutException as e:
+            msg = f"Request timeout: {e}"
+            raise ApiException(status=0, reason=msg)
+        except httpx.ConnectError as e:
+            msg = f"Connection error: {e}"
+            raise ApiException(status=0, reason=msg)
         except Exception as e:
             msg = "{0}\n{1}".format(type(e).__name__, str(e))
             raise ApiException(status=0, reason=msg)

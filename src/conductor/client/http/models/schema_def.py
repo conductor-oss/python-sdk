@@ -113,7 +113,6 @@ class SchemaDef(Auditable):
         self._name = name
 
     @property
-    @deprecated
     def version(self):
         """Gets the version of this SchemaDef.  # noqa: E501
 
@@ -123,7 +122,6 @@ class SchemaDef(Auditable):
         return self._version
 
     @version.setter
-    @deprecated
     def version(self, version):
         """Sets the version of this SchemaDef.
 

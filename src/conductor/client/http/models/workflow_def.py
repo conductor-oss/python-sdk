@@ -281,7 +281,6 @@ class WorkflowDef:
             self.rate_limit_config = rate_limit_config
 
     @property
-    @deprecated("This field is deprecated and will be removed in a future version")
     def owner_app(self):
         """Gets the owner_app of this WorkflowDef.  # noqa: E501
 
@@ -292,7 +291,6 @@ class WorkflowDef:
         return self._owner_app
 
     @owner_app.setter
-    @deprecated("This field is deprecated and will be removed in a future version")
     def owner_app(self, owner_app):
         """Sets the owner_app of this WorkflowDef.
 
@@ -304,7 +302,6 @@ class WorkflowDef:
         self._owner_app = owner_app
 
     @property
-    @deprecated("This field is deprecated and will be removed in a future version")
     def create_time(self):
         """Gets the create_time of this WorkflowDef.  # noqa: E501
 
@@ -315,7 +312,6 @@ class WorkflowDef:
         return self._create_time
 
     @create_time.setter
-    @deprecated("This field is deprecated and will be removed in a future version")
     def create_time(self, create_time):
         """Sets the create_time of this WorkflowDef.
 
@@ -327,7 +323,6 @@ class WorkflowDef:
         self._create_time = create_time
 
     @property
-    @deprecated("This field is deprecated and will be removed in a future version")
     def update_time(self):
         """Gets the update_time of this WorkflowDef.  # noqa: E501
 
@@ -338,7 +333,6 @@ class WorkflowDef:
         return self._update_time
 
     @update_time.setter
-    @deprecated("This field is deprecated and will be removed in a future version")
     def update_time(self, update_time):
         """Sets the update_time of this WorkflowDef.
 
@@ -350,7 +344,6 @@ class WorkflowDef:
         self._update_time = update_time
 
     @property
-    @deprecated("This field is deprecated and will be removed in a future version")
     def created_by(self):
         """Gets the created_by of this WorkflowDef.  # noqa: E501
 
@@ -361,7 +354,6 @@ class WorkflowDef:
         return self._created_by
 
     @created_by.setter
-    @deprecated("This field is deprecated and will be removed in a future version")
     def created_by(self, created_by):
         """Sets the created_by of this WorkflowDef.
 
@@ -373,7 +365,6 @@ class WorkflowDef:
         self._created_by = created_by
 
     @property
-    @deprecated("This field is deprecated and will be removed in a future version")
     def updated_by(self):
         """Gets the updated_by of this WorkflowDef.  # noqa: E501
 
@@ -384,7 +375,6 @@ class WorkflowDef:
         return self._updated_by
 
     @updated_by.setter
-    @deprecated("This field is deprecated and will be removed in a future version")
     def updated_by(self, updated_by):
         """Sets the updated_by of this WorkflowDef.
 
