@@ -25,7 +25,7 @@ except ImportError:
     httpx = None
 
 
-class TestWorkerPause(unittest.TestCase):
+class TestWorkerPause(unittest.IsolatedAsyncioTestCase):
     """Test worker pause functionality"""
 
     def setUp(self):
@@ -221,7 +221,7 @@ class TestWorkerPause(unittest.TestCase):
     # =========================================================================
 
     @unittest.skipIf(httpx is None, "httpx not installed")
-    def test_paused_worker_skips_polling(self):
+    async def test_paused_worker_skips_polling(self):
         """Test paused worker returns empty list without polling"""
         os.environ['conductor.worker.test_task.paused'] = 'true'
 
@@ -243,33 +243,28 @@ class TestWorkerPause(unittest.TestCase):
         # Mock the metrics_collector's method
         runner.metrics_collector.increment_task_paused = Mock()
 
-        import asyncio
+        # Mock HTTP client (should not be called)
+        runner.http_client = Mock()
+        runner.http_client.get = Mock()
 
-        async def run_test():
-            # Mock HTTP client (should not be called)
-            runner.http_client = Mock()
-            runner.http_client.get = Mock()
+        # Poll should return empty without HTTP call
+        tasks = await runner._poll_tasks_from_server(count=1)
 
-            # Poll should return empty without HTTP call
-            tasks = await runner._poll_tasks_from_server(count=1)
+        # Should return empty list
+        self.assertEqual(tasks, [])
 
-            # Should return empty list
-            self.assertEqual(tasks, [])
+        # HTTP client should not be called
+        runner.http_client.get.assert_not_called()
 
-            # HTTP client should not be called
-            runner.http_client.get.assert_not_called()
+        # Metrics should record pause
+        runner.metrics_collector.increment_task_paused.assert_called_once_with('test_task')
 
-            # Metrics should record pause
-            runner.metrics_collector.increment_task_paused.assert_called_once_with('test_task')
-
-            # Cleanup
-            import shutil
-            shutil.rmtree(metrics_dir, ignore_errors=True)
-
-        asyncio.run(run_test())
+        # Cleanup
+        import shutil
+        shutil.rmtree(metrics_dir, ignore_errors=True)
 
     @unittest.skipIf(httpx is None, "httpx not installed")
-    def test_active_worker_polls_normally(self):
+    async def test_active_worker_polls_normally(self):
         """Test active (not paused) worker polls normally"""
         # No pause env vars set
         config = Configuration(server_api_url='http://localhost:8080/api')
@@ -291,31 +286,27 @@ class TestWorkerPause(unittest.TestCase):
         runner.metrics_collector.increment_task_paused = Mock()
         runner.metrics_collector.record_api_request_time = Mock()
 
-        import asyncio
         from unittest.mock import AsyncMock
 
-        async def run_test():
-            # Mock HTTP client
-            runner.http_client = AsyncMock()
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_response.json.return_value = []
-            runner.http_client.get = AsyncMock(return_value=mock_response)
+        # Mock HTTP client
+        runner.http_client = AsyncMock()
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = []
+        runner.http_client.get = AsyncMock(return_value=mock_response)
 
-            # Poll should make HTTP call
-            await runner._poll_tasks_from_server(count=1)
+        # Poll should make HTTP call
+        await runner._poll_tasks_from_server(count=1)
 
-            # HTTP client should be called
-            runner.http_client.get.assert_called()
+        # HTTP client should be called
+        runner.http_client.get.assert_called()
 
-            # Pause metric should NOT be called
-            runner.metrics_collector.increment_task_paused.assert_not_called()
+        # Pause metric should NOT be called
+        runner.metrics_collector.increment_task_paused.assert_not_called()
 
-            # Cleanup
-            import shutil
-            shutil.rmtree(metrics_dir, ignore_errors=True)
-
-        asyncio.run(run_test())
+        # Cleanup
+        import shutil
+        shutil.rmtree(metrics_dir, ignore_errors=True)
 
     def test_worker_pause_custom_logic(self):
         """Test custom pause logic can be implemented by subclassing"""

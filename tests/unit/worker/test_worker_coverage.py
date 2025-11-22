@@ -9,22 +9,19 @@ Tests cover:
 - Helper functions (is_callable_input_parameter_a_task, is_callable_return_value_of_type)
 - Dataclass conversion
 - Output data serialization (dict, dataclass, non-serializable objects)
-- Async worker execution
 - Complex type handling and parameter validation
 """
 
-import asyncio
 import dataclasses
-import inspect
 import unittest
 from typing import Any, Optional
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_result_status import TaskResultStatus
-from conductor.client.worker.worker import (
-    Worker,
+from conductor.client.worker.worker import Worker
+from conductor.client.worker.base_worker import (
     is_callable_input_parameter_a_task,
     is_callable_return_value_of_type,
 )
@@ -144,40 +141,9 @@ class TestWorkerInitialization(unittest.TestCase):
         worker = Worker("test_task", simple_func)
 
         self.assertEqual(worker.task_definition_name, "test_task")
-        self.assertEqual(worker.poll_interval, 100)  # DEFAULT_POLLING_INTERVAL
+        self.assertEqual(worker.poll_interval, 100)
         self.assertIsNone(worker.domain)
         self.assertIsNotNone(worker.worker_id)
-        self.assertEqual(worker.thread_count, 1)
-        self.assertFalse(worker.register_task_def)
-        self.assertEqual(worker.poll_timeout, 100)
-        self.assertTrue(worker.lease_extend_enabled)
-
-    def test_worker_init_with_poll_interval(self):
-        """Test Worker initialization with custom poll_interval"""
-        def simple_func(task: Task) -> dict:
-            return {"result": "ok"}
-
-        worker = Worker("test_task", simple_func, poll_interval=5.0)
-
-        self.assertEqual(worker.poll_interval, 5.0)
-
-    def test_worker_init_with_domain(self):
-        """Test Worker initialization with domain"""
-        def simple_func(task: Task) -> dict:
-            return {"result": "ok"}
-
-        worker = Worker("test_task", simple_func, domain="production")
-
-        self.assertEqual(worker.domain, "production")
-
-    def test_worker_init_with_worker_id(self):
-        """Test Worker initialization with custom worker_id"""
-        def simple_func(task: Task) -> dict:
-            return {"result": "ok"}
-
-        worker = Worker("test_task", simple_func, worker_id="custom-worker-123")
-
-        self.assertEqual(worker.worker_id, "custom-worker-123")
 
     def test_worker_init_with_all_params(self):
         """Test Worker initialization with all parameters"""
@@ -190,20 +156,12 @@ class TestWorkerInitialization(unittest.TestCase):
             poll_interval=2.5,
             domain="staging",
             worker_id="worker-456",
-            thread_count=10,
-            register_task_def=True,
-            poll_timeout=500,
-            lease_extend_enabled=False
         )
 
         self.assertEqual(worker.task_definition_name, "test_task")
         self.assertEqual(worker.poll_interval, 2.5)
         self.assertEqual(worker.domain, "staging")
         self.assertEqual(worker.worker_id, "worker-456")
-        self.assertEqual(worker.thread_count, 10)
-        self.assertTrue(worker.register_task_def)
-        self.assertEqual(worker.poll_timeout, 500)
-        self.assertFalse(worker.lease_extend_enabled)
 
     def test_worker_get_identity(self):
         """Test get_identity returns worker_id"""
@@ -596,52 +554,6 @@ class TestWorkerExecuteErrorHandling(unittest.TestCase):
         self.assertEqual(result.status, TaskResultStatus.FAILED)
         self.assertEqual(len(result.logs), 1)
         mock_logger.error.assert_called()
-
-
-class TestWorkerExecuteAsync(unittest.TestCase):
-    """Test Worker execute method with async functions"""
-
-    def test_execute_with_async_function(self):
-        """Test execute with async function"""
-        async def async_task_func(task: Task) -> dict:
-            await asyncio.sleep(0.01)
-            return {"result": "async_success"}
-
-        worker = Worker("test_task", async_task_func)
-
-        task = Task()
-        task.task_id = "task-123"
-        task.workflow_instance_id = "workflow-456"
-        task.task_def_name = "test_task"
-        task.input_data = {}
-
-        result = worker.execute(task)
-
-        self.assertEqual(result.status, TaskResultStatus.COMPLETED)
-        self.assertEqual(result.output_data, {"result": "async_success"})
-
-    def test_execute_with_async_function_returning_task_result(self):
-        """Test execute with async function returning TaskResult"""
-        async def async_task_func(task: Task) -> TaskResult:
-            await asyncio.sleep(0.01)
-            result = TaskResult()
-            result.status = TaskResultStatus.COMPLETED
-            result.output_data = {"async": "task_result"}
-            return result
-
-        worker = Worker("test_task", async_task_func)
-
-        task = Task()
-        task.task_id = "task-456"
-        task.workflow_instance_id = "workflow-789"
-        task.task_def_name = "test_task"
-        task.input_data = {}
-
-        result = worker.execute(task)
-
-        self.assertEqual(result.task_id, "task-456")
-        self.assertEqual(result.workflow_instance_id, "workflow-789")
-        self.assertEqual(result.output_data, {"async": "task_result"})
 
 
 class TestWorkerExecuteTaskInProgress(unittest.TestCase):

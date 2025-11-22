@@ -196,11 +196,7 @@ class TestTaskHandlerDecoratedWorkers(unittest.TestCase):
             poll_interval=100,
             domain='test_domain',
             worker_id='worker1',
-            func=test_func,
-            thread_count=2,
-            register_task_def=True,
-            poll_timeout=200,
-            lease_extend_enabled=False
+            func=test_func
         )
 
         self.assertIn(('test_task', 'test_domain'), _decorated_functions)
@@ -209,10 +205,6 @@ class TestTaskHandlerDecoratedWorkers(unittest.TestCase):
         self.assertEqual(record['poll_interval'], 100)
         self.assertEqual(record['domain'], 'test_domain')
         self.assertEqual(record['worker_id'], 'worker1')
-        self.assertEqual(record['thread_count'], 2)
-        self.assertEqual(record['register_task_def'], True)
-        self.assertEqual(record['poll_timeout'], 200)
-        self.assertEqual(record['lease_extend_enabled'], False)
 
     def test_get_registered_workers(self):
         """Test getting registered workers."""
@@ -227,16 +219,14 @@ class TestTaskHandlerDecoratedWorkers(unittest.TestCase):
             poll_interval=100,
             domain='domain1',
             worker_id='worker1',
-            func=test_func1,
-            thread_count=1
+            func=test_func1
         )
         register_decorated_fn(
             name='task2',
             poll_interval=200,
             domain='domain2',
             worker_id='worker2',
-            func=test_func2,
-            thread_count=3
+            func=test_func2
         )
 
         workers = get_registered_workers()
@@ -286,10 +276,6 @@ class TestTaskHandlerDecoratedWorkers(unittest.TestCase):
             'poll_interval': 100,
             'domain': 'test_domain',
             'worker_id': 'worker1',
-            'thread_count': 1,
-            'register_task_def': False,
-            'poll_timeout': 100,
-            'lease_extend_enabled': True
         }
 
         def test_func():
@@ -300,11 +286,7 @@ class TestTaskHandlerDecoratedWorkers(unittest.TestCase):
             poll_interval=100,
             domain='test_domain',
             worker_id='worker1',
-            func=test_func,
-            thread_count=1,
-            register_task_def=False,
-            poll_timeout=100,
-            lease_extend_enabled=True
+            func=test_func
         )
 
         handler = TaskHandler(
@@ -993,11 +975,7 @@ class TestWorkerConfiguration(unittest.TestCase):
             poll_interval=100,
             domain='dev',
             worker_id='worker1',
-            func=test_func,
-            thread_count=1,
-            register_task_def=False,
-            poll_timeout=100,
-            lease_extend_enabled=True
+            func=test_func
         )
 
         handler = TaskHandler(

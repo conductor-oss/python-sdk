@@ -28,7 +28,8 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_result_status import TaskResultStatus
-from conductor.client.worker.worker import Worker
+from conductor.client.worker.async_worker import AsyncWorker
+
 
 
 @dataclasses.dataclass
@@ -39,7 +40,7 @@ class UserData:
     email: str
 
 
-class SimpleWorker(Worker):
+class SimpleWorker(AsyncWorker):
     """Simple test worker"""
     def __init__(self, task_name='test_task'):
         def execute_fn(task):
@@ -204,9 +205,9 @@ class TestSemaphoreBatchPolling(unittest.TestCase):
     def test_acquire_all_available_permits(self):
         """Should acquire all available permits non-blocking"""
         worker = SimpleWorker()
-        worker.thread_count = 5
 
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(5)
 
         async def test():
             # Initially, all 5 permits should be available
@@ -219,9 +220,10 @@ class TestSemaphoreBatchPolling(unittest.TestCase):
     def test_acquire_zero_permits_when_all_busy(self):
         """Should return 0 when all permits are held"""
         worker = SimpleWorker()
-        worker.thread_count = 3
 
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(3)
+
 
         async def test():
             # Acquire all permits
@@ -238,9 +240,9 @@ class TestSemaphoreBatchPolling(unittest.TestCase):
     def test_acquire_partial_permits(self):
         """Should acquire only available permits"""
         worker = SimpleWorker()
-        worker.thread_count = 5
 
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(5)
 
         async def test():
             # Hold 3 permits
@@ -257,10 +259,10 @@ class TestSemaphoreBatchPolling(unittest.TestCase):
     def test_zero_polling_optimization(self):
         """Should skip polling when poll_count is 0"""
         worker = SimpleWorker()
-        worker.thread_count = 2
 
         mock_http_client = AsyncMock()
         runner = TaskRunnerAsyncIO(worker, self.config, http_client=mock_http_client)
+        runner._semaphore = asyncio.Semaphore(2)
 
         async def test():
             # Hold all permits
@@ -282,9 +284,9 @@ class TestSemaphoreBatchPolling(unittest.TestCase):
     def test_excess_permits_released(self):
         """Should release excess permits when fewer tasks returned"""
         worker = SimpleWorker()
-        worker.thread_count = 5
 
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(5)
 
         async def test():
             # Mock _poll_tasks to return only 2 tasks when asked for 5
@@ -324,9 +326,9 @@ class TestPermitLeakPrevention(unittest.TestCase):
     def test_permits_released_on_poll_exception(self):
         """Permits should be released if exception occurs during polling"""
         worker = SimpleWorker()
-        worker.thread_count = 5
 
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(5)
 
         async def test():
             # Mock _poll_tasks to raise exception
@@ -344,9 +346,9 @@ class TestPermitLeakPrevention(unittest.TestCase):
     def test_permit_always_released_after_task_execution(self):
         """Permit should be released even if task execution fails"""
         worker = SimpleWorker()
-        worker.thread_count = 3
 
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(3)
 
         async def test():
             task = Task()
@@ -372,9 +374,9 @@ class TestPermitLeakPrevention(unittest.TestCase):
     def test_permit_released_even_if_update_fails(self):
         """Permit should be released even if update fails"""
         worker = SimpleWorker()
-        worker.thread_count = 3
 
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(3)
 
         async def test():
             task = Task()
@@ -423,9 +425,9 @@ class TestConcurrency(unittest.TestCase):
     def test_concurrent_permit_acquisition(self):
         """Multiple concurrent acquisitions should not exceed max permits"""
         worker = SimpleWorker()
-        worker.thread_count = 5
 
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(5)
 
         async def test():
             # Try to acquire permits concurrently
@@ -442,9 +444,9 @@ class TestConcurrency(unittest.TestCase):
     def test_concurrent_task_execution_respects_semaphore(self):
         """Concurrent tasks should respect semaphore limit"""
         worker = SimpleWorker()
-        worker.thread_count = 3
 
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(3)
 
         execution_count = []
 
@@ -483,9 +485,9 @@ class TestConcurrency(unittest.TestCase):
     def test_no_race_condition_in_background_task_tracking(self):
         """Background tasks should be properly tracked without race conditions"""
         worker = SimpleWorker()
-        worker.thread_count = 5
 
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(5)
 
         async def test():
             mock_tasks = []
@@ -509,9 +511,9 @@ class TestConcurrency(unittest.TestCase):
     def test_semaphore_not_over_released(self):
         """Semaphore should not be released more times than acquired"""
         worker = SimpleWorker()
-        worker.thread_count = 3
 
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(3)
 
         async def test():
             # Acquire 2 permits
@@ -559,7 +561,6 @@ class TestLeaseExtension(unittest.TestCase):
     def test_lease_extension_cancelled_on_completion(self):
         """Lease extension should be cancelled when task completes"""
         worker = SimpleWorker()
-        worker.lease_extend_enabled = True
 
         runner = TaskRunnerAsyncIO(worker, self.config)
 
@@ -589,7 +590,6 @@ class TestLeaseExtension(unittest.TestCase):
     def test_lease_extension_cancelled_on_exception(self):
         """Lease extension should be cancelled even if task execution fails"""
         worker = SimpleWorker()
-        worker.lease_extend_enabled = True
 
         runner = TaskRunnerAsyncIO(worker, self.config)
 
@@ -945,7 +945,7 @@ class TestImmediateExecution(unittest.TestCase):
         def failing_worker(task):
             raise RuntimeError("Task failed")
 
-        worker = Worker(
+        worker = AsyncWorker(
             task_definition_name='failing_task',
             execute_function=failing_worker
         )
@@ -981,12 +981,12 @@ class TestImmediateExecution(unittest.TestCase):
 
     def test_immediate_execution_multiple_tasks_concurrently(self):
         """Should execute multiple tasks immediately if permits available"""
-        worker = Worker(
+        worker = AsyncWorker(
             task_definition_name='concurrent_task',
-            execute_function=lambda t: {'result': 'done'},
-            thread_count=5  # 5 concurrent permits
+            execute_function=lambda t: {'result': 'done'}
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(5)
 
         async def test():
             # Should have 5 permits available
@@ -1020,12 +1020,12 @@ class TestImmediateExecution(unittest.TestCase):
 
     def test_immediate_execution_mixed_immediate_and_queued(self):
         """Should execute some immediately and queue others when permits run out"""
-        worker = Worker(
+        worker = AsyncWorker(
             task_definition_name='mixed_task',
-            execute_function=lambda t: {'result': 'done'},
-            thread_count=2  # Only 2 concurrent permits
+            execute_function=lambda t: {'result': 'done'}
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(2)
 
         async def test():
             # Should have 2 permits available
@@ -1059,12 +1059,16 @@ class TestImmediateExecution(unittest.TestCase):
 
     def test_immediate_execution_with_v2_response_integration(self):
         """Full integration: V2 API response triggers immediate execution"""
-        worker = Worker(
+        async def slow_worker(task):
+            await asyncio.sleep(0.2)
+            return {'result': 'done'}
+
+        worker = AsyncWorker(
             task_definition_name='integration_task',
-            execute_function=lambda t: {'result': 'done'},
-            thread_count=3
+            execute_function=slow_worker
         )
         runner = TaskRunnerAsyncIO(worker, self.config, use_v2_api=True)
+        runner._semaphore = asyncio.Semaphore(3)
 
         async def test():
             # Initial state: 3 permits available
@@ -1092,13 +1096,18 @@ class TestImmediateExecution(unittest.TestCase):
             mock_response.json = Mock(return_value=next_task_data)
             mock_response.raise_for_status = Mock()
 
-            runner.http_client.post = AsyncMock(return_value=mock_response)
+            empty_response = Mock()
+            empty_response.status_code = 200
+            empty_response.text = ''
+            empty_response.raise_for_status = Mock()
+
+            runner.http_client.post = AsyncMock(side_effect=[mock_response, empty_response])
 
             # Update task (should trigger immediate execution)
             await runner._update_task(task_result)
 
             # Give background task time to start
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.1)
 
             # Should have consumed 1 permit (immediate execution)
             self.assertEqual(runner._semaphore._value, 2)
@@ -1146,12 +1155,12 @@ class TestImmediateExecution(unittest.TestCase):
             await asyncio.sleep(0.03)
             return {'result': 'done'}
 
-        worker = Worker(
+        worker = AsyncWorker(
             task_definition_name='cleanup_task',
-            execute_function=slow_worker,
-            thread_count=2
+            execute_function=slow_worker
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
+        runner._semaphore = asyncio.Semaphore(2)
 
         async def test():
             # Mock HTTP response for update calls
@@ -1210,10 +1219,9 @@ class TestImmediateExecution(unittest.TestCase):
             result.reason_for_incompletion = None
             return result
 
-        worker = Worker(
+        worker = AsyncWorker(
             task_definition_name='task_result_test',
-            execute_function=worker_returns_task_result,
-            thread_count=1
+            execute_function=worker_returns_task_result
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
@@ -1265,10 +1273,9 @@ class TestImmediateExecution(unittest.TestCase):
             result.output_data = {"async_result": True, "value": 42}
             return result
 
-        worker = Worker(
+        worker = AsyncWorker(
             task_definition_name='async_task_result_test',
-            execute_function=async_worker_returns_task_result,
-            thread_count=1
+            execute_function=async_worker_returns_task_result
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
@@ -1301,10 +1308,9 @@ class TestImmediateExecution(unittest.TestCase):
         def worker_returns_dict(task):
             return {"raw": "dict", "value": 123}
 
-        worker = Worker(
+        worker = AsyncWorker(
             task_definition_name='dict_test',
-            execute_function=worker_returns_dict,
-            thread_count=1
+            execute_function=worker_returns_dict
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
@@ -1332,10 +1338,9 @@ class TestImmediateExecution(unittest.TestCase):
         def worker_returns_string(task):
             return "simple string"
 
-        worker = Worker(
+        worker = AsyncWorker(
             task_definition_name='primitive_test',
-            execute_function=worker_returns_string,
-            thread_count=1
+            execute_function=worker_returns_string
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
@@ -1389,10 +1394,9 @@ class TestImmediateExecution(unittest.TestCase):
 
             return result
 
-        worker = Worker(
+        worker = AsyncWorker(
             task_definition_name='long_running_task',
-            execute_function=long_running_worker,
-            thread_count=1
+            execute_function=long_running_worker
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
@@ -1488,10 +1492,9 @@ class TestImmediateExecution(unittest.TestCase):
                 'total_polls': poll_count
             }
 
-        worker = Worker(
+        worker = AsyncWorker(
             task_definition_name='long_running_union',
-            execute_function=long_running_union,
-            thread_count=1
+            execute_function=long_running_union
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
@@ -1572,10 +1575,9 @@ class TestImmediateExecution(unittest.TestCase):
 
             return {'status': 'done', 'result': value * 2}
 
-        worker = Worker(
+        worker = AsyncWorker(
             task_definition_name='async_union_worker',
-            execute_function=async_union_worker,
-            thread_count=1
+            execute_function=async_union_worker
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
@@ -1632,10 +1634,9 @@ class TestImmediateExecution(unittest.TestCase):
 
             return {'stage': 'completed', 'data': data}
 
-        worker = Worker(
+        worker = AsyncWorker(
             task_definition_name='worker_with_logs',
-            execute_function=worker_with_logs,
-            thread_count=1
+            execute_function=worker_with_logs
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 

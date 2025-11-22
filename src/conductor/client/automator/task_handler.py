@@ -35,7 +35,7 @@ if not _mp_fork_set:
         os.environ["no_proxy"] = "*"
 
 def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func,
-                         thread_count: int = 1, register_task_def: bool = False,
+                         register_task_def: bool = False,
                          poll_timeout: int = 100, lease_extend_enabled: bool = True):
     logger.info("decorated %s", name)
     _decorated_functions[(name, domain)] = {
@@ -43,7 +43,6 @@ def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id:
         "poll_interval": poll_interval,
         "domain": domain,
         "worker_id": worker_id,
-        "thread_count": thread_count,
         "register_task_def": register_task_def,
         "poll_timeout": poll_timeout,
         "lease_extend_enabled": lease_extend_enabled
@@ -64,8 +63,7 @@ def get_registered_workers() -> List[Worker]:
             execute_function=record["func"],
             poll_interval=record["poll_interval"],
             domain=domain,
-            worker_id=record["worker_id"],
-            thread_count=record.get("thread_count", 1)
+            worker_id=record["worker_id"]
         )
         workers.append(worker)
     return workers
@@ -112,7 +110,6 @@ class TaskHandler:
                     'poll_interval': record["poll_interval"],
                     'domain': domain,
                     'worker_id': record["worker_id"],
-                    'thread_count': record.get("thread_count", 1),
                     'register_task_def': record.get("register_task_def", False),
                     'poll_timeout': record.get("poll_timeout", 100),
                     'lease_extend_enabled': record.get("lease_extend_enabled", True)
@@ -129,11 +126,7 @@ class TaskHandler:
                     execute_function=fn,
                     worker_id=resolved_config['worker_id'],
                     domain=resolved_config['domain'],
-                    poll_interval=resolved_config['poll_interval'],
-                    thread_count=resolved_config['thread_count'],
-                    register_task_def=resolved_config['register_task_def'],
-                    poll_timeout=resolved_config['poll_timeout'],
-                    lease_extend_enabled=resolved_config['lease_extend_enabled'])
+                    poll_interval=resolved_config['poll_interval'])
                 logger.info("created worker with name=%s and domain=%s", task_def_name, resolved_config['domain'])
                 workers.append(worker)
 

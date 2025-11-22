@@ -119,7 +119,7 @@ class TestTaskContext(unittest.TestCase):
         self.assertIn('2', repr_str)  # retry count
 
 
-class TestTaskContextIntegration(unittest.TestCase):
+class TestTaskContextIntegration(unittest.IsolatedAsyncioTestCase):
     """Test TaskContext integration with TaskRunner"""
 
     def setUp(self):
@@ -129,15 +129,7 @@ class TestTaskContextIntegration(unittest.TestCase):
     def tearDown(self):
         _clear_task_context()
 
-    def run_async(self, coro):
-        """Helper to run async code in tests"""
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(coro)
-        finally:
-            loop.close()
-
-    def test_context_available_in_worker(self):
+    async def test_context_available_in_worker(self):
         """Test that context is available inside worker execution"""
         context_captured = []
 
@@ -155,22 +147,19 @@ class TestTaskContextIntegration(unittest.TestCase):
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
-        async def test():
-            task = Task()
-            task.task_id = 'task-abc'
-            task.workflow_instance_id = 'workflow-xyz'
-            task.task_def_name = 'test_task'
-            task.input_data = {}
+        task = Task()
+        task.task_id = 'task-abc'
+        task.workflow_instance_id = 'workflow-xyz'
+        task.task_def_name = 'test_task'
+        task.input_data = {}
 
-            result = await runner._execute_task(task)
+        result = await runner._execute_task(task)
 
-            self.assertEqual(len(context_captured), 1)
-            self.assertEqual(context_captured[0]['task_id'], 'task-abc')
-            self.assertEqual(context_captured[0]['workflow_id'], 'workflow-xyz')
+        self.assertEqual(len(context_captured), 1)
+        self.assertEqual(context_captured[0]['task_id'], 'task-abc')
+        self.assertEqual(context_captured[0]['workflow_id'], 'workflow-xyz')
 
-        self.run_async(test())
-
-    def test_context_cleared_after_worker(self):
+    async def test_context_cleared_after_worker(self):
         """Test that context is cleared after worker execution"""
         def worker_func(task):
             ctx = get_task_context()
@@ -183,22 +172,19 @@ class TestTaskContextIntegration(unittest.TestCase):
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
-        async def test():
-            task = Task()
-            task.task_id = 'task-abc'
-            task.workflow_instance_id = 'workflow-xyz'
-            task.task_def_name = 'test_task'
-            task.input_data = {}
+        task = Task()
+        task.task_id = 'task-abc'
+        task.workflow_instance_id = 'workflow-xyz'
+        task.task_def_name = 'test_task'
+        task.input_data = {}
 
-            await runner._execute_task(task)
+        await runner._execute_task(task)
 
-            # Context should be cleared after execution
-            with self.assertRaises(RuntimeError):
-                get_task_context()
+        # Context should be cleared after execution
+        with self.assertRaises(RuntimeError):
+            get_task_context()
 
-        self.run_async(test())
-
-    def test_logs_merged_into_result(self):
+    async def test_logs_merged_into_result(self):
         """Test that logs added via context are merged into result"""
         def worker_func(task):
             ctx = get_task_context()
@@ -212,23 +198,20 @@ class TestTaskContextIntegration(unittest.TestCase):
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
-        async def test():
-            task = Task()
-            task.task_id = 'task-abc'
-            task.workflow_instance_id = 'workflow-xyz'
-            task.task_def_name = 'test_task'
-            task.input_data = {}
+        task = Task()
+        task.task_id = 'task-abc'
+        task.workflow_instance_id = 'workflow-xyz'
+        task.task_def_name = 'test_task'
+        task.input_data = {}
 
-            result = await runner._execute_task(task)
+        result = await runner._execute_task(task)
 
-            self.assertIsNotNone(result.logs)
-            self.assertEqual(len(result.logs), 2)
-            self.assertEqual(result.logs[0].log, "Log 1")
-            self.assertEqual(result.logs[1].log, "Log 2")
+        self.assertIsNotNone(result.logs)
+        self.assertEqual(len(result.logs), 2)
+        self.assertEqual(result.logs[0].log, "Log 1")
+        self.assertEqual(result.logs[1].log, "Log 2")
 
-        self.run_async(test())
-
-    def test_callback_after_merged_into_result(self):
+    async def test_callback_after_merged_into_result(self):
         """Test that callback_after is merged into result"""
         def worker_func(task):
             ctx = get_task_context()
@@ -241,20 +224,17 @@ class TestTaskContextIntegration(unittest.TestCase):
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
-        async def test():
-            task = Task()
-            task.task_id = 'task-abc'
-            task.workflow_instance_id = 'workflow-xyz'
-            task.task_def_name = 'test_task'
-            task.input_data = {}
+        task = Task()
+        task.task_id = 'task-abc'
+        task.workflow_instance_id = 'workflow-xyz'
+        task.task_def_name = 'test_task'
+        task.input_data = {}
 
-            result = await runner._execute_task(task)
+        result = await runner._execute_task(task)
 
-            self.assertEqual(result.callback_after_seconds, 120)
+        self.assertEqual(result.callback_after_seconds, 120)
 
-        self.run_async(test())
-
-    def test_async_worker_with_context(self):
+    async def test_async_worker_with_context(self):
         """Test TaskContext works with async workers"""
         async def async_worker_func(task):
             ctx = get_task_context()
@@ -272,22 +252,19 @@ class TestTaskContextIntegration(unittest.TestCase):
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
-        async def test():
-            task = Task()
-            task.task_id = 'task-async'
-            task.workflow_instance_id = 'workflow-async'
-            task.task_def_name = 'test_task'
-            task.input_data = {}
+        task = Task()
+        task.task_id = 'task-async'
+        task.workflow_instance_id = 'workflow-async'
+        task.task_def_name = 'test_task'
+        task.input_data = {}
 
-            result = await runner._execute_task(task)
+        result = await runner._execute_task(task)
 
-            self.assertEqual(len(result.logs), 2)
-            self.assertEqual(result.logs[0].log, "Async log 1")
-            self.assertEqual(result.logs[1].log, "Async log 2")
+        self.assertEqual(len(result.logs), 2)
+        self.assertEqual(result.logs[0].log, "Async log 1")
+        self.assertEqual(result.logs[1].log, "Async log 2")
 
-        self.run_async(test())
-
-    def test_context_with_task_exception(self):
+    async def test_context_with_task_exception(self):
         """Test that context is cleared even when worker raises exception"""
         def failing_worker(task):
             ctx = get_task_context()
@@ -300,23 +277,20 @@ class TestTaskContextIntegration(unittest.TestCase):
         )
         runner = TaskRunnerAsyncIO(worker, self.config)
 
-        async def test():
-            task = Task()
-            task.task_id = 'task-fail'
-            task.workflow_instance_id = 'workflow-fail'
-            task.task_def_name = 'test_task'
-            task.input_data = {}
+        task = Task()
+        task.task_id = 'task-fail'
+        task.workflow_instance_id = 'workflow-fail'
+        task.task_def_name = 'test_task'
+        task.input_data = {}
 
-            result = await runner._execute_task(task)
+        result = await runner._execute_task(task)
 
-            # Task should have failed
-            self.assertEqual(result.status, "FAILED")
+        # Task should have failed
+        self.assertEqual(result.status, "FAILED")
 
-            # Context should still be cleared
-            with self.assertRaises(RuntimeError):
-                get_task_context()
-
-        self.run_async(test())
+        # Context should still be cleared
+        with self.assertRaises(RuntimeError):
+            get_task_context()
 
 
 if __name__ == '__main__':

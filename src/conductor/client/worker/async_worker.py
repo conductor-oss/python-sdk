@@ -1,9 +1,9 @@
 from __future__ import annotations
-import dataclasses
 import inspect
 import logging
-import time
 import traceback
+import time
+import dataclasses
 from typing import Optional
 
 from typing_extensions import Self
@@ -25,7 +25,7 @@ logger = logging.getLogger(
     )
 )
 
-class Worker(BaseWorker):
+class AsyncWorker(BaseWorker):
     def __init__(self,
                  task_definition_name: str,
                  execute_function: ExecuteTaskFunction,
@@ -42,7 +42,7 @@ class Worker(BaseWorker):
         )
         self.api_client = ApiClient()
 
-    def execute(self, task: Task) -> TaskResult:
+    async def async_execute(self, task: Task) -> TaskResult:
         task_input = {}
         task_output = None
         task_result: TaskResult = self.get_task_result_from_task(task)
@@ -65,15 +65,11 @@ class Worker(BaseWorker):
                     else:
                         task_input[input_name] = None
                 task_output = self.execute_function(**task_input)
-            
+
             if inspect.iscoroutine(task_output):
-                # Close the coroutine to avoid "coroutine was never awaited" warnings
-                task_output.close()
-                raise Exception('Coroutines are not supported in SyncWorker, please use AsyncWorker')
+                task_output = await task_output
 
             if isinstance(task_output, TaskResult):
-                task_output.task_id = task.task_id
-                task_output.workflow_instance_id = task.workflow_instance_id
                 return task_output
             
             from conductor.client.context.task_context import TaskInProgress
@@ -89,9 +85,6 @@ class Worker(BaseWorker):
                 task_result.reason_for_incompletion = ne.args[0]
 
         except Exception as ne:
-            if 'Coroutines are not supported' in str(ne):
-                raise ne
-            
             logger.error(
                 "Error executing task %s with id %s. error = %s",
                 task.task_def_name,
@@ -130,3 +123,6 @@ class Worker(BaseWorker):
                 }
 
         return task_result
+    
+    def execute(self, task: Task) -> TaskResult:
+        raise Exception('execute() is not supported in ASyncWorker, please use async_execute')
