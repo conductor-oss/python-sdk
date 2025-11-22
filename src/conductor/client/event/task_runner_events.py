@@ -6,7 +6,7 @@ They match the Java SDK's TaskRunnerEvent hierarchy.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from conductor.client.event.conductor_event import ConductorEvent
@@ -37,7 +37,7 @@ class PollStarted(TaskRunnerEvent):
     """
     worker_id: str
     poll_count: int
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass(frozen=True)
@@ -53,7 +53,7 @@ class PollCompleted(TaskRunnerEvent):
     """
     duration_ms: float
     tasks_received: int
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass(frozen=True)
@@ -69,7 +69,7 @@ class PollFailure(TaskRunnerEvent):
     """
     duration_ms: float
     cause: Exception
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass(frozen=True)
@@ -87,7 +87,7 @@ class TaskExecutionStarted(TaskRunnerEvent):
     task_id: str
     worker_id: str
     workflow_instance_id: Optional[str] = None
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass(frozen=True)
@@ -109,7 +109,7 @@ class TaskExecutionCompleted(TaskRunnerEvent):
     workflow_instance_id: Optional[str]
     duration_ms: float
     output_size_bytes: Optional[int] = None
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass(frozen=True)
@@ -131,4 +131,4 @@ class TaskExecutionFailure(TaskRunnerEvent):
     workflow_instance_id: Optional[str]
     cause: Exception
     duration_ms: float
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

@@ -6,7 +6,7 @@ and external storage usage.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 
 from conductor.client.event.conductor_event import ConductorEvent
 
@@ -33,7 +33,7 @@ class TaskResultPayloadSize(TaskEvent):
         timestamp: UTC timestamp when the event was created
     """
     size_bytes: int
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass(frozen=True)
@@ -49,4 +49,4 @@ class TaskPayloadUsed(TaskEvent):
     """
     operation: str
     payload_type: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
