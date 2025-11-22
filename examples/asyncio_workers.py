@@ -140,9 +140,10 @@ if __name__ == '__main__':
 
     Async Execution:
     ----------------
-    - Async workers use BackgroundEventLoop (persistent event loop in background thread)
-    - 1.5-2x faster than creating new event loops per task
-    - For non-blocking async (10-100x better concurrency), use non_blocking_async=True in decorator
+    - Async workers (async def) automatically use BackgroundEventLoop
+    - Execution mode is detected from function signature (def vs async def)
+    - async def provides 10-100x better concurrency for I/O-bound workloads
+    - BackgroundEventLoop is 1.5-2x faster than asyncio.run()
 
     Metrics Available:
     ------------------

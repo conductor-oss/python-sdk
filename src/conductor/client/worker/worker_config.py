@@ -118,8 +118,7 @@ def resolve_worker_config(
     thread_count: Optional[int] = None,
     register_task_def: Optional[bool] = None,
     poll_timeout: Optional[int] = None,
-    lease_extend_enabled: Optional[bool] = None,
-    non_blocking_async: Optional[bool] = None
+    lease_extend_enabled: Optional[bool] = None
 ) -> dict:
     """
     Resolve worker configuration with hierarchical override.
@@ -138,7 +137,6 @@ def resolve_worker_config(
         register_task_def: Whether to register task definition (code-level default)
         poll_timeout: Polling timeout in milliseconds (code-level default)
         lease_extend_enabled: Whether lease extension is enabled (code-level default)
-        non_blocking_async: Whether non-blocking async is enabled (code-level default)
 
     Returns:
         Dict with resolved configuration values
@@ -184,10 +182,6 @@ def resolve_worker_config(
     # Resolve lease_extend_enabled
     env_lease_extend = _get_env_value(worker_name, 'lease_extend_enabled', bool)
     resolved['lease_extend_enabled'] = env_lease_extend if env_lease_extend is not None else lease_extend_enabled
-
-    # Resolve non_blocking_async
-    env_non_blocking = _get_env_value(worker_name, 'non_blocking_async', bool)
-    resolved['non_blocking_async'] = env_non_blocking if env_non_blocking is not None else non_blocking_async
 
     return resolved
 

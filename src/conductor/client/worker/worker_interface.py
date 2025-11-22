@@ -21,6 +21,27 @@ def _get_env_bool(key: str, default: bool = False) -> bool:
 
 
 class WorkerInterface(abc.ABC):
+    """
+    Abstract base class for implementing Conductor workers.
+
+    RECOMMENDED: Use @worker_task decorator instead of implementing this interface directly.
+    The decorator provides automatic worker registration, configuration management, and
+    cleaner syntax.
+
+    Example using @worker_task (RECOMMENDED):
+        from conductor.client.worker.worker_task import worker_task
+
+        @worker_task(task_definition_name='my_task', thread_count=10)
+        def my_worker(input_value: int) -> dict:
+            return {'result': input_value * 2}
+
+    Example implementing WorkerInterface (for advanced use cases):
+        class MyWorker(WorkerInterface):
+            def execute(self, task: Task) -> TaskResult:
+                task_result = self.get_task_result_from_task(task)
+                task_result.status = TaskResultStatus.COMPLETED
+                return task_result
+    """
     def __init__(self, task_definition_name: Union[str, list]):
         self.task_definition_name = task_definition_name
         self.next_task_index = 0
@@ -37,9 +58,31 @@ class WorkerInterface(abc.ABC):
         """
         Executes a task and returns the updated task.
 
-        :param Task: (required)
-        :return: TaskResult
-                 If the task is not completed yet, return with the status as IN_PROGRESS.
+        Execution Mode (automatically detected):
+        ----------------------------------------
+        - Sync (def): Execute in thread pool, return TaskResult directly
+        - Async (async def): Execute as non-blocking coroutine in BackgroundEventLoop
+
+        Sync Example:
+            def execute(self, task: Task) -> TaskResult:
+                # Executes in ThreadPoolExecutor
+                # Concurrency limited by self.thread_count
+                result = process_task(task)
+                task_result = self.get_task_result_from_task(task)
+                task_result.status = TaskResultStatus.COMPLETED
+                return task_result
+
+        Async Example:
+            async def execute(self, task: Task) -> TaskResult:
+                # Executes as non-blocking coroutine
+                # 10-100x better concurrency for I/O-bound workloads
+                result = await async_api_call(task)
+                task_result = self.get_task_result_from_task(task)
+                task_result.status = TaskResultStatus.COMPLETED
+                return task_result
+
+        :param task: Task to execute (required)
+        :return: TaskResult with status COMPLETED, FAILED, or IN_PROGRESS
         """
         ...
 

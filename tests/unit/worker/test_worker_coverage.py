@@ -617,8 +617,11 @@ class TestWorkerExecuteAsync(unittest.TestCase):
 
         result = worker.execute(task)
 
-        self.assertEqual(result.status, TaskResultStatus.COMPLETED)
-        self.assertEqual(result.output_data, {"result": "async_success"})
+        # Async workers return None immediately (non-blocking)
+        self.assertIsNone(result)
+
+        # Verify async task was submitted
+        self.assertIn(task.task_id, worker._pending_async_tasks)
 
     def test_execute_with_async_function_returning_task_result(self):
         """Test execute with async function returning TaskResult"""
@@ -639,9 +642,11 @@ class TestWorkerExecuteAsync(unittest.TestCase):
 
         result = worker.execute(task)
 
-        self.assertEqual(result.task_id, "task-456")
-        self.assertEqual(result.workflow_instance_id, "workflow-789")
-        self.assertEqual(result.output_data, {"async": "task_result"})
+        # Async workers return None immediately (non-blocking)
+        self.assertIsNone(result)
+
+        # Verify async task was submitted
+        self.assertIn(task.task_id, worker._pending_async_tasks)
 
 
 class TestWorkerExecuteTaskInProgress(unittest.TestCase):

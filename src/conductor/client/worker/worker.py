@@ -289,8 +289,7 @@ class Worker(WorkerInterface):
                  thread_count: int = 1,
                  register_task_def: bool = False,
                  poll_timeout: int = 100,
-                 lease_extend_enabled: bool = True,
-                 non_blocking_async: bool = False
+                 lease_extend_enabled: bool = True
                  ) -> Self:
         super().__init__(task_definition_name)
         self.api_client = ApiClient()
@@ -308,7 +307,6 @@ class Worker(WorkerInterface):
         self.register_task_def = register_task_def
         self.poll_timeout = poll_timeout
         self.lease_extend_enabled = lease_extend_enabled
-        self.non_blocking_async = non_blocking_async
 
         # Initialize background event loop for async workers
         self._background_loop = None
@@ -347,21 +345,16 @@ class Worker(WorkerInterface):
                 if self._background_loop is None:
                     self._background_loop = BackgroundEventLoop()
 
-                if self.non_blocking_async:
-                    # Non-blocking mode: Submit coroutine and return None
-                    # This allows worker to continue polling while async tasks run concurrently
-                    future = self._background_loop.submit_coroutine(task_output)
+                # Non-blocking mode: Submit coroutine and continue polling
+                # This allows high concurrency for async I/O-bound workloads
+                future = self._background_loop.submit_coroutine(task_output)
 
-                    # Store future for later retrieval
-                    self._pending_async_tasks[task.task_id] = (future, task, time.time())
+                # Store future for later retrieval
+                self._pending_async_tasks[task.task_id] = (future, task, time.time())
 
-                    # Return None to signal that this task is being handled asynchronously
-                    # The TaskRunner will check for completed async tasks separately
-                    return None
-                else:
-                    # Blocking mode (default): Wait for result (backward compatible)
-                    # This avoids the expensive overhead of starting/stopping an event loop per call
-                    task_output = self._background_loop.run_coroutine(task_output)
+                # Return None to signal that this task is being handled asynchronously
+                # The TaskRunner will check for completed async tasks separately
+                return None
 
             if isinstance(task_output, TaskResult):
                 task_output.task_id = task.task_id

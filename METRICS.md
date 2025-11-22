@@ -107,18 +107,19 @@ with TaskHandler(
 
 ### AsyncIO Workers
 
-For AsyncIO-based workers:
+Usage with TaskHandler:
 
 ```python
-from conductor.client.automator.task_handler_asyncio import TaskHandlerAsyncIO
+from conductor.client.automator.task_handler import TaskHandler
 
-async with TaskHandlerAsyncIO(
+with TaskHandler(
     configuration=api_config,
     metrics_settings=metrics_settings,
     scan_for_annotated_workers=True,
     import_modules=['your_module']
 ) as task_handler:
-    await task_handler.start()
+    task_handler.start_processes()
+    task_handler.join_processes()
 ```
 
 ### Metrics File Cleanup
@@ -326,6 +327,6 @@ httpd.serve_forever()
 - Limit the number of unique label combinations
 
 ### Missing metrics
-- Verify `metrics_settings` is passed to TaskHandler/TaskHandlerAsyncIO
+- Verify `metrics_settings` is passed to TaskHandler
 - Check that the SDK version supports the metric you're looking for
 - Ensure workers are properly registered and running

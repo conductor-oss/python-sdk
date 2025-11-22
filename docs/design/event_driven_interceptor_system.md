@@ -107,40 +107,40 @@ if self.metrics_collector is not None:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Task Execution Layer                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │TaskRunnerAsync│ │WorkflowClient│  │  TaskClient  │          │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘          │
-│         │ publish()        │ publish()        │ publish()        │
-└─────────┼──────────────────┼──────────────────┼──────────────────┘
-          │                  │                  │
-          └──────────────────▼──────────────────┘
-                             │
-┌────────────────────────────▼──────────────────────────────────┐
-│                  Event Dispatch Layer                          │
+│                    Task Execution Layer                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │
+│  │TaskRunnerAsync│ │WorkflowClient│  │  TaskClient  │           │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘           │
+│         │ publish()       │ publish()       │ publish()         │
+└─────────┼─────────────────┼─────────────────┼───────────────────┘
+          │                 │                 │
+          └─────────────────▼─────────────────┘
+                            │
+┌───────────────────────────▼───────────────────────────────────┐
+│                  Event Dispatch Layer                         │
 │  ┌──────────────────────────────────────────────────────────┐ │
-│  │         EventDispatcher[T] (Generic)                      │ │
+│  │         EventDispatcher[T] (Generic)                     │ │
 │  │  • Async event publishing (asyncio.create_task)          │ │
 │  │  • Type-safe event routing (Protocol/ABC)                │ │
 │  │  • Multiple listener support (CopyOnWriteList)           │ │
-│  │  • Event filtering by type                                │ │
+│  │  • Event filtering by type                               │ │
 │  └─────────────────────┬────────────────────────────────────┘ │
-│                        │ dispatch_async()                      │
-└────────────────────────┼───────────────────────────────────────┘
+│                        │ dispatch_async()                     │
+└────────────────────────┼──────────────────────────────────────┘
                          │
-                         ▼
-┌────────────────────────────────────────────────────────────────┐
-│                 Listener/Consumer Layer                         │
+                         │                         
+┌────────────────────────▼─────────────────────────────────────┐
+│                 Listener/Consumer Layer                      │
 │  ┌────────────────┐  ┌────────────────┐  ┌─────────────────┐ │
 │  │PrometheusMetrics│ │DatadogMetrics  │  │CustomListener   │ │
-│  │   Collector     │  │   Collector    │  │  (SLA Monitor)  │ │
+│  │   Collector     │ │   Collector    │  │  (SLA Monitor)  │ │
 │  └────────────────┘  └────────────────┘  └─────────────────┘ │
-│                                                                 │
+│                                                              │
 │  ┌────────────────┐  ┌────────────────┐  ┌─────────────────┐ │
 │  │  Audit Logger  │  │  Cost Tracker  │  │ Dashboard Feed  │ │
 │  │  (Compliance)  │  │  (FinOps)      │  │  (WebSocket)    │ │
 │  └────────────────┘  └────────────────┘  └─────────────────┘ │
-└────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Design Principles
@@ -895,7 +895,7 @@ class PrometheusMetricsCollector(MetricsCollector):
         collector = PrometheusMetricsCollector()
 
         # Register with task handler
-        handler = TaskHandlerAsyncIO(
+        handler = TaskHandler(
             configuration=config,
             event_listeners=[collector]
         )
@@ -1166,30 +1166,24 @@ self.event_dispatcher.publish(PollStarted(...))  # NEW
 ### Example 1: Basic Usage (Prometheus)
 
 ```python
-import asyncio
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.automator.task_handler_asyncio import TaskHandlerAsyncIO
+from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.telemetry.prometheus.prometheus_metrics_collector import (
     PrometheusMetricsCollector
 )
 
-async def main():
-    config = Configuration()
+config = Configuration()
 
-    # Create Prometheus collector
-    prometheus = PrometheusMetricsCollector()
+# Create Prometheus collector
+prometheus = PrometheusMetricsCollector()
 
-    # Create task handler with metrics
-    handler = TaskHandlerAsyncIO(
-        configuration=config,
-        event_listeners=[prometheus]  # NEW API
-    )
-
-    await handler.start()
-    await handler.wait()
-
-if __name__ == '__main__':
-    asyncio.run(main())
+# Create task handler with metrics
+with TaskHandler(
+    configuration=config,
+    event_listeners=[prometheus]  # NEW API
+) as handler:
+    handler.start_processes()
+    handler.join_processes()
 ```
 
 ### Example 2: Multiple Collectors
@@ -1207,7 +1201,7 @@ datadog = DatadogCollector(api_key=os.getenv('DATADOG_API_KEY'))
 sla_monitor = SLAMonitor(thresholds={'critical_task': 30.0})
 
 # Register all collectors
-handler = TaskHandlerAsyncIO(
+handler = TaskHandler(
     configuration=config,
     event_listeners=[prometheus, datadog, sla_monitor]
 )
@@ -1240,7 +1234,7 @@ class SlowTaskAlert(TaskRunnerEventsListener):
         print(f"[{severity.upper()}] {title}: {message}")
 
 # Usage
-handler = TaskHandlerAsyncIO(
+handler = TaskHandler(
     configuration=config,
     event_listeners=[SlowTaskAlert(threshold_seconds=30.0)]
 )
@@ -1253,7 +1247,7 @@ from conductor.client.events.event_dispatcher import EventDispatcher
 from conductor.client.events.task_runner_events import TaskExecutionCompleted
 
 # Create handler
-handler = TaskHandlerAsyncIO(configuration=config)
+handler = TaskHandler(configuration=config)
 
 # Get dispatcher (exposed by handler)
 dispatcher = handler.get_task_runner_event_dispatcher()
@@ -1295,7 +1289,7 @@ cost_tracker = CostTracker({
     'simple_task': Decimal('0.001')         # $0.001 per second
 })
 
-handler = TaskHandlerAsyncIO(
+handler = TaskHandler(
     configuration=config,
     event_listeners=[cost_tracker]
 )
@@ -1316,7 +1310,7 @@ old_collector = MetricsCollector(metrics_settings)
 adapter = MetricsCollectorAdapter(old_collector)
 
 # Use with new event system
-handler = TaskHandlerAsyncIO(
+handler = TaskHandler(
     configuration=config,
     event_listeners=[adapter]  # OLD collector works with NEW system!
 )

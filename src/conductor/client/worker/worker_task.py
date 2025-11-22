@@ -79,8 +79,7 @@ def WorkerTask(task_definition_name: str, poll_interval: int = 100, domain: Opti
 
 
 def worker_task(task_definition_name: str, poll_interval_millis: int = 100, domain: Optional[str] = None, worker_id: Optional[str] = None,
-                thread_count: int = 1, register_task_def: bool = False, poll_timeout: int = 100, lease_extend_enabled: bool = True,
-                non_blocking_async: bool = False):
+                thread_count: int = 1, register_task_def: bool = False, poll_timeout: int = 100, lease_extend_enabled: bool = True):
     """
     Decorator to register a function as a Conductor worker task.
 
@@ -129,34 +128,33 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
             - Disable for fast tasks (<1s) to reduce unnecessary API calls
             - Enable for long tasks (>30s) to prevent premature timeout
 
-        non_blocking_async: Enable non-blocking async execution for async workers.
-            - Default: False (blocking mode - backward compatible)
-            - When False: Async tasks block worker thread until complete
-            - When True: Async tasks run concurrently in background, worker continues polling
-            - Only affects async def functions (sync functions unaffected)
-            - Benefits: 10-100x better async concurrency
-            - Use for: I/O-bound async workloads with many concurrent tasks
-
     Returns:
         Decorated function that can be called normally or used as a workflow task
 
-    Example:
-        @worker_task(
-            task_definition_name='process_order',
-            thread_count=10,              # AsyncIO only: 10 concurrent tasks
-            poll_interval_millis=200,
-            poll_timeout=500,
-            lease_extend_enabled=True
-        )
-        async def process_order(order_id: str) -> dict:
-            # Process order asynchronously
+    Worker Execution Modes (automatically detected):
+        - Sync workers (def): Execute in thread pool (ThreadPoolExecutor)
+        - Async workers (async def): Execute concurrently using BackgroundEventLoop
+          * Automatically run as non-blocking coroutines
+          * 10-100x better concurrency for I/O-bound workloads
+
+    Example (Sync):
+        @worker_task(task_definition_name='process_order', thread_count=5)
+        def process_order(order_id: str) -> dict:
+            # Sync execution in thread pool
             return {'status': 'completed'}
+
+    Example (Async):
+        @worker_task(task_definition_name='fetch_data', thread_count=50)
+        async def fetch_data(url: str) -> dict:
+            # Async execution with high concurrency
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url)
+            return {'data': response.json()}
     """
     def worker_task_func(func):
         register_decorated_fn(name=task_definition_name, poll_interval=poll_interval_millis, domain=domain,
                               worker_id=worker_id, thread_count=thread_count, register_task_def=register_task_def,
-                              poll_timeout=poll_timeout, lease_extend_enabled=lease_extend_enabled,
-                              non_blocking_async=non_blocking_async, func=func)
+                              poll_timeout=poll_timeout, lease_extend_enabled=lease_extend_enabled, func=func)
 
         @functools.wraps(func)
         def wrapper_func(*args, **kwargs):

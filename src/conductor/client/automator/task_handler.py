@@ -36,8 +36,7 @@ if not _mp_fork_set:
 
 def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func,
                          thread_count: int = 1, register_task_def: bool = False,
-                         poll_timeout: int = 100, lease_extend_enabled: bool = True,
-                         non_blocking_async: bool = False):
+                         poll_timeout: int = 100, lease_extend_enabled: bool = True):
     logger.info("decorated %s", name)
     _decorated_functions[(name, domain)] = {
         "func": func,
@@ -47,8 +46,7 @@ def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id:
         "thread_count": thread_count,
         "register_task_def": register_task_def,
         "poll_timeout": poll_timeout,
-        "lease_extend_enabled": lease_extend_enabled,
-        "non_blocking_async": non_blocking_async
+        "lease_extend_enabled": lease_extend_enabled
     }
 
 
@@ -67,8 +65,7 @@ def get_registered_workers() -> List[Worker]:
             poll_interval=record["poll_interval"],
             domain=domain,
             worker_id=record["worker_id"],
-            thread_count=record.get("thread_count", 1),
-            non_blocking_async=record.get("non_blocking_async", False)
+            thread_count=record.get("thread_count", 1)
         )
         workers.append(worker)
     return workers
@@ -103,10 +100,10 @@ class TaskHandler:
             - Async tasks block worker thread until complete
             - Simple and predictable
 
-        Non-blocking mode (opt-in via Worker.non_blocking_async=True):
+        Async mode (automatic for async def functions):
             - Async tasks run concurrently in background
             - Worker thread continues polling
-            - 10-100x better async concurrency
+            - 10-100x better concurrency for I/O-bound workloads
 
     Usage:
         # Default configuration
@@ -167,8 +164,7 @@ class TaskHandler:
                     'thread_count': record.get("thread_count", 1),
                     'register_task_def': record.get("register_task_def", False),
                     'poll_timeout': record.get("poll_timeout", 100),
-                    'lease_extend_enabled': record.get("lease_extend_enabled", True),
-                    'non_blocking_async': record.get("non_blocking_async", False)
+                    'lease_extend_enabled': record.get("lease_extend_enabled", True)
                 }
 
                 # Resolve configuration with environment variable overrides
@@ -186,8 +182,7 @@ class TaskHandler:
                     thread_count=resolved_config['thread_count'],
                     register_task_def=resolved_config['register_task_def'],
                     poll_timeout=resolved_config['poll_timeout'],
-                    lease_extend_enabled=resolved_config['lease_extend_enabled'],
-                    non_blocking_async=resolved_config.get('non_blocking_async', False))
+                    lease_extend_enabled=resolved_config['lease_extend_enabled'])
                 logger.info("created worker with name=%s and domain=%s", task_def_name, resolved_config['domain'])
                 workers.append(worker)
 

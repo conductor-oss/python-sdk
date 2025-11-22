@@ -1,8 +1,8 @@
 """
-Performance Comparison: Blocking vs Non-Blocking Async Execution
+Performance Comparison: Sync vs Async Worker Execution
 
-This script demonstrates the differences between blocking and non-blocking async
-execution modes and helps you choose the right one for your workload.
+This script demonstrates the differences between sync and async workers
+and helps you choose the right one for your workload.
 
 Run:
     python examples/compare_multiprocessing_vs_asyncio.py
@@ -17,28 +17,27 @@ from conductor.client.worker.worker_task import worker_task
 import asyncio
 
 
-# Blocking async worker (default)
+# Async worker (automatically runs concurrently)
 @worker_task(
-    task_definition_name='io_task_blocking',
-    thread_count=10,
-    non_blocking_async=False  # Default: blocks worker thread
+    task_definition_name='io_task_async',
+    thread_count=50
 )
-async def io_bound_task_blocking(duration: float) -> str:
-    """Simulates I/O-bound work with blocking async (default behavior)"""
+async def io_bound_task_async(duration: float) -> str:
+    """Simulates I/O-bound work with async (automatic concurrency)"""
     await asyncio.sleep(duration)
-    return f"Blocking async task completed in {duration}s"
+    return f"Async task completed in {duration}s"
 
 
-# Non-blocking async worker
+# Sync worker (sequential execution in thread pool)
 @worker_task(
-    task_definition_name='io_task_nonblocking',
-    thread_count=10,
-    non_blocking_async=True  # Non-blocking: runs concurrently
+    task_definition_name='io_task_sync',
+    thread_count=10
 )
-async def io_bound_task_nonblocking(duration: float) -> str:
-    """Simulates I/O-bound work with non-blocking async"""
-    await asyncio.sleep(duration)
-    return f"Non-blocking async task completed in {duration}s"
+def io_bound_task_sync(duration: float) -> str:
+    """Simulates I/O-bound work with sync (thread pool)"""
+    import time
+    time.sleep(duration)
+    return f"Sync task completed in {duration}s"
 
 
 # CPU-bound worker (unaffected by async mode)
@@ -57,10 +56,10 @@ def measure_memory():
     return process.memory_info().rss / 1024 / 1024
 
 
-def test_nonblocking_mode(config: Configuration, duration: int = 10):
-    """Test non-blocking async execution"""
+def test_async_mode(config: Configuration, duration: int = 10):
+    """Test async worker execution"""
     print("\n" + "=" * 60)
-    print("Testing Non-Blocking Async Execution")
+    print("Testing Async Worker Execution")
     print("=" * 60)
 
     start_memory = measure_memory()
@@ -91,13 +90,13 @@ def test_nonblocking_mode(config: Configuration, duration: int = 10):
     print(f"  Ending memory: {end_memory:.2f} MB")
     print(f"  Memory used: {end_memory - start_memory:.2f} MB")
     print(f"  Process count: {process_count}")
-    print(f"  Mode: Non-blocking async (concurrent execution in BackgroundEventLoop)")
+    print(f"  Mode: Async (automatic concurrent execution in BackgroundEventLoop)")
 
 
-def test_blocking_mode(config: Configuration, duration: int = 10):
-    """Test blocking async execution (default)"""
+def test_sync_mode(config: Configuration, duration: int = 10):
+    """Test sync worker execution"""
     print("\n" + "=" * 60)
-    print("Testing Blocking Async Execution (Default)")
+    print("Testing Sync Worker Execution")
     print("=" * 60)
 
     start_memory = measure_memory()
@@ -128,26 +127,25 @@ def test_blocking_mode(config: Configuration, duration: int = 10):
     print(f"  Ending memory: {end_memory:.2f} MB")
     print(f"  Memory used: {end_memory - start_memory:.2f} MB")
     print(f"  Process count: {process_count}")
-    print(f"  Mode: Blocking async (sequential execution in BackgroundEventLoop)")
+    print(f"  Mode: Sync (ThreadPoolExecutor)")
 
 
 def print_comparison_table():
     """Print feature comparison table"""
     print("\n" + "=" * 80)
-    print("ASYNC EXECUTION MODE COMPARISON")
+    print("WORKER EXECUTION MODE COMPARISON")
     print("=" * 80)
 
     comparison = [
-        ("Aspect", "Blocking (default)", "Non-Blocking"),
+        ("Aspect", "Sync (def)", "Async (async def)"),
         ("─" * 30, "─" * 25, "─" * 25),
         ("Architecture", "Multiprocessing", "Multiprocessing"),
-        ("Async execution", "BackgroundEventLoop", "BackgroundEventLoop"),
-        ("Worker thread behavior", "Blocks waiting for async", "Continues polling"),
-        ("Async concurrency", "Sequential", "Concurrent (10-100x)"),
+        ("Execution", "ThreadPoolExecutor", "BackgroundEventLoop"),
+        ("Worker behavior", "Thread pool", "Non-blocking coroutines"),
+        ("Concurrency", "Limited by threads", "10-100x higher"),
         ("Memory overhead", "~60 MB per worker", "~60 MB per worker"),
-        ("Complexity", "Simple", "Slightly more complex"),
-        ("Best for", "Most use cases", "I/O-heavy async workloads"),
-        ("Backward compatible", "Yes (default)", "Opt-in"),
+        ("Best for", "CPU-bound, blocking I/O", "I/O-bound async workloads"),
+        ("Detection", "Automatic (def)", "Automatic (async def)"),
     ]
 
     for row in comparison:
@@ -160,28 +158,29 @@ def print_recommendations():
     print("RECOMMENDATIONS")
     print("=" * 80)
 
-    print("\n✅ Use Blocking Async (default, non_blocking_async=False):")
-    print("   • General use cases")
-    print("   • Few concurrent async tasks (< 5)")
-    print("   • Quick async operations (< 1s)")
-    print("   • You want simplicity and predictability")
+    print("\n✅ Use Sync Workers (def):")
+    print("   • CPU-bound tasks")
+    print("   • Blocking I/O operations")
+    print("   • Simple synchronous logic")
+    print("   • When thread pool concurrency is sufficient")
 
-    print("\n✅ Use Non-Blocking Async (non_blocking_async=True):")
-    print("   • Many concurrent async tasks (10+)")
-    print("   • I/O-heavy workloads (HTTP calls, DB queries)")
-    print("   • Long-running async operations (> 1s)")
-    print("   • You need maximum async throughput")
+    print("\n✅ Use Async Workers (async def):")
+    print("   • I/O-bound workloads (HTTP, DB, file operations)")
+    print("   • Need high concurrency (100+ concurrent operations)")
+    print("   • Long-running async operations")
+    print("   • Working with async libraries (httpx, aiohttp, asyncpg)")
 
     print("\n💡 Key Insight:")
-    print("   Both modes use multiprocessing (one process per worker)")
-    print("   Both use BackgroundEventLoop for async execution")
-    print("   The difference is whether worker threads block waiting for async tasks")
+    print("   Execution mode is automatically detected from function signature")
+    print("   async def → BackgroundEventLoop (10-100x better concurrency)")
+    print("   def → ThreadPoolExecutor (traditional thread pool)")
+    print("   Both use multiprocessing (one process per worker)")
 
 
 def main():
     """Run comparison tests"""
     print("\n" + "=" * 80)
-    print("Conductor Python SDK: Async Execution Mode Comparison")
+    print("Conductor Python SDK: Sync vs Async Worker Comparison")
     print("=" * 80)
 
     config = Configuration()
@@ -194,8 +193,8 @@ def main():
     print(f"  Test duration: {test_duration}s per mode")
 
     # Run tests
-    test_blocking_mode(config, test_duration)
-    test_nonblocking_mode(config, test_duration)
+    test_sync_mode(config, test_duration)
+    test_async_mode(config, test_duration)
 
     # Print comparison
     print_comparison_table()

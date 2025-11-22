@@ -6,11 +6,7 @@ Automatic worker discovery from packages, similar to Spring's component scanning
 
 The `WorkerLoader` class provides automatic discovery of workers decorated with `@worker_task` by scanning Python packages. This eliminates the need to manually register each worker.
 
-**Important**: Worker discovery is **execution-model agnostic**. The same discovery process works for both:
-- **TaskHandler** (sync, multiprocessing-based execution)
-- **TaskHandlerAsyncIO** (async, asyncio-based execution)
-
-Discovery just imports modules and registers workers - it doesn't care whether workers are sync or async functions. The execution model is determined by which TaskHandler you use, not by the discovery process.
+**Important**: Worker discovery works with **TaskHandler** for all worker types. The discovery process imports modules and registers workers - execution mode (sync/async) is automatically detected from function signatures (`def` vs `async def`).
 
 ## Quick Start
 
@@ -18,15 +14,16 @@ Discovery just imports modules and registers workers - it doesn't care whether w
 
 ```python
 from conductor.client.worker.worker_loader import auto_discover_workers
-from conductor.client.automator.task_handler_asyncio import TaskHandlerAsyncIO
+from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 
 # Auto-discover workers from packages
 loader = auto_discover_workers(packages=['my_app.workers'])
 
 # Start task handler with discovered workers
-async with TaskHandlerAsyncIO(configuration=Configuration()) as handler:
-    await handler.wait()
+with TaskHandler(configuration=Configuration()) as handler:
+    handler.start_processes()
+    handler.join_processes()
 ```
 
 ### Directory Structure
@@ -97,7 +94,7 @@ loader.scan_packages(['my_app.workers'], recursive=False)
 ```python
 import asyncio
 from conductor.client.worker.worker_loader import auto_discover_workers
-from conductor.client.automator.task_handler_asyncio import TaskHandlerAsyncIO
+from conductor.client.automator.task_handler_asyncio import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 
 async def main():
@@ -113,9 +110,10 @@ async def main():
     # Start async task handler
     config = Configuration()
 
-    async with TaskHandlerAsyncIO(configuration=config) as handler:
+    with TaskHandler(configuration=config) as handler:
         print(f"Started {loader.get_worker_count()} workers")
-        await handler.wait()
+        handler.start_processes()
+    handler.join_processes()
 
 if __name__ == '__main__':
     asyncio.run(main())
@@ -208,22 +206,23 @@ Worker discovery is **completely independent** of execution model:
 loader = auto_discover_workers(packages=['my_app.workers'])
 
 # Option 1: Use with AsyncIO (async execution)
-async with TaskHandlerAsyncIO(configuration=config) as handler:
-    await handler.wait()
+with TaskHandler(configuration=config) as handler:
+    handler.start_processes()
+    handler.join_processes()
 
 # Option 2: Use with TaskHandler (sync multiprocessing)
 handler = TaskHandler(configuration=config, scan_for_annotated_workers=True)
 handler.start_processes()
 ```
 
-### How Each Handler Executes Discovered Workers
+### How TaskHandler Executes Discovered Workers
 
-| Worker Type | TaskHandler (Sync) | TaskHandlerAsyncIO (Async) |
-|-------------|-------------------|---------------------------|
-| **Sync functions** | Run directly in worker process | Run in thread pool executor |
-| **Async functions** | Run in event loop in worker process | Run natively in event loop |
+| Worker Type | Execution Mode |
+|-------------|----------------|
+| **Sync functions (`def`)** | ThreadPoolExecutor (thread pool) |
+| **Async functions (`async def`)** | BackgroundEventLoop (non-blocking coroutines) |
 
-**Key Insight**: Discovery finds and registers workers. Execution model is determined by which TaskHandler you instantiate.
+**Key Insight**: Discovery finds and registers workers. Execution mode is automatically detected from function signature (`def` vs `async def`).
 
 ## How It Works
 
