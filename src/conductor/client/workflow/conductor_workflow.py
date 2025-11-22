@@ -46,6 +46,26 @@ class ConductorWorkflow:
         self._workflow_status_listener_enabled = False
         self._workflow_status_listener_sink = None
 
+    def __deepcopy__(self, memo):
+        """
+        Custom deepcopy to handle the executor field which may contain non-picklable objects.
+        The executor is shared (not copied) since it's just a reference to the workflow execution service.
+        """
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+
+        # Copy all attributes except _executor (which is shared, not copied)
+        for k, v in self.__dict__.items():
+            if k == '_executor':
+                # Share the executor reference, don't copy it
+                setattr(result, k, v)
+            else:
+                # Deep copy all other attributes
+                setattr(result, k, deepcopy(v, memo))
+
+        return result
+
     @property
     def name(self) -> str:
         return self._name

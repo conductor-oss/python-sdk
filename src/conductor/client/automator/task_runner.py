@@ -8,6 +8,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.context.task_context import _set_task_context, _clear_task_context, TaskInProgress
+from conductor.client.event.task_runner_events import (
+    TaskRunnerEvent, PollStarted, PollCompleted, PollFailure,
+    TaskExecutionStarted, TaskExecutionCompleted, TaskExecutionFailure
+)
+from conductor.client.event.sync_event_dispatcher import SyncEventDispatcher
+from conductor.client.event.sync_listener_register import register_task_runner_listener
 from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.api_client import ApiClient
 from conductor.client.http.models.task import Task
@@ -30,7 +36,8 @@ class TaskRunner:
             self,
             worker: WorkerInterface,
             configuration: Configuration = None,
-            metrics_settings: MetricsSettings = None
+            metrics_settings: MetricsSettings = None,
+            event_listeners: list = None
     ):
         if not isinstance(worker, WorkerInterface):
             raise Exception("Invalid worker")
@@ -39,11 +46,21 @@ class TaskRunner:
         if not isinstance(configuration, Configuration):
             configuration = Configuration()
         self.configuration = configuration
+
+        # Set up event dispatcher and register listeners
+        self.event_dispatcher = SyncEventDispatcher[TaskRunnerEvent]()
+        if event_listeners:
+            for listener in event_listeners:
+                register_task_runner_listener(listener, self.event_dispatcher)
+
         self.metrics_collector = None
         if metrics_settings is not None:
             self.metrics_collector = MetricsCollector(
                 metrics_settings
             )
+            # Register metrics collector as event listener
+            register_task_runner_listener(self.metrics_collector, self.event_dispatcher)
+
         self.task_client = TaskResourceApi(
             ApiClient(
                 configuration=self.configuration
@@ -192,8 +209,12 @@ class TaskRunner:
                 time.sleep(0.1)
                 return []
 
-        if self.metrics_collector is not None:
-            self.metrics_collector.increment_task_poll(task_definition_name)
+        # Publish PollStarted event (metrics collector will handle via event)
+        self.event_dispatcher.publish(PollStarted(
+            task_type=task_definition_name,
+            worker_id=self.worker.get_identity(),
+            poll_count=count
+        ))
 
         try:
             start_time = time.time()
@@ -210,8 +231,13 @@ class TaskRunner:
 
             finish_time = time.time()
             time_spent = finish_time - start_time
-            if self.metrics_collector is not None:
-                self.metrics_collector.record_task_poll_time(task_definition_name, time_spent)
+
+            # Publish PollCompleted event (metrics collector will handle via event)
+            self.event_dispatcher.publish(PollCompleted(
+                task_type=task_definition_name,
+                duration_ms=time_spent * 1000,
+                tasks_received=len(tasks) if tasks else 0
+            ))
 
             # Success - reset auth failure counter
             if tasks:
@@ -224,8 +250,12 @@ class TaskRunner:
             self._last_auth_failure = time.time()
             backoff_seconds = min(2 ** self._auth_failures, 60)
 
-            if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(task_definition_name, type(auth_exception))
+            # Publish PollFailure event (metrics collector will handle via event)
+            self.event_dispatcher.publish(PollFailure(
+                task_type=task_definition_name,
+                duration_ms=(time.time() - start_time) * 1000,
+                cause=auth_exception
+            ))
 
             if auth_exception.invalid_token:
                 logger.error(
@@ -240,8 +270,12 @@ class TaskRunner:
                 )
             return []
         except Exception as e:
-            if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(task_definition_name, type(e))
+            # Publish PollFailure event (metrics collector will handle via event)
+            self.event_dispatcher.publish(PollFailure(
+                task_type=task_definition_name,
+                duration_ms=(time.time() - start_time) * 1000,
+                cause=e
+            ))
             logger.error(
                 "Failed to batch poll task for: %s, reason: %s",
                 task_definition_name,
@@ -350,6 +384,14 @@ class TaskRunner:
         # Set task context (similar to AsyncIO implementation)
         _set_task_context(task, initial_task_result)
 
+        # Publish TaskExecutionStarted event
+        self.event_dispatcher.publish(TaskExecutionStarted(
+            task_type=task_definition_name,
+            task_id=task.task_id,
+            worker_id=self.worker.get_identity(),
+            workflow_instance_id=task.workflow_instance_id
+        ))
+
         try:
             start_time = time.time()
 
@@ -377,10 +419,10 @@ class TaskRunner:
                     task_result = task_output
                 else:
                     # Shouldn't happen, but handle gracefully
-                    logger.warning(
-                        "Worker returned unexpected type: %s, wrapping in TaskResult",
-                        type(task_output)
-                    )
+                    # logger.trace(
+                    #     f"Worker returned unexpected type: %s, for task {task.workflow_instance_id} / {task.task_id} wrapping in TaskResult",
+                    #     type(task_output)
+                    # )
                     task_result = TaskResult(
                         task_id=task.task_id,
                         workflow_instance_id=task.workflow_instance_id,
@@ -397,15 +439,17 @@ class TaskRunner:
 
             finish_time = time.time()
             time_spent = finish_time - start_time
-            if self.metrics_collector is not None:
-                self.metrics_collector.record_task_execute_time(
-                    task_definition_name,
-                    time_spent
-                )
-                self.metrics_collector.record_task_result_payload_size(
-                    task_definition_name,
-                    sys.getsizeof(task_result)
-                )
+
+            # Publish TaskExecutionCompleted event (metrics collector will handle via event)
+            output_size = sys.getsizeof(task_result) if task_result else 0
+            self.event_dispatcher.publish(TaskExecutionCompleted(
+                task_type=task_definition_name,
+                task_id=task.task_id,
+                worker_id=self.worker.get_identity(),
+                workflow_instance_id=task.workflow_instance_id,
+                duration_ms=time_spent * 1000,
+                output_size_bytes=output_size
+            ))
             logger.debug(
                 "Executed task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
                 task.task_id,
@@ -413,10 +457,18 @@ class TaskRunner:
                 task_definition_name
             )
         except Exception as e:
-            if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_execution_error(
-                    task_definition_name, type(e)
-                )
+            finish_time = time.time()
+            time_spent = finish_time - start_time
+
+            # Publish TaskExecutionFailure event (metrics collector will handle via event)
+            self.event_dispatcher.publish(TaskExecutionFailure(
+                task_type=task_definition_name,
+                task_id=task.task_id,
+                worker_id=self.worker.get_identity(),
+                workflow_instance_id=task.workflow_instance_id,
+                cause=e,
+                duration_ms=time_spent * 1000
+            ))
             task_result = TaskResult(
                 task_id=task.task_id,
                 workflow_instance_id=task.workflow_instance_id,

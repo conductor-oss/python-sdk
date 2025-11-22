@@ -9,6 +9,7 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.context import get_task_context, TaskInProgress
 from conductor.client.worker.worker_task import worker_task
+from examples.event_listener_examples import TaskExecutionLogger
 
 
 @worker_task(
@@ -117,7 +118,8 @@ def main():
             configuration=api_config,
             metrics_settings=metrics_settings,
             scan_for_annotated_workers=True,
-            import_modules=["helloworld.greetings_worker", "user_example.user_workers"]
+            import_modules=["helloworld.greetings_worker", "user_example.user_workers"],
+            event_listeners=[TaskExecutionLogger()]
         )
 
         # Start worker processes (blocks until stopped)

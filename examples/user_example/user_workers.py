@@ -45,7 +45,7 @@ async def fetch_user(user_id: int) -> User:
 @worker_task(
     task_definition_name='update_user',
     thread_count=10,
-    poll_timeout=100
+    poll_timeout=10
 )
 async def update_user(user: User) -> dict:
     """
@@ -64,8 +64,8 @@ async def update_user(user: User) -> dict:
     """
     # Simulate some processing
     ctx = get_task_context()
-    print(f'user name is {user.username} and workflow {ctx.get_workflow_instance_id()}')
-    time.sleep(0.1)
+    # print(f'user name is {user.username} and workflow {ctx.get_workflow_instance_id()}')
+    # time.sleep(0.1)
 
     return {
         'user_id': user.id,

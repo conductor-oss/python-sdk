@@ -9,6 +9,9 @@ from typing import List, Optional
 from conductor.client.automator.task_runner import TaskRunner
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
+from conductor.client.event.task_runner_events import TaskRunnerEvent
+from conductor.client.event.sync_event_dispatcher import SyncEventDispatcher
+from conductor.client.event.sync_listener_register import register_task_runner_listener
 from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.worker.worker import Worker
 from conductor.client.worker.worker_interface import WorkerInterface
@@ -137,10 +140,17 @@ class TaskHandler:
             configuration: Optional[Configuration] = None,
             metrics_settings: Optional[MetricsSettings] = None,
             scan_for_annotated_workers: bool = True,
-            import_modules: Optional[List[str]] = None
+            import_modules: Optional[List[str]] = None,
+            event_listeners: Optional[List] = None
     ):
         workers = workers or []
         self.logger_process, self.queue = _setup_logging_queue(configuration)
+
+        # Store event listeners to pass to each worker process
+        self.event_listeners = event_listeners or []
+        if self.event_listeners:
+            for listener in self.event_listeners:
+                logger.info(f"Will register event listener in each worker process: {listener.__class__.__name__}")
 
         # imports
         importlib.import_module("conductor.client.http.models.task")
@@ -249,7 +259,7 @@ class TaskHandler:
             configuration: Configuration,
             metrics_settings: MetricsSettings
     ) -> None:
-        task_runner = TaskRunner(worker, configuration, metrics_settings)
+        task_runner = TaskRunner(worker, configuration, metrics_settings, self.event_listeners)
         process = Process(target=task_runner.run)
         self.task_runner_processes.append(process)
 

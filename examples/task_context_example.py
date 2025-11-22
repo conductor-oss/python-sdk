@@ -232,7 +232,7 @@ def input_access_example() -> dict:
     }
 
 
-async def main():
+def main():
     """
     Main entry point demonstrating TaskContext examples.
     """
@@ -260,17 +260,12 @@ async def main():
     print("\nStarting workers... Press Ctrl+C to stop\n")
 
     try:
-        async with TaskHandler(configuration=api_config) as task_handler:
-            loop = asyncio.get_running_loop()
-
-            def signal_handler():
-                print("\n\nReceived shutdown signal, stopping workers...")
-                loop.create_task(task_handler.stop())
-
-            for sig in (signal.SIGTERM, signal.SIGINT):
-                loop.add_signal_handler(sig, signal_handler)
-
-            await task_handler.wait()
+        with TaskHandler(
+            configuration=api_config,
+            scan_for_annotated_workers=True
+        ) as task_handler:
+            task_handler.start_processes()
+            task_handler.join_processes()
 
     except KeyboardInterrupt:
         print("\n\nShutting down gracefully...")
@@ -287,6 +282,6 @@ if __name__ == '__main__':
     Run the TaskContext examples.
     """
     try:
-        asyncio.run(main())
+        main()
     except KeyboardInterrupt:
         pass

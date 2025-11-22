@@ -57,7 +57,7 @@ def convert_from_dict(cls: type, data: dict) -> object:
             # Use manual construction to bypass dacite's strict validation
             missing_field = str(e).replace('missing value for field ', '').strip('"')
 
-            logger.warning(
+            logger.debug(
                 f"Missing fields in task input for {cls.__name__}. "
                 f"Creating partial object with available fields only. "
                 f"Available: {list(data.keys()) if isinstance(data, dict) else []}, "
