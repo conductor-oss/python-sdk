@@ -7,8 +7,7 @@ from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.task.http_task import HttpTask
 from conductor.client.workflow.task.simple_task import SimpleTask
 from conductor.client.workflow.task.switch_task import SwitchTask
-from greetings import greet
-
+from examples.helloworld.greetings_worker import greet
 
 class WorkflowUnitTest(unittest.TestCase):
     """
@@ -32,7 +31,7 @@ class WorkflowUnitTest(unittest.TestCase):
         """
         name = 'test'
         result = greet(name=name)
-        self.assertEqual(f'Hello my friend {name}', result)
+        self.assertEqual(f'Hello {name}', result)
 
     def test_workflow_execution(self):
         """
