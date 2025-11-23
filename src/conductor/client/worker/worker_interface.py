@@ -51,7 +51,7 @@ class WorkerInterface(abc.ABC):
         self.thread_count = 1
         self.register_task_def = False
         self.poll_timeout = 100  # milliseconds
-        self.lease_extend_enabled = True
+        self.lease_extend_enabled = False
 
     @abc.abstractmethod
     def execute(self, task: Task) -> TaskResult:

@@ -32,7 +32,6 @@ class MockWorker(WorkerInterface):
 
     def __init__(self, task_name='test_task'):
         super().__init__(task_name)
-        self.paused = False
         self.poll_interval = 0.01  # Fast polling for tests
 
     def execute(self, task: Task) -> TaskResult:
@@ -283,7 +282,7 @@ class TestTaskRunnerCoverage(unittest.TestCase):
     def test_poll_task_when_worker_paused(self, mock_sleep):
         """Test polling returns None when worker is paused"""
         worker = MockWorker('test_task')
-        worker.paused_flag = True
+        worker.paused = True
 
         task_runner = TaskRunner(worker=worker)
 
