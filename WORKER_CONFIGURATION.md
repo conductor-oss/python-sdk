@@ -19,16 +19,18 @@ This means:
 
 The following properties can be configured via environment variables:
 
-| Property | Type | Description | Example |
-|----------|------|-------------|---------|
-| `poll_interval` | float | Polling interval in milliseconds | `1000` |
-| `domain` | string | Worker domain for task routing | `production` |
-| `worker_id` | string | Unique worker identifier | `worker-1` |
-| `thread_count` | int | Number of concurrent threads/coroutines | `10` |
-| `register_task_def` | bool | Auto-register task definition | `true` |
-| `poll_timeout` | int | Poll request timeout in milliseconds | `100` |
-| `lease_extend_enabled` | bool | Enable automatic lease extension | `true` |
-| `paused` | bool | Pause worker from polling/executing tasks | `true` |
+| Property | Type | Description | Example | Decorator? |
+|----------|------|-------------|---------|------------|
+| `poll_interval` | float | Polling interval in milliseconds | `1000` | ✅ Yes |
+| `domain` | string | Worker domain for task routing | `production` | ✅ Yes |
+| `worker_id` | string | Unique worker identifier | `worker-1` | ✅ Yes |
+| `thread_count` | int | Number of concurrent threads/coroutines | `10` | ✅ Yes |
+| `register_task_def` | bool | Auto-register task definition | `true` | ✅ Yes |
+| `poll_timeout` | int | Poll request timeout in milliseconds | `100` | ✅ Yes |
+| `lease_extend_enabled` | bool | Enable automatic lease extension | `false` | ✅ Yes |
+| `paused` | bool | Pause worker from polling/executing tasks | `true` | ❌ **Environment-only** |
+
+**Note**: The `paused` property is intentionally **not available** in the `@worker_task` decorator. It can only be controlled via environment variables, allowing operators to pause/resume workers at runtime without code changes or redeployment.
 
 ## Environment Variable Format
 
@@ -356,7 +358,7 @@ Use sensible defaults in code so workers work without environment variables:
     poll_interval=1000,      # Reasonable default
     domain='dev',            # Safe default domain
     thread_count=5,          # Moderate concurrency
-    lease_extend_enabled=True  # Safe default
+    lease_extend_enabled=False  # Default: disabled
 )
 def process_order(order_id: str):
     ...

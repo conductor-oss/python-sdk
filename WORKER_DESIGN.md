@@ -144,7 +144,7 @@ async def notify(message: str):
 | `domain` | str | None | Worker domain |
 | `worker_id` | str | auto | Worker identifier |
 | `poll_timeout` | int | 100 | Poll timeout (ms) |
-| `lease_extend_enabled` | bool | True | Auto-extend lease |
+| `lease_extend_enabled` | bool | False | Auto-extend lease |
 | `register_task_def` | bool | False | Auto-register task |
 
 ### Examples
@@ -171,6 +171,24 @@ export conductor.worker.process_order.thread_count=50
 ```
 
 **Result:** `domain=production`, `thread_count=50`
+
+### Startup Configuration Logging
+
+When workers start, they log their resolved configuration in a compact single-line format:
+
+```
+INFO - Conductor Worker[name=process_order, status=active, poll_interval=1000ms, domain=production, thread_count=50, poll_timeout=100ms, lease_extend=false]
+```
+
+This shows:
+- Worker name and status (active/paused)
+- All resolved configuration values
+- Configuration source (code, global env, or worker-specific env)
+
+**Benefits:**
+- Quick verification of configuration in logs
+- Easy debugging of environment variable issues
+- Single-line format for log aggregation tools
 
 ---
 
