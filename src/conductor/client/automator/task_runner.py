@@ -22,6 +22,7 @@ from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.http.rest import AuthorizationException
 from conductor.client.telemetry.metrics_collector import MetricsCollector
+from conductor.client.worker.worker import ASYNC_TASK_RUNNING
 from conductor.client.worker.worker_interface import WorkerInterface
 
 logger = logging.getLogger(
@@ -63,7 +64,8 @@ class TaskRunner:
 
         self.task_client = TaskResourceApi(
             ApiClient(
-                configuration=self.configuration
+                configuration=self.configuration,
+                metrics_collector=self.metrics_collector
             )
         )
 
@@ -87,7 +89,7 @@ class TaskRunner:
             logger.setLevel(logging.DEBUG)
 
         task_names = ",".join(self.worker.task_definition_names)
-        logger.info(
+        logger.debug(
             "Polling task %s with domain %s with polling interval %s",
             task_names,
             self.worker.get_domain(),
@@ -163,9 +165,37 @@ class TaskRunner:
             return
 
         completed = self.worker.check_completed_async_tasks()
-        for task_id, task_result in completed:
+        if completed:
+            logger.debug(f"Found {len(completed)} completed async tasks")
+
+        for task_id, task_result, submit_time, task in completed:
             try:
-                self.__update_task(task_result)
+                # Calculate actual execution time (from submission to completion)
+                finish_time = time.time()
+                time_spent = finish_time - submit_time
+
+                logger.debug(
+                    "Async task completed: %s (task_id=%s, execution_time=%.3fs, status=%s, output_data=%s)",
+                    task.task_def_name,
+                    task_id,
+                    time_spent,
+                    task_result.status,
+                    task_result.output_data
+                )
+
+                # Publish TaskExecutionCompleted event with actual execution time
+                output_size = sys.getsizeof(task_result) if task_result else 0
+                self.event_dispatcher.publish(TaskExecutionCompleted(
+                    task_type=task.task_def_name,
+                    task_id=task_id,
+                    worker_id=self.worker.get_identity(),
+                    workflow_instance_id=task.workflow_instance_id,
+                    duration_ms=time_spent * 1000,
+                    output_size_bytes=output_size
+                ))
+
+                update_response = self.__update_task(task_result)
+                logger.debug("Successfully updated async task %s with output %s, response: %s", task_id, task_result.output_data, update_response)
             except Exception as e:
                 logger.error(
                     "Error updating completed async task %s: %s",
@@ -177,7 +207,8 @@ class TaskRunner:
         """Execute task and update result (runs in thread pool)"""
         try:
             task_result = self.__execute_task(task)
-            # If task returned None, it's running async - don't update yet
+            # If task returned None, it's an async task running in background - don't update yet
+            # (Note: __execute_task returns None for async tasks, regardless of their actual return value)
             if task_result is None:
                 logger.debug("Task %s is running async, will update when complete", task.task_id)
                 return
@@ -398,6 +429,13 @@ class TaskRunner:
             # Execute worker function - worker.execute() handles both sync and async correctly
             task_output = self.worker.execute(task)
 
+            # If worker returned ASYNC_TASK_RUNNING sentinel, it's an async task running in background
+            # Don't create TaskResult or publish events - will be handled when task completes
+            # Note: This allows async tasks to legitimately return None as their result
+            if task_output is ASYNC_TASK_RUNNING:
+                _clear_task_context()
+                return None
+
             # Handle different return types
             if isinstance(task_output, TaskResult):
                 # Already a TaskResult - use as-is
@@ -530,10 +568,12 @@ class TaskRunner:
             return None
         task_definition_name = self.worker.get_task_definition_name()
         logger.debug(
-            "Updating task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
+            "Updating task, id: %s, workflow_instance_id: %s, task_definition_name: %s, status: %s, output_data: %s",
             task_result.task_id,
             task_result.workflow_instance_id,
-            task_definition_name
+            task_definition_name,
+            task_result.status,
+            task_result.output_data
         )
         for attempt in range(4):
             if attempt > 0:
