@@ -32,7 +32,7 @@ class MockWorker(WorkerInterface):
 
     def __init__(self, task_name='test_task'):
         super().__init__(task_name)
-        self.paused_flag = False
+        self.paused = False
         self.poll_interval = 0.01  # Fast polling for tests
 
     def execute(self, task: Task) -> TaskResult:
@@ -40,9 +40,6 @@ class MockWorker(WorkerInterface):
         task_result.status = TaskResultStatus.COMPLETED
         task_result.output_data = {'result': 'success'}
         return task_result
-
-    def paused(self) -> bool:
-        return self.paused_flag
 
 
 class TaskInProgressWorker(WorkerInterface):

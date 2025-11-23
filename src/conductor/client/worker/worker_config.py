@@ -63,16 +63,16 @@ def _parse_env_value(value: str, expected_type: type) -> Any:
         try:
             return int(value)
         except ValueError:
-            logger.warning(f"Cannot convert '{value}' to int, using as-is")
-            return value
+            logger.warning(f"Cannot convert '{value}' to int, ignoring invalid value")
+            return None
 
     # Handle float values
     if expected_type == float:
         try:
             return float(value)
         except ValueError:
-            logger.warning(f"Cannot convert '{value}' to float, using as-is")
-            return value
+            logger.warning(f"Cannot convert '{value}' to float, ignoring invalid value")
+            return None
 
     # String values
     return value
@@ -83,8 +83,12 @@ def _get_env_value(worker_name: str, property_name: str, expected_type: type = s
     Get configuration value from environment variables with hierarchical lookup.
 
     Priority order (highest to lowest):
-    1. conductor.worker.<worker_name>.<property>
-    2. conductor.worker.all.<property>
+    1. conductor.worker.<worker_name>.<property> (new format)
+    2. conductor_worker_<worker_name>_<property> (old format - backward compatibility)
+    3. CONDUCTOR_WORKER_<WORKER_NAME>_<PROPERTY> (old format - uppercase)
+    4. conductor.worker.all.<property> (new format)
+    5. conductor_worker_<property> (old format - backward compatibility)
+    6. CONDUCTOR_WORKER_<PROPERTY> (old format - uppercase)
 
     Args:
         worker_name: Task definition name
@@ -94,18 +98,69 @@ def _get_env_value(worker_name: str, property_name: str, expected_type: type = s
     Returns:
         Configuration value if found, None otherwise
     """
-    # Check worker-specific override first
+    # Check worker-specific override first (new format)
     worker_specific_key = f"conductor.worker.{worker_name}.{property_name}"
     value = os.environ.get(worker_specific_key)
     if value is not None:
         logger.debug(f"Using worker-specific config: {worker_specific_key}={value}")
         return _parse_env_value(value, expected_type)
 
-    # Check global worker config
+    # Check worker-specific override (old format - lowercase with underscores)
+    old_worker_key = f"conductor_worker_{worker_name}_{property_name}"
+    value = os.environ.get(old_worker_key)
+    if value is not None:
+        logger.debug(f"Using worker-specific config (old format): {old_worker_key}={value}")
+        return _parse_env_value(value, expected_type)
+
+    # Check worker-specific override (old format - uppercase, fully uppercased)
+    old_worker_key_upper = f"CONDUCTOR_WORKER_{worker_name.upper()}_{property_name.upper()}"
+    value = os.environ.get(old_worker_key_upper)
+    if value is not None:
+        logger.debug(f"Using worker-specific config (old format uppercase): {old_worker_key_upper}={value}")
+        return _parse_env_value(value, expected_type)
+
+    # Check worker-specific override (old format - uppercase prefix, original worker name case)
+    old_worker_key_mixed = f"CONDUCTOR_WORKER_{worker_name}_{property_name.upper()}"
+    value = os.environ.get(old_worker_key_mixed)
+    if value is not None:
+        logger.debug(f"Using worker-specific config (old format mixed case): {old_worker_key_mixed}={value}")
+        return _parse_env_value(value, expected_type)
+
+    # Also check for POLLING_INTERVAL if property is poll_interval (backward compatibility)
+    if property_name == 'poll_interval':
+        # Fully uppercase version
+        old_worker_key_polling = f"CONDUCTOR_WORKER_{worker_name.upper()}_POLLING_INTERVAL"
+        value = os.environ.get(old_worker_key_polling)
+        if value is not None:
+            logger.debug(f"Using worker-specific config (old format uppercase): {old_worker_key_polling}={value}")
+            return _parse_env_value(value, expected_type)
+
+        # Mixed case version
+        old_worker_key_polling_mixed = f"CONDUCTOR_WORKER_{worker_name}_POLLING_INTERVAL"
+        value = os.environ.get(old_worker_key_polling_mixed)
+        if value is not None:
+            logger.debug(f"Using worker-specific config (old format mixed case): {old_worker_key_polling_mixed}={value}")
+            return _parse_env_value(value, expected_type)
+
+    # Check global worker config (new format)
     global_key = f"conductor.worker.all.{property_name}"
     value = os.environ.get(global_key)
     if value is not None:
         logger.debug(f"Using global worker config: {global_key}={value}")
+        return _parse_env_value(value, expected_type)
+
+    # Check global worker config (old format - lowercase with underscores)
+    old_global_key = f"conductor_worker_{property_name}"
+    value = os.environ.get(old_global_key)
+    if value is not None:
+        logger.debug(f"Using global worker config (old format): {old_global_key}={value}")
+        return _parse_env_value(value, expected_type)
+
+    # Check global worker config (old format - uppercase)
+    old_global_key_upper = f"CONDUCTOR_WORKER_{property_name.upper()}"
+    value = os.environ.get(old_global_key_upper)
+    if value is not None:
+        logger.debug(f"Using global worker config (old format uppercase): {old_global_key_upper}={value}")
         return _parse_env_value(value, expected_type)
 
     return None
@@ -158,8 +213,11 @@ def resolve_worker_config(
     """
     resolved = {}
 
-    # Resolve poll_interval
+    # Resolve poll_interval (also check for old 'polling_interval' name for backward compatibility)
     env_poll_interval = _get_env_value(worker_name, 'poll_interval', float)
+    if env_poll_interval is None:
+        # Try old 'polling_interval' name for backward compatibility
+        env_poll_interval = _get_env_value(worker_name, 'polling_interval', float)
     resolved['poll_interval'] = env_poll_interval if env_poll_interval is not None else poll_interval
 
     # Resolve domain
