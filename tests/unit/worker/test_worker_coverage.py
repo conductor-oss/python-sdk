@@ -150,7 +150,7 @@ class TestWorkerInitialization(unittest.TestCase):
         self.assertEqual(worker.thread_count, 1)
         self.assertFalse(worker.register_task_def)
         self.assertEqual(worker.poll_timeout, 100)
-        self.assertTrue(worker.lease_extend_enabled)
+        self.assertFalse(worker.lease_extend_enabled)  # Default is False
 
     def test_worker_init_with_poll_interval(self):
         """Test Worker initialization with custom poll_interval"""
@@ -617,8 +617,9 @@ class TestWorkerExecuteAsync(unittest.TestCase):
 
         result = worker.execute(task)
 
-        # Async workers return None immediately (non-blocking)
-        self.assertIsNone(result)
+        # Async workers return ASYNC_TASK_RUNNING sentinel (non-blocking)
+        from conductor.client.worker.worker import ASYNC_TASK_RUNNING
+        self.assertIs(result, ASYNC_TASK_RUNNING)
 
         # Verify async task was submitted
         self.assertIn(task.task_id, worker._pending_async_tasks)
@@ -642,8 +643,9 @@ class TestWorkerExecuteAsync(unittest.TestCase):
 
         result = worker.execute(task)
 
-        # Async workers return None immediately (non-blocking)
-        self.assertIsNone(result)
+        # Async workers return ASYNC_TASK_RUNNING sentinel (non-blocking)
+        from conductor.client.worker.worker import ASYNC_TASK_RUNNING
+        self.assertIs(result, ASYNC_TASK_RUNNING)
 
         # Verify async task was submitted
         self.assertIn(task.task_id, worker._pending_async_tasks)
