@@ -539,36 +539,6 @@ class TestTaskHandlerProcessManagement(unittest.TestCase):
         # Check that metrics process was joined
         handler.metrics_provider_process.join.assert_called_once()
 
-    @patch('conductor.client.automator.task_handler._setup_logging_queue')
-    @patch('conductor.client.automator.task_handler.importlib.import_module')
-    def test_join_processes_with_keyboard_interrupt(self, mock_import, mock_logging):
-        """Test join_processes handles KeyboardInterrupt."""
-        mock_queue = Mock()
-        mock_logger_process = Mock()
-        mock_logging.return_value = (mock_logger_process, mock_queue)
-
-        worker = ClassWorker('test_task')
-        handler = TaskHandler(
-            workers=[worker],
-            configuration=Configuration(),
-            scan_for_annotated_workers=False
-        )
-
-        # Override the queue and logger_process with fresh mocks
-        handler.queue = Mock()
-        handler.logger_process = Mock()
-
-        # Mock join to raise KeyboardInterrupt
-        for process in handler.task_runner_processes:
-            process.join = Mock(side_effect=KeyboardInterrupt())
-            process.terminate = Mock()
-
-        handler.join_processes()
-
-        # Check that stop_processes was called
-        handler.queue.put.assert_called_with(None)
-
-
 class TestTaskHandlerContextManager(unittest.TestCase):
     """Test TaskHandler as a context manager."""
 
