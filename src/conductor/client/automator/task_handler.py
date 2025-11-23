@@ -40,7 +40,7 @@ if not _mp_fork_set:
 def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func,
                          thread_count: int = 1, register_task_def: bool = False,
                          poll_timeout: int = 100, lease_extend_enabled: bool = False):
-    logger.info("decorated %s", name)
+    logger.debug("decorated %s", name)
     _decorated_functions[(name, domain)] = {
         "func": func,
         "poll_interval": poll_interval,
@@ -203,7 +203,7 @@ class TaskHandler:
                     register_task_def=resolved_config['register_task_def'],
                     poll_timeout=resolved_config['poll_timeout'],
                     lease_extend_enabled=resolved_config['lease_extend_enabled'])
-                logger.info("created worker with name=%s and domain=%s", task_def_name, resolved_config['domain'])
+                logger.debug("created worker with name=%s and domain=%s", task_def_name, resolved_config['domain'])
                 workers.append(worker)
 
         self.__create_task_runner_processes(workers, configuration, metrics_settings)
@@ -231,13 +231,9 @@ class TaskHandler:
         logger.info("Started all processes")
 
     def join_processes(self) -> None:
-        try:
-            self.__join_task_runner_processes()
-            self.__join_metrics_provider_process()
-            logger.info("Joined all processes")
-        except KeyboardInterrupt:
-            logger.info("KeyboardInterrupt: Stopping all processes")
-            self.stop_processes()
+        self.__join_task_runner_processes()
+        self.__join_metrics_provider_process()
+        logger.info("Joined all processes")
 
     def __create_metrics_provider_process(self, metrics_settings: MetricsSettings) -> None:
         if metrics_settings is None:
@@ -284,8 +280,8 @@ class TaskHandler:
         for i, task_runner_process in enumerate(self.task_runner_processes):
             task_runner_process.start()
             worker = self.workers[i]
-            paused_status = "PAUSED" if worker.paused() else "ACTIVE"
-            logger.info("Started worker '%s' [%s]", worker.get_task_definition_name(), paused_status)
+            paused_status = "PAUSED" if worker.paused else "ACTIVE"
+            logger.debug("Started worker '%s' [%s]", worker.get_task_definition_name(), paused_status)
             n = n + 1
         logger.info("Started %s TaskRunner process(es)", n)
 

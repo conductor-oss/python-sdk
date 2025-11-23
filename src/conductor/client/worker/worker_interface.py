@@ -155,27 +155,6 @@ class WorkerInterface(abc.ABC):
         """
         return self.domain
 
-    def paused(self) -> bool:
-        """
-        Check if the worker is paused from polling.
-
-        Workers can be paused via environment variables:
-        - conductor.worker.all.paused=true - pauses all workers
-        - conductor.worker.<taskType>.paused=true - pauses specific worker
-
-        Override this method to implement custom pause logic.
-        """
-        # Check task-specific pause first
-        task_name = self.get_task_definition_name()
-        if task_name and _get_env_bool(f'conductor.worker.{task_name}.paused'):
-            return True
-
-        # Check global pause
-        if _get_env_bool('conductor.worker.all.paused'):
-            return True
-
-        return False
-
     @property
     def domain(self):
         return self._domain

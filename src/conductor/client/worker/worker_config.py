@@ -275,4 +275,4 @@ def get_worker_config_oneline(worker_name: str, resolved_config: dict) -> str:
     if resolved_config.get('register_task_def') is not None:
         parts.append(f"register_task_def={'true' if resolved_config['register_task_def'] else 'false'}")
 
-    return f"Worker[{', '.join(parts)}]"
+    return f"Conductor Worker[{', '.join(parts)}]"

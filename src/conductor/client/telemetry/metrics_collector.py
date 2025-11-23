@@ -108,10 +108,10 @@ class MetricsCollector:
             if MetricsCollector.registry is None:
                 MetricsCollector.registry = CollectorRegistry()
                 MultiProcessCollector(MetricsCollector.registry)
-                logger.info(f"Created CollectorRegistry with multiprocess support")
+                logger.debug(f"Created CollectorRegistry with multiprocess support")
 
             self.must_collect_metrics = True
-            logger.info(f"MetricsCollector initialized with directory={settings.directory}, must_collect={self.must_collect_metrics}")
+            logger.debug(f"MetricsCollector initialized with directory={settings.directory}, must_collect={self.must_collect_metrics}")
 
     @staticmethod
     def provide_metrics(settings: MetricsSettings) -> None:

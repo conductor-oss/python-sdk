@@ -228,7 +228,7 @@ class TaskRunner:
     def __batch_poll_tasks(self, count: int) -> list:
         """Poll for multiple tasks at once (more efficient than polling one at a time)"""
         task_definition_name = self.worker.get_task_definition_name()
-        if self.worker.paused():
+        if self.worker.paused:
             logger.debug("Stop polling task for: %s", task_definition_name)
             return []
 
@@ -317,7 +317,7 @@ class TaskRunner:
 
     def __poll_task(self) -> Task:
         task_definition_name = self.worker.get_task_definition_name()
-        if self.worker.paused():
+        if self.worker.paused:
             logger.debug("Stop polling task for: %s", task_definition_name)
             return None
 

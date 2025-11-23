@@ -365,7 +365,7 @@ class Worker(WorkerInterface):
                 submit_time = time.time()
                 self._pending_async_tasks[task.task_id] = (future, task, submit_time)
 
-                logger.info(
+                logger.debug(
                     "Submitted async task: %s (task_id=%s, pending_count=%d, submit_time=%s)",
                     task.task_def_name,
                     task.task_id,
@@ -451,13 +451,13 @@ class Worker(WorkerInterface):
 
         pending_count = len(self._pending_async_tasks)
         if pending_count > 0:
-            logger.info(f"Checking {pending_count} pending async tasks")
+            logger.debug(f"Checking {pending_count} pending async tasks")
 
         for task_id, (future, task, submit_time) in list(self._pending_async_tasks.items()):
             if future.done():  # Non-blocking check
                 done_time = time.time()
                 actual_duration = done_time - submit_time
-                logger.info(f"Async task {task_id} ({task.task_def_name}) is done (duration={actual_duration:.3f}s, submit_time={submit_time}, done_time={done_time})")
+                logger.debug(f"Async task {task_id} ({task.task_def_name}) is done (duration={actual_duration:.3f}s, submit_time={submit_time}, done_time={done_time})")
                 task_result: TaskResult = self.get_task_result_from_task(task)
 
                 try:
