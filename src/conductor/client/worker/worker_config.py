@@ -35,7 +35,8 @@ ENV_PROPERTY_NAMES = {
     'thread_count': 'thread_count',
     'register_task_def': 'register_task_def',
     'poll_timeout': 'poll_timeout',
-    'lease_extend_enabled': 'lease_extend_enabled'
+    'lease_extend_enabled': 'lease_extend_enabled',
+    'paused': 'paused'
 }
 
 
@@ -118,7 +119,8 @@ def resolve_worker_config(
     thread_count: Optional[int] = None,
     register_task_def: Optional[bool] = None,
     poll_timeout: Optional[int] = None,
-    lease_extend_enabled: Optional[bool] = None
+    lease_extend_enabled: Optional[bool] = None,
+    paused: Optional[bool] = None
 ) -> dict:
     """
     Resolve worker configuration with hierarchical override.
@@ -137,6 +139,7 @@ def resolve_worker_config(
         register_task_def: Whether to register task definition (code-level default)
         poll_timeout: Polling timeout in milliseconds (code-level default)
         lease_extend_enabled: Whether lease extension is enabled (code-level default)
+        paused: Whether worker is paused (code-level default)
 
     Returns:
         Dict with resolved configuration values
@@ -183,6 +186,10 @@ def resolve_worker_config(
     env_lease_extend = _get_env_value(worker_name, 'lease_extend_enabled', bool)
     resolved['lease_extend_enabled'] = env_lease_extend if env_lease_extend is not None else lease_extend_enabled
 
+    # Resolve paused
+    env_paused = _get_env_value(worker_name, 'paused', bool)
+    resolved['paused'] = env_paused if env_paused is not None else paused
+
     return resolved
 
 
@@ -225,3 +232,47 @@ def get_worker_config_summary(worker_name: str, resolved_config: dict) -> str:
         lines.append(f"  {prop_name}: {value} ({source})")
 
     return "\n".join(lines)
+
+
+def get_worker_config_oneline(worker_name: str, resolved_config: dict) -> str:
+    """
+    Generate a compact single-line summary of worker configuration.
+
+    Args:
+        worker_name: Task definition name
+        resolved_config: Resolved configuration dict
+
+    Returns:
+        Formatted single-line string with comma-separated properties
+
+    Example:
+        summary = get_worker_config_oneline('process_order', config)
+        print(summary)
+        # Worker[name=process_order, status=active, poll_interval=500ms, domain=production, thread_count=5, poll_timeout=100ms, lease_extend=true]
+    """
+    parts = [f"name={worker_name}"]
+
+    # Add status first (paused or active)
+    is_paused = resolved_config.get('paused', False)
+    parts.append(f"status={'paused' if is_paused else 'active'}")
+
+    # Add other properties in a logical order
+    if resolved_config.get('poll_interval') is not None:
+        parts.append(f"poll_interval={resolved_config['poll_interval']}ms")
+
+    if resolved_config.get('domain') is not None:
+        parts.append(f"domain={resolved_config['domain']}")
+
+    if resolved_config.get('thread_count') is not None:
+        parts.append(f"thread_count={resolved_config['thread_count']}")
+
+    if resolved_config.get('poll_timeout') is not None:
+        parts.append(f"poll_timeout={resolved_config['poll_timeout']}ms")
+
+    if resolved_config.get('lease_extend_enabled') is not None:
+        parts.append(f"lease_extend={'true' if resolved_config['lease_extend_enabled'] else 'false'}")
+
+    if resolved_config.get('register_task_def') is not None:
+        parts.append(f"register_task_def={'true' if resolved_config['register_task_def'] else 'false'}")
+
+    return f"Worker[{', '.join(parts)}]"

@@ -7,7 +7,7 @@ from conductor.client.workflow.task.simple_task import SimpleTask
 
 def WorkerTask(task_definition_name: str, poll_interval: int = 100, domain: Optional[str] = None, worker_id: Optional[str] = None,
                poll_interval_seconds: int = 0, thread_count: int = 1, register_task_def: bool = False,
-               poll_timeout: int = 100, lease_extend_enabled: bool = True):
+               poll_timeout: int = 100, lease_extend_enabled: bool = False):
     """
     Decorator to register a function as a Conductor worker task (legacy CamelCase name).
 
@@ -46,7 +46,7 @@ def WorkerTask(task_definition_name: str, poll_interval: int = 100, domain: Opti
             - Default: 100ms
 
         lease_extend_enabled: Whether to automatically extend task lease for long-running tasks.
-            - Default: True
+            - Default: False
             - Disable for fast tasks (<1s) to reduce API calls
             - Enable for long tasks (>30s) to prevent timeout
 
@@ -79,7 +79,7 @@ def WorkerTask(task_definition_name: str, poll_interval: int = 100, domain: Opti
 
 
 def worker_task(task_definition_name: str, poll_interval_millis: int = 100, domain: Optional[str] = None, worker_id: Optional[str] = None,
-                thread_count: int = 1, register_task_def: bool = False, poll_timeout: int = 100, lease_extend_enabled: bool = True):
+                thread_count: int = 1, register_task_def: bool = False, poll_timeout: int = 100, lease_extend_enabled: bool = False):
     """
     Decorator to register a function as a Conductor worker task.
 
@@ -122,7 +122,7 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
             - Recommended: 100-500ms
 
         lease_extend_enabled: Whether to automatically extend task lease for long-running tasks.
-            - Default: True
+            - Default: False
             - When True: Lease is automatically extended at 80% of responseTimeoutSeconds
             - When False: Task must complete within responseTimeoutSeconds or will timeout
             - Disable for fast tasks (<1s) to reduce unnecessary API calls
@@ -130,6 +130,12 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
 
     Returns:
         Decorated function that can be called normally or used as a workflow task
+
+    Note:
+        The 'paused' property is not available as a decorator parameter. It can only be
+        controlled via environment variables:
+        - conductor.worker.all.paused=true (pause all workers)
+        - conductor.worker.<task_name>.paused=true (pause specific worker)
 
     Worker Execution Modes (automatically detected):
         - Sync workers (def): Execute in thread pool (ThreadPoolExecutor)

@@ -39,7 +39,7 @@ if not _mp_fork_set:
 
 def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func,
                          thread_count: int = 1, register_task_def: bool = False,
-                         poll_timeout: int = 100, lease_extend_enabled: bool = True):
+                         poll_timeout: int = 100, lease_extend_enabled: bool = False):
     logger.info("decorated %s", name)
     _decorated_functions[(name, domain)] = {
         "func": func,
@@ -68,7 +68,11 @@ def get_registered_workers() -> List[Worker]:
             poll_interval=record["poll_interval"],
             domain=domain,
             worker_id=record["worker_id"],
-            thread_count=record.get("thread_count", 1)
+            thread_count=record.get("thread_count", 1),
+            register_task_def=record.get("register_task_def", False),
+            poll_timeout=record.get("poll_timeout", 100),
+            lease_extend_enabled=record.get("lease_extend_enabled", False),
+            paused=False  # Always default to False, only env vars can set to True
         )
         workers.append(worker)
     return workers

@@ -24,6 +24,7 @@ from conductor.client.http.rest import AuthorizationException
 from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.worker.worker import ASYNC_TASK_RUNNING
 from conductor.client.worker.worker_interface import WorkerInterface
+from conductor.client.worker.worker_config import resolve_worker_config, get_worker_config_oneline
 
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(
@@ -608,29 +609,38 @@ class TaskRunner:
         time.sleep(polling_interval)
 
     def __set_worker_properties(self) -> None:
-        # If multiple tasks are supplied to the same worker, then only first
-        # task will be considered for setting worker properties
-        task_type = self.worker.get_task_definition_name()
+        """
+        Resolve worker configuration using hierarchical override (env vars > code defaults).
+        Logs the resolved configuration in a compact single-line format.
+        """
+        task_name = self.worker.get_task_definition_name()
 
-        domain = self.__get_property_value_from_env("domain", task_type)
-        if domain:
-            self.worker.domain = domain
-        else:
-            self.worker.domain = self.worker.get_domain()
+        # Resolve configuration with hierarchical override
+        resolved_config = resolve_worker_config(
+            worker_name=task_name,
+            poll_interval=self.worker.poll_interval,
+            domain=self.worker.domain,
+            worker_id=self.worker.worker_id,
+            thread_count=self.worker.thread_count,
+            register_task_def=self.worker.register_task_def,
+            poll_timeout=self.worker.poll_timeout,
+            lease_extend_enabled=self.worker.lease_extend_enabled,
+            paused=getattr(self.worker, 'paused', False)
+        )
 
-        polling_interval = self.__get_property_value_from_env("polling_interval", task_type)
-        if polling_interval:
-            try:
-                self.worker.poll_interval = float(polling_interval)
-            except Exception:
-                logger.error("error reading and parsing the polling interval value %s", polling_interval)
-                self.worker.poll_interval = self.worker.get_polling_interval_in_seconds()
+        # Apply resolved configuration to worker
+        self.worker.poll_interval = resolved_config.get('poll_interval', self.worker.poll_interval)
+        self.worker.domain = resolved_config.get('domain', self.worker.domain)
+        self.worker.worker_id = resolved_config.get('worker_id', self.worker.worker_id)
+        self.worker.thread_count = resolved_config.get('thread_count', self.worker.thread_count)
+        self.worker.register_task_def = resolved_config.get('register_task_def', self.worker.register_task_def)
+        self.worker.poll_timeout = resolved_config.get('poll_timeout', self.worker.poll_timeout)
+        self.worker.lease_extend_enabled = resolved_config.get('lease_extend_enabled', self.worker.lease_extend_enabled)
+        self.worker.paused = resolved_config.get('paused', False)
 
-        if polling_interval:
-            try:
-                self.worker.poll_interval = float(polling_interval)
-            except Exception as e:
-                logger.error("Exception in reading polling interval from environment variable: %s", e)
+        # Log worker configuration in compact single-line format
+        config_summary = get_worker_config_oneline(task_name, resolved_config)
+        logger.info(config_summary)
 
     def __get_property_value_from_env(self, prop, task_type):
         """
