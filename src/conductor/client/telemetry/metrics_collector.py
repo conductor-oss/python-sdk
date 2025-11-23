@@ -4,13 +4,37 @@ import time
 from collections import deque
 from typing import Any, ClassVar, Dict, List, Tuple
 
-from prometheus_client import CollectorRegistry
-from prometheus_client import Counter
-from prometheus_client import Gauge
-from prometheus_client import Histogram
-from prometheus_client import Summary
-from prometheus_client import write_to_textfile
-from prometheus_client.multiprocess import MultiProcessCollector
+# Lazy imports - these will be imported when first needed
+# This is necessary for multiprocess mode where PROMETHEUS_MULTIPROC_DIR
+# must be set before prometheus_client is imported
+CollectorRegistry = None
+Counter = None
+Gauge = None
+Histogram = None
+Summary = None
+write_to_textfile = None
+MultiProcessCollector = None
+
+def _ensure_prometheus_imported():
+    """Lazy import of prometheus_client to ensure PROMETHEUS_MULTIPROC_DIR is set first."""
+    global CollectorRegistry, Counter, Gauge, Histogram, Summary, write_to_textfile, MultiProcessCollector
+
+    if CollectorRegistry is None:
+        from prometheus_client import CollectorRegistry as _CollectorRegistry
+        from prometheus_client import Counter as _Counter
+        from prometheus_client import Gauge as _Gauge
+        from prometheus_client import Histogram as _Histogram
+        from prometheus_client import Summary as _Summary
+        from prometheus_client import write_to_textfile as _write_to_textfile
+        from prometheus_client.multiprocess import MultiProcessCollector as _MultiProcessCollector
+
+        CollectorRegistry = _CollectorRegistry
+        Counter = _Counter
+        Gauge = _Gauge
+        Histogram = _Histogram
+        Summary = _Summary
+        write_to_textfile = _write_to_textfile
+        MultiProcessCollector = _MultiProcessCollector
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
@@ -69,32 +93,184 @@ class MetricsCollector:
     summaries: ClassVar[Dict[str, Summary]] = {}
     quantile_metrics: ClassVar[Dict[str, Gauge]] = {}  # metric_name -> Gauge with quantile label (used as summary)
     quantile_data: ClassVar[Dict[str, deque]] = {}  # metric_name+labels -> deque of values
-    registry = CollectorRegistry()
+    registry = None  # Lazy initialization - created when first MetricsCollector instance is created
     must_collect_metrics = False
     QUANTILE_WINDOW_SIZE = 1000  # Keep last 1000 observations for quantile calculation
 
     def __init__(self, settings: MetricsSettings):
         if settings is not None:
             os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.directory
-            MultiProcessCollector(self.registry)
+
+            # Import prometheus_client NOW (after PROMETHEUS_MULTIPROC_DIR is set)
+            _ensure_prometheus_imported()
+
+            # Initialize registry on first use (after PROMETHEUS_MULTIPROC_DIR is set)
+            if MetricsCollector.registry is None:
+                MetricsCollector.registry = CollectorRegistry()
+                MultiProcessCollector(MetricsCollector.registry)
+                logger.info(f"Created CollectorRegistry with multiprocess support")
+
             self.must_collect_metrics = True
+            logger.info(f"MetricsCollector initialized with directory={settings.directory}, must_collect={self.must_collect_metrics}")
 
     @staticmethod
     def provide_metrics(settings: MetricsSettings) -> None:
         if settings is None:
             return
+
+        # Set environment variable for this process
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.directory
+
+        # Import prometheus_client in this process too (after setting env var)
+        _ensure_prometheus_imported()
+
         OUTPUT_FILE_PATH = os.path.join(
             settings.directory,
             settings.file_name
         )
+
+        # Wait a bit for worker processes to start and create initial metrics
+        time.sleep(0.5)
+
         registry = CollectorRegistry()
-        MultiProcessCollector(registry)
-        while True:
-            write_to_textfile(
-                OUTPUT_FILE_PATH,
-                registry
-            )
-            time.sleep(settings.update_interval)
+        # Use custom collector that removes pid label and aggregates across processes
+        from prometheus_client.multiprocess import MultiProcessCollector as MPCollector
+        from prometheus_client.samples import Sample
+        from prometheus_client.metrics_core import Metric
+
+        class NoPidCollector(MPCollector):
+            """Custom collector that removes pid label and aggregates metrics across processes."""
+            def collect(self):
+                for metric in super().collect():
+                    # Group samples by label set (excluding pid)
+                    aggregated = {}
+
+                    for sample in metric.samples:
+                        # Remove pid from labels
+                        labels = {k: v for k, v in sample.labels.items() if k != 'pid'}
+                        # Create key from sample name and labels
+                        label_items = tuple(sorted(labels.items()))
+                        key = (sample.name, label_items)
+
+                        if key not in aggregated:
+                            aggregated[key] = {
+                                'labels': labels,
+                                'values': [],
+                                'name': sample.name,
+                                'timestamp': sample.timestamp,
+                                'exemplar': sample.exemplar
+                            }
+
+                        aggregated[key]['values'].append(sample.value)
+
+                    # Create consolidated samples
+                    filtered_samples = []
+                    for key, data in aggregated.items():
+                        # For counters and _count/_sum metrics: sum the values
+                        # For gauges with quantiles: take the mean (approximation)
+                        # For other gauges: take the last value
+                        if metric.type == 'counter' or data['name'].endswith('_count') or data['name'].endswith('_sum'):
+                            # Sum values for counters
+                            value = sum(data['values'])
+                        elif 'quantile' in data['labels']:
+                            # For quantile metrics, take the mean across processes
+                            value = sum(data['values']) / len(data['values'])
+                        else:
+                            # For other gauges, take the last value
+                            value = data['values'][-1]
+
+                        filtered_samples.append(
+                            Sample(data['name'], data['labels'], value, data['timestamp'], data['exemplar'])
+                        )
+
+                    # Create new metric and assign filtered samples
+                    new_metric = Metric(metric.name, metric.documentation, metric.type)
+                    new_metric.samples = filtered_samples
+                    yield new_metric
+
+        NoPidCollector(registry)
+
+        # Start HTTP server if port is specified
+        http_server = None
+        if settings.http_port is not None:
+            http_server = MetricsCollector._start_http_server(settings.http_port, registry)
+            logger.info("Metrics HTTP server mode: serving from memory (no file writes)")
+
+            # When HTTP server is enabled, don't write to file - just keep updating registry in memory
+            # The HTTP server reads directly from the registry
+            while True:
+                time.sleep(settings.update_interval)
+        else:
+            # File-based mode: write metrics to file periodically
+            logger.info(f"Metrics file mode: writing to {OUTPUT_FILE_PATH}")
+            while True:
+                try:
+                    write_to_textfile(
+                        OUTPUT_FILE_PATH,
+                        registry
+                    )
+                except Exception as e:
+                    # Log error but continue - metrics files might be in inconsistent state
+                    logger.debug(f"Error writing metrics (will retry): {e}")
+
+                time.sleep(settings.update_interval)
+
+    @staticmethod
+    def _start_http_server(port: int, registry: 'CollectorRegistry') -> 'HTTPServer':
+        """Start HTTP server to expose metrics endpoint for Prometheus scraping."""
+        from http.server import HTTPServer, BaseHTTPRequestHandler
+        import threading
+
+        class MetricsHTTPHandler(BaseHTTPRequestHandler):
+            """HTTP handler to serve Prometheus metrics."""
+
+            def do_GET(self):
+                """Handle GET requests for /metrics endpoint."""
+                if self.path == '/metrics':
+                    try:
+                        # Generate metrics in Prometheus text format
+                        from prometheus_client import generate_latest
+                        metrics_content = generate_latest(registry)
+
+                        # Send response
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
+                        self.end_headers()
+                        self.wfile.write(metrics_content)
+
+                    except Exception as e:
+                        logger.error(f"Error serving metrics: {e}")
+                        self.send_response(500)
+                        self.send_header('Content-Type', 'text/plain')
+                        self.end_headers()
+                        self.wfile.write(f'Error: {str(e)}'.encode('utf-8'))
+
+                elif self.path == '/' or self.path == '/health':
+                    # Health check endpoint
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'text/plain')
+                    self.end_headers()
+                    self.wfile.write(b'OK')
+
+                else:
+                    self.send_response(404)
+                    self.send_header('Content-Type', 'text/plain')
+                    self.end_headers()
+                    self.wfile.write(b'Not Found - Try /metrics')
+
+            def log_message(self, format, *args):
+                """Override to use our logger instead of stderr."""
+                logger.debug(f"HTTP {self.address_string()} - {format % args}")
+
+        server = HTTPServer(('', port), MetricsHTTPHandler)
+        logger.info(f"Started metrics HTTP server on port {port}")
+        logger.info(f"Metrics available at: http://localhost:{port}/metrics")
+
+        # Run server in daemon thread
+        server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+        server_thread.start()
+
+        return server
 
     def increment_task_poll(self, task_type: str) -> None:
         self.__increment_counter(
@@ -382,7 +558,8 @@ class MetricsCollector:
             name=name,
             documentation=documentation,
             labelnames=labelnames,
-            registry=self.registry
+            registry=self.registry,
+            multiprocess_mode='all'  # Aggregate across processes, don't include pid
         )
 
     def __observe_histogram(
@@ -555,11 +732,14 @@ class MetricsCollector:
         if name not in self.quantile_metrics:
             # Create a single gauge with quantile as a label
             # This gauge will be shared across all quantiles for this metric
+            # Note: In multiprocess mode, prometheus_client automatically adds 'pid' label
+            # We use multiprocess_mode='all' to aggregate across processes and remove pid
             self.quantile_metrics[name] = Gauge(
                 name=name,
                 documentation=documentation,
                 labelnames=labelnames,
-                registry=self.registry
+                registry=self.registry,
+                multiprocess_mode='all'  # Aggregate across processes, don't include pid
             )
 
         return self.quantile_metrics[name]
@@ -591,7 +771,8 @@ class MetricsCollector:
                 name=count_name,
                 documentation=f"{doc_str} - count",
                 labelnames=[label.value for label in labels.keys()],
-                registry=self.registry
+                registry=self.registry,
+                multiprocess_mode='all'  # Aggregate across processes, don't include pid
             )
 
         # Get or create _sum gauge
@@ -601,7 +782,8 @@ class MetricsCollector:
                 name=sum_name,
                 documentation=f"{doc_str} - sum",
                 labelnames=[label.value for label in labels.keys()],
-                registry=self.registry
+                registry=self.registry,
+                multiprocess_mode='all'  # Aggregate across processes, don't include pid
             )
 
         # Update values

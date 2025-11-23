@@ -23,6 +23,15 @@ from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.worker.exception import NonRetryableException
 from conductor.client.worker.worker_interface import WorkerInterface, DEFAULT_POLLING_INTERVAL
 
+
+# Sentinel value to indicate async task is running (distinct from None return value)
+class _AsyncTaskRunning:
+    """Sentinel to indicate an async task has been submitted to BackgroundEventLoop"""
+    pass
+
+
+ASYNC_TASK_RUNNING = _AsyncTaskRunning()
+
 ExecuteTaskFunction = Callable[
     [
         Union[Task, object]
@@ -344,17 +353,28 @@ class Worker(WorkerInterface):
                 # Lazy-initialize the background loop only when needed
                 if self._background_loop is None:
                     self._background_loop = BackgroundEventLoop()
+                    logger.debug("Initialized BackgroundEventLoop for async tasks")
 
                 # Non-blocking mode: Submit coroutine and continue polling
                 # This allows high concurrency for async I/O-bound workloads
                 future = self._background_loop.submit_coroutine(task_output)
 
                 # Store future for later retrieval
-                self._pending_async_tasks[task.task_id] = (future, task, time.time())
+                submit_time = time.time()
+                self._pending_async_tasks[task.task_id] = (future, task, submit_time)
 
-                # Return None to signal that this task is being handled asynchronously
+                logger.info(
+                    "Submitted async task: %s (task_id=%s, pending_count=%d, submit_time=%s)",
+                    task.task_def_name,
+                    task.task_id,
+                    len(self._pending_async_tasks),
+                    submit_time
+                )
+
+                # Return sentinel to signal that this task is being handled asynchronously
+                # This allows async tasks to legitimately return None as their result
                 # The TaskRunner will check for completed async tasks separately
-                return None
+                return ASYNC_TASK_RUNNING
 
             if isinstance(task_output, TaskResult):
                 task_output.task_id = task.task_id
@@ -422,13 +442,20 @@ class Worker(WorkerInterface):
         This is non-blocking - just checks if futures are done.
 
         Returns:
-            List of (task_id, TaskResult) tuples for completed tasks
+            List of (task_id, TaskResult, submit_time, Task) tuples for completed tasks
         """
         completed_results = []
         tasks_to_remove = []
 
+        pending_count = len(self._pending_async_tasks)
+        if pending_count > 0:
+            logger.info(f"Checking {pending_count} pending async tasks")
+
         for task_id, (future, task, submit_time) in list(self._pending_async_tasks.items()):
             if future.done():  # Non-blocking check
+                done_time = time.time()
+                actual_duration = done_time - submit_time
+                logger.info(f"Async task {task_id} ({task.task_def_name}) is done (duration={actual_duration:.3f}s, submit_time={submit_time}, done_time={done_time})")
                 task_result: TaskResult = self.get_task_result_from_task(task)
 
                 try:
@@ -439,7 +466,7 @@ class Worker(WorkerInterface):
                     if isinstance(task_output, TaskResult):
                         task_output.task_id = task.task_id
                         task_output.workflow_instance_id = task.workflow_instance_id
-                        completed_results.append((task_id, task_output))
+                        completed_results.append((task_id, task_output, submit_time, task))
                         tasks_to_remove.append(task_id)
                         continue
 
@@ -471,14 +498,14 @@ class Worker(WorkerInterface):
                                 "error": "Object could not be serialized. Please return JSON-serializable data."
                             }
 
-                    completed_results.append((task_id, task_result))
+                    completed_results.append((task_id, task_result, submit_time, task))
                     tasks_to_remove.append(task_id)
 
                 except NonRetryableException as ne:
                     task_result.status = TaskResultStatus.FAILED_WITH_TERMINAL_ERROR
                     if len(ne.args) > 0:
                         task_result.reason_for_incompletion = ne.args[0]
-                    completed_results.append((task_id, task_result))
+                    completed_results.append((task_id, task_result, submit_time, task))
                     tasks_to_remove.append(task_id)
 
                 except Exception as e:
@@ -493,7 +520,7 @@ class Worker(WorkerInterface):
                     task_result.status = TaskResultStatus.FAILED
                     if len(e.args) > 0:
                         task_result.reason_for_incompletion = e.args[0]
-                    completed_results.append((task_id, task_result))
+                    completed_results.append((task_id, task_result, submit_time, task))
                     tasks_to_remove.append(task_id)
 
         # Remove completed tasks

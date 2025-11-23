@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class MetricName(str, Enum):
-    API_REQUEST_TIME = "api_request_time_seconds"
+    API_REQUEST_TIME = "http_api_client_request"
     EXTERNAL_PAYLOAD_USED = "external_payload_used"
     TASK_ACK_ERROR = "task_ack_error"
     TASK_ACK_FAILED = "task_ack_failed"
