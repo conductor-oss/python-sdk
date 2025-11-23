@@ -397,12 +397,12 @@ class TestMetricsCollector(unittest.TestCase):
         metrics_content = self._read_metrics_file()
 
         # Should have quantile metrics
-        self.assertIn('api_request_time_seconds', metrics_content)
+        self.assertIn('http_api_client_request_count', metrics_content)
         self.assertIn('method="GET"', metrics_content)
         self.assertIn('uri="/tasks/poll/batch/test_task"', metrics_content)
         self.assertIn('status="200"', metrics_content)
-        self.assertIn('api_request_time_seconds_count', metrics_content)
-        self.assertIn('api_request_time_seconds_sum', metrics_content)
+        self.assertIn('http_api_client_request_count', metrics_content)
+        self.assertIn('http_api_client_request_sum', metrics_content)
 
     def test_record_api_request_time_error_status(self):
         """Test record_api_request_time with error status"""
@@ -418,7 +418,7 @@ class TestMetricsCollector(unittest.TestCase):
         self._write_metrics(collector)
         metrics_content = self._read_metrics_file()
 
-        self.assertIn('api_request_time_seconds', metrics_content)
+        self.assertIn('http_api_client_request', metrics_content)
         self.assertIn('method="POST"', metrics_content)
         self.assertIn('uri="/tasks/update"', metrics_content)
         self.assertIn('status="500"', metrics_content)
@@ -476,7 +476,7 @@ class TestMetricsCollector(unittest.TestCase):
         self.assertIn('quantile="0.99"', metrics_content)
 
         # Should have count and sum (note: may accumulate from other tests)
-        self.assertIn('api_request_time_seconds_count', metrics_content)
+        self.assertIn('http_api_client_request_count', metrics_content)
 
     def test_quantile_sliding_window(self):
         """Test quantile calculations use sliding window (last 1000 observations)"""
@@ -495,7 +495,7 @@ class TestMetricsCollector(unittest.TestCase):
         metrics_content = self._read_metrics_file()
 
         # Count should reflect samples (note: prometheus may use sliding window for summary)
-        self.assertIn('api_request_time_seconds_count', metrics_content)
+        self.assertIn('http_api_client_request_count', metrics_content)
 
     # Note: _calculate_percentile is not a public method and percentile calculation
     # is handled internally by prometheus_client Summary objects
@@ -534,7 +534,7 @@ class TestMetricsCollector(unittest.TestCase):
         # Check that metrics were recorded (value may accumulate from other tests)
         self.assertIn('task_poll_total', metrics_content)
         self.assertIn('taskType="test_task"', metrics_content)
-        self.assertIn('api_request_time_seconds', metrics_content)
+        self.assertIn('http_api_client_request', metrics_content)
 
     def test_zero_duration_timing(self):
         """Test recording zero duration timing"""
@@ -546,7 +546,7 @@ class TestMetricsCollector(unittest.TestCase):
         metrics_content = self._read_metrics_file()
 
         # Should still record the timing
-        self.assertIn('api_request_time_seconds', metrics_content)
+        self.assertIn('http_api_client_request', metrics_content)
 
     def test_very_large_payload_size(self):
         """Test recording very large payload sizes"""
