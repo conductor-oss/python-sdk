@@ -616,27 +616,37 @@ class TaskRunner:
         task_name = self.worker.get_task_definition_name()
 
         # Resolve configuration with hierarchical override
+        # Use getattr with defaults to handle workers that don't have all attributes
         resolved_config = resolve_worker_config(
             worker_name=task_name,
-            poll_interval=self.worker.poll_interval,
-            domain=self.worker.domain,
-            worker_id=self.worker.worker_id,
-            thread_count=self.worker.thread_count,
-            register_task_def=self.worker.register_task_def,
-            poll_timeout=self.worker.poll_timeout,
-            lease_extend_enabled=self.worker.lease_extend_enabled,
+            poll_interval=getattr(self.worker, 'poll_interval', None),
+            domain=getattr(self.worker, 'domain', None),
+            worker_id=getattr(self.worker, 'worker_id', None),
+            thread_count=getattr(self.worker, 'thread_count', 1),
+            register_task_def=getattr(self.worker, 'register_task_def', False),
+            poll_timeout=getattr(self.worker, 'poll_timeout', 100),
+            lease_extend_enabled=getattr(self.worker, 'lease_extend_enabled', False),
             paused=getattr(self.worker, 'paused', False)
         )
 
         # Apply resolved configuration to worker
-        self.worker.poll_interval = resolved_config.get('poll_interval', self.worker.poll_interval)
-        self.worker.domain = resolved_config.get('domain', self.worker.domain)
-        self.worker.worker_id = resolved_config.get('worker_id', self.worker.worker_id)
-        self.worker.thread_count = resolved_config.get('thread_count', self.worker.thread_count)
-        self.worker.register_task_def = resolved_config.get('register_task_def', self.worker.register_task_def)
-        self.worker.poll_timeout = resolved_config.get('poll_timeout', self.worker.poll_timeout)
-        self.worker.lease_extend_enabled = resolved_config.get('lease_extend_enabled', self.worker.lease_extend_enabled)
-        self.worker.paused = resolved_config.get('paused', False)
+        # Only set attributes if they have non-None values
+        if resolved_config.get('poll_interval') is not None:
+            self.worker.poll_interval = resolved_config['poll_interval']
+        if resolved_config.get('domain') is not None:
+            self.worker.domain = resolved_config['domain']
+        if resolved_config.get('worker_id') is not None:
+            self.worker.worker_id = resolved_config['worker_id']
+        if resolved_config.get('thread_count') is not None:
+            self.worker.thread_count = resolved_config['thread_count']
+        if resolved_config.get('register_task_def') is not None:
+            self.worker.register_task_def = resolved_config['register_task_def']
+        if resolved_config.get('poll_timeout') is not None:
+            self.worker.poll_timeout = resolved_config['poll_timeout']
+        if resolved_config.get('lease_extend_enabled') is not None:
+            self.worker.lease_extend_enabled = resolved_config['lease_extend_enabled']
+        if resolved_config.get('paused') is not None:
+            self.worker.paused = resolved_config['paused']
 
         # Log worker configuration in compact single-line format
         config_summary = get_worker_config_oneline(task_name, resolved_config)
