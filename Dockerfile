@@ -51,14 +51,19 @@ ENV PATH "/root/.local/bin:$PATH"
 COPY pyproject.toml poetry.lock README.md /package/
 COPY --from=python_test_base /package/src /package/src
 
+ARG CONDUCTOR_PYTHON_VERSION
+ENV CONDUCTOR_PYTHON_VERSION=${CONDUCTOR_PYTHON_VERSION}
+RUN if [ -z "$CONDUCTOR_PYTHON_VERSION" ]; then \
+      echo "CONDUCTOR_PYTHON_VERSION build arg is required." >&2; exit 1; \
+    fi && \
+    poetry version "$CONDUCTOR_PYTHON_VERSION"
+
 RUN poetry config virtualenvs.create false && \
     poetry install --only main --no-root --no-interaction --no-ansi && \
     poetry install --no-root --no-interaction --no-ansi
 
 ENV PYTHONPATH /package/src
 
-ARG CONDUCTOR_PYTHON_VERSION
-ENV CONDUCTOR_PYTHON_VERSION ${CONDUCTOR_PYTHON_VERSION}
 RUN poetry build
 ARG PYPI_USER
 ARG PYPI_PASS
