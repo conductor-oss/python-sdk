@@ -31,14 +31,14 @@ The Conductor Python SDK uses a **unified multiprocessing architecture**:
 │  - Spawns one Process per worker                │
 │  - Each process has ThreadPoolExecutor          │
 └─────────────────────────────────────────────────┘
-                     │
-        ┌────────────┼────────────┬────────────┐
-        ▼            ▼            ▼            ▼
-   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
-   │Process 1│  │Process 2│  │Process 3│  │Process N│
-   │ Worker1 │  │ Worker2 │  │ Worker3 │  │ WorkerN │
-   │ ThreadPool│ │ ThreadPool│ │ ThreadPool│ │ ThreadPool│
-   └─────────┘  └─────────┘  └─────────┘  └─────────┘
+                       │
+        ┌──────────────┼──────────────┬──────────────┐
+        ▼              ▼              ▼              ▼
+   ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐
+   │ Process 1 │  │ Process 2 │  │ Process 3 │  │ Process N │
+   │ Worker1   │  │ Worker2   │  │ Worker3   │..│ WorkerN   │
+   │ ThreadPool│  │ ThreadPool│  │ ThreadPool│  │ ThreadPool│
+   └───────────┘  └───────────┘  └───────────┘  └───────────┘
 ```
 
 ### Two Async Execution Modes

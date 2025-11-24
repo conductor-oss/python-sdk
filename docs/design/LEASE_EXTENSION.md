@@ -27,18 +27,20 @@ If the task's `responseTimeoutSeconds` is set to 300 seconds (5 minutes) but exe
 
 ### The Solution: Automatic Lease Extension
 
-The Python SDK automatically extends the task lease when `lease_extend_enabled=True` (the default):
+The Python SDK can automatically extend the task lease when explicitly enabled:
 
 ```python
 @worker_task(
     task_definition_name='long_processing_task',
-    lease_extend_enabled=True  # Default: enabled
+    lease_extend_enabled=True  # Explicitly enable for long-running tasks
 )
 def process_large_dataset(dataset_id: str) -> dict:
     # SDK automatically extends lease every 80% of responseTimeoutSeconds
     result = expensive_ml_model_training(dataset_id)
     return {'model_id': result.id}
 ```
+
+**Note:** `lease_extend_enabled` defaults to `False`. Enable it explicitly for tasks that take longer than their `responseTimeoutSeconds`.
 
 ## How It Works Internally
 
@@ -80,14 +82,14 @@ When lease is extended:
 
 ## Usage Patterns
 
-### Pattern 1: Automatic Extension (Recommended)
+### Pattern 1: Automatic Extension (Recommended for Long-Running Tasks)
 
-**Default behavior** - SDK handles everything automatically:
+**Explicit opt-in** - SDK handles everything automatically once enabled:
 
 ```python
 @worker_task(
     task_definition_name='ml_training',
-    lease_extend_enabled=True  # Default
+    lease_extend_enabled=True  # Explicitly enable
 )
 def train_model(dataset: dict) -> dict:
     # Just write your business logic
@@ -97,7 +99,7 @@ def train_model(dataset: dict) -> dict:
 ```
 
 **When to use:**
-- Long-running tasks (>5 minutes)
+- Long-running tasks (>responseTimeoutSeconds)
 - Unpredictable execution time
 - Tasks that shouldn't be interrupted
 

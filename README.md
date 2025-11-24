@@ -334,6 +334,16 @@ def greetings(name: str) -> str:
     return f'Hello, {name}'
 ```
 
+**Async Workers:** Workers can be defined as `async def` functions for I/O-bound tasks, which are automatically executed using a background event loop for high concurrency:
+
+```python
+@worker_task(task_definition_name='fetch_data')
+async def fetch_data(url: str) -> dict:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+    return response.json()
+```
+
 A worker can take inputs which are primitives - `str`, `int`, `float`, `bool` etc. or can be complex data classes.
 
 Here is an example worker that uses `dataclass` as part of the worker input.
@@ -386,6 +396,44 @@ if __name__ == '__main__':
     main()
 
 ```
+
+**Worker Configuration:** Workers support hierarchical configuration via environment variables, allowing you to override settings at deployment without code changes:
+
+```bash
+# Global configuration (applies to all workers)
+export conductor.worker.all.domain=production
+export conductor.worker.all.poll_interval=250
+
+# Worker-specific configuration (overrides global)
+export conductor.worker.greetings.thread_count=20
+
+# Runtime control (pause/resume workers)
+export conductor.worker.all.paused=true  # Maintenance mode
+```
+
+Workers log their configuration on startup:
+```
+INFO - Conductor Worker[name=greetings, status=active, poll_interval=250ms, domain=production, thread_count=20]
+```
+
+For detailed configuration options, see [WORKER_CONFIGURATION.md](WORKER_CONFIGURATION.md).
+
+**Monitoring:** Enable Prometheus metrics with built-in HTTP server:
+
+```python
+from conductor.client.configuration.settings.metrics_settings import MetricsSettings
+
+metrics_settings = MetricsSettings(http_port=8000)
+
+task_handler = TaskHandler(
+    configuration=api_config,
+    metrics_settings=metrics_settings,
+    scan_for_annotated_workers=True
+)
+# Metrics available at: http://localhost:8000/metrics
+```
+
+For more details, see [METRICS.md](METRICS.md) and [WORKER_DESIGN.md](WORKER_DESIGN.md).
 
 ### Design Principles for Workers
 
