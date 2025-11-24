@@ -7,7 +7,10 @@ This directory contains comprehensive examples demonstrating various Conductor S
 - [Quick Start](#-quick-start)
 - [Worker Examples](#-worker-examples)
 - [Workflow Examples](#-workflow-examples)
+- [Configuration Examples](#-configuration-examples)
+- [Monitoring & Observability](#-monitoring--observability)
 - [Advanced Patterns](#-advanced-patterns)
+- [Testing Examples](#-testing-examples)
 - [Package Structure](#-package-structure)
 
 ---
@@ -510,12 +513,200 @@ config = Configuration(
 
 ---
 
+## ⚙️ Configuration Examples
+
+### Worker Configuration
+
+**File:** `worker_configuration_example.py`
+
+```bash
+python examples/worker_configuration_example.py
+```
+
+Demonstrates hierarchical worker configuration:
+- Code-level defaults
+- Global environment overrides (`conductor.worker.all.*`)
+- Worker-specific overrides (`conductor.worker.<task_name>.*`)
+- Configuration resolution and logging
+
+### Comprehensive Worker Example
+
+**File:** `worker_example.py`
+
+```bash
+python examples/worker_example.py
+```
+
+Complete worker example showing:
+- Sync workers (CPU-bound tasks)
+- Async workers (I/O-bound tasks)
+- Workers returning None
+- Workers returning TaskInProgress
+- Built-in HTTP metrics server
+
+---
+
+## 📊 Monitoring & Observability
+
+### Metrics Example
+
+**File:** `metrics_example.py`
+
+```bash
+python examples/metrics_example.py
+```
+
+Demonstrates Prometheus metrics:
+- HTTP metrics server on port 8000
+- Automatic multiprocess aggregation
+- API latency tracking (p50-p99)
+- Task execution metrics
+- Error rate monitoring
+
+Access metrics: `curl http://localhost:8000/metrics`
+
+### Event Listener Examples
+
+**File:** `event_listener_examples.py`
+
+```bash
+python examples/event_listener_examples.py
+```
+
+Shows custom event listeners:
+- TaskExecutionLogger: Logs all task events
+- TaskTimingMetrics: Tracks task execution time
+- Custom listeners for DataDog, StatsD, etc.
+- Event-driven observability patterns
+
+### Task Listener Example
+
+**File:** `task_listener_example.py`
+
+```bash
+python examples/task_listener_example.py
+```
+
+Demonstrates task lifecycle listeners for monitoring and custom metrics collection.
+
+---
+
+## 🔧 Advanced Patterns
+
+### Workflow Operations
+
+**File:** `workflow_ops.py`
+
+```bash
+python examples/workflow_ops.py
+```
+
+Comprehensive workflow lifecycle operations:
+- Start, pause, resume, terminate workflows
+- Restart and rerun workflows
+- Manual task completion
+- Workflow signals
+- Correlation IDs
+
+### Workflow Status Listener
+
+**File:** `workflow_status_listner.py`
+
+```bash
+python examples/workflow_status_listner.py
+```
+
+Enable external status listeners:
+- Kafka integration
+- SQS integration
+- Real-time workflow monitoring
+- Event-driven architecture
+
+### Shell Worker (Security Warning)
+
+**File:** `shell_worker.py`
+
+```bash
+python examples/shell_worker.py
+```
+
+⚠️ Educational example only - shows executing shell commands from workers.
+**Never use in production with untrusted inputs.**
+
+### Untrusted Host
+
+**File:** `untrusted_host.py`
+
+```bash
+python examples/untrusted_host.py
+```
+
+Connect to servers with self-signed SSL certificates.
+**Development/testing only** - never disable SSL verification in production.
+
+### Task Configuration
+
+**File:** `task_configure.py`
+
+```bash
+python examples/task_configure.py
+```
+
+Programmatically configure task definitions:
+- Retry policies (LINEAR_BACKOFF, EXPONENTIAL_BACKOFF)
+- Timeout settings
+- Concurrency limits
+- Rate limiting
+
+### Kitchen Sink
+
+**File:** `kitchensink.py`
+
+```bash
+python examples/kitchensink.py
+```
+
+Comprehensive example showing all task types:
+- HTTP, JavaScript, JSON JQ, Wait tasks
+- Switch (branching)
+- Terminate
+- Set Variable
+- Custom workers
+
+---
+
+## 🧪 Testing Examples
+
+### Test Workflows
+
+**File:** `test_workflows.py`
+
+```bash
+python3 -m unittest examples.test_workflows.WorkflowUnitTest
+```
+
+Unit testing workflows:
+- Test worker functions directly (no server needed)
+- Test complete workflows with mocked task outputs
+- Simulate task failures and retries
+- Test decision/switch logic
+- CI/CD integration
+
+---
+
 ## 📚 Additional Resources
 
-- [Main Documentation](../README.md)
-- [Worker Guide](../WORKER_DISCOVERY.md)
+### Documentation
+- [Main Documentation](../README.md) - SDK overview and getting started
+- [Worker Configuration Guide](../WORKER_CONFIGURATION.md) - Hierarchical configuration system
+- [Worker Design](../WORKER_DESIGN.md) - Architecture and async workers
+- [Metrics Documentation](../METRICS.md) - Prometheus metrics guide
+- [Event-Driven Architecture](../docs/design/event_driven_interceptor_system.md) - Observability system design
+
+### External Resources
 - [API Reference](https://orkes.io/content/reference-docs/api/python-sdk)
 - [Conductor Documentation](https://orkes.io/content)
+- [GitHub Repository](https://github.com/conductor-oss/conductor-python)
 
 ---
 

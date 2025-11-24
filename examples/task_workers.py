@@ -1,3 +1,42 @@
+"""
+Task Workers Example
+====================
+
+Comprehensive collection of worker examples demonstrating various patterns and features.
+
+What it does:
+-------------
+- Complex data types: Workers using dataclasses and custom objects
+- Error handling: NonRetryableException for terminal failures
+- TaskResult: Direct control over task status and output
+- Type hints: Proper typing for inputs and outputs
+- Various patterns: Simple returns, exceptions, TaskResult objects
+
+Workers Demonstrated:
+---------------------
+1. get_user_info: Returns complex dataclass objects
+2. process_order: Works with custom OrderInfo dataclass
+3. check_inventory: Simple boolean return
+4. ship_order: Uses TaskResult for detailed control
+5. retry_example: Demonstrates retryable vs non-retryable errors
+6. random_failure: Shows probabilistic failure handling
+
+Use Cases:
+----------
+- Working with complex data structures in workflows
+- Proper error handling and retry strategies
+- Direct task result manipulation
+- Integrating with existing Python data models
+- Building type-safe workers
+
+Key Concepts:
+-------------
+- @worker_task: Decorator to register Python functions as workers
+- Dataclasses: Structured data as worker input/output
+- TaskResult: Fine-grained control over task completion
+- NonRetryableException: Terminal failures that skip retries
+- Type Hints: Enable type checking and better IDE support
+"""
 import datetime
 from dataclasses import dataclass
 from random import random
@@ -31,7 +70,7 @@ def get_user_info(user_id: str) -> UserDetails:
 
 
 @worker_task(task_definition_name='save_order')
-def save_order(order_details: OrderInfo) -> OrderInfo:
+async def save_order(order_details: OrderInfo) -> OrderInfo:
     order_details.sku_price = order_details.quantity * order_details.sku_price
     return order_details
 

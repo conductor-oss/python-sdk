@@ -18,13 +18,6 @@ Sync Workers (def):
 - Runs in thread pool to avoid blocking
 - For heavy CPU work, consider multiprocessing TaskHandler
 
-Task Lifecycle:
----------------
-1. Poll → Worker polls Conductor for tasks
-2. Execute → Task function runs (async or sync)
-3. Update → Result sent back to Conductor
-4. Repeat
-
 Metrics:
 --------
 - HTTP mode (recommended): Built-in server at http://localhost:8000/metrics
@@ -382,7 +375,7 @@ if __name__ == '__main__':
     Quick Start:
     ------------
     1. Set environment variables:
-       export CONDUCTOR_SERVER_URL=https://your-server.com/api
+       export CONDUCTOR_SERVER_URL=https://developer.orkescloud.com/api
        export CONDUCTOR_AUTH_KEY=your_key
        export CONDUCTOR_AUTH_SECRET=your_secret
 
