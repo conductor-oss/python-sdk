@@ -102,29 +102,70 @@ The SDK requires Python 3.9+. To install the SDK, use the following command:
 python3 -m pip install conductor-python
 ```
 
-## ⚡ Performance Features (v1.2.5+)
+## 🚀 Quick Start
 
-The Python SDK includes ultra-low latency optimizations for high-performance production workloads:
+For a complete end-to-end example, see [examples/workers_e2e.py](examples/workers_e2e.py):
 
-- **2-5ms average polling delay** (down from 15-90ms) - 10-18x improvement!
-- **HTTP/2 enabled by default** - 40-60% higher throughput, request multiplexing
-- **Batch polling** - 60-70% fewer API calls
-- **Adaptive backoff** - Prevents API hammering when queue is empty
-- **Concurrent execution** - ThreadPoolExecutor with configurable `thread_count`
-- **Connection pooling** - 100 connections with 50 keep-alive
-- **250+ tasks/sec throughput** with 80-85% efficiency (thread_count=10)
+```bash
+export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
+python3 examples/workers_e2e.py
+```
 
-See [POLLING_LOOP_OPTIMIZATIONS.md](POLLING_LOOP_OPTIMIZATIONS.md) and [HTTP2_MIGRATION.md](HTTP2_MIGRATION.md) for details.
+This example demonstrates:
+- Registering a workflow definition
+- Starting workflow execution
+- Running workers (sync + async)
+- Monitoring with Prometheus metrics
+- Long-running tasks with lease extension
 
-## 📚 Key Documentation
+**What you'll see:**
+- Workflow URL to monitor execution in UI
+- Workers processing tasks (AsyncTaskRunner vs TaskRunner)
+- Metrics endpoint at http://localhost:8000/metrics
+- Long-running task with TaskInProgress (5 polls)
 
-- **[Worker Architecture](WORKER_ARCHITECTURE.md)** - Overview of worker architecture and design
-- **[Worker Concurrency Design](WORKER_CONCURRENCY_DESIGN.md)** - Multiprocessing vs AsyncIO comparison
-- **[Polling Loop Optimizations](POLLING_LOOP_OPTIMIZATIONS.md)** - Ultra-low latency polling details
-- **[HTTP/2 Migration](HTTP2_MIGRATION.md)** - HTTP/2 benefits and connection pooling
-- **[Lease Extension](LEASE_EXTENSION.md)** - How to handle long-running tasks
-- **[Worker Configuration](WORKER_CONFIGURATION.md)** - Environment-based configuration
-- **[Worker Documentation](docs/worker/README.md)** - Complete worker usage guide
+## ⚡ Performance Features (SDK 1.3.0+)
+
+The Python SDK provides high-performance worker execution with automatic optimization:
+
+**Worker Architecture:**
+- **AsyncTaskRunner** for async workers (`async def`) - Pure async/await, zero thread overhead
+- **TaskRunner** for sync workers (`def`) - ThreadPoolExecutor for concurrent execution
+- **Automatic selection** - Based on function signature, no configuration needed
+- **One process per worker** - Process isolation and fault tolerance
+
+**Performance Optimizations:**
+- **Dynamic batch polling** - Batch size adapts to available capacity (thread_count - running tasks)
+- **Adaptive backoff** - Exponential backoff when queue empty (1ms → 2ms → 4ms → poll_interval)
+- **High concurrency** - Async workers: 100-1000+ tasks/sec, Sync workers: 10-50 tasks/sec
+
+**AsyncTaskRunner Benefits (async def workers):**
+- 67% fewer threads per worker
+- 40-50% less memory per worker
+- 10-100x better I/O throughput
+- Direct `await worker_fn()` execution
+
+See [docs/design/WORKER_DESIGN.md](docs/design/WORKER_DESIGN.md) for complete architecture details.
+
+## 📚 Documentation
+
+**Getting Started:**
+- **[End-to-End Example](examples/workers_e2e.py)** - Complete workflow execution with workers
+- **[Examples Guide](examples/EXAMPLES_README.md)** - All examples with quick reference
+
+**Worker Documentation:**
+- **[Worker Design & Architecture](docs/design/WORKER_DESIGN.md)** - Complete worker architecture guide
+  - AsyncTaskRunner vs TaskRunner
+  - Automatic runner selection
+  - Worker discovery, configuration, best practices
+  - Long-running tasks and lease extension
+  - Performance metrics and monitoring
+- **[Worker Configuration](WORKER_CONFIGURATION.md)** - Hierarchical environment-based configuration
+- **[Complete Worker Guide](docs/worker/README.md)** - Comprehensive worker documentation
+
+**Monitoring & Advanced:**
+- **[Metrics](METRICS.md)** - Prometheus metrics collection
+- **[Event-Driven Architecture](docs/design/event_driven_interceptor_system.md)** - Observability design
 
 ## Hello World Application Using Conductor
 
@@ -334,15 +375,33 @@ def greetings(name: str) -> str:
     return f'Hello, {name}'
 ```
 
-**Async Workers:** Workers can be defined as `async def` functions for I/O-bound tasks, which are automatically executed using a background event loop for high concurrency:
+**Async Workers:** Workers can be defined as `async def` functions for I/O-bound tasks. The SDK automatically uses **AsyncTaskRunner** for pure async/await execution with high concurrency:
 
 ```python
-@worker_task(task_definition_name='fetch_data')
+@worker_task(task_definition_name='fetch_data', thread_count=50)
 async def fetch_data(url: str) -> dict:
+    # Automatically uses AsyncTaskRunner (not TaskRunner)
+    # - Pure async/await execution (no thread overhead)
+    # - Single event loop per process
+    # - Up to 50 concurrent tasks
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
     return response.json()
 ```
+
+**Sync Workers:** Use regular `def` functions for CPU-bound or blocking I/O tasks:
+
+```python
+@worker_task(task_definition_name='process_data', thread_count=5)
+def process_data(data: dict) -> dict:
+    # Automatically uses TaskRunner (ThreadPoolExecutor)
+    # - 5 concurrent threads
+    # - Best for CPU-bound tasks or blocking I/O
+    result = expensive_computation(data)
+    return {'result': result}
+```
+
+**The SDK automatically selects the right execution model** based on your function signature (`def` vs `async def`).
 
 A worker can take inputs which are primitives - `str`, `int`, `float`, `bool` etc. or can be complex data classes.
 
@@ -402,19 +461,22 @@ if __name__ == '__main__':
 ```bash
 # Global configuration (applies to all workers)
 export conductor.worker.all.domain=production
-export conductor.worker.all.poll_interval=250
+export conductor.worker.all.poll_interval_millis=250
+export conductor.worker.all.thread_count=20
 
 # Worker-specific configuration (overrides global)
-export conductor.worker.greetings.thread_count=20
+export conductor.worker.greetings.thread_count=50
 
-# Runtime control (pause/resume workers)
+# Runtime control (pause/resume workers without code changes)
 export conductor.worker.all.paused=true  # Maintenance mode
 ```
 
-Workers log their configuration on startup:
+Workers log their resolved configuration on startup:
 ```
-INFO - Conductor Worker[name=greetings, status=active, poll_interval=250ms, domain=production, thread_count=20]
+INFO - Conductor Worker[name=greetings, pid=12345, status=active, poll_interval=250ms, domain=production, thread_count=50]
 ```
+
+**Configuration Priority:** Worker-specific > Global > Code defaults
 
 For detailed configuration options, see [WORKER_CONFIGURATION.md](WORKER_CONFIGURATION.md).
 
@@ -423,7 +485,10 @@ For detailed configuration options, see [WORKER_CONFIGURATION.md](WORKER_CONFIGU
 ```python
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 
-metrics_settings = MetricsSettings(http_port=8000)
+metrics_settings = MetricsSettings(
+    directory='/tmp/conductor-metrics',  # Multiprocess coordination
+    http_port=8000                        # HTTP metrics endpoint
+)
 
 task_handler = TaskHandler(
     configuration=api_config,
@@ -433,7 +498,7 @@ task_handler = TaskHandler(
 # Metrics available at: http://localhost:8000/metrics
 ```
 
-For more details, see [METRICS.md](METRICS.md) and [WORKER_DESIGN.md](WORKER_DESIGN.md).
+For more details, see [METRICS.md](METRICS.md) and [docs/design/WORKER_DESIGN.md](docs/design/WORKER_DESIGN.md).
 
 ### Design Principles for Workers
 

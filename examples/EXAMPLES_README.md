@@ -1,386 +1,112 @@
 # Conductor Python SDK Examples
 
-This directory contains comprehensive examples demonstrating various Conductor SDK features and patterns.
-
-## 📋 Table of Contents
-
-- [Quick Start](#-quick-start)
-- [Worker Examples](#-worker-examples)
-- [Workflow Examples](#-workflow-examples)
-- [Configuration Examples](#-configuration-examples)
-- [Monitoring & Observability](#-monitoring--observability)
-- [Advanced Patterns](#-advanced-patterns)
-- [Testing Examples](#-testing-examples)
-- [Package Structure](#-package-structure)
-
----
+Quick reference for example files demonstrating SDK features.
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
 ```bash
-# Install dependencies
-pip install conductor-python httpx requests
+# Install
+pip install conductor-python httpx
 
-# Set environment variables
+# Configure
 export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
-export CONDUCTOR_AUTH_KEY="your-key"      # Optional for Orkes Cloud
-export CONDUCTOR_AUTH_SECRET="your-secret" # Optional for Orkes Cloud
-```
 
-### Simplest Example
-
-```bash
-# Start with the end-to-end example (shows both sync and async workers)
-python examples/workers_e2e.py
-
-# Or explore comprehensive examples with worker discovery
-python examples/asyncio_workers.py
-python examples/multiprocessing_workers.py
-```
-
----
-
-## 👷 Worker Examples
-
-### Worker Architecture
-
-**Both examples use multiprocessing** (one process per worker) with automatic runner selection:
-- **Async workers** (`async def`) → AsyncTaskRunner (pure async/await, single event loop)
-- **Sync workers** (`def`) → TaskRunner (ThreadPoolExecutor)
-
-The examples demonstrate different worker types and patterns.
-
----
-
-### Complete Worker Example (Recommended Starting Point)
-
-**File:** `workers_e2e.py`
-
-```bash
+# Run end-to-end example
 python examples/workers_e2e.py
 ```
 
-**Workers:**
-- `greet_sync` - Sync worker example
-- `greet_async` - Async worker with high concurrency (thread_count=50)
-
-**Features:**
-- ✓ Demonstrates both sync and async workers
-- ✓ Shows automatic AsyncTaskRunner selection for async workers
-- ✓ End-to-end example with workflow execution
-- ✓ Multiprocess architecture (one process per worker)
-- ✓ Best practices for worker implementation
-
 ---
 
-### AsyncIO Workers Example
-
-**File:** `asyncio_workers.py`
-
-```bash
-python examples/asyncio_workers.py
-```
-
-**Workers:**
-- `calculate` - Fibonacci calculator (CPU-bound)
-- `long_running_task` - Long-running task with Union[dict, TaskInProgress]
-- `greet`, `greet_sync`, `greet_async` - Simple greeting examples (from helloworld package)
-- `fetch_user` - HTTP API call (from user_example package)
-- `update_user` - Process User dataclass (from user_example package)
-
-**Features:**
-- ✓ Multiprocess architecture (one process per worker)
-- ✓ Automatic runner selection (AsyncTaskRunner for async, TaskRunner for sync)
-- ✓ Perfect for I/O-bound async tasks (HTTP, DB, file I/O)
-- ✓ Automatic worker discovery from packages
-- ✓ Mixed sync/async workers
-
----
-
-### Multiprocessing Workers Example
-
-**File:** `multiprocessing_workers.py`
-
-```bash
-python examples/multiprocessing_workers.py
-```
-
-**Workers:** Same as AsyncIO version (identical code works in both!)
-
-**Features:**
-- ✓ Same multiprocess architecture
-- ✓ Same automatic runner selection
-- ✓ Demonstrates that worker code is execution-mode agnostic
-- ✓ True parallelism (bypasses Python GIL)
-
----
-
-### Understanding Worker Execution
-
-**The SDK automatically selects the right runner based on function signature:**
-
-| Function Type | Runner | Execution Model | Best For |
-|---------------|--------|-----------------|----------|
-| `def worker()` | TaskRunner | ThreadPoolExecutor | CPU-bound, blocking I/O |
-| `async def worker()` | AsyncTaskRunner | Pure async/await | I/O-bound (HTTP, DB) |
-
-**Architecture per worker process:**
-```
-Process 1 (async def)  →  AsyncTaskRunner  →  Event loop (asyncio)  →  High concurrency
-Process 2 (def)        →  TaskRunner       →  ThreadPoolExecutor    →  Thread-based
-```
-
-**Key Benefits:**
-- ✓ Process isolation (one process per worker)
-- ✓ Automatic execution mode selection
-- ✓ AsyncTaskRunner: 67% fewer threads, 40-50% less memory per async worker
-- ✓ No code changes needed - just use `def` or `async def`
-
----
-
-### Task Context Example
-
-**File:** `task_context_example.py`
-
-```bash
-python examples/task_context_example.py
-```
-
-Demonstrates:
-- Accessing task metadata (task_id, workflow_id, retry_count, poll_count)
-- Adding logs visible in Conductor UI
-- Setting callback delays for long-running tasks
-- Type-safe context access
-
-```python
-from conductor.client.context import get_task_context
-
-def my_worker(data: dict) -> dict:
-    ctx = get_task_context()
-
-    # Access task info
-    task_id = ctx.get_task_id()
-    poll_count = ctx.get_poll_count()
-
-    # Add logs (visible in UI)
-    ctx.add_log(f"Processing task {task_id}")
-
-    return {'result': 'done'}
-```
-
----
-
-### Worker Discovery Examples
-
-#### Basic Discovery
-
-**File:** `worker_discovery_example.py`
-
-```bash
-python examples/worker_discovery_example.py
-```
-
-Shows automatic discovery of workers from multiple packages:
-- `worker_discovery/my_workers/order_tasks.py` - Order processing workers
-- `worker_discovery/my_workers/payment_tasks.py` - Payment workers
-- `worker_discovery/other_workers/notification_tasks.py` - Notification workers
-
-**Key concept:** Use `import_modules` parameter to automatically discover and register all `@worker_task` decorated functions.
-
-#### Sync + Async Discovery
-
-**File:** `worker_discovery_sync_async_example.py`
-
-```bash
-python examples/worker_discovery_sync_async_example.py
-```
-
-Demonstrates mixing sync and async workers in the same application.
-
----
-
-### Legacy Examples
-
-**File:** `multiprocessing_workers_example.py`
-
-Older example showing multiprocessing workers. Use `multiprocessing_workers.py` instead.
-
-**File:** `task_workers.py`
-
-Legacy worker examples. See `asyncio_workers.py` for modern patterns.
-
----
-
-## 🔄 Workflow Examples
-
-### Dynamic Workflows
-
-**File:** `dynamic_workflow.py`
-
-```bash
-python examples/dynamic_workflow.py
-```
-
-Shows how to:
-- Create workflows programmatically at runtime
-- Chain tasks together dynamically
-- Execute workflows without pre-registration
-- Use idempotency strategies
-
-```python
-from conductor.client.workflow.conductor_workflow import ConductorWorkflow
-
-workflow = ConductorWorkflow(name='dynamic_example', version=1)
-workflow.add(get_user_email_task)
-workflow.add(send_email_task)
-workflow.execute(workflow_input={'user_id': '123'})
-```
-
----
-
-### Workflow Operations
-
-**File:** `workflow_ops.py`
-
-```bash
-python examples/workflow_ops.py
-```
-
-Demonstrates:
-- Starting workflows
-- Pausing/resuming workflows
-- Terminating workflows
-- Getting workflow status
-- Restarting failed workflows
-- Retrying failed tasks
-
----
-
-### Workflow Status Listener
-
-**File:** `workflow_status_listner.py` *(note: typo in filename)*
-
-```bash
-python examples/workflow_status_listner.py
-```
-
-Shows how to:
-- Listen for workflow status changes
-- Handle workflow completion/failure events
-- Implement callbacks for workflow lifecycle events
-
----
-
-### Test Workflows
-
-**File:** `test_workflows.py`
-
-Unit test examples showing how to test workflows and tasks.
-
----
-
-## 🎯 Advanced Patterns
+## 📁 Examples by Category
+
+### Workers
+
+| File | Description | Run |
+|------|-------------|-----|
+| **workers_e2e.py** | ⭐ Start here - sync + async workers | `python examples/workers_e2e.py` |
+| **worker_example.py** | Comprehensive patterns (None returns, TaskInProgress) | `python examples/worker_example.py` |
+| **worker_configuration_example.py** | Hierarchical configuration (env vars) | `python examples/worker_configuration_example.py` |
+| **task_context_example.py** | Task context (logs, poll_count, task_id) | `python examples/task_context_example.py` |
+
+**Key Concepts:**
+- `def` → TaskRunner (ThreadPoolExecutor)
+- `async def` → AsyncTaskRunner (pure async/await, single event loop)
+- One process per worker (automatic selection)
 
 ### Long-Running Tasks
 
-Long-running tasks use `Union[dict, TaskInProgress]` return type:
-
 ```python
+from conductor.client.context.task_context import TaskInProgress
 from typing import Union
-from conductor.client.context import get_task_context, TaskInProgress
 
-@worker_task(task_definition_name='long_task')
-def long_running_task(job_id: str) -> Union[dict, TaskInProgress]:
+@worker_task(task_definition_name='batch_job')
+def process_batch(batch_id: str) -> Union[dict, TaskInProgress]:
     ctx = get_task_context()
-    poll_count = ctx.get_poll_count()
 
-    ctx.add_log(f"Processing {job_id}, poll {poll_count}/5")
+    if ctx.get_poll_count() < 5:
+        # More work - extend lease
+        return TaskInProgress(callback_after_seconds=30)
 
-    if poll_count < 5:
-        # Still working - tell Conductor to callback after 1 second
-        return TaskInProgress(
-            callback_after_seconds=1,
-            output={
-                'job_id': job_id,
-                'status': 'processing',
-                'progress': poll_count * 20  # 20%, 40%, 60%, 80%
-            }
-        )
-
-    # Completed
-    return {
-        'job_id': job_id,
-        'status': 'completed',
-        'result': 'success'
-    }
+    return {'status': 'completed'}
 ```
 
-**Key benefits:**
-- ✓ Semantically correct (not an error condition)
-- ✓ Type-safe with Union types
-- ✓ Intermediate output visible in Conductor UI
-- ✓ Logs preserved across polls
-- ✓ Works in both AsyncIO and multiprocessing modes
+See: `task_context_example.py`, `worker_example.py`
 
 ---
 
-### Task Configuration
+### Workflows
 
-**File:** `task_configure.py`
+| File | Description | Run |
+|------|-------------|-----|
+| **dynamic_workflow.py** | Create workflows programmatically | `python examples/dynamic_workflow.py` |
+| **workflow_ops.py** | Start, pause, resume, terminate workflows | `python examples/workflow_ops.py` |
+| **workflow_status_listner.py** | Workflow event listeners | `python examples/workflow_status_listner.py` |
+| **test_workflows.py** | Unit testing workflows | `python -m unittest examples.test_workflows` |
+
+---
+
+### Monitoring
+
+| File | Description | Run |
+|------|-------------|-----|
+| **metrics_example.py** | Prometheus metrics (HTTP server on :8000) | `python examples/metrics_example.py` |
+| **event_listener_examples.py** | Custom event listeners (SLA, logging) | `python examples/event_listener_examples.py` |
+| **task_listener_example.py** | Task lifecycle listeners | `python examples/task_listener_example.py` |
+
+Access metrics: `curl http://localhost:8000/metrics`
+
+---
+
+### Advanced
+
+| File | Description | Notes |
+|------|-------------|-------|
+| **task_configure.py** | Task definitions (retry, timeout, rate limits) | Programmatic task config |
+| **kitchensink.py** | All task types (HTTP, JS, JQ, Switch) | Comprehensive |
+| **shell_worker.py** | Execute shell commands | ⚠️ Educational only |
+| **untrusted_host.py** | Self-signed SSL certificates | ⚠️ Dev/test only |
+
+---
+
+## 🎓 Learning Path (60-Second Guide)
 
 ```bash
-python examples/task_configure.py
+# 1. Basic workers (5 min)
+python examples/workers_e2e.py
+
+# 2. Long-running tasks (5 min)
+python examples/task_context_example.py
+
+# 3. Configuration (5 min)
+python examples/worker_configuration_example.py
+
+# 4. Workflows (10 min)
+python examples/dynamic_workflow.py
+
+# 5. Monitoring (5 min)
+python examples/metrics_example.py
+curl http://localhost:8000/metrics
 ```
-
-Shows how to:
-- Define task metadata
-- Set retry policies
-- Configure timeouts
-- Set rate limits
-- Define task input/output templates
-
----
-
-### Shell Worker
-
-**File:** `shell_worker.py`
-
-```bash
-python examples/shell_worker.py
-```
-
-Demonstrates executing shell commands as Conductor tasks:
-- Run arbitrary shell commands
-- Capture stdout/stderr
-- Handle exit codes
-- Set working directory and environment
-
----
-
-### Kitchen Sink
-
-**File:** `kitchensink.py`
-
-Comprehensive example showing many SDK features together.
-
----
-
-### Untrusted Host
-
-**File:** `untrusted_host.py`
-
-```bash
-python examples/untrusted_host.py
-```
-
-Shows how to:
-- Connect to Conductor with self-signed certificates
-- Disable SSL verification (for testing only!)
-- Handle certificate validation errors
-
-**⚠️ Warning:** Only use for development/testing. Never disable SSL verification in production!
 
 ---
 
@@ -388,99 +114,53 @@ Shows how to:
 
 ```
 examples/
-├── EXAMPLES_README.md              # This file
-│
-├── workers_e2e.py                  # ⭐ Recommended: Start here - E2E example
-├── asyncio_workers.py              # Mixed sync/async workers with discovery
-├── multiprocessing_workers.py      # Same workers, different handler
-│
-├── task_context_example.py         # TaskContext usage
-├── worker_discovery_example.py     # Worker discovery patterns
-├── worker_discovery_sync_async_example.py
-├── worker_configuration_example.py # Hierarchical configuration
+├── workers_e2e.py                  # ⭐ Start here
 ├── worker_example.py               # Comprehensive worker patterns
+├── worker_configuration_example.py # Env var configuration
+├── task_context_example.py         # Long-running tasks
 │
-├── dynamic_workflow.py             # Dynamic workflow creation
-├── workflow_ops.py                 # Workflow operations
+├── dynamic_workflow.py             # Workflow creation
+├── workflow_ops.py                 # Workflow management
 ├── workflow_status_listner.py      # Workflow events
 │
 ├── metrics_example.py              # Prometheus metrics
-├── event_listener_examples.py      # Custom event listeners
-├── task_listener_example.py        # Task lifecycle listeners
+├── event_listener_examples.py      # Custom listeners
+├── task_listener_example.py        # Task events
 │
-├── task_configure.py               # Task configuration
-├── shell_worker.py                 # Shell command execution
-├── untrusted_host.py               # SSL/certificate handling
-├── kitchensink.py                  # Comprehensive example
-├── test_workflows.py               # Testing examples
+├── task_configure.py               # Task definitions
+├── kitchensink.py                  # All features
+├── shell_worker.py                 # Shell commands
+├── untrusted_host.py               # SSL handling
+├── test_workflows.py               # Unit tests
 │
-├── helloworld/                     # Simple greeting workers
+├── helloworld/                     # Simple examples
 │   └── greetings_worker.py
 │
-├── user_example/                   # HTTP + dataclass examples
-│   ├── models.py                   # User dataclass
-│   └── user_workers.py             # fetch_user, update_user
-│
-├── worker_discovery/               # Multi-package discovery
-│   ├── my_workers/
-│   │   ├── order_tasks.py
-│   │   └── payment_tasks.py
-│   └── other_workers/
-│       └── notification_tasks.py
-│
-├── orkes/                          # Orkes Cloud specific examples
-│   └── ...
-│
-└── (legacy files)
-    ├── multiprocessing_workers_example.py
-    ├── task_workers.py
-    └── compare_multiprocessing_vs_asyncio.py
-```
-
----
-
-## 🎓 Learning Path
-
-### 1. **Start Here** (Beginner)
-```bash
-# Learn basic worker patterns - shows both sync and async workers
-python examples/workers_e2e.py
-```
-
-### 2. **Learn Context** (Beginner)
-```bash
-# Understand task context for long-running tasks
-python examples/task_context_example.py
-```
-
-### 3. **Learn Discovery** (Intermediate)
-```bash
-# Package-based worker organization
-python examples/worker_discovery_example.py
-```
-
-### 4. **Learn Workflows** (Intermediate)
-```bash
-# Create and manage workflows
-python examples/dynamic_workflow.py
-python examples/workflow_ops.py
-```
-
-### 5. **Learn Worker Patterns** (Advanced)
-```bash
-# Mixed sync/async workers with discovery
-python examples/asyncio_workers.py
-
-# Same workers, showing code portability
-python examples/multiprocessing_workers.py
-
-# Key insight: Use async def for I/O-bound, def for CPU-bound
-# The SDK automatically selects AsyncTaskRunner vs TaskRunner
+└── user_example/                   # HTTP + dataclass
+    ├── models.py
+    └── user_workers.py
 ```
 
 ---
 
 ## 🔧 Configuration
+
+### Worker Architecture
+
+**Multiprocess** - one process per worker with automatic runner selection:
+
+```python
+# Sync worker → TaskRunner (ThreadPoolExecutor)
+@worker_task(task_definition_name='cpu_task', thread_count=4)
+def cpu_task(data: dict):
+    return expensive_computation(data)
+
+# Async worker → AsyncTaskRunner (event loop, 67% less memory)
+@worker_task(task_definition_name='api_task', thread_count=50)
+async def api_task(url: str):
+    async with httpx.AsyncClient() as client:
+        return await client.get(url)
+```
 
 ### Environment Variables
 
@@ -488,294 +168,42 @@ python examples/multiprocessing_workers.py
 # Required
 export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
 
-# Optional (for Orkes Cloud)
-export CONDUCTOR_AUTH_KEY="your-key-id"
-export CONDUCTOR_AUTH_SECRET="your-key-secret"
+# Optional - Orkes Cloud
+export CONDUCTOR_AUTH_KEY="your-key"
+export CONDUCTOR_AUTH_SECRET="your-secret"
 
-# Optional (for on-premise with auth)
-export CONDUCTOR_AUTH_TOKEN="your-jwt-token"
-```
-
-### Programmatic Configuration
-
-```python
-from conductor.client.configuration.configuration import Configuration
-
-# Option 1: Use environment variables
-config = Configuration()
-
-# Option 2: Explicit configuration
-config = Configuration(
-    server_api_url='http://localhost:8080/api',
-    authentication_settings=AuthenticationSettings(
-        key_id='your-key',
-        key_secret='your-secret'
-    )
-)
+# Optional - Worker config
+export conductor.worker.all.domain=production
+export conductor.worker.all.poll_interval_millis=250
+export conductor.worker.all.thread_count=20
 ```
 
 ---
 
-## 🐛 Troubleshooting
+## 🐛 Common Issues
 
-### Workers Not Polling
+**Workers not polling?**
+- Check task names match between workflow and `@worker_task`
+- Verify `CONDUCTOR_SERVER_URL` is correct
+- Check auth credentials
 
-**Problem:** Workers start but don't pick up tasks
+**Async workers using threads?**
+- Use `async def` (not `def`)
+- Check logs for "Created AsyncTaskRunner"
 
-**Solutions:**
-1. Check task definition names match between workflow and workers
-2. Verify Conductor server URL is correct
-3. Check authentication credentials
-4. Ensure tasks are in `SCHEDULED` state (not `COMPLETED` or `FAILED`)
-
-### Context Not Available
-
-**Problem:** `get_task_context()` raises error
-
-**Solution:** Only call `get_task_context()` from within worker functions decorated with `@worker_task`.
-
-### Async Workers Not Using AsyncTaskRunner
-
-**Problem:** Async workers seem to be using threads instead of pure async
-
-**Solution:**
-- Ensure function is defined with `async def` (not `def`)
-- Check logs for "Created AsyncTaskRunner" vs "Created TaskRunner"
-- Verify `inspect.iscoroutinefunction(worker.execute_function)` returns True
-
-### Import Errors
-
-**Problem:** `ModuleNotFoundError` for worker modules
-
-**Solutions:**
-1. Ensure packages have `__init__.py`
-2. Use correct module paths in `import_modules` parameter
-3. Add parent directory to `sys.path` if needed
-
-### High Memory Usage
-
-**Problem:** Worker processes consuming too much memory
-
-**Solutions:**
-1. Use async workers (`async def`) for I/O-bound tasks - 40-50% less memory
-2. Reduce number of worker processes
-3. Lower `thread_count` for sync workers
-4. Check for memory leaks in worker code
+**High memory?**
+- Use `async def` for I/O tasks (40-50% less memory)
+- Reduce worker count or thread_count
 
 ---
 
-## ⚙️ Configuration Examples
+## 📚 Documentation
 
-### Worker Configuration
-
-**File:** `worker_configuration_example.py`
-
-```bash
-python examples/worker_configuration_example.py
-```
-
-Demonstrates hierarchical worker configuration:
-- Code-level defaults
-- Global environment overrides (`conductor.worker.all.*`)
-- Worker-specific overrides (`conductor.worker.<task_name>.*`)
-- Configuration resolution and logging
-
-### Comprehensive Worker Example
-
-**File:** `worker_example.py`
-
-```bash
-python examples/worker_example.py
-```
-
-Complete worker example showing:
-- Sync workers (CPU-bound tasks)
-- Async workers (I/O-bound tasks)
-- Workers returning None
-- Workers returning TaskInProgress
-- Built-in HTTP metrics server
+- [Worker Design](../docs/design/WORKER_DESIGN.md) - Complete architecture guide
+- [Worker Configuration](../WORKER_CONFIGURATION.md) - Hierarchical config system
+- [Main README](../README.md) - SDK overview
 
 ---
 
-## 📊 Monitoring & Observability
-
-### Metrics Example
-
-**File:** `metrics_example.py`
-
-```bash
-python examples/metrics_example.py
-```
-
-Demonstrates Prometheus metrics:
-- HTTP metrics server on port 8000
-- Automatic multiprocess aggregation
-- API latency tracking (p50-p99)
-- Task execution metrics
-- Error rate monitoring
-
-Access metrics: `curl http://localhost:8000/metrics`
-
-### Event Listener Examples
-
-**File:** `event_listener_examples.py`
-
-```bash
-python examples/event_listener_examples.py
-```
-
-Shows custom event listeners:
-- TaskExecutionLogger: Logs all task events
-- TaskTimingMetrics: Tracks task execution time
-- Custom listeners for DataDog, StatsD, etc.
-- Event-driven observability patterns
-
-### Task Listener Example
-
-**File:** `task_listener_example.py`
-
-```bash
-python examples/task_listener_example.py
-```
-
-Demonstrates task lifecycle listeners for monitoring and custom metrics collection.
-
----
-
-## 🔧 Advanced Patterns
-
-### Workflow Operations
-
-**File:** `workflow_ops.py`
-
-```bash
-python examples/workflow_ops.py
-```
-
-Comprehensive workflow lifecycle operations:
-- Start, pause, resume, terminate workflows
-- Restart and rerun workflows
-- Manual task completion
-- Workflow signals
-- Correlation IDs
-
-### Workflow Status Listener
-
-**File:** `workflow_status_listner.py`
-
-```bash
-python examples/workflow_status_listner.py
-```
-
-Enable external status listeners:
-- Kafka integration
-- SQS integration
-- Real-time workflow monitoring
-- Event-driven architecture
-
-### Shell Worker (Security Warning)
-
-**File:** `shell_worker.py`
-
-```bash
-python examples/shell_worker.py
-```
-
-⚠️ Educational example only - shows executing shell commands from workers.
-**Never use in production with untrusted inputs.**
-
-### Untrusted Host
-
-**File:** `untrusted_host.py`
-
-```bash
-python examples/untrusted_host.py
-```
-
-Connect to servers with self-signed SSL certificates.
-**Development/testing only** - never disable SSL verification in production.
-
-### Task Configuration
-
-**File:** `task_configure.py`
-
-```bash
-python examples/task_configure.py
-```
-
-Programmatically configure task definitions:
-- Retry policies (LINEAR_BACKOFF, EXPONENTIAL_BACKOFF)
-- Timeout settings
-- Concurrency limits
-- Rate limiting
-
-### Kitchen Sink
-
-**File:** `kitchensink.py`
-
-```bash
-python examples/kitchensink.py
-```
-
-Comprehensive example showing all task types:
-- HTTP, JavaScript, JSON JQ, Wait tasks
-- Switch (branching)
-- Terminate
-- Set Variable
-- Custom workers
-
----
-
-## 🧪 Testing Examples
-
-### Test Workflows
-
-**File:** `test_workflows.py`
-
-```bash
-python3 -m unittest examples.test_workflows.WorkflowUnitTest
-```
-
-Unit testing workflows:
-- Test worker functions directly (no server needed)
-- Test complete workflows with mocked task outputs
-- Simulate task failures and retries
-- Test decision/switch logic
-- CI/CD integration
-
----
-
-## 📚 Additional Resources
-
-### Documentation
-- [Main Documentation](../README.md) - SDK overview and getting started
-- [Worker Design](../docs/design/WORKER_DESIGN.md) - **Complete worker architecture guide**
-  - AsyncTaskRunner vs TaskRunner
-  - Automatic runner selection
-  - Worker discovery, configuration, and best practices
-  - Lease extension and long-running tasks
-  - Performance comparison and metrics
-- [Event-Driven Architecture](../docs/design/event_driven_interceptor_system.md) - Observability system design
-
-### External Resources
-- [API Reference](https://orkes.io/content/reference-docs/api/python-sdk)
-- [Conductor Documentation](https://orkes.io/content)
-- [GitHub Repository](https://github.com/conductor-oss/conductor-python)
-
----
-
-## 🤝 Contributing
-
-Have a useful example? Please contribute!
-
-1. Create your example file
-2. Add clear docstrings and comments
-3. Test it works standalone
-4. Update this README
-5. Submit a PR
-
----
-
-## 📝 License
-
-Apache 2.0 - See [LICENSE](../LICENSE) for details
+**Repository**: https://github.com/conductor-oss/conductor-python
+**License**: Apache 2.0
