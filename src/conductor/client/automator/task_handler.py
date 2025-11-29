@@ -266,7 +266,15 @@ class TaskHandler:
             metrics_settings: MetricsSettings
     ) -> None:
         # Detect if worker function is async
-        is_async_worker = inspect.iscoroutinefunction(worker.execute_function)
+        # For function-based workers (@worker_task), check execute_function
+        # For class-based workers, check execute method
+        is_async_worker = False
+        if hasattr(worker, 'execute_function'):
+            # Function-based worker (created with @worker_task decorator)
+            is_async_worker = inspect.iscoroutinefunction(worker.execute_function)
+        else:
+            # Class-based worker (implements WorkerInterface)
+            is_async_worker = inspect.iscoroutinefunction(worker.execute)
 
         if is_async_worker:
             # Use AsyncTaskRunner for async def workers
