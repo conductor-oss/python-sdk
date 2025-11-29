@@ -1,5 +1,7 @@
 from __future__ import annotations
+import asyncio
 import importlib
+import inspect
 import logging
 import os
 from multiprocessing import Process, freeze_support, Queue, set_start_method
@@ -7,6 +9,7 @@ from sys import platform
 from typing import List, Optional
 
 from conductor.client.automator.task_runner import TaskRunner
+from conductor.client.automator.async_task_runner import AsyncTaskRunner
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.event.task_runner_events import TaskRunnerEvent
@@ -94,23 +97,20 @@ class TaskHandler:
 
     Architecture:
         - Always uses multiprocessing: One Python process per worker
-        - Each process continuously polls for tasks (non-blocking)
+        - Each process continuously polls for tasks
+        - Execution mode automatically selected based on function signature
+
+    Sync Workers (def):
+        - Use TaskRunner with ThreadPoolExecutor
         - Tasks execute in thread pool (controlled by thread_count parameter)
-        - Polling continues while tasks are executing in background
-        - Polling and updates are always synchronous (requests library)
+        - Best for: CPU-bound tasks, blocking I/O
 
-    Async Execution:
-        - Sync workers: Execute directly in worker threads
-        - Async workers: Execute via BackgroundEventLoop (1.5-2x faster than creating new loops)
-
-        Blocking mode (default):
-            - Async tasks block worker thread until complete
-            - Simple and predictable
-
-        Async mode (automatic for async def functions):
-            - Async tasks run concurrently in background
-            - Worker thread continues polling
-            - 10-100x better concurrency for I/O-bound workloads
+    Async Workers (async def):
+        - Use AsyncTaskRunner with pure async/await
+        - Tasks execute in single event loop (zero thread overhead)
+        - Async polling, execution, and updates (httpx.AsyncClient)
+        - 10-100x better concurrency for I/O-bound workloads
+        - Automatically detected - no configuration needed
 
     Usage:
         # Default configuration
@@ -124,15 +124,15 @@ class TaskHandler:
             handler.join_processes()
 
     Worker Examples:
-        # Async worker (works with both modes)
-        @worker_task(task_definition_name='fetch_data')
+        # Async worker (automatically uses AsyncTaskRunner)
+        @worker_task(task_definition_name='fetch_data', thread_count=50)
         async def fetch_data(url: str) -> dict:
             async with httpx.AsyncClient() as client:
                 response = await client.get(url)
             return {'data': response.json()}
 
-        # Sync worker (works with both modes)
-        @worker_task(task_definition_name='process_data')
+        # Sync worker (automatically uses TaskRunner)
+        @worker_task(task_definition_name='process_data', thread_count=4)
         def process_data(data: dict) -> dict:
             result = expensive_computation(data)
             return {'result': result}
@@ -265,9 +265,26 @@ class TaskHandler:
             configuration: Configuration,
             metrics_settings: MetricsSettings
     ) -> None:
-        task_runner = TaskRunner(worker, configuration, metrics_settings, self.event_listeners)
-        process = Process(target=task_runner.run)
+        # Detect if worker function is async
+        is_async_worker = inspect.iscoroutinefunction(worker.execute_function)
+
+        if is_async_worker:
+            # Use AsyncTaskRunner for async def workers
+            async_task_runner = AsyncTaskRunner(worker, configuration, metrics_settings, self.event_listeners)
+            # Wrap async runner in a sync function for multiprocessing
+            process = Process(target=self.__run_async_runner, args=(async_task_runner,))
+            logger.debug(f"Created AsyncTaskRunner for async worker: {worker.get_task_definition_name()}")
+        else:
+            # Use TaskRunner for sync def workers
+            task_runner = TaskRunner(worker, configuration, metrics_settings, self.event_listeners)
+            process = Process(target=task_runner.run)
+            logger.debug(f"Created TaskRunner for sync worker: {worker.get_task_definition_name()}")
+
         self.task_runner_processes.append(process)
+
+    def __run_async_runner(self, async_task_runner: AsyncTaskRunner) -> None:
+        """Helper method to run AsyncTaskRunner in event loop within multiprocessing context."""
+        asyncio.run(async_task_runner.run())
 
     def __start_metrics_provider_process(self):
         if self.metrics_provider_process is None:
@@ -279,6 +296,7 @@ class TaskHandler:
         n = 0
         for i, task_runner_process in enumerate(self.task_runner_processes):
             task_runner_process.start()
+            print(f'task runner process {task_runner_process.name} started')
             worker = self.workers[i]
             paused_status = "PAUSED" if worker.paused else "ACTIVE"
             logger.debug("Started worker '%s' [%s]", worker.get_task_definition_name(), paused_status)

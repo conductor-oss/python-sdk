@@ -194,7 +194,7 @@ class MetricsCollector:
         http_server = None
         if settings.http_port is not None:
             http_server = MetricsCollector._start_http_server(settings.http_port, registry)
-            logger.info("Metrics HTTP server mode: serving from memory (no file writes)")
+            logger.info(f"Metrics HTTP server mode: serving from memory (no file writes) (pid={os.getpid()})")
 
             # When HTTP server is enabled, don't write to file - just keep updating registry in memory
             # The HTTP server reads directly from the registry
@@ -202,7 +202,7 @@ class MetricsCollector:
                 time.sleep(settings.update_interval)
         else:
             # File-based mode: write metrics to file periodically
-            logger.info(f"Metrics file mode: writing to {OUTPUT_FILE_PATH}")
+            logger.info(f"Metrics file mode: writing to {OUTPUT_FILE_PATH} (pid={os.getpid()})")
             while True:
                 try:
                     write_to_textfile(
@@ -263,7 +263,7 @@ class MetricsCollector:
                 logger.debug(f"HTTP {self.address_string()} - {format % args}")
 
         server = HTTPServer(('', port), MetricsHTTPHandler)
-        logger.info(f"Started metrics HTTP server on port {port}")
+        logger.info(f"Started metrics HTTP server on port {port} (pid={os.getpid()})")
         logger.info(f"Metrics available at: http://localhost:{port}/metrics")
 
         # Run server in daemon thread

@@ -32,10 +32,11 @@ export CONDUCTOR_AUTH_SECRET="your-secret" # Optional for Orkes Cloud
 ### Simplest Example
 
 ```bash
-# Start AsyncIO workers (recommended for most use cases)
-python examples/asyncio_workers.py
+# Start with the end-to-end example (shows both sync and async workers)
+python examples/workers_e2e.py
 
-# Or start multiprocessing workers (for CPU-intensive tasks)
+# Or explore comprehensive examples with worker discovery
+python examples/asyncio_workers.py
 python examples/multiprocessing_workers.py
 ```
 
@@ -43,7 +44,38 @@ python examples/multiprocessing_workers.py
 
 ## 👷 Worker Examples
 
-### AsyncIO Workers (Recommended for I/O-bound tasks)
+### Worker Architecture
+
+**Both examples use multiprocessing** (one process per worker) with automatic runner selection:
+- **Async workers** (`async def`) → AsyncTaskRunner (pure async/await, single event loop)
+- **Sync workers** (`def`) → TaskRunner (ThreadPoolExecutor)
+
+The examples demonstrate different worker types and patterns.
+
+---
+
+### Complete Worker Example (Recommended Starting Point)
+
+**File:** `workers_e2e.py`
+
+```bash
+python examples/workers_e2e.py
+```
+
+**Workers:**
+- `greet_sync` - Sync worker example
+- `greet_async` - Async worker with high concurrency (thread_count=50)
+
+**Features:**
+- ✓ Demonstrates both sync and async workers
+- ✓ Shows automatic AsyncTaskRunner selection for async workers
+- ✓ End-to-end example with workflow execution
+- ✓ Multiprocess architecture (one process per worker)
+- ✓ Best practices for worker implementation
+
+---
+
+### AsyncIO Workers Example
 
 **File:** `asyncio_workers.py`
 
@@ -52,22 +84,22 @@ python examples/asyncio_workers.py
 ```
 
 **Workers:**
-- `calculate` - Fibonacci calculator (CPU-bound, runs in thread pool)
+- `calculate` - Fibonacci calculator (CPU-bound)
 - `long_running_task` - Long-running task with Union[dict, TaskInProgress]
 - `greet`, `greet_sync`, `greet_async` - Simple greeting examples (from helloworld package)
 - `fetch_user` - HTTP API call (from user_example package)
 - `update_user` - Process User dataclass (from user_example package)
 
 **Features:**
-- ✓ Low memory footprint (~60-90% less than multiprocessing)
-- ✓ Perfect for I/O-bound tasks (HTTP, DB, file I/O)
+- ✓ Multiprocess architecture (one process per worker)
+- ✓ Automatic runner selection (AsyncTaskRunner for async, TaskRunner for sync)
+- ✓ Perfect for I/O-bound async tasks (HTTP, DB, file I/O)
 - ✓ Automatic worker discovery from packages
-- ✓ Single-process, event loop based
-- ✓ Async/await support
+- ✓ Mixed sync/async workers
 
 ---
 
-### Multiprocessing Workers (Recommended for CPU-bound tasks)
+### Multiprocessing Workers Example
 
 **File:** `multiprocessing_workers.py`
 
@@ -75,41 +107,36 @@ python examples/asyncio_workers.py
 python examples/multiprocessing_workers.py
 ```
 
-**Workers:** Same as AsyncIO version (identical code works in both modes!)
+**Workers:** Same as AsyncIO version (identical code works in both!)
 
 **Features:**
+- ✓ Same multiprocess architecture
+- ✓ Same automatic runner selection
+- ✓ Demonstrates that worker code is execution-mode agnostic
 - ✓ True parallelism (bypasses Python GIL)
-- ✓ Better for CPU-intensive work (ML, data processing, crypto)
-- ✓ Automatic worker discovery
-- ✓ Multi-process execution
-- ✓ Async functions work via asyncio.run() in each process
 
 ---
 
-### Comparison: AsyncIO vs Multiprocessing
+### Understanding Worker Execution
 
-**File:** `compare_multiprocessing_vs_asyncio.py`
+**The SDK automatically selects the right runner based on function signature:**
 
-```bash
-python examples/compare_multiprocessing_vs_asyncio.py
+| Function Type | Runner | Execution Model | Best For |
+|---------------|--------|-----------------|----------|
+| `def worker()` | TaskRunner | ThreadPoolExecutor | CPU-bound, blocking I/O |
+| `async def worker()` | AsyncTaskRunner | Pure async/await | I/O-bound (HTTP, DB) |
+
+**Architecture per worker process:**
+```
+Process 1 (async def)  →  AsyncTaskRunner  →  Event loop (asyncio)  →  High concurrency
+Process 2 (def)        →  TaskRunner       →  ThreadPoolExecutor    →  Thread-based
 ```
 
-Benchmarks and compares:
-- Memory usage
-- CPU utilization
-- Task throughput
-- I/O-bound vs CPU-bound workloads
-
-**Use this to decide which mode is best for your use case!**
-
-| Feature | AsyncIO | Multiprocessing |
-|---------|---------|-----------------|
-| **Best for** | I/O-bound (HTTP, DB, files) | CPU-bound (compute, ML) |
-| **Memory** | Low | Higher |
-| **Parallelism** | Concurrent (single process) | True parallel (multi-process) |
-| **GIL Impact** | Limited by GIL for CPU work | Bypasses GIL |
-| **Startup Time** | Fast | Slower (spawns processes) |
-| **Async Support** | Native | Via asyncio.run() |
+**Key Benefits:**
+- ✓ Process isolation (one process per worker)
+- ✓ Automatic execution mode selection
+- ✓ AsyncTaskRunner: 67% fewer threads, 40-50% less memory per async worker
+- ✓ No code changes needed - just use `def` or `async def`
 
 ---
 
@@ -363,17 +390,23 @@ Shows how to:
 examples/
 ├── EXAMPLES_README.md              # This file
 │
-├── asyncio_workers.py              # ⭐ Recommended: AsyncIO workers
-├── multiprocessing_workers.py      # ⭐ Recommended: Multiprocessing workers
-├── compare_multiprocessing_vs_asyncio.py  # Performance comparison
+├── workers_e2e.py                  # ⭐ Recommended: Start here - E2E example
+├── asyncio_workers.py              # Mixed sync/async workers with discovery
+├── multiprocessing_workers.py      # Same workers, different handler
 │
 ├── task_context_example.py         # TaskContext usage
 ├── worker_discovery_example.py     # Worker discovery patterns
 ├── worker_discovery_sync_async_example.py
+├── worker_configuration_example.py # Hierarchical configuration
+├── worker_example.py               # Comprehensive worker patterns
 │
 ├── dynamic_workflow.py             # Dynamic workflow creation
 ├── workflow_ops.py                 # Workflow operations
 ├── workflow_status_listner.py      # Workflow events
+│
+├── metrics_example.py              # Prometheus metrics
+├── event_listener_examples.py      # Custom event listeners
+├── task_listener_example.py        # Task lifecycle listeners
 │
 ├── task_configure.py               # Task configuration
 ├── shell_worker.py                 # Shell command execution
@@ -400,7 +433,8 @@ examples/
 │
 └── (legacy files)
     ├── multiprocessing_workers_example.py
-    └── task_workers.py
+    ├── task_workers.py
+    └── compare_multiprocessing_vs_asyncio.py
 ```
 
 ---
@@ -409,13 +443,13 @@ examples/
 
 ### 1. **Start Here** (Beginner)
 ```bash
-# Learn basic worker patterns
-python examples/asyncio_workers.py
+# Learn basic worker patterns - shows both sync and async workers
+python examples/workers_e2e.py
 ```
 
 ### 2. **Learn Context** (Beginner)
 ```bash
-# Understand task context
+# Understand task context for long-running tasks
 python examples/task_context_example.py
 ```
 
@@ -432,14 +466,16 @@ python examples/dynamic_workflow.py
 python examples/workflow_ops.py
 ```
 
-### 5. **Optimize Performance** (Advanced)
+### 5. **Learn Worker Patterns** (Advanced)
 ```bash
-# Choose the right execution mode
-python examples/compare_multiprocessing_vs_asyncio.py
+# Mixed sync/async workers with discovery
+python examples/asyncio_workers.py
 
-# Then use the appropriate mode:
-python examples/asyncio_workers.py          # For I/O-bound
-python examples/multiprocessing_workers.py  # For CPU-bound
+# Same workers, showing code portability
+python examples/multiprocessing_workers.py
+
+# Key insight: Use async def for I/O-bound, def for CPU-bound
+# The SDK automatically selects AsyncTaskRunner vs TaskRunner
 ```
 
 ---
@@ -498,9 +534,14 @@ config = Configuration(
 
 **Solution:** Only call `get_task_context()` from within worker functions decorated with `@worker_task`.
 
-### Async Functions Not Working in Multiprocessing
+### Async Workers Not Using AsyncTaskRunner
 
-**Solution:** This now works automatically! The SDK runs async functions with `asyncio.run()` in multiprocessing mode.
+**Problem:** Async workers seem to be using threads instead of pure async
+
+**Solution:**
+- Ensure function is defined with `async def` (not `def`)
+- Check logs for "Created AsyncTaskRunner" vs "Created TaskRunner"
+- Verify `inspect.iscoroutinefunction(worker.execute_function)` returns True
 
 ### Import Errors
 
@@ -510,6 +551,16 @@ config = Configuration(
 1. Ensure packages have `__init__.py`
 2. Use correct module paths in `import_modules` parameter
 3. Add parent directory to `sys.path` if needed
+
+### High Memory Usage
+
+**Problem:** Worker processes consuming too much memory
+
+**Solutions:**
+1. Use async workers (`async def`) for I/O-bound tasks - 40-50% less memory
+2. Reduce number of worker processes
+3. Lower `thread_count` for sync workers
+4. Check for memory leaks in worker code
 
 ---
 
@@ -698,9 +749,12 @@ Unit testing workflows:
 
 ### Documentation
 - [Main Documentation](../README.md) - SDK overview and getting started
-- [Worker Configuration Guide](../WORKER_CONFIGURATION.md) - Hierarchical configuration system
-- [Worker Design](../WORKER_DESIGN.md) - Architecture and async workers
-- [Metrics Documentation](../METRICS.md) - Prometheus metrics guide
+- [Worker Design](../docs/design/WORKER_DESIGN.md) - **Complete worker architecture guide**
+  - AsyncTaskRunner vs TaskRunner
+  - Automatic runner selection
+  - Worker discovery, configuration, and best practices
+  - Lease extension and long-running tasks
+  - Performance comparison and metrics
 - [Event-Driven Architecture](../docs/design/event_driven_interceptor_system.md) - Observability system design
 
 ### External Resources

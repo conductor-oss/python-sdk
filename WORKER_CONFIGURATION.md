@@ -21,16 +21,80 @@ The following properties can be configured via environment variables:
 
 | Property | Type | Description | Example | Decorator? |
 |----------|------|-------------|---------|------------|
-| `poll_interval` | float | Polling interval in milliseconds | `1000` | ✅ Yes |
+| `poll_interval_millis` | int | Polling interval in milliseconds | `1000` | ✅ Yes |
 | `domain` | string | Worker domain for task routing | `production` | ✅ Yes |
 | `worker_id` | string | Unique worker identifier | `worker-1` | ✅ Yes |
-| `thread_count` | int | Number of concurrent threads/coroutines | `10` | ✅ Yes |
+| `thread_count` | int | Max concurrent executions (threads for sync, coroutines for async) | `10` | ✅ Yes |
 | `register_task_def` | bool | Auto-register task definition | `true` | ✅ Yes |
 | `poll_timeout` | int | Poll request timeout in milliseconds | `100` | ✅ Yes |
-| `lease_extend_enabled` | bool | Enable automatic lease extension | `false` | ✅ Yes |
+| `lease_extend_enabled` | bool | ⚠️ **Not implemented** - reserved for future use | `false` | ✅ Yes |
 | `paused` | bool | Pause worker from polling/executing tasks | `true` | ❌ **Environment-only** |
 
-**Note**: The `paused` property is intentionally **not available** in the `@worker_task` decorator. It can only be controlled via environment variables, allowing operators to pause/resume workers at runtime without code changes or redeployment.
+**Notes**:
+- The `paused` property is intentionally **not available** in the `@worker_task` decorator. It can only be controlled via environment variables, allowing operators to pause/resume workers at runtime without code changes or redeployment.
+- The `lease_extend_enabled` parameter is accepted but **not currently implemented**. For lease extension, use manual `TaskInProgress` returns (see below).
+
+### Understanding `thread_count`
+
+The `thread_count` parameter has different meanings depending on worker type (automatically detected from function signature):
+
+**Sync Workers (`def`):**
+- Controls ThreadPoolExecutor size
+- Each task consumes one thread
+- Recommended: 1-4 for CPU-bound, 10-50 for I/O-bound
+
+**Async Workers (`async def`):**
+- Controls max concurrent async tasks (semaphore limit)
+- All tasks share single event loop
+- Recommended: 50-200 for I/O-bound (event loop handles thousands)
+
+**Example:**
+```python
+# Sync worker - thread_count = thread pool size
+@worker_task(task_definition_name='cpu_task', thread_count=4)
+def cpu_task(data: dict) -> dict:
+    return expensive_computation(data)
+
+# Async worker - thread_count = concurrency limit (not threads!)
+@worker_task(task_definition_name='api_task', thread_count=100)
+async def api_task(url: str) -> dict:
+    async with httpx.AsyncClient() as client:
+        return await client.get(url)
+    # Only 1 thread, but 100 concurrent tasks!
+```
+
+**For more details**, see [Worker Design Documentation](docs/design/WORKER_DESIGN.md).
+
+### Lease Extension for Long-Running Tasks
+
+**Current Implementation**: Only manual lease extension via `TaskInProgress` is supported.
+
+```python
+from conductor.client.context.task_context import TaskInProgress, get_task_context
+from typing import Union
+
+@worker_task(task_definition_name='long_running_task')
+def long_task(job_id: str) -> Union[dict, TaskInProgress]:
+    ctx = get_task_context()
+    poll_count = ctx.get_poll_count()
+
+    # Process chunk of work
+    processed = process_chunk(job_id, poll_count)
+
+    if not is_complete(job_id):
+        # More work to do - extend lease by returning TaskInProgress
+        return TaskInProgress(
+            callback_after_seconds=60,  # Return to queue after 60s
+            output={'progress': processed}
+        )
+    else:
+        # Done - return final result
+        return {'status': 'completed', 'result': processed}
+```
+
+**⚠️ Note**: The `lease_extend_enabled=True` configuration parameter does **not** provide automatic lease extension. You must explicitly return `TaskInProgress` to extend the lease.
+
+**For detailed patterns**, see [Long-Running Tasks & Lease Extension](docs/design/WORKER_DESIGN.md#long-running-tasks--lease-extension).
 
 ## Environment Variable Format
 
@@ -52,7 +116,7 @@ from conductor.client.worker.worker_task import worker_task
 
 @worker_task(
     task_definition_name='process_order',
-    poll_interval=1000,
+    poll_interval_millis=1000,
     domain='dev',
     thread_count=5
 )
@@ -62,30 +126,30 @@ def process_order(order_id: str) -> dict:
 
 ### Without Environment Variables
 Worker uses code-level defaults:
-- `poll_interval=1000`
+- `poll_interval_millis=1000`
 - `domain='dev'`
 - `thread_count=5`
 
 ### With Global Override
 ```bash
-export conductor.worker.all.poll_interval=500
+export conductor.worker.all.poll_interval_millis=500
 export conductor.worker.all.domain=production
 ```
 
 Worker now uses:
-- `poll_interval=500` (from global env)
+- `poll_interval_millis=500` (from global env)
 - `domain='production'` (from global env)
 - `thread_count=5` (from code)
 
 ### With Worker-Specific Override
 ```bash
-export conductor.worker.all.poll_interval=500
+export conductor.worker.all.poll_interval_millis=500
 export conductor.worker.all.domain=production
 export conductor.worker.process_order.thread_count=20
 ```
 
 Worker now uses:
-- `poll_interval=500` (from global env)
+- `poll_interval_millis=500` (from global env)
 - `domain='production'` (from global env)
 - `thread_count=20` (from worker-specific env)
 
@@ -98,37 +162,36 @@ Override all workers to use production domain and optimized settings:
 ```bash
 # Global production settings
 export conductor.worker.all.domain=production
-export conductor.worker.all.poll_interval=250
-export conductor.worker.all.lease_extend_enabled=true
+export conductor.worker.all.poll_interval_millis=250
 
 # Critical worker needs more resources
 export conductor.worker.process_payment.thread_count=50
-export conductor.worker.process_payment.poll_interval=50
+export conductor.worker.process_payment.poll_interval_millis=50
 ```
 
 ```python
 # Code remains unchanged
-@worker_task(task_definition_name='process_order', poll_interval=1000, domain='dev', thread_count=5)
+@worker_task(task_definition_name='process_order', poll_interval_millis=1000, domain='dev', thread_count=5)
 def process_order(order_id: str):
     ...
 
-@worker_task(task_definition_name='process_payment', poll_interval=1000, domain='dev', thread_count=5)
+@worker_task(task_definition_name='process_payment', poll_interval_millis=1000, domain='dev', thread_count=5)
 def process_payment(payment_id: str):
     ...
 ```
 
 Result:
-- `process_order`: domain=production, poll_interval=250, thread_count=5
-- `process_payment`: domain=production, poll_interval=50, thread_count=50
+- `process_order`: domain=production, poll_interval_millis=250, thread_count=5
+- `process_payment`: domain=production, poll_interval_millis=50, thread_count=50
 
 ### Development/Debug Mode
 
 Slow down polling for easier debugging:
 
 ```bash
-export conductor.worker.all.poll_interval=10000    # 10 seconds
-export conductor.worker.all.thread_count=1         # Single-threaded
-export conductor.worker.all.poll_timeout=5000      # 5 second timeout
+export conductor.worker.all.poll_interval_millis=10000  # 10 seconds
+export conductor.worker.all.thread_count=1              # Single concurrent task
+export conductor.worker.all.poll_timeout=5000           # 5 second timeout
 ```
 
 All workers will use these debug-friendly settings without code changes.
@@ -142,6 +205,39 @@ export conductor.worker.all.domain=staging
 ```
 
 All workers use staging domain, but keep their code-defined poll intervals, thread counts, etc.
+
+### High-Concurrency Async Workers
+
+For async I/O-bound workers, increase concurrency significantly:
+
+```bash
+# Global settings for async workers
+export conductor.worker.all.domain=production
+export conductor.worker.all.poll_interval_millis=100  # Lower polling delay for async
+
+# Async worker - high concurrency (event loop can handle it!)
+export conductor.worker.fetch_api_data.thread_count=200
+
+# Sync worker - keep moderate thread count
+export conductor.worker.process_cpu_task.thread_count=10
+```
+
+```python
+# Async worker - high concurrency with single event loop
+@worker_task(task_definition_name='fetch_api_data')
+async def fetch_api_data(url: str):
+    async with httpx.AsyncClient() as client:
+        return await client.get(url)
+
+# Sync worker - traditional thread pool
+@worker_task(task_definition_name='process_cpu_task')
+def process_cpu_task(data: dict):
+    return expensive_computation(data)
+```
+
+**Result**:
+- `fetch_api_data`: 200 concurrent async tasks in 1 thread!
+- `process_cpu_task`: 10 threads for CPU-bound work
 
 ### Pausing Workers
 
@@ -201,7 +297,7 @@ Test new configuration on one worker before rolling out to all:
 ```bash
 # Production settings for all workers
 export conductor.worker.all.domain=production
-export conductor.worker.all.poll_interval=200
+export conductor.worker.all.poll_interval_millis=200
 
 # Canary worker uses staging domain for testing
 export conductor.worker.canary_worker.domain=staging
@@ -231,7 +327,7 @@ services:
     image: my-conductor-worker
     environment:
       - conductor.worker.all.domain=production
-      - conductor.worker.all.poll_interval=250
+      - conductor.worker.all.poll_interval_millis=250
       - conductor.worker.critical_task.thread_count=50
 ```
 
@@ -244,7 +340,7 @@ metadata:
   name: worker-config
 data:
   conductor.worker.all.domain: "production"
-  conductor.worker.all.poll_interval: "250"
+  conductor.worker.all.poll_interval_millis: "250"
   conductor.worker.critical_task.thread_count: "50"
 ---
 apiVersion: v1
@@ -277,7 +373,7 @@ spec:
         env:
         - name: conductor.worker.all.domain
           value: "production"
-        - name: conductor.worker.all.poll_interval
+        - name: conductor.worker.all.poll_interval_millis
           value: "250"
 ---
 apiVersion: apps/v1
@@ -294,7 +390,7 @@ spec:
         env:
         - name: conductor.worker.all.domain
           value: "staging"
-        - name: conductor.worker.all.poll_interval
+        - name: conductor.worker.all.poll_interval_millis
           value: "500"
 ```
 
@@ -308,19 +404,19 @@ from conductor.client.worker.worker_config import resolve_worker_config, get_wor
 # Resolve configuration for a worker
 config = resolve_worker_config(
     worker_name='process_order',
-    poll_interval=1000,
+    poll_interval_millis=1000,
     domain='dev',
     thread_count=5
 )
 
 print(config)
-# {'poll_interval': 500.0, 'domain': 'production', 'thread_count': 5, ...}
+# {'poll_interval_millis': 500, 'domain': 'production', 'thread_count': 5, ...}
 
 # Get human-readable summary
 summary = get_worker_config_summary('process_order', config)
 print(summary)
 # Worker 'process_order' configuration:
-#   poll_interval: 500.0 (from conductor.worker.all.poll_interval)
+#   poll_interval_millis: 500 (from conductor.worker.all.poll_interval_millis)
 #   domain: production (from conductor.worker.all.domain)
 #   thread_count: 5 (from code)
 ```
@@ -342,11 +438,11 @@ export conductor.worker.worker3.domain=production
 ```bash
 # Global settings for most workers
 export conductor.worker.all.thread_count=10
-export conductor.worker.all.poll_interval=250
+export conductor.worker.all.poll_interval_millis=250
 
 # Exception: High-priority worker needs more resources
 export conductor.worker.critical_task.thread_count=50
-export conductor.worker.critical_task.poll_interval=50
+export conductor.worker.critical_task.poll_interval_millis=50
 ```
 
 ### 3. Keep Code Defaults Sensible
@@ -355,10 +451,9 @@ Use sensible defaults in code so workers work without environment variables:
 ```python
 @worker_task(
     task_definition_name='process_order',
-    poll_interval=1000,      # Reasonable default
-    domain='dev',            # Safe default domain
-    thread_count=5,          # Moderate concurrency
-    lease_extend_enabled=False  # Default: disabled
+    poll_interval_millis=1000,  # Reasonable default (1 second)
+    domain='dev',                # Safe default domain
+    thread_count=5               # Moderate concurrency
 )
 def process_order(order_id: str):
     ...
@@ -374,12 +469,12 @@ Maintain a README or wiki documenting required environment variables for each de
 - `conductor.worker.all.domain=production`
 
 ## Optional (Recommended)
-- `conductor.worker.all.poll_interval=250`
-- `conductor.worker.all.lease_extend_enabled=true`
+- `conductor.worker.all.poll_interval_millis=250`
+- `conductor.worker.all.thread_count=20`
 
 ## Worker-Specific Overrides
 - `conductor.worker.critical_task.thread_count=50`
-- `conductor.worker.critical_task.poll_interval=50`
+- `conductor.worker.critical_task.poll_interval_millis=50`
 ```
 
 ### 5. Use Infrastructure as Code
@@ -397,8 +492,12 @@ resource "kubernetes_deployment" "worker" {
             value = var.environment_name
           }
           env {
-            name  = "conductor.worker.all.poll_interval"
-            value = var.worker_poll_interval
+            name  = "conductor.worker.all.poll_interval_millis"
+            value = var.worker_poll_interval_millis
+          }
+          env {
+            name  = "conductor.worker.all.thread_count"
+            value = var.worker_thread_count
           }
         }
       }
@@ -467,5 +566,47 @@ The hierarchical worker configuration system provides flexibility to:
 - **Override at runtime**: No code changes needed for environment-specific settings
 - **Fine-tune per worker**: Optimize critical workers without affecting others
 - **Simplify management**: Use global settings for common configurations
+- **Pause/resume at runtime**: Control worker execution without redeployment
 
-Configuration priority: **Worker-specific** > **Global** > **Code defaults**
+**Configuration priority**: Worker-specific > Global > Code defaults
+
+### Key Configuration Patterns
+
+**Sync Workers (CPU-bound):**
+```bash
+export conductor.worker.cpu_task.thread_count=4           # Thread pool size
+export conductor.worker.cpu_task.poll_interval_millis=500  # Moderate polling
+```
+
+**Async Workers (I/O-bound):**
+```bash
+export conductor.worker.api_task.thread_count=100          # High concurrency
+export conductor.worker.api_task.poll_interval_millis=100  # Fast polling
+```
+
+**Long-Running Tasks:**
+```bash
+# Note: Use TaskInProgress for lease extension (lease_extend_enabled not implemented)
+export conductor.worker.ml_training.thread_count=2  # Limit concurrent long tasks
+export conductor.worker.ml_training.poll_interval_millis=500
+```
+
+---
+
+## Additional Resources
+
+- **[Worker Design Documentation](docs/design/WORKER_DESIGN.md)** - Complete worker architecture guide
+  - AsyncTaskRunner vs TaskRunner
+  - Automatic runner selection (`def` vs `async def`)
+  - Performance comparison and best practices
+  - Worker discovery and metrics
+
+- **[Examples](examples/)** - Working examples with configuration
+  - `examples/worker_configuration_example.py` - Hierarchical configuration demo
+  - `examples/workers_e2e.py` - End-to-end example
+  - `examples/asyncio_workers.py` - Mixed sync/async workers
+
+---
+
+**Last Updated**: 2025-11-28
+**SDK Version**: 1.3.0+

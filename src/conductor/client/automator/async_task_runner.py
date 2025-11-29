@@ -1,9 +1,10 @@
+import asyncio
+import inspect
 import logging
 import os
 import sys
 import time
 import traceback
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
@@ -14,15 +15,14 @@ from conductor.client.event.task_runner_events import (
 )
 from conductor.client.event.sync_event_dispatcher import SyncEventDispatcher
 from conductor.client.event.sync_listener_register import register_task_runner_listener
-from conductor.client.http.api.task_resource_api import TaskResourceApi
-from conductor.client.http.api_client import ApiClient
+from conductor.client.http.api.async_task_resource_api import AsyncTaskResourceApi
+from conductor.client.http.async_api_client import AsyncApiClient
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.http.rest import AuthorizationException
 from conductor.client.telemetry.metrics_collector import MetricsCollector
-from conductor.client.worker.worker import ASYNC_TASK_RUNNING
 from conductor.client.worker.worker_interface import WorkerInterface
 from conductor.client.worker.worker_config import resolve_worker_config, get_worker_config_oneline
 
@@ -33,7 +33,30 @@ logger = logging.getLogger(
 )
 
 
-class TaskRunner:
+class AsyncTaskRunner:
+    """
+    Pure async/await task runner for async workers.
+
+    Eliminates thread overhead by running everything in a single event loop:
+    - Async polling (via AsyncTaskResourceApi)
+    - Async task execution (direct await of worker function)
+    - Async result updates (via AsyncTaskResourceApi)
+
+    Key differences from TaskRunner:
+    - No ThreadPoolExecutor
+    - No BackgroundEventLoop
+    - No ASYNC_TASK_RUNNING sentinel
+    - Direct await of worker functions
+    - asyncio.gather() for concurrency
+
+    Preserved features:
+    - Same event publishing (PollStarted, PollCompleted, TaskExecutionCompleted, etc.)
+    - Same metrics collection (via MetricsCollector as event listener)
+    - Same configuration resolution
+    - Same adaptive backoff logic
+    - Same auth failure handling
+    """
+
     def __init__(
             self,
             worker: WorkerInterface,
@@ -49,7 +72,7 @@ class TaskRunner:
             configuration = Configuration()
         self.configuration = configuration
 
-        # Set up event dispatcher and register listeners
+        # Set up event dispatcher and register listeners (same as TaskRunner)
         self.event_dispatcher = SyncEventDispatcher[TaskRunnerEvent]()
         if event_listeners:
             for listener in event_listeners:
@@ -63,31 +86,44 @@ class TaskRunner:
             # Register metrics collector as event listener
             register_task_runner_listener(self.metrics_collector, self.event_dispatcher)
 
-        self.task_client = TaskResourceApi(
-            ApiClient(
-                configuration=self.configuration,
-                metrics_collector=self.metrics_collector
-            )
-        )
+        # Don't create async HTTP client here - will be created in subprocess
+        # httpx.AsyncClient is not picklable, so we defer creation until after fork
+        self.async_api_client = None
+        self.async_task_client = None
 
-        # Auth failure backoff tracking to prevent retry storms
+        # Auth failure backoff tracking (same as TaskRunner)
         self._auth_failures = 0
         self._last_auth_failure = 0
 
-        # Thread pool for concurrent task execution
-        # thread_count from worker configuration controls concurrency
-        max_workers = getattr(worker, 'thread_count', 1)
-        self._executor = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix=f"worker-{worker.get_task_definition_name()}")
-        self._running_tasks = set()  # Track futures of running tasks
-        self._max_workers = max_workers
-        self._last_poll_time = 0  # Track last poll to avoid excessive polling when queue is empty
-        self._consecutive_empty_polls = 0  # Track empty polls to implement backoff
+        # Polling state tracking (same as TaskRunner)
+        self._max_workers = getattr(worker, 'thread_count', 1)  # Max concurrent tasks
+        self._running_tasks = set()  # Track running asyncio tasks
+        self._last_poll_time = 0
+        self._consecutive_empty_polls = 0
 
-    def run(self) -> None:
+        # Semaphore will be created in run() within the event loop
+        self._semaphore = None
+
+    async def run(self) -> None:
+        """Main async loop - runs continuously in single event loop."""
         if self.configuration is not None:
             self.configuration.apply_logging_config()
         else:
             logger.setLevel(logging.DEBUG)
+
+        # Create async HTTP client in subprocess (after fork)
+        # This must be done here because httpx.AsyncClient is not picklable
+        self.async_api_client = AsyncApiClient(
+            configuration=self.configuration,
+            metrics_collector=self.metrics_collector
+        )
+
+        self.async_task_client = AsyncTaskResourceApi(
+            api_client=self.async_api_client
+        )
+
+        # Create semaphore in the event loop (must be created within the loop)
+        self._semaphore = asyncio.Semaphore(self._max_workers)
 
         # Log worker configuration with correct PID (after fork)
         task_name = self.worker.get_task_definition_name()
@@ -96,62 +132,66 @@ class TaskRunner:
 
         task_names = ",".join(self.worker.task_definition_names)
         logger.debug(
-            "Polling task %s with domain %s with polling interval %s",
+            "Async polling task %s with domain %s with polling interval %s",
             task_names,
             self.worker.get_domain(),
             self.worker.get_polling_interval_in_seconds()
         )
 
-        while True:
-            self.run_once()
-
-    def run_once(self) -> None:
         try:
-            # Check completed async tasks first (non-blocking)
-            self.__check_completed_async_tasks()
+            while True:
+                await self.run_once()
+        finally:
+            # Cleanup async client on exit
+            if self.async_api_client:
+                await self.async_api_client.close()
 
-            # Cleanup completed tasks immediately - this is critical for detecting available slots
+    async def run_once(self) -> None:
+        """Execute one iteration of the polling loop (async version)."""
+        try:
+            # Cleanup completed tasks
             self.__cleanup_completed_tasks()
 
-            # Check if we can accept more tasks (based on thread_count)
-            # Account for pending async tasks in capacity calculation
-            pending_async_count = len(getattr(self.worker, '_pending_async_tasks', {}))
-            current_capacity = len(self._running_tasks) + pending_async_count
+            # Check if we can accept more tasks
+            current_capacity = len(self._running_tasks)
             if current_capacity >= self._max_workers:
-                # At capacity - sleep briefly then return to check again
-                time.sleep(0.001)  # 1ms - just enough to prevent CPU spinning
+                # At capacity - sleep briefly then return
+                await asyncio.sleep(0.001)  # 1ms
                 return
 
             # Calculate how many tasks we can accept
             available_slots = self._max_workers - current_capacity
 
-            # Adaptive backoff: if queue is empty, don't poll too aggressively
+            # Adaptive backoff: if queue is empty, don't poll too aggressively (same logic as TaskRunner)
             if self._consecutive_empty_polls > 0:
                 now = time.time()
                 time_since_last_poll = now - self._last_poll_time
 
                 # Exponential backoff for empty polls (1ms, 2ms, 4ms, 8ms, up to poll_interval)
-                # Cap exponent at 10 to prevent overflow (2^10 = 1024ms = 1s)
                 capped_empty_polls = min(self._consecutive_empty_polls, 10)
                 min_poll_delay = min(0.001 * (2 ** capped_empty_polls), self.worker.get_polling_interval_in_seconds())
 
                 if time_since_last_poll < min_poll_delay:
                     # Too soon to poll again - sleep the remaining time
-                    time.sleep(min_poll_delay - time_since_last_poll)
+                    await asyncio.sleep(min_poll_delay - time_since_last_poll)
                     return
 
-            # Always use batch poll (even for 1 task) for consistency
-            tasks = self.__batch_poll_tasks(available_slots)
+            # Batch poll for tasks (async)
+            tasks = await self.__async_batch_poll(available_slots)
             self._last_poll_time = time.time()
 
             if tasks:
-                # Got tasks - reset backoff and submit to executor
+                # Got tasks - reset backoff and start executing them concurrently
                 self._consecutive_empty_polls = 0
                 for task in tasks:
                     if task and task.task_id:
-                        future = self._executor.submit(self.__execute_and_update_task, task)
-                        self._running_tasks.add(future)
-                # Continue immediately - don't sleep!
+                        # Create async task for each polled task
+                        asyncio_task = asyncio.create_task(
+                            self.__async_execute_and_update_task(task)
+                        )
+                        self._running_tasks.add(asyncio_task)
+                        # Add callback to remove from set when done
+                        asyncio_task.add_done_callback(self._running_tasks.discard)
             else:
                 # No tasks available - increment backoff counter
                 self._consecutive_empty_polls += 1
@@ -161,92 +201,26 @@ class TaskRunner:
             logger.error("Error in run_once: %s", traceback.format_exc())
 
     def __cleanup_completed_tasks(self) -> None:
-        """Remove completed task futures from tracking set"""
-        # Fast path: use difference_update for better performance
+        """Remove completed task futures from tracking set (same as TaskRunner)."""
         self._running_tasks = {f for f in self._running_tasks if not f.done()}
 
-    def __check_completed_async_tasks(self) -> None:
-        """Check for completed async tasks and update Conductor"""
-        if not hasattr(self.worker, 'check_completed_async_tasks'):
-            return
-
-        completed = self.worker.check_completed_async_tasks()
-        if completed:
-            logger.debug(f"Found {len(completed)} completed async tasks")
-
-        for task_id, task_result, submit_time, task in completed:
-            try:
-                # Calculate actual execution time (from submission to completion)
-                finish_time = time.time()
-                time_spent = finish_time - submit_time
-
-                logger.debug(
-                    "Async task completed: %s (task_id=%s, execution_time=%.3fs, status=%s, output_data=%s)",
-                    task.task_def_name,
-                    task_id,
-                    time_spent,
-                    task_result.status,
-                    task_result.output_data
-                )
-
-                # Publish TaskExecutionCompleted event with actual execution time
-                output_size = sys.getsizeof(task_result) if task_result else 0
-                self.event_dispatcher.publish(TaskExecutionCompleted(
-                    task_type=task.task_def_name,
-                    task_id=task_id,
-                    worker_id=self.worker.get_identity(),
-                    workflow_instance_id=task.workflow_instance_id,
-                    duration_ms=time_spent * 1000,
-                    output_size_bytes=output_size
-                ))
-
-                update_response = self.__update_task(task_result)
-                logger.debug("Successfully updated async task %s with output %s, response: %s", task_id, task_result.output_data, update_response)
-            except Exception as e:
-                logger.error(
-                    "Error updating completed async task %s: %s",
-                    task_id,
-                    traceback.format_exc()
-                )
-
-    def __execute_and_update_task(self, task: Task) -> None:
-        """Execute task and update result (runs in thread pool)"""
-        try:
-            task_result = self.__execute_task(task)
-            # If task returned None, it's an async task running in background - don't update yet
-            # (Note: __execute_task returns None for async tasks, regardless of their actual return value)
-            if task_result is None:
-                logger.debug("Task %s is running async, will update when complete", task.task_id)
-                return
-            # If task returned TaskInProgress, it's running async - don't update yet
-            if isinstance(task_result, TaskInProgress):
-                logger.debug("Task %s is in progress, will update when complete", task.task_id)
-                return
-            self.__update_task(task_result)
-        except Exception as e:
-            logger.error(
-                "Error executing/updating task %s: %s",
-                task.task_id if task else "unknown",
-                traceback.format_exc()
-            )
-
-    def __batch_poll_tasks(self, count: int) -> list:
-        """Poll for multiple tasks at once (more efficient than polling one at a time)"""
+    async def __async_batch_poll(self, count: int) -> list:
+        """Async batch poll for multiple tasks (async version of TaskRunner.__batch_poll_tasks)."""
         task_definition_name = self.worker.get_task_definition_name()
         if self.worker.paused:
             logger.debug("Stop polling task for: %s", task_definition_name)
             return []
 
-        # Apply exponential backoff if we have recent auth failures
+        # Apply exponential backoff if we have recent auth failures (same as TaskRunner)
         if self._auth_failures > 0:
             now = time.time()
             backoff_seconds = min(2 ** self._auth_failures, 60)
             time_since_last_failure = now - self._last_auth_failure
             if time_since_last_failure < backoff_seconds:
-                time.sleep(0.1)
+                await asyncio.sleep(0.1)
                 return []
 
-        # Publish PollStarted event (metrics collector will handle via event)
+        # Publish PollStarted event (same as TaskRunner:245)
         self.event_dispatcher.publish(PollStarted(
             task_type=task_definition_name,
             worker_id=self.worker.get_identity(),
@@ -264,12 +238,13 @@ class TaskRunner:
             if domain is not None:
                 params["domain"] = domain
 
-            tasks = self.task_client.batch_poll(tasktype=task_definition_name, **params)
+            # Async batch poll
+            tasks = await self.async_task_client.batch_poll(tasktype=task_definition_name, **params)
 
             finish_time = time.time()
             time_spent = finish_time - start_time
 
-            # Publish PollCompleted event (metrics collector will handle via event)
+            # Publish PollCompleted event (same as TaskRunner:268)
             self.event_dispatcher.publish(PollCompleted(
                 task_type=task_definition_name,
                 duration_ms=time_spent * 1000,
@@ -287,7 +262,7 @@ class TaskRunner:
             self._last_auth_failure = time.time()
             backoff_seconds = min(2 ** self._auth_failures, 60)
 
-            # Publish PollFailure event (metrics collector will handle via event)
+            # Publish PollFailure event (same as TaskRunner:286)
             self.event_dispatcher.publish(PollFailure(
                 task_type=task_definition_name,
                 duration_ms=(time.time() - start_time) * 1000,
@@ -307,7 +282,7 @@ class TaskRunner:
                 )
             return []
         except Exception as e:
-            # Publish PollFailure event (metrics collector will handle via event)
+            # Publish PollFailure event (same as TaskRunner:306)
             self.event_dispatcher.publish(PollFailure(
                 task_type=task_definition_name,
                 duration_ms=(time.time() - start_time) * 1000,
@@ -320,108 +295,48 @@ class TaskRunner:
             )
             return []
 
-    def __poll_task(self) -> Task:
-        task_definition_name = self.worker.get_task_definition_name()
-        if self.worker.paused:
-            logger.debug("Stop polling task for: %s", task_definition_name)
-            return None
-
-        # Apply exponential backoff if we have recent auth failures
-        if self._auth_failures > 0:
-            now = time.time()
-            # Exponential backoff: 2^failures seconds (2s, 4s, 8s, 16s, 32s)
-            backoff_seconds = min(2 ** self._auth_failures, 60)  # Cap at 60s
-            time_since_last_failure = now - self._last_auth_failure
-
-            if time_since_last_failure < backoff_seconds:
-                # Still in backoff period - skip polling
-                time.sleep(0.1)  # Small sleep to prevent tight loop
-                return None
-
-        if self.metrics_collector is not None:
-            self.metrics_collector.increment_task_poll(
-                task_definition_name
-            )
-
-        try:
-            start_time = time.time()
-            domain = self.worker.get_domain()
-            params = {"workerid": self.worker.get_identity()}
-            if domain is not None:
-                params["domain"] = domain
-            task = self.task_client.poll(tasktype=task_definition_name, **params)
-            finish_time = time.time()
-            time_spent = finish_time - start_time
-            if self.metrics_collector is not None:
-                self.metrics_collector.record_task_poll_time(task_definition_name, time_spent)
-        except AuthorizationException as auth_exception:
-            # Track auth failure for backoff
-            self._auth_failures += 1
-            self._last_auth_failure = time.time()
-            backoff_seconds = min(2 ** self._auth_failures, 60)
-
-            if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(task_definition_name, type(auth_exception))
-
-            if auth_exception.invalid_token:
+    async def __async_execute_and_update_task(self, task: Task) -> None:
+        """Execute task and update result (async version - runs in event loop, not thread pool)."""
+        # Acquire semaphore to limit concurrency
+        async with self._semaphore:
+            try:
+                task_result = await self.__async_execute_task(task)
+                # If task returned TaskInProgress, don't update yet
+                if isinstance(task_result, TaskInProgress):
+                    logger.debug("Task %s is in progress, will update when complete", task.task_id)
+                    return
+                if task_result is not None:
+                    await self.__async_update_task(task_result)
+            except Exception as e:
                 logger.error(
-                    f"Failed to poll task {task_definition_name} due to invalid auth token "
-                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s). "
-                    "Please check your CONDUCTOR_AUTH_KEY and CONDUCTOR_AUTH_SECRET."
+                    "Error executing/updating task %s: %s",
+                    task.task_id if task else "unknown",
+                    traceback.format_exc()
                 )
-            else:
-                logger.error(
-                    f"Failed to poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code} "
-                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s)."
-                )
-            return None
-        except Exception as e:
-            if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(task_definition_name, type(e))
-            logger.error(
-                "Failed to poll task for: %s, reason: %s",
-                task_definition_name,
-                traceback.format_exc()
-            )
-            return None
 
-        # Success - reset auth failure counter
-        if task is not None:
-            self._auth_failures = 0
-            logger.trace(
-                "Polled task: %s, worker_id: %s, domain: %s",
-                task_definition_name,
-                self.worker.get_identity(),
-                self.worker.get_domain()
-            )
-        else:
-            # No task available - also reset auth failures since poll succeeded
-            self._auth_failures = 0
-
-        return task
-
-    def __execute_task(self, task: Task) -> TaskResult:
+    async def __async_execute_task(self, task: Task) -> TaskResult:
+        """Execute async worker function directly (no threads, no BackgroundEventLoop)."""
         if not isinstance(task, Task):
             return None
         task_definition_name = self.worker.get_task_definition_name()
         logger.trace(
-            "Executing task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
+            "Executing async task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
             task.task_id,
             task.workflow_instance_id,
             task_definition_name
         )
 
-        # Create initial task result for context
+        # Create initial task result for context (same as TaskRunner:410)
         initial_task_result = TaskResult(
             task_id=task.task_id,
             workflow_instance_id=task.workflow_instance_id,
             worker_id=self.worker.get_identity()
         )
 
-        # Set task context (similar to AsyncIO implementation)
+        # Set task context (same as TaskRunner:417)
         _set_task_context(task, initial_task_result)
 
-        # Publish TaskExecutionStarted event
+        # Publish TaskExecutionStarted event (same as TaskRunner:420)
         self.event_dispatcher.publish(TaskExecutionStarted(
             task_type=task_definition_name,
             task_id=task.task_id,
@@ -432,17 +347,28 @@ class TaskRunner:
         try:
             start_time = time.time()
 
-            # Execute worker function - worker.execute() handles both sync and async correctly
-            task_output = self.worker.execute(task)
+            # Get worker function parameters (same as TaskRunner, but for async function)
+            params = inspect.signature(self.worker.execute_function).parameters
+            task_input = {}
+            for input_name in params:
+                typ = params[input_name].annotation
+                default_value = params[input_name].default
+                if input_name in task.input_data:
+                    from conductor.client.automator import utils
+                    if typ in utils.simple_types:
+                        task_input[input_name] = task.input_data[input_name]
+                    else:
+                        from conductor.client.automator.utils import convert_from_dict_or_list
+                        task_input[input_name] = convert_from_dict_or_list(typ, task.input_data[input_name])
+                elif default_value is not inspect.Parameter.empty:
+                    task_input[input_name] = default_value
+                else:
+                    task_input[input_name] = None
 
-            # If worker returned ASYNC_TASK_RUNNING sentinel, it's an async task running in background
-            # Don't create TaskResult or publish events - will be handled when task completes
-            # Note: This allows async tasks to legitimately return None as their result
-            if task_output is ASYNC_TASK_RUNNING:
-                _clear_task_context()
-                return None
+            # Direct await of async worker function - NO THREADS!
+            task_output = await self.worker.execute_function(**task_input)
 
-            # Handle different return types
+            # Handle different return types (same as TaskRunner:441-474)
             if isinstance(task_output, TaskResult):
                 # Already a TaskResult - use as-is
                 task_result = task_output
@@ -457,34 +383,25 @@ class TaskRunner:
                 task_result.callback_after_seconds = task_output.callback_after_seconds
                 task_result.output_data = task_output.output
             else:
-                # Regular return value - worker.execute() should have returned TaskResult
-                # but if it didn't, treat the output as TaskResult
-                if hasattr(task_output, 'status'):
-                    task_result = task_output
+                # Regular return value - create COMPLETED result
+                task_result = TaskResult(
+                    task_id=task.task_id,
+                    workflow_instance_id=task.workflow_instance_id,
+                    worker_id=self.worker.get_identity()
+                )
+                task_result.status = TaskResultStatus.COMPLETED
+                if isinstance(task_output, dict):
+                    task_result.output_data = task_output
                 else:
-                    # Shouldn't happen, but handle gracefully
-                    # logger.trace(
-                    #     f"Worker returned unexpected type: %s, for task {task.workflow_instance_id} / {task.task_id} wrapping in TaskResult",
-                    #     type(task_output)
-                    # )
-                    task_result = TaskResult(
-                        task_id=task.task_id,
-                        workflow_instance_id=task.workflow_instance_id,
-                        worker_id=self.worker.get_identity()
-                    )
-                    task_result.status = TaskResultStatus.COMPLETED
-                    if isinstance(task_output, dict):
-                        task_result.output_data = task_output
-                    else:
-                        task_result.output_data = {"result": task_output}
+                    task_result.output_data = {"result": task_output}
 
-            # Merge context modifications (logs, callback_after, etc.)
+            # Merge context modifications (same as TaskRunner:477)
             self.__merge_context_modifications(task_result, initial_task_result)
 
             finish_time = time.time()
             time_spent = finish_time - start_time
 
-            # Publish TaskExecutionCompleted event (metrics collector will handle via event)
+            # Publish TaskExecutionCompleted event (same as TaskRunner:484)
             output_size = sys.getsizeof(task_result) if task_result else 0
             self.event_dispatcher.publish(TaskExecutionCompleted(
                 task_type=task_definition_name,
@@ -495,7 +412,7 @@ class TaskRunner:
                 output_size_bytes=output_size
             ))
             logger.debug(
-                "Executed task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
+                "Executed async task, id: %s, workflow_instance_id: %s, task_definition_name: %s",
                 task.task_id,
                 task.workflow_instance_id,
                 task_definition_name
@@ -504,7 +421,7 @@ class TaskRunner:
             finish_time = time.time()
             time_spent = finish_time - start_time
 
-            # Publish TaskExecutionFailure event (metrics collector will handle via event)
+            # Publish TaskExecutionFailure event (same as TaskRunner:503)
             self.event_dispatcher.publish(TaskExecutionFailure(
                 task_type=task_definition_name,
                 task_id=task.task_id,
@@ -523,7 +440,7 @@ class TaskRunner:
             task_result.logs = [TaskExecLog(
                 traceback.format_exc(), task_result.task_id, int(time.time()))]
             logger.error(
-                "Failed to execute task, id: %s, workflow_instance_id: %s, "
+                "Failed to execute async task, id: %s, workflow_instance_id: %s, "
                 "task_definition_name: %s, reason: %s",
                 task.task_id,
                 task.workflow_instance_id,
@@ -531,21 +448,17 @@ class TaskRunner:
                 traceback.format_exc()
             )
         finally:
-            # Always clear task context after execution
+            # Always clear task context after execution (same as TaskRunner:530)
             _clear_task_context()
 
         return task_result
 
     def __merge_context_modifications(self, task_result: TaskResult, context_result: TaskResult) -> None:
         """
-        Merge modifications made via TaskContext into the final task result.
+        Merge modifications made via TaskContext into the final task result (same as TaskRunner).
 
         This allows workers to use TaskContext.add_log(), set_callback_after(), etc.
         and have those modifications reflected in the final result.
-
-        Args:
-            task_result: The task result to merge into
-            context_result: The context result with modifications
         """
         # Merge logs
         if hasattr(context_result, 'logs') and context_result.logs:
@@ -569,26 +482,28 @@ class TaskRunner:
             else:
                 task_result.output_data = context_result.output_data
 
-    def __update_task(self, task_result: TaskResult):
+    async def __async_update_task(self, task_result: TaskResult):
+        """Async update task result (async version of TaskRunner.__update_task)."""
         if not isinstance(task_result, TaskResult):
             return None
         task_definition_name = self.worker.get_task_definition_name()
         logger.debug(
-            "Updating task, id: %s, workflow_instance_id: %s, task_definition_name: %s, status: %s, output_data: %s",
+            "Updating async task, id: %s, workflow_instance_id: %s, task_definition_name: %s, status: %s, output_data: %s",
             task_result.task_id,
             task_result.workflow_instance_id,
             task_definition_name,
             task_result.status,
             task_result.output_data
         )
+        # Retry logic (same as TaskRunner:579-604)
         for attempt in range(4):
             if attempt > 0:
                 # Wait for [10s, 20s, 30s] before next attempt
-                time.sleep(attempt * 10)
+                await asyncio.sleep(attempt * 10)
             try:
-                response = self.task_client.update_task(body=task_result)
+                response = await self.async_task_client.update_task(body=task_result)
                 logger.debug(
-                    "Updated task, id: %s, workflow_instance_id: %s, task_definition_name: %s, response: %s",
+                    "Updated async task, id: %s, workflow_instance_id: %s, task_definition_name: %s, response: %s",
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
@@ -601,7 +516,7 @@ class TaskRunner:
                         task_definition_name, type(e)
                     )
                 logger.error(
-                    "Failed to update task, id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
+                    "Failed to update async task, id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
@@ -609,19 +524,14 @@ class TaskRunner:
                 )
         return None
 
-    def __wait_for_polling_interval(self) -> None:
-        polling_interval = self.worker.get_polling_interval_in_seconds()
-        time.sleep(polling_interval)
-
     def __set_worker_properties(self) -> None:
         """
-        Resolve worker configuration using hierarchical override (env vars > code defaults).
+        Resolve worker configuration using hierarchical override (same as TaskRunner).
         Note: Logging is done in run() to capture the correct PID (after fork).
         """
         task_name = self.worker.get_task_definition_name()
 
         # Resolve configuration with hierarchical override
-        # Use getattr with defaults to handle workers that don't have all attributes
         resolved_config = resolve_worker_config(
             worker_name=task_name,
             poll_interval=getattr(self.worker, 'poll_interval', None),
@@ -635,7 +545,6 @@ class TaskRunner:
         )
 
         # Apply resolved configuration to worker
-        # Only set attributes if they have non-None values
         if resolved_config.get('poll_interval') is not None:
             self.worker.poll_interval = resolved_config['poll_interval']
         if resolved_config.get('domain') is not None:
@@ -655,19 +564,3 @@ class TaskRunner:
 
         # Store resolved config for logging in run() (after fork)
         self._resolved_config = resolved_config
-
-    def __get_property_value_from_env(self, prop, task_type):
-        """
-        get the property from the env variable
-        e.g. conductor_worker_"prop" or conductor_worker_"task_type"_"prop"
-        """
-        prefix = "conductor_worker"
-        # Look for generic property in both case environment variables
-        key = prefix + "_" + prop
-        value_all = os.getenv(key, os.getenv(key.upper()))
-
-        # Look for task specific property in both case environment variables
-        key_small = prefix + "_" + task_type + "_" + prop
-        key_upper = prefix.upper() + "_" + task_type + "_" + prop.upper()
-        value = os.getenv(key_small, os.getenv(key_upper, value_all))
-        return value

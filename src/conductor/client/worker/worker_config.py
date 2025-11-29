@@ -306,11 +306,15 @@ def get_worker_config_oneline(worker_name: str, resolved_config: dict) -> str:
     Example:
         summary = get_worker_config_oneline('process_order', config)
         print(summary)
-        # Worker[name=process_order, status=active, poll_interval=500ms, domain=production, thread_count=5, poll_timeout=100ms, lease_extend=true]
+        # Worker[name=process_order, pid=12345, status=active, poll_interval=500ms, domain=production, thread_count=5, poll_timeout=100ms, lease_extend=true]
     """
     parts = [f"name={worker_name}"]
 
-    # Add status first (paused or active)
+    # Add process ID
+    import os
+    parts.append(f"pid={os.getpid()}")
+
+    # Add status (paused or active)
     is_paused = resolved_config.get('paused', False)
     parts.append(f"status={'paused' if is_paused else 'active'}")
 
