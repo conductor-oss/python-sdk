@@ -32,7 +32,8 @@ class TestTaskHandler(unittest.TestCase):
 
     def test_start_processes(self):
         with patch.object(TaskRunner, 'run', PickableMock(return_value=None)):
-            with _get_valid_task_handler() as task_handler:
+            task_handler = _get_valid_task_handler()
+            with task_handler:
                 task_handler.start_processes()
                 self.assertEqual(len(task_handler.task_runner_processes), 1)
                 for process in task_handler.task_runner_processes:

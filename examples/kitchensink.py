@@ -1,3 +1,37 @@
+"""
+Kitchen Sink Example
+====================
+
+Comprehensive example demonstrating all major workflow task types and patterns.
+
+What it does:
+-------------
+- HTTP Task: Make external API calls
+- JavaScript Task: Execute inline JavaScript code
+- JSON JQ Task: Transform JSON using JQ queries
+- Switch Task: Conditional branching based on values
+- Wait Task: Pause workflow execution
+- Set Variable Task: Store values in workflow variables
+- Terminate Task: End workflow with specific status
+- Custom Worker Task: Execute Python business logic
+
+Use Cases:
+----------
+- Learning all available task types
+- Building complex workflows with multiple task patterns
+- Testing different control flow mechanisms (switch, terminate)
+- Understanding how to combine system tasks with custom workers
+
+Key Concepts:
+-------------
+- System Tasks: Built-in tasks (HTTP, JavaScript, JQ, Wait, etc.)
+- Control Flow: Switch for branching, Terminate for early exit
+- Data Transformation: JQ for JSON manipulation
+- Worker Integration: Mix system tasks with custom Python workers
+- Variable Management: Set and use workflow variables
+
+This example is a "kitchen sink" showing all major features in one workflow.
+"""
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.orkes_clients import OrkesClients
@@ -57,7 +91,7 @@ def main():
     sub_workflow = ConductorWorkflow(name='sub0', executor=workflow_executor)
     sub_workflow >> HttpTask(task_ref_name='call_remote_api', http_input={
         'uri': sub_workflow.input('uri')
-    })
+    }) >> WaitTask(task_ref_name="wait_forever", wait_for_seconds=2)
     sub_workflow.input_parameters({
         'uri': js.output('url')
     })
@@ -92,6 +126,7 @@ def main():
     result = wf.execute(workflow_input={'name': 'Orkes', 'country': 'US'})
     op = result.output
     print(f'\n\nWorkflow output: {op}\n\n')
+    print(f'\n\nWorkflow status: {result.status}\n\n')
     print(f'See the execution at {api_config.ui_host}/execution/{result.workflow_id}')
     task_handler.stop_processes()
 

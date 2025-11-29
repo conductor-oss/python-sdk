@@ -1,3 +1,46 @@
+"""
+Workflow Status Listener Example
+=================================
+
+Demonstrates enabling external status listeners for workflow state changes.
+
+What it does:
+-------------
+- Creates a workflow with HTTP task
+- Enables a Kafka status listener
+- Registers the workflow with listener configuration
+- Status changes will be published to specified Kafka topic
+
+Use Cases:
+----------
+- Real-time workflow monitoring via message queues
+- Integrating workflows with external systems (Kafka, SQS, etc.)
+- Building event-driven architectures
+- Audit logging and compliance tracking
+- Custom notifications on workflow state changes
+- Analytics and metrics collection
+
+Status Events Published:
+------------------------
+- Workflow started
+- Workflow completed
+- Workflow failed
+- Workflow paused
+- Workflow resumed
+- Workflow terminated
+- Task status changes
+
+Key Concepts:
+-------------
+- Status Listener: External sink for workflow events
+- enable_status_listener(): Configure where events are sent
+- Kafka Integration: Publish events to Kafka topics
+- Event-Driven Architecture: React to workflow state changes
+- Workflow Registration: Persist workflow with listener config
+
+Example Kafka Topic: kafka:<topic_name>
+Example SQS Queue: sqs:<queue_url>
+"""
 import time
 import uuid
 

@@ -1,8 +1,31 @@
 """
-This is a dynamic workflow that can be created and executed at run time.
-dynamic_workflow will run worker tasks get_user_email and send_email in the same order.
-For use cases in which the workflow cannot be defined statically, dynamic workflows is a useful approach.
-For detailed explanation, https://github.com/conductor-sdk/conductor-python/blob/main/workflows.md
+Dynamic Workflow Example
+=========================
+
+Demonstrates creating and executing workflows at runtime without pre-registration.
+
+What it does:
+-------------
+- Creates a workflow programmatically using Python code
+- Defines two workers: get_user_email and send_email
+- Chains tasks together using the >> operator
+- Executes the workflow with input data
+
+Use Cases:
+----------
+- Workflows that cannot be defined statically (structure depends on runtime data)
+- Programmatic workflow generation based on business rules
+- Testing workflows without registering definitions
+- Rapid prototyping and development
+
+Key Concepts:
+-------------
+- ConductorWorkflow: Build workflows in code
+- Task chaining: Use >> operator to define task sequence
+- Dynamic execution: Create and run workflows on-the-fly
+- Worker tasks: Simple Python functions with @worker_task decorator
+
+For detailed explanation: https://github.com/conductor-sdk/conductor-python/blob/main/workflows.md
 """
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
@@ -24,7 +47,7 @@ def send_email(email: str, subject: str, body: str):
 
 def main():
     # defaults to reading the configuration using following env variables
-    # CONDUCTOR_SERVER_URL : conductor server e.g. https://play.orkes.io/api
+    # CONDUCTOR_SERVER_URL : conductor server e.g. https://developer.orkescloud.com/api
     # CONDUCTOR_AUTH_KEY : API Authentication Key
     # CONDUCTOR_AUTH_SECRET: API Auth Secret
     api_config = Configuration()

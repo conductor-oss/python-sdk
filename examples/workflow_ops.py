@@ -1,3 +1,48 @@
+"""
+Workflow Operations Example
+============================
+
+Demonstrates various workflow lifecycle operations and control mechanisms.
+
+What it does:
+-------------
+- Start workflow: Create and execute a new workflow instance
+- Pause workflow: Temporarily halt workflow execution
+- Resume workflow: Continue paused workflow
+- Terminate workflow: Force stop a running workflow
+- Restart workflow: Restart from a specific task
+- Rerun workflow: Re-execute from beginning with same/different inputs
+- Update task: Manually update task status and output
+- Signal workflow: Send external signals to waiting workflows
+
+Use Cases:
+----------
+- Workflow lifecycle management (start, pause, resume, terminate)
+- Manual intervention in workflow execution
+- Debugging and testing workflows
+- Implementing human-in-the-loop patterns
+- External event handling via signals
+- Recovery from failures (restart, rerun)
+
+Key Operations:
+---------------
+- start_workflow(): Launch new workflow instance
+- pause_workflow(): Halt at current task
+- resume_workflow(): Continue from pause
+- terminate_workflow(): Force stop with reason
+- restart_workflow(): Resume from failed task
+- rerun_workflow(): Start fresh with new/same inputs
+- update_task(): Manually complete tasks
+- complete_signal(): Send signal to waiting task
+
+Key Concepts:
+-------------
+- WorkflowClient: API for workflow operations
+- Workflow signals: External event triggers
+- Manual task completion: Override task execution
+- Correlation IDs: Track related workflow instances
+- Idempotency: Prevent duplicate workflow starts
+"""
 import time
 import uuid
 

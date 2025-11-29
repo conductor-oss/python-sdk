@@ -36,7 +36,7 @@ class WorkflowSummary:
     external_input_payload_storage_path: Optional[str] = field(default=None)
     external_output_payload_storage_path: Optional[str] = field(default=None)
     priority: Optional[int] = field(default=None)
-    failed_task_names: Set[str] = field(default_factory=set)
+    failed_task_names: list[str] = field(default_factory=set)
     created_by: Optional[str] = field(default=None)
     
     # Fields present in Python but not in Java - mark as deprecated
@@ -61,7 +61,7 @@ class WorkflowSummary:
     _external_input_payload_storage_path: Optional[str] = field(init=False, repr=False, default=None)
     _external_output_payload_storage_path: Optional[str] = field(init=False, repr=False, default=None)
     _priority: Optional[int] = field(init=False, repr=False, default=None)
-    _failed_task_names: Set[str] = field(init=False, repr=False, default_factory=set)
+    _failed_task_names: list[str] = field(init=False, repr=False, default_factory=set)
     _created_by: Optional[str] = field(init=False, repr=False, default=None)
     _output_size: Optional[int] = field(init=False, repr=False, default=None)
     _input_size: Optional[int] = field(init=False, repr=False, default=None)
@@ -85,7 +85,7 @@ class WorkflowSummary:
         'external_input_payload_storage_path': 'str',
         'external_output_payload_storage_path': 'str',
         'priority': 'int',
-        'failed_task_names': 'Set[str]',
+        'failed_task_names': 'list[str]',
         'created_by': 'str',
         'output_size': 'int',
         'input_size': 'int'
@@ -143,7 +143,7 @@ class WorkflowSummary:
         self._created_by = None
         self._output_size = None
         self._input_size = None
-        self._failed_task_names = set() if failed_task_names is None else failed_task_names
+        self._failed_task_names = list() if failed_task_names is None else failed_task_names
         self.discriminator = None
         if workflow_type is not None:
             self.workflow_type = workflow_type
@@ -579,7 +579,7 @@ class WorkflowSummary:
 
 
         :return: The failed_task_names of this WorkflowSummary.  # noqa: E501
-        :rtype: Set[str]
+        :rtype: list[str]
         """
         return self._failed_task_names
 

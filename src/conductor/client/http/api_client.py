@@ -1,3 +1,4 @@
+import base64
 import datetime
 import logging
 import mimetypes
@@ -44,7 +45,8 @@ class ApiClient(object):
             configuration=None,
             header_name=None,
             header_value=None,
-            cookie=None
+            cookie=None,
+            metrics_collector=None
     ):
         if configuration is None:
             configuration = Configuration()
@@ -57,6 +59,15 @@ class ApiClient(object):
         )
 
         self.cookie = cookie
+
+        # Token refresh backoff tracking
+        self._token_refresh_failures = 0
+        self._last_token_refresh_attempt = 0
+        self._max_token_refresh_failures = 5  # Stop after 5 consecutive failures
+
+        # Metrics collector for API request tracking
+        self.metrics_collector = metrics_collector
+
         self.__refresh_auth_token()
 
     def __call_api(
@@ -76,18 +87,22 @@ class ApiClient(object):
         except AuthorizationException as ae:
             if ae.token_expired or ae.invalid_token:
                 token_status = "expired" if ae.token_expired else "invalid"
-                logger.warning(
-                    f'authentication token is {token_status}, refreshing the token.  request= {method} {resource_path}')
+                logger.info(
+                    f'Authentication token is {token_status}, renewing token... (request: {method} {resource_path})')
                 # if the token has expired or is invalid, lets refresh the token
-                self.__force_refresh_auth_token()
-                # and now retry the same request
-                return self.__call_api_no_retry(
-                    resource_path=resource_path, method=method, path_params=path_params,
-                    query_params=query_params, header_params=header_params, body=body, post_params=post_params,
-                    files=files, response_type=response_type, auth_settings=auth_settings,
-                    _return_http_data_only=_return_http_data_only, collection_formats=collection_formats,
-                    _preload_content=_preload_content, _request_timeout=_request_timeout
-                )
+                success = self.__force_refresh_auth_token()
+                if success:
+                    logger.debug('Authentication token successfully renewed')
+                    # and now retry the same request
+                    return self.__call_api_no_retry(
+                        resource_path=resource_path, method=method, path_params=path_params,
+                        query_params=query_params, header_params=header_params, body=body, post_params=post_params,
+                        files=files, response_type=response_type, auth_settings=auth_settings,
+                        _return_http_data_only=_return_http_data_only, collection_formats=collection_formats,
+                        _preload_content=_preload_content, _request_timeout=_request_timeout
+                    )
+                else:
+                    logger.error('Failed to renew authentication token. Please check your credentials.')
             raise ae
 
     def __call_api_no_retry(
@@ -179,6 +194,7 @@ class ApiClient(object):
 
         If obj is None, return None.
         If obj is str, int, long, float, bool, return directly.
+        If obj is bytes, decode to string (UTF-8) or base64 if binary.
         If obj is datetime.datetime, datetime.date
             convert to string in iso8601 format.
         If obj is list, sanitize each element in the list.
@@ -190,6 +206,13 @@ class ApiClient(object):
         """
         if obj is None:
             return None
+        elif isinstance(obj, bytes):
+            # Handle bytes: try UTF-8 decode, fallback to base64 for binary data
+            try:
+                return obj.decode('utf-8')
+            except UnicodeDecodeError:
+                # Binary data - encode as base64 string
+                return base64.b64encode(obj).decode('ascii')
         elif isinstance(obj, self.PRIMITIVE_TYPES):
             return obj
         elif isinstance(obj, list):
@@ -367,62 +390,112 @@ class ApiClient(object):
                 post_params=None, body=None, _preload_content=True,
                 _request_timeout=None):
         """Makes the HTTP request using RESTClient."""
-        if method == "GET":
-            return self.rest_client.GET(url,
-                                        query_params=query_params,
-                                        _preload_content=_preload_content,
-                                        _request_timeout=_request_timeout,
-                                        headers=headers)
-        elif method == "HEAD":
-            return self.rest_client.HEAD(url,
-                                         query_params=query_params,
-                                         _preload_content=_preload_content,
-                                         _request_timeout=_request_timeout,
-                                         headers=headers)
-        elif method == "OPTIONS":
-            return self.rest_client.OPTIONS(url,
+        # Extract URI path from URL (remove query params and domain)
+        try:
+            from urllib.parse import urlparse
+            parsed_url = urlparse(url)
+            uri = parsed_url.path or url
+        except:
+            uri = url
+
+        # Start timing
+        start_time = time.time()
+        status_code = "unknown"
+
+        try:
+            if method == "GET":
+                response = self.rest_client.GET(url,
+                                            query_params=query_params,
+                                            _preload_content=_preload_content,
+                                            _request_timeout=_request_timeout,
+                                            headers=headers)
+            elif method == "HEAD":
+                response = self.rest_client.HEAD(url,
+                                             query_params=query_params,
+                                             _preload_content=_preload_content,
+                                             _request_timeout=_request_timeout,
+                                             headers=headers)
+            elif method == "OPTIONS":
+                response = self.rest_client.OPTIONS(url,
+                                                query_params=query_params,
+                                                headers=headers,
+                                                post_params=post_params,
+                                                _preload_content=_preload_content,
+                                                _request_timeout=_request_timeout,
+                                                body=body)
+            elif method == "POST":
+                response = self.rest_client.POST(url,
+                                             query_params=query_params,
+                                             headers=headers,
+                                             post_params=post_params,
+                                             _preload_content=_preload_content,
+                                             _request_timeout=_request_timeout,
+                                             body=body)
+            elif method == "PUT":
+                response = self.rest_client.PUT(url,
                                             query_params=query_params,
                                             headers=headers,
                                             post_params=post_params,
                                             _preload_content=_preload_content,
                                             _request_timeout=_request_timeout,
                                             body=body)
-        elif method == "POST":
-            return self.rest_client.POST(url,
-                                         query_params=query_params,
-                                         headers=headers,
-                                         post_params=post_params,
-                                         _preload_content=_preload_content,
-                                         _request_timeout=_request_timeout,
-                                         body=body)
-        elif method == "PUT":
-            return self.rest_client.PUT(url,
-                                        query_params=query_params,
-                                        headers=headers,
-                                        post_params=post_params,
-                                        _preload_content=_preload_content,
-                                        _request_timeout=_request_timeout,
-                                        body=body)
-        elif method == "PATCH":
-            return self.rest_client.PATCH(url,
-                                          query_params=query_params,
-                                          headers=headers,
-                                          post_params=post_params,
-                                          _preload_content=_preload_content,
-                                          _request_timeout=_request_timeout,
-                                          body=body)
-        elif method == "DELETE":
-            return self.rest_client.DELETE(url,
-                                           query_params=query_params,
-                                           headers=headers,
-                                           _preload_content=_preload_content,
-                                           _request_timeout=_request_timeout,
-                                           body=body)
-        else:
-            raise ValueError(
-                "http method must be `GET`, `HEAD`, `OPTIONS`,"
-                " `POST`, `PATCH`, `PUT` or `DELETE`."
-            )
+            elif method == "PATCH":
+                response = self.rest_client.PATCH(url,
+                                              query_params=query_params,
+                                              headers=headers,
+                                              post_params=post_params,
+                                              _preload_content=_preload_content,
+                                              _request_timeout=_request_timeout,
+                                              body=body)
+            elif method == "DELETE":
+                response = self.rest_client.DELETE(url,
+                                               query_params=query_params,
+                                               headers=headers,
+                                               _preload_content=_preload_content,
+                                               _request_timeout=_request_timeout,
+                                               body=body)
+            else:
+                raise ValueError(
+                    "http method must be `GET`, `HEAD`, `OPTIONS`,"
+                    " `POST`, `PATCH`, `PUT` or `DELETE`."
+                )
+
+            # Extract status code from response
+            status_code = str(response.status) if hasattr(response, 'status') else "200"
+
+            # Record metrics
+            if self.metrics_collector is not None:
+                elapsed_time = time.time() - start_time
+                self.metrics_collector.record_api_request_time(
+                    method=method,
+                    uri=uri,
+                    status=status_code,
+                    time_spent=elapsed_time
+                )
+
+            return response
+
+        except Exception as e:
+            # Extract status code from exception if available
+            if hasattr(e, 'status'):
+                status_code = str(e.status)
+            elif hasattr(e, 'code'):
+                status_code = str(e.code)
+            else:
+                status_code = "error"
+
+            # Record metrics for failed requests
+            if self.metrics_collector is not None:
+                elapsed_time = time.time() - start_time
+                self.metrics_collector.record_api_request_time(
+                    method=method,
+                    uri=uri,
+                    status=status_code,
+                    time_spent=elapsed_time
+                )
+
+            # Re-raise the exception
+            raise
 
     def parameters_to_tuples(self, params, collection_formats):
         """Get parameters as list of tuples, formatting collections.
@@ -661,6 +734,9 @@ class ApiClient(object):
                 instance = self.__deserialize(data, klass_name)
         return instance
 
+    def get_authentication_headers(self):
+        return self.__get_authentication_headers()
+
     def __get_authentication_headers(self):
         if self.configuration.AUTH_TOKEN is None:
             return None
@@ -669,10 +745,12 @@ class ApiClient(object):
         time_since_last_update = now - self.configuration.token_update_time
 
         if time_since_last_update > self.configuration.auth_token_ttl_msec:
-            # time to refresh the token
-            logger.debug('refreshing authentication token')
-            token = self.__get_new_token()
+            # time to refresh the token - skip backoff for legitimate renewal
+            logger.info('Authentication token TTL expired, renewing token...')
+            token = self.__get_new_token(skip_backoff=True)
             self.configuration.update_token(token)
+            if token:
+                logger.debug('Authentication token successfully renewed')
 
         return {
             'header': {
@@ -685,22 +763,69 @@ class ApiClient(object):
             return
         if self.configuration.authentication_settings is None:
             return
-        token = self.__get_new_token()
+        # Initial token generation - apply backoff if there were previous failures
+        token = self.__get_new_token(skip_backoff=False)
         self.configuration.update_token(token)
 
-    def __force_refresh_auth_token(self) -> None:
+    def force_refresh_auth_token(self) -> bool:
         """
-        Forces the token refresh.  Unlike the __refresh_auth_token method above
+        Forces the token refresh - called when server says token is expired/invalid.
+        This is a legitimate renewal, so skip backoff.
+        Returns True if token was successfully refreshed, False otherwise.
         """
         if self.configuration.authentication_settings is None:
-            return
-        token = self.__get_new_token()
-        self.configuration.update_token(token)
+            return False
+        # Token renewal after server rejection - skip backoff (credentials should be valid)
+        token = self.__get_new_token(skip_backoff=True)
+        if token:
+            self.configuration.update_token(token)
+            return True
+        return False
 
-    def __get_new_token(self) -> str:
+    def __force_refresh_auth_token(self) -> bool:
+        """Deprecated: Use force_refresh_auth_token() instead"""
+        return self.force_refresh_auth_token()
+
+    def __get_new_token(self, skip_backoff: bool = False) -> str:
+        """
+        Get a new authentication token from the server.
+
+        Args:
+            skip_backoff: If True, skip backoff logic. Use this for legitimate token renewals
+                         (expired token with valid credentials). If False, apply backoff for
+                         invalid credentials.
+        """
+        # Only apply backoff if not skipping and we have failures
+        if not skip_backoff:
+            # Check if we should back off due to recent failures
+            if self._token_refresh_failures >= self._max_token_refresh_failures:
+                logger.error(
+                    f'Token refresh has failed {self._token_refresh_failures} times. '
+                    'Please check your authentication credentials. '
+                    'Stopping token refresh attempts.'
+                )
+                return None
+
+            # Exponential backoff: 2^failures seconds (1s, 2s, 4s, 8s, 16s)
+            if self._token_refresh_failures > 0:
+                now = time.time()
+                backoff_seconds = 2 ** self._token_refresh_failures
+                time_since_last_attempt = now - self._last_token_refresh_attempt
+
+                if time_since_last_attempt < backoff_seconds:
+                    remaining = backoff_seconds - time_since_last_attempt
+                    logger.warning(
+                        f'Token refresh backoff active. Please wait {remaining:.1f}s before next attempt. '
+                        f'(Failure count: {self._token_refresh_failures})'
+                    )
+                    return None
+
+        self._last_token_refresh_attempt = time.time()
+
         try:
             if self.configuration.authentication_settings.key_id is None or self.configuration.authentication_settings.key_secret is None:
                 logger.error('Authentication Key or Secret is not set. Failed to get the auth token')
+                self._token_refresh_failures += 1
                 return None
 
             logger.debug('Requesting new authentication token from server')
@@ -716,9 +841,28 @@ class ApiClient(object):
                 _return_http_data_only=True,
                 response_type='Token'
             )
+
+            # Success - reset failure counter
+            self._token_refresh_failures = 0
             return response.token
+
+        except AuthorizationException as ae:
+            # 401 from /token endpoint - invalid credentials
+            self._token_refresh_failures += 1
+            logger.error(
+                f'Authentication failed when getting token (attempt {self._token_refresh_failures}): '
+                f'{ae.status} - {ae.error_code}. '
+                'Please check your CONDUCTOR_AUTH_KEY and CONDUCTOR_AUTH_SECRET. '
+                f'Will retry with exponential backoff ({2 ** self._token_refresh_failures}s).'
+            )
+            return None
+
         except Exception as e:
-            logger.error(f'Failed to get new token, reason: {e.args}')
+            # Other errors (network, etc)
+            self._token_refresh_failures += 1
+            logger.error(
+                f'Failed to get new token (attempt {self._token_refresh_failures}): {e.args}'
+            )
             return None
 
     def __get_default_headers(self, header_name: str, header_value: object) -> Dict[str, object]:

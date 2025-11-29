@@ -1,3 +1,44 @@
+"""
+Task Configuration Example
+===========================
+
+Demonstrates how to programmatically create and configure task definitions.
+
+What it does:
+-------------
+- Creates a TaskDef with retry configuration (3 retries with linear backoff)
+- Sets concurrency limits (max 3 concurrent executions)
+- Configures various timeout settings (poll, execution, response)
+- Sets rate limits (100 executions per 10-second window)
+- Registers the task definition with Conductor server
+
+Use Cases:
+----------
+- Programmatically managing task definitions (Infrastructure as Code)
+- Setting task-level retry policies
+- Configuring timeout and concurrency controls
+- Implementing rate limiting for external API calls
+- Creating task definitions as part of deployment automation
+
+Key Configuration Options:
+--------------------------
+- retry_count: Number of retry attempts on failure
+- retry_logic: LINEAR_BACKOFF, EXPONENTIAL_BACKOFF, FIXED
+- retry_delay_seconds: Wait time between retries
+- concurrent_exec_limit: Max concurrent executions
+- poll_timeout_seconds: Task fails if not polled within this time
+- timeout_seconds: Total execution timeout
+- response_timeout_seconds: Timeout if no status update received
+- rate_limit_per_frequency: Rate limit per time window
+- rate_limit_frequency_in_seconds: Time window for rate limit
+
+Key Concepts:
+-------------
+- TaskDef: Python object representing task metadata
+- MetadataClient: API client for managing task definitions
+- Configuration: Server connection settings
+- Rate Limiting: Control task execution frequency
+"""
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models import TaskDef
 from conductor.client.orkes_clients import OrkesClients

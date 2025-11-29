@@ -1,19 +1,65 @@
 import logging
 import os
 import time
-from typing import Any, ClassVar, Dict, List
+from collections import deque
+from typing import Any, ClassVar, Dict, List, Tuple
 
-from prometheus_client import CollectorRegistry
-from prometheus_client import Counter
-from prometheus_client import Gauge
-from prometheus_client import write_to_textfile
-from prometheus_client.multiprocess import MultiProcessCollector
+# Lazy imports - these will be imported when first needed
+# This is necessary for multiprocess mode where PROMETHEUS_MULTIPROC_DIR
+# must be set before prometheus_client is imported
+CollectorRegistry = None
+Counter = None
+Gauge = None
+Histogram = None
+Summary = None
+write_to_textfile = None
+MultiProcessCollector = None
+
+def _ensure_prometheus_imported():
+    """Lazy import of prometheus_client to ensure PROMETHEUS_MULTIPROC_DIR is set first."""
+    global CollectorRegistry, Counter, Gauge, Histogram, Summary, write_to_textfile, MultiProcessCollector
+
+    if CollectorRegistry is None:
+        from prometheus_client import CollectorRegistry as _CollectorRegistry
+        from prometheus_client import Counter as _Counter
+        from prometheus_client import Gauge as _Gauge
+        from prometheus_client import Histogram as _Histogram
+        from prometheus_client import Summary as _Summary
+        from prometheus_client import write_to_textfile as _write_to_textfile
+        from prometheus_client.multiprocess import MultiProcessCollector as _MultiProcessCollector
+
+        CollectorRegistry = _CollectorRegistry
+        Counter = _Counter
+        Gauge = _Gauge
+        Histogram = _Histogram
+        Summary = _Summary
+        write_to_textfile = _write_to_textfile
+        MultiProcessCollector = _MultiProcessCollector
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.telemetry.model.metric_documentation import MetricDocumentation
 from conductor.client.telemetry.model.metric_label import MetricLabel
 from conductor.client.telemetry.model.metric_name import MetricName
+
+# Event system imports (for new event-driven architecture)
+from conductor.client.event.task_runner_events import (
+    PollStarted,
+    PollCompleted,
+    PollFailure,
+    TaskExecutionStarted,
+    TaskExecutionCompleted,
+    TaskExecutionFailure,
+)
+from conductor.client.event.workflow_events import (
+    WorkflowStarted,
+    WorkflowInputPayloadSize,
+    WorkflowPayloadUsed,
+)
+from conductor.client.event.task_events import (
+    TaskResultPayloadSize,
+    TaskPayloadUsed,
+)
 
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(
@@ -23,33 +69,208 @@ logger = logging.getLogger(
 
 
 class MetricsCollector:
+    """
+    Prometheus-based metrics collector for Conductor operations.
+
+    This class implements the event listener protocols (TaskRunnerEventsListener,
+    WorkflowEventsListener, TaskEventsListener) via structural subtyping (duck typing),
+    matching the Java SDK's MetricsCollector interface.
+
+    Supports both usage patterns:
+    1. Direct method calls (backward compatible):
+       metrics.increment_task_poll(task_type)
+
+    2. Event-driven (new):
+       dispatcher.register(PollStarted, metrics.on_poll_started)
+       dispatcher.publish(PollStarted(...))
+
+    Note: Uses Python's Protocol for structural subtyping rather than explicit
+    inheritance to avoid circular imports and maintain backward compatibility.
+    """
     counters: ClassVar[Dict[str, Counter]] = {}
     gauges: ClassVar[Dict[str, Gauge]] = {}
-    registry = CollectorRegistry()
+    histograms: ClassVar[Dict[str, Histogram]] = {}
+    summaries: ClassVar[Dict[str, Summary]] = {}
+    quantile_metrics: ClassVar[Dict[str, Gauge]] = {}  # metric_name -> Gauge with quantile label (used as summary)
+    quantile_data: ClassVar[Dict[str, deque]] = {}  # metric_name+labels -> deque of values
+    registry = None  # Lazy initialization - created when first MetricsCollector instance is created
     must_collect_metrics = False
+    QUANTILE_WINDOW_SIZE = 1000  # Keep last 1000 observations for quantile calculation
 
     def __init__(self, settings: MetricsSettings):
         if settings is not None:
             os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.directory
-            MultiProcessCollector(self.registry)
+
+            # Import prometheus_client NOW (after PROMETHEUS_MULTIPROC_DIR is set)
+            _ensure_prometheus_imported()
+
+            # Initialize registry on first use (after PROMETHEUS_MULTIPROC_DIR is set)
+            if MetricsCollector.registry is None:
+                MetricsCollector.registry = CollectorRegistry()
+                MultiProcessCollector(MetricsCollector.registry)
+                logger.debug(f"Created CollectorRegistry with multiprocess support")
+
             self.must_collect_metrics = True
+            logger.debug(f"MetricsCollector initialized with directory={settings.directory}, must_collect={self.must_collect_metrics}")
 
     @staticmethod
     def provide_metrics(settings: MetricsSettings) -> None:
         if settings is None:
             return
+
+        # Set environment variable for this process
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.directory
+
+        # Import prometheus_client in this process too (after setting env var)
+        _ensure_prometheus_imported()
+
         OUTPUT_FILE_PATH = os.path.join(
             settings.directory,
             settings.file_name
         )
+
+        # Wait a bit for worker processes to start and create initial metrics
+        time.sleep(0.5)
+
         registry = CollectorRegistry()
-        MultiProcessCollector(registry)
-        while True:
-            write_to_textfile(
-                OUTPUT_FILE_PATH,
-                registry
-            )
-            time.sleep(settings.update_interval)
+        # Use custom collector that removes pid label and aggregates across processes
+        from prometheus_client.multiprocess import MultiProcessCollector as MPCollector
+        from prometheus_client.samples import Sample
+        from prometheus_client.metrics_core import Metric
+
+        class NoPidCollector(MPCollector):
+            """Custom collector that removes pid label and aggregates metrics across processes."""
+            def collect(self):
+                for metric in super().collect():
+                    # Group samples by label set (excluding pid)
+                    aggregated = {}
+
+                    for sample in metric.samples:
+                        # Remove pid from labels
+                        labels = {k: v for k, v in sample.labels.items() if k != 'pid'}
+                        # Create key from sample name and labels
+                        label_items = tuple(sorted(labels.items()))
+                        key = (sample.name, label_items)
+
+                        if key not in aggregated:
+                            aggregated[key] = {
+                                'labels': labels,
+                                'values': [],
+                                'name': sample.name,
+                                'timestamp': sample.timestamp,
+                                'exemplar': sample.exemplar
+                            }
+
+                        aggregated[key]['values'].append(sample.value)
+
+                    # Create consolidated samples
+                    filtered_samples = []
+                    for key, data in aggregated.items():
+                        # For counters and _count/_sum metrics: sum the values
+                        # For gauges with quantiles: take the mean (approximation)
+                        # For other gauges: take the last value
+                        if metric.type == 'counter' or data['name'].endswith('_count') or data['name'].endswith('_sum'):
+                            # Sum values for counters
+                            value = sum(data['values'])
+                        elif 'quantile' in data['labels']:
+                            # For quantile metrics, take the mean across processes
+                            value = sum(data['values']) / len(data['values'])
+                        else:
+                            # For other gauges, take the last value
+                            value = data['values'][-1]
+
+                        filtered_samples.append(
+                            Sample(data['name'], data['labels'], value, data['timestamp'], data['exemplar'])
+                        )
+
+                    # Create new metric and assign filtered samples
+                    new_metric = Metric(metric.name, metric.documentation, metric.type)
+                    new_metric.samples = filtered_samples
+                    yield new_metric
+
+        NoPidCollector(registry)
+
+        # Start HTTP server if port is specified
+        http_server = None
+        if settings.http_port is not None:
+            http_server = MetricsCollector._start_http_server(settings.http_port, registry)
+            logger.info(f"Metrics HTTP server mode: serving from memory (no file writes) (pid={os.getpid()})")
+
+            # When HTTP server is enabled, don't write to file - just keep updating registry in memory
+            # The HTTP server reads directly from the registry
+            while True:
+                time.sleep(settings.update_interval)
+        else:
+            # File-based mode: write metrics to file periodically
+            logger.info(f"Metrics file mode: writing to {OUTPUT_FILE_PATH} (pid={os.getpid()})")
+            while True:
+                try:
+                    write_to_textfile(
+                        OUTPUT_FILE_PATH,
+                        registry
+                    )
+                except Exception as e:
+                    # Log error but continue - metrics files might be in inconsistent state
+                    logger.debug(f"Error writing metrics (will retry): {e}")
+
+                time.sleep(settings.update_interval)
+
+    @staticmethod
+    def _start_http_server(port: int, registry: 'CollectorRegistry') -> 'HTTPServer':
+        """Start HTTP server to expose metrics endpoint for Prometheus scraping."""
+        from http.server import HTTPServer, BaseHTTPRequestHandler
+        import threading
+
+        class MetricsHTTPHandler(BaseHTTPRequestHandler):
+            """HTTP handler to serve Prometheus metrics."""
+
+            def do_GET(self):
+                """Handle GET requests for /metrics endpoint."""
+                if self.path == '/metrics':
+                    try:
+                        # Generate metrics in Prometheus text format
+                        from prometheus_client import generate_latest
+                        metrics_content = generate_latest(registry)
+
+                        # Send response
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
+                        self.end_headers()
+                        self.wfile.write(metrics_content)
+
+                    except Exception as e:
+                        logger.error(f"Error serving metrics: {e}")
+                        self.send_response(500)
+                        self.send_header('Content-Type', 'text/plain')
+                        self.end_headers()
+                        self.wfile.write(f'Error: {str(e)}'.encode('utf-8'))
+
+                elif self.path == '/' or self.path == '/health':
+                    # Health check endpoint
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'text/plain')
+                    self.end_headers()
+                    self.wfile.write(b'OK')
+
+                else:
+                    self.send_response(404)
+                    self.send_header('Content-Type', 'text/plain')
+                    self.end_headers()
+                    self.wfile.write(b'Not Found - Try /metrics')
+
+            def log_message(self, format, *args):
+                """Override to use our logger instead of stderr."""
+                logger.debug(f"HTTP {self.address_string()} - {format % args}")
+
+        server = HTTPServer(('', port), MetricsHTTPHandler)
+        logger.info(f"Started metrics HTTP server on port {port} (pid={os.getpid()})")
+        logger.info(f"Metrics available at: http://localhost:{port}/metrics")
+
+        # Run server in daemon thread
+        server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+        server_thread.start()
+
+        return server
 
     def increment_task_poll(self, task_type: str) -> None:
         self.__increment_counter(
@@ -77,14 +298,8 @@ class MetricsCollector:
         )
 
     def increment_task_poll_error(self, task_type: str, exception: Exception) -> None:
-        self.__increment_counter(
-            name=MetricName.TASK_POLL_ERROR,
-            documentation=MetricDocumentation.TASK_POLL_ERROR,
-            labels={
-                MetricLabel.TASK_TYPE: task_type,
-                MetricLabel.EXCEPTION: str(exception)
-            }
-        )
+        # No-op: Poll errors are already tracked via task_poll_time_seconds_count with status=FAILURE
+        pass
 
     def increment_task_paused(self, task_type: str) -> None:
         self.__increment_counter(
@@ -176,7 +391,7 @@ class MetricsCollector:
             value=payload_size
         )
 
-    def record_task_poll_time(self, task_type: str, time_spent: float) -> None:
+    def record_task_poll_time(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
         self.__record_gauge(
             name=MetricName.TASK_POLL_TIME,
             documentation=MetricDocumentation.TASK_POLL_TIME,
@@ -185,13 +400,82 @@ class MetricsCollector:
             },
             value=time_spent
         )
+        # Record as quantile gauges for percentile tracking
+        self.__record_quantiles(
+            name=MetricName.TASK_POLL_TIME_HISTOGRAM,
+            documentation=MetricDocumentation.TASK_POLL_TIME_HISTOGRAM,
+            labels={
+                MetricLabel.TASK_TYPE: task_type,
+                MetricLabel.STATUS: status
+            },
+            value=time_spent
+        )
 
-    def record_task_execute_time(self, task_type: str, time_spent: float) -> None:
+    def record_task_execute_time(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
         self.__record_gauge(
             name=MetricName.TASK_EXECUTE_TIME,
             documentation=MetricDocumentation.TASK_EXECUTE_TIME,
             labels={
                 MetricLabel.TASK_TYPE: task_type
+            },
+            value=time_spent
+        )
+        # Record as quantile gauges for percentile tracking
+        self.__record_quantiles(
+            name=MetricName.TASK_EXECUTE_TIME_HISTOGRAM,
+            documentation=MetricDocumentation.TASK_EXECUTE_TIME_HISTOGRAM,
+            labels={
+                MetricLabel.TASK_TYPE: task_type,
+                MetricLabel.STATUS: status
+            },
+            value=time_spent
+        )
+
+    def record_task_poll_time_histogram(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
+        """Record task poll time with quantile gauges for percentile tracking."""
+        self.__record_quantiles(
+            name=MetricName.TASK_POLL_TIME_HISTOGRAM,
+            documentation=MetricDocumentation.TASK_POLL_TIME_HISTOGRAM,
+            labels={
+                MetricLabel.TASK_TYPE: task_type,
+                MetricLabel.STATUS: status
+            },
+            value=time_spent
+        )
+
+    def record_task_execute_time_histogram(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
+        """Record task execution time with quantile gauges for percentile tracking."""
+        self.__record_quantiles(
+            name=MetricName.TASK_EXECUTE_TIME_HISTOGRAM,
+            documentation=MetricDocumentation.TASK_EXECUTE_TIME_HISTOGRAM,
+            labels={
+                MetricLabel.TASK_TYPE: task_type,
+                MetricLabel.STATUS: status
+            },
+            value=time_spent
+        )
+
+    def record_task_update_time_histogram(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
+        """Record task update time with quantile gauges for percentile tracking."""
+        self.__record_quantiles(
+            name=MetricName.TASK_UPDATE_TIME_HISTOGRAM,
+            documentation=MetricDocumentation.TASK_UPDATE_TIME_HISTOGRAM,
+            labels={
+                MetricLabel.TASK_TYPE: task_type,
+                MetricLabel.STATUS: status
+            },
+            value=time_spent
+        )
+
+    def record_api_request_time(self, method: str, uri: str, status: str, time_spent: float) -> None:
+        """Record API request time with quantile gauges for percentile tracking."""
+        self.__record_quantiles(
+            name=MetricName.API_REQUEST_TIME,
+            documentation=MetricDocumentation.API_REQUEST_TIME,
+            labels={
+                MetricLabel.METHOD: method,
+                MetricLabel.URI: uri,
+                MetricLabel.STATUS: status
             },
             value=time_spent
         )
@@ -207,7 +491,7 @@ class MetricsCollector:
         counter = self.__get_counter(
             name=name,
             documentation=documentation,
-            labelnames=labels.keys()
+            labelnames=[label.value for label in labels.keys()]
         )
         counter.labels(*labels.values()).inc()
 
@@ -223,7 +507,7 @@ class MetricsCollector:
         gauge = self.__get_gauge(
             name=name,
             documentation=documentation,
-            labelnames=labels.keys()
+            labelnames=[label.value for label in labels.keys()]
         )
         gauge.labels(*labels.values()).set(value)
 
@@ -274,5 +558,339 @@ class MetricsCollector:
             name=name,
             documentation=documentation,
             labelnames=labelnames,
+            registry=self.registry,
+            multiprocess_mode='all'  # Aggregate across processes, don't include pid
+        )
+
+    def __observe_histogram(
+            self,
+            name: MetricName,
+            documentation: MetricDocumentation,
+            labels: Dict[MetricLabel, str],
+            value: Any
+    ) -> None:
+        if not self.must_collect_metrics:
+            return
+        histogram = self.__get_histogram(
+            name=name,
+            documentation=documentation,
+            labelnames=[label.value for label in labels.keys()]
+        )
+        histogram.labels(*labels.values()).observe(value)
+
+    def __get_histogram(
+            self,
+            name: MetricName,
+            documentation: MetricDocumentation,
+            labelnames: List[MetricLabel]
+    ) -> Histogram:
+        if name not in self.histograms:
+            self.histograms[name] = self.__generate_histogram(
+                name, documentation, labelnames
+            )
+        return self.histograms[name]
+
+    def __generate_histogram(
+            self,
+            name: MetricName,
+            documentation: MetricDocumentation,
+            labelnames: List[MetricLabel]
+    ) -> Histogram:
+        # Standard buckets for timing metrics: 1ms to 10s
+        return Histogram(
+            name=name,
+            documentation=documentation,
+            labelnames=labelnames,
+            buckets=(0.001, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
             registry=self.registry
         )
+
+    def __observe_summary(
+            self,
+            name: MetricName,
+            documentation: MetricDocumentation,
+            labels: Dict[MetricLabel, str],
+            value: Any
+    ) -> None:
+        if not self.must_collect_metrics:
+            return
+        summary = self.__get_summary(
+            name=name,
+            documentation=documentation,
+            labelnames=[label.value for label in labels.keys()]
+        )
+        summary.labels(*labels.values()).observe(value)
+
+    def __get_summary(
+            self,
+            name: MetricName,
+            documentation: MetricDocumentation,
+            labelnames: List[MetricLabel]
+    ) -> Summary:
+        if name not in self.summaries:
+            self.summaries[name] = self.__generate_summary(
+                name, documentation, labelnames
+            )
+        return self.summaries[name]
+
+    def __generate_summary(
+            self,
+            name: MetricName,
+            documentation: MetricDocumentation,
+            labelnames: List[MetricLabel]
+    ) -> Summary:
+        # Create summary metric
+        # Note: Prometheus Summary metrics provide count and sum by default
+        # For percentiles, use histogram buckets or calculate server-side
+        return Summary(
+            name=name,
+            documentation=documentation,
+            labelnames=labelnames,
+            registry=self.registry
+        )
+
+    def __record_quantiles(
+            self,
+            name: MetricName,
+            documentation: MetricDocumentation,
+            labels: Dict[MetricLabel, str],
+            value: float
+    ) -> None:
+        """
+        Record a value and update quantile gauges (p50, p75, p90, p95, p99).
+        Also maintains _count and _sum for proper summary metrics.
+
+        Maintains a sliding window of observations and calculates quantiles.
+        """
+        if not self.must_collect_metrics:
+            return
+
+        # Create a key for this metric+labels combination
+        label_values = tuple(labels.values())
+        data_key = f"{name}_{label_values}"
+
+        # Initialize data window if needed
+        if data_key not in self.quantile_data:
+            self.quantile_data[data_key] = deque(maxlen=self.QUANTILE_WINDOW_SIZE)
+
+        # Add new observation
+        self.quantile_data[data_key].append(value)
+
+        # Calculate and update quantiles
+        observations = sorted(self.quantile_data[data_key])
+        n = len(observations)
+
+        if n > 0:
+            quantiles = [0.5, 0.75, 0.9, 0.95, 0.99]
+            for q in quantiles:
+                quantile_value = self.__calculate_quantile(observations, q)
+
+                # Get or create gauge for this quantile
+                gauge = self.__get_quantile_gauge(
+                    name=name,
+                    documentation=documentation,
+                    labelnames=[label.value for label in labels.keys()] + ["quantile"],
+                    quantile=q
+                )
+
+                # Set gauge value with labels + quantile
+                gauge.labels(*labels.values(), str(q)).set(quantile_value)
+
+            # Also publish _count and _sum for proper summary metrics
+            self.__update_summary_aggregates(
+                name=name,
+                documentation=documentation,
+                labels=labels,
+                observations=list(self.quantile_data[data_key])
+            )
+
+    def __calculate_quantile(self, sorted_values: List[float], quantile: float) -> float:
+        """Calculate quantile from sorted list of values."""
+        if not sorted_values:
+            return 0.0
+
+        n = len(sorted_values)
+        index = quantile * (n - 1)
+
+        if index.is_integer():
+            return sorted_values[int(index)]
+        else:
+            # Linear interpolation
+            lower_index = int(index)
+            upper_index = min(lower_index + 1, n - 1)
+            fraction = index - lower_index
+            return sorted_values[lower_index] + fraction * (sorted_values[upper_index] - sorted_values[lower_index])
+
+    def __get_quantile_gauge(
+            self,
+            name: MetricName,
+            documentation: MetricDocumentation,
+            labelnames: List[str],
+            quantile: float
+    ) -> Gauge:
+        """Get or create a gauge for quantiles (single gauge with quantile label)."""
+        if name not in self.quantile_metrics:
+            # Create a single gauge with quantile as a label
+            # This gauge will be shared across all quantiles for this metric
+            # Note: In multiprocess mode, prometheus_client automatically adds 'pid' label
+            # We use multiprocess_mode='all' to aggregate across processes and remove pid
+            self.quantile_metrics[name] = Gauge(
+                name=name,
+                documentation=documentation,
+                labelnames=labelnames,
+                registry=self.registry,
+                multiprocess_mode='all'  # Aggregate across processes, don't include pid
+            )
+
+        return self.quantile_metrics[name]
+
+    def __update_summary_aggregates(
+            self,
+            name: MetricName,
+            documentation: MetricDocumentation,
+            labels: Dict[MetricLabel, str],
+            observations: List[float]
+    ) -> None:
+        """
+        Update _count and _sum gauges for proper summary metric format.
+        This makes the metrics compatible with Prometheus summary type.
+        """
+        if not observations:
+            return
+
+        # Convert enum to string value
+        base_name = name.value if hasattr(name, 'value') else str(name)
+
+        # Convert documentation enum to string
+        doc_str = documentation.value if hasattr(documentation, 'value') else str(documentation)
+
+        # Get or create _count gauge
+        count_name = f"{base_name}_count"
+        if count_name not in self.gauges:
+            self.gauges[count_name] = Gauge(
+                name=count_name,
+                documentation=f"{doc_str} - count",
+                labelnames=[label.value for label in labels.keys()],
+                registry=self.registry,
+                multiprocess_mode='all'  # Aggregate across processes, don't include pid
+            )
+
+        # Get or create _sum gauge
+        sum_name = f"{base_name}_sum"
+        if sum_name not in self.gauges:
+            self.gauges[sum_name] = Gauge(
+                name=sum_name,
+                documentation=f"{doc_str} - sum",
+                labelnames=[label.value for label in labels.keys()],
+                registry=self.registry,
+                multiprocess_mode='all'  # Aggregate across processes, don't include pid
+            )
+
+        # Update values
+        self.gauges[count_name].labels(*labels.values()).set(len(observations))
+        self.gauges[sum_name].labels(*labels.values()).set(sum(observations))
+
+    # =========================================================================
+    # Event Listener Protocol Implementation (TaskRunnerEventsListener)
+    # =========================================================================
+    # These methods allow MetricsCollector to be used as an event listener
+    # in the new event-driven architecture, while maintaining backward
+    # compatibility with existing direct method calls.
+
+    def on_poll_started(self, event: PollStarted) -> None:
+        """
+        Handle poll started event.
+        Maps to increment_task_poll() for backward compatibility.
+        """
+        self.increment_task_poll(event.task_type)
+
+    def on_poll_completed(self, event: PollCompleted) -> None:
+        """
+        Handle poll completed event.
+        Maps to record_task_poll_time() for backward compatibility.
+        """
+        self.record_task_poll_time(event.task_type, event.duration_ms / 1000, status="SUCCESS")
+
+    def on_poll_failure(self, event: PollFailure) -> None:
+        """
+        Handle poll failure event.
+        Maps to increment_task_poll_error() for backward compatibility.
+        Also records poll time with FAILURE status.
+        """
+        self.increment_task_poll_error(event.task_type, event.cause)
+        # Record poll time with failure status if duration is available
+        if hasattr(event, 'duration_ms') and event.duration_ms is not None:
+            self.record_task_poll_time(event.task_type, event.duration_ms / 1000, status="FAILURE")
+
+    def on_task_execution_started(self, event: TaskExecutionStarted) -> None:
+        """
+        Handle task execution started event.
+        No direct metric equivalent in old system - could be used for
+        tracking in-flight tasks in the future.
+        """
+        pass  # No corresponding metric in existing system
+
+    def on_task_execution_completed(self, event: TaskExecutionCompleted) -> None:
+        """
+        Handle task execution completed event.
+        Maps to record_task_execute_time() and record_task_result_payload_size().
+        """
+        self.record_task_execute_time(event.task_type, event.duration_ms / 1000, status="SUCCESS")
+        if event.output_size_bytes is not None:
+            self.record_task_result_payload_size(event.task_type, event.output_size_bytes)
+
+    def on_task_execution_failure(self, event: TaskExecutionFailure) -> None:
+        """
+        Handle task execution failure event.
+        Maps to increment_task_execution_error() for backward compatibility.
+        Also records execution time with FAILURE status.
+        """
+        self.increment_task_execution_error(event.task_type, event.cause)
+        # Record execution time with failure status if duration is available
+        if hasattr(event, 'duration_ms') and event.duration_ms is not None:
+            self.record_task_execute_time(event.task_type, event.duration_ms / 1000, status="FAILURE")
+
+    # =========================================================================
+    # Event Listener Protocol Implementation (WorkflowEventsListener)
+    # =========================================================================
+
+    def on_workflow_started(self, event: WorkflowStarted) -> None:
+        """
+        Handle workflow started event.
+        Maps to increment_workflow_start_error() if workflow failed to start.
+        """
+        if not event.success and event.cause is not None:
+            self.increment_workflow_start_error(event.name, event.cause)
+
+    def on_workflow_input_payload_size(self, event: WorkflowInputPayloadSize) -> None:
+        """
+        Handle workflow input payload size event.
+        Maps to record_workflow_input_payload_size().
+        """
+        version_str = str(event.version) if event.version is not None else "1"
+        self.record_workflow_input_payload_size(event.name, version_str, event.size_bytes)
+
+    def on_workflow_payload_used(self, event: WorkflowPayloadUsed) -> None:
+        """
+        Handle workflow external payload usage event.
+        Maps to increment_external_payload_used().
+        """
+        self.increment_external_payload_used(event.name, event.operation, event.payload_type)
+
+    # =========================================================================
+    # Event Listener Protocol Implementation (TaskEventsListener)
+    # =========================================================================
+
+    def on_task_result_payload_size(self, event: TaskResultPayloadSize) -> None:
+        """
+        Handle task result payload size event.
+        Maps to record_task_result_payload_size().
+        """
+        self.record_task_result_payload_size(event.task_type, event.size_bytes)
+
+    def on_task_payload_used(self, event: TaskPayloadUsed) -> None:
+        """
+        Handle task external payload usage event.
+        Maps to increment_external_payload_used().
+        """
+        self.increment_external_payload_used(event.task_type, event.operation, event.payload_type)
