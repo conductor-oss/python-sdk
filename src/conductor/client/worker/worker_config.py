@@ -36,7 +36,9 @@ ENV_PROPERTY_NAMES = {
     'register_task_def': 'register_task_def',
     'poll_timeout': 'poll_timeout',
     'lease_extend_enabled': 'lease_extend_enabled',
-    'paused': 'paused'
+    'paused': 'paused',
+    'overwrite_task_def': 'overwrite_task_def',
+    'strict_schema': 'strict_schema'
 }
 
 
@@ -175,7 +177,9 @@ def resolve_worker_config(
     register_task_def: Optional[bool] = None,
     poll_timeout: Optional[int] = None,
     lease_extend_enabled: Optional[bool] = None,
-    paused: Optional[bool] = None
+    paused: Optional[bool] = None,
+    overwrite_task_def: Optional[bool] = None,
+    strict_schema: Optional[bool] = None
 ) -> dict:
     """
     Resolve worker configuration with hierarchical override.
@@ -195,6 +199,8 @@ def resolve_worker_config(
         poll_timeout: Polling timeout in milliseconds (code-level default)
         lease_extend_enabled: Whether lease extension is enabled (code-level default)
         paused: Whether worker is paused (code-level default)
+        overwrite_task_def: Whether to overwrite existing task definitions (code-level default, default=True)
+        strict_schema: Whether to set additionalProperties=false in schemas (code-level default, default=False)
 
     Returns:
         Dict with resolved configuration values
@@ -247,6 +253,14 @@ def resolve_worker_config(
     # Resolve paused
     env_paused = _get_env_value(worker_name, 'paused', bool)
     resolved['paused'] = env_paused if env_paused is not None else paused
+
+    # Resolve overwrite_task_def (default: True)
+    env_overwrite = _get_env_value(worker_name, 'overwrite_task_def', bool)
+    resolved['overwrite_task_def'] = env_overwrite if env_overwrite is not None else (overwrite_task_def if overwrite_task_def is not None else True)
+
+    # Resolve strict_schema (default: False)
+    env_strict = _get_env_value(worker_name, 'strict_schema', bool)
+    resolved['strict_schema'] = env_strict if env_strict is not None else (strict_schema if strict_schema is not None else False)
 
     return resolved
 

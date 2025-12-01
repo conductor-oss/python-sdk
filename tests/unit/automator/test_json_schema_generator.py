@@ -191,8 +191,21 @@ class TestDataclassSchemas(unittest.TestCase):
             name: str
             age: int
 
-        schema = _type_to_json_schema(User)
+        # Default: lenient mode (additionalProperties=True)
+        schema = _type_to_json_schema(User, strict_schema=False)
         self.assertEqual(schema, {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "age": {"type": "integer"}
+            },
+            "required": ["name", "age"],
+            "additionalProperties": True
+        })
+
+        # Strict mode (additionalProperties=False)
+        schema_strict = _type_to_json_schema(User, strict_schema=True)
+        self.assertEqual(schema_strict, {
             "type": "object",
             "properties": {
                 "name": {"type": "string"},
@@ -208,7 +221,7 @@ class TestDataclassSchemas(unittest.TestCase):
             user_id: str
             email: Optional[str] = None
 
-        schema = _type_to_json_schema(UserProfile)
+        schema = _type_to_json_schema(UserProfile, strict_schema=False)
         self.assertEqual(schema, {
             "type": "object",
             "properties": {
@@ -216,7 +229,7 @@ class TestDataclassSchemas(unittest.TestCase):
                 "email": {"type": "string", "nullable": True}
             },
             "required": ["user_id"],
-            "additionalProperties": False
+            "additionalProperties": True
         })
 
     def test_dataclass_with_default_values(self):
@@ -226,7 +239,7 @@ class TestDataclassSchemas(unittest.TestCase):
             port: int = 8080
             enabled: bool = True
 
-        schema = _type_to_json_schema(Config)
+        schema = _type_to_json_schema(Config, strict_schema=False)
         self.assertEqual(schema, {
             "type": "object",
             "properties": {
@@ -235,7 +248,7 @@ class TestDataclassSchemas(unittest.TestCase):
                 "enabled": {"type": "boolean"}
             },
             "required": ["host"],  # Only host is required
-            "additionalProperties": False
+            "additionalProperties": True
         })
 
     def test_nested_dataclass(self):
@@ -249,7 +262,7 @@ class TestDataclassSchemas(unittest.TestCase):
             name: str
             address: Address
 
-        schema = _type_to_json_schema(Person)
+        schema = _type_to_json_schema(Person, strict_schema=False)
         expected = {
             "type": "object",
             "properties": {
@@ -261,11 +274,11 @@ class TestDataclassSchemas(unittest.TestCase):
                         "city": {"type": "string"}
                     },
                     "required": ["street", "city"],
-                    "additionalProperties": False
+                    "additionalProperties": True
                 }
             },
             "required": ["name", "address"],
-            "additionalProperties": False
+            "additionalProperties": True
         }
         self.assertEqual(schema, expected)
 
@@ -275,7 +288,7 @@ class TestDataclassSchemas(unittest.TestCase):
             order_id: str
             items: List[str]
 
-        schema = _type_to_json_schema(Order)
+        schema = _type_to_json_schema(Order, strict_schema=False)
         self.assertEqual(schema, {
             "type": "object",
             "properties": {
@@ -286,7 +299,7 @@ class TestDataclassSchemas(unittest.TestCase):
                 }
             },
             "required": ["order_id", "items"],
-            "additionalProperties": False
+            "additionalProperties": True
         })
 
 
@@ -687,7 +700,7 @@ class TestEdgeCases(unittest.TestCase):
             name: str
             tags: List[str] = field(default_factory=list)
 
-        schema = _type_to_json_schema(Config)
+        schema = _type_to_json_schema(Config, strict_schema=False)
         # 'tags' has default_factory, so not required
         self.assertEqual(schema['required'], ["name"])
         self.assertIn("tags", schema['properties'])
@@ -862,3 +875,85 @@ class TestRealWorldExamples(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 
+
+
+class TestStrictSchemaFlag(unittest.TestCase):
+    """Test strict_schema flag controls additionalProperties."""
+
+    def test_strict_schema_false_allows_additional_properties(self):
+        """When strict_schema=False, additionalProperties should be True."""
+        def worker(name: str) -> dict:
+            return {}
+
+        schemas = generate_json_schema_from_function(worker, "test", strict_schema=False)
+        input_schema = schemas['input']
+
+        # Should allow additional properties
+        self.assertEqual(input_schema['additionalProperties'], True)
+
+    def test_strict_schema_true_disallows_additional_properties(self):
+        """When strict_schema=True, additionalProperties should be False."""
+        def worker(name: str) -> dict:
+            return {}
+
+        schemas = generate_json_schema_from_function(worker, "test", strict_schema=True)
+        input_schema = schemas['input']
+
+        # Should NOT allow additional properties
+        self.assertEqual(input_schema['additionalProperties'], False)
+
+    def test_strict_schema_applies_to_dataclasses(self):
+        """strict_schema should apply to dataclass schemas as well."""
+        @dataclass
+        class User:
+            name: str
+            age: int
+
+        def worker(user: User) -> dict:
+            return {}
+
+        # Lenient mode
+        schemas_lenient = generate_json_schema_from_function(worker, "test", strict_schema=False)
+        user_schema_lenient = schemas_lenient['input']['properties']['user']
+        self.assertEqual(user_schema_lenient['additionalProperties'], True)
+
+        # Strict mode
+        schemas_strict = generate_json_schema_from_function(worker, "test", strict_schema=True)
+        user_schema_strict = schemas_strict['input']['properties']['user']
+        self.assertEqual(user_schema_strict['additionalProperties'], False)
+
+    def test_strict_schema_applies_recursively_to_nested_dataclasses(self):
+        """strict_schema should apply to all nested dataclasses."""
+        @dataclass
+        class Address:
+            street: str
+            city: str
+
+        @dataclass
+        class User:
+            name: str
+            address: Address
+
+        def worker(user: User) -> dict:
+            return {}
+
+        # Strict mode
+        schemas = generate_json_schema_from_function(worker, "test", strict_schema=True)
+        user_schema = schemas['input']['properties']['user']
+        address_schema = user_schema['properties']['address']
+
+        # Both should be strict
+        self.assertEqual(user_schema['additionalProperties'], False)
+        self.assertEqual(address_schema['additionalProperties'], False)
+
+    def test_strict_schema_default_is_false(self):
+        """Default behavior should be lenient (strict_schema=False)."""
+        def worker(name: str) -> dict:
+            return {}
+
+        # Call without strict_schema parameter
+        schemas = generate_json_schema_from_function(worker, "test")
+        input_schema = schemas['input']
+
+        # Default should be lenient (additionalProperties=True)
+        self.assertEqual(input_schema['additionalProperties'], True)

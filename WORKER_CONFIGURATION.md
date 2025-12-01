@@ -26,6 +26,8 @@ The following properties can be configured via environment variables:
 | `worker_id` | string | Unique worker identifier | `worker-1` | ✅ Yes |
 | `thread_count` | int | Max concurrent executions (threads for sync, coroutines for async) | `10` | ✅ Yes |
 | `register_task_def` | bool | Auto-register task definition with JSON schemas on startup | `true` | ✅ Yes |
+| `overwrite_task_def` | bool | Overwrite existing task definitions when registering (default: true) | `false` | ✅ Yes |
+| `strict_schema` | bool | Enforce strict schema validation - additionalProperties=false (default: false) | `true` | ✅ Yes |
 | `poll_timeout` | int | Poll request timeout in milliseconds | `100` | ✅ Yes |
 | `lease_extend_enabled` | bool | ⚠️ **Not implemented** - reserved for future use | `false` | ✅ Yes |
 | `paused` | bool | Pause worker from polling/executing tasks | `true` | ❌ **Environment-only** |
@@ -33,7 +35,9 @@ The following properties can be configured via environment variables:
 **Notes**:
 - The `paused` property is intentionally **not available** in the `@worker_task` decorator. It can only be controlled via environment variables, allowing operators to pause/resume workers at runtime without code changes or redeployment.
 - The `lease_extend_enabled` parameter is accepted but **not currently implemented**. For lease extension, use manual `TaskInProgress` returns (see below).
-- The `register_task_def` parameter automatically registers task definitions with JSON Schema (draft-07) generated from Python type hints. Does not overwrite existing definitions.
+- The `register_task_def` parameter automatically registers task definitions with JSON Schema (draft-07) generated from Python type hints.
+- The `overwrite_task_def` parameter controls whether to overwrite existing task definitions (default: true).
+- The `strict_schema` parameter controls JSON schema validation strictness (default: false for lenient validation).
 
 ### Understanding `thread_count`
 
@@ -96,6 +100,69 @@ def long_task(job_id: str) -> Union[dict, TaskInProgress]:
 **⚠️ Note**: The `lease_extend_enabled=True` configuration parameter does **not** provide automatic lease extension. You must explicitly return `TaskInProgress` to extend the lease.
 
 **For detailed patterns**, see [Long-Running Tasks & Lease Extension](docs/design/WORKER_DESIGN.md#long-running-tasks--lease-extension).
+
+### Understanding `overwrite_task_def`
+
+Controls whether to overwrite existing task definitions when `register_task_def=True`:
+
+**Overwrite Mode (default, overwrite_task_def=true):**
+- Always calls `update_task_def()` to overwrite existing definitions
+- Ensures server always has latest configuration from code
+- **Use when:** Task configuration changes frequently, development environments
+
+**No-Overwrite Mode (overwrite_task_def=false):**
+- Checks if task exists before registering
+- Only creates new task if it doesn't exist
+- Preserves manual changes made on server
+- **Use when:** Tasks managed outside code, production with manual config
+
+```bash
+# Global: Never overwrite any task definitions
+export conductor.worker.all.overwrite_task_def=false
+
+# Specific: Allow overwrite for this worker only
+export conductor.worker.dynamic_task.overwrite_task_def=true
+```
+
+### Understanding `strict_schema`
+
+Controls JSON Schema validation strictness when `register_task_def=True`:
+
+**Lenient Mode (default, strict_schema=false):**
+- Sets `additionalProperties=true` in schemas
+- Allows extra fields beyond defined schema
+- **Use when:** Backward compatibility, flexible integrations, development
+
+**Strict Mode (strict_schema=true):**
+- Sets `additionalProperties=false` in schemas
+- Rejects inputs with extra fields
+- **Use when:** Strict contract enforcement, production validation
+
+```bash
+# Global: Strict validation for all workers
+export conductor.worker.all.strict_schema=true
+
+# Specific: Lenient for this worker (overrides global)
+export conductor.worker.flexible_task.strict_schema=false
+```
+
+**Example Schemas:**
+
+```json
+// strict_schema=false (default)
+{
+  "type": "object",
+  "properties": {"name": {"type": "string"}},
+  "additionalProperties": true  // ← Extra fields allowed
+}
+
+// strict_schema=true
+{
+  "type": "object",
+  "properties": {"name": {"type": "string"}},
+  "additionalProperties": false  // ← Extra fields rejected
+}
+```
 
 ## Environment Variable Format
 

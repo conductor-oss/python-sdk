@@ -52,6 +52,8 @@ class WorkerInterface(abc.ABC):
         self.register_task_def = False
         self.poll_timeout = 100  # milliseconds
         self.lease_extend_enabled = False
+        self.overwrite_task_def = True  # Default: overwrite existing task definitions
+        self.strict_schema = False  # Default: allow additional properties in schemas
 
     @abc.abstractmethod
     def execute(self, task: Task) -> TaskResult:

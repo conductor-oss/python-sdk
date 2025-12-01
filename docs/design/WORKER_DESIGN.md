@@ -410,6 +410,8 @@ async def __get_authentication_headers(self):
 | `poll_timeout` | int | 100 | Poll timeout (ms) |
 | `lease_extend_enabled` | bool | False | ⚠️ **Not implemented** - use `TaskInProgress` instead |
 | `register_task_def` | bool | False | Auto-register task definition with JSON schemas (draft-07) |
+| `overwrite_task_def` | bool | True | Overwrite existing task definitions (when register_task_def=True) |
+| `strict_schema` | bool | False | Enforce strict schema validation (additionalProperties=false) |
 | `paused` | bool | False | Pause worker (env-only, not in decorator) |
 
 ### Examples
@@ -514,6 +516,80 @@ export conductor.worker.all.register_task_def=true
 
 # Enable for specific worker
 export conductor.worker.process_order.register_task_def=true
+
+# Control overwrite behavior
+export conductor.worker.all.overwrite_task_def=false  # Don't overwrite existing
+
+# Enable strict schema validation
+export conductor.worker.process_order.strict_schema=true  # No extra fields allowed
+```
+
+### Schema Validation Modes
+
+The `strict_schema` flag controls JSON Schema validation strictness:
+
+**Lenient Mode (default, strict_schema=False):**
+```json
+{
+  "type": "object",
+  "properties": {...},
+  "additionalProperties": true  ← Extra fields allowed
+}
+```
+
+**Strict Mode (strict_schema=True):**
+```json
+{
+  "type": "object",
+  "properties": {...},
+  "additionalProperties": false  ← Extra fields rejected
+}
+```
+
+**Use Cases:**
+- **Lenient (default):** Development, backward compatibility, flexible integrations
+- **Strict:** Production, strict validation, contract enforcement
+
+**Example:**
+```python
+@worker_task(
+    task_definition_name='validate_order',
+    register_task_def=True,
+    strict_schema=True  # Enforce strict validation
+)
+def validate_order(order_id: str, amount: float) -> dict:
+    return {}
+
+# Generated schema will reject inputs with extra fields
+```
+
+### Task Definition Overwrite Control
+
+The `overwrite_task_def` flag controls update behavior:
+
+**Overwrite Mode (default, overwrite_task_def=True):**
+- Always calls `update_task_def()` (overwrites existing)
+- Ensures server has latest configuration from code
+- Use in development or when task config changes frequently
+
+**No-Overwrite Mode (overwrite_task_def=False):**
+- Checks if task exists first
+- Only creates if doesn't exist
+- Preserves manual changes on server
+- Use when tasks are managed outside code
+
+**Example:**
+```python
+@worker_task(
+    task_definition_name='stable_task',
+    register_task_def=True,
+    overwrite_task_def=False  # Don't overwrite existing config
+)
+def stable_worker(data: dict) -> dict:
+    return {}
+
+# If task exists on server, keeps existing configuration
+# If task doesn't exist, registers new one
 ```
 
 ### Startup Configuration Logging
@@ -1435,7 +1511,7 @@ Expected improvements for I/O-bound async workers:
 
 ## Changelog
 
-### Version 4.1 (2025-11-28)
+### Version 4.1 (2025-11-30)
 - Enhanced Worker Discovery section with comprehensive WorkerLoader documentation
 - Expanded Long-Running Tasks section with detailed lease extension patterns
 - Added practical examples for checkpointing and external system polling
@@ -1451,16 +1527,26 @@ Expected improvements for I/O-bound async workers:
   - Generates JSON Schema (draft-07) from Python type hints
   - Supports dataclasses, Optional, List, Dict, Union types
   - Creates schemas named {task_name}_input and {task_name}_output
-  - Does not overwrite existing definitions or schemas
   - Works for both TaskRunner and AsyncTaskRunner
+  - Added task_def parameter for advanced configuration (retry, timeout, rate limits)
+- **Added overwrite_task_def and strict_schema flags:**
+  - `overwrite_task_def` (default: True) - Controls whether to overwrite existing task definitions
+  - `strict_schema` (default: False) - Controls additionalProperties in JSON schemas
+  - Both configurable via environment variables
+  - Applies to both sync and async workers
 - **Added TaskUpdateFailure event:**
   - Published when task update fails after all retry attempts (4 retries with exponential backoff: 10s/20s/30s)
   - Contains TaskResult for recovery/logging
   - Enables external handling of critical update failures
   - Event count: 7 total events (was 6)
+- **Fixed Optional[T] handling:**
+  - Optional[T] parameters are NOT required in schema
+  - Optional[T] parameters are marked nullable
+  - Works correctly with nested dataclasses
 - Added detailed polling loop with dynamic batch sizing examples
 - Improved troubleshooting guidance
 - Fixed class-based worker support in TaskHandler async detection
+- Fixed task_def_template passing in scan_for_annotated_workers path
 
 ### Version 4.0 (2025-11-28)
 - AsyncTaskRunner: Pure async/await execution (zero thread overhead)

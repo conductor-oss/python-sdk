@@ -20,6 +20,12 @@ Demonstrates:
   * Optional fields (Optional[str], default values)
   * Generates JSON Schema draft-07 automatically
   * Registers schemas as {task_name}_input and {task_name}_output
+- ⭐ CONFIGURATION FLAGS:
+  * overwrite_task_def: Control whether to overwrite existing task definitions
+  * strict_schema: Control JSON schema validation strictness (additionalProperties)
+  * Both flags support environment variable override
+  * Global: conductor.worker.all.<property>
+  * Worker-specific: conductor.worker.<task_name>.<property>
 
 Usage:
     export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
@@ -85,7 +91,9 @@ except ImportError:
     task_definition_name='calculate',
     thread_count=100,  # High concurrency - async workers can handle it!
     poll_timeout=10,
-    register_task_def=True
+    register_task_def=True,  # Auto-register task definition with JSON schema
+    overwrite_task_def=True,  # Always update definition on server (default: true)
+    strict_schema=False  # Allow additional properties in schema (default: false)
 )
 async def calculate_fibonacci(n: int) -> int:
     """
@@ -100,6 +108,11 @@ async def calculate_fibonacci(n: int) -> int:
     - Thread count: 1 (event loop only)
     - Concurrency: Up to 100 concurrent tasks
     - Memory: ~3-6 MB per process
+
+    Configuration:
+    - register_task_def=True: Auto-registers task definition + JSON schema
+    - overwrite_task_def=True: Always updates server (default behavior)
+    - strict_schema=False: Allows extra fields in input (lenient, default)
 
     Note: This is a CPU-bound task (fibonacci calculation), which isn't
     ideal for async workers. Use this pattern for I/O-bound operations
@@ -161,17 +174,18 @@ class OrderRequest:
 
 
 # Create TaskDef with advanced configuration for the complex order worker
+# This demonstrates using task_def parameter to specify retry, timeout, and rate limiting
 complex_order_task_def = TaskDef(
     name='process_complex_order',  # Will be overridden by task_definition_name
     description='Process customer orders with complex validation and retry logic',
     retry_count=3,                          # Retry up to 3 times on failure
     retry_logic='EXPONENTIAL_BACKOFF',      # Use exponential backoff between retries
     retry_delay_seconds=10,                 # Start with 10 second delay
-    backoff_scale_factor=3,                 # Double delay each retry (10s, 20s, 40s)
+    backoff_scale_factor=3,                 # Triple delay each retry (10s, 30s, 90s)
     timeout_seconds=600,                    # Task must complete within 10 minutes
     response_timeout_seconds=120,           # Each execution attempt has 2 minutes
     timeout_policy='RETRY',                 # Retry on timeout
-    concurrent_exec_limit=30,                # Max 5 concurrent executions
+    concurrent_exec_limit=30,               # Max 30 concurrent executions
     rate_limit_per_frequency=100,           # Max 100 executions
     rate_limit_frequency_in_seconds=60,     # Per 60 seconds
     poll_timeout_seconds=30                 # Long poll timeout for efficiency
@@ -180,8 +194,13 @@ complex_order_task_def = TaskDef(
 @worker_task(
     task_definition_name='process_complex_order',
     thread_count=10,
-    register_task_def=True,  # Will auto-generate and register JSON schema!
-    task_def=complex_order_task_def  # Advanced task configuration
+    register_task_def=True,  # Auto-register task definition with JSON schemas
+    task_def=complex_order_task_def,  # Advanced task configuration (retry, timeout, rate limits)
+    overwrite_task_def=True,  # Always update task definition on server (default: true)
+    strict_schema=False  # Lenient validation - allows extra fields (default: false)
+    # Can be overridden via env:
+    #   export conductor.worker.process_complex_order.overwrite_task_def=false
+    #   export conductor.worker.process_complex_order.strict_schema=true
 )
 async def process_complex_order(
     order: OrderRequest,
@@ -203,11 +222,20 @@ async def process_complex_order(
        - Schema registered as: process_complex_order_input (v1)
 
     2. ADVANCED TASK CONFIGURATION via task_def parameter:
-       - Retry policy: 3 retries with EXPONENTIAL_BACKOFF (10s, 20s, 40s)
+       - Retry policy: 3 retries with EXPONENTIAL_BACKOFF (10s, 30s, 90s)
        - Timeouts: 10 min total, 2 min per execution
        - Rate limiting: Max 100 executions per 60 seconds
-       - Concurrency: Max 5 concurrent executions
+       - Concurrency: Max 30 concurrent executions
        - All configured via TaskDef object passed to @worker_task
+
+    3. CONFIGURATION FLAGS:
+       - overwrite_task_def=True: Always updates task definition on server
+         * Use False to preserve manual server changes
+         * Configurable: export conductor.worker.process_complex_order.overwrite_task_def=false
+
+       - strict_schema=False: Lenient JSON schema validation (allows extra fields)
+         * Use True for strict validation (rejects extra fields)
+         * Configurable: export conductor.worker.process_complex_order.strict_schema=true
 
     Benefits:
     - Input validation in Conductor UI
@@ -216,6 +244,8 @@ async def process_complex_order(
     - Runtime validation of task inputs
     - Production-ready retry and timeout policies
     - Rate limiting to protect downstream services
+    - Flexible schema validation modes
+    - Environment-based configuration control
     """
     # Simulate order processing
     ctx = get_task_context()

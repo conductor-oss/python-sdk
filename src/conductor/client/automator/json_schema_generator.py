@@ -28,13 +28,15 @@ def _is_optional_type(type_hint) -> bool:
     return False
 
 
-def generate_json_schema_from_function(func, schema_name: str) -> Optional[Dict[str, Any]]:
+def generate_json_schema_from_function(func, schema_name: str, strict_schema: bool = False) -> Optional[Dict[str, Any]]:
     """
     Generate JSON Schema draft-07 from function signature.
 
     Args:
         func: The function to analyze (can be sync or async)
         schema_name: Name for the schema
+        strict_schema: If True, set additionalProperties=false (strict validation)
+                      If False (default), set additionalProperties=true (lenient)
 
     Returns:
         Dict containing JSON Schema, or None if schema cannot be generated
@@ -50,10 +52,10 @@ def generate_json_schema_from_function(func, schema_name: str) -> Optional[Dict[
         return_annotation = sig.return_annotation
 
         # Generate input schema from parameters
-        input_schema = _generate_input_schema(sig, schema_name)
+        input_schema = _generate_input_schema(sig, schema_name, strict_schema)
 
         # Generate output schema from return type
-        output_schema = _generate_output_schema(return_annotation, schema_name)
+        output_schema = _generate_output_schema(return_annotation, schema_name, strict_schema)
 
         return {
             'input': input_schema,
@@ -64,7 +66,7 @@ def generate_json_schema_from_function(func, schema_name: str) -> Optional[Dict[
         return None
 
 
-def _generate_input_schema(sig: inspect.Signature, schema_name: str) -> Optional[Dict[str, Any]]:
+def _generate_input_schema(sig: inspect.Signature, schema_name: str, strict_schema: bool = False) -> Optional[Dict[str, Any]]:
     """Generate JSON schema for function input parameters."""
     try:
         properties = {}
@@ -75,7 +77,7 @@ def _generate_input_schema(sig: inspect.Signature, schema_name: str) -> Optional
                 # No type hint - can't generate schema
                 return None
 
-            param_schema = _type_to_json_schema(param.annotation)
+            param_schema = _type_to_json_schema(param.annotation, strict_schema)
             if param_schema is None:
                 # Can't convert this type - abort schema generation
                 return None
@@ -97,14 +99,14 @@ def _generate_input_schema(sig: inspect.Signature, schema_name: str) -> Optional
                 "$schema": "http://json-schema.org/draft-07/schema#",
                 "type": "object",
                 "properties": {},
-                "additionalProperties": False
+                "additionalProperties": not strict_schema
             }
 
         schema = {
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": properties,
-            "additionalProperties": False
+            "additionalProperties": not strict_schema  # False when strict, True when lenient
         }
 
         if required:
@@ -117,7 +119,7 @@ def _generate_input_schema(sig: inspect.Signature, schema_name: str) -> Optional
         return None
 
 
-def _generate_output_schema(return_annotation, schema_name: str) -> Optional[Dict[str, Any]]:
+def _generate_output_schema(return_annotation, schema_name: str, strict_schema: bool = False) -> Optional[Dict[str, Any]]:
     """Generate JSON schema for function return type."""
     try:
         if return_annotation == inspect.Signature.empty:
@@ -141,7 +143,7 @@ def _generate_output_schema(return_annotation, schema_name: str) -> Optional[Dic
                     return_annotation = arg
                     break
 
-        output_schema = _type_to_json_schema(return_annotation)
+        output_schema = _type_to_json_schema(return_annotation, strict_schema)
         if output_schema is None:
             return None
 
@@ -155,9 +157,13 @@ def _generate_output_schema(return_annotation, schema_name: str) -> Optional[Dic
         return None
 
 
-def _type_to_json_schema(type_hint) -> Optional[Dict[str, Any]]:
+def _type_to_json_schema(type_hint, strict_schema: bool = False) -> Optional[Dict[str, Any]]:
     """
     Convert Python type hint to JSON Schema.
+
+    Args:
+        type_hint: The Python type hint to convert
+        strict_schema: If True, set additionalProperties=false for objects
 
     Supports:
     - Basic types: str, int, float, bool
@@ -181,7 +187,7 @@ def _type_to_json_schema(type_hint) -> Optional[Dict[str, Any]]:
 
         if len(non_none_args) == 1:
             # Optional[T] case
-            inner_schema = _type_to_json_schema(non_none_args[0])
+            inner_schema = _type_to_json_schema(non_none_args[0], strict_schema)
             if inner_schema:
                 # For optional, we could use oneOf or just mark as nullable
                 # Using nullable for simplicity
@@ -194,7 +200,7 @@ def _type_to_json_schema(type_hint) -> Optional[Dict[str, Any]]:
     if origin is list:
         args = get_args(type_hint)
         if args:
-            item_schema = _type_to_json_schema(args[0])
+            item_schema = _type_to_json_schema(args[0], strict_schema)
             if item_schema:
                 return {
                     "type": "array",
@@ -209,7 +215,7 @@ def _type_to_json_schema(type_hint) -> Optional[Dict[str, Any]]:
         if len(args) >= 2:
             # Dict[str, T] - we can only support string keys in JSON
             if args[0] == str:
-                value_schema = _type_to_json_schema(args[1])
+                value_schema = _type_to_json_schema(args[1], strict_schema)
                 if value_schema:
                     return {
                         "type": "object",
@@ -239,7 +245,7 @@ def _type_to_json_schema(type_hint) -> Optional[Dict[str, Any]]:
             required = []
 
             for field in fields(type_hint):
-                field_schema = _type_to_json_schema(field.type)
+                field_schema = _type_to_json_schema(field.type, strict_schema)
                 if field_schema is None:
                     # Can't convert a field - abort dataclass schema
                     return None
@@ -259,7 +265,7 @@ def _type_to_json_schema(type_hint) -> Optional[Dict[str, Any]]:
             schema = {
                 "type": "object",
                 "properties": properties,
-                "additionalProperties": False
+                "additionalProperties": not strict_schema  # False when strict, True when lenient
             }
 
             if required:

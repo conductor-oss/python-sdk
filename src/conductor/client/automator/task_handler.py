@@ -42,7 +42,8 @@ if not _mp_fork_set:
 
 def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func,
                          thread_count: int = 1, register_task_def: bool = False,
-                         poll_timeout: int = 100, lease_extend_enabled: bool = False, task_def: Optional['TaskDef'] = None):
+                         poll_timeout: int = 100, lease_extend_enabled: bool = False, task_def: Optional['TaskDef'] = None,
+                         overwrite_task_def: bool = True, strict_schema: bool = False):
     logger.debug("decorated %s", name)
     _decorated_functions[(name, domain)] = {
         "func": func,
@@ -53,7 +54,9 @@ def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id:
         "register_task_def": register_task_def,
         "poll_timeout": poll_timeout,
         "lease_extend_enabled": lease_extend_enabled,
-        "task_def": task_def
+        "task_def": task_def,
+        "overwrite_task_def": overwrite_task_def,
+        "strict_schema": strict_schema
     }
 
 
@@ -77,7 +80,9 @@ def get_registered_workers() -> List[Worker]:
             poll_timeout=record.get("poll_timeout", 100),
             lease_extend_enabled=record.get("lease_extend_enabled", False),
             paused=False,  # Always default to False, only env vars can set to True
-            task_def_template=record.get("task_def")  # Optional TaskDef configuration
+            task_def_template=record.get("task_def"),  # Optional TaskDef configuration
+            overwrite_task_def=record.get("overwrite_task_def", True),
+            strict_schema=record.get("strict_schema", False)
         )
         workers.append(worker)
     return workers
@@ -186,7 +191,9 @@ class TaskHandler:
                     'thread_count': record.get("thread_count", 1),
                     'register_task_def': record.get("register_task_def", False),
                     'poll_timeout': record.get("poll_timeout", 100),
-                    'lease_extend_enabled': record.get("lease_extend_enabled", True)
+                    'lease_extend_enabled': record.get("lease_extend_enabled", True),
+                    'overwrite_task_def': record.get("overwrite_task_def", True),
+                    'strict_schema': record.get("strict_schema", False)
                 }
 
                 # Resolve configuration with environment variable overrides
@@ -205,7 +212,9 @@ class TaskHandler:
                     register_task_def=resolved_config['register_task_def'],
                     poll_timeout=resolved_config['poll_timeout'],
                     lease_extend_enabled=resolved_config['lease_extend_enabled'],
-                    task_def_template=record.get("task_def"))  # Pass TaskDef configuration
+                    task_def_template=record.get("task_def"),  # Pass TaskDef configuration
+                    overwrite_task_def=resolved_config.get('overwrite_task_def', True),
+                    strict_schema=resolved_config.get('strict_schema', False))
                 logger.debug("created worker with name=%s and domain=%s", task_def_name, resolved_config['domain'])
                 workers.append(worker)
 

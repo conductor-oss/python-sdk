@@ -464,8 +464,14 @@ export conductor.worker.all.domain=production
 export conductor.worker.all.poll_interval_millis=250
 export conductor.worker.all.thread_count=20
 
+# Task registration configuration
+export conductor.worker.all.register_task_def=true  # Auto-register task definitions
+export conductor.worker.all.overwrite_task_def=true  # Overwrite existing (default)
+export conductor.worker.all.strict_schema=false  # Lenient schema validation (default)
+
 # Worker-specific configuration (overrides global)
 export conductor.worker.greetings.thread_count=50
+export conductor.worker.validate_order.strict_schema=true  # Strict validation for this worker
 
 # Runtime control (pause/resume workers without code changes)
 export conductor.worker.all.paused=true  # Maintenance mode

@@ -189,7 +189,10 @@ class AsyncTaskRunner:
 
             if hasattr(self.worker, 'execute_function'):
                 logger.info(f"Generating JSON schemas from function signature...")
-                schemas = generate_json_schema_from_function(self.worker.execute_function, task_name)
+                # Pass strict_schema flag to control additionalProperties
+                strict_mode = getattr(self.worker, 'strict_schema', False)
+                logger.debug(f"  strict_schema mode: {strict_mode}")
+                schemas = generate_json_schema_from_function(self.worker.execute_function, task_name, strict_schema=strict_mode)
 
                 if schemas:
                     has_input_schema = schemas.get('input') is not None
@@ -316,7 +319,11 @@ class AsyncTaskRunner:
                 task_def.output_schema = {"name": output_schema_name, "version": 1}
                 logger.debug(f"  Linked output schema: {output_schema_name}")
 
-            # Register/update task definition (will overwrite if exists)
+            # Register/update task definition
+            # Behavior depends on overwrite_task_def flag
+            overwrite = getattr(self.worker, 'overwrite_task_def', True)
+            logger.debug(f"  overwrite_task_def: {overwrite}")
+
             try:
                 # Debug: Log the TaskDef being sent
                 logger.debug(f"  Sending TaskDef to server:")
@@ -326,8 +333,23 @@ class AsyncTaskRunner:
                 logger.debug(f"    timeout_policy: {task_def.timeout_policy}")
                 logger.debug(f"    Full to_dict(): {task_def.to_dict()}")
 
-                # Use update_task_def to ensure we overwrite existing definitions
-                metadata_client.update_task_def(task_def=task_def)
+                if overwrite:
+                    # Use update_task_def to overwrite existing definitions
+                    logger.debug(f"  Using update_task_def (overwrite=True)")
+                    metadata_client.update_task_def(task_def=task_def)
+                else:
+                    # Check if task exists, only create if it doesn't
+                    logger.debug(f"  Checking if task exists before creating (overwrite=False)")
+                    try:
+                        existing = metadata_client.get_task_def(task_name)
+                        if existing:
+                            logger.info(f"✓ Task definition '{task_name}' already exists - skipping (overwrite=False)")
+                            logger.info(f"  View at: {self.configuration.ui_host}/taskDef/{task_name}")
+                            return
+                    except Exception:
+                        # Task doesn't exist, proceed to register
+                        pass
+                    metadata_client.register_task_def(task_def=task_def)
 
                 # Print success message with link
                 task_def_url = f"{self.configuration.ui_host}/taskDef/{task_name}"
@@ -780,7 +802,9 @@ class AsyncTaskRunner:
             register_task_def=getattr(self.worker, 'register_task_def', False),
             poll_timeout=getattr(self.worker, 'poll_timeout', 100),
             lease_extend_enabled=getattr(self.worker, 'lease_extend_enabled', False),
-            paused=getattr(self.worker, 'paused', False)
+            paused=getattr(self.worker, 'paused', False),
+            overwrite_task_def=getattr(self.worker, 'overwrite_task_def', True),
+            strict_schema=getattr(self.worker, 'strict_schema', False)
         )
 
         # Apply resolved configuration to worker
@@ -800,6 +824,10 @@ class AsyncTaskRunner:
             self.worker.lease_extend_enabled = resolved_config['lease_extend_enabled']
         if resolved_config.get('paused') is not None:
             self.worker.paused = resolved_config['paused']
+        if resolved_config.get('overwrite_task_def') is not None:
+            self.worker.overwrite_task_def = resolved_config['overwrite_task_def']
+        if resolved_config.get('strict_schema') is not None:
+            self.worker.strict_schema = resolved_config['strict_schema']
 
         # Store resolved config for logging in run() (after fork)
         self._resolved_config = resolved_config

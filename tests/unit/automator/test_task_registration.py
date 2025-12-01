@@ -10,6 +10,7 @@ Tests the register_task_def functionality including:
 """
 
 import asyncio
+import os
 import unittest
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Union
@@ -593,6 +594,338 @@ class TestClassBasedWorkers(unittest.TestCase):
         self.assertEqual(task_def.name, 'class_task')
         self.assertIsNone(task_def.input_schema)
         self.assertIsNone(task_def.output_schema)
+
+
+if __name__ == '__main__':
+    unittest.main()
+
+
+class TestOverwriteTaskDefFlag(unittest.TestCase):
+    """Test overwrite_task_def configuration flag."""
+
+    def setUp(self):
+        self.config = Configuration()
+
+    @patch('conductor.client.automator.task_runner.OrkesMetadataClient')
+    def test_overwrite_true_always_updates(self, mock_metadata_client_class):
+        """When overwrite_task_def=True, should call update_task_def."""
+
+        def worker_func(name: str) -> str:
+            return name
+
+        worker = Worker(
+            task_definition_name='my_task',
+            execute_function=worker_func,
+            register_task_def=True,
+            overwrite_task_def=True  # Should update
+        )
+
+        mock_metadata = Mock()
+        mock_metadata_client_class.return_value = mock_metadata
+        mock_metadata.update_task_def.return_value = None
+
+        task_runner = TaskRunner(worker, self.config)
+        task_runner._TaskRunner__register_task_definition()
+
+        # Should call update (overwrites)
+        mock_metadata.update_task_def.assert_called_once()
+
+    @patch('conductor.client.automator.task_runner.OrkesMetadataClient')
+    def test_overwrite_false_checks_existence(self, mock_metadata_client_class):
+        """When overwrite_task_def=False, should check if task exists first."""
+
+        def worker_func(name: str) -> str:
+            return name
+
+        worker = Worker(
+            task_definition_name='existing_task',
+            execute_function=worker_func,
+            register_task_def=True,
+            overwrite_task_def=False  # Should check first
+        )
+
+        mock_metadata = Mock()
+        mock_metadata_client_class.return_value = mock_metadata
+
+        # Task exists
+        existing_task = TaskDef(name='existing_task')
+        mock_metadata.get_task_def.return_value = existing_task
+
+        task_runner = TaskRunner(worker, self.config)
+        task_runner._TaskRunner__register_task_definition()
+
+        # Should check if task exists
+        mock_metadata.get_task_def.assert_called_once_with('existing_task')
+
+        # Should NOT call update or register
+        mock_metadata.update_task_def.assert_not_called()
+        mock_metadata.register_task_def.assert_not_called()
+
+    @patch('conductor.client.automator.task_runner.OrkesMetadataClient')
+    def test_overwrite_false_creates_if_not_exists(self, mock_metadata_client_class):
+        """When overwrite_task_def=False and task doesn't exist, should create."""
+
+        def worker_func(name: str) -> str:
+            return name
+
+        worker = Worker(
+            task_definition_name='new_task',
+            execute_function=worker_func,
+            register_task_def=True,
+            overwrite_task_def=False
+        )
+
+        mock_metadata = Mock()
+        mock_metadata_client_class.return_value = mock_metadata
+
+        # Task doesn't exist
+        mock_metadata.get_task_def.side_effect = Exception("Not found")
+
+        task_runner = TaskRunner(worker, self.config)
+        task_runner._TaskRunner__register_task_definition()
+
+        # Should check if task exists
+        mock_metadata.get_task_def.assert_called_once()
+
+        # Should call register (not update)
+        mock_metadata.register_task_def.assert_called_once()
+
+    @patch('conductor.client.automator.async_task_runner.OrkesMetadataClient')
+    def test_async_worker_respects_overwrite_flag(self, mock_metadata_client_class):
+        """Async workers should respect overwrite_task_def flag."""
+
+        async def async_worker(name: str) -> str:
+            return name
+
+        # overwrite=True
+        worker_overwrite = Worker(
+            task_definition_name='task1',
+            execute_function=async_worker,
+            register_task_def=True,
+            overwrite_task_def=True
+        )
+
+        mock_metadata = Mock()
+        mock_metadata_client_class.return_value = mock_metadata
+        mock_metadata.update_task_def.return_value = None
+
+        async_runner = AsyncTaskRunner(worker_overwrite, self.config)
+        asyncio.run(async_runner._AsyncTaskRunner__async_register_task_definition())
+
+        # Should call update
+        mock_metadata.update_task_def.assert_called_once()
+
+
+class TestStrictSchemaConfiguration(unittest.TestCase):
+    """Test strict_schema configuration with workers."""
+
+    def setUp(self):
+        self.config = Configuration()
+
+    @patch('conductor.client.automator.task_runner.OrkesMetadataClient')
+    @patch('conductor.client.automator.task_runner.OrkesSchemaClient')
+    def test_strict_schema_false_generates_lenient_schemas(self, mock_schema_client_class, mock_metadata_client_class):
+        """When strict_schema=False, schemas should have additionalProperties=true."""
+
+        @dataclass
+        class User:
+            name: str
+
+        def worker(user: User) -> dict:
+            return {}
+
+        worker = Worker(
+            task_definition_name='test_task',
+            execute_function=worker,
+            register_task_def=True,
+            strict_schema=False  # Lenient
+        )
+
+        mock_metadata = Mock()
+        mock_schema = Mock()
+        mock_metadata_client_class.return_value = mock_metadata
+        mock_schema_client_class.return_value = mock_schema
+        setup_update_then_register_mock(mock_metadata)
+
+        task_runner = TaskRunner(worker, self.config)
+        task_runner._TaskRunner__register_task_definition()
+
+        # Get registered schema
+        schema_calls = mock_schema.register_schema.call_args_list
+        self.assertEqual(len(schema_calls), 2)
+
+        input_schema_def = schema_calls[0][0][0]
+        input_schema_data = input_schema_def.data
+
+        # Should be lenient
+        self.assertEqual(input_schema_data['additionalProperties'], True)
+
+    @patch('conductor.client.automator.task_runner.OrkesMetadataClient')
+    @patch('conductor.client.automator.task_runner.OrkesSchemaClient')
+    def test_strict_schema_true_generates_strict_schemas(self, mock_schema_client_class, mock_metadata_client_class):
+        """When strict_schema=True, schemas should have additionalProperties=false."""
+
+        def worker(name: str) -> str:
+            return name
+
+        worker = Worker(
+            task_definition_name='strict_task',
+            execute_function=worker,
+            register_task_def=True,
+            strict_schema=True  # Strict
+        )
+
+        mock_metadata = Mock()
+        mock_schema = Mock()
+        mock_metadata_client_class.return_value = mock_metadata
+        mock_schema_client_class.return_value = mock_schema
+        setup_update_then_register_mock(mock_metadata)
+
+        task_runner = TaskRunner(worker, self.config)
+        task_runner._TaskRunner__register_task_definition()
+
+        # Get registered schema
+        schema_calls = mock_schema.register_schema.call_args_list
+        input_schema_def = schema_calls[0][0][0]
+        input_schema_data = input_schema_def.data
+
+        # Should be strict
+        self.assertEqual(input_schema_data['additionalProperties'], False)
+
+
+if __name__ == '__main__':
+    unittest.main()
+
+
+class TestEnvironmentVariableOverride(unittest.TestCase):
+    """Test that overwrite_task_def and strict_schema can be overridden via env vars."""
+
+    def setUp(self):
+        self.config = Configuration()
+        # Clean up any existing env vars
+        for key in list(os.environ.keys()):
+            if key.startswith('conductor.worker.'):
+                del os.environ[key]
+
+    def tearDown(self):
+        # Clean up env vars after each test
+        for key in list(os.environ.keys()):
+            if key.startswith('conductor.worker.'):
+                del os.environ[key]
+
+    def test_global_env_overrides_overwrite_task_def(self):
+        """Global env var should override code-level overwrite_task_def."""
+        from conductor.client.worker.worker_config import resolve_worker_config
+
+        # Set global env var
+        os.environ['conductor.worker.all.overwrite_task_def'] = 'false'
+
+        # Resolve with code-level default of True
+        config = resolve_worker_config(
+            worker_name='test_worker',
+            overwrite_task_def=True  # Code default
+        )
+
+        # Should use env var value (False)
+        self.assertEqual(config['overwrite_task_def'], False)
+
+    def test_global_env_overrides_strict_schema(self):
+        """Global env var should override code-level strict_schema."""
+        from conductor.client.worker.worker_config import resolve_worker_config
+
+        # Set global env var
+        os.environ['conductor.worker.all.strict_schema'] = 'true'
+
+        # Resolve with code-level default of False
+        config = resolve_worker_config(
+            worker_name='test_worker',
+            strict_schema=False  # Code default
+        )
+
+        # Should use env var value (True)
+        self.assertEqual(config['strict_schema'], True)
+
+    def test_worker_specific_env_overrides_global(self):
+        """Worker-specific env var should override global env var."""
+        from conductor.client.worker.worker_config import resolve_worker_config
+
+        # Set both global and worker-specific
+        os.environ['conductor.worker.all.overwrite_task_def'] = 'true'
+        os.environ['conductor.worker.my_worker.overwrite_task_def'] = 'false'
+
+        config = resolve_worker_config(
+            worker_name='my_worker',
+            overwrite_task_def=True
+        )
+
+        # Should use worker-specific value (False)
+        self.assertEqual(config['overwrite_task_def'], False)
+
+    def test_priority_order(self):
+        """Test configuration priority: worker-specific > global > code."""
+        from conductor.client.worker.worker_config import resolve_worker_config
+
+        # Set global
+        os.environ['conductor.worker.all.strict_schema'] = 'true'
+        os.environ['conductor.worker.all.overwrite_task_def'] = 'false'
+
+        # Worker-specific overrides global
+        os.environ['conductor.worker.priority_test.strict_schema'] = 'false'
+
+        config = resolve_worker_config(
+            worker_name='priority_test',
+            overwrite_task_def=True,  # Code default
+            strict_schema=False  # Code default
+        )
+
+        # strict_schema: worker-specific (False) overrides global (True)
+        self.assertEqual(config['strict_schema'], False)
+
+        # overwrite_task_def: global (False) overrides code (True)
+        self.assertEqual(config['overwrite_task_def'], False)
+
+    @patch('conductor.client.automator.task_runner.OrkesMetadataClient')
+    def test_env_var_affects_actual_behavior(self, mock_metadata_client_class):
+        """Env var should actually change worker behavior."""
+
+        # Set env var to disable overwrite
+        os.environ['conductor.worker.env_test.overwrite_task_def'] = 'false'
+
+        def worker_func(name: str) -> str:
+            return name
+
+        worker = Worker(
+            task_definition_name='env_test',
+            execute_function=worker_func,
+            register_task_def=True,
+            overwrite_task_def=True  # Code says True, but env will override to False
+        )
+
+        mock_metadata = Mock()
+        mock_metadata_client_class.return_value = mock_metadata
+
+        # Existing task
+        existing_task = TaskDef(name='env_test')
+        mock_metadata.get_task_def.return_value = existing_task
+
+        task_runner = TaskRunner(worker, self.config)
+
+        # This will call __set_worker_properties which resolves env vars
+        # Need to manually trigger it
+        task_runner._TaskRunner__set_worker_properties()
+
+        # Now worker should have overwrite_task_def=False from env
+        self.assertEqual(worker.overwrite_task_def, False)
+
+        # When we call registration, it should skip (because overwrite=False and task exists)
+        task_runner._TaskRunner__register_task_definition()
+
+        # Should check if task exists
+        mock_metadata.get_task_def.assert_called_once()
+
+        # Should NOT update or register (skipped because exists)
+        mock_metadata.update_task_def.assert_not_called()
+        mock_metadata.register_task_def.assert_not_called()
 
 
 if __name__ == '__main__':

@@ -80,7 +80,7 @@ def WorkerTask(task_definition_name: str, poll_interval: int = 100, domain: Opti
 
 def worker_task(task_definition_name: str, poll_interval_millis: int = 100, domain: Optional[str] = None, worker_id: Optional[str] = None,
                 thread_count: int = 1, register_task_def: bool = False, poll_timeout: int = 100, lease_extend_enabled: bool = False,
-                task_def: Optional['TaskDef'] = None):
+                task_def: Optional['TaskDef'] = None, overwrite_task_def: bool = True, strict_schema: bool = False):
     """
     Decorator to register a function as a Conductor worker task.
 
@@ -144,6 +144,18 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
                     concurrent_exec_limit=10
                 )
 
+        overwrite_task_def: Whether to overwrite existing task definitions on server.
+            - Default: True
+            - When True: Always updates task definition (uses update_task_def)
+            - When False: Only creates if doesn't exist (skips if exists)
+            - Can be overridden via env: conductor.worker.<name>.overwrite_task_def=false
+
+        strict_schema: Whether to enforce strict JSON schema validation.
+            - Default: False
+            - When False: additionalProperties=true (allows extra fields)
+            - When True: additionalProperties=false (strict validation)
+            - Can be overridden via env: conductor.worker.<name>.strict_schema=true
+
     Returns:
         Decorated function that can be called normally or used as a workflow task
 
@@ -176,7 +188,8 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
     def worker_task_func(func):
         register_decorated_fn(name=task_definition_name, poll_interval=poll_interval_millis, domain=domain,
                               worker_id=worker_id, thread_count=thread_count, register_task_def=register_task_def,
-                              poll_timeout=poll_timeout, lease_extend_enabled=lease_extend_enabled, task_def=task_def, func=func)
+                              poll_timeout=poll_timeout, lease_extend_enabled=lease_extend_enabled, task_def=task_def,
+                              overwrite_task_def=overwrite_task_def, strict_schema=strict_schema, func=func)
 
         @functools.wraps(func)
         def wrapper_func(*args, **kwargs):
