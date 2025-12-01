@@ -137,12 +137,12 @@ The Python SDK provides high-performance worker execution with automatic optimiz
 **Performance Optimizations:**
 - **Dynamic batch polling** - Batch size adapts to available capacity (thread_count - running tasks)
 - **Adaptive backoff** - Exponential backoff when queue empty (1ms → 2ms → 4ms → poll_interval)
-- **High concurrency** - Async workers: 100-1000+ tasks/sec, Sync workers: 10-50 tasks/sec
+- **High concurrency** - Async workers support higher task throughput, sync workers use thread pools
 
 **AsyncTaskRunner Benefits (async def workers):**
-- 67% fewer threads per worker
-- 40-50% less memory per worker
-- 10-100x better I/O throughput
+- Fewer threads per worker (single event loop)
+- Lower memory footprint per worker
+- Better I/O throughput for async workloads
 - Direct `await worker_fn()` execution
 
 See [docs/design/WORKER_DESIGN.md](docs/design/WORKER_DESIGN.md) for complete architecture details.

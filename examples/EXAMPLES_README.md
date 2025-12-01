@@ -192,7 +192,7 @@ export conductor.worker.all.thread_count=20
 - Check logs for "Created AsyncTaskRunner"
 
 **High memory?**
-- Use `async def` for I/O tasks (40-50% less memory)
+- Use `async def` for I/O tasks (lower memory)
 - Reduce worker count or thread_count
 
 ---

@@ -1193,7 +1193,7 @@ FUNCTION should_backoff() → Bool:
 **Benefits:**
 - Request multiplexing (multiple requests on single connection)
 - Header compression
-- 40-60% higher throughput
+- Higher throughput compared to HTTP/1.1
 
 **Configuration:**
 - Connection pool: 100 connections
@@ -1230,7 +1230,7 @@ FOR i IN 0 to available_slots:
 ```
 
 **Benefits:**
-- 60-70% fewer API calls
+- Fewer API calls compared to single polling
 - Lower server load
 - Better throughput
 
@@ -1995,11 +1995,11 @@ FUNCTION my_worker(data: Input) → Output:
 ### 19.2 Performance Targets
 
 **Must Achieve:**
-- Average polling delay: < 5ms
-- Throughput (sync workers): 10-50 tasks/sec
-- Throughput (async workers): 100-1000+ tasks/sec
-- API call reduction (batch polling): ~65%
-- Memory per worker process: < 100 MB
+- Low polling latency (single-digit milliseconds)
+- High throughput for sync workers
+- Higher throughput for async workers (I/O-bound workloads)
+- Reduced API calls via batch polling
+- Efficient memory usage per worker process
 
 ### 19.3 Compatibility Matrix
 
@@ -2096,16 +2096,16 @@ tasks = batch_poll(available_slots)
 
 ### 22.2 Non-Functional Requirements
 
-✅ Low latency (< 5ms polling delay)
-✅ High throughput (100+ tasks/sec)
-✅ Memory efficient (< 100 MB per worker)
-✅ CPU efficient (< 10% idle CPU)
+✅ Low polling latency
+✅ High throughput
+✅ Memory efficient
+✅ CPU efficient
 ✅ Network efficient (batch polling, connection pooling)
 ✅ Observable (metrics, events, logs)
 
 ### 22.3 Test Coverage
 
-✅ Unit tests: 80%+ coverage
+✅ Unit tests: Comprehensive coverage
 ✅ Integration tests: End-to-end workflows
 ✅ Edge cases: All critical paths tested
 ✅ Performance tests: Benchmark results documented

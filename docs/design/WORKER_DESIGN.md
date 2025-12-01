@@ -51,7 +51,7 @@ def process_data(input_value: int) -> dict:
 @worker_task(task_definition_name='fetch_data', thread_count=50)
 async def fetch_data(url: str) -> dict:
     # Automatically runs as non-blocking coroutine
-    # 10-100x better concurrency for I/O-bound workloads
+    # Higher concurrency for I/O-bound workloads
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
     return {'data': response.json()}
@@ -149,7 +149,7 @@ Execution mode is **automatically detected** based on function signature:
 - Uses `AsyncTaskRunner` for polling/execution
 - Non-blocking poll/update (httpx.AsyncClient)
 - Best for: I/O-bound tasks (HTTP, DB, file operations)
-- Concurrency: 10-100x better than sync workers
+- Concurrency: Higher than sync workers for I/O-bound workloads
 - Automatic: No configuration needed
 - Threads: 1 (event loop only)
 - **Can return `None`**: Async tasks can legitimately return `None` as their result
@@ -158,7 +158,7 @@ Execution mode is **automatically detected** based on function signature:
 - **Zero Thread Overhead**: Single event loop per process (no ThreadPoolExecutor, no BackgroundEventLoop)
 - **Direct Execution**: `await worker_fn()` - no thread context switches
 - **Async HTTP**: Uses `httpx.AsyncClient` for non-blocking polling/updates
-- **Memory Efficient**: ~3-6 MB per process (regardless of async worker count)
+- **Memory Efficient**: Lower memory footprint per process
 - **High Concurrency**: Up to `thread_count` tasks running concurrently via `asyncio.gather()`
 - **Accurate Timing**: Execution time measured from start to completion
 
@@ -327,12 +327,12 @@ asyncio_task.add_done_callback(self._running_tasks.discard)  # Auto-cleanup
 
 ### **Performance Comparison**
 
-| Metric | TaskRunner (Async) | AsyncTaskRunner | Improvement |
-|--------|-------------------|-----------------|-------------|
-| Threads per worker | 3 (main + pool + event loop) | 1 (event loop only) | **67% reduction** |
-| Context switches/task | 5+ | 0 | **100% reduction** |
-| Latency overhead | Thread switches (~100-500µs) | Direct await (~1µs) | **100-500x faster** |
-| Throughput (I/O) | Limited by threads | Limited by event loop | **10-100x better** |
+| Metric | TaskRunner (Async) | AsyncTaskRunner | Notes |
+|--------|-------------------|-----------------|-------|
+| Threads per worker | 3 (main + pool + event loop) | 1 (event loop only) | Fewer threads |
+| Context switches/task | 5+ | 0 | No context switches |
+| Latency overhead | Thread context switches | Direct await | Lower latency |
+| Throughput (I/O) | Limited by threads | Limited by event loop | Higher for I/O workloads |
 
 ### **Feature Parity**
 
@@ -941,7 +941,7 @@ def run_once(self):
 **Other Optimizations:**
 - **Immediate cleanup:** Completed tasks removed immediately for accurate capacity
 - **Adaptive backoff:** Exponential backoff when queue empty (1ms → 2ms → 4ms → poll_interval)
-- **Batch polling:** ~65% API call reduction vs polling one at a time
+- **Batch polling:** significant API call reduction vs polling one at a time
 - **Non-blocking checks:** Fast capacity calculation (no locks needed)
 
 ---
@@ -992,9 +992,9 @@ async def mixed_task(url: str) -> dict:
 
 | Workload | Worker Type | thread_count | Runner | Expected Throughput |
 |----------|------------|--------------|--------|-------------------|
-| CPU-bound | `def` | 1-4 | TaskRunner | 1-4 tasks/sec (GIL limited) |
-| I/O-bound sync | `def` | 10-50 | TaskRunner | 10-50 tasks/sec |
-| I/O-bound async | `async def` | 50-200 | AsyncTaskRunner | 100-1000+ tasks/sec |
+| CPU-bound | `def` | 1-4 | TaskRunner | Limited by GIL |
+| I/O-bound sync | `def` | 10-50 | TaskRunner | Moderate |
+| I/O-bound async | `async def` | 50-200 | AsyncTaskRunner | High |
 
 ### Configuration
 
@@ -1418,7 +1418,7 @@ python3 -m pytest tests/unit/automator/test_async_task_runner.py -v
 - HTTP requests: **Mocked** (AsyncMock)
 - Everything else: **Real** (event system, configuration, serialization)
 - No external dependencies
-- Fast execution (~1 second for all tests)
+- Fast execution
 
 ### Integration Tests
 
@@ -1502,12 +1502,12 @@ def fetch_data(url: str) -> dict:  # Changed from async def
 
 Expected improvements for I/O-bound async workers:
 
-| Metric | Before (v3.2) | After (v4.0) | Improvement |
-|--------|--------------|--------------|-------------|
-| Latency | +100-500µs overhead | +1µs overhead | **100-500x faster** |
-| Throughput | ~50 tasks/sec | ~500+ tasks/sec | **10x faster** |
-| Memory | ~8-10 MB/worker | ~3-6 MB/worker | **40-50% less** |
-| CPU usage | Higher (thread switches) | Lower (pure async) | **30-50% less** |
+| Metric | TaskRunner (v3.2) | AsyncTaskRunner (v4.0) | Notes |
+|--------|-------------------|----------------------|-------|
+| Latency | Thread context switches | Direct await | Lower latency |
+| Throughput | Thread pool limited | Event loop concurrent | Higher for I/O |
+| Memory | Thread pool overhead | Single event loop | Lower memory |
+| CPU usage | Context switching overhead | Pure async execution | Lower CPU |
 
 ---
 
