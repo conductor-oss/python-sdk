@@ -30,6 +30,7 @@ from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
 from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.worker.worker_interface import WorkerInterface
 from conductor.client.worker.worker_config import resolve_worker_config, get_worker_config_oneline
+from conductor.client.worker.exception import NonRetryableException
 from conductor.client.automator.json_schema_generator import generate_json_schema_from_function
 
 logger = logging.getLogger(
@@ -652,6 +653,40 @@ class AsyncTaskRunner:
                 task.workflow_instance_id,
                 task_definition_name
             )
+        except NonRetryableException as ne:
+            # Non-retryable exception - task fails with terminal error (no retries)
+            finish_time = time.time()
+            time_spent = finish_time - start_time
+
+            # Publish TaskExecutionFailure event
+            self.event_dispatcher.publish(TaskExecutionFailure(
+                task_type=task_definition_name,
+                task_id=task.task_id,
+                worker_id=self.worker.get_identity(),
+                workflow_instance_id=task.workflow_instance_id,
+                cause=ne,
+                duration_ms=time_spent * 1000
+            ))
+
+            task_result = TaskResult(
+                task_id=task.task_id,
+                workflow_instance_id=task.workflow_instance_id,
+                worker_id=self.worker.get_identity()
+            )
+            task_result.status = TaskResultStatus.FAILED_WITH_TERMINAL_ERROR
+            task_result.reason_for_incompletion = str(ne) if str(ne) else "NonRetryableException"
+            task_result.logs = [TaskExecLog(
+                traceback.format_exc(), task_result.task_id, int(time.time()))]
+
+            logger.error(
+                "Async task failed with terminal error (no retry), id: %s, workflow_instance_id: %s, "
+                "task_definition_name: %s, reason: %s",
+                task.task_id,
+                task.workflow_instance_id,
+                task_definition_name,
+                str(ne)
+            )
+
         except Exception as e:
             finish_time = time.time()
             time_spent = finish_time - start_time
