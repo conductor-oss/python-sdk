@@ -299,7 +299,8 @@ class Worker(WorkerInterface):
                  register_task_def: bool = False,
                  poll_timeout: int = 100,
                  lease_extend_enabled: bool = False,
-                 paused: bool = False
+                 paused: bool = False,
+                 task_def_template: Optional['TaskDef'] = None
                  ) -> Self:
         super().__init__(task_definition_name)
         self.api_client = ApiClient()
@@ -318,6 +319,7 @@ class Worker(WorkerInterface):
         self.poll_timeout = poll_timeout
         self.lease_extend_enabled = lease_extend_enabled
         self.paused = paused
+        self.task_def_template = task_def_template  # Optional TaskDef configuration
 
         # Initialize background event loop for async workers
         self._background_loop = None

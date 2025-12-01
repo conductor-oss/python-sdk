@@ -13,6 +13,13 @@ Demonstrates:
 - Long-running tasks with TaskInProgress (manual lease extension)
 - Worker discovery from multiple packages
 - Prometheus metrics collection
+- ⭐ AUTOMATIC JSON SCHEMA REGISTRATION from complex Python type hints:
+  * Multiple parameters (str, int, bool, float)
+  * Nested dataclasses (Address, ContactInfo, OrderRequest)
+  * Lists of dataclasses (List[OrderItem])
+  * Optional fields (Optional[str], default values)
+  * Generates JSON Schema draft-07 automatically
+  * Registers schemas as {task_name}_input and {task_name}_output
 
 Usage:
     export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
@@ -23,6 +30,20 @@ Or with Orkes Cloud:
     export CONDUCTOR_AUTH_KEY="your-key"
     export CONDUCTOR_AUTH_SECRET="your-secret"
     python3 examples/workers_e2e.py
+
+Expected Output:
+    ================================================================================
+    Registering task definition: process_complex_order
+    ================================================================================
+    Generating JSON schemas from function signature...
+      ✓ Generated schemas: input=Yes, output=Yes
+    Registering JSON schemas...
+      ✓ Registered input schema: process_complex_order_input (v1)
+      ✓ Registered output schema: process_complex_order_output (v1)
+    Creating task definition for 'process_complex_order'...
+    ✓ Registered task definition: process_complex_order
+      View at: http://localhost:5000/taskDef/process_complex_order
+      With 2 JSON schema(s): process_complex_order_input, process_complex_order_output
 """
 
 import json
@@ -31,7 +52,8 @@ import os
 import shutil
 import sys
 import time
-from typing import Union
+from dataclasses import dataclass
+from typing import Union, Optional, List
 
 # Add parent directory to path so we can import conductor modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -42,6 +64,7 @@ from conductor.client.configuration.settings.metrics_settings import MetricsSett
 from conductor.client.context import get_task_context, TaskInProgress
 from conductor.client.worker.worker_task import worker_task
 from conductor.client.http.models.workflow_def import WorkflowDef
+from conductor.client.http.models.task_def import TaskDef
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
@@ -61,7 +84,8 @@ except ImportError:
 @worker_task(
     task_definition_name='calculate',
     thread_count=100,  # High concurrency - async workers can handle it!
-    poll_timeout=10
+    poll_timeout=10,
+    register_task_def=True
 )
 async def calculate_fibonacci(n: int) -> int:
     """
@@ -84,6 +108,128 @@ async def calculate_fibonacci(n: int) -> int:
     if n <= 1:
         return n
     return await calculate_fibonacci(n - 1) + await calculate_fibonacci(n - 2)
+
+
+# ============================================================================
+# COMPLEX SCHEMA EXAMPLE - Demonstrates JSON Schema Generation
+# ============================================================================
+
+@dataclass
+class Address:
+    """Address information - demonstrates nested dataclass."""
+    street: str
+    city: str
+    state: str
+    zip_code: str
+    country: str = "USA"  # Default value - makes this field optional in schema
+
+
+@dataclass
+class ContactInfo:
+    """Contact information - demonstrates optional fields."""
+    email: str
+    phone: Optional[str] = None      # Optional - nullable in schema
+    mobile: Optional[str] = None     # Optional - nullable in schema
+
+
+@dataclass
+class OrderItem:
+    """Order item - demonstrates dataclass within List."""
+    sku: str
+    quantity: int
+    price: float
+
+
+@dataclass
+class OrderRequest:
+    """
+    Complex order request - demonstrates:
+    - Nested dataclasses (Address, ContactInfo)
+    - Lists of primitives (tags)
+    - Lists of dataclasses (items)
+    - Optional fields at multiple levels
+    """
+    order_id: str
+    customer_name: str
+    shipping_address: Address        # Nested dataclass
+    billing_address: Address         # Nested dataclass
+    contact: ContactInfo             # Nested dataclass with optional fields
+    items: List[OrderItem]           # List of dataclasses
+    tags: List[str]                  # List of primitives
+    priority: int = 1                # Default value - optional in schema
+    requires_signature: bool = False # Default value - optional in schema
+
+
+# Create TaskDef with advanced configuration for the complex order worker
+complex_order_task_def = TaskDef(
+    name='process_complex_order',  # Will be overridden by task_definition_name
+    description='Process customer orders with complex validation and retry logic',
+    retry_count=3,                          # Retry up to 3 times on failure
+    retry_logic='EXPONENTIAL_BACKOFF',      # Use exponential backoff between retries
+    retry_delay_seconds=10,                 # Start with 10 second delay
+    backoff_scale_factor=3,                 # Double delay each retry (10s, 20s, 40s)
+    timeout_seconds=600,                    # Task must complete within 10 minutes
+    response_timeout_seconds=120,           # Each execution attempt has 2 minutes
+    timeout_policy='RETRY',                 # Retry on timeout
+    concurrent_exec_limit=30,                # Max 5 concurrent executions
+    rate_limit_per_frequency=100,           # Max 100 executions
+    rate_limit_frequency_in_seconds=60,     # Per 60 seconds
+    poll_timeout_seconds=30                 # Long poll timeout for efficiency
+)
+
+@worker_task(
+    task_definition_name='process_complex_order',
+    thread_count=10,
+    register_task_def=True,  # Will auto-generate and register JSON schema!
+    task_def=complex_order_task_def  # Advanced task configuration
+)
+async def process_complex_order(
+    order: OrderRequest,
+    idempotency_key: Optional[str],
+    timeout_seconds: int = 300
+) -> dict:
+    """
+    COMPLEX SCHEMA WORKER - Demonstrates automatic JSON Schema generation AND TaskDef configuration
+
+    This worker showcases TWO powerful SDK features:
+
+    1. AUTOMATIC JSON SCHEMA GENERATION from complex Python type hints:
+       - 3 top-level parameters (order, idempotency_key, timeout_seconds)
+       - OrderRequest dataclass with 9 fields
+       - 3 nested dataclasses (Address x2, ContactInfo)
+       - List of dataclasses (OrderItem)
+       - Optional fields at multiple levels
+       - Default values correctly marked as optional
+       - Schema registered as: process_complex_order_input (v1)
+
+    2. ADVANCED TASK CONFIGURATION via task_def parameter:
+       - Retry policy: 3 retries with EXPONENTIAL_BACKOFF (10s, 20s, 40s)
+       - Timeouts: 10 min total, 2 min per execution
+       - Rate limiting: Max 100 executions per 60 seconds
+       - Concurrency: Max 5 concurrent executions
+       - All configured via TaskDef object passed to @worker_task
+
+    Benefits:
+    - Input validation in Conductor UI
+    - Type-safe workflow design
+    - Auto-completion in workflow editor
+    - Runtime validation of task inputs
+    - Production-ready retry and timeout policies
+    - Rate limiting to protect downstream services
+    """
+    # Simulate order processing
+    ctx = get_task_context()
+    ctx.add_log(f"Processing order {order.order_id} with {len(order.items)} items")
+    ctx.add_log(f"Shipping to: {order.shipping_address.city}, {order.shipping_address.state}")
+    ctx.add_log(f"Contact: {order.contact.email}")
+
+    return {
+        'order_id': order.order_id,
+        'status': 'processed',
+        'items_count': len(order.items),
+        'customer': order.customer_name,
+        'total_price': sum(item.price * item.quantity for item in order.items)
+    }
 
 
 @worker_task(
@@ -356,22 +502,32 @@ if __name__ == '__main__':
     1. calculate (async def) - AsyncTaskRunner
        - Fibonacci calculation (demo only - use sync for CPU-bound)
        - thread_count=100 (100 concurrent async tasks in 1 event loop!)
+       - Auto-registers with JSON schema
 
-    2. long_running_task (def) - TaskRunner
+    2. process_complex_order (def) - TaskRunner
+       - ⭐ COMPLEX SCHEMA DEMO - showcases JSON Schema generation
+       - Multiple parameters (order, idempotency_key, timeout_seconds)
+       - Nested dataclasses (OrderRequest → Address x2, ContactInfo, OrderItem)
+       - List of dataclasses (items: List[OrderItem])
+       - Optional fields at multiple levels
+       - Auto-generates comprehensive JSON Schema (draft-07)
+       - Schema registered as: process_complex_order_input (v1)
+
+    3. long_running_task (def) - TaskRunner
        - Demonstrates manual lease extension with TaskInProgress
        - Takes 5 seconds total (5 polls × 1 second each)
        - thread_count=5 (5 concurrent threads)
 
-    3. greet (def) - TaskRunner
+    4. greet (def) - TaskRunner
        - Simple sync worker from helloworld package
 
-    4. greet_async (async def) - AsyncTaskRunner
+    5. greet_async (async def) - AsyncTaskRunner
        - Simple async worker from helloworld package
 
-    5. fetch_user (async def) - AsyncTaskRunner
+    6. fetch_user (async def) - AsyncTaskRunner
        - HTTP API call using httpx (from user_example package)
 
-    6. update_user (def) - TaskRunner
+    7. update_user (def) - TaskRunner
        - Process User dataclass (from user_example package)
 
     Workflow Tasks (see workers_e2e_workflow.json):
@@ -387,9 +543,11 @@ if __name__ == '__main__':
     What to Observe:
     ----------------
     - Worker logs showing AsyncTaskRunner vs TaskRunner creation
+    - JSON Schema registration logs for calculate and process_complex_order
     - Long-running task showing 5 polls with TaskInProgress
     - Metrics at http://localhost:8000/metrics
     - Workflow execution in UI (URL printed at startup)
+    - Registered task definitions with schemas in Conductor UI
 
     Key Concepts:
     ------------

@@ -6,6 +6,56 @@
   "version": 1,
   "tasks": [
     {
+      "name": "process_complex_order",
+      "taskReferenceName": "process_complex_order_ref",
+      "inputParameters": {
+        "order": {
+          "order_id": "ORD-12345",
+          "customer_name": "Jane Doe",
+          "shipping_address": {
+            "street": "123 Main St",
+            "city": "Springfield",
+            "state": "IL",
+            "zip_code": "62704",
+            "country": "USA"
+          },
+          "billing_address": {
+            "street": "456 Elm St",
+            "city": "Springfield",
+            "state": "IL",
+            "zip_code": "62701",
+            "country": "USA"
+          },
+          "contact": {
+            "email": "jane.doe@example.com",
+            "phone": "555-123-4567",
+            "mobile": null
+          },
+          "items": [
+            {
+              "sku": "SKU-001",
+              "quantity": 2,
+              "price": 19.99
+            },
+            {
+              "sku": "SKU-002",
+              "quantity": 1,
+              "price": 49.5
+            }
+          ],
+          "tags": [
+            "new_customer",
+            "expedited"
+          ],
+          "priority": 1,
+          "requires_signature": true
+        }
+      },
+      "type": "SIMPLE",
+      "optional": false,
+      "asyncComplete": false
+    },
+    {
       "name": "calculate",
       "taskReferenceName": "calculate_ref",
       "inputParameters": {

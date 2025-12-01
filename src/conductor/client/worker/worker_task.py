@@ -79,7 +79,8 @@ def WorkerTask(task_definition_name: str, poll_interval: int = 100, domain: Opti
 
 
 def worker_task(task_definition_name: str, poll_interval_millis: int = 100, domain: Optional[str] = None, worker_id: Optional[str] = None,
-                thread_count: int = 1, register_task_def: bool = False, poll_timeout: int = 100, lease_extend_enabled: bool = False):
+                thread_count: int = 1, register_task_def: bool = False, poll_timeout: int = 100, lease_extend_enabled: bool = False,
+                task_def: Optional['TaskDef'] = None):
     """
     Decorator to register a function as a Conductor worker task.
 
@@ -128,6 +129,21 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
             - Disable for fast tasks (<1s) to reduce unnecessary API calls
             - Enable for long tasks (>30s) to prevent premature timeout
 
+        task_def: Optional TaskDef object with advanced task configuration.
+            - Default: None
+            - Only used when register_task_def=True
+            - Allows specifying retry policies, timeouts, rate limits, etc.
+            - The task_definition_name parameter takes precedence for the name field
+            - Example:
+                task_def = TaskDef(
+                    name='my_task',  # Will be overridden by task_definition_name
+                    retry_count=3,
+                    retry_logic='EXPONENTIAL_BACKOFF',
+                    timeout_seconds=300,
+                    response_timeout_seconds=60,
+                    concurrent_exec_limit=10
+                )
+
     Returns:
         Decorated function that can be called normally or used as a workflow task
 
@@ -160,7 +176,7 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
     def worker_task_func(func):
         register_decorated_fn(name=task_definition_name, poll_interval=poll_interval_millis, domain=domain,
                               worker_id=worker_id, thread_count=thread_count, register_task_def=register_task_def,
-                              poll_timeout=poll_timeout, lease_extend_enabled=lease_extend_enabled, func=func)
+                              poll_timeout=poll_timeout, lease_extend_enabled=lease_extend_enabled, task_def=task_def, func=func)
 
         @functools.wraps(func)
         def wrapper_func(*args, **kwargs):

@@ -19,6 +19,7 @@ from conductor.client.event.task_runner_events import (
     TaskExecutionStarted,
     TaskExecutionCompleted,
     TaskExecutionFailure,
+    TaskUpdateFailure,
 )
 from conductor.client.event.workflow_events import (
     WorkflowEvent,
@@ -64,6 +65,8 @@ def register_task_runner_listener(
         dispatcher.register(TaskExecutionCompleted, listener.on_task_execution_completed)
     if hasattr(listener, 'on_task_execution_failure'):
         dispatcher.register(TaskExecutionFailure, listener.on_task_execution_failure)
+    if hasattr(listener, 'on_task_update_failure'):
+        dispatcher.register(TaskUpdateFailure, listener.on_task_update_failure)
 
 
 def register_workflow_listener(

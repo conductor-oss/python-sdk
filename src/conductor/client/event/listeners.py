@@ -15,6 +15,7 @@ from conductor.client.event.task_runner_events import (
     TaskExecutionStarted,
     TaskExecutionCompleted,
     TaskExecutionFailure,
+    TaskUpdateFailure,
 )
 from conductor.client.event.workflow_events import (
     WorkflowStarted,
@@ -66,6 +67,22 @@ class TaskRunnerEventsListener(Protocol):
 
     def on_task_execution_failure(self, event: TaskExecutionFailure) -> None:
         """Handle task execution failure event."""
+        ...
+
+    def on_task_update_failure(self, event: TaskUpdateFailure) -> None:
+        """
+        Handle task update failure event (after all retries exhausted).
+
+        This critical event indicates that a task was successfully executed but
+        the worker failed to communicate the result to Conductor after multiple
+        retry attempts. External intervention may be required.
+
+        Use cases:
+            - Alert operations team
+            - Log task result to external storage for recovery
+            - Implement custom retry/recovery logic
+            - Track update reliability
+        """
         ...
 
 

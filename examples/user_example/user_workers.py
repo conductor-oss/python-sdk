@@ -8,13 +8,14 @@ import time
 
 from conductor.client.context import get_task_context
 from conductor.client.worker.worker_task import worker_task
-from user_example.models import User
+from examples.user_example.models import User
 
 
 @worker_task(
     task_definition_name='fetch_user',
     thread_count=10,
-    poll_timeout=100
+    poll_timeout=100,
+    register_task_def=True
 )
 async def fetch_user(user_id: int) -> User:
     """

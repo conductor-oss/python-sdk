@@ -409,7 +409,7 @@ async def __get_authentication_headers(self):
 | `worker_id` | str | auto | Worker identifier |
 | `poll_timeout` | int | 100 | Poll timeout (ms) |
 | `lease_extend_enabled` | bool | False | ⚠️ **Not implemented** - use `TaskInProgress` instead |
-| `register_task_def` | bool | False | Auto-register task |
+| `register_task_def` | bool | False | Auto-register task definition with JSON schemas (draft-07) |
 | `paused` | bool | False | Pause worker (env-only, not in decorator) |
 
 ### Examples
@@ -436,6 +436,85 @@ export conductor.worker.process_order.thread_count=50
 ```
 
 **Result:** `domain=production`, `thread_count=50`
+
+### Automatic Task Definition Registration
+
+When `register_task_def=True`, the worker automatically registers its task definition with Conductor on startup, including JSON schemas generated from type hints.
+
+**Example:**
+```python
+from dataclasses import dataclass
+
+@dataclass
+class OrderInfo:
+    order_id: str
+    amount: float
+    customer_id: int
+
+@worker_task(
+    task_definition_name='process_order',
+    register_task_def=True  # Auto-register on startup
+)
+def process_order(order: OrderInfo, priority: int = 1) -> dict:
+    return {'status': 'processed', 'order_id': order.order_id}
+```
+
+**What Gets Registered:**
+
+1. **Task Definition**: `process_order`
+
+2. **Input Schema** (`process_order_input`):
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "order": {
+      "type": "object",
+      "properties": {
+        "order_id": {"type": "string"},
+        "amount": {"type": "number"},
+        "customer_id": {"type": "integer"}
+      },
+      "required": ["order_id", "amount", "customer_id"]
+    },
+    "priority": {"type": "integer"}
+  },
+  "required": ["order"]
+}
+```
+
+3. **Output Schema** (`process_order_output`):
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object"
+}
+```
+
+**Supported Types:**
+- Basic: `str`, `int`, `float`, `bool`, `dict`, `list`
+- Optional: `Optional[T]`
+- Collections: `List[T]`, `Dict[str, T]`
+- Dataclasses (with recursive field conversion)
+- Union types (filters out TaskInProgress/None for return types)
+
+**Behavior:**
+- ✅ Skips if task definition already exists (no overwrite)
+- ✅ Skips if schemas already exist (no overwrite)
+- ✅ Workers start even if registration fails (just logs warning)
+- ✅ Works for both sync and async workers
+- ⚠️ Only works for function-based workers (`@worker_task` decorator)
+- ⚠️ Class-based workers not supported (no execute_function attribute)
+
+**Environment Override:**
+```bash
+# Enable for all workers
+export conductor.worker.all.register_task_def=true
+
+# Enable for specific worker
+export conductor.worker.process_order.register_task_def=true
+```
 
 ### Startup Configuration Logging
 
@@ -988,6 +1067,7 @@ The built-in `MetricsCollector` is implemented as an event listener that respond
 - `TaskExecutionStarted(task_type, task_id, worker_id, workflow_instance_id)` - When task execution begins
 - `TaskExecutionCompleted(task_type, task_id, worker_id, workflow_instance_id, duration_ms, output_size_bytes)` - When task completes (includes actual async execution time)
 - `TaskExecutionFailure(task_type, task_id, worker_id, workflow_instance_id, cause, duration_ms)` - When task fails
+- `TaskUpdateFailure(task_type, task_id, worker_id, workflow_instance_id, cause, retry_count, task_result)` - **Critical!** When task update fails after all retries (4 attempts with 10s/20s/30s backoff)
 
 **Event Properties:**
 - All events are dataclasses with type hints
@@ -1018,6 +1098,59 @@ handler = TaskHandler(
 handler = TaskHandler(
     configuration=config,
     metrics_settings=MetricsSettings(http_port=8000)  # MetricsCollector auto-registered
+)
+```
+
+### Update Retry Logic & Failure Handling
+
+**Critical: Task updates are retried with exponential backoff**
+
+Both TaskRunner and AsyncTaskRunner implement robust retry logic for task updates:
+
+**Retry Configuration:**
+- **4 attempts total** (0, 1, 2, 3)
+- **Exponential backoff**: 10s, 20s, 30s between retries
+- **Idempotent**: Safe to retry updates
+- **Event on final failure**: `TaskUpdateFailure` published
+
+**Why This Matters:**
+Task updates are **critical** - if a worker executes a task successfully but fails to update Conductor, the task result is lost. The retry logic ensures maximum reliability.
+
+**Handling Update Failures:**
+```python
+class UpdateFailureHandler(TaskRunnerEventsListener):
+    """Handle critical update failures after all retries exhausted."""
+
+    def on_task_update_failure(self, event: TaskUpdateFailure):
+        # CRITICAL: Task was executed but Conductor doesn't know!
+        # External intervention required
+
+        # Option 1: Alert operations team
+        send_pagerduty_alert(
+            f"CRITICAL: Task update failed after {event.retry_count} attempts",
+            task_id=event.task_id,
+            workflow_id=event.workflow_instance_id
+        )
+
+        # Option 2: Log to external storage for recovery
+        backup_db.save_task_result(
+            task_id=event.task_id,
+            result=event.task_result,  # Contains the actual result that was lost
+            timestamp=event.timestamp,
+            error=str(event.cause)
+        )
+
+        # Option 3: Attempt custom recovery
+        try:
+            # Custom retry logic with different strategy
+            custom_update_service.update_task_with_custom_retry(event.task_result)
+        except Exception as e:
+            logger.critical(f"Recovery failed: {e}")
+
+# Register handler
+handler = TaskHandler(
+    configuration=config,
+    event_listeners=[UpdateFailureHandler()]
 )
 ```
 
@@ -1311,9 +1444,23 @@ Expected improvements for I/O-bound async workers:
   - Both TaskRunner and AsyncTaskRunner use dynamic batch polling
   - Batch size = thread_count - currently_running_tasks
   - TaskRunner: ThreadPoolExecutor capacity limits execution
-  - AsyncTaskRunner: Semaphore limits execution (during execute, not poll)
+  - AsyncTaskRunner: Semaphore limits execution (during execute + update)
+  - Semaphore held until update succeeds (ensures capacity represents fully-handled tasks)
+- **Implemented register_task_def functionality:**
+  - Automatically registers task definitions on worker startup
+  - Generates JSON Schema (draft-07) from Python type hints
+  - Supports dataclasses, Optional, List, Dict, Union types
+  - Creates schemas named {task_name}_input and {task_name}_output
+  - Does not overwrite existing definitions or schemas
+  - Works for both TaskRunner and AsyncTaskRunner
+- **Added TaskUpdateFailure event:**
+  - Published when task update fails after all retry attempts (4 retries with exponential backoff: 10s/20s/30s)
+  - Contains TaskResult for recovery/logging
+  - Enables external handling of critical update failures
+  - Event count: 7 total events (was 6)
 - Added detailed polling loop with dynamic batch sizing examples
 - Improved troubleshooting guidance
+- Fixed class-based worker support in TaskHandler async detection
 
 ### Version 4.0 (2025-11-28)
 - AsyncTaskRunner: Pure async/await execution (zero thread overhead)

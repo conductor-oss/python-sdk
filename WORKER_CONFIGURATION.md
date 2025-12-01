@@ -25,7 +25,7 @@ The following properties can be configured via environment variables:
 | `domain` | string | Worker domain for task routing | `production` | ✅ Yes |
 | `worker_id` | string | Unique worker identifier | `worker-1` | ✅ Yes |
 | `thread_count` | int | Max concurrent executions (threads for sync, coroutines for async) | `10` | ✅ Yes |
-| `register_task_def` | bool | Auto-register task definition | `true` | ✅ Yes |
+| `register_task_def` | bool | Auto-register task definition with JSON schemas on startup | `true` | ✅ Yes |
 | `poll_timeout` | int | Poll request timeout in milliseconds | `100` | ✅ Yes |
 | `lease_extend_enabled` | bool | ⚠️ **Not implemented** - reserved for future use | `false` | ✅ Yes |
 | `paused` | bool | Pause worker from polling/executing tasks | `true` | ❌ **Environment-only** |
@@ -33,6 +33,7 @@ The following properties can be configured via environment variables:
 **Notes**:
 - The `paused` property is intentionally **not available** in the `@worker_task` decorator. It can only be controlled via environment variables, allowing operators to pause/resume workers at runtime without code changes or redeployment.
 - The `lease_extend_enabled` parameter is accepted but **not currently implemented**. For lease extension, use manual `TaskInProgress` returns (see below).
+- The `register_task_def` parameter automatically registers task definitions with JSON Schema (draft-07) generated from Python type hints. Does not overwrite existing definitions.
 
 ### Understanding `thread_count`
 
