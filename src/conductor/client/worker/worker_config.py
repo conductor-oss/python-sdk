@@ -151,6 +151,13 @@ def _get_env_value(worker_name: str, property_name: str, expected_type: type = s
         logger.debug(f"Using global worker config: {global_key}={value}")
         return _parse_env_value(value, expected_type)
 
+    # Check global worker config (Unix format - CONDUCTOR_WORKER_ALL_PROPERTY)
+    unix_global_key = f"CONDUCTOR_WORKER_ALL_{property_name.upper()}"
+    value = os.environ.get(unix_global_key)
+    if value is not None:
+        logger.debug(f"Using global worker config (Unix format): {unix_global_key}={value}")
+        return _parse_env_value(value, expected_type)
+
     # Check global worker config (old format - lowercase with underscores)
     old_global_key = f"conductor_worker_{property_name}"
     value = os.environ.get(old_global_key)
@@ -158,7 +165,7 @@ def _get_env_value(worker_name: str, property_name: str, expected_type: type = s
         logger.debug(f"Using global worker config (old format): {old_global_key}={value}")
         return _parse_env_value(value, expected_type)
 
-    # Check global worker config (old format - uppercase)
+    # Check global worker config (old format - uppercase without ALL)
     old_global_key_upper = f"CONDUCTOR_WORKER_{property_name.upper()}"
     value = os.environ.get(old_global_key_upper)
     if value is not None:

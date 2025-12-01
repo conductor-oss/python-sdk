@@ -469,7 +469,8 @@ class AsyncTaskRunner:
                 "count": count,
                 "timeout": 100  # ms
             }
-            if domain is not None:
+            # Only add domain if it's not None and not empty string
+            if domain is not None and domain != "":
                 params["domain"] = domain
 
             # Async batch poll

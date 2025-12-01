@@ -13,6 +13,7 @@ from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.worker.worker_interface import DEFAULT_POLLING_INTERVAL
+from tests.unit.resources.workers import SimplePythonWorker, ClassWorker
 from tests.unit.resources.workers import ClassWorker
 from tests.unit.resources.workers import FaultyExecutionWorker
 
@@ -303,3 +304,76 @@ class TestTaskRunner(unittest.TestCase):
         cw.domain = domain
         cw.poll_interval = poll_interval
         return cw
+
+    def test_empty_string_domain_not_passed_to_poll(self):
+        """When domain is empty string, should not include it in poll parameters."""
+        from unittest.mock import Mock, patch
+        
+        # Create worker with empty string domain
+        worker = ClassWorker("test_task")
+        worker.domain = ""  # Empty string
+        
+        configuration = Configuration()
+        
+        with patch.object(TaskResourceApi, 'batch_poll') as mock_batch_poll:
+            mock_batch_poll.return_value = []
+            
+            task_runner = TaskRunner(worker=worker, configuration=configuration)
+            
+            # Trigger a poll
+            task_runner._TaskRunner__batch_poll_tasks(1)
+            
+            # Check the call arguments
+            call_args = mock_batch_poll.call_args
+            
+            # 'domain' should NOT be in the kwargs
+            self.assertNotIn('domain', call_args.kwargs)
+
+    def test_none_domain_not_passed_to_poll(self):
+        """When domain is None, should not include it in poll parameters."""
+        from unittest.mock import Mock, patch
+        
+        # Create worker with None domain
+        worker = ClassWorker("test_task")
+        worker.domain = None
+        
+        configuration = Configuration()
+        
+        with patch.object(TaskResourceApi, 'batch_poll') as mock_batch_poll:
+            mock_batch_poll.return_value = []
+            
+            task_runner = TaskRunner(worker=worker, configuration=configuration)
+            
+            # Trigger a poll
+            task_runner._TaskRunner__batch_poll_tasks(1)
+            
+            # Check the call arguments
+            call_args = mock_batch_poll.call_args
+            
+            # 'domain' should NOT be in the kwargs
+            self.assertNotIn('domain', call_args.kwargs)
+
+    def test_valid_domain_passed_to_poll(self):
+        """When domain has a value, should include it in poll parameters."""
+        from unittest.mock import Mock, patch
+        
+        # Create worker with actual domain
+        worker = ClassWorker("test_task")
+        worker.domain = "production"
+        
+        configuration = Configuration()
+        
+        with patch.object(TaskResourceApi, 'batch_poll') as mock_batch_poll:
+            mock_batch_poll.return_value = []
+            
+            task_runner = TaskRunner(worker=worker, configuration=configuration)
+            
+            # Trigger a poll
+            task_runner._TaskRunner__batch_poll_tasks(1)
+            
+            # Check the call arguments
+            call_args = mock_batch_poll.call_args
+            
+            # 'domain' SHOULD be in the kwargs with value 'production'
+            self.assertIn('domain', call_args.kwargs)
+            self.assertEqual(call_args.kwargs['domain'], 'production')

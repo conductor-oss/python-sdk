@@ -459,22 +459,26 @@ if __name__ == '__main__':
 **Worker Configuration:** Workers support hierarchical configuration via environment variables, allowing you to override settings at deployment without code changes:
 
 ```bash
-# Global configuration (applies to all workers)
-export conductor.worker.all.domain=production
-export conductor.worker.all.poll_interval_millis=250
-export conductor.worker.all.thread_count=20
+# Global configuration (applies to all workers) - Unix format recommended
+export CONDUCTOR_WORKER_ALL_DOMAIN=production
+export CONDUCTOR_WORKER_ALL_POLL_INTERVAL_MILLIS=250
+export CONDUCTOR_WORKER_ALL_THREAD_COUNT=20
 
 # Task registration configuration
-export conductor.worker.all.register_task_def=true  # Auto-register task definitions
-export conductor.worker.all.overwrite_task_def=true  # Overwrite existing (default)
-export conductor.worker.all.strict_schema=false  # Lenient schema validation (default)
+export CONDUCTOR_WORKER_ALL_REGISTER_TASK_DEF=true  # Auto-register task definitions
+export CONDUCTOR_WORKER_ALL_OVERWRITE_TASK_DEF=true  # Overwrite existing (default)
+export CONDUCTOR_WORKER_ALL_STRICT_SCHEMA=false  # Lenient schema validation (default)
 
 # Worker-specific configuration (overrides global)
-export conductor.worker.greetings.thread_count=50
-export conductor.worker.validate_order.strict_schema=true  # Strict validation for this worker
+export CONDUCTOR_WORKER_GREETINGS_THREAD_COUNT=50
+export CONDUCTOR_WORKER_VALIDATE_ORDER_STRICT_SCHEMA=true  # Strict validation for this worker
 
 # Runtime control (pause/resume workers without code changes)
-export conductor.worker.all.paused=true  # Maintenance mode
+export CONDUCTOR_WORKER_ALL_PAUSED=true  # Maintenance mode
+
+# Alternative: Dot notation also works
+# export conductor.worker.all.strict_schema=true
+# export conductor.worker.validate_order.strict_schema=false
 ```
 
 Workers log their resolved configuration on startup:

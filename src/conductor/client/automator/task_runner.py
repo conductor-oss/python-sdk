@@ -496,7 +496,8 @@ class TaskRunner:
                 "count": count,
                 "timeout": 100  # ms
             }
-            if domain is not None:
+            # Only add domain if it's not None and not empty string
+            if domain is not None and domain != "":
                 params["domain"] = domain
 
             tasks = self.task_client.batch_poll(tasktype=task_definition_name, **params)
@@ -582,7 +583,8 @@ class TaskRunner:
             start_time = time.time()
             domain = self.worker.get_domain()
             params = {"workerid": self.worker.get_identity()}
-            if domain is not None:
+            # Only add domain if it's not None and not empty string
+            if domain is not None and domain != "":
                 params["domain"] = domain
             task = self.task_client.poll(tasktype=task_definition_name, **params)
             finish_time = time.time()

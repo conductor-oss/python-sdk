@@ -117,10 +117,14 @@ Controls whether to overwrite existing task definitions when `register_task_def=
 - **Use when:** Tasks managed outside code, production with manual config
 
 ```bash
-# Global: Never overwrite any task definitions
-export conductor.worker.all.overwrite_task_def=false
+# Global: Never overwrite any task definitions (Unix format - recommended)
+export CONDUCTOR_WORKER_ALL_OVERWRITE_TASK_DEF=false
 
-# Specific: Allow overwrite for this worker only
+# Specific: Allow overwrite for this worker only (Unix format - recommended)
+export CONDUCTOR_WORKER_DYNAMIC_TASK_OVERWRITE_TASK_DEF=true
+
+# Alternative: Dot notation (also works)
+export conductor.worker.all.overwrite_task_def=false
 export conductor.worker.dynamic_task.overwrite_task_def=true
 ```
 
@@ -139,10 +143,14 @@ Controls JSON Schema validation strictness when `register_task_def=True`:
 - **Use when:** Strict contract enforcement, production validation
 
 ```bash
-# Global: Strict validation for all workers
-export conductor.worker.all.strict_schema=true
+# Global: Strict validation for all workers (Unix format - recommended)
+export CONDUCTOR_WORKER_ALL_STRICT_SCHEMA=true
 
-# Specific: Lenient for this worker (overrides global)
+# Specific: Lenient for this worker (overrides global, Unix format - recommended)
+export CONDUCTOR_WORKER_FLEXIBLE_TASK_STRICT_SCHEMA=false
+
+# Alternative: Dot notation (also works)
+export conductor.worker.all.strict_schema=true
 export conductor.worker.flexible_task.strict_schema=false
 ```
 

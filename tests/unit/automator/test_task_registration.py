@@ -930,3 +930,76 @@ class TestEnvironmentVariableOverride(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestUnixEnvironmentVariableFormat(unittest.TestCase):
+    """Test Unix-compatible environment variable format (UPPERCASE_WITH_UNDERSCORES)."""
+
+    def setUp(self):
+        self.config = Configuration()
+        # Clean up env vars
+        for key in list(os.environ.keys()):
+            if key.startswith('CONDUCTOR_WORKER') or key.startswith('conductor.worker'):
+                del os.environ[key]
+
+    def tearDown(self):
+        # Clean up env vars
+        for key in list(os.environ.keys()):
+            if key.startswith('CONDUCTOR_WORKER') or key.startswith('conductor.worker'):
+                del os.environ[key]
+
+    def test_unix_format_global_all(self):
+        """CONDUCTOR_WORKER_ALL_* format should work for global config."""
+        from conductor.client.worker.worker_config import resolve_worker_config
+
+        # Set using Unix format
+        os.environ['CONDUCTOR_WORKER_ALL_STRICT_SCHEMA'] = 'true'
+        os.environ['CONDUCTOR_WORKER_ALL_OVERWRITE_TASK_DEF'] = 'false'
+
+        config = resolve_worker_config(
+            worker_name='test_worker',
+            strict_schema=False,
+            overwrite_task_def=True
+        )
+
+        # Should use env values
+        self.assertEqual(config['strict_schema'], True)
+        self.assertEqual(config['overwrite_task_def'], False)
+
+    def test_unix_format_worker_specific(self):
+        """CONDUCTOR_WORKER_TASKNAME_* format should work for worker-specific config."""
+        from conductor.client.worker.worker_config import resolve_worker_config
+
+        # Set using Unix format
+        os.environ['CONDUCTOR_WORKER_MY_TASK_STRICT_SCHEMA'] = 'true'
+        os.environ['CONDUCTOR_WORKER_MY_TASK_OVERWRITE_TASK_DEF'] = 'false'
+
+        config = resolve_worker_config(
+            worker_name='my_task',
+            strict_schema=False,
+            overwrite_task_def=True
+        )
+
+        # Should use env values
+        self.assertEqual(config['strict_schema'], True)
+        self.assertEqual(config['overwrite_task_def'], False)
+
+    def test_unix_format_priority(self):
+        """Worker-specific Unix format should override global Unix format."""
+        from conductor.client.worker.worker_config import resolve_worker_config
+
+        # Set both global and worker-specific
+        os.environ['CONDUCTOR_WORKER_ALL_STRICT_SCHEMA'] = 'true'
+        os.environ['CONDUCTOR_WORKER_PRIORITY_TEST_STRICT_SCHEMA'] = 'false'
+
+        config = resolve_worker_config(
+            worker_name='priority_test',
+            strict_schema=True  # Code default
+        )
+
+        # Should use worker-specific value (False), not global (True)
+        self.assertEqual(config['strict_schema'], False)
+
+
+if __name__ == '__main__':
+    unittest.main()

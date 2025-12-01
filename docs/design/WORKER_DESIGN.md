@@ -511,17 +511,21 @@ def process_order(order: OrderInfo, priority: int = 1) -> dict:
 
 **Environment Override:**
 ```bash
-# Enable for all workers
-export conductor.worker.all.register_task_def=true
+# Enable for all workers (Unix format - recommended)
+export CONDUCTOR_WORKER_ALL_REGISTER_TASK_DEF=true
 
-# Enable for specific worker
-export conductor.worker.process_order.register_task_def=true
+# Enable for specific worker (Unix format - recommended)
+export CONDUCTOR_WORKER_PROCESS_ORDER_REGISTER_TASK_DEF=true
 
 # Control overwrite behavior
-export conductor.worker.all.overwrite_task_def=false  # Don't overwrite existing
+export CONDUCTOR_WORKER_ALL_OVERWRITE_TASK_DEF=false  # Don't overwrite existing
 
 # Enable strict schema validation
-export conductor.worker.process_order.strict_schema=true  # No extra fields allowed
+export CONDUCTOR_WORKER_PROCESS_ORDER_STRICT_SCHEMA=true  # No extra fields allowed
+
+# Alternative: Dot notation (also works)
+export conductor.worker.all.register_task_def=true
+export conductor.worker.process_order.strict_schema=true
 ```
 
 ### Schema Validation Modes
