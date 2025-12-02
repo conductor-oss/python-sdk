@@ -102,6 +102,71 @@ The SDK requires Python 3.9+. To install the SDK, use the following command:
 python3 -m pip install conductor-python
 ```
 
+## 🚀 Quick Start
+
+For a complete end-to-end example, see [examples/workers_e2e.py](examples/workers_e2e.py):
+
+```bash
+export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
+python3 examples/workers_e2e.py
+```
+
+This example demonstrates:
+- Registering a workflow definition
+- Starting workflow execution
+- Running workers (sync + async)
+- Monitoring with Prometheus metrics
+- Long-running tasks with lease extension
+
+**What you'll see:**
+- Workflow URL to monitor execution in UI
+- Workers processing tasks (AsyncTaskRunner vs TaskRunner)
+- Metrics endpoint at http://localhost:8000/metrics
+- Long-running task with TaskInProgress (5 polls)
+
+## ⚡ Performance Features (SDK 1.3.0+)
+
+The Python SDK provides high-performance worker execution with automatic optimization:
+
+**Worker Architecture:**
+- **AsyncTaskRunner** for async workers (`async def`) - Pure async/await, zero thread overhead
+- **TaskRunner** for sync workers (`def`) - ThreadPoolExecutor for concurrent execution
+- **Automatic selection** - Based on function signature, no configuration needed
+- **One process per worker** - Process isolation and fault tolerance
+
+**Performance Optimizations:**
+- **Dynamic batch polling** - Batch size adapts to available capacity (thread_count - running tasks)
+- **Adaptive backoff** - Exponential backoff when queue empty (1ms → 2ms → 4ms → poll_interval)
+- **High concurrency** - Async workers support higher task throughput, sync workers use thread pools
+
+**AsyncTaskRunner Benefits (async def workers):**
+- Fewer threads per worker (single event loop)
+- Lower memory footprint per worker
+- Better I/O throughput for async workloads
+- Direct `await worker_fn()` execution
+
+See [docs/design/WORKER_DESIGN.md](docs/design/WORKER_DESIGN.md) for complete architecture details.
+
+## 📚 Documentation
+
+**Getting Started:**
+- **[End-to-End Example](examples/workers_e2e.py)** - Complete workflow execution with workers
+- **[Examples Guide](examples/EXAMPLES_README.md)** - All examples with quick reference
+
+**Worker Documentation:**
+- **[Worker Design & Architecture](docs/design/WORKER_DESIGN.md)** - Complete worker architecture guide
+  - AsyncTaskRunner vs TaskRunner
+  - Automatic runner selection
+  - Worker discovery, configuration, best practices
+  - Long-running tasks and lease extension
+  - Performance metrics and monitoring
+- **[Worker Configuration](WORKER_CONFIGURATION.md)** - Hierarchical environment-based configuration
+- **[Complete Worker Guide](docs/worker/README.md)** - Comprehensive worker documentation
+
+**Monitoring & Advanced:**
+- **[Metrics](METRICS.md)** - Prometheus metrics collection
+- **[Event-Driven Architecture](docs/design/event_driven_interceptor_system.md)** - Observability design
+
 ## Hello World Application Using Conductor
 
 In this section, we will create a simple "Hello World" application that executes a "greetings" workflow managed by Conductor.
@@ -264,7 +329,7 @@ export CONDUCTOR_SERVER_URL=https://[cluster-name].orkesconductor.io/api
 - If you want to run the workflow on the Orkes Conductor Playground, set the Conductor Server variable as follows:
 
 ```shell
-export CONDUCTOR_SERVER_URL=https://play.orkes.io/api
+export CONDUCTOR_SERVER_URL=https://developer.orkescloud.com/api
 ```
 
 - Orkes Conductor requires authentication. [Obtain the key and secret from the Conductor server](https://orkes.io/content/how-to-videos/access-key-and-secret) and set the following environment variables.
@@ -309,6 +374,34 @@ from conductor.client.worker.worker_task import worker_task
 def greetings(name: str) -> str:
     return f'Hello, {name}'
 ```
+
+**Async Workers:** Workers can be defined as `async def` functions for I/O-bound tasks. The SDK automatically uses **AsyncTaskRunner** for pure async/await execution with high concurrency:
+
+```python
+@worker_task(task_definition_name='fetch_data', thread_count=50)
+async def fetch_data(url: str) -> dict:
+    # Automatically uses AsyncTaskRunner (not TaskRunner)
+    # - Pure async/await execution (no thread overhead)
+    # - Single event loop per process
+    # - Up to 50 concurrent tasks
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+    return response.json()
+```
+
+**Sync Workers:** Use regular `def` functions for CPU-bound or blocking I/O tasks:
+
+```python
+@worker_task(task_definition_name='process_data', thread_count=5)
+def process_data(data: dict) -> dict:
+    # Automatically uses TaskRunner (ThreadPoolExecutor)
+    # - 5 concurrent threads
+    # - Best for CPU-bound tasks or blocking I/O
+    result = expensive_computation(data)
+    return {'result': result}
+```
+
+**The SDK automatically selects the right execution model** based on your function signature (`def` vs `async def`).
 
 A worker can take inputs which are primitives - `str`, `int`, `float`, `bool` etc. or can be complex data classes.
 
@@ -362,6 +455,60 @@ if __name__ == '__main__':
     main()
 
 ```
+
+**Worker Configuration:** Workers support hierarchical configuration via environment variables, allowing you to override settings at deployment without code changes:
+
+```bash
+# Global configuration (applies to all workers) - Unix format recommended
+export CONDUCTOR_WORKER_ALL_DOMAIN=production
+export CONDUCTOR_WORKER_ALL_POLL_INTERVAL_MILLIS=250
+export CONDUCTOR_WORKER_ALL_THREAD_COUNT=20
+
+# Task registration configuration
+export CONDUCTOR_WORKER_ALL_REGISTER_TASK_DEF=true  # Auto-register task definitions
+export CONDUCTOR_WORKER_ALL_OVERWRITE_TASK_DEF=true  # Overwrite existing (default)
+export CONDUCTOR_WORKER_ALL_STRICT_SCHEMA=false  # Lenient schema validation (default)
+
+# Worker-specific configuration (overrides global)
+export CONDUCTOR_WORKER_GREETINGS_THREAD_COUNT=50
+export CONDUCTOR_WORKER_VALIDATE_ORDER_STRICT_SCHEMA=true  # Strict validation for this worker
+
+# Runtime control (pause/resume workers without code changes)
+export CONDUCTOR_WORKER_ALL_PAUSED=true  # Maintenance mode
+
+# Alternative: Dot notation also works
+# export conductor.worker.all.strict_schema=true
+# export conductor.worker.validate_order.strict_schema=false
+```
+
+Workers log their resolved configuration on startup:
+```
+INFO - Conductor Worker[name=greetings, pid=12345, status=active, poll_interval=250ms, domain=production, thread_count=50]
+```
+
+**Configuration Priority:** Worker-specific > Global > Code defaults
+
+For detailed configuration options, see [WORKER_CONFIGURATION.md](WORKER_CONFIGURATION.md).
+
+**Monitoring:** Enable Prometheus metrics with built-in HTTP server:
+
+```python
+from conductor.client.configuration.settings.metrics_settings import MetricsSettings
+
+metrics_settings = MetricsSettings(
+    directory='/tmp/conductor-metrics',  # Multiprocess coordination
+    http_port=8000                        # HTTP metrics endpoint
+)
+
+task_handler = TaskHandler(
+    configuration=api_config,
+    metrics_settings=metrics_settings,
+    scan_for_annotated_workers=True
+)
+# Metrics available at: http://localhost:8000/metrics
+```
+
+For more details, see [METRICS.md](METRICS.md) and [docs/design/WORKER_DESIGN.md](docs/design/WORKER_DESIGN.md).
 
 ### Design Principles for Workers
 
@@ -562,7 +709,7 @@ def send_email(email: str, subject: str, body: str):
 def main():
 
     # defaults to reading the configuration using following env variables
-    # CONDUCTOR_SERVER_URL : conductor server e.g. https://play.orkes.io/api
+    # CONDUCTOR_SERVER_URL : conductor server e.g. https://developer.orkescloud.com/api
     # CONDUCTOR_AUTH_KEY : API Authentication Key
     # CONDUCTOR_AUTH_SECRET: API Auth Secret
     api_config = Configuration()

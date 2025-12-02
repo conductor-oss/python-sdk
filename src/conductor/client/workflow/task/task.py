@@ -31,6 +31,8 @@ class TaskInterface():
                  input_parameters: Optional[Dict[str, Any]] = None,
                  cache_key: Optional[str] = None,
                  cache_ttl_second: int = 0) -> Self:
+        self._name = task_name or task_reference_name
+        self._cache_ttl_second = 0
         self.task_reference_name = task_reference_name
         self.task_type = task_type
         self.task_name = task_name if task_name is not None else task_type.value

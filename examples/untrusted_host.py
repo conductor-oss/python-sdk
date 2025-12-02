@@ -1,23 +1,21 @@
-import urllib3
+"""
+Example demonstrating how to connect to a Conductor server with untrusted/self-signed SSL certificates.
+
+This is useful for:
+- Development environments with self-signed certificates
+- Internal servers with custom CA certificates
+- Testing environments
+
+WARNING: Disabling SSL verification should only be used in development/testing.
+Never use this in production as it makes you vulnerable to man-in-the-middle attacks.
+"""
+
+import httpx
+import warnings
 
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
-from conductor.client.http.api_client import ApiClient
-from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
-from conductor.client.orkes.orkes_task_client import OrkesTaskClient
-from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 from conductor.client.worker.worker_task import worker_task
-from conductor.client.workflow.conductor_workflow import ConductorWorkflow
-from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
-from greetings_workflow import greetings_workflow
-import requests
-
-
-def register_workflow(workflow_executor: WorkflowExecutor) -> ConductorWorkflow:
-    workflow = greetings_workflow(workflow_executor=workflow_executor)
-    workflow.register(True)
-    return workflow
 
 
 @worker_task(task_definition_name='hello')
@@ -27,21 +25,53 @@ def hello(name: str) -> str:
 
 
 def main():
-    urllib3.disable_warnings()
+    # Suppress SSL verification warnings
+    warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 
-    # points to http://localhost:8080/api by default
+    # Create httpx client with SSL verification disabled
+    # verify=False disables SSL certificate verification
+    http_client = httpx.Client(
+        verify=False,  # Disable SSL verification
+        timeout=httpx.Timeout(120.0, connect=10.0),
+        follow_redirects=True,
+        http2=True
+    )
+
+    # Configure Conductor to use the custom HTTP client
     api_config = Configuration()
-    api_config.http_connection = requests.Session()
-    api_config.http_connection.verify = False
+    api_config.http_connection = http_client
 
-    metadata_client = OrkesMetadataClient(api_config)
-    task_client = OrkesTaskClient(api_config)
-    workflow_client = OrkesWorkflowClient(api_config)
+    print("=" * 80)
+    print("Untrusted Host Example")
+    print("=" * 80)
+    print("")
+    print("WARNING: SSL verification is DISABLED!")
+    print("This should only be used in development/testing environments.")
+    print("")
+    print("Worker available:")
+    print("  - hello: Simple greeting worker")
+    print("")
+    print("Press Ctrl+C to stop...")
+    print("=" * 80)
+    print("")
 
-    task_handler = TaskHandler(configuration=api_config)
-    task_handler.start_processes()
+    try:
+        # Start workers with the custom configuration
+        with TaskHandler(
+            configuration=api_config,
+            scan_for_annotated_workers=True
+        ) as task_handler:
+            task_handler.start_processes()
+            task_handler.join_processes()
 
-    # task_handler.stop_processes()
+    except KeyboardInterrupt:
+        print("\nShutting down gracefully...")
+
+    finally:
+        # Close the HTTP client
+        http_client.close()
+
+    print("\nWorkers stopped. Goodbye!")
 
 
 if __name__ == '__main__':

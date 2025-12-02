@@ -3,7 +3,7 @@ For detailed explanation https://github.com/conductor-sdk/conductor-python/blob/
 """
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
-from greetings_worker import greet
+from greetings_worker import *
 
 
 def greetings_workflow(workflow_executor: WorkflowExecutor) -> ConductorWorkflow:

@@ -3,7 +3,6 @@ import re  # noqa: F401
 from dataclasses import dataclass, field, InitVar, fields, asdict, is_dataclass
 from typing import List, Dict, Optional, Any, Union
 import six
-from deprecated import deprecated
 
 from conductor.client.http.models.state_change_event import StateChangeConfig, StateChangeEventType, StateChangeEvent
 
@@ -400,7 +399,6 @@ class WorkflowTask:
         self._dynamic_task_name_param = dynamic_task_name_param
 
     @property
-    @deprecated
     def case_value_param(self):
         """Gets the case_value_param of this WorkflowTask.  # noqa: E501
 
@@ -411,7 +409,6 @@ class WorkflowTask:
         return self._case_value_param
 
     @case_value_param.setter
-    @deprecated
     def case_value_param(self, case_value_param):
         """Sets the case_value_param of this WorkflowTask.
 
@@ -423,7 +420,6 @@ class WorkflowTask:
         self._case_value_param = case_value_param
 
     @property
-    @deprecated
     def case_expression(self):
         """Gets the case_expression of this WorkflowTask.  # noqa: E501
 
@@ -434,7 +430,6 @@ class WorkflowTask:
         return self._case_expression
 
     @case_expression.setter
-    @deprecated
     def case_expression(self, case_expression):
         """Sets the case_expression of this WorkflowTask.
 
@@ -488,7 +483,6 @@ class WorkflowTask:
         self._decision_cases = decision_cases
 
     @property
-    @deprecated
     def dynamic_fork_join_tasks_param(self):
         """Gets the dynamic_fork_join_tasks_param of this WorkflowTask.  # noqa: E501
 
@@ -499,7 +493,6 @@ class WorkflowTask:
         return self._dynamic_fork_join_tasks_param
 
     @dynamic_fork_join_tasks_param.setter
-    @deprecated
     def dynamic_fork_join_tasks_param(self, dynamic_fork_join_tasks_param):
         """Sets the dynamic_fork_join_tasks_param of this WorkflowTask.
 
@@ -889,7 +882,6 @@ class WorkflowTask:
         self._expression = expression
 
     @property
-    @deprecated
     def workflow_task_type(self):
         """Gets the workflow_task_type of this WorkflowTask.  # noqa: E501
 
@@ -900,7 +892,6 @@ class WorkflowTask:
         return self._workflow_task_type
 
     @workflow_task_type.setter
-    @deprecated
     def workflow_task_type(self, workflow_task_type):
         """Sets the workflow_task_type of this WorkflowTask.
 
