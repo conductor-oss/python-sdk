@@ -12,7 +12,9 @@ from conductor.client.orkes.models.metadata_tag import MetadataTag
 class PromptClient(ABC):
 
     @abstractmethod
-    def save_prompt(self, prompt_name: str, description: str, prompt_template: str):
+    def save_prompt(self, prompt_name: str, description: str, prompt_template: str,
+                    models: Optional[List[str]] = None, version: Optional[int] = None,
+                    auto_increment: bool = False):
         pass
 
     @abstractmethod

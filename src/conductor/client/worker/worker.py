@@ -330,6 +330,8 @@ class Worker(WorkerInterface):
 
         # Track pending async tasks: {task_id -> (future, task, submit_time)}
         self._pending_async_tasks = {}
+        # Add thread lock for safe concurrent access to _pending_async_tasks
+        self._pending_tasks_lock = threading.Lock()
 
     def execute(self, task: Task) -> TaskResult:
         task_input = {}
@@ -367,15 +369,17 @@ class Worker(WorkerInterface):
                 # This allows high concurrency for async I/O-bound workloads
                 future = self._background_loop.submit_coroutine(task_output)
 
-                # Store future for later retrieval
+                # Store future for later retrieval (thread-safe)
                 submit_time = time.time()
-                self._pending_async_tasks[task.task_id] = (future, task, submit_time)
+                with self._pending_tasks_lock:
+                    self._pending_async_tasks[task.task_id] = (future, task, submit_time)
+                    pending_count = len(self._pending_async_tasks)
 
                 logger.debug(
                     "Submitted async task: %s (task_id=%s, pending_count=%d, submit_time=%s)",
                     task.task_def_name,
                     task.task_id,
-                    len(self._pending_async_tasks),
+                    pending_count,
                     submit_time
                 )
 
@@ -455,11 +459,16 @@ class Worker(WorkerInterface):
         completed_results = []
         tasks_to_remove = []
 
-        pending_count = len(self._pending_async_tasks)
+        # Create snapshot of pending tasks to avoid iteration during modification
+        with self._pending_tasks_lock:
+            tasks_snapshot = list(self._pending_async_tasks.items())
+            pending_count = len(self._pending_async_tasks)
+
         if pending_count > 0:
             logger.debug(f"Checking {pending_count} pending async tasks")
 
-        for task_id, (future, task, submit_time) in list(self._pending_async_tasks.items()):
+        # Process snapshot outside of lock
+        for task_id, (future, task, submit_time) in tasks_snapshot:
             if future.done():  # Non-blocking check
                 done_time = time.time()
                 actual_duration = done_time - submit_time
@@ -531,9 +540,11 @@ class Worker(WorkerInterface):
                     completed_results.append((task_id, task_result, submit_time, task))
                     tasks_to_remove.append(task_id)
 
-        # Remove completed tasks
-        for task_id in tasks_to_remove:
-            del self._pending_async_tasks[task_id]
+        # Remove completed tasks (thread-safe)
+        with self._pending_tasks_lock:
+            for task_id in tasks_to_remove:
+                # Use pop to avoid KeyError if task was already removed
+                self._pending_async_tasks.pop(task_id, None)
 
         return completed_results
 

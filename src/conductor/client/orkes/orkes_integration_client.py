@@ -64,25 +64,37 @@ class OrkesIntegrationClient(OrkesBaseClient, IntegrationClient):
     def get_token_usage_for_integration_provider(self, name) -> dict:
         return self.integrationApi.get_token_usage_for_integration_provider(name)
 
-    def register_token_usage(self, body, name, integration_name):
-        ...
-
     # Tags
 
     def delete_tag_for_integration(self, body, tag_name, integration_name):
-        """Delete an integration"""
+        """Delete tags for an integration API"""
+        self.integrationApi.delete_tag_for_integration(body, tag_name, integration_name)
 
     def delete_tag_for_integration_provider(self, body, name):
-        ...
+        self.integrationApi.delete_tag_for_integration_provider(body, name)
 
     def put_tag_for_integration(self, body, name, integration_name):
-        ...
+        self.integrationApi.put_tag_for_integration(body, name, integration_name)
 
     def put_tag_for_integration_provider(self, body, name):
-        ...
+        self.integrationApi.put_tag_for_integration_provider(body, name)
 
     def get_tags_for_integration(self, name, integration_name):
-        ...
+        return self.integrationApi.get_tags_for_integration(name, integration_name)
 
     def get_tags_for_integration_provider(self, name):
-        ...
+        return self.integrationApi.get_tags_for_integration_provider(name)
+
+    # Additional methods
+
+    def get_integration_available_apis(self, integration_name):
+        """Get available APIs for an integration provider"""
+        return self.integrationApi.get_integration_available_apis(integration_name)
+
+    def get_integration_provider_defs(self):
+        """Get all integration provider definitions"""
+        return self.integrationApi.get_integration_provider_defs()
+
+    def get_providers_and_integrations(self):
+        """Get all providers and their integrations"""
+        return self.integrationApi.get_providers_and_integrations()

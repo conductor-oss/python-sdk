@@ -347,10 +347,22 @@ class TaskHandler:
         try:
             logger.debug("Terminating process: %s", process.pid)
             process.terminate()
+            # Wait for graceful termination
+            process.join(timeout=5.0)
+            if process.is_alive():
+                logger.warning("Process %s did not terminate within 5 seconds, killing...", process.pid)
+                process.kill()
+                process.join(timeout=1.0)  # Wait after kill too
+                if process.is_alive():
+                    logger.error("Process %s could not be killed", process.pid)
         except Exception as e:
             logger.debug("Failed to terminate process: %s, reason: %s", process.pid, e)
-            process.kill()
-            logger.debug("Killed process: %s", process.pid)
+            try:
+                process.kill()
+                process.join(timeout=1.0)
+                logger.debug("Killed process: %s", process.pid)
+            except Exception as kill_error:
+                logger.error("Failed to kill process: %s, reason: %s", process.pid, kill_error)
 
 
 # Setup centralized logging queue

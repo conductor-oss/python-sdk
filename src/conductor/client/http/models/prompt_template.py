@@ -21,75 +21,98 @@ class PromptTemplate:
     """
     swagger_types = {
         'created_by': 'str',
-        'created_on': 'int',
+        'create_time': 'int',
+        'created_on': 'int',  # Backward compatibility alias for create_time
         'description': 'str',
         'integrations': 'list[str]',
         'name': 'str',
+        'owner_app': 'str',
         'tags': 'list[TagObject]',
         'template': 'str',
         'updated_by': 'str',
-        'updated_on': 'int',
-        'variables': 'list[str]'
+        'update_time': 'int',
+        'updated_on': 'int',  # Backward compatibility alias for update_time
+        'variables': 'list[str]',
+        'version': 'int'
     }
 
     attribute_map = {
         'created_by': 'createdBy',
-        'created_on': 'createdOn',
+        'create_time': 'createTime',
+        'created_on': 'createdOn',  # Backward compatibility alias for create_time
         'description': 'description',
         'integrations': 'integrations',
         'name': 'name',
+        'owner_app': 'ownerApp',
         'tags': 'tags',
         'template': 'template',
         'updated_by': 'updatedBy',
-        'updated_on': 'updatedOn',
-        'variables': 'variables'
+        'update_time': 'updateTime',
+        'updated_on': 'updatedOn',  # Backward compatibility alias for update_time
+        'variables': 'variables',
+        'version': 'version'
     }
 
     _created_by: Optional[str] = field(default=None)
-    _created_on: Optional[int] = field(default=None)
+    _create_time: Optional[int] = field(default=None)
     _description: Optional[str] = field(default=None)
     _integrations: Optional[List[str]] = field(default=None)
     _name: Optional[str] = field(default=None)
+    _owner_app: Optional[str] = field(default=None)
     _tags: Optional[List['TagObject']] = field(default=None)
     _template: Optional[str] = field(default=None)
     _updated_by: Optional[str] = field(default=None)
-    _updated_on: Optional[int] = field(default=None)
+    _update_time: Optional[int] = field(default=None)
     _variables: Optional[List[str]] = field(default=None)
+    _version: Optional[int] = field(default=1)
 
-    def __init__(self, created_by=None, created_on=None, description=None, integrations=None, name=None, tags=None,
-                 template=None, updated_by=None, updated_on=None, variables=None):  # noqa: E501
+    def __init__(self, created_by=None, create_time=None, description=None, integrations=None, name=None,
+                 owner_app=None, tags=None, template=None, updated_by=None, update_time=None, variables=None,
+                 version=None, created_on=None, updated_on=None):  # noqa: E501
         """PromptTemplate - a model defined in Swagger"""  # noqa: E501
         self._created_by = None
-        self._created_on = None
+        self._create_time = None
         self._description = None
         self._integrations = None
         self._name = None
+        self._owner_app = None
         self._tags = None
         self._template = None
         self._updated_by = None
-        self._updated_on = None
+        self._update_time = None
         self._variables = None
+        self._version = 1  # Default version is 1
         self.discriminator = None
         if created_by is not None:
             self.created_by = created_by
-        if created_on is not None:
-            self.created_on = created_on
+        # Handle both old and new field names for backward compatibility
+        if create_time is not None:
+            self.create_time = create_time
+        elif created_on is not None:  # Backward compatibility
+            self.create_time = created_on
         if description is not None:
             self.description = description
         if integrations is not None:
             self.integrations = integrations
         if name is not None:
             self.name = name
+        if owner_app is not None:
+            self.owner_app = owner_app
         if tags is not None:
             self.tags = tags
         if template is not None:
             self.template = template
         if updated_by is not None:
             self.updated_by = updated_by
-        if updated_on is not None:
-            self.updated_on = updated_on
+        # Handle both old and new field names for backward compatibility
+        if update_time is not None:
+            self.update_time = update_time
+        elif updated_on is not None:  # Backward compatibility
+            self.update_time = updated_on
         if variables is not None:
             self.variables = variables
+        if version is not None:
+            self.version = version
 
     def __post_init__(self):
         """Post initialization for dataclass"""
@@ -117,25 +140,36 @@ class PromptTemplate:
         self._created_by = created_by
 
     @property
-    def created_on(self):
-        """Gets the created_on of this PromptTemplate.  # noqa: E501
+    def create_time(self):
+        """Gets the create_time of this PromptTemplate.  # noqa: E501
 
 
-        :return: The created_on of this PromptTemplate.  # noqa: E501
+        :return: The create_time of this PromptTemplate.  # noqa: E501
         :rtype: int
         """
-        return self._created_on
+        return self._create_time
 
-    @created_on.setter
-    def created_on(self, created_on):
-        """Sets the created_on of this PromptTemplate.
+    @create_time.setter
+    def create_time(self, create_time):
+        """Sets the create_time of this PromptTemplate.
 
 
-        :param created_on: The created_on of this PromptTemplate.  # noqa: E501
+        :param create_time: The create_time of this PromptTemplate.  # noqa: E501
         :type: int
         """
 
-        self._created_on = created_on
+        self._create_time = create_time
+
+    # Backward compatibility property
+    @property
+    def created_on(self):
+        """Backward compatibility alias for create_time."""
+        return self._create_time
+
+    @created_on.setter
+    def created_on(self, value):
+        """Backward compatibility setter for create_time."""
+        self._create_time = value
 
     @property
     def description(self):
@@ -201,6 +235,27 @@ class PromptTemplate:
         self._name = name
 
     @property
+    def owner_app(self):
+        """Gets the owner_app of this PromptTemplate.  # noqa: E501
+
+
+        :return: The owner_app of this PromptTemplate.  # noqa: E501
+        :rtype: str
+        """
+        return self._owner_app
+
+    @owner_app.setter
+    def owner_app(self, owner_app):
+        """Sets the owner_app of this PromptTemplate.
+
+
+        :param owner_app: The owner_app of this PromptTemplate.  # noqa: E501
+        :type: str
+        """
+
+        self._owner_app = owner_app
+
+    @property
     def tags(self):
         """Gets the tags of this PromptTemplate.  # noqa: E501
 
@@ -264,25 +319,36 @@ class PromptTemplate:
         self._updated_by = updated_by
 
     @property
-    def updated_on(self):
-        """Gets the updated_on of this PromptTemplate.  # noqa: E501
+    def update_time(self):
+        """Gets the update_time of this PromptTemplate.  # noqa: E501
 
 
-        :return: The updated_on of this PromptTemplate.  # noqa: E501
+        :return: The update_time of this PromptTemplate.  # noqa: E501
         :rtype: int
         """
-        return self._updated_on
+        return self._update_time
 
-    @updated_on.setter
-    def updated_on(self, updated_on):
-        """Sets the updated_on of this PromptTemplate.
+    @update_time.setter
+    def update_time(self, update_time):
+        """Sets the update_time of this PromptTemplate.
 
 
-        :param updated_on: The updated_on of this PromptTemplate.  # noqa: E501
+        :param update_time: The update_time of this PromptTemplate.  # noqa: E501
         :type: int
         """
 
-        self._updated_on = updated_on
+        self._update_time = update_time
+
+    # Backward compatibility property
+    @property
+    def updated_on(self):
+        """Backward compatibility alias for update_time."""
+        return self._update_time
+
+    @updated_on.setter
+    def updated_on(self, value):
+        """Backward compatibility setter for update_time."""
+        self._update_time = value
 
     @property
     def variables(self):
@@ -304,6 +370,27 @@ class PromptTemplate:
         """
 
         self._variables = variables
+
+    @property
+    def version(self):
+        """Gets the version of this PromptTemplate.  # noqa: E501
+
+
+        :return: The version of this PromptTemplate.  # noqa: E501
+        :rtype: int
+        """
+        return self._version
+
+    @version.setter
+    def version(self, version):
+        """Sets the version of this PromptTemplate.
+
+
+        :param version: The version of this PromptTemplate.  # noqa: E501
+        :type: int
+        """
+
+        self._version = version
 
     def to_dict(self):
         """Returns the model properties as a dict"""

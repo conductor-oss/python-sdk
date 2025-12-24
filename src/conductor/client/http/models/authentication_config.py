@@ -18,16 +18,19 @@ class AuthenticationConfig:
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
-    id: Optional[str] = field(default=None)
-    application_id: Optional[str] = field(default=None)
-    authentication_type: Optional[str] = field(default=None)
-    api_keys: Optional[List[str]] = field(default=None)
-    audience: Optional[str] = field(default=None)
-    conductor_token: Optional[str] = field(default=None)
-    fallback_to_default_auth: Optional[bool] = field(default=None)
-    issuer_uri: Optional[str] = field(default=None)
-    passthrough: Optional[bool] = field(default=None)
-    token_in_workflow_input: Optional[bool] = field(default=None)
+    # Private backing fields for properties
+    _id: Optional[str] = field(init=False, repr=False, default=None)
+    _application_id: Optional[str] = field(init=False, repr=False, default=None)
+    _authentication_type: Optional[str] = field(init=False, repr=False, default=None)  # Enum: NONE, API_KEY, OIDC
+    _api_keys: Optional[List[str]] = field(init=False, repr=False, default=None)
+    _audience: Optional[str] = field(init=False, repr=False, default=None)
+    _conductor_token: Optional[str] = field(init=False, repr=False, default=None)
+    _created_by: Optional[str] = field(init=False, repr=False, default=None)
+    _fallback_to_default_auth: Optional[bool] = field(init=False, repr=False, default=None)
+    _issuer_uri: Optional[str] = field(init=False, repr=False, default=None)
+    _passthrough: Optional[bool] = field(init=False, repr=False, default=None)
+    _token_in_workflow_input: Optional[bool] = field(init=False, repr=False, default=None)
+    _updated_by: Optional[str] = field(init=False, repr=False, default=None)
 
     # Class variables
     swagger_types = {
@@ -37,10 +40,12 @@ class AuthenticationConfig:
         'api_keys': 'list[str]',
         'audience': 'str',
         'conductor_token': 'str',
+        'created_by': 'str',
         'fallback_to_default_auth': 'bool',
         'issuer_uri': 'str',
         'passthrough': 'bool',
-        'token_in_workflow_input': 'bool'
+        'token_in_workflow_input': 'bool',
+        'updated_by': 'str'
     }
 
     attribute_map = {
@@ -50,16 +55,18 @@ class AuthenticationConfig:
         'api_keys': 'apiKeys',
         'audience': 'audience',
         'conductor_token': 'conductorToken',
+        'created_by': 'createdBy',
         'fallback_to_default_auth': 'fallbackToDefaultAuth',
         'issuer_uri': 'issuerUri',
         'passthrough': 'passthrough',
-        'token_in_workflow_input': 'tokenInWorkflowInput'
+        'token_in_workflow_input': 'tokenInWorkflowInput',
+        'updated_by': 'updatedBy'
     }
 
     def __init__(self, id=None, application_id=None, authentication_type=None,
-                 api_keys=None, audience=None, conductor_token=None,
+                 api_keys=None, audience=None, conductor_token=None, created_by=None,
                  fallback_to_default_auth=None, issuer_uri=None,
-                 passthrough=None, token_in_workflow_input=None):  # noqa: E501
+                 passthrough=None, token_in_workflow_input=None, updated_by=None):  # noqa: E501
         """AuthenticationConfig - a model defined in Swagger"""  # noqa: E501
         self._id = None
         self._application_id = None
@@ -67,10 +74,12 @@ class AuthenticationConfig:
         self._api_keys = None
         self._audience = None
         self._conductor_token = None
+        self._created_by = None
         self._fallback_to_default_auth = None
         self._issuer_uri = None
         self._passthrough = None
         self._token_in_workflow_input = None
+        self._updated_by = None
         self.discriminator = None
         if id is not None:
             self.id = id
@@ -84,6 +93,8 @@ class AuthenticationConfig:
             self.audience = audience
         if conductor_token is not None:
             self.conductor_token = conductor_token
+        if created_by is not None:
+            self.created_by = created_by
         if fallback_to_default_auth is not None:
             self.fallback_to_default_auth = fallback_to_default_auth
         if issuer_uri is not None:
@@ -92,6 +103,8 @@ class AuthenticationConfig:
             self.passthrough = passthrough
         if token_in_workflow_input is not None:
             self.token_in_workflow_input = token_in_workflow_input
+        if updated_by is not None:
+            self.updated_by = updated_by
 
     def __post_init__(self):
         """Post initialization for dataclass"""
@@ -225,6 +238,26 @@ class AuthenticationConfig:
         self._conductor_token = conductor_token
 
     @property
+    def created_by(self):
+        """Gets the created_by of this AuthenticationConfig.  # noqa: E501
+
+
+        :return: The created_by of this AuthenticationConfig.  # noqa: E501
+        :rtype: str
+        """
+        return self._created_by
+
+    @created_by.setter
+    def created_by(self, created_by):
+        """Sets the created_by of this AuthenticationConfig.
+
+
+        :param created_by: The created_by of this AuthenticationConfig.  # noqa: E501
+        :type: str
+        """
+        self._created_by = created_by
+
+    @property
     def fallback_to_default_auth(self):
         """Gets the fallback_to_default_auth of this AuthenticationConfig.  # noqa: E501
 
@@ -303,6 +336,26 @@ class AuthenticationConfig:
         :type: bool
         """
         self._token_in_workflow_input = token_in_workflow_input
+
+    @property
+    def updated_by(self):
+        """Gets the updated_by of this AuthenticationConfig.  # noqa: E501
+
+
+        :return: The updated_by of this AuthenticationConfig.  # noqa: E501
+        :rtype: str
+        """
+        return self._updated_by
+
+    @updated_by.setter
+    def updated_by(self, updated_by):
+        """Sets the updated_by of this AuthenticationConfig.
+
+
+        :param updated_by: The updated_by of this AuthenticationConfig.  # noqa: E501
+        :type: str
+        """
+        self._updated_by = updated_by
 
     def to_dict(self):
         """Returns the model properties as a dict"""

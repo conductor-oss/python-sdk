@@ -5,6 +5,7 @@ import sys
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Optional, Any
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
@@ -90,6 +91,7 @@ class TaskRunner:
         self._max_workers = max_workers
         self._last_poll_time = 0  # Track last poll to avoid excessive polling when queue is empty
         self._consecutive_empty_polls = 0  # Track empty polls to implement backoff
+        self._shutdown = False  # Flag to indicate graceful shutdown
 
     def run(self) -> None:
         if self.configuration is not None:
@@ -114,8 +116,53 @@ class TaskRunner:
             self.worker.get_polling_interval_in_seconds()
         )
 
-        while True:
-            self.run_once()
+        try:
+            while not self._shutdown:
+                self.run_once()
+        finally:
+            # Cleanup resources on exit
+            self._cleanup()
+
+    def stop(self) -> None:
+        """Signal the runner to stop gracefully."""
+        self._shutdown = True
+
+    def _cleanup(self) -> None:
+        """Clean up resources - called on exit."""
+        logger.debug("Cleaning up TaskRunner resources...")
+
+        # Shutdown ThreadPoolExecutor (EAFP style - more Pythonic)
+        try:
+            self._executor.shutdown(wait=True, cancel_futures=True)
+            logger.debug("ThreadPoolExecutor shut down successfully")
+        except AttributeError:
+            pass  # No executor to shutdown
+        except (RuntimeError, ValueError) as e:
+            logger.warning(f"Error shutting down executor: {e}")
+
+        # Close HTTP client (EAFP style)
+        try:
+            rest_client = self.task_client.api_client.rest_client
+            rest_client.close()
+            logger.debug("HTTP client closed successfully")
+        except AttributeError:
+            pass  # No client to close or no close method
+        except (IOError, OSError) as e:
+            logger.warning(f"Error closing HTTP client: {e}")
+
+        # Clear event listeners
+        self.event_dispatcher = None
+
+        logger.debug("TaskRunner cleanup completed")
+
+    def __enter__(self):
+        """Context manager entry - returns self for 'with' statement usage."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - ensures cleanup even if exception occurs."""
+        self._cleanup()
+        return False  # Don't suppress exceptions
 
     def __register_task_definition(self) -> None:
         """
@@ -350,8 +397,11 @@ class TaskRunner:
             self.__cleanup_completed_tasks()
 
             # Check if we can accept more tasks (based on thread_count)
-            # Account for pending async tasks in capacity calculation
-            pending_async_count = len(getattr(self.worker, '_pending_async_tasks', {}))
+            # Account for pending async tasks in capacity calculation (thread-safe)
+            pending_async_count = 0
+            if hasattr(self.worker, '_pending_tasks_lock') and hasattr(self.worker, '_pending_async_tasks'):
+                with self.worker._pending_tasks_lock:
+                    pending_async_count = len(self.worker._pending_async_tasks)
             current_capacity = len(self._running_tasks) + pending_async_count
             if current_capacity >= self._max_workers:
                 # At capacity - sleep briefly then return to check again
@@ -397,9 +447,11 @@ class TaskRunner:
             logger.error("Error in run_once: %s", traceback.format_exc())
 
     def __cleanup_completed_tasks(self) -> None:
-        """Remove completed task futures from tracking set"""
-        # Fast path: use difference_update for better performance
-        self._running_tasks = {f for f in self._running_tasks if not f.done()}
+        """Remove completed task futures from tracking set (thread-safe)"""
+        # Avoid recreating the set - modify in place to prevent race conditions
+        completed = [f for f in self._running_tasks if f.done()]
+        for f in completed:
+            self._running_tasks.discard(f)
 
     def __check_completed_async_tasks(self) -> None:
         """Check for completed async tasks and update Conductor"""

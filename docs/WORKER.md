@@ -576,4 +576,4 @@ def process_large_dataset(dataset_id: str) -> Union[dict, TaskInProgress]:
         return {'status': 'completed', 'total_processed': processed}
 ```
 
-### Next: [Create workflows using Code](../workflow/README.md)
+### Next: [Create workflows using Code](./WORKFLOW.md)

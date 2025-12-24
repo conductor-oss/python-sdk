@@ -2,7 +2,7 @@ import pprint
 import re  # noqa: F401
 import six
 from dataclasses import dataclass, field, InitVar
-from typing import Optional
+from typing import Optional, List
 from dataclasses import asdict
 from deprecated import deprecated
 
@@ -38,13 +38,6 @@ class ConductorApplication:
         'updated_by': 'updatedBy'
     }
 
-    id: Optional[str] = field(default=None)
-    name: Optional[str] = field(default=None)
-    created_by: Optional[str] = field(default=None)
-    create_time: Optional[int] = field(default=None)
-    update_time: Optional[int] = field(default=None)
-    updated_by: Optional[str] = field(default=None)
-    
     # Private backing fields for properties
     _id: Optional[str] = field(init=False, repr=False, default=None)
     _name: Optional[str] = field(init=False, repr=False, default=None)
@@ -92,6 +85,8 @@ class ConductorApplication:
             self._update_time = self.update_time
         if self._updated_by is None and self.updated_by is not None:
             self._updated_by = self.updated_by
+        if self._tags is None and self.tags is not None:
+            self._tags = self.tags
 
     @property
     def id(self):

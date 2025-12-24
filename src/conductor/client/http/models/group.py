@@ -23,33 +23,32 @@ class Group:
         'id': 'str',
         'description': 'str',
         'roles': 'list[Role]',
-        'default_access': 'dict(str, list[str])'
+        'default_access': 'dict(str, list[str])',
+        'contact_information': 'dict(str, str)'
     }
 
     attribute_map = {
         'id': 'id',
         'description': 'description',
         'roles': 'roles',
-        'default_access': 'defaultAccess'
+        'default_access': 'defaultAccess',
+        'contact_information': 'contactInformation'
     }
 
-    id: Optional[str] = field(default=None)
-    description: Optional[str] = field(default=None)
-    roles: Optional[List['Role']] = field(default=None)
-    default_access: Optional[Dict[str, List[str]]] = field(default=None)
-    
     # Private backing fields for properties
     _id: Optional[str] = field(default=None, init=False, repr=False)
     _description: Optional[str] = field(default=None, init=False, repr=False)
     _roles: Optional[List['Role']] = field(default=None, init=False, repr=False)
     _default_access: Optional[Dict[str, List[str]]] = field(default=None, init=False, repr=False)
+    _contact_information: Optional[Dict[str, str]] = field(default=None, init=False, repr=False)
     
-    def __init__(self, id=None, description=None, roles=None, default_access=None):  # noqa: E501
+    def __init__(self, id=None, description=None, roles=None, default_access=None, contact_information=None):  # noqa: E501
         """Group - a model defined in Swagger"""  # noqa: E501
         self._id = None
         self._description = None
         self._roles = None
         self._default_access = None
+        self._contact_information = None
         self.discriminator = None
         if id is not None:
             self.id = id
@@ -59,17 +58,13 @@ class Group:
             self.roles = roles
         if default_access is not None:
             self.default_access = default_access
+        if contact_information is not None:
+            self.contact_information = contact_information
 
     def __post_init__(self):
-        # Transfer values from dataclass fields to property backing fields
-        if self.id is not None:
-            self._id = self.id
-        if self.description is not None:
-            self._description = self.description
-        if self.roles is not None:
-            self._roles = self.roles
-        if self.default_access is not None:
-            self._default_access = self.default_access
+        # Post initialization for dataclass
+        # Since we're using property setters in __init__, no additional work needed here
+        pass
 
     @property
     def id(self):
@@ -154,6 +149,27 @@ class Group:
         """
 
         self._default_access = default_access
+
+    @property
+    def contact_information(self):
+        """Gets the contact_information of this Group.  # noqa: E501
+
+
+        :return: The contact_information of this Group.  # noqa: E501
+        :rtype: dict(str, str)
+        """
+        return self._contact_information
+
+    @contact_information.setter
+    def contact_information(self, contact_information):
+        """Sets the contact_information of this Group.
+
+
+        :param contact_information: The contact_information of this Group.  # noqa: E501
+        :type: dict(str, str)
+        """
+
+        self._contact_information = contact_information
 
     def to_dict(self):
         """Returns the model properties as a dict"""

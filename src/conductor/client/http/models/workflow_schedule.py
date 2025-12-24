@@ -5,6 +5,8 @@ from dataclasses import dataclass, field, InitVar
 from typing import List, Optional
 from deprecated import deprecated
 
+from conductor.client.http.models import TagObject
+
 
 @dataclass
 class WorkflowSchedule:
@@ -19,22 +21,6 @@ class WorkflowSchedule:
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
-    name: Optional[str] = field(default=None)
-    cron_expression: Optional[str] = field(default=None)
-    run_catchup_schedule_instances: Optional[bool] = field(default=None)
-    paused: Optional[bool] = field(default=None)
-    start_workflow_request: Optional['StartWorkflowRequest'] = field(default=None)
-    schedule_start_time: Optional[int] = field(default=None)
-    schedule_end_time: Optional[int] = field(default=None)
-    create_time: Optional[int] = field(default=None)
-    updated_time: Optional[int] = field(default=None)
-    created_by: Optional[str] = field(default=None)
-    updated_by: Optional[str] = field(default=None)
-    zone_id: Optional[str] = field(default=None)
-    tags: Optional[List['Tag']] = field(default=None)
-    paused_reason: Optional[str] = field(default=None)
-    description: Optional[str] = field(default=None)
-
     # Private backing fields for properties
     _name: Optional[str] = field(init=False, repr=False, default=None)
     _cron_expression: Optional[str] = field(init=False, repr=False, default=None)
@@ -48,7 +34,7 @@ class WorkflowSchedule:
     _created_by: Optional[str] = field(init=False, repr=False, default=None)
     _updated_by: Optional[str] = field(init=False, repr=False, default=None)
     _zone_id: Optional[str] = field(init=False, repr=False, default=None)
-    _tags: Optional[List['Tag']] = field(init=False, repr=False, default=None)
+    _tags: Optional[List['TagObject']] = field(init=False, repr=False, default=None)
     _paused_reason: Optional[str] = field(init=False, repr=False, default=None)
     _description: Optional[str] = field(init=False, repr=False, default=None)
 
@@ -65,7 +51,7 @@ class WorkflowSchedule:
         'created_by': 'str',
         'updated_by': 'str',
         'zone_id': 'str',
-        'tags': 'list[Tag]',
+        'tags': 'list[TagObject]',  # Tags are included for serialization/deserialization
         'paused_reason': 'str',
         'description': 'str'
     }
@@ -83,7 +69,7 @@ class WorkflowSchedule:
         'created_by': 'createdBy',
         'updated_by': 'updatedBy',
         'zone_id': 'zoneId',
-        'tags': 'tags',
+        'tags': 'tags',  # Tags are included for serialization/deserialization
         'paused_reason': 'pausedReason',
         'description': 'description'
     }
@@ -167,7 +153,7 @@ class WorkflowSchedule:
             self._updated_by = self.updated_by
         if self.zone_id is not None:
             self._zone_id = self.zone_id
-        if self.tags is not None:
+        if hasattr(self, 'tags') and self.tags is not None:
             self._tags = self.tags
         if self.paused_reason is not None:
             self._paused_reason = self.paused_reason
@@ -427,22 +413,22 @@ class WorkflowSchedule:
         self._zone_id = zone_id
 
     @property
-    def tags(self):
+    def tags(self) -> List[TagObject]:
         """Gets the tags of this WorkflowSchedule.  # noqa: E501
 
 
         :return: The tags of this WorkflowSchedule.  # noqa: E501
-        :rtype: List[Tag]
+        :rtype: List[TagObject]
         """
         return self._tags
 
     @tags.setter
-    def tags(self, tags):
+    def tags(self, tags: List[TagObject]):
         """Sets the tags of this WorkflowSchedule.
 
 
         :param tags: The tags of this WorkflowSchedule.  # noqa: E501
-        :type: List[Tag]
+        :type: List[TagObject]
         """
 
         self._tags = tags

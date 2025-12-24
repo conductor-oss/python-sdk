@@ -2,7 +2,7 @@ import pprint
 import re  # noqa: F401
 import six
 from dataclasses import dataclass, field, fields
-from typing import List, Optional
+from typing import List, Optional, Dict
 from deprecated import deprecated
 
 
@@ -27,6 +27,8 @@ class ConductorUser:
     _application_user: Optional[bool] = field(default=None, init=False, repr=False)
     _encrypted_id: Optional[bool] = field(default=None, init=False, repr=False)
     _encrypted_id_display_value: Optional[str] = field(default=None, init=False, repr=False)
+    _contact_information: Optional[Dict[str, str]] = field(default=None, init=False, repr=False)
+    _namespace: Optional[str] = field(default=None, init=False, repr=False)
 
     swagger_types = {
         'id': 'str',
@@ -36,7 +38,9 @@ class ConductorUser:
         'uuid': 'str',
         'application_user': 'bool',
         'encrypted_id': 'bool',
-        'encrypted_id_display_value': 'str'
+        'encrypted_id_display_value': 'str',
+        'contact_information': 'dict(str, str)',
+        'namespace': 'str'
     }
 
     attribute_map = {
@@ -47,11 +51,13 @@ class ConductorUser:
         'uuid': 'uuid',
         'application_user': 'applicationUser',
         'encrypted_id': 'encryptedId',
-        'encrypted_id_display_value': 'encryptedIdDisplayValue'
+        'encrypted_id_display_value': 'encryptedIdDisplayValue',
+        'contact_information': 'contactInformation',
+        'namespace': 'namespace'
     }
 
     def __init__(self, id=None, name=None, roles=None, groups=None, uuid=None, application_user=None, encrypted_id=None,
-                 encrypted_id_display_value=None):  # noqa: E501
+                 encrypted_id_display_value=None, contact_information=None, namespace=None):  # noqa: E501
         """ConductorUser - a model defined in Swagger"""  # noqa: E501
         self._id = None
         self._name = None
@@ -61,6 +67,8 @@ class ConductorUser:
         self._application_user = None
         self._encrypted_id = None
         self._encrypted_id_display_value = None
+        self._contact_information = None
+        self._namespace = None
         self.discriminator = None
         if id is not None:
             self.id = id
@@ -78,6 +86,10 @@ class ConductorUser:
             self.encrypted_id = encrypted_id
         if encrypted_id_display_value is not None:
             self.encrypted_id_display_value = encrypted_id_display_value
+        if contact_information is not None:
+            self.contact_information = contact_information
+        if namespace is not None:
+            self.namespace = namespace
 
     def __post_init__(self):
         """Initialize after dataclass initialization"""
@@ -252,6 +264,48 @@ class ConductorUser:
         """
 
         self._encrypted_id_display_value = encrypted_id_display_value
+
+    @property
+    def contact_information(self):
+        """Gets the contact_information of this ConductorUser.  # noqa: E501
+
+
+        :return: The contact_information of this ConductorUser.  # noqa: E501
+        :rtype: dict(str, str)
+        """
+        return self._contact_information
+
+    @contact_information.setter
+    def contact_information(self, contact_information):
+        """Sets the contact_information of this ConductorUser.
+
+
+        :param contact_information: The contact_information of this ConductorUser.  # noqa: E501
+        :type: dict(str, str)
+        """
+
+        self._contact_information = contact_information
+
+    @property
+    def namespace(self):
+        """Gets the namespace of this ConductorUser.  # noqa: E501
+
+
+        :return: The namespace of this ConductorUser.  # noqa: E501
+        :rtype: str
+        """
+        return self._namespace
+
+    @namespace.setter
+    def namespace(self, namespace):
+        """Sets the namespace of this ConductorUser.
+
+
+        :param namespace: The namespace of this ConductorUser.  # noqa: E501
+        :type: str
+        """
+
+        self._namespace = namespace
 
     def to_dict(self):
         """Returns the model properties as a dict"""

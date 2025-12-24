@@ -110,6 +110,7 @@ class AsyncTaskRunner:
 
         # Semaphore will be created in run() within the event loop
         self._semaphore = None
+        self._shutdown = False  # Flag to indicate graceful shutdown
 
     async def run(self) -> None:
         """Main async loop - runs continuously in single event loop."""
@@ -150,12 +151,49 @@ class AsyncTaskRunner:
         )
 
         try:
-            while True:
+            while not self._shutdown:
                 await self.run_once()
         finally:
-            # Cleanup async client on exit
-            if self.async_api_client:
+            # Cleanup resources on exit
+            await self._cleanup()
+
+    async def stop(self) -> None:
+        """Signal the runner to stop gracefully."""
+        self._shutdown = True
+
+    async def _cleanup(self) -> None:
+        """Clean up async resources."""
+        logger.debug("Cleaning up AsyncTaskRunner resources...")
+
+        # Cancel any running tasks (EAFP style)
+        try:
+            for task in list(self._running_tasks):
+                if not task.done():
+                    task.cancel()
+        except AttributeError:
+            pass  # No tasks to cancel
+
+        # Close async HTTP client
+        if self.async_api_client:
+            try:
                 await self.async_api_client.close()
+                logger.debug("Async API client closed successfully")
+            except (IOError, OSError) as e:
+                logger.warning(f"Error closing async client: {e}")
+
+        # Clear event listeners
+        self.event_dispatcher = None
+
+        logger.debug("AsyncTaskRunner cleanup completed")
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit - ensures cleanup."""
+        await self._cleanup()
+        return False  # Don't suppress exceptions
 
     async def __async_register_task_definition(self) -> None:
         """
@@ -384,10 +422,8 @@ class AsyncTaskRunner:
     async def run_once(self) -> None:
         """Execute one iteration of the polling loop (async version)."""
         try:
-            # Cleanup completed tasks
-            self.__cleanup_completed_tasks()
-
-            # Check if we can accept more tasks
+            # No need for manual cleanup - tasks remove themselves via add_done_callback
+            # Just check capacity directly
             current_capacity = len(self._running_tasks)
             if current_capacity >= self._max_workers:
                 # At capacity - sleep briefly then return
@@ -434,10 +470,6 @@ class AsyncTaskRunner:
             self.worker.clear_task_definition_name_cache()
         except Exception as e:
             logger.error("Error in run_once: %s", traceback.format_exc())
-
-    def __cleanup_completed_tasks(self) -> None:
-        """Remove completed task futures from tracking set (same as TaskRunner)."""
-        self._running_tasks = {f for f in self._running_tasks if not f.done()}
 
     async def __async_batch_poll(self, count: int) -> list:
         """Async batch poll for multiple tasks (async version of TaskRunner.__batch_poll_tasks)."""
@@ -533,7 +565,8 @@ class AsyncTaskRunner:
 
     async def __async_execute_and_update_task(self, task: Task) -> None:
         """Execute task and update result (async version - runs in event loop, not thread pool)."""
-        # Acquire semaphore to limit concurrency
+        # Acquire semaphore for entire task lifecycle (execution + update)
+        # This ensures we never exceed thread_count tasks in any stage of processing
         async with self._semaphore:
             try:
                 task_result = await self.__async_execute_task(task)

@@ -3,11 +3,15 @@ from typing import Dict, List, Optional
 
 from conductor.client.authorization_client import AuthorizationClient
 from conductor.client.configuration.configuration import Configuration
+from conductor.client.http.models.authentication_config import AuthenticationConfig
 from conductor.client.http.models.authorization_request import AuthorizationRequest
 from conductor.client.http.models.conductor_application import ConductorApplication
 from conductor.client.http.models.conductor_user import ConductorUser
 from conductor.client.http.models.create_or_update_application_request import CreateOrUpdateApplicationRequest
+from conductor.client.http.models.create_or_update_role_request import CreateOrUpdateRoleRequest
+from conductor.client.http.models.generate_token_request import GenerateTokenRequest
 from conductor.client.http.models.group import Group
+from conductor.client.http.models.role import Role
 from conductor.client.http.models.subject_ref import SubjectRef
 from conductor.client.http.models.target_ref import TargetRef
 from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
@@ -89,6 +93,17 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
     def delete_access_key(self, application_id: str, key_id: str):
         self.applicationResourceApi.delete_access_key(application_id, key_id)
 
+    def get_app_by_access_key_id(self, access_key_id: str) -> Dict:
+        """Get application information by access key ID.
+
+        Args:
+            access_key_id: The access key ID
+
+        Returns:
+            Dict with application information
+        """
+        return self.applicationResourceApi.get_app_by_access_key_id(access_key_id)
+
     # Users
 
     def upsert_user(self, upsert_user_request: UpsertUserRequest, user_id: str) -> ConductorUser:
@@ -105,6 +120,20 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
 
     def delete_user(self, user_id: str):
         self.userResourceApi.delete_user(user_id)
+
+    def check_permissions(self, user_id: str, target_type: str, target_id: str) -> Dict:
+        """Check if user has permissions on a specific target.
+
+        Args:
+            user_id: The user ID
+            target_type: The target type (e.g., 'WORKFLOW_DEF', 'TASK_DEF')
+            target_id: The target ID
+
+        Returns:
+            Dict with permission information
+        """
+        kwargs = {"type": target_type, "id": target_id}
+        return self.userResourceApi.check_permissions(user_id, **kwargs)
 
     # Groups
 
@@ -136,6 +165,12 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
 
     def remove_user_from_group(self, group_id: str, user_id: str):
         self.groupResourceApi.remove_user_from_group(group_id, user_id)
+
+    def add_users_to_group(self, group_id: str, user_ids: List[str]):
+        self.groupResourceApi.add_users_to_group(group_id, user_ids)
+
+    def remove_users_from_group(self, group_id: str, user_ids: List[str]):
+        self.groupResourceApi.remove_users_from_group(group_id, user_ids)
 
     # Permissions
 
@@ -172,3 +207,151 @@ class OrkesAuthorizationClient(OrkesBaseClient, AuthorizationClient):
     def remove_permissions(self, subject: SubjectRef, target: TargetRef, access: List[AccessType]):
         req = AuthorizationRequest(subject, target, access)
         self.authorizationResourceApi.remove_permissions(req)
+
+    # Token/Authentication
+
+    def generate_token(self, key_id: str, key_secret: str) -> Dict:
+        """Generate JWT token with the given access key.
+
+        Args:
+            key_id: The access key ID
+            key_secret: The access key secret
+
+        Returns:
+            Dict containing token information
+        """
+        request = GenerateTokenRequest(key_id=key_id, key_secret=key_secret)
+        return self.tokenResourceApi.generate_token(request)
+
+    def get_user_info_from_token(self) -> Dict:
+        """Get user information from the current authentication token.
+
+        Returns:
+            Dict with user information extracted from token
+        """
+        return self.tokenResourceApi.get_user_info()
+
+    # Roles
+
+    def list_all_roles(self) -> List[Role]:
+        """Get all roles (both system and custom).
+
+        Returns:
+            List of all roles
+        """
+        return self.roleResourceApi.list_all_roles()
+
+    def list_system_roles(self) -> Dict[str, Role]:
+        """Get all system-defined roles.
+
+        Returns:
+            Dict mapping role names to Role objects
+        """
+        return self.roleResourceApi.list_system_roles()
+
+    def list_custom_roles(self) -> List[Role]:
+        """Get all custom roles (excludes system roles).
+
+        Returns:
+            List of custom roles
+        """
+        return self.roleResourceApi.list_custom_roles()
+
+    def list_available_permissions(self) -> Dict:
+        """Get all available permissions that can be assigned to roles.
+
+        Returns:
+            Dict of available permissions
+        """
+        return self.roleResourceApi.list_available_permissions()
+
+    def create_role(self, create_role_request: CreateOrUpdateRoleRequest) -> Dict:
+        """Create a new custom role.
+
+        Args:
+            create_role_request: The role creation request
+
+        Returns:
+            Dict with creation result
+        """
+        return self.roleResourceApi.create_role(create_role_request)
+
+    def get_role(self, role_name: str) -> Dict:
+        """Get a role by name.
+
+        Args:
+            role_name: The name of the role
+
+        Returns:
+            Dict with role information
+        """
+        return self.roleResourceApi.get_role(role_name)
+
+    def update_role(self, role_name: str, update_role_request: CreateOrUpdateRoleRequest) -> Dict:
+        """Update an existing custom role.
+
+        Args:
+            role_name: The name of the role to update
+            update_role_request: The role update request
+
+        Returns:
+            Dict with update result
+        """
+        return self.roleResourceApi.update_role(role_name, update_role_request)
+
+    def delete_role(self, role_name: str):
+        """Delete a custom role.
+
+        Args:
+            role_name: The name of the role to delete
+        """
+        return self.roleResourceApi.delete_role(role_name)
+
+    # Gateway Authentication Config
+
+    def create_gateway_auth_config(self, auth_config: AuthenticationConfig) -> str:
+        """Create a new gateway authentication configuration.
+
+        Args:
+            auth_config: The authentication configuration
+
+        Returns:
+            The ID of the created configuration
+        """
+        return self.gatewayAuthResourceApi.create_config(auth_config)
+
+    def get_gateway_auth_config(self, config_id: str) -> AuthenticationConfig:
+        """Get gateway authentication configuration by id.
+
+        Args:
+            config_id: The configuration ID
+
+        Returns:
+            AuthenticationConfig object
+        """
+        return self.gatewayAuthResourceApi.get_config(config_id)
+
+    def list_gateway_auth_configs(self) -> List[AuthenticationConfig]:
+        """List all gateway authentication configurations.
+
+        Returns:
+            List of AuthenticationConfig objects
+        """
+        return self.gatewayAuthResourceApi.list_all_configs()
+
+    def update_gateway_auth_config(self, config_id: str, auth_config: AuthenticationConfig):
+        """Update gateway authentication configuration.
+
+        Args:
+            config_id: The configuration ID
+            auth_config: The updated authentication configuration
+        """
+        return self.gatewayAuthResourceApi.update_config(config_id, auth_config)
+
+    def delete_gateway_auth_config(self, config_id: str):
+        """Delete gateway authentication configuration.
+
+        Args:
+            config_id: The configuration ID
+        """
+        return self.gatewayAuthResourceApi.delete_config(config_id)

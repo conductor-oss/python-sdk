@@ -12,6 +12,8 @@ from conductor.client.http.models.permission import Permission
 from conductor.client.http.models.poll_data import PollData
 from conductor.client.http.models.prompt_template import PromptTemplate
 from conductor.client.http.models.rate_limit import RateLimit
+# Alias for backward compatibility - some code may refer to RateLimitConfig
+RateLimitConfig = RateLimit
 from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
 from conductor.client.http.models.response import Response
 from conductor.client.http.models.role import Role
@@ -63,3 +65,5 @@ from conductor.client.http.models.proto_registry_entry import ProtoRegistryEntry
 from conductor.client.http.models.service_method import ServiceMethod
 from conductor.client.http.models.circuit_breaker_transition_response import CircuitBreakerTransitionResponse
 from conductor.client.http.models.signal_response import SignalResponse, TaskStatus
+from conductor.client.http.models.authentication_config import AuthenticationConfig
+from conductor.client.http.models.tag_object import TagObject
