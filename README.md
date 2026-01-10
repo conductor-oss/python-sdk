@@ -160,7 +160,7 @@ See [docs/design/WORKER_DESIGN.md](docs/design/WORKER_DESIGN.md) for complete ar
   - Long-running tasks and lease extension
   - Performance metrics and monitoring
 - **[Worker Configuration](WORKER_CONFIGURATION.md)** - Hierarchical environment-based configuration
-- **[Complete Worker Guide](docs/worker/README.md)** - Comprehensive worker documentation
+- **[Complete Worker Guide](docs/WORKER.md)** - Comprehensive worker documentation
 
 **Monitoring & Advanced:**
 - **[Metrics](METRICS.md)** - Prometheus metrics collection

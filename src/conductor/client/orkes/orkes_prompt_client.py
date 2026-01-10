@@ -16,8 +16,30 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
     def __init__(self, configuration: Configuration):
         super(OrkesPromptClient, self).__init__(configuration)
 
-    def save_prompt(self, prompt_name: str, description: str, prompt_template: str):
-        self.promptApi.save_message_template(prompt_template, description, prompt_name)
+    def save_prompt(self, prompt_name: str, description: str, prompt_template: str,
+                    models: Optional[List[str]] = None, version: Optional[int] = None,
+                    auto_increment: bool = False):
+        """
+        Save or update a prompt template with optional parameters.
+
+        Args:
+            prompt_name: Name of the prompt template
+            description: Description of the prompt
+            prompt_template: The actual prompt text with variables
+            models: List of AI models this prompt supports (optional)
+            version: Specific version number (optional)
+            auto_increment: Auto-increment version on save (optional)
+        """
+        kwargs = {}
+        if models is not None:
+            kwargs['models'] = models
+        if version is not None:
+            kwargs['version'] = version
+        # Only pass autoIncrement if it's True (not the default)
+        if auto_increment:
+            kwargs['autoIncrement'] = auto_increment
+
+        self.promptApi.save_message_template(prompt_template, description, prompt_name, **kwargs)
 
     def get_prompt(self, prompt_name: str) -> PromptTemplate:
         try:
@@ -34,7 +56,7 @@ class OrkesPromptClient(OrkesBaseClient, PromptClient):
         self.promptApi.delete_message_template(prompt_name)
 
     def get_tags_for_prompt_template(self, prompt_name: str) -> List[MetadataTag]:
-        self.promptApi.get_tags_for_prompt_template(prompt_name)
+        return self.promptApi.get_tags_for_prompt_template(prompt_name)
 
     def update_tag_for_prompt_template(self, prompt_name: str, tags: List[MetadataTag]):
         self.promptApi.put_tag_for_prompt_template(tags, prompt_name)

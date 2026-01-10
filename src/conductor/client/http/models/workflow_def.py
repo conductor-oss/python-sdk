@@ -110,7 +110,7 @@ class WorkflowDef:
         'output_schema': 'SchemaDef',
         'enforce_schema': 'bool',
         'metadata': 'dict(str, object)',
-        'rate_limit_config': 'RateLimitConfig'
+        'rate_limit_config': 'RateLimit'
     }
 
     attribute_map = {
@@ -794,7 +794,7 @@ class WorkflowDef:
         """Gets the rate_limit_config of this WorkflowDef.  # noqa: E501
 
         :return: The rate_limit_config of this WorkflowDef.  # noqa: E501
-        :rtype: RateLimitConfig
+        :rtype: RateLimit
         """
         return self._rate_limit_config
 
@@ -803,7 +803,7 @@ class WorkflowDef:
         """Sets the rate_limit_config of this WorkflowDef.  # noqa: E501
 
         :param rate_limit_config: The rate_limit_config of this WorkflowDef.  # noqa: E501
-        :type: RateLimitConfig
+        :type: RateLimit
         """
         self._rate_limit_config = rate_limit_config
 

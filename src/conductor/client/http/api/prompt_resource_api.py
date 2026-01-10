@@ -613,6 +613,8 @@ class PromptResourceApi(object):
         :param str description: (required)
         :param str name: (required)
         :param list[str] models:
+        :param int version: Specific version number for the template
+        :param bool autoIncrement: Auto-increment version on save
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
@@ -637,12 +639,14 @@ class PromptResourceApi(object):
         :param str description: (required)
         :param str name: (required)
         :param list[str] models:
+        :param int version: Specific version number for the template
+        :param bool autoIncrement: Auto-increment version on save
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
         """
 
-        all_params = ['body', 'description', 'name', 'models']  # noqa: E501
+        all_params = ['body', 'description', 'name', 'models', 'version', 'autoIncrement']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -683,6 +687,10 @@ class PromptResourceApi(object):
         if 'models' in params:
             query_params.append(('models', params['models']))  # noqa: E501
             collection_formats['models'] = 'multi'  # noqa: E501
+        if 'version' in params:
+            query_params.append(('version', params['version']))  # noqa: E501
+        if 'autoIncrement' in params:
+            query_params.append(('autoIncrement', params['autoIncrement']))  # noqa: E501
 
         header_params = {}
 

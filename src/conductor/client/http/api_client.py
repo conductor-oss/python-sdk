@@ -765,7 +765,9 @@ class ApiClient(object):
             return
         # Initial token generation - apply backoff if there were previous failures
         token = self.__get_new_token(skip_backoff=False)
-        self.configuration.update_token(token)
+        # If token is None and auth was disabled (404), skip update
+        if token is not None or self.configuration.authentication_settings is not None:
+            self.configuration.update_token(token)
 
     def force_refresh_auth_token(self) -> bool:
         """
@@ -780,6 +782,10 @@ class ApiClient(object):
         if token:
             self.configuration.update_token(token)
             return True
+        # Check if auth was disabled during token refresh (404 response)
+        if self.configuration.authentication_settings is None:
+            logger.info('Authentication was disabled (no auth endpoint found)')
+            return False
         return False
 
     def __force_refresh_auth_token(self) -> bool:
@@ -856,6 +862,28 @@ class ApiClient(object):
                 f'Will retry with exponential backoff ({2 ** self._token_refresh_failures}s).'
             )
             return None
+
+        except rest.ApiException as ae:
+            # Check if it's a 404 - indicates no authentication endpoint (Conductor OSS)
+            if ae.is_not_found():
+                logger.info(
+                    'Authentication endpoint /token not found (404). '
+                    'Running in open mode without authentication (Conductor OSS).'
+                )
+                # Disable authentication to prevent future attempts
+                self.configuration.authentication_settings = None
+                self.configuration.AUTH_TOKEN = None
+                # Reset failure counter since this is not a failure
+                self._token_refresh_failures = 0
+                return None
+            else:
+                # Other API errors
+                self._token_refresh_failures += 1
+                logger.error(
+                    f'API error when getting token (attempt {self._token_refresh_failures}): '
+                    f'{ae.status} - {ae.reason}'
+                )
+                return None
 
         except Exception as e:
             # Other errors (network, etc)

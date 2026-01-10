@@ -77,10 +77,6 @@ class IntegrationClient(ABC):
         ...
 
     @abstractmethod
-    def register_token_usage(self, body, name, integration_name):
-        ...
-
-    @abstractmethod
     def save_integration_api(self, integration_name, api_name, api_details: IntegrationApiUpdate):
         ...
 
@@ -113,4 +109,21 @@ class IntegrationClient(ABC):
 
     @abstractmethod
     def get_tags_for_integration_provider(self, name):
+        ...
+
+    # Additional methods
+
+    @abstractmethod
+    def get_integration_available_apis(self, integration_name):
+        """Get available APIs for an integration provider"""
+        ...
+
+    @abstractmethod
+    def get_integration_provider_defs(self):
+        """Get all integration provider definitions"""
+        ...
+
+    @abstractmethod
+    def get_providers_and_integrations(self):
+        """Get all providers and their integrations"""
         ...
