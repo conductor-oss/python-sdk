@@ -6,7 +6,7 @@ import logging
 import os
 from multiprocessing import Process, freeze_support, Queue, set_start_method
 from sys import platform
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from conductor.client.automator.task_runner import TaskRunner
 from conductor.client.automator.async_task_runner import AsyncTaskRunner
@@ -148,14 +148,28 @@ class TaskHandler:
     def __init__(
             self,
             workers: Optional[List[WorkerInterface]] = None,
-            configuration: Optional[Configuration] = None,
+            configuration: Optional[Union[Configuration, List[Configuration]]] = None,
             metrics_settings: Optional[MetricsSettings] = None,
             scan_for_annotated_workers: bool = True,
             import_modules: Optional[List[str]] = None,
             event_listeners: Optional[List] = None
     ):
         workers = workers or []
-        self.logger_process, self.queue = _setup_logging_queue(configuration)
+        
+        # Normalize configuration to list (multi-homed support)
+        # If no config provided, try comma-separated env vars first
+        if configuration is None:
+            self.configurations = Configuration.from_env_multi()
+        elif isinstance(configuration, list):
+            self.configurations = configuration
+        else:
+            self.configurations = [configuration]
+        
+        if len(self.configurations) > 1:
+            server_urls = [c.host for c in self.configurations]
+            logger.info(f"Multi-homed mode enabled: {len(self.configurations)} servers - {server_urls}")
+        
+        self.logger_process, self.queue = _setup_logging_queue(self.configurations[0])
 
         # Set prometheus multiprocess directory BEFORE any worker processes start
         # This must be done before prometheus_client is imported in worker processes
@@ -218,9 +232,9 @@ class TaskHandler:
                 logger.debug("created worker with name=%s and domain=%s", task_def_name, resolved_config['domain'])
                 workers.append(worker)
 
-        self.__create_task_runner_processes(workers, configuration, metrics_settings)
+        self.__create_task_runner_processes(workers, self.configurations, metrics_settings)
         self.__create_metrics_provider_process(metrics_settings)
-        logger.info("TaskHandler initialized")
+        logger.info(f"TaskHandler initialized with {len(self.configurations)} server(s)")
 
     def __enter__(self):
         return self
@@ -260,21 +274,21 @@ class TaskHandler:
     def __create_task_runner_processes(
             self,
             workers: List[WorkerInterface],
-            configuration: Configuration,
+            configurations: List[Configuration],
             metrics_settings: MetricsSettings
     ) -> None:
         self.task_runner_processes = []
         self.workers = []
         for worker in workers:
             self.__create_task_runner_process(
-                worker, configuration, metrics_settings
+                worker, configurations, metrics_settings
             )
             self.workers.append(worker)
 
     def __create_task_runner_process(
             self,
             worker: WorkerInterface,
-            configuration: Configuration,
+            configurations: List[Configuration],
             metrics_settings: MetricsSettings
     ) -> None:
         # Detect if worker function is async
@@ -288,17 +302,18 @@ class TaskHandler:
             # Class-based worker (implements WorkerInterface)
             is_async_worker = inspect.iscoroutinefunction(worker.execute)
 
+        server_count = len(configurations)
         if is_async_worker:
             # Use AsyncTaskRunner for async def workers
-            async_task_runner = AsyncTaskRunner(worker, configuration, metrics_settings, self.event_listeners)
+            async_task_runner = AsyncTaskRunner(worker, configurations, metrics_settings, self.event_listeners)
             # Wrap async runner in a sync function for multiprocessing
             process = Process(target=self.__run_async_runner, args=(async_task_runner,))
-            logger.debug(f"Created AsyncTaskRunner for async worker: {worker.get_task_definition_name()}")
+            logger.debug(f"Created AsyncTaskRunner for async worker: {worker.get_task_definition_name()} ({server_count} server(s))")
         else:
             # Use TaskRunner for sync def workers
-            task_runner = TaskRunner(worker, configuration, metrics_settings, self.event_listeners)
+            task_runner = TaskRunner(worker, configurations, metrics_settings, self.event_listeners)
             process = Process(target=task_runner.run)
-            logger.debug(f"Created TaskRunner for sync worker: {worker.get_task_definition_name()}")
+            logger.debug(f"Created TaskRunner for sync worker: {worker.get_task_definition_name()} ({server_count} server(s))")
 
         self.task_runner_processes.append(process)
 

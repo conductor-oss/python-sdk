@@ -270,7 +270,75 @@ If you paste the above code in a file called main.py, you can launch the workers
 python3 main.py
 ```
 
+## Multi-Homed Workers (High Availability)
+
+Workers can poll tasks from **multiple Conductor servers** simultaneously for high availability, disaster recovery, and active-active deployments.
+
+### Configuration via Environment Variables
+
+```bash
+# Multiple servers (comma-separated)
+export CONDUCTOR_SERVER_URL=https://east.example.com/api,https://west.example.com/api
+
+# Auth credentials per server (must match server count)
+export CONDUCTOR_AUTH_KEY=key1,key2
+export CONDUCTOR_AUTH_SECRET=secret1,secret2
+```
+
+Workers automatically detect and use all configured servers:
+
+```python
+from conductor.client.automator.task_handler import TaskHandler
+
+# Auto-detects multi-homed config from env vars
+handler = TaskHandler(scan_for_annotated_workers=True)
+handler.start_processes()
+```
+
+### Programmatic Configuration
+
+```python
+from conductor.client.configuration.configuration import Configuration
+from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
+from conductor.client.automator.task_handler import TaskHandler
+
+configs = [
+    Configuration(
+        server_api_url="https://east.example.com/api",
+        authentication_settings=AuthenticationSettings(key_id="key1", key_secret="secret1")
+    ),
+    Configuration(
+        server_api_url="https://west.example.com/api",
+        authentication_settings=AuthenticationSettings(key_id="key2", key_secret="secret2")
+    ),
+]
+
+handler = TaskHandler(configuration=configs, scan_for_annotated_workers=True)
+handler.start_processes()
+```
+
+### How It Works
+
+| Behavior | Description |
+|----------|-------------|
+| **Parallel Polling** | Workers poll all servers simultaneously each cycle |
+| **Task Tracking** | Each task is tracked to its originating server |
+| **Correct Routing** | Updates are routed back to the correct server |
+| **Metadata Registration** | Task definitions are registered to all servers |
+| **Backward Compatible** | Single server configuration still works unchanged |
+
+### Validation
+
+The SDK validates that credential counts match server counts:
+
+```bash
+# This will raise ValueError at startup:
+export CONDUCTOR_SERVER_URL=https://east.example.com/api,https://west.example.com/api
+export CONDUCTOR_AUTH_KEY=key1  # Only 1 key for 2 servers - ERROR!
+```
+
 ## Task Domains
+
 Workers can be configured to start polling for work that is tagged by a task domain. See more on domains [here](https://orkes.io/content/developer-guides/task-to-domain).
 
 

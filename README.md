@@ -100,6 +100,8 @@ The SDK requires Python 3.9+. To install the SDK, use the following command:
 ```shell
 python3 -m pip install conductor-python
 ```
+## Working with Conductor Server
+
 
 ## 🚀 Quick Start
 
@@ -342,6 +344,53 @@ Run the application and view the execution status from Conductor's UI Console.
 
 > [!NOTE]
 > That's it - you just created and executed your first distributed Python app!
+
+## Multi-Homed Workers (High Availability)
+
+Workers can poll tasks from **multiple Conductor servers** simultaneously for high availability and disaster recovery. This is useful when running active-active or active-passive Conductor clusters.
+
+### Configuration via Environment Variables
+
+```bash
+# Multiple servers (comma-separated)
+export CONDUCTOR_SERVER_URL=https://east.example.com/api,https://west.example.com/api
+
+# Auth credentials per server (must match server count)
+export CONDUCTOR_AUTH_KEY=key1,key2
+export CONDUCTOR_AUTH_SECRET=secret1,secret2
+```
+
+```python
+# Workers automatically poll all configured servers
+handler = TaskHandler()  # Auto-detects from env vars
+handler.start_processes()
+```
+
+### Programmatic Configuration
+
+```python
+from conductor.client.configuration.configuration import Configuration
+from conductor.client.automator.task_handler import TaskHandler
+
+handler = TaskHandler(configuration=[
+    Configuration(
+        server_api_url="https://east.example.com/api",
+        authentication_settings=AuthenticationSettings(key_id="key1", key_secret="secret1")
+    ),
+    Configuration(
+        server_api_url="https://west.example.com/api", 
+        authentication_settings=AuthenticationSettings(key_id="key2", key_secret="secret2")
+    ),
+])
+```
+
+### How It Works
+
+- Workers **poll all servers in parallel** each cycle
+- Tasks are tracked to their originating server
+- Updates are routed back to the correct server
+- Task definitions are registered to **all** servers
+- **Backward compatible** - single server config still works
 
 ## Learn More about Conductor Python SDK
 
