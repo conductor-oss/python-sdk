@@ -391,6 +391,9 @@ class AsyncTaskRunner:
             logger.debug("Stop polling task for: %s", task_definition_name)
             return []
 
+        if not self.async_task_clients:
+            return []
+
         # Divide capacity across servers evenly
         # e.g., count=10, clients=3 -> [4, 3, 3]
         total_servers = len(self.async_task_clients)
@@ -479,6 +482,14 @@ class AsyncTaskRunner:
         # Single server: poll directly
         if len(self.async_task_clients) == 1:
             server_idx, tasks, error = await poll_single_server(0, self.async_task_clients[0])
+            
+            if error:
+                self.event_dispatcher.publish(PollFailure(
+                    task_type=task_definition_name,
+                    cause=error,
+                    duration_ms=int((time.time() - start_time) * 1000)
+                ))
+
             for task in tasks:
                 if task and task.task_id:
                     self._task_server_map[task.task_id] = server_idx
@@ -500,6 +511,14 @@ class AsyncTaskRunner:
                         logger.debug(f"Poll exception: {result}")
                         continue
                     server_idx, tasks, error = result
+                    
+                    if error:
+                        self.event_dispatcher.publish(PollFailure(
+                            task_type=task_definition_name,
+                            cause=error,
+                            duration_ms=int((time.time() - start_time) * 1000)
+                        ))
+
                     for task in tasks:
                         if task and task.task_id:
                             self._task_server_map[task.task_id] = server_idx

@@ -255,11 +255,7 @@ class TaskRunner:
         else:
             task_def = TaskDef(name=task_name)
 
-        # Link schemas if generated
-        if input_schema_name:
-            task_def.input_schema = {"name": input_schema_name, "version": 1}
-        if output_schema_name:
-            task_def.output_schema = {"name": output_schema_name, "version": 1}
+
 
         overwrite = getattr(self.worker, 'overwrite_task_def', True)
 
@@ -271,6 +267,8 @@ class TaskRunner:
                 metadata_client = OrkesMetadataClient(config)
 
                 # Register schemas if available
+                input_schema_registered = False
+                output_schema_registered = False
                 if schemas and (schemas.get('input') or schemas.get('output')):
                     try:
                         schema_client = OrkesSchemaClient(config)
@@ -282,6 +280,7 @@ class TaskRunner:
                                 data=schemas['input']
                             )
                             schema_client.register_schema(input_schema_def)
+                            input_schema_registered = True
                             logger.debug(f"  ✓ Registered input schema on {server_label}")
                         if schemas.get('output'):
                             output_schema_def = SchemaDef(
@@ -291,14 +290,29 @@ class TaskRunner:
                                 data=schemas['output']
                             )
                             schema_client.register_schema(output_schema_def)
+                            output_schema_registered = True
                             logger.debug(f"  ✓ Registered output schema on {server_label}")
                     except Exception as e:
                         logger.warning(f"⚠ Could not register schemas on {server_label}: {e}")
 
                 # Register task definition
                 try:
+                    # For single server, modify usage of task_def directly to preserve object identity (helps tests)
+                    # For multi-server, clone to ensure isolation
+                    if len(self.configurations) == 1:
+                        server_task_def = task_def
+                    else:
+                        import copy
+                        server_task_def = copy.deepcopy(task_def)
+                    
+                    # Link schemas ONLY if successfully registered on THIS server
+                    if input_schema_registered and input_schema_name:
+                         server_task_def.input_schema = {"name": input_schema_name, "version": 1}
+                    if output_schema_registered and output_schema_name:
+                         server_task_def.output_schema = {"name": output_schema_name, "version": 1}
+
                     if overwrite:
-                        metadata_client.update_task_def(task_def=task_def)
+                        metadata_client.update_task_def(task_def=server_task_def)
                     else:
                         try:
                             existing = metadata_client.get_task_def(task_name)
@@ -307,8 +321,8 @@ class TaskRunner:
                                 continue
                         except Exception:
                             pass
-                        metadata_client.register_task_def(task_def=task_def)
-
+                        metadata_client.register_task_def(task_def=server_task_def)
+                    
                     logger.info(f"  ✓ Registered task definition on {server_label}")
 
                 except Exception as e:
@@ -459,6 +473,9 @@ class TaskRunner:
             logger.debug("Stop polling task for: %s", task_definition_name)
             return []
 
+        if not self.task_clients:
+            return []
+
         # Divide capacity across servers evenly
         # e.g., count=10, clients=3 -> [4, 3, 3]
         total_servers = len(self.task_clients)
@@ -564,6 +581,14 @@ class TaskRunner:
                 for future in as_completed(futures, timeout=self._POLL_TIMEOUT_SECONDS):
                     try:
                         server_idx, tasks, error = future.result(timeout=0)
+                        
+                        if error:
+                            self.event_dispatcher.publish(PollFailure(
+                                task_type=task_definition_name,
+                                cause=error,
+                                duration_ms=int((time.time() - start_time) * 1000)
+                            ))
+
                         for task in tasks:
                             if task and task.task_id:
                                 # Track which server this task came from (thread-safe)
