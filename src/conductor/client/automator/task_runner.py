@@ -627,11 +627,11 @@ class TaskRunner:
             return None
 
         # Apply exponential backoff if we have recent auth failures
-        if self._auth_failures > 0:
+        if self._auth_failures[0] > 0:
             now = time.time()
             # Exponential backoff: 2^failures seconds (2s, 4s, 8s, 16s, 32s)
-            backoff_seconds = min(2 ** self._auth_failures, 60)  # Cap at 60s
-            time_since_last_failure = now - self._last_auth_failure
+            backoff_seconds = min(2 ** self._auth_failures[0], 60)  # Cap at 60s
+            time_since_last_failure = now - self._last_auth_failure[0]
 
             if time_since_last_failure < backoff_seconds:
                 # Still in backoff period - skip polling
@@ -650,16 +650,24 @@ class TaskRunner:
             # Only add domain if it's not None and not empty string
             if domain is not None and domain != "":
                 params["domain"] = domain
-            task = self.task_client.poll(tasktype=task_definition_name, **params)
+            
+            # Use the first client (single-server optimization)
+            task = self.task_clients[0].poll(tasktype=task_definition_name, **params)
+            
             finish_time = time.time()
             time_spent = finish_time - start_time
             if self.metrics_collector is not None:
                 self.metrics_collector.record_task_poll_time(task_definition_name, time_spent)
+            
+            # Reset failure count on success
+            if self._auth_failures[0] > 0:
+                self._auth_failures[0] = 0
+                
         except AuthorizationException as auth_exception:
             # Track auth failure for backoff
-            self._auth_failures += 1
-            self._last_auth_failure = time.time()
-            backoff_seconds = min(2 ** self._auth_failures, 60)
+            self._auth_failures[0] += 1
+            self._last_auth_failure[0] = time.time()
+            backoff_seconds = min(2 ** self._auth_failures[0], 60)
 
             if self.metrics_collector is not None:
                 self.metrics_collector.increment_task_poll_error(task_definition_name, type(auth_exception))
@@ -667,7 +675,7 @@ class TaskRunner:
             if auth_exception.invalid_token:
                 logger.error(
                     f"Failed to poll task {task_definition_name} due to invalid auth token "
-                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s). "
+                    f"(failure #{self._auth_failures[0]}). Will retry with exponential backoff ({backoff_seconds}s). "
                     "Please check your CONDUCTOR_AUTH_KEY and CONDUCTOR_AUTH_SECRET."
                 )
             else:
