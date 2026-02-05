@@ -91,6 +91,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
             # Initialize runner (creates clients in event loop)
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(5)
 
             # Mock batch_poll to return one task
@@ -149,6 +150,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
@@ -195,6 +197,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             # Mock batch_poll to raise a generic exception
@@ -244,6 +247,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(2)  # Max 2 concurrent
 
             # Return 2 tasks on first poll, 2 on second poll
@@ -297,6 +301,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             # Mock batch_poll to return empty (no tasks)
@@ -344,6 +349,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             # Mock batch_poll to raise exception
@@ -394,6 +400,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
@@ -435,6 +442,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(2)
 
             # Mock batch_poll to return only the number of tasks requested (count param)
@@ -486,6 +494,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[self.__create_task()])
@@ -529,6 +538,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(3)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=mock_tasks)
@@ -574,6 +584,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
@@ -666,6 +677,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             # Successful execution scenario
@@ -753,6 +765,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
@@ -808,6 +821,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
@@ -863,6 +877,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
@@ -919,6 +934,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
@@ -994,6 +1010,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
         async def run_test():
             runner.async_api_client = AsyncMock()
             runner.async_task_client = AsyncMock()
+            runner.async_task_clients = [runner.async_task_client]
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])

@@ -2,6 +2,7 @@ import inspect
 import logging
 import os
 import sys
+import threading
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -46,7 +47,7 @@ class TaskRunner:
     def __init__(
             self,
             worker: WorkerInterface,
-            configuration: Configuration = None,
+            configuration: Configuration = None,  # Accepts single or list for multi-homed
             metrics_settings: MetricsSettings = None,
             event_listeners: list = None
     ):
@@ -54,9 +55,15 @@ class TaskRunner:
             raise Exception("Invalid worker")
         self.worker = worker
         self.__set_worker_properties()
-        if not isinstance(configuration, Configuration):
-            configuration = Configuration()
-        self.configuration = configuration
+        
+        # Normalize configuration to list (multi-homed support)
+        # Accepts: None, single Configuration, or List[Configuration]
+        if configuration is None:
+            self.configurations = [Configuration()]
+        elif isinstance(configuration, list):
+            self.configurations = configuration
+        else:
+            self.configurations = [configuration]
 
         # Set up event dispatcher and register listeners
         self.event_dispatcher = SyncEventDispatcher[TaskRunnerEvent]()
@@ -72,16 +79,32 @@ class TaskRunner:
             # Register metrics collector as event listener
             register_task_runner_listener(self.metrics_collector, self.event_dispatcher)
 
-        self.task_client = TaskResourceApi(
-            ApiClient(
-                configuration=self.configuration,
-                metrics_collector=self.metrics_collector
+        # Create one task client per server (multi-homed support)
+        self.task_clients = []
+        for cfg in self.configurations:
+            task_client = TaskResourceApi(
+                ApiClient(
+                    configuration=cfg,
+                    metrics_collector=self.metrics_collector
+                )
             )
-        )
+            self.task_clients.append(task_client)
+        
+        # Track which server each task came from: {task_id: server_index}
+        # Thread-safe: accessed from poll thread and executor threads
+        self._task_server_map = {}
+        self._task_server_map_lock = threading.Lock()
 
-        # Auth failure backoff tracking to prevent retry storms
-        self._auth_failures = 0
-        self._last_auth_failure = 0
+        # Auth failure backoff tracking per server
+        self._auth_failures = [0] * len(self.configurations)
+        self._last_auth_failure = [0] * len(self.configurations)
+        
+        # Circuit breaker per server (for multi-homed resilience)
+        self._server_failures = [0] * len(self.configurations)
+        self._circuit_open_until = [0.0] * len(self.configurations)
+        self._CIRCUIT_FAILURE_THRESHOLD = 3  # failures before opening circuit
+        self._CIRCUIT_RESET_SECONDS = 30  # seconds before half-open retry
+        self._POLL_TIMEOUT_SECONDS = 5  # max time to wait for any server poll
 
         # Thread pool for concurrent task execution
         # thread_count from worker configuration controls concurrency
@@ -92,10 +115,20 @@ class TaskRunner:
         self._last_poll_time = 0  # Track last poll to avoid excessive polling when queue is empty
         self._consecutive_empty_polls = 0  # Track empty polls to implement backoff
         self._shutdown = False  # Flag to indicate graceful shutdown
+        
+        # Reusable poll executor for multi-homed parallel polling
+        if len(self.configurations) > 1:
+            self._poll_executor = ThreadPoolExecutor(
+                max_workers=len(self.configurations),
+                thread_name_prefix=f"poll-{worker.get_task_definition_name()}"
+            )
+        else:
+            self._poll_executor = None
 
     def run(self) -> None:
-        if self.configuration is not None:
-            self.configuration.apply_logging_config()
+        # Apply logging config from primary configuration
+        if self.configurations:
+            self.configurations[0].apply_logging_config()
         else:
             logger.setLevel(logging.DEBUG)
 
@@ -139,16 +172,25 @@ class TaskRunner:
             pass  # No executor to shutdown
         except (RuntimeError, ValueError) as e:
             logger.warning(f"Error shutting down executor: {e}")
+        
+        # Shutdown poll executor if exists (multi-homed mode)
+        if self._poll_executor is not None:
+            try:
+                self._poll_executor.shutdown(wait=False, cancel_futures=True)
+                logger.debug("Poll executor shut down successfully")
+            except (RuntimeError, ValueError) as e:
+                logger.warning(f"Error shutting down poll executor: {e}")
 
-        # Close HTTP client (EAFP style)
-        try:
-            rest_client = self.task_client.api_client.rest_client
-            rest_client.close()
-            logger.debug("HTTP client closed successfully")
-        except AttributeError:
-            pass  # No client to close or no close method
-        except (IOError, OSError) as e:
-            logger.warning(f"Error closing HTTP client: {e}")
+        # Close HTTP clients for all servers (multi-homed support)
+        for i, task_client in enumerate(self.task_clients):
+            try:
+                rest_client = task_client.api_client.rest_client
+                rest_client.close()
+                logger.debug(f"HTTP client {i + 1} closed successfully")
+            except AttributeError:
+                pass  # No client to close or no close method
+            except (IOError, OSError) as e:
+                logger.warning(f"Error closing HTTP client {i + 1}: {e}")
 
         # Clear event listeners
         self.event_dispatcher = None
@@ -166,7 +208,9 @@ class TaskRunner:
 
     def __register_task_definition(self) -> None:
         """
-        Register task definition with Conductor server (if register_task_def=True).
+        Register task definition with Conductor server(s) (if register_task_def=True).
+
+        In multi-homed mode, registers to ALL configured servers.
 
         Automatically creates/updates:
         1. Task definition with basic metadata or provided TaskDef configuration
@@ -181,212 +225,116 @@ class TaskRunner:
         task_name = self.worker.get_task_definition_name()
 
         logger.info("=" * 80)
-        logger.info(f"Registering task definition: {task_name}")
+        logger.info(f"Registering task definition: {task_name} to {len(self.configurations)} server(s)")
         logger.info("=" * 80)
 
-        try:
-            # Create metadata client
-            logger.debug(f"Creating metadata client for task registration...")
-            metadata_client = OrkesMetadataClient(self.configuration)
+        # Generate JSON schemas once (same for all servers)
+        input_schema_name = None
+        output_schema_name = None
+        schemas = None
 
-            # Generate JSON schemas from function signature (if worker has execute_function)
-            input_schema_name = None
-            output_schema_name = None
-            schema_registry_available = True
+        if hasattr(self.worker, 'execute_function'):
+            logger.info(f"Generating JSON schemas from function signature...")
+            strict_mode = getattr(self.worker, 'strict_schema', False)
+            logger.debug(f"  strict_schema mode: {strict_mode}")
+            schemas = generate_json_schema_from_function(self.worker.execute_function, task_name, strict_schema=strict_mode)
 
-            if hasattr(self.worker, 'execute_function'):
-                logger.info(f"Generating JSON schemas from function signature...")
-                # Pass strict_schema flag to control additionalProperties
-                strict_mode = getattr(self.worker, 'strict_schema', False)
-                logger.debug(f"  strict_schema mode: {strict_mode}")
-                schemas = generate_json_schema_from_function(self.worker.execute_function, task_name, strict_schema=strict_mode)
+            if schemas:
+                has_input_schema = schemas.get('input') is not None
+                has_output_schema = schemas.get('output') is not None
+                if has_input_schema or has_output_schema:
+                    logger.info(f"  ✓ Generated schemas: input={'Yes' if has_input_schema else 'No'}, output={'Yes' if has_output_schema else 'No'}")
+                    input_schema_name = f"{task_name}_input" if has_input_schema else None
+                    output_schema_name = f"{task_name}_output" if has_output_schema else None
 
-                if schemas:
-                    has_input_schema = schemas.get('input') is not None
-                    has_output_schema = schemas.get('output') is not None
+        # Build task definition once (same for all servers)
+        if hasattr(self.worker, 'task_def_template') and self.worker.task_def_template:
+            import copy
+            task_def = copy.deepcopy(self.worker.task_def_template)
+            task_def.name = task_name
+        else:
+            task_def = TaskDef(name=task_name)
 
-                    if has_input_schema or has_output_schema:
-                        logger.info(f"  ✓ Generated schemas: input={'Yes' if has_input_schema else 'No'}, output={'Yes' if has_output_schema else 'No'}")
-                    else:
-                        logger.info(f"  ⚠ No schemas generated (type hints not fully supported)")
 
-                    # Register schemas with schema client
-                    try:
-                        logger.debug(f"Creating schema client...")
-                        schema_client = OrkesSchemaClient(self.configuration)
-                    except Exception as e:
-                        # Schema client not available (server doesn't support schemas)
-                        logger.warning(f"⚠ Schema registry not available on server - task will be registered without schemas")
-                        logger.debug(f"  Error: {e}")
-                        schema_registry_available = False
-                        schema_client = None
 
-                    if schema_registry_available and schema_client:
-                        logger.info(f"Registering JSON schemas...")
-                        try:
-                            # Register input schema
-                            if schemas.get('input'):
-                                input_schema_name = f"{task_name}_input"
-                                try:
-                                    # Register schema (overwrite if exists)
-                                    input_schema_def = SchemaDef(
-                                        name=input_schema_name,
-                                        version=1,
-                                        type=SchemaType.JSON,
-                                        data=schemas['input']
-                                    )
-                                    schema_client.register_schema(input_schema_def)
-                                    logger.info(f"  ✓ Registered input schema: {input_schema_name} (v1)")
+        overwrite = getattr(self.worker, 'overwrite_task_def', True)
 
-                                except Exception as e:
-                                    # Check if this is a 404 (API endpoint doesn't exist on server)
-                                    if hasattr(e, 'status') and e.status == 404:
-                                        logger.warning(f"⚠ Schema registry API not available on server (404) - task will be registered without schemas")
-                                        schema_registry_available = False
-                                        input_schema_name = None
-                                    else:
-                                        # Other error - log and continue without this schema
-                                        logger.warning(f"⚠ Could not register input schema '{input_schema_name}': {e}")
-                                        input_schema_name = None
-
-                            # Register output schema (only if schema registry is available)
-                            if schema_registry_available and schemas.get('output'):
-                                output_schema_name = f"{task_name}_output"
-                                try:
-                                    # Register schema (overwrite if exists)
-                                    output_schema_def = SchemaDef(
-                                        name=output_schema_name,
-                                        version=1,
-                                        type=SchemaType.JSON,
-                                        data=schemas['output']
-                                    )
-                                    schema_client.register_schema(output_schema_def)
-                                    logger.info(f"  ✓ Registered output schema: {output_schema_name} (v1)")
-
-                                except Exception as e:
-                                    # Check if this is a 404 (API endpoint doesn't exist on server)
-                                    if hasattr(e, 'status') and e.status == 404:
-                                        logger.warning(f"⚠ Schema registry API not available on server (404)")
-                                        schema_registry_available = False
-                                    else:
-                                        # Other error - log and continue without this schema
-                                        logger.warning(f"⚠ Could not register output schema '{output_schema_name}': {e}")
-                                    output_schema_name = None
-
-                        except Exception as e:
-                            logger.debug(f"Could not register schemas for {task_name}: {e}")
-                else:
-                    logger.info(f"  ⚠ No schemas generated (unable to analyze function signature)")
-            else:
-                logger.info(f"  ⚠ Class-based worker (no execute_function) - registering task without schemas")
-
-            # Create task definition
-            logger.info(f"Creating task definition for '{task_name}'...")
-
-            # Check if task_def_template is provided
-            logger.debug(f"  task_def_template present: {hasattr(self.worker, 'task_def_template')}")
-            if hasattr(self.worker, 'task_def_template'):
-                logger.debug(f"  task_def_template value: {self.worker.task_def_template}")
-
-            # Use provided task_def template if available, otherwise create minimal TaskDef
-            if hasattr(self.worker, 'task_def_template') and self.worker.task_def_template:
-                logger.info(f"  Using provided TaskDef configuration:")
-
-                # Create a copy to avoid mutating the original
-                import copy
-                task_def = copy.deepcopy(self.worker.task_def_template)
-
-                # Override name to ensure consistency
-                task_def.name = task_name
-
-                # Log configuration being applied
-                if task_def.retry_count:
-                    logger.info(f"    - retry_count: {task_def.retry_count}")
-                if task_def.retry_logic:
-                    logger.info(f"    - retry_logic: {task_def.retry_logic}")
-                if task_def.timeout_seconds:
-                    logger.info(f"    - timeout_seconds: {task_def.timeout_seconds}")
-                if task_def.timeout_policy:
-                    logger.info(f"    - timeout_policy: {task_def.timeout_policy}")
-                if task_def.response_timeout_seconds:
-                    logger.info(f"    - response_timeout_seconds: {task_def.response_timeout_seconds}")
-                if task_def.concurrent_exec_limit:
-                    logger.info(f"    - concurrent_exec_limit: {task_def.concurrent_exec_limit}")
-                if task_def.rate_limit_per_frequency:
-                    logger.info(f"    - rate_limit: {task_def.rate_limit_per_frequency}/{task_def.rate_limit_frequency_in_seconds}s")
-            else:
-                # Create minimal task definition
-                logger.info(f"  Creating minimal TaskDef (no custom configuration)")
-                task_def = TaskDef(name=task_name)
-
-            # Link schemas if they were generated (overrides any schemas in task_def_template)
-            if input_schema_name:
-                task_def.input_schema = {"name": input_schema_name, "version": 1}
-                logger.debug(f"  Linked input schema: {input_schema_name}")
-            if output_schema_name:
-                task_def.output_schema = {"name": output_schema_name, "version": 1}
-                logger.debug(f"  Linked output schema: {output_schema_name}")
-
-            # Register/update task definition
-            # Behavior depends on overwrite_task_def flag
-            overwrite = getattr(self.worker, 'overwrite_task_def', True)
-            logger.debug(f"  overwrite_task_def: {overwrite}")
-
+        # Register to each server
+        for server_idx, config in enumerate(self.configurations):
+            server_label = f"server {server_idx + 1}/{len(self.configurations)}"
             try:
-                # Debug: Log the TaskDef being sent
-                logger.debug(f"  Sending TaskDef to server:")
-                logger.debug(f"    Name: {task_def.name}")
-                logger.debug(f"    retry_count: {task_def.retry_count}")
-                logger.debug(f"    retry_logic: {task_def.retry_logic}")
-                logger.debug(f"    timeout_policy: {task_def.timeout_policy}")
-                logger.debug(f"    Full to_dict(): {task_def.to_dict()}")
+                logger.info(f"Registering to {server_label}: {config.host}")
+                metadata_client = OrkesMetadataClient(config)
 
-                if overwrite:
-                    # Use update_task_def to overwrite existing definitions
-                    logger.debug(f"  Using update_task_def (overwrite=True)")
-                    metadata_client.update_task_def(task_def=task_def)
-                else:
-                    # Check if task exists, only create if it doesn't
-                    logger.debug(f"  Checking if task exists before creating (overwrite=False)")
+                # Register schemas if available
+                input_schema_registered = False
+                output_schema_registered = False
+                if schemas and (schemas.get('input') or schemas.get('output')):
                     try:
-                        existing = metadata_client.get_task_def(task_name)
-                        if existing:
-                            logger.info(f"✓ Task definition '{task_name}' already exists - skipping (overwrite=False)")
-                            logger.info(f"  View at: {self.configuration.ui_host}/taskDef/{task_name}")
-                            return
-                    except Exception:
-                        # Task doesn't exist, proceed to register
-                        pass
-                    metadata_client.register_task_def(task_def=task_def)
+                        schema_client = OrkesSchemaClient(config)
+                        if schemas.get('input'):
+                            input_schema_def = SchemaDef(
+                                name=input_schema_name,
+                                version=1,
+                                type=SchemaType.JSON,
+                                data=schemas['input']
+                            )
+                            schema_client.register_schema(input_schema_def)
+                            input_schema_registered = True
+                            logger.debug(f"  ✓ Registered input schema on {server_label}")
+                        if schemas.get('output'):
+                            output_schema_def = SchemaDef(
+                                name=output_schema_name,
+                                version=1,
+                                type=SchemaType.JSON,
+                                data=schemas['output']
+                            )
+                            schema_client.register_schema(output_schema_def)
+                            output_schema_registered = True
+                            logger.debug(f"  ✓ Registered output schema on {server_label}")
+                    except Exception as e:
+                        logger.warning(f"⚠ Could not register schemas on {server_label}: {e}")
 
-                # Print success message with link
-                task_def_url = f"{self.configuration.ui_host}/taskDef/{task_name}"
-                logger.info(f"✓ Registered/Updated task definition: {task_name} with {task_def.to_dict()}")
-                logger.info(f"  View at: {task_def_url}")
+                # Register task definition
+                try:
+                    # For single server, modify usage of task_def directly to preserve object identity (helps tests)
+                    # For multi-server, clone to ensure isolation
+                    if len(self.configurations) == 1:
+                        server_task_def = task_def
+                    else:
+                        import copy
+                        server_task_def = copy.deepcopy(task_def)
+                    
+                    # Link schemas ONLY if successfully registered on THIS server
+                    if input_schema_registered and input_schema_name:
+                         server_task_def.input_schema = {"name": input_schema_name, "version": 1}
+                    if output_schema_registered and output_schema_name:
+                         server_task_def.output_schema = {"name": output_schema_name, "version": 1}
 
-                if input_schema_name or output_schema_name:
-                    schema_count = sum([1 for s in [input_schema_name, output_schema_name] if s])
-                    logger.info(f"  With {schema_count} JSON schema(s): {', '.join(filter(None, [input_schema_name, output_schema_name]))}")
+                    if overwrite:
+                        metadata_client.update_task_def(task_def=server_task_def)
+                    else:
+                        try:
+                            existing = metadata_client.get_task_def(task_name)
+                            if existing:
+                                logger.info(f"  ✓ Task already exists on {server_label} - skipping (overwrite=False)")
+                                continue
+                        except Exception:
+                            pass
+                        metadata_client.register_task_def(task_def=server_task_def)
+                    
+                    logger.info(f"  ✓ Registered task definition on {server_label}")
+
+                except Exception as e:
+                    # Try register if update fails
+                    try:
+                        metadata_client.register_task_def(task_def=task_def)
+                        logger.info(f"  ✓ Registered task definition on {server_label}")
+                    except Exception as register_error:
+                        logger.warning(f"⚠ Could not register task on {server_label}: {register_error}")
 
             except Exception as e:
-                # If update fails (task doesn't exist), try register
-                try:
-                    metadata_client.register_task_def(task_def=task_def)
-
-                    task_def_url = f"{self.configuration.ui_host}/taskDef/{task_name}"
-                    logger.info(f"✓ Registered task definition: {task_name}")
-                    logger.info(f"  View at: {task_def_url}")
-
-                    if input_schema_name or output_schema_name:
-                        schema_count = sum([1 for s in [input_schema_name, output_schema_name] if s])
-                        logger.info(f"  With {schema_count} JSON schema(s): {', '.join(filter(None, [input_schema_name, output_schema_name]))}")
-
-                except Exception as register_error:
-                    logger.warning(f"⚠ Could not register/update task definition '{task_name}': {register_error}")
-
-        except Exception as e:
-            # Don't crash worker if registration fails - just log warning
-            logger.warning(f"Failed to register task definition for {task_name}: {e}")
+                logger.warning(f"Failed to register task definition on {server_label}: {e}")
 
     def run_once(self) -> None:
         try:
@@ -519,108 +467,177 @@ class TaskRunner:
             )
 
     def __batch_poll_tasks(self, count: int) -> list:
-        """Poll for multiple tasks at once (more efficient than polling one at a time)"""
+        """Poll for multiple tasks from all servers in parallel (multi-homed support)."""
         task_definition_name = self.worker.get_task_definition_name()
         if self.worker.paused:
             logger.debug("Stop polling task for: %s", task_definition_name)
             return []
 
-        # Apply exponential backoff if we have recent auth failures
-        if self._auth_failures > 0:
-            now = time.time()
-            backoff_seconds = min(2 ** self._auth_failures, 60)
-            time_since_last_failure = now - self._last_auth_failure
-            if time_since_last_failure < backoff_seconds:
-                time.sleep(0.1)
-                return []
+        if not self.task_clients:
+            return []
 
-        # Publish PollStarted event (metrics collector will handle via event)
+        # Divide capacity across servers evenly
+        # e.g., count=10, clients=3 -> [4, 3, 3]
+        total_servers = len(self.task_clients)
+        base_count = count // total_servers
+        remainder = count % total_servers
+
+        # Publish PollStarted event
         self.event_dispatcher.publish(PollStarted(
             task_type=task_definition_name,
             worker_id=self.worker.get_identity(),
             poll_count=count
         ))
 
-        try:
-            start_time = time.time()
-            domain = self.worker.get_domain()
-            params = {
-                "workerid": self.worker.get_identity(),
-                "count": count,
-                "timeout": 100  # ms
+        start_time = time.time()
+        all_tasks = []
+        domain = self.worker.get_domain()
+
+        def poll_single_server(server_idx: int, task_client: TaskResourceApi) -> tuple:
+            """Poll a single server and return (server_idx, tasks, error)."""
+            now = time.time()
+            
+            # Calculate specific count for this server
+            # Distribute remainder to first N servers
+            server_count = base_count + (1 if server_idx < remainder else 0)
+            
+            # Don't poll if count is 0 (unless we have plenty of thread capacity, but let's be strict)
+            if server_count <= 0:
+                return (server_idx, [], None)
+            
+            # Circuit breaker: skip if circuit is open
+            if self._circuit_open_until[server_idx] > now:
+                # Circuit is open, skip this server
+                return (server_idx, [], None)
+            
+            # Check per-server auth backoff
+            if self._auth_failures[server_idx] > 0:
+                backoff_seconds = min(2 ** self._auth_failures[server_idx], 60)
+                time_since_failure = now - self._last_auth_failure[server_idx]
+                if time_since_failure < backoff_seconds:
+                    return (server_idx, [], None)
+
+            try:
+                params = {
+                    "workerid": self.worker.get_identity(),
+                    "count": server_count,
+                    "timeout": 100  # ms
+                }
+                if domain is not None and domain != "":
+                    params["domain"] = domain
+
+                tasks = task_client.batch_poll(tasktype=task_definition_name, **params)
+                
+                # Reset failures on success
+                if tasks:
+                    self._auth_failures[server_idx] = 0
+                    self._server_failures[server_idx] = 0
+                
+                return (server_idx, tasks or [], None)
+
+            except AuthorizationException as auth_exception:
+                self._auth_failures[server_idx] += 1
+                self._last_auth_failure[server_idx] = time.time()
+                backoff = min(2 ** self._auth_failures[server_idx], 60)
+                logger.error(
+                    f"Auth failure polling server {server_idx} for {task_definition_name}: "
+                    f"{auth_exception.error_code} (backoff: {backoff}s)"
+                )
+                return (server_idx, [], auth_exception)
+
+            except Exception as e:
+                # Increment failure count for circuit breaker
+                self._server_failures[server_idx] += 1
+                if self._server_failures[server_idx] >= self._CIRCUIT_FAILURE_THRESHOLD:
+                    self._circuit_open_until[server_idx] = time.time() + self._CIRCUIT_RESET_SECONDS
+                    logger.warning(
+                        f"Circuit breaker OPEN for server {server_idx} after {self._server_failures[server_idx]} failures. "
+                        f"Will retry in {self._CIRCUIT_RESET_SECONDS}s"
+                    )
+                else:
+                    logger.error(
+                        f"Failed to poll server {server_idx} for {task_definition_name}: {e} "
+                        f"(failure {self._server_failures[server_idx]}/{self._CIRCUIT_FAILURE_THRESHOLD})"
+                    )
+                return (server_idx, [], e)
+
+        # Single server: poll directly without executor overhead
+        if len(self.task_clients) == 1:
+            server_idx, tasks, error = poll_single_server(0, self.task_clients[0])
+            for task in tasks:
+                if task and task.task_id:
+                    with self._task_server_map_lock:
+                        self._task_server_map[task.task_id] = server_idx
+                    all_tasks.append(task)
+        else:
+            # Multi-homed: poll all servers in parallel with timeout
+            futures = {
+                self._poll_executor.submit(poll_single_server, idx, client): idx
+                for idx, client in enumerate(self.task_clients)
             }
-            # Only add domain if it's not None and not empty string
-            if domain is not None and domain != "":
-                params["domain"] = domain
 
-            tasks = self.task_client.batch_poll(tasktype=task_definition_name, **params)
+            try:
+                # Use timeout to avoid slow server blocking all polling
+                for future in as_completed(futures, timeout=self._POLL_TIMEOUT_SECONDS):
+                    try:
+                        server_idx, tasks, error = future.result(timeout=0)
+                        
+                        if error:
+                            self.event_dispatcher.publish(PollFailure(
+                                task_type=task_definition_name,
+                                cause=error,
+                                duration_ms=int((time.time() - start_time) * 1000)
+                            ))
 
-            finish_time = time.time()
-            time_spent = finish_time - start_time
-
-            # Publish PollCompleted event (metrics collector will handle via event)
-            self.event_dispatcher.publish(PollCompleted(
-                task_type=task_definition_name,
-                duration_ms=time_spent * 1000,
-                tasks_received=len(tasks) if tasks else 0
-            ))
-
-            # Success - reset auth failure counter
-            if tasks:
-                self._auth_failures = 0
-
-            return tasks if tasks else []
-
-        except AuthorizationException as auth_exception:
-            self._auth_failures += 1
-            self._last_auth_failure = time.time()
-            backoff_seconds = min(2 ** self._auth_failures, 60)
-
-            # Publish PollFailure event (metrics collector will handle via event)
-            self.event_dispatcher.publish(PollFailure(
-                task_type=task_definition_name,
-                duration_ms=(time.time() - start_time) * 1000,
-                cause=auth_exception
-            ))
-
-            if auth_exception.invalid_token:
-                logger.error(
-                    f"Failed to batch poll task {task_definition_name} due to invalid auth token "
-                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s). "
-                    "Please check your CONDUCTOR_AUTH_KEY and CONDUCTOR_AUTH_SECRET."
+                        for task in tasks:
+                            if task and task.task_id:
+                                # Track which server this task came from (thread-safe)
+                                with self._task_server_map_lock:
+                                    self._task_server_map[task.task_id] = server_idx
+                                all_tasks.append(task)
+                    except Exception as e:
+                        logger.debug(f"Error getting poll result: {e}")
+            except TimeoutError:
+                # Some servers didn't respond in time - continue with tasks we have
+                logger.debug(
+                    f"Poll timeout after {self._POLL_TIMEOUT_SECONDS}s - some servers did not respond"
                 )
-            else:
-                logger.error(
-                    f"Failed to batch poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code} "
-                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s)."
-                )
-            return []
-        except Exception as e:
-            # Publish PollFailure event (metrics collector will handle via event)
-            self.event_dispatcher.publish(PollFailure(
-                task_type=task_definition_name,
-                duration_ms=(time.time() - start_time) * 1000,
-                cause=e
-            ))
-            logger.error(
-                "Failed to batch poll task for: %s, reason: %s",
-                task_definition_name,
-                traceback.format_exc()
+
+        finish_time = time.time()
+        time_spent = finish_time - start_time
+
+        # Publish PollCompleted event
+        self.event_dispatcher.publish(PollCompleted(
+            task_type=task_definition_name,
+            duration_ms=time_spent * 1000,
+            tasks_received=len(all_tasks)
+        ))
+
+        if len(self.task_clients) > 1 and all_tasks:
+            logger.debug(
+                f"Polled {len(all_tasks)} tasks from {len(self.task_clients)} servers for {task_definition_name}"
             )
-            return []
+
+        return all_tasks
 
     def __poll_task(self) -> Task:
+        """Poll for a single task (single-server optimization path).
+        
+        This method is only called when len(self.configurations) == 1.
+        For multi-server mode, __batch_poll_tasks is used instead.
+        All list indices use [0] because there's only one server.
+        """
         task_definition_name = self.worker.get_task_definition_name()
         if self.worker.paused:
             logger.debug("Stop polling task for: %s", task_definition_name)
             return None
 
         # Apply exponential backoff if we have recent auth failures
-        if self._auth_failures > 0:
+        if self._auth_failures[0] > 0:
             now = time.time()
             # Exponential backoff: 2^failures seconds (2s, 4s, 8s, 16s, 32s)
-            backoff_seconds = min(2 ** self._auth_failures, 60)  # Cap at 60s
-            time_since_last_failure = now - self._last_auth_failure
+            backoff_seconds = min(2 ** self._auth_failures[0], 60)  # Cap at 60s
+            time_since_last_failure = now - self._last_auth_failure[0]
 
             if time_since_last_failure < backoff_seconds:
                 # Still in backoff period - skip polling
@@ -639,16 +656,24 @@ class TaskRunner:
             # Only add domain if it's not None and not empty string
             if domain is not None and domain != "":
                 params["domain"] = domain
-            task = self.task_client.poll(tasktype=task_definition_name, **params)
+            
+            # Use the first client (single-server optimization)
+            task = self.task_clients[0].poll(tasktype=task_definition_name, **params)
+            
             finish_time = time.time()
             time_spent = finish_time - start_time
             if self.metrics_collector is not None:
                 self.metrics_collector.record_task_poll_time(task_definition_name, time_spent)
+            
+            # Reset failure count on success
+            if self._auth_failures[0] > 0:
+                self._auth_failures[0] = 0
+                
         except AuthorizationException as auth_exception:
             # Track auth failure for backoff
-            self._auth_failures += 1
-            self._last_auth_failure = time.time()
-            backoff_seconds = min(2 ** self._auth_failures, 60)
+            self._auth_failures[0] += 1
+            self._last_auth_failure[0] = time.time()
+            backoff_seconds = min(2 ** self._auth_failures[0], 60)
 
             if self.metrics_collector is not None:
                 self.metrics_collector.increment_task_poll_error(task_definition_name, type(auth_exception))
@@ -656,7 +681,7 @@ class TaskRunner:
             if auth_exception.invalid_token:
                 logger.error(
                     f"Failed to poll task {task_definition_name} due to invalid auth token "
-                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s). "
+                    f"(failure #{self._auth_failures[0]}). Will retry with exponential backoff ({backoff_seconds}s). "
                     "Please check your CONDUCTOR_AUTH_KEY and CONDUCTOR_AUTH_SECRET."
                 )
             else:
@@ -677,7 +702,7 @@ class TaskRunner:
 
         # Success - reset auth failure counter
         if task is not None:
-            self._auth_failures = 0
+            self._auth_failures[0] = 0
             logger.trace(
                 "Polled task: %s, worker_id: %s, domain: %s",
                 task_definition_name,
@@ -686,7 +711,7 @@ class TaskRunner:
             )
         else:
             # No task available - also reset auth failures since poll succeeded
-            self._auth_failures = 0
+            self._auth_failures[0] = 0
 
         return task
 
@@ -897,13 +922,19 @@ class TaskRunner:
         if not isinstance(task_result, TaskResult):
             return None
         task_definition_name = self.worker.get_task_definition_name()
+        
+        # Get the correct server for this task (thread-safe, multi-homed support)
+        with self._task_server_map_lock:
+            server_idx = self._task_server_map.pop(task_result.task_id, 0)
+        task_client = self.task_clients[server_idx]
+        
         logger.debug(
-            "Updating task, id: %s, workflow_instance_id: %s, task_definition_name: %s, status: %s, output_data: %s",
+            "Updating task, id: %s, workflow_instance_id: %s, task_definition_name: %s, status: %s, server: %d",
             task_result.task_id,
             task_result.workflow_instance_id,
             task_definition_name,
             task_result.status,
-            task_result.output_data
+            server_idx
         )
 
         last_exception = None
@@ -914,7 +945,7 @@ class TaskRunner:
                 # Exponential backoff: [10s, 20s, 30s] before retry
                 time.sleep(attempt * 10)
             try:
-                response = self.task_client.update_task(body=task_result)
+                response = task_client.update_task(body=task_result)
                 logger.debug(
                     "Updated task, id: %s, workflow_instance_id: %s, task_definition_name: %s, response: %s",
                     task_result.task_id,
@@ -930,12 +961,13 @@ class TaskRunner:
                         task_definition_name, type(e)
                     )
                 logger.error(
-                    "Failed to update task (attempt %d/%d), id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
+                    "Failed to update task (attempt %d/%d), id: %s, workflow_instance_id: %s, task_definition_name: %s, server: %d, reason: %s",
                     attempt + 1,
                     retry_count,
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
+                    server_idx,
                     traceback.format_exc()
                 )
 

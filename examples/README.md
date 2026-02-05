@@ -24,6 +24,7 @@ python examples/workers_e2e.py
 | File | Description | Run |
 |------|-------------|-----|
 | **workers_e2e.py** | ⭐ Start here - sync + async workers | `python examples/workers_e2e.py` |
+| **multi_homed_workers.py** | Poll from multiple servers (HA) | `python examples/multi_homed_workers.py` |
 | **worker_example.py** | Comprehensive patterns (None returns, TaskInProgress) | `python examples/worker_example.py` |
 | **worker_configuration_example.py** | Hierarchical configuration (env vars) | `python examples/worker_configuration_example.py` |
 | **task_context_example.py** | Task context (logs, poll_count, task_id) | `python examples/task_context_example.py` |
@@ -202,6 +203,7 @@ curl http://localhost:8000/metrics
 examples/
 ├── Core Workers
 │   ├── workers_e2e.py                  # ⭐ Start here
+│   ├── multi_homed_workers.py          # Multi-server HA
 │   ├── worker_example.py               # Comprehensive patterns
 │   ├── worker_configuration_example.py # Env var configuration
 │   ├── task_context_example.py         # Long-running tasks

@@ -180,3 +180,70 @@ class Configuration:
     def update_token(self, token: str) -> None:
         self.AUTH_TOKEN = token
         self.token_update_time = round(time.time() * 1000)
+
+    @classmethod
+    def from_env_multi(cls) -> list:
+        """
+        Create list of Configuration objects from comma-separated environment variables.
+        
+        Supports multi-homed workers by parsing:
+        - CONDUCTOR_SERVER_URL: comma-separated list of server URLs
+        - CONDUCTOR_AUTH_KEY: comma-separated list of auth keys (must match server count)
+        - CONDUCTOR_AUTH_SECRET: comma-separated list of auth secrets (must match server count)
+        
+        Returns:
+            List of Configuration objects, one per server.
+            Returns [Configuration()] if no env vars are set.
+        
+        Raises:
+            ValueError: If auth key/secret counts don't match server count.
+        
+        Example:
+            CONDUCTOR_SERVER_URL=https://east.example.com/api,https://west.example.com/api
+            CONDUCTOR_AUTH_KEY=key1,key2
+            CONDUCTOR_AUTH_SECRET=secret1,secret2
+        """
+        servers_raw = os.getenv("CONDUCTOR_SERVER_URL", "")
+        keys_raw = os.getenv("CONDUCTOR_AUTH_KEY", "")
+        secrets_raw = os.getenv("CONDUCTOR_AUTH_SECRET", "")
+        
+        # Parse and clean comma-separated values
+        servers = [s.strip() for s in servers_raw.split(",") if s.strip()]
+        keys = [k.strip() for k in keys_raw.split(",") if k.strip()]
+        secrets = [s.strip() for s in secrets_raw.split(",") if s.strip()]
+        
+        # If no servers configured, return default
+        if not servers:
+            return [cls()]
+        
+        # Validate auth credentials count matches server count
+        if keys and len(keys) != len(servers):
+            raise ValueError(
+                f"CONDUCTOR_AUTH_KEY count ({len(keys)}) must match "
+                f"CONDUCTOR_SERVER_URL count ({len(servers)}). "
+                f"Got servers: {servers}, keys count: {len(keys)}"
+            )
+        
+        if secrets and len(secrets) != len(servers):
+            raise ValueError(
+                f"CONDUCTOR_AUTH_SECRET count ({len(secrets)}) must match "
+                f"CONDUCTOR_SERVER_URL count ({len(servers)}). "
+                f"Got servers: {servers}, secrets count: {len(secrets)}"
+            )
+        
+        # Validate keys and secrets are paired
+        if (keys and not secrets) or (secrets and not keys):
+            raise ValueError(
+                "Both CONDUCTOR_AUTH_KEY and CONDUCTOR_AUTH_SECRET must be provided together"
+            )
+        
+        # Create configuration for each server
+        configs = []
+        for i, server in enumerate(servers):
+            auth = None
+            if keys and secrets:
+                auth = AuthenticationSettings(key_id=keys[i], key_secret=secrets[i])
+            configs.append(cls(server_api_url=server, authentication_settings=auth))
+        
+        return configs
+

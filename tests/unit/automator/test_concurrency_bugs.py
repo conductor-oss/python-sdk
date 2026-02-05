@@ -197,8 +197,8 @@ class TestConcurrencyBugs(unittest.TestCase):
             runner = TaskRunner(worker=worker, configuration=self.config)
 
             # Simulate some work
-            with patch.object(runner, 'task_client'):
-                runner.task_client.batch_poll = Mock(return_value=[])
+            with patch.object(runner, 'task_clients', new=[Mock()]) as mock_clients:
+                mock_clients[0].batch_poll = Mock(return_value=[])
                 # Note: No cleanup/shutdown called
 
         # Force garbage collection
