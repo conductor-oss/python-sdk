@@ -154,7 +154,7 @@ class TestTaskRunnerCoverage(unittest.TestCase):
 
         self.assertIsNotNone(task_runner.metrics_collector)
         self.assertEqual(task_runner.worker, worker)
-        self.assertEqual(task_runner.configuration, config)
+        self.assertEqual(task_runner.configurations[0], config)
 
     def test_initialization_without_metrics_settings(self):
         """Test TaskRunner initialization without metrics"""
@@ -178,8 +178,8 @@ class TestTaskRunnerCoverage(unittest.TestCase):
             configuration=None
         )
 
-        self.assertIsNotNone(task_runner.configuration)
-        self.assertIsInstance(task_runner.configuration, Configuration)
+        self.assertIsNotNone(task_runner.configurations)
+        self.assertIsInstance(task_runner.configurations[0], Configuration)
 
     @patch.dict(os.environ, {
         'conductor_worker_test_task_polling_interval': 'invalid_value'
@@ -245,7 +245,7 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         )
 
         # Set configuration to None to test the logging path
-        task_runner.configuration = None
+        task_runner.configurations = []
 
         # Mock run_once to exit after one iteration
         with patch.object(task_runner, 'run_once', side_effect=[None, Exception("Exit loop")]):
@@ -297,8 +297,8 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         task_runner = TaskRunner(worker=worker)
 
         # Simulate auth failure
-        task_runner._auth_failures = 2
-        task_runner._last_auth_failure = time.time()
+        task_runner._auth_failures[0] = 2
+        task_runner._last_auth_failure[0] = time.time()
 
         with patch.object(TaskResourceApi, 'poll', return_value=None):
             task = task_runner._TaskRunner__poll_task()
@@ -330,8 +330,8 @@ class TestTaskRunnerCoverage(unittest.TestCase):
             task = task_runner._TaskRunner__poll_task()
 
             self.assertIsNone(task)
-            self.assertEqual(task_runner._auth_failures, 1)
-            self.assertGreater(task_runner._last_auth_failure, 0)
+            self.assertEqual(task_runner._auth_failures[0], 1)
+            self.assertGreater(task_runner._last_auth_failure[0], 0)
 
     @patch('time.sleep')
     def test_poll_task_auth_failure_without_invalid_token(self, mock_sleep):
@@ -356,7 +356,7 @@ class TestTaskRunnerCoverage(unittest.TestCase):
             task = task_runner._TaskRunner__poll_task()
 
             self.assertIsNone(task)
-            self.assertEqual(task_runner._auth_failures, 1)
+            self.assertEqual(task_runner._auth_failures[0], 1)
 
     @patch('time.sleep')
     def test_poll_task_success_resets_auth_failures(self, mock_sleep):
@@ -365,8 +365,8 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         task_runner = TaskRunner(worker=worker)
 
         # Set some auth failures in the past (so backoff has elapsed)
-        task_runner._auth_failures = 3
-        task_runner._last_auth_failure = time.time() - 100  # 100 seconds ago
+        task_runner._auth_failures[0] = 3
+        task_runner._last_auth_failure[0] = time.time() - 100  # 100 seconds ago
 
         test_task = Task(task_id='test_id', workflow_instance_id='wf_id')
 
@@ -374,7 +374,7 @@ class TestTaskRunnerCoverage(unittest.TestCase):
             task = task_runner._TaskRunner__poll_task()
 
             self.assertEqual(task, test_task)
-            self.assertEqual(task_runner._auth_failures, 0)
+            self.assertEqual(task_runner._auth_failures[0], 0)
 
     def test_poll_task_no_task_available_resets_auth_failures(self):
         """Test that None result from successful poll resets auth failures"""
@@ -382,13 +382,13 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         task_runner = TaskRunner(worker=worker)
 
         # Set some auth failures
-        task_runner._auth_failures = 2
+        task_runner._auth_failures[0] = 2
 
         with patch.object(TaskResourceApi, 'poll', return_value=None):
             task = task_runner._TaskRunner__poll_task()
 
             self.assertIsNone(task)
-            self.assertEqual(task_runner._auth_failures, 0)
+            self.assertEqual(task_runner._auth_failures[0], 0)
 
     def test_poll_task_with_metrics_collector(self):
         """Test polling with metrics collection enabled"""

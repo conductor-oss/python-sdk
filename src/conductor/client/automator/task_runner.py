@@ -621,6 +621,12 @@ class TaskRunner:
         return all_tasks
 
     def __poll_task(self) -> Task:
+        """Poll for a single task (single-server optimization path).
+        
+        This method is only called when len(self.configurations) == 1.
+        For multi-server mode, __batch_poll_tasks is used instead.
+        All list indices use [0] because there's only one server.
+        """
         task_definition_name = self.worker.get_task_definition_name()
         if self.worker.paused:
             logger.debug("Stop polling task for: %s", task_definition_name)
@@ -696,7 +702,7 @@ class TaskRunner:
 
         # Success - reset auth failure counter
         if task is not None:
-            self._auth_failures = 0
+            self._auth_failures[0] = 0
             logger.trace(
                 "Polled task: %s, worker_id: %s, domain: %s",
                 task_definition_name,
@@ -705,7 +711,7 @@ class TaskRunner:
             )
         else:
             # No task available - also reset auth failures since poll succeeded
-            self._auth_failures = 0
+            self._auth_failures[0] = 0
 
         return task
 
