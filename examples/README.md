@@ -60,6 +60,7 @@ See: `task_context_example.py`, `worker_example.py`
 
 | File | Description | Run |
 |------|-------------|-----|
+| **agentic_workflow.py** | 🤖 AI agent with Python workers as tools | `python examples/agentic_workflow.py` |
 | **dynamic_workflow.py** | Create workflows programmatically | `python examples/dynamic_workflow.py` |
 | **workflow_ops.py** | Start, pause, resume, terminate workflows | `python examples/workflow_ops.py` |
 | **workflow_status_listner.py** | Workflow event listeners | `python examples/workflow_status_listner.py` |
@@ -209,6 +210,7 @@ examples/
 │   └── pythonic_usage.py               # Pythonic decorators
 │
 ├── Workflows
+│   ├── agentic_workflow.py             # 🤖 AI agent with tools
 │   ├── dynamic_workflow.py             # Workflow creation
 │   ├── workflow_ops.py                 # Workflow management
 │   ├── workflow_status_listner.py      # Workflow events
