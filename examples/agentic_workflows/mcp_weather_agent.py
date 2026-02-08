@@ -24,7 +24,7 @@ Prerequisites:
 
 4. Run the example:
    export CONDUCTOR_SERVER_URL="http://localhost:7001/api"
-   python examples/mcp_weather_agent.py "What's the weather in Tokyo?"
+   python examples/agentic_workflows/mcp_weather_agent.py "What's the weather in Tokyo?"
 
 Reference:
 https://github.com/conductor-oss/conductor/tree/main/ai#mcp--ai-agent-workflow

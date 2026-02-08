@@ -60,7 +60,6 @@ See: `task_context_example.py`, `worker_example.py`
 
 | File | Description | Run |
 |------|-------------|-----|
-| **agentic_workflow.py** | 🤖 AI agent with Python workers as tools | `python examples/agentic_workflow.py` |
 | **dynamic_workflow.py** | Create workflows programmatically | `python examples/dynamic_workflow.py` |
 | **workflow_ops.py** | Start, pause, resume, terminate workflows | `python examples/workflow_ops.py` |
 | **workflow_status_listner.py** | Workflow event listeners | `python examples/workflow_status_listner.py` |
@@ -70,10 +69,16 @@ See: `task_context_example.py`, `worker_example.py`
 
 ### AI/LLM Workflows
 
+See [agentic_workflows/](agentic_workflows/) for the full set of AI agent examples.
+
 | File | Description | Run |
 |------|-------------|-----|
-| **rag_workflow.py** | 📚 RAG pipeline: markitdown → pgvector → search → answer | `python examples/rag_workflow.py file.pdf "question"` |
-| **mcp_weather_agent.py** | 🌤️  AI agent with MCP tool calling | `python examples/mcp_weather_agent.py "What's the weather?"` |
+| **agentic_workflows/llm_chat.py** | Automated multi-turn LLM chat | `python examples/agentic_workflows/llm_chat.py` |
+| **agentic_workflows/llm_chat_human_in_loop.py** | Interactive chat with WAIT task pauses | `python examples/agentic_workflows/llm_chat_human_in_loop.py` |
+| **agentic_workflows/multiagent_chat.py** | Multi-agent debate with moderator routing | `python examples/agentic_workflows/multiagent_chat.py` |
+| **agentic_workflows/function_calling_example.py** | LLM picks Python functions to call | `python examples/agentic_workflows/function_calling_example.py` |
+| **agentic_workflows/mcp_weather_agent.py** | AI agent with MCP tool calling | `python examples/agentic_workflows/mcp_weather_agent.py "What's the weather?"` |
+| **rag_workflow.py** | RAG pipeline: markitdown, pgvector, search, answer | `python examples/rag_workflow.py file.pdf "question"` |
 
 ---
 
@@ -229,10 +234,10 @@ python3 -m mcp_weather_server \
 # 3. Run AI agent
 export OPENAI_API_KEY="your-key"
 export ANTHROPIC_API_KEY="your-key"
-python examples/mcp_weather_agent.py "What's the weather in Tokyo?"
+python examples/agentic_workflows/mcp_weather_agent.py "What's the weather in Tokyo?"
 
 # Or simple mode (direct tool call):
-python examples/mcp_weather_agent.py "Temperature in New York" --simple
+python examples/agentic_workflows/mcp_weather_agent.py "Temperature in New York" --simple
 ```
 
 **Features:**
@@ -258,7 +263,8 @@ python examples/worker_configuration_example.py
 # 4. Workflows (10 min)
 python examples/dynamic_workflow.py
 
-# 5. AI/RAG (15 min)
+# 5. AI/LLM Workflows (15 min)
+python examples/agentic_workflows/llm_chat.py
 python examples/rag_workflow.py examples/goog-20251231.pdf "What were Google's total revenues?"
 
 # 6. Monitoring (5 min)
@@ -281,15 +287,19 @@ examples/
 │   └── pythonic_usage.py               # Pythonic decorators
 │
 ├── Workflows
-│   ├── agentic_workflow.py             # 🤖 AI agent with tools
 │   ├── dynamic_workflow.py             # Workflow creation
 │   ├── workflow_ops.py                 # Workflow management
 │   ├── workflow_status_listner.py      # Workflow events
 │   └── test_workflows.py               # Unit tests
 │
 ├── AI/LLM Workflows
-│   ├── rag_workflow.py                 # 📚 RAG pipeline (markitdown + pgvector)
-│   └── mcp_weather_agent.py            # 🌤️ MCP tool calling agent
+│   ├── rag_workflow.py                 # RAG pipeline (markitdown + pgvector)
+│   └── agentic_workflows/             # Agentic AI examples
+│       ├── llm_chat.py                # Multi-turn LLM chat
+│       ├── llm_chat_human_in_loop.py  # Interactive chat with WAIT
+│       ├── multiagent_chat.py         # Multi-agent debate
+│       ├── function_calling_example.py # LLM function calling
+│       └── mcp_weather_agent.py       # MCP tool calling agent
 │
 ├── Monitoring
 │   ├── metrics_example.py              # Prometheus metrics
@@ -322,14 +332,11 @@ examples/
 │   └── other_workers/
 │
 └── orkes/                             # Orkes-specific features
-    ├── ai_orchestration/              # AI/LLM integration
-    │   ├── open_ai_chat_gpt.py
-    │   ├── open_ai_function_example.py
-    │   └── vector_db_helloworld.py
-    └── workers/                       # Advanced patterns
-        ├── http_poll.py
-        ├── sync_updates.py
-        └── wait_for_webhook.py
+    ├── vector_db_helloworld.py        # Vector DB operations
+    ├── agentic_workflow.py            # AI agent (AIOrchestrator)
+    ├── http_poll.py
+    ├── sync_updates.py
+    └── wait_for_webhook.py
 ```
 
 ---

@@ -215,15 +215,15 @@ Conductor supports AI-native workflows including agentic tool calling, RAG pipel
 
 ### Agentic Workflows
 
-Build AI agents where LLMs dynamically select and call Python workers as tools:
+Build AI agents where LLMs dynamically select and call Python workers as tools. See [examples/agentic_workflows/](examples/agentic_workflows/) for all examples.
 
 | Example | Description |
 |---------|-------------|
-| [agentic_workflow.py](examples/agentic_workflow.py) | Interactive agent that calls Python workers (weather, search, calculator) based on user queries |
-| [mcp_weather_agent.py](examples/mcp_weather_agent.py) | Agent using Model Context Protocol (MCP) for external tool discovery and execution |
-| [multiagent_chat.py](examples/orkes/multiagent_chat.py) | Multi-agent conversation where multiple LLMs collaborate with routing and turn-taking |
-| [open_ai_function_example.py](examples/orkes/open_ai_function_example.py) | OpenAI function calling with dynamic task execution in a loop |
-| [open_ai_copilot.py](examples/orkes/copilot/open_ai_copilot.py) | Copilot-style assistant with human-in-the-loop, sub-workflows, and dynamic tool dispatch |
+| [llm_chat.py](examples/agentic_workflows/llm_chat.py) | Automated multi-turn science Q&A between two LLMs |
+| [llm_chat_human_in_loop.py](examples/agentic_workflows/llm_chat_human_in_loop.py) | Interactive chat with WAIT task pauses for user input |
+| [multiagent_chat.py](examples/agentic_workflows/multiagent_chat.py) | Multi-agent debate with moderator routing between panelists |
+| [function_calling_example.py](examples/agentic_workflows/function_calling_example.py) | LLM picks which Python function to call based on user queries |
+| [mcp_weather_agent.py](examples/agentic_workflows/mcp_weather_agent.py) | AI agent using MCP tools for weather queries |
 
 ### LLM and RAG Workflows
 
@@ -231,13 +231,13 @@ Build AI agents where LLMs dynamically select and call Python workers as tools:
 |---------|-------------|
 | [rag_workflow.py](examples/rag_workflow.py) | End-to-end RAG: document conversion (PDF/Word/Excel), pgvector indexing, semantic search, answer generation |
 | [vector_db_helloworld.py](examples/orkes/vector_db_helloworld.py) | Vector database operations: text indexing, embedding generation, and semantic search with Pinecone |
-| [open_ai_chat_gpt.py](examples/orkes/open_ai_chat_gpt.py) | Multi-turn chat with OpenAI using conversation history in a loop |
-| [open_ai_chat_user_input.py](examples/orkes/open_ai_chat_user_input.py) | Chat with human input -- pauses for user messages between LLM responses |
-| [open_ai_helloworld.py](examples/orkes/open_ai_helloworld.py) | Minimal LLM text completion with OpenAI |
 
 ```shell
-# Agentic workflow
-python examples/agentic_workflow.py
+# Automated multi-turn chat
+python examples/agentic_workflows/llm_chat.py
+
+# Multi-agent debate
+python examples/agentic_workflows/multiagent_chat.py --topic "renewable energy"
 
 # RAG pipeline
 pip install "markitdown[pdf]"
@@ -283,7 +283,7 @@ See the [Examples Guide](examples/README.md) for the full catalog. Key examples:
 | [workers_e2e.py](examples/workers_e2e.py) | End-to-end: sync + async workers, metrics | `python examples/workers_e2e.py` |
 | [helloworld.py](examples/helloworld/helloworld.py) | Minimal hello world | `python examples/helloworld/helloworld.py` |
 | [dynamic_workflow.py](examples/dynamic_workflow.py) | Build workflows programmatically | `python examples/dynamic_workflow.py` |
-| [agentic_workflow.py](examples/agentic_workflow.py) | AI agent with tool calling | `python examples/agentic_workflow.py` |
+| [llm_chat.py](examples/agentic_workflows/llm_chat.py) | AI multi-turn chat | `python examples/agentic_workflows/llm_chat.py` |
 | [rag_workflow.py](examples/rag_workflow.py) | RAG pipeline (PDF → pgvector → answer) | `python examples/rag_workflow.py file.pdf "question"` |
 | [task_context_example.py](examples/task_context_example.py) | Long-running tasks with TaskInProgress | `python examples/task_context_example.py` |
 | [workflow_ops.py](examples/workflow_ops.py) | Pause, resume, terminate workflows | `python examples/workflow_ops.py` |
