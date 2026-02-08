@@ -10,29 +10,47 @@ from conductor.client.workflow.task.task_type import TaskType
 
 
 class LlmIndexDocument(TaskInterface):
-    """
-    Indexes the document specified by a URL
-    Inputs:
-    embedding_model.provider: AI provider to use for generating embeddings e.g. OpenAI
-    embedding_model.model: Model to be used to generate embeddings e.g. text-embedding-ada-002
-    url: URL to read the document from.  Can be HTTP(S), S3 or other blob store that the server can access
-    media_type: content type for the document. e.g. application/pdf, text/html, text/plain, application/json, text/json
-    namespace: (optional) namespace to separate the data inside the index - if supported by vector store (e.g. Pinecone)
-    index: Index or classname (in case of Weaviate)
+    """Indexes a document from a URL into a vector database.
 
-    Optional fields
-    chunk_size: size of the chunk so the document is split into the chunks and stored
-    chunk_overlap: how much the chunks should overlap
-    doc_id: by default the indexed document is given an id based on the URL, use doc_id to override this
-    metadata: a dictionary of optional metadata to be added to thd indexed doc
+    Fetches the document, splits it into chunks, generates embeddings,
+    and stores them in the vector database.
+
+    Note: This class uses the LLM_INDEX_TEXT task type on the server side.
+    The server's IndexDocInput model handles both inline text (via LlmIndexText)
+    and URL-based document indexing (via this class) under the same task type.
+
+    Args:
+        task_ref_name: Reference name for the task in the workflow.
+        vector_db: Vector database integration name.
+        namespace: Namespace for data isolation.
+        embedding_model: EmbeddingModel with provider and model name.
+        index: Index or collection name.
+        url: URL to fetch the document from (HTTP(S), S3, blob store).
+        media_type: Content type (e.g., application/pdf, text/html, text/plain).
+        chunk_size: Size of text chunks for splitting.
+        chunk_overlap: Overlap between chunks.
+        doc_id: Override the default URL-based document ID.
+        task_name: Optional custom task name.
+        metadata: Optional metadata dictionary to store with the document.
+        dimensions: Embedding vector dimensions.
     """
 
-    def __init__(self, task_ref_name: str, vector_db: str, namespace: str,
-                 embedding_model: EmbeddingModel, index: str, url: str, media_type: str,
-                 chunk_size: Optional[int] = None, chunk_overlap: Optional[int] = None, doc_id: Optional[str] = None,
-                 task_name: Optional[str] = None,
-                 metadata: Optional[dict] = None) -> Self:
-        metadata = metadata or {}
+    def __init__(
+        self,
+        task_ref_name: str,
+        vector_db: str,
+        namespace: str,
+        embedding_model: EmbeddingModel,
+        index: str,
+        url: str,
+        media_type: str,
+        chunk_size: Optional[int] = None,
+        chunk_overlap: Optional[int] = None,
+        doc_id: Optional[str] = None,
+        task_name: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        dimensions: Optional[int] = None,
+    ) -> Self:
         input_params = {
             "vectorDB": vector_db,
             "namespace": namespace,
@@ -41,27 +59,25 @@ class LlmIndexDocument(TaskInterface):
             "embeddingModel": embedding_model.model,
             "url": url,
             "mediaType": media_type,
-            "metadata": metadata
         }
 
-        optional_input_params = {}
-
+        if metadata:
+            input_params["metadata"] = metadata
         if chunk_size is not None:
-            optional_input_params.update({"chunkSize": chunk_size})
-
+            input_params["chunkSize"] = chunk_size
         if chunk_overlap is not None:
-            optional_input_params.update({"chunkOverlap": chunk_overlap})
-
+            input_params["chunkOverlap"] = chunk_overlap
         if doc_id is not None:
-            optional_input_params.update({"docId": doc_id})
+            input_params["docId"] = doc_id
+        if dimensions is not None:
+            input_params["dimensions"] = dimensions
 
-        input_params.update(optional_input_params)
         if task_name is None:
-            task_name = "llm_index_document"
+            task_name = "llm_index_text"
 
         super().__init__(
             task_name=task_name,
             task_reference_name=task_ref_name,
-            task_type=TaskType.LLM_INDEX_DOCUMENT,
-            input_parameters=input_params
+            task_type=TaskType.LLM_INDEX_TEXT,
+            input_parameters=input_params,
         )

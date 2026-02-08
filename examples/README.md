@@ -68,6 +68,15 @@ See: `task_context_example.py`, `worker_example.py`
 
 ---
 
+### AI/LLM Workflows
+
+| File | Description | Run |
+|------|-------------|-----|
+| **rag_workflow.py** | 📚 RAG pipeline: markitdown → pgvector → search → answer | `python examples/rag_workflow.py file.pdf "question"` |
+| **mcp_weather_agent.py** | 🌤️  AI agent with MCP tool calling | `python examples/mcp_weather_agent.py "What's the weather?"` |
+
+---
+
 ### Monitoring
 
 | File | Description | Run |
@@ -175,6 +184,65 @@ python examples/prompt_journey.py
 
 ---
 
+### RAG Pipeline Setup
+
+Complete RAG (Retrieval Augmented Generation) pipeline example:
+
+```bash
+# 1. Install dependencies
+pip install conductor-python "markitdown[pdf]"
+
+# 2. Configure (requires Orkes Conductor with AI/LLM support)
+#    - Vector DB integration named "postgres-prod" (pgvector)
+#    - LLM provider named "openai" with a valid API key
+export CONDUCTOR_SERVER_URL="http://localhost:7001/api"
+
+# 3. Run RAG workflow
+python examples/rag_workflow.py examples/goog-20251231.pdf "What were Google's total revenues?"
+```
+
+**Pipeline:** `convert_to_markdown` → `LLM_INDEX_TEXT` → `WAIT` → `LLM_SEARCH_INDEX` → `LLM_CHAT_COMPLETE`
+
+**Features:**
+- Document conversion (PDF, Word, Excel → Markdown via [markitdown](https://github.com/microsoft/markitdown))
+- Vector database ingestion into pgvector with OpenAI `text-embedding-3-small` embeddings
+- Semantic search with configurable result count
+- Context-aware answer generation with `gpt-4o-mini`
+
+---
+
+### MCP Tool Integration Setup
+
+MCP (Model Context Protocol) agent example:
+
+```bash
+# 1. Install MCP weather server
+pip install mcp-weather-server
+
+# 2. Start MCP server
+python3 -m mcp_weather_server \
+  --mode streamable-http \
+  --host localhost \
+  --port 3001 \
+  --stateless
+
+# 3. Run AI agent
+export OPENAI_API_KEY="your-key"
+export ANTHROPIC_API_KEY="your-key"
+python examples/mcp_weather_agent.py "What's the weather in Tokyo?"
+
+# Or simple mode (direct tool call):
+python examples/mcp_weather_agent.py "Temperature in New York" --simple
+```
+
+**Features:**
+- MCP tool discovery
+- LLM-based planning (agent decides which tool to use)
+- Tool execution via HTTP/Streamable transport
+- Natural language response generation
+
+---
+
 ## 🎓 Learning Path (60-Second Guide)
 
 ```bash
@@ -190,7 +258,10 @@ python examples/worker_configuration_example.py
 # 4. Workflows (10 min)
 python examples/dynamic_workflow.py
 
-# 5. Monitoring (5 min)
+# 5. AI/RAG (15 min)
+python examples/rag_workflow.py examples/goog-20251231.pdf "What were Google's total revenues?"
+
+# 6. Monitoring (5 min)
 python examples/metrics_example.py
 curl http://localhost:8000/metrics
 ```
@@ -215,6 +286,10 @@ examples/
 │   ├── workflow_ops.py                 # Workflow management
 │   ├── workflow_status_listner.py      # Workflow events
 │   └── test_workflows.py               # Unit tests
+│
+├── AI/LLM Workflows
+│   ├── rag_workflow.py                 # 📚 RAG pipeline (markitdown + pgvector)
+│   └── mcp_weather_agent.py            # 🌤️ MCP tool calling agent
 │
 ├── Monitoring
 │   ├── metrics_example.py              # Prometheus metrics
