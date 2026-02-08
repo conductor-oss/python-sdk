@@ -89,8 +89,31 @@ python quickstart.py
 
 That's it -- you just defined a worker, built a workflow, and executed it. Open [http://localhost:8080](http://localhost:8080) to see the execution in the Conductor UI.
 
-### More comprehensive example with sync + async workers, metrics, and long-running tasks 
-* See [examples/workers_e2e.py](examples/workers_e2e.py)
+### Comprehensive example with sync + async workers, metrics, and long-running tasks 
+
+See [examples/workers_e2e.py](examples/workers_e2e.py)
+
+### Configuration
+
+The SDK reads configuration from environment variables:
+
+```shell
+# Required — Conductor server endpoint
+export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
+
+# Optional — Authentication (required for Orkes Conductor)
+export CONDUCTOR_AUTH_KEY="your-key"
+export CONDUCTOR_AUTH_SECRET="your-secret"
+```
+
+### Orkes Conductor (Cloud)
+
+```shell
+export CONDUCTOR_SERVER_URL="https://developer.orkescloud.com/api"
+export CONDUCTOR_AUTH_KEY="your-key"
+export CONDUCTOR_AUTH_SECRET="your-secret"
+```
+---
 
 ## Workers
 
@@ -229,27 +252,6 @@ See [`examples/rag_workflow.py`](examples/rag_workflow.py) for the full pipeline
 ### MCP Tool Integration
 
 AI agent with Model Context Protocol tool calling. See [`examples/mcp_weather_agent.py`](examples/mcp_weather_agent.py).
-
-## Configuration
-
-The SDK reads configuration from environment variables:
-
-```shell
-# Required — Conductor server endpoint
-export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
-
-# Optional — Authentication (required for Orkes Conductor)
-export CONDUCTOR_AUTH_KEY="your-key"
-export CONDUCTOR_AUTH_SECRET="your-secret"
-```
-
-### Orkes Conductor (Cloud)
-
-```shell
-export CONDUCTOR_SERVER_URL="https://developer.orkescloud.com/api"
-export CONDUCTOR_AUTH_KEY="your-key"
-export CONDUCTOR_AUTH_SECRET="your-secret"
-```
 
 ### Worker Configuration
 
