@@ -61,7 +61,7 @@ def main():
     task_handler.start_processes()
 
     # Step 5: Run the workflow and get the result
-    result = executor.execute(name='greetings', version=1, workflow_input={'name': 'Orkes'})
+    result = executor.execute(name='greetings', version=1, workflow_input={'name': 'Conductor'})
     print(f'result: {result.output["result"]}')
     print(f'execution: {config.ui_host}/execution/{result.workflow_id}')
 
@@ -105,20 +105,12 @@ export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
 export CONDUCTOR_AUTH_KEY="your-key"
 export CONDUCTOR_AUTH_SECRET="your-secret"
 ```
-
-### Orkes Conductor (Cloud)
-
-```shell
-export CONDUCTOR_SERVER_URL="https://developer.orkescloud.com/api"
-export CONDUCTOR_AUTH_KEY="your-key"
-export CONDUCTOR_AUTH_SECRET="your-secret"
-```
 ---
 
 ## Workers
 
 Workers are Python functions that execute tasks. Decorate any function with `@worker_task` to make it a distributed worker:
-In the agentic workflows, workers are the tools and can be used by LLMs for tool caling.
+Note: Workers can be used by LLMs for tool calling.
 
 ```python
 from conductor.client.worker.worker_task import worker_task
@@ -219,39 +211,38 @@ It creates a `greetings` workflow with one worker task, runs the worker, execute
 
 ## AI & LLM Workflows
 
-Conductor supports AI-native workflows including agentic tool calling and RAG pipelines. These require [Orkes Conductor](https://orkes.io) with AI/LLM support.
+Conductor supports AI-native workflows including agentic tool calling, RAG pipelines, and multi-agent orchestration.
 
 ### Agentic Workflows
 
-Build AI agents where LLMs dynamically call Python workers as tools:
+Build AI agents where LLMs dynamically select and call Python workers as tools:
 
-```python
-@worker_task(task_definition_name='get_weather')
-def get_weather(city: str) -> dict:
-    return {'city': city, 'temperature': 72, 'condition': 'Sunny'}
-```
+| Example | Description |
+|---------|-------------|
+| [agentic_workflow.py](examples/agentic_workflow.py) | Interactive agent that calls Python workers (weather, search, calculator) based on user queries |
+| [mcp_weather_agent.py](examples/mcp_weather_agent.py) | Agent using Model Context Protocol (MCP) for external tool discovery and execution |
+| [multiagent_chat.py](examples/orkes/multiagent_chat.py) | Multi-agent conversation where multiple LLMs collaborate with routing and turn-taking |
+| [open_ai_function_example.py](examples/orkes/open_ai_function_example.py) | OpenAI function calling with dynamic task execution in a loop |
+| [open_ai_copilot.py](examples/orkes/copilot/open_ai_copilot.py) | Copilot-style assistant with human-in-the-loop, sub-workflows, and dynamic tool dispatch |
 
-The LLM decides which worker to call based on user queries. See [`examples/agentic_workflow.py`](examples/agentic_workflow.py) for the complete interactive example.
+### LLM and RAG Workflows
+
+| Example | Description |
+|---------|-------------|
+| [rag_workflow.py](examples/rag_workflow.py) | End-to-end RAG: document conversion (PDF/Word/Excel), pgvector indexing, semantic search, answer generation |
+| [vector_db_helloworld.py](examples/orkes/vector_db_helloworld.py) | Vector database operations: text indexing, embedding generation, and semantic search with Pinecone |
+| [open_ai_chat_gpt.py](examples/orkes/open_ai_chat_gpt.py) | Multi-turn chat with OpenAI using conversation history in a loop |
+| [open_ai_chat_user_input.py](examples/orkes/open_ai_chat_user_input.py) | Chat with human input -- pauses for user messages between LLM responses |
+| [open_ai_helloworld.py](examples/orkes/open_ai_helloworld.py) | Minimal LLM text completion with OpenAI |
 
 ```shell
-export CONDUCTOR_SERVER_URL="http://localhost:7001/api"
+# Agentic workflow
 python examples/agentic_workflow.py
-```
 
-### RAG Pipeline
-
-End-to-end Retrieval Augmented Generation: convert documents to markdown, index into pgvector, search, and generate answers:
-
-```shell
+# RAG pipeline
 pip install "markitdown[pdf]"
 python examples/rag_workflow.py document.pdf "What are the key findings?"
 ```
-
-See [`examples/rag_workflow.py`](examples/rag_workflow.py) for the full pipeline.
-
-### MCP Tool Integration
-
-AI agent with Model Context Protocol tool calling. See [`examples/mcp_weather_agent.py`](examples/mcp_weather_agent.py).
 
 ### Worker Configuration
 
