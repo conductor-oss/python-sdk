@@ -4,56 +4,98 @@
 
 Python SDK for [Conductor](https://www.conductor-oss.org/) — the leading open-source orchestration platform for building distributed applications, AI agents, and workflow-driven microservices. Define workflows as code, run workers anywhere, and let Conductor handle retries, state management, and observability.
 
-If you find [Conductor](https://github.com/conductor-oss/conductor) useful, please consider giving it a ⭐ on GitHub — it helps the project grow.
+If you find [Conductor](https://github.com/conductor-oss/conductor) useful, please consider giving it a star on GitHub -- it helps the project grow.
 
 [![GitHub stars](https://img.shields.io/github/stars/conductor-oss/conductor.svg?style=social&label=Star&maxAge=)](https://GitHub.com/conductor-oss/conductor/)
 
-## Install
+## 60-Second Quickstart
+
+Install the SDK and create a single file `quickstart.py`:
 
 ```shell
 pip install conductor-python
 ```
 
-Requires Python 3.9+.
+## Setting Up Conductor
 
-## Quick Start
+If you don't already have a Conductor server running:
 
-**1. Start a Conductor server** (if you don't have one running):
-
+**macOS / Linux:**
 ```shell
 curl -sSL https://raw.githubusercontent.com/conductor-oss/conductor/main/conductor_server.sh | sh
 ```
 
-**Or with Docker:** 
-```
+**Docker:**
+```shell
 docker run -p 8080:8080 conductoross/conductor:latest
 ```
+The UI will be available at `http://localhost:8080`.
 
-**2. Point the SDK at your server:**
+## Run your first workflow app
+```python
+from conductor.client.automator.task_handler import TaskHandler
+from conductor.client.configuration.configuration import Configuration
+from conductor.client.workflow.conductor_workflow import ConductorWorkflow
+from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
+from conductor.client.worker.worker_task import worker_task
+
+
+# Step 1: Define a worker — any Python function
+@worker_task(task_definition_name='greet')
+def greet(name: str) -> str:
+    return f'Hello {name}'
+
+
+def main():
+    # Step 2: Configure the SDK (reads CONDUCTOR_SERVER_URL from env)
+    config = Configuration()
+
+    # Step 3: Build a workflow with the >> operator
+    executor = WorkflowExecutor(configuration=config)
+    workflow = ConductorWorkflow(name='greetings', version=1, executor=executor)
+    workflow >> greet(task_ref_name='greet_ref', name=workflow.input('name'))
+    workflow.register(True)
+
+    # Step 4: Start polling for tasks
+    task_handler = TaskHandler(configuration=config)
+    task_handler.start_processes()
+
+    # Step 5: Run the workflow and get the result
+    result = executor.execute(name='greetings', version=1, workflow_input={'name': 'Orkes'})
+    print(f'result: {result.output["result"]}')
+    print(f'execution: {config.ui_host}/execution/{result.workflow_id}')
+
+    task_handler.stop_processes()
+
+
+if __name__ == '__main__':
+    main()
+```
+
+Run it:
 
 ```shell
 export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
+python quickstart.py
 ```
 
-> **Using Orkes Conductor?** You'll also need to export your authentication credentials:
+> **Using Orkes Conductor?** Export your authentication credentials as well:
 > ```shell
 > export CONDUCTOR_SERVER_URL="https://your-cluster.orkesconductor.io/api"
 > export CONDUCTOR_AUTH_KEY="your-key"
 > export CONDUCTOR_AUTH_SECRET="your-secret"
 > ```
-> Get your key and secret from your Orkes Conductor dashboard. See [Configuration](#configuration) for details.
+> See [Configuration](#configuration) for details.
 
-**3. Run the end-to-end example:**
+That's it -- you just defined a worker, built a workflow, and executed it. Open [http://localhost:8080](http://localhost:8080) to see the execution in the Conductor UI.
 
-```shell
-python examples/workers_e2e.py
-```
-
-This registers a workflow, starts workers (sync + async), executes the workflow, and prints results — all in one script. Open `http://localhost:8080` to see the execution in the UI.
+### More comprehensive example with sync + async workers, metrics, and long-running tasks 
+* See [examples/workers_e2e.py](examples/workers_e2e.py)
 
 ## Workers
 
 Workers are Python functions that execute tasks. Decorate any function with `@worker_task` to make it a distributed worker:
+In the agentic workflows, workers are the tools and can be used by LLMs for tool caling.
 
 ```python
 from conductor.client.worker.worker_task import worker_task

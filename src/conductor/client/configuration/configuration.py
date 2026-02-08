@@ -45,7 +45,7 @@ class Configuration:
         self.temp_folder_path = None
         self.__ui_host = os.getenv("CONDUCTOR_UI_SERVER_URL")
         if self.__ui_host is None:
-            self.__ui_host = self.host.replace("8080/api", "5001")
+            self.__ui_host = self.host.rstrip("/").removesuffix("/api")
 
         if authentication_settings is not None:
             self.authentication_settings = authentication_settings
