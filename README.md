@@ -140,7 +140,7 @@ workflow_client.restart_workflow(workflow_id)
 **Learn more:**
 - [Workflow Management](docs/WORKFLOW.md) — Start, pause, resume, terminate, retry, search
 - [Workflow Testing](docs/WORKFLOW_TESTING.md) — Unit testing with mock task outputs
-- [Metadata Management](docs/METADATA.md) — Task & workflow definitions (21 APIs)
+- [Metadata Management](docs/METADATA.md) — Task & workflow definitions
 
 ## Hello World
 
@@ -261,10 +261,10 @@ End-to-end examples covering all APIs for each domain:
 
 | Example | APIs | Run |
 |---------|------|-----|
-| [authorization_journey.py](examples/authorization_journey.py) | 49 Authorization APIs | `python examples/authorization_journey.py` |
-| [metadata_journey.py](examples/metadata_journey.py) | 21 Metadata APIs | `python examples/metadata_journey.py` |
-| [schedule_journey.py](examples/schedule_journey.py) | 15 Schedule APIs | `python examples/schedule_journey.py` |
-| [prompt_journey.py](examples/prompt_journey.py) | 8 Prompt APIs | `python examples/prompt_journey.py` |
+| [authorization_journey.py](examples/authorization_journey.py) | Authorization APIs | `python examples/authorization_journey.py` |
+| [metadata_journey.py](examples/metadata_journey.py) | Metadata APIs | `python examples/metadata_journey.py` |
+| [schedule_journey.py](examples/schedule_journey.py) | Schedule APIs | `python examples/schedule_journey.py` |
+| [prompt_journey.py](examples/prompt_journey.py) | Prompt APIs | `python examples/prompt_journey.py` |
 
 ## Documentation
 
@@ -275,13 +275,13 @@ End-to-end examples covering all APIs for each domain:
 | [Worker Configuration](WORKER_CONFIGURATION.md) | Hierarchical environment variable configuration |
 | [Workflow Management](docs/WORKFLOW.md) | Start, pause, resume, terminate, retry, search |
 | [Workflow Testing](docs/WORKFLOW_TESTING.md) | Unit testing with mock outputs |
-| [Task Management](docs/TASK_MANAGEMENT.md) | Task operations (11 APIs) |
-| [Metadata](docs/METADATA.md) | Task & workflow definitions (21 APIs) |
-| [Authorization](docs/AUTHORIZATION.md) | Users, groups, applications, permissions (49 APIs) |
-| [Schedules](docs/SCHEDULE.md) | Workflow scheduling (15 APIs) |
-| [Secrets](docs/SECRET_MANAGEMENT.md) | Secret storage (9 APIs) |
-| [Prompts](docs/PROMPT.md) | AI/LLM prompt templates (8 APIs) |
-| [Integrations](docs/INTEGRATION.md) | AI/LLM provider integrations (28+ providers) |
+| [Task Management](docs/TASK_MANAGEMENT.md) | Task operations |
+| [Metadata](docs/METADATA.md) | Task & workflow definitions |
+| [Authorization](docs/AUTHORIZATION.md) | Users, groups, applications, permissions |
+| [Schedules](docs/SCHEDULE.md) | Workflow scheduling |
+| [Secrets](docs/SECRET_MANAGEMENT.md) | Secret storage |
+| [Prompts](docs/PROMPT.md) | AI/LLM prompt templates |
+| [Integrations](docs/INTEGRATION.md) | AI/LLM provider integrations |
 | [Metrics](METRICS.md) | Prometheus metrics collection |
 | [Examples](examples/README.md) | Complete examples catalog |
 
