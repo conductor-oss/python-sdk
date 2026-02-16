@@ -14,6 +14,8 @@ Chaos tests are opt-in and skipped by default.
 RUN_CHAOS_TESTS=1 pytest -q tests/chaos -q
 ```
 
+Default timeout is 60s (set `CHAOS_TEST_TIMEOUT_SECONDS` to override) so runs cannot hang CI.
+
 ## What is simulated
 
 - A transport-level stub for `httpx.Client` (used by the SDK REST layer) that:

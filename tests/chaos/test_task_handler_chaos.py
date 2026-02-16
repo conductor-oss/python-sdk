@@ -1,4 +1,5 @@
 import os
+import signal
 import time
 import unittest
 from multiprocessing import Value
@@ -75,6 +76,14 @@ class _FlakyHttpxClient:
 @unittest.skipIf(os.name == "nt", "Chaos tests rely on fork semantics on POSIX")
 class TestTaskHandlerChaos(unittest.TestCase):
     def setUp(self) -> None:
+        # Hard stop to prevent runaway chaos runs (default 60s, override via CHAOS_TEST_TIMEOUT_SECONDS)
+        timeout = int(os.getenv("CHAOS_TEST_TIMEOUT_SECONDS", "60"))
+        try:
+            signal.alarm(timeout)
+        except Exception:
+            # On platforms without alarm (should be skipped anyway)
+            pass
+
         with _client_creations.get_lock():
             _client_creations.value = 0
         with _requests_total.get_lock():
@@ -90,6 +99,10 @@ class TestTaskHandlerChaos(unittest.TestCase):
         self._patcher.start()
 
     def tearDown(self) -> None:
+        try:
+            signal.alarm(0)
+        except Exception:
+            pass
         try:
             self._patcher.stop()
         except Exception:
@@ -161,4 +174,3 @@ class TestTaskHandlerChaos(unittest.TestCase):
             self.assertGreaterEqual(status1["restart_count"], 1)
             self.assertNotEqual(status1["pid"], old_pid)
             self.assertTrue(status1["alive"])
-
