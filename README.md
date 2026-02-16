@@ -1,4 +1,4 @@
-# Conductor Python SDK
+# Python SDK for Conductor
 
 [![CI](https://github.com/conductor-sdk/conductor-python/actions/workflows/pull_request.yml/badge.svg)](https://github.com/conductor-sdk/conductor-python/actions/workflows/pull_request.yml)
 [![PyPI](https://img.shields.io/pypi/v/conductor-python.svg)](https://pypi.org/project/conductor-python/)
@@ -11,24 +11,25 @@ If you find [Conductor](https://github.com/conductor-oss/conductor) useful, plea
 
 [![GitHub stars](https://img.shields.io/github/stars/conductor-oss/conductor.svg?style=social&label=Star&maxAge=)](https://GitHub.com/conductor-oss/conductor/)
 
-## Quick Links
+
 
 <!-- TOC -->
-* [Start  Conductor server](#start--conductor-server)
-* [Install the SDK](#install-the-sdk)
-* [60-Second Quickstart](#60-second-quickstart)
-* [Comprehensive example with sync + async workers, metrics, and long-running tasks](#comprehensive-example-with-sync--async-workers-metrics-and-long-running-tasks)
-* [Workers](#workers)
-* [Monitoring Workers](#monitoring-workers)
-* [Workflows](#workflows)
-* [Troubleshooting](#troubleshooting)
-* [AI & LLM Workflows](#ai--llm-workflows)
-* [Examples](#examples)
-* [API Journey Examples](#api-journey-examples)
-* [Documentation](#documentation)
-* [Support](#support)
-* [Frequently Asked Questions](#frequently-asked-questions)
-* [License](#license)
+* [Python SDK for Conductor](#python-sdk-for-conductor)
+  * [Start  Conductor server](#start--conductor-server)
+  * [Install the SDK](#install-the-sdk)
+  * [60-Second Quickstart](#60-second-quickstart)
+  * [Comprehensive worker example](#comprehensive-worker-example-)
+  * [Workers](#workers)
+  * [Monitoring Workers](#monitoring-workers)
+  * [Workflows](#workflows)
+  * [Troubleshooting](#troubleshooting)
+  * [AI & LLM Workflows](#ai--llm-workflows)
+  * [Examples](#examples)
+  * [API Journey Examples](#api-journey-examples)
+  * [Documentation](#documentation)
+  * [Support](#support)
+  * [Frequently Asked Questions](#frequently-asked-questions)
+  * [License](#license)
 <!-- TOC -->
 
 
@@ -166,7 +167,8 @@ python quickstart.py
 That's it -- you just defined a worker, built a workflow, and executed it. Open the Conductor UI (default:
 [http://localhost:8127](http://localhost:8127)) to see the execution.
 
-## Comprehensive example with sync + async workers, metrics, and long-running tasks
+## Comprehensive worker example 
+The example includes sync + async workers, metrics, and long-running tasks
 
 See [examples/workers_e2e.py](examples/workers_e2e.py)
 
