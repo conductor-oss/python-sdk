@@ -294,7 +294,9 @@ class TestTaskRunnerCoverage(unittest.TestCase):
     def test_poll_task_with_auth_failure_backoff(self, mock_sleep):
         """Test exponential backoff on authorization failures"""
         worker = MockWorker('test_task')
-        task_runner = TaskRunner(worker=worker)
+        # Ensure auth env vars do not cause ApiClient token refresh (which can call time.sleep internally).
+        with patch.dict(os.environ, {}, clear=True):
+            task_runner = TaskRunner(worker=worker)
 
         # Simulate auth failure
         task_runner._auth_failures = 2
@@ -305,7 +307,7 @@ class TestTaskRunnerCoverage(unittest.TestCase):
 
             # Should skip polling and return None due to backoff
             self.assertIsNone(task)
-            mock_sleep.assert_called_once()
+            mock_sleep.assert_called_once_with(0.1)
 
     @patch('time.sleep')
     def test_poll_task_auth_failure_with_invalid_token(self, mock_sleep):

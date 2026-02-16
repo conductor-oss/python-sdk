@@ -4,9 +4,11 @@ import importlib
 import inspect
 import logging
 import os
+import threading
+import time
 from multiprocessing import Process, freeze_support, Queue, set_start_method
 from sys import platform
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 
 from conductor.client.automator.task_runner import TaskRunner
 from conductor.client.automator.async_task_runner import AsyncTaskRunner
@@ -16,6 +18,9 @@ from conductor.client.event.task_runner_events import TaskRunnerEvent
 from conductor.client.event.sync_event_dispatcher import SyncEventDispatcher
 from conductor.client.event.sync_listener_register import register_task_runner_listener
 from conductor.client.telemetry.metrics_collector import MetricsCollector
+from conductor.client.telemetry.model.metric_documentation import MetricDocumentation
+from conductor.client.telemetry.model.metric_label import MetricLabel
+from conductor.client.telemetry.model.metric_name import MetricName
 from conductor.client.worker.worker import Worker
 from conductor.client.worker.worker_interface import WorkerInterface
 from conductor.client.worker.worker_config import resolve_worker_config
@@ -37,8 +42,30 @@ if not _mp_fork_set:
         _mp_fork_set = True
     except Exception as e:
         logger.info("error when setting multiprocessing.set_start_method - maybe the context is set %s", e.args)
-    if platform == "darwin":
+if platform == "darwin":
         os.environ["no_proxy"] = "*"
+
+def _run_sync_worker_process(
+        worker: WorkerInterface,
+        configuration: Optional[Configuration],
+        metrics_settings: Optional[MetricsSettings],
+        event_listeners: Optional[List[Any]],
+) -> None:
+    """Process target: construct TaskRunner after fork/spawn and run forever."""
+    task_runner = TaskRunner(worker, configuration, metrics_settings, event_listeners)
+    task_runner.run()
+
+
+def _run_async_worker_process(
+        worker: WorkerInterface,
+        configuration: Optional[Configuration],
+        metrics_settings: Optional[MetricsSettings],
+        event_listeners: Optional[List[Any]],
+) -> None:
+    """Process target: construct AsyncTaskRunner after fork/spawn and run forever."""
+    async_task_runner = AsyncTaskRunner(worker, configuration, metrics_settings, event_listeners)
+    asyncio.run(async_task_runner.run())
+
 
 def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func,
                          thread_count: int = 1, register_task_def: bool = False,
@@ -152,10 +179,18 @@ class TaskHandler:
             metrics_settings: Optional[MetricsSettings] = None,
             scan_for_annotated_workers: bool = True,
             import_modules: Optional[List[str]] = None,
-            event_listeners: Optional[List] = None
+            event_listeners: Optional[List] = None,
+            monitor_processes: bool = True,
+            restart_on_failure: bool = True,
+            monitor_interval_seconds: float = 5.0,
+            restart_backoff_seconds: float = 1.0,
+            restart_backoff_max_seconds: float = 60.0,
+            restart_max_attempts: int = 0
     ):
         workers = workers or []
         self.logger_process, self.queue = _setup_logging_queue(configuration)
+        self._configuration = configuration
+        self._metrics_settings = metrics_settings
 
         # Set prometheus multiprocess directory BEFORE any worker processes start
         # This must be done before prometheus_client is imported in worker processes
@@ -220,6 +255,19 @@ class TaskHandler:
 
         self.__create_task_runner_processes(workers, configuration, metrics_settings)
         self.__create_metrics_provider_process(metrics_settings)
+        self._worker_restart_counter = None
+
+        # Optional supervision: monitor worker processes and (optionally) restart on failure.
+        self.monitor_processes = monitor_processes
+        self.restart_on_failure = restart_on_failure
+        self.monitor_interval_seconds = monitor_interval_seconds
+        self.restart_backoff_seconds = restart_backoff_seconds
+        self.restart_backoff_max_seconds = restart_backoff_max_seconds
+        self.restart_max_attempts = restart_max_attempts
+        self._monitor_stop_event = threading.Event()
+        self._monitor_thread: Optional[threading.Thread] = None
+        self._restart_counts: List[int] = [0 for _ in self.workers]
+        self._next_restart_at: List[float] = [0.0 for _ in self.workers]
         logger.info("TaskHandler initialized")
 
     def __enter__(self):
@@ -229,6 +277,9 @@ class TaskHandler:
         self.stop_processes()
 
     def stop_processes(self) -> None:
+        self._monitor_stop_event.set()
+        if self._monitor_thread is not None and self._monitor_thread.is_alive():
+            self._monitor_thread.join(timeout=2.0)
         self.__stop_task_runner_processes()
         self.__stop_metrics_provider_process()
         logger.info("Stopped worker processes...")
@@ -238,8 +289,10 @@ class TaskHandler:
     def start_processes(self) -> None:
         logger.info("Starting worker processes...")
         freeze_support()
+        self._monitor_stop_event.clear()
         self.__start_task_runner_processes()
         self.__start_metrics_provider_process()
+        self.__start_monitor_thread()
         logger.info("Started all processes")
 
     def join_processes(self) -> None:
@@ -289,22 +342,175 @@ class TaskHandler:
             is_async_worker = inspect.iscoroutinefunction(worker.execute)
 
         if is_async_worker:
-            # Use AsyncTaskRunner for async def workers
-            async_task_runner = AsyncTaskRunner(worker, configuration, metrics_settings, self.event_listeners)
-            # Wrap async runner in a sync function for multiprocessing
-            process = Process(target=self.__run_async_runner, args=(async_task_runner,))
-            logger.debug(f"Created AsyncTaskRunner for async worker: {worker.get_task_definition_name()}")
+            process = Process(
+                target=_run_async_worker_process,
+                args=(worker, configuration, metrics_settings, self.event_listeners)
+            )
+            logger.debug(f"Created AsyncTaskRunner process for async worker: {worker.get_task_definition_name()}")
         else:
-            # Use TaskRunner for sync def workers
-            task_runner = TaskRunner(worker, configuration, metrics_settings, self.event_listeners)
-            process = Process(target=task_runner.run)
-            logger.debug(f"Created TaskRunner for sync worker: {worker.get_task_definition_name()}")
+            process = Process(
+                target=_run_sync_worker_process,
+                args=(worker, configuration, metrics_settings, self.event_listeners)
+            )
+            logger.debug(f"Created TaskRunner process for sync worker: {worker.get_task_definition_name()}")
 
         self.task_runner_processes.append(process)
 
-    def __run_async_runner(self, async_task_runner: AsyncTaskRunner) -> None:
-        """Helper method to run AsyncTaskRunner in event loop within multiprocessing context."""
-        asyncio.run(async_task_runner.run())
+    def __start_monitor_thread(self) -> None:
+        if not self.monitor_processes:
+            return
+        if self._monitor_thread is not None and self._monitor_thread.is_alive():
+            return
+        self._monitor_thread = threading.Thread(target=self.__monitor_loop, name="TaskHandlerMonitor", daemon=True)
+        self._monitor_thread.start()
+        logger.info(
+            "TaskHandler monitor started (restart_on_failure=%s, interval=%ss)",
+            self.restart_on_failure,
+            self.monitor_interval_seconds
+        )
+
+    def __monitor_loop(self) -> None:
+        while not self._monitor_stop_event.is_set():
+            try:
+                self.__check_and_restart_processes()
+            except Exception as e:
+                logger.debug("TaskHandler monitor loop error: %s", e)
+            # Use Event.wait() so stop_processes can wake the thread immediately.
+            self._monitor_stop_event.wait(self.monitor_interval_seconds)
+
+    def __check_and_restart_processes(self) -> None:
+        if self._monitor_stop_event.is_set():
+            return
+        for i, process in enumerate(list(self.task_runner_processes)):
+            if process is None:
+                continue
+            if process.is_alive():
+                continue
+            exitcode = process.exitcode
+            if exitcode is None:
+                continue
+            worker = self.workers[i] if i < len(self.workers) else None
+            worker_name = worker.get_task_definition_name() if worker is not None else f"worker[{i}]"
+            logger.warning("Worker process exited (worker=%s, pid=%s, exitcode=%s)", worker_name, process.pid, exitcode)
+            if not self.restart_on_failure:
+                continue
+            self.__restart_worker_process(i)
+
+    def __restart_worker_process(self, index: int) -> None:
+        if self._monitor_stop_event.is_set():
+            return
+        if index >= len(self.workers) or index >= len(self.task_runner_processes):
+            return
+
+        # Enforce max attempts if configured (0 = unlimited)
+        if self.restart_max_attempts > 0 and self._restart_counts[index] >= self.restart_max_attempts:
+            worker = self.workers[index]
+            logger.error(
+                "Not restarting worker process: max restart attempts reached (worker=%s, attempts=%s)",
+                worker.get_task_definition_name(),
+                self._restart_counts[index]
+            )
+            return
+
+        now = time.time()
+        if now < self._next_restart_at[index]:
+            return
+
+        worker = self.workers[index]
+        attempt = self._restart_counts[index] + 1
+
+        # Exponential backoff per-worker to avoid tight crash loops
+        backoff = min(self.restart_backoff_seconds * (2 ** max(self._restart_counts[index], 0)), self.restart_backoff_max_seconds)
+        self._next_restart_at[index] = now + backoff
+
+        try:
+            # Reap the old process (avoid accumulating zombies on repeated restarts).
+            old_process = self.task_runner_processes[index]
+            try:
+                if old_process is not None and old_process.exitcode is not None:
+                    old_process.join(timeout=0.0)
+                    try:
+                        old_process.close()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+            new_process = self.__build_process_for_worker(worker)
+            self.task_runner_processes[index] = new_process
+            new_process.start()
+            self._restart_counts[index] = attempt
+            self.__inc_worker_restart_metric(worker.get_task_definition_name())
+            logger.info(
+                "Restarted worker process (worker=%s, attempt=%s, pid=%s, next_backoff=%ss)",
+                worker.get_task_definition_name(),
+                attempt,
+                new_process.pid,
+                backoff
+            )
+        except Exception as e:
+            logger.error("Failed to restart worker process (worker=%s): %s", worker.get_task_definition_name(), e)
+
+    def __inc_worker_restart_metric(self, task_type: str) -> None:
+        """Best-effort counter increment for worker subprocess restarts (requires metrics_settings)."""
+        if self._metrics_settings is None:
+            return
+
+        try:
+            # Avoid instantiating MetricsCollector here: it keeps a global registry which can be problematic
+            # when multiple TaskHandlers/tests use different PROMETHEUS_MULTIPROC_DIR values in one process.
+            from conductor.client.telemetry import metrics_collector as mc
+
+            mc._ensure_prometheus_imported()
+            if self._worker_restart_counter is None:
+                # Use a dedicated registry to avoid duplicate metric registration errors in the default registry.
+                registry = mc.CollectorRegistry()
+                self._worker_restart_counter = mc.Counter(
+                    name=MetricName.WORKER_RESTART,
+                    documentation=MetricDocumentation.WORKER_RESTART,
+                    labelnames=[MetricLabel.TASK_TYPE.value],
+                    registry=registry,
+                )
+            self._worker_restart_counter.labels(task_type).inc()
+        except Exception as e:
+            # Metrics should never break worker supervision.
+            logger.debug("Failed to increment worker_restart metric: %s", e)
+
+    def __build_process_for_worker(self, worker: WorkerInterface) -> Process:
+        """Create a new worker process for the given worker (used for initial start + restarts)."""
+        # Detect if worker function is async
+        if hasattr(worker, 'execute_function'):
+            is_async_worker = inspect.iscoroutinefunction(worker.execute_function)
+        else:
+            is_async_worker = inspect.iscoroutinefunction(worker.execute)
+
+        if is_async_worker:
+            return Process(
+                target=_run_async_worker_process,
+                args=(worker, self._configuration, self._metrics_settings, self.event_listeners)
+            )
+        return Process(
+            target=_run_sync_worker_process,
+            args=(worker, self._configuration, self._metrics_settings, self.event_listeners)
+        )
+
+    def get_worker_process_status(self) -> List[Dict[str, Any]]:
+        """Return basic worker process status for health checks / observability."""
+        statuses: List[Dict[str, Any]] = []
+        for i, worker in enumerate(self.workers):
+            process = self.task_runner_processes[i] if i < len(self.task_runner_processes) else None
+            statuses.append({
+                "worker": worker.get_task_definition_name(),
+                "pid": getattr(process, "pid", None),
+                "alive": process.is_alive() if process is not None else False,
+                "exitcode": getattr(process, "exitcode", None),
+                "restart_count": self._restart_counts[i] if i < len(self._restart_counts) else 0,
+            })
+        return statuses
+
+    def is_healthy(self) -> bool:
+        """True if all worker processes are alive."""
+        return all(p is not None and p.is_alive() for p in self.task_runner_processes)
 
     def __start_metrics_provider_process(self):
         if self.metrics_provider_process is None:
@@ -318,7 +524,7 @@ class TaskHandler:
             task_runner_process.start()
             print(f'task runner process {task_runner_process.name} started')
             worker = self.workers[i]
-            paused_status = "PAUSED" if worker.paused else "ACTIVE"
+            paused_status = "PAUSED" if getattr(worker, "paused", False) else "ACTIVE"
             logger.debug("Started worker '%s' [%s]", worker.get_task_definition_name(), paused_status)
             n = n + 1
         logger.info("Started %s TaskRunner process(es)", n)

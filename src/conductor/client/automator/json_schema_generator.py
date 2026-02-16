@@ -188,11 +188,13 @@ def _type_to_json_schema(type_hint, strict_schema: bool = False) -> Optional[Dic
         if len(non_none_args) == 1:
             # Optional[T] case
             inner_schema = _type_to_json_schema(non_none_args[0], strict_schema)
-            if inner_schema:
-                # For optional, we could use oneOf or just mark as nullable
-                # Using nullable for simplicity
-                inner_schema['nullable'] = True
-                return inner_schema
+            if inner_schema is not None:
+                # Draft-07 JSON Schema does not support OpenAPI's `nullable`.
+                # Represent Optional[T] as a union with null.
+                if inner_schema == {}:
+                    # "Any" already includes null, so keep it minimal.
+                    return inner_schema
+                return {"anyOf": [inner_schema, {"type": "null"}]}
         # Multiple non-None types in Union - too complex
         return None
 

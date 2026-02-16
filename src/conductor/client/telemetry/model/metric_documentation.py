@@ -18,5 +18,6 @@ class MetricDocumentation(str, Enum):
     TASK_UPDATE_ERROR = "Task status cannot be updated back to server"
     TASK_UPDATE_TIME_HISTOGRAM = "Task update duration in seconds with quantiles"
     THREAD_UNCAUGHT_EXCEPTION = "thread_uncaught_exceptions"
+    WORKER_RESTART = "Worker subprocess restarted"
     WORKFLOW_START_ERROR = "Counter for workflow start errors"
     WORKFLOW_INPUT_SIZE = "Records input payload size of a workflow"

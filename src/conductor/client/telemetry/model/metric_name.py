@@ -18,5 +18,6 @@ class MetricName(str, Enum):
     TASK_UPDATE_ERROR = "task_update_error"
     TASK_UPDATE_TIME_HISTOGRAM = "task_update_time_seconds"
     THREAD_UNCAUGHT_EXCEPTION = "thread_uncaught_exceptions"
+    WORKER_RESTART = "worker_restart"
     WORKFLOW_INPUT_SIZE = "workflow_input_size"
     WORKFLOW_START_ERROR = "workflow_start_error"

@@ -69,15 +69,15 @@ class TestOptionalTypes(unittest.TestCase):
 
     def test_optional_string(self):
         schema = _type_to_json_schema(Optional[str])
-        self.assertEqual(schema, {"type": "string", "nullable": True})
+        self.assertEqual(schema, {"anyOf": [{"type": "string"}, {"type": "null"}]})
 
     def test_optional_int(self):
         schema = _type_to_json_schema(Optional[int])
-        self.assertEqual(schema, {"type": "integer", "nullable": True})
+        self.assertEqual(schema, {"anyOf": [{"type": "integer"}, {"type": "null"}]})
 
     def test_optional_dict(self):
         schema = _type_to_json_schema(Optional[dict])
-        self.assertEqual(schema, {"type": "object", "nullable": True})
+        self.assertEqual(schema, {"anyOf": [{"type": "object"}, {"type": "null"}]})
 
     def test_optional_parameter_not_required(self):
         """Optional[T] parameters should not be in required array."""
@@ -95,8 +95,10 @@ class TestOptionalTypes(unittest.TestCase):
         self.assertIn('required_param', input_schema['properties'])
         self.assertIn('optional_param', input_schema['properties'])
 
-        # optional_param should be nullable
-        self.assertTrue(input_schema['properties']['optional_param']['nullable'])
+        # optional_param should allow null
+        optional_schema = input_schema['properties']['optional_param']
+        self.assertIn('anyOf', optional_schema)
+        self.assertIn({"type": "null"}, optional_schema['anyOf'])
 
     def test_optional_with_default_still_not_required(self):
         """Optional[T] with default value should not be required."""
@@ -226,7 +228,7 @@ class TestDataclassSchemas(unittest.TestCase):
             "type": "object",
             "properties": {
                 "user_id": {"type": "string"},
-                "email": {"type": "string", "nullable": True}
+                "email": {"anyOf": [{"type": "string"}, {"type": "null"}]}
             },
             "required": ["user_id"],
             "additionalProperties": True
@@ -316,7 +318,7 @@ class TestUnionTypes(unittest.TestCase):
     def test_optional_is_union(self):
         # Optional[str] is Union[str, None]
         schema = _type_to_json_schema(Optional[str])
-        self.assertEqual(schema, {"type": "string", "nullable": True})
+        self.assertEqual(schema, {"anyOf": [{"type": "string"}, {"type": "null"}]})
 
 
 class TestUnsupportedTypes(unittest.TestCase):
@@ -456,7 +458,7 @@ class TestFunctionSchemaGeneration(unittest.TestCase):
         contact_schema = input_schema['properties']['contact']
         self.assertEqual(contact_schema['type'], "object")
         self.assertEqual(contact_schema['properties']['email'], {"type": "string"})
-        self.assertEqual(contact_schema['properties']['phone'], {"type": "string", "nullable": True})
+        self.assertEqual(contact_schema['properties']['phone'], {"anyOf": [{"type": "string"}, {"type": "null"}]})
 
         # Only email is required in contact (phone is optional)
         self.assertEqual(contact_schema['required'], ['email'])

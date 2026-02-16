@@ -100,6 +100,12 @@ if __name__ == '__main__':
 
 ```
 
+Notes:
+- TaskHandler enables supervision by default. For local debugging you can disable it with `monitor_processes=False` and `restart_on_failure=False`.
+- `CONDUCTOR_HTTP2_ENABLED` controls whether the SDK uses HTTP/2 for outbound requests to Conductor (default: `true`).
+  If you see intermittent `httpcore.RemoteProtocolError: <ConnectionTerminated ...>`, try `CONDUCTOR_HTTP2_ENABLED=false`
+  to force HTTP/1.1 (workaround for some proxies/load balancers).
+
 ## Design Principles for Workers
 
 Each worker embodies the design pattern and follows certain basic principles:
