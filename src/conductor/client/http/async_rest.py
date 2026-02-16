@@ -88,6 +88,10 @@ class AsyncRESTClientObject(object):
         except Exception:
             pass
         self.connection = self._create_default_httpx_client()
+        # Log at debug level for diagnostics
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug("Reset HTTP connection after protocol error (HTTP/2 enabled: %s)", self._http2_enabled)
 
     async def __aenter__(self):
         """Async context manager entry."""
