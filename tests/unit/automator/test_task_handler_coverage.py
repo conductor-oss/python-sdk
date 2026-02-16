@@ -406,20 +406,7 @@ class TestTaskHandlerProcessManagement(unittest.TestCase):
         # Clean up any started processes
         for handler in self.handlers:
             try:
-                # Terminate all task runner processes
-                for process in handler.task_runner_processes:
-                    if process.is_alive():
-                        process.terminate()
-                        process.join(timeout=1)
-                        if process.is_alive():
-                            process.kill()
-                # Terminate metrics process if it exists
-                if hasattr(handler, 'metrics_provider_process') and handler.metrics_provider_process:
-                    if handler.metrics_provider_process.is_alive():
-                        handler.metrics_provider_process.terminate()
-                        handler.metrics_provider_process.join(timeout=1)
-                        if handler.metrics_provider_process.is_alive():
-                            handler.metrics_provider_process.kill()
+                handler.stop_processes()
             except Exception:
                 pass
 
@@ -1006,13 +993,7 @@ class TestWorkerConfiguration(unittest.TestCase):
         # Clean up any started processes
         for handler in self.handlers:
             try:
-                # Terminate all task runner processes
-                for process in handler.task_runner_processes:
-                    if process.is_alive():
-                        process.terminate()
-                        process.join(timeout=1)
-                        if process.is_alive():
-                            process.kill()
+                handler.stop_processes()
             except Exception:
                 pass
         # Restore original environment
@@ -1073,13 +1054,7 @@ class TestTaskHandlerPausedWorker(unittest.TestCase):
         # Clean up any started processes
         for handler in self.handlers:
             try:
-                # Terminate all task runner processes
-                for process in handler.task_runner_processes:
-                    if process.is_alive():
-                        process.terminate()
-                        process.join(timeout=1)
-                        if process.is_alive():
-                            process.kill()
+                handler.stop_processes()
             except Exception:
                 pass
 
