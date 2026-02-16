@@ -13,65 +13,60 @@ If you find [Conductor](https://github.com/conductor-oss/conductor) useful, plea
 
 ## Quick Links
 
-- [60-Second Quickstart](#60-second-quickstart)
-- [Workflow-as-API (FastAPI example)](examples/fastapi_worker_service.py)
-- [Examples Catalog](examples/README.md)
-- [Worker Guide](docs/WORKER.md) and [Worker Configuration](WORKER_CONFIGURATION.md)
-- [Workflow Guide](docs/WORKFLOW.md) and [Workflow Testing](docs/WORKFLOW_TESTING.md)
-- [Metrics (Prometheus)](METRICS.md)
+<!-- TOC -->
+* [Start  Conductor server](#start--conductor-server)
+* [Install the SDK](#install-the-sdk)
+* [60-Second Quickstart](#60-second-quickstart)
+* [Comprehensive example with sync + async workers, metrics, and long-running tasks](#comprehensive-example-with-sync--async-workers-metrics-and-long-running-tasks)
+* [Workers](#workers)
+* [Monitoring Workers](#monitoring-workers)
+* [Workflows](#workflows)
+* [Troubleshooting](#troubleshooting)
+* [AI & LLM Workflows](#ai--llm-workflows)
+* [Examples](#examples)
+* [API Journey Examples](#api-journey-examples)
+* [Documentation](#documentation)
+* [Support](#support)
+* [Frequently Asked Questions](#frequently-asked-questions)
+* [License](#license)
+<!-- TOC -->
 
-## 60-Second Quickstart
 
-Prereqs: Python 3.9+.
-
-### Start a Conductor server
+## Start  Conductor server
 
 If you don't already have a Conductor server running, pick one:
 
 **Docker Compose (recommended, includes UI):**
 
 ```shell
-git clone https://github.com/conductor-oss/conductor.git
-cd conductor
-docker compose -f docker/docker-compose.yaml up -d
+docker run -p 8080:8080 conductoross/conductor:latest
 ```
+The UI will be available at `http://localhost:8080` and the API at `http://localhost:8080/api`
 
-The UI will be available at `http://localhost:8127` and the API at `http://localhost:8080/api` (run without `-d` to see logs).
-
-**macOS / Linux (one-liner):**
-
+**MacOS / Linux (one-liner):** (If you don't want to use docker, you can install and run the binary directly)
 ```shell
 curl -sSL https://raw.githubusercontent.com/conductor-oss/conductor/main/conductor_server.sh | sh
 ```
 
-This starts the same Docker Compose setup as above.
+**Conductor CLI**
+```shell
+# Installs conductor cli
+npm install -g @conductor-oss/conductor-cli
 
-### Install the SDK
+# Start the open source conductor server
+conductor server start
+# see conductor server --help for all the available commands
+```
+
+## Install the SDK
 
 ```shell
 pip install conductor-python
 ```
 
-### Set environment variables
+## 60-Second Quickstart
 
-The SDK reads configuration from environment variables:
-
-```shell
-# Required — Conductor server endpoint
-export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
-
-# Optional — Conductor UI base URL (Docker Compose runs UI on 8127; defaults to CONDUCTOR_SERVER_URL without /api)
-export CONDUCTOR_UI_SERVER_URL="http://localhost:8127"
-
-# Optional — Authentication (required for Orkes Conductor)
-export CONDUCTOR_AUTH_KEY="your-key"
-export CONDUCTOR_AUTH_SECRET="your-secret"
-
-# Optional — set to false to force HTTP/1.1 if your environment has unstable long-lived HTTP/2 connections (default: true)
-# export CONDUCTOR_HTTP2_ENABLED=false
-```
-
-### Step 1: Create a workflow
+**Step 1: Create a workflow**
 
 Workflows are definitions that reference task types (e.g. a SIMPLE task called `greet`). We'll build a workflow called
 `greetings` that runs one task and returns its output.
@@ -88,7 +83,7 @@ workflow.output_parameters({'result': greet_task.output('result')})
 workflow.register(overwrite=True)
 ```
 
-### Step 2: Write worker
+**Step 2: Write worker**
 
 Workers are just Python functions decorated with `@worker_task` that poll Conductor for tasks and execute them.
 
@@ -101,7 +96,7 @@ def greet(name: str) -> str:
     return f'Hello {name}'
 ```
 
-### Step 3: Run your first workflow app
+**Step 3: Run your first workflow app**
 
 Create a `quickstart.py` with the following:
 
@@ -153,39 +148,28 @@ Run it:
 python quickstart.py
 ```
 
-> **Using Orkes Conductor?** Export your authentication credentials as well:
+> ### Using Orkes Conductor / Remote Server? 
+> Export your authentication credentials as well:
+> 
 > ```shell
 > export CONDUCTOR_SERVER_URL="https://your-cluster.orkesconductor.io/api"
+> 
+> # If using Orkes Conductor that requires auth key/secret
 > export CONDUCTOR_AUTH_KEY="your-key"
 > export CONDUCTOR_AUTH_SECRET="your-secret"
+> 
+> # Optional — set to false to force HTTP/1.1 if your network environment has unstable long-lived HTTP/2 connections (default: true)
+> # export CONDUCTOR_HTTP2_ENABLED=false
 > ```
 > See [Configuration](#configuration) for details.
 
 That's it -- you just defined a worker, built a workflow, and executed it. Open the Conductor UI (default:
 [http://localhost:8127](http://localhost:8127)) to see the execution.
 
-### Comprehensive example with sync + async workers, metrics, and long-running tasks
+## Comprehensive example with sync + async workers, metrics, and long-running tasks
 
 See [examples/workers_e2e.py](examples/workers_e2e.py)
 
-### Configuration
-
-The SDK reads configuration from environment variables:
-
-```shell
-# Required — Conductor server endpoint
-export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
-
-# Optional — Authentication (required for Orkes Conductor)
-export CONDUCTOR_AUTH_KEY="your-key"
-export CONDUCTOR_AUTH_SECRET="your-secret"
-
-# Optional — Override UI base URL (Docker Compose runs UI on 8127; defaults to CONDUCTOR_SERVER_URL without /api)
-export CONDUCTOR_UI_SERVER_URL="http://localhost:8127"
-
-# Optional — set to false to force HTTP/1.1 if your environment has unstable long-lived HTTP/2 connections (default: true)
-# export CONDUCTOR_HTTP2_ENABLED=false
-```
 ---
 
 ## Workers
@@ -242,7 +226,8 @@ finally:
 
 Workers support complex inputs (dataclasses), long-running tasks (`TaskInProgress`), and hierarchical configuration via environment variables.
 
-### Resilience: auto-restart and health checks
+**Resilience: auto-restart and health checks**
+
 
 Workers are typically long-lived services. By default, `TaskHandler` monitors worker subprocesses and restarts them if
 they exit unexpectedly.
@@ -260,7 +245,7 @@ To disable monitoring/restarts (e.g., local debugging):
 TaskHandler(..., monitor_processes=False, restart_on_failure=False)
 ```
 
-### Worker Configuration
+**Worker Configuration**
 
 Workers support hierarchical environment variable configuration — global settings that can be overridden per worker:
 
@@ -276,7 +261,7 @@ export CONDUCTOR_WORKER_GREETINGS_THREAD_COUNT=50
 
 See [WORKER_CONFIGURATION.md](WORKER_CONFIGURATION.md) for all options.
 
-### Monitoring
+## Monitoring Workers
 
 Enable Prometheus metrics:
 
@@ -341,7 +326,7 @@ run = workflow.execute(workflow_input={'name': 'Orkes'}, wait_for_seconds=10)
 print(run.output)
 ```
 
-**Manage running workflows:**
+**Manage running workflows and send signals:**
 
 ```python
 from conductor.client.orkes_clients import OrkesClients
@@ -371,22 +356,12 @@ workflow_client.restart_workflow(workflow_id)
   `CONDUCTOR_HTTP2_ENABLED=false` (forces HTTP/1.1) — see `docs/WORKER.md`.
 - FastAPI/Uvicorn: avoid running `uvicorn` with multiple web workers unless you explicitly want multiple independent
   `TaskHandler`s polling Conductor (see `examples/fastapi_worker_service.py`).
-
-## Hello World
-
-The complete Hello World example lives in [`examples/helloworld/`](examples/helloworld/):
-
-```shell
-python examples/helloworld/helloworld.py
-```
-
-It creates a `greetings` workflow with one worker task, runs the worker, executes the workflow, and prints the result. See the [Hello World source](examples/helloworld/helloworld.py) for the full code.
-
+---
 ## AI & LLM Workflows
 
 Conductor supports AI-native workflows including agentic tool calling, RAG pipelines, and multi-agent orchestration.
 
-### Agentic Workflows
+**Agentic Workflows**
 
 Build AI agents where LLMs dynamically select and call Python workers as tools. See [examples/agentic_workflows/](examples/agentic_workflows/) for all examples.
 
@@ -398,7 +373,7 @@ Build AI agents where LLMs dynamically select and call Python workers as tools. 
 | [function_calling_example.py](examples/agentic_workflows/function_calling_example.py) | LLM picks which Python function to call based on user queries |
 | [mcp_weather_agent.py](examples/agentic_workflows/mcp_weather_agent.py) | AI agent using MCP tools for weather queries |
 
-### LLM and RAG Workflows
+**LLM and RAG Workflows**
 
 | Example | Description |
 |---------|-------------|
@@ -434,7 +409,7 @@ See the [Examples Guide](examples/README.md) for the full catalog. Key examples:
 | [test_workflows.py](examples/test_workflows.py) | Unit testing workflows | `python -m unittest examples.test_workflows` |
 | [kitchensink.py](examples/kitchensink.py) | All task types (HTTP, JS, JQ, Switch) | `python examples/kitchensink.py` |
 
-### API Journey Examples
+## API Journey Examples
 
 End-to-end examples covering all APIs for each domain:
 
