@@ -268,6 +268,8 @@ class TaskHandler:
         self._monitor_thread: Optional[threading.Thread] = None
         self._restart_counts: List[int] = [0 for _ in self.workers]
         self._next_restart_at: List[float] = [0.0 for _ in self.workers]
+        # Lock to protect process list during concurrent access (monitor thread vs main thread)
+        self._process_lock = threading.Lock()
         logger.info("TaskHandler initialized")
 
     def __enter__(self):
@@ -280,8 +282,10 @@ class TaskHandler:
         self._monitor_stop_event.set()
         if self._monitor_thread is not None and self._monitor_thread.is_alive():
             self._monitor_thread.join(timeout=2.0)
-        self.__stop_task_runner_processes()
-        self.__stop_metrics_provider_process()
+        # Lock to prevent race conditions with monitor thread
+        with self._process_lock:
+            self.__stop_task_runner_processes()
+            self.__stop_metrics_provider_process()
         logger.info("Stopped worker processes...")
         self.queue.put(None)
         self.logger_process.terminate()
@@ -381,20 +385,22 @@ class TaskHandler:
     def __check_and_restart_processes(self) -> None:
         if self._monitor_stop_event.is_set():
             return
-        for i, process in enumerate(list(self.task_runner_processes)):
-            if process is None:
-                continue
-            if process.is_alive():
-                continue
-            exitcode = process.exitcode
-            if exitcode is None:
-                continue
-            worker = self.workers[i] if i < len(self.workers) else None
-            worker_name = worker.get_task_definition_name() if worker is not None else f"worker[{i}]"
-            logger.warning("Worker process exited (worker=%s, pid=%s, exitcode=%s)", worker_name, process.pid, exitcode)
-            if not self.restart_on_failure:
-                continue
-            self.__restart_worker_process(i)
+        # Lock to prevent race conditions with stop_processes
+        with self._process_lock:
+            for i, process in enumerate(list(self.task_runner_processes)):
+                if process is None:
+                    continue
+                if process.is_alive():
+                    continue
+                exitcode = process.exitcode
+                if exitcode is None:
+                    continue
+                worker = self.workers[i] if i < len(self.workers) else None
+                worker_name = worker.get_task_definition_name() if worker is not None else f"worker[{i}]"
+                logger.warning("Worker process exited (worker=%s, pid=%s, exitcode=%s)", worker_name, process.pid, exitcode)
+                if not self.restart_on_failure:
+                    continue
+                self.__restart_worker_process(i)
 
     def __restart_worker_process(self, index: int) -> None:
         if self._monitor_stop_event.is_set():
@@ -522,7 +528,6 @@ class TaskHandler:
         n = 0
         for i, task_runner_process in enumerate(self.task_runner_processes):
             task_runner_process.start()
-            print(f'task runner process {task_runner_process.name} started')
             worker = self.workers[i]
             paused_status = "PAUSED" if getattr(worker, "paused", False) else "ACTIVE"
             logger.debug("Started worker '%s' [%s]", worker.get_task_definition_name(), paused_status)

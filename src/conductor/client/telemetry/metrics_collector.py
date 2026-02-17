@@ -1,5 +1,6 @@
 import logging
 import os
+import threading
 import time
 from collections import deque
 from typing import Any, ClassVar, Dict, List, Tuple
@@ -84,6 +85,11 @@ class MetricsCollector:
        dispatcher.register(PollStarted, metrics.on_poll_started)
        dispatcher.publish(PollStarted(...))
 
+    Thread Safety:
+    This class is thread-safe. Internal dictionaries (counters, gauges, histograms, etc.)
+    are protected by a lock to prevent race conditions when accessed from multiple threads
+    (e.g., worker threads and monitor threads).
+
     Note: Uses Python's Protocol for structural subtyping rather than explicit
     inheritance to avoid circular imports and maintain backward compatibility.
     """
@@ -99,6 +105,7 @@ class MetricsCollector:
         self.quantile_data: Dict[str, deque] = {}  # metric_name+labels -> deque of values
         self.registry = None
         self.must_collect_metrics = False
+        self._lock = threading.RLock()  # Reentrant lock for thread-safe access to internal dictionaries
 
         if settings is None:
             return
@@ -504,12 +511,13 @@ class MetricsCollector:
     ) -> None:
         if not self.must_collect_metrics:
             return
-        counter = self.__get_counter(
-            name=name,
-            documentation=documentation,
-            labelnames=[label.value for label in labels.keys()]
-        )
-        counter.labels(*labels.values()).inc()
+        with self._lock:
+            counter = self.__get_counter(
+                name=name,
+                documentation=documentation,
+                labelnames=[label.value for label in labels.keys()]
+            )
+            counter.labels(*labels.values()).inc()
 
     def __record_gauge(
             self,
@@ -520,12 +528,13 @@ class MetricsCollector:
     ) -> None:
         if not self.must_collect_metrics:
             return
-        gauge = self.__get_gauge(
-            name=name,
-            documentation=documentation,
-            labelnames=[label.value for label in labels.keys()]
-        )
-        gauge.labels(*labels.values()).set(value)
+        with self._lock:
+            gauge = self.__get_gauge(
+                name=name,
+                documentation=documentation,
+                labelnames=[label.value for label in labels.keys()]
+            )
+            gauge.labels(*labels.values()).set(value)
 
     def __get_counter(
             self,
@@ -587,12 +596,13 @@ class MetricsCollector:
     ) -> None:
         if not self.must_collect_metrics:
             return
-        histogram = self.__get_histogram(
-            name=name,
-            documentation=documentation,
-            labelnames=[label.value for label in labels.keys()]
-        )
-        histogram.labels(*labels.values()).observe(value)
+        with self._lock:
+            histogram = self.__get_histogram(
+                name=name,
+                documentation=documentation,
+                labelnames=[label.value for label in labels.keys()]
+            )
+            histogram.labels(*labels.values()).observe(value)
 
     def __get_histogram(
             self,
@@ -630,12 +640,13 @@ class MetricsCollector:
     ) -> None:
         if not self.must_collect_metrics:
             return
-        summary = self.__get_summary(
-            name=name,
-            documentation=documentation,
-            labelnames=[label.value for label in labels.keys()]
-        )
-        summary.labels(*labels.values()).observe(value)
+        with self._lock:
+            summary = self.__get_summary(
+                name=name,
+                documentation=documentation,
+                labelnames=[label.value for label in labels.keys()]
+            )
+            summary.labels(*labels.values()).observe(value)
 
     def __get_summary(
             self,
@@ -681,44 +692,45 @@ class MetricsCollector:
         if not self.must_collect_metrics:
             return
 
-        # Create a key for this metric+labels combination
-        label_values = tuple(labels.values())
-        data_key = f"{name}_{label_values}"
+        with self._lock:
+            # Create a key for this metric+labels combination
+            label_values = tuple(labels.values())
+            data_key = f"{name}_{label_values}"
 
-        # Initialize data window if needed
-        if data_key not in self.quantile_data:
-            self.quantile_data[data_key] = deque(maxlen=self.QUANTILE_WINDOW_SIZE)
+            # Initialize data window if needed
+            if data_key not in self.quantile_data:
+                self.quantile_data[data_key] = deque(maxlen=self.QUANTILE_WINDOW_SIZE)
 
-        # Add new observation
-        self.quantile_data[data_key].append(value)
+            # Add new observation
+            self.quantile_data[data_key].append(value)
 
-        # Calculate and update quantiles
-        observations = sorted(self.quantile_data[data_key])
-        n = len(observations)
+            # Calculate and update quantiles
+            observations = sorted(self.quantile_data[data_key])
+            n = len(observations)
 
-        if n > 0:
-            quantiles = [0.5, 0.75, 0.9, 0.95, 0.99]
-            for q in quantiles:
-                quantile_value = self.__calculate_quantile(observations, q)
+            if n > 0:
+                quantiles = [0.5, 0.75, 0.9, 0.95, 0.99]
+                for q in quantiles:
+                    quantile_value = self.__calculate_quantile(observations, q)
 
-                # Get or create gauge for this quantile
-                gauge = self.__get_quantile_gauge(
+                    # Get or create gauge for this quantile
+                    gauge = self.__get_quantile_gauge(
+                        name=name,
+                        documentation=documentation,
+                        labelnames=[label.value for label in labels.keys()] + ["quantile"],
+                        quantile=q
+                    )
+
+                    # Set gauge value with labels + quantile
+                    gauge.labels(*labels.values(), str(q)).set(quantile_value)
+
+                # Also publish _count and _sum for proper summary metrics
+                self.__update_summary_aggregates(
                     name=name,
                     documentation=documentation,
-                    labelnames=[label.value for label in labels.keys()] + ["quantile"],
-                    quantile=q
+                    labels=labels,
+                    observations=list(self.quantile_data[data_key])
                 )
-
-                # Set gauge value with labels + quantile
-                gauge.labels(*labels.values(), str(q)).set(quantile_value)
-
-            # Also publish _count and _sum for proper summary metrics
-            self.__update_summary_aggregates(
-                name=name,
-                documentation=documentation,
-                labels=labels,
-                observations=list(self.quantile_data[data_key])
-            )
 
     def __calculate_quantile(self, sorted_values: List[float], quantile: float) -> float:
         """Calculate quantile from sorted list of values."""
@@ -770,6 +782,9 @@ class MetricsCollector:
         """
         Update _count and _sum gauges for proper summary metric format.
         This makes the metrics compatible with Prometheus summary type.
+
+        Note: This method should only be called while holding self._lock
+        (called from __record_quantiles which already holds the lock).
         """
         if not observations:
             return
