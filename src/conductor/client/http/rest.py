@@ -91,10 +91,6 @@ class RESTClientObject(object):
         except Exception:
             pass
         self.connection = self._create_default_httpx_client()
-        # Log at debug level for diagnostics
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.debug("Reset HTTP connection after protocol error (HTTP/2 enabled: %s)", self._http2_enabled)
 
     def __del__(self):
         """Cleanup httpx client on object destruction."""

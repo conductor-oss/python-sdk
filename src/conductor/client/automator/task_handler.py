@@ -255,22 +255,7 @@ class TaskHandler:
 
         self.__create_task_runner_processes(workers, configuration, metrics_settings)
         self.__create_metrics_provider_process(metrics_settings)
-
-        # Initialize worker restart counter directly using prometheus_client (if metrics enabled).
-        # We use prometheus_client directly in the parent process instead of MetricsCollector
-        # to avoid registry confusion between parent and worker processes.
         self._worker_restart_counter = None
-        if metrics_settings is not None:
-            try:
-                from prometheus_client import Counter
-                self._worker_restart_counter = Counter(
-                    name='worker_restart_total',
-                    documentation='Number of times TaskHandler restarted a worker subprocess',
-                    labelnames=['taskType']
-                )
-                logger.debug("Initialized worker_restart_total counter in parent process")
-            except Exception as e:
-                logger.debug("Failed to initialize worker restart counter: %s", e)
 
         # Optional supervision: monitor worker processes and (optionally) restart on failure.
         self.monitor_processes = monitor_processes
@@ -441,26 +426,21 @@ class TaskHandler:
         attempt = self._restart_counts[index] + 1
 
         # Exponential backoff per-worker to avoid tight crash loops
-        backoff = min(self.restart_backoff_seconds * (2 ** self._restart_counts[index]), self.restart_backoff_max_seconds)
+        backoff = min(self.restart_backoff_seconds * (2 ** max(self._restart_counts[index], 0)), self.restart_backoff_max_seconds)
         self._next_restart_at[index] = now + backoff
 
         try:
             # Reap the old process (avoid accumulating zombies on repeated restarts).
             old_process = self.task_runner_processes[index]
-            old_pid = getattr(old_process, "pid", None)
             try:
                 if old_process is not None and old_process.exitcode is not None:
-                    # Give process a bit more time to clean up
-                    old_process.join(timeout=0.5)
+                    old_process.join(timeout=0.0)
                     try:
                         old_process.close()
-                        logger.debug("Cleaned up old worker process (worker=%s, pid=%s)", worker.get_task_definition_name(), old_pid)
-                    except Exception as close_err:
-                        logger.debug("Failed to close old worker process (worker=%s, pid=%s): %s",
-                                   worker.get_task_definition_name(), old_pid, close_err)
-            except Exception as join_err:
-                logger.debug("Failed to join old worker process (worker=%s, pid=%s): %s",
-                           worker.get_task_definition_name(), old_pid, join_err)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
 
             new_process = self.__build_process_for_worker(worker)
             self.task_runner_processes[index] = new_process
@@ -468,10 +448,9 @@ class TaskHandler:
             self._restart_counts[index] = attempt
             self.__inc_worker_restart_metric(worker.get_task_definition_name())
             logger.info(
-                "Restarted worker process (worker=%s, attempt=%s, old_pid=%s, new_pid=%s, next_backoff=%ss)",
+                "Restarted worker process (worker=%s, attempt=%s, pid=%s, next_backoff=%ss)",
                 worker.get_task_definition_name(),
                 attempt,
-                old_pid,
                 new_process.pid,
                 backoff
             )
@@ -479,14 +458,26 @@ class TaskHandler:
             logger.error("Failed to restart worker process (worker=%s): %s", worker.get_task_definition_name(), e)
 
     def __inc_worker_restart_metric(self, task_type: str) -> None:
-        """Best-effort counter increment for worker subprocess restarts."""
-        if self._worker_restart_counter is None:
+        """Best-effort counter increment for worker subprocess restarts (requires metrics_settings)."""
+        if self._metrics_settings is None:
             return
 
         try:
-            # Increment the prometheus counter directly.
-            # This writes to the shared multiprocess metrics directory.
-            self._worker_restart_counter.labels(taskType=task_type).inc()
+            # Avoid instantiating MetricsCollector here: it keeps a global registry which can be problematic
+            # when multiple TaskHandlers/tests use different PROMETHEUS_MULTIPROC_DIR values in one process.
+            from conductor.client.telemetry import metrics_collector as mc
+
+            mc._ensure_prometheus_imported()
+            if self._worker_restart_counter is None:
+                # Use a dedicated registry to avoid duplicate metric registration errors in the default registry.
+                registry = mc.CollectorRegistry()
+                self._worker_restart_counter = mc.Counter(
+                    name=MetricName.WORKER_RESTART,
+                    documentation=MetricDocumentation.WORKER_RESTART,
+                    labelnames=[MetricLabel.TASK_TYPE.value],
+                    registry=registry,
+                )
+            self._worker_restart_counter.labels(task_type).inc()
         except Exception as e:
             # Metrics should never break worker supervision.
             logger.debug("Failed to increment worker_restart metric: %s", e)
@@ -511,19 +502,17 @@ class TaskHandler:
 
     def get_worker_process_status(self) -> List[Dict[str, Any]]:
         """Return basic worker process status for health checks / observability."""
-        # Lock to ensure consistent snapshot of process state
-        with self._process_lock:
-            statuses: List[Dict[str, Any]] = []
-            for i, worker in enumerate(self.workers):
-                process = self.task_runner_processes[i] if i < len(self.task_runner_processes) else None
-                statuses.append({
-                    "worker": worker.get_task_definition_name(),
-                    "pid": getattr(process, "pid", None),
-                    "alive": process.is_alive() if process is not None else False,
-                    "exitcode": getattr(process, "exitcode", None),
-                    "restart_count": self._restart_counts[i] if i < len(self._restart_counts) else 0,
-                })
-            return statuses
+        statuses: List[Dict[str, Any]] = []
+        for i, worker in enumerate(self.workers):
+            process = self.task_runner_processes[i] if i < len(self.task_runner_processes) else None
+            statuses.append({
+                "worker": worker.get_task_definition_name(),
+                "pid": getattr(process, "pid", None),
+                "alive": process.is_alive() if process is not None else False,
+                "exitcode": getattr(process, "exitcode", None),
+                "restart_count": self._restart_counts[i] if i < len(self._restart_counts) else 0,
+            })
+        return statuses
 
     def is_healthy(self) -> bool:
         """True if all worker processes are alive."""
@@ -541,7 +530,7 @@ class TaskHandler:
             task_runner_process.start()
             worker = self.workers[i]
             paused_status = "PAUSED" if getattr(worker, "paused", False) else "ACTIVE"
-            logger.info("Started worker '%s' [%s] (pid=%s)", worker.get_task_definition_name(), paused_status, task_runner_process.pid)
+            logger.debug("Started worker '%s' [%s]", worker.get_task_definition_name(), paused_status)
             n = n + 1
         logger.info("Started %s TaskRunner process(es)", n)
 
