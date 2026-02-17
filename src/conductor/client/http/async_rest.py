@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import re
 
 import httpx
@@ -46,35 +47,47 @@ class RESTResponse(io.IOBase):
 class AsyncRESTClientObject(object):
     def __init__(self, connection=None):
         if connection is None:
-            # Create httpx async client with HTTP/2 support and connection pooling
-            # HTTP/2 provides:
-            # - Request/response multiplexing (multiple requests over single connection)
-            # - Header compression (HPACK)
-            # - Server push capability
-            # - Binary protocol (more efficient than HTTP/1.1 text)
-            limits = httpx.Limits(
-                max_connections=100,      # Total connections across all hosts
-                max_keepalive_connections=50,  # Persistent connections to keep alive
-                keepalive_expiry=30.0     # Keep connections alive for 30 seconds
-            )
-
-            # Retry configuration for transient failures
-            transport = httpx.AsyncHTTPTransport(
-                retries=3,  # Retry up to 3 times
-                http2=True  # Enable HTTP/2 support
-            )
-
-            self.connection = httpx.AsyncClient(
-                limits=limits,
-                transport=transport,
-                timeout=httpx.Timeout(120.0, connect=10.0),  # 120s total, 10s connect
-                follow_redirects=True,
-                http2=True  # Enable HTTP/2 globally
-            )
+            self._http2_enabled = self._is_http2_enabled()
+            self.connection = self._create_default_httpx_client()
             self._owns_connection = True
         else:
             self.connection = connection
             self._owns_connection = False
+            self._http2_enabled = None
+
+    def _is_http2_enabled(self) -> bool:
+        val = os.getenv("CONDUCTOR_HTTP2_ENABLED", "true").strip().lower()
+        return val not in ("0", "false", "no", "off")
+
+    def _create_default_httpx_client(self) -> httpx.AsyncClient:
+        limits = httpx.Limits(
+            max_connections=100,           # Total connections across all hosts
+            max_keepalive_connections=50,  # Persistent connections to keep alive
+            keepalive_expiry=30.0          # Keep connections alive for 30 seconds
+        )
+
+        transport = httpx.AsyncHTTPTransport(
+            retries=3,
+            http2=bool(self._http2_enabled)
+        )
+
+        return httpx.AsyncClient(
+            limits=limits,
+            transport=transport,
+            timeout=httpx.Timeout(120.0, connect=10.0),
+            follow_redirects=True,
+            http2=bool(self._http2_enabled)
+        )
+
+    async def _reset_connection(self) -> None:
+        if not getattr(self, "_owns_connection", False):
+            return
+        try:
+            if getattr(self, "connection", None) is not None:
+                await self.connection.aclose()
+        except Exception:
+            pass
+        self.connection = self._create_default_httpx_client()
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -113,6 +126,7 @@ class AsyncRESTClientObject(object):
         method = method.upper()
         assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT',
                           'PATCH', 'OPTIONS']
+        idempotent_methods = {'GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE'}
 
         if post_params and body:
             raise ValueError(
@@ -134,46 +148,56 @@ class AsyncRESTClientObject(object):
         if 'Content-Type' not in headers:
             headers['Content-Type'] = 'application/json'
 
-        try:
-            # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
-            if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
-                if query_params:
-                    url += '?' + urlencode(query_params)
-                if re.search('json', headers['Content-Type'], re.IGNORECASE) or isinstance(body, str):
-                    request_body = '{}'
-                    if body is not None:
-                        request_body = json.dumps(body)
-                        if isinstance(body, str):
-                            request_body = request_body.strip('"')
+        for attempt in range(2):
+            try:
+                # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
+                if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
+                    request_url = url
+                    if query_params:
+                        request_url += '?' + urlencode(query_params)
+                    if re.search('json', headers['Content-Type'], re.IGNORECASE) or isinstance(body, str):
+                        request_body = '{}'
+                        if body is not None:
+                            request_body = json.dumps(body)
+                            if isinstance(body, str):
+                                request_body = request_body.strip('"')
+                        r = await self.connection.request(
+                            method, request_url,
+                            content=request_body,
+                            timeout=timeout,
+                            headers=headers
+                        )
+                    else:
+                        # Cannot generate the request from given parameters
+                        msg = """Cannot prepare a request message for provided
+                                 arguments. Please check that your arguments match
+                                 declared content type."""
+                        raise ApiException(status=0, reason=msg)
+                # For `GET`, `HEAD`
+                else:
                     r = await self.connection.request(
                         method, url,
-                        content=request_body,
+                        params=query_params,
                         timeout=timeout,
                         headers=headers
                     )
-                else:
-                    # Cannot generate the request from given parameters
-                    msg = """Cannot prepare a request message for provided
-                             arguments. Please check that your arguments match
-                             declared content type."""
-                    raise ApiException(status=0, reason=msg)
-            # For `GET`, `HEAD`
-            else:
-                r = await self.connection.request(
-                    method, url,
-                    params=query_params,
-                    timeout=timeout,
-                    headers=headers
-                )
-        except httpx.TimeoutException as e:
-            msg = f"Request timeout: {e}"
-            raise ApiException(status=0, reason=msg)
-        except httpx.ConnectError as e:
-            msg = f"Connection error: {e}"
-            raise ApiException(status=0, reason=msg)
-        except Exception as e:
-            msg = "{0}\n{1}".format(type(e).__name__, str(e))
-            raise ApiException(status=0, reason=msg)
+                break
+            except (httpx.ProtocolError, httpx.ReadError, httpx.WriteError) as e:
+                if attempt == 0 and self._owns_connection:
+                    await self._reset_connection()
+                    if method in idempotent_methods:
+                        continue
+                msg = f"Protocol error: {e}"
+                raise ApiException(status=0, reason=msg)
+            except httpx.TimeoutException as e:
+                msg = f"Request timeout: {e}"
+                raise ApiException(status=0, reason=msg)
+            except httpx.ConnectError as e:
+                msg = f"Connection error: {e}"
+                raise ApiException(status=0, reason=msg)
+            except Exception as e:
+                msg = "{0}\n{1}".format(type(e).__name__, str(e))
+                raise ApiException(status=0, reason=msg)
 
         if _preload_content:
             r = RESTResponse(r)
@@ -292,6 +316,10 @@ class ApiException(Exception):
 
     def is_not_found(self) -> bool:
         return self.code == 404
+
+
+# Backwards compatible alias for older SDK versions/tests.
+RestException = ApiException
 
 class AuthorizationException(ApiException):
     def __init__(self, status=None, reason=None, http_resp=None, body=None):

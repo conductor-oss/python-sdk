@@ -25,6 +25,7 @@ python examples/workers_e2e.py
 |------|-------------|-----|
 | **workers_e2e.py** | ⭐ Start here - sync + async workers | `python examples/workers_e2e.py` |
 | **worker_example.py** | Comprehensive patterns (None returns, TaskInProgress) | `python examples/worker_example.py` |
+| **fastapi_worker_service.py** | FastAPI exposing a workflow as an API (+ workers) | `uvicorn examples.fastapi_worker_service:app --port 8081 --workers 1` |
 | **worker_configuration_example.py** | Hierarchical configuration (env vars) | `python examples/worker_configuration_example.py` |
 | **task_context_example.py** | Task context (logs, poll_count, task_id) | `python examples/task_context_example.py` |
 | **task_workers.py** | Task worker patterns with dataclasses | `python examples/task_workers.py` |

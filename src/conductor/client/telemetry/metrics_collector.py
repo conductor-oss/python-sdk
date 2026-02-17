@@ -87,31 +87,37 @@ class MetricsCollector:
     Note: Uses Python's Protocol for structural subtyping rather than explicit
     inheritance to avoid circular imports and maintain backward compatibility.
     """
-    counters: ClassVar[Dict[str, Counter]] = {}
-    gauges: ClassVar[Dict[str, Gauge]] = {}
-    histograms: ClassVar[Dict[str, Histogram]] = {}
-    summaries: ClassVar[Dict[str, Summary]] = {}
-    quantile_metrics: ClassVar[Dict[str, Gauge]] = {}  # metric_name -> Gauge with quantile label (used as summary)
-    quantile_data: ClassVar[Dict[str, deque]] = {}  # metric_name+labels -> deque of values
-    registry = None  # Lazy initialization - created when first MetricsCollector instance is created
-    must_collect_metrics = False
     QUANTILE_WINDOW_SIZE = 1000  # Keep last 1000 observations for quantile calculation
 
     def __init__(self, settings: MetricsSettings):
-        if settings is not None:
-            os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.directory
+        # Instance state (avoid cross-test/dir interference from class-level caches).
+        self.counters: Dict[str, Counter] = {}
+        self.gauges: Dict[str, Gauge] = {}
+        self.histograms: Dict[str, Histogram] = {}
+        self.summaries: Dict[str, Summary] = {}
+        self.quantile_metrics: Dict[str, Gauge] = {}  # metric_name -> Gauge with quantile label (used as summary)
+        self.quantile_data: Dict[str, deque] = {}  # metric_name+labels -> deque of values
+        self.registry = None
+        self.must_collect_metrics = False
 
-            # Import prometheus_client NOW (after PROMETHEUS_MULTIPROC_DIR is set)
-            _ensure_prometheus_imported()
+        if settings is None:
+            return
 
-            # Initialize registry on first use (after PROMETHEUS_MULTIPROC_DIR is set)
-            if MetricsCollector.registry is None:
-                MetricsCollector.registry = CollectorRegistry()
-                MultiProcessCollector(MetricsCollector.registry)
-                logger.debug(f"Created CollectorRegistry with multiprocess support")
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.directory
 
-            self.must_collect_metrics = True
-            logger.debug(f"MetricsCollector initialized with directory={settings.directory}, must_collect={self.must_collect_metrics}")
+        # Import prometheus_client NOW (after PROMETHEUS_MULTIPROC_DIR is set).
+        _ensure_prometheus_imported()
+
+        # Each MetricsCollector instance gets its own registry so callers/tests can
+        # safely use different PROMETHEUS_MULTIPROC_DIR values in the same process.
+        self.registry = CollectorRegistry()
+
+        self.must_collect_metrics = True
+        logger.debug(
+            "MetricsCollector initialized with directory=%s, must_collect=%s",
+            settings.directory,
+            self.must_collect_metrics,
+        )
 
     @staticmethod
     def provide_metrics(settings: MetricsSettings) -> None:
@@ -295,6 +301,16 @@ class MetricsCollector:
             name=MetricName.THREAD_UNCAUGHT_EXCEPTION,
             documentation=MetricDocumentation.THREAD_UNCAUGHT_EXCEPTION,
             labels={}
+        )
+
+    def increment_worker_restart(self, task_type: str) -> None:
+        """Incremented each time TaskHandler restarts a worker subprocess."""
+        self.__increment_counter(
+            name=MetricName.WORKER_RESTART,
+            documentation=MetricDocumentation.WORKER_RESTART,
+            labels={
+                MetricLabel.TASK_TYPE: task_type
+            }
         )
 
     def increment_task_poll_error(self, task_type: str, exception: Exception) -> None:

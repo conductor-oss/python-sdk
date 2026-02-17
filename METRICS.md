@@ -33,6 +33,7 @@ The Conductor Python SDK includes built-in metrics collection using Prometheus t
 | `task_result_size` | Gauge | `taskType` | Size of task result payload (bytes) |
 | `task_execution_queue_full_total` | Counter | `taskType` | Number of times execution queue was full |
 | `task_paused_total` | Counter | `taskType` | Number of polls while worker paused |
+| `worker_restart_total` | Counter | `taskType` | Number of times TaskHandler restarted a worker subprocess |
 | `external_payload_used_total` | Counter | `taskType`, `payloadType` | External payload storage usage count |
 | `workflow_input_size` | Gauge | `workflowType`, `version` | Workflow input payload size (bytes) |
 | `workflow_start_error_total` | Counter | `workflowType`, `exception` | Workflow start error count |

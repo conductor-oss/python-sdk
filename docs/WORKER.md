@@ -259,10 +259,62 @@ workers = [
     )
 ]
 
-# If there are decorated workers in your application, scan_for_annotated_workers should be set
-# default value of scan_for_annotated_workers is False
+# TaskHandler scans for @worker_task decorated workers by default.
+# Set scan_for_annotated_workers=False if you want to disable auto-discovery.
 with TaskHandler(workers, configuration, scan_for_annotated_workers=True) as task_handler:
     task_handler.start_processes()
+```
+
+### Resilience: auto-restart and health checks
+
+If you run workers as a long-lived service (e.g., alongside FastAPI/Uvicorn), you can optionally enable process
+supervision so the `TaskHandler` monitors worker processes and restarts them if they exit unexpectedly:
+
+```python
+with TaskHandler(
+    workers,
+    configuration,
+    scan_for_annotated_workers=True,
+    # Enabled by default. Set to False to disable supervision.
+    monitor_processes=True,
+    restart_on_failure=True,
+) as task_handler:
+    task_handler.start_processes()
+```
+
+For a `/healthcheck` endpoint, you can use:
+
+```python
+task_handler.is_healthy()
+task_handler.get_worker_process_status()
+```
+
+To disable restarts/monitoring (e.g., for local debugging), set:
+
+```python
+TaskHandler(..., monitor_processes=False, restart_on_failure=False)
+```
+
+### Mitigation for intermittent HTTP/2 connection termination
+
+The SDK uses `httpx` for outbound calls to the Conductor/Orkes server. By default, it enables HTTP/2 for these calls.
+In some environments (certain proxies/load balancers/NATs), long-lived HTTP/2 connections may be terminated, which can
+surface as errors like `httpcore.RemoteProtocolError: <ConnectionTerminated ...>`.
+
+The SDK automatically attempts to recover by recreating the underlying HTTP client and retrying the request once.
+If your environment is still unstable with HTTP/2, you can force the SDK to use HTTP/1.1 instead via an environment
+variable.
+
+#### `CONDUCTOR_HTTP2_ENABLED`
+
+- **What it does**: Controls whether the Conductor Python SDK uses HTTP/2 for outbound requests to the Conductor server.
+- **Default**: `true` (HTTP/2 enabled).
+- **Scope**: Affects all SDK clients (workers, `OrkesClients`, sync + async). It does *not* change your FastAPI/Uvicorn
+  server behavior; it only changes how the SDK talks to Conductor.
+- **Values**: `false|0|no|off` disables HTTP/2. Anything else enables it.
+
+```shell
+export CONDUCTOR_HTTP2_ENABLED=false
 ```
 
 If you paste the above code in a file called main.py, you can launch the workers by running:

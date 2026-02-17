@@ -13,6 +13,7 @@ This test file covers:
 """
 import multiprocessing
 import os
+import tempfile
 import unittest
 from unittest.mock import Mock, patch, MagicMock, PropertyMock, call
 from conductor.client.automator.task_handler import (
@@ -58,6 +59,81 @@ class TestTaskHandlerInitialization(unittest.TestCase):
                     process.kill()
             except Exception:
                 pass
+
+
+class _FakeProcess:
+    def __init__(self, *, alive: bool, exitcode: int, pid: int = 123):
+        self._alive = alive
+        self.exitcode = exitcode
+        self.pid = pid
+        self.started = False
+
+    def is_alive(self):
+        return self._alive
+
+    def start(self):
+        self.started = True
+        self._alive = True
+        # Simulate OS-assigned PID on start
+        self.pid = 999
+
+
+class TestTaskHandlerSupervision(unittest.TestCase):
+    @patch('conductor.client.automator.task_handler._setup_logging_queue')
+    @patch('conductor.client.automator.task_handler.importlib.import_module')
+    def test_restart_dead_worker_process(self, mock_import, mock_logging):
+        mock_logging.return_value = (Mock(), Mock())
+
+        handler = TaskHandler(
+            workers=[ClassWorker('test_task')],
+            configuration=Configuration(),
+            scan_for_annotated_workers=False,
+            monitor_processes=True,
+            restart_on_failure=True,
+            monitor_interval_seconds=0.01,
+            restart_backoff_seconds=0.0,
+            restart_backoff_max_seconds=0.0
+        )
+
+        # Replace the real Process with a dead one to trigger restart logic.
+        handler.task_runner_processes[0] = _FakeProcess(alive=False, exitcode=1, pid=111)
+        new_proc = _FakeProcess(alive=False, exitcode=None, pid=None)
+        handler._TaskHandler__build_process_for_worker = Mock(return_value=new_proc)
+
+        handler._TaskHandler__check_and_restart_processes()
+
+        self.assertTrue(new_proc.started)
+        self.assertEqual(handler.get_worker_process_status()[0]["restart_count"], 1)
+
+    @patch('conductor.client.automator.task_handler._setup_logging_queue')
+    @patch('conductor.client.automator.task_handler.importlib.import_module')
+    def test_restart_increments_worker_restart_metric(self, mock_import, mock_logging):
+        mock_logging.return_value = (Mock(), Mock())
+
+        with tempfile.TemporaryDirectory(prefix="conductor-metrics-") as metrics_dir:
+            metrics_settings = MetricsSettings(directory=metrics_dir, update_interval=0.5)
+            handler = TaskHandler(
+                workers=[ClassWorker('test_task')],
+                configuration=Configuration(),
+                metrics_settings=metrics_settings,
+                scan_for_annotated_workers=False,
+                monitor_processes=True,
+                restart_on_failure=True,
+                monitor_interval_seconds=0.01,
+                restart_backoff_seconds=0.0,
+                restart_backoff_max_seconds=0.0
+            )
+
+            handler.task_runner_processes[0] = _FakeProcess(alive=False, exitcode=1, pid=111)
+            new_proc = _FakeProcess(alive=False, exitcode=None, pid=None)
+            handler._TaskHandler__build_process_for_worker = Mock(return_value=new_proc)
+
+            with patch.object(handler, "_TaskHandler__inc_worker_restart_metric") as mock_inc:
+                handler._TaskHandler__check_and_restart_processes()
+
+            self.assertTrue(new_proc.started)
+            self.assertEqual(handler.get_worker_process_status()[0]["restart_count"], 1)
+            mock_inc.assert_called_once_with('test_task')
 
     @patch('conductor.client.automator.task_handler._setup_logging_queue')
     def test_initialization_with_no_workers(self, mock_logging):
@@ -330,20 +406,7 @@ class TestTaskHandlerProcessManagement(unittest.TestCase):
         # Clean up any started processes
         for handler in self.handlers:
             try:
-                # Terminate all task runner processes
-                for process in handler.task_runner_processes:
-                    if process.is_alive():
-                        process.terminate()
-                        process.join(timeout=1)
-                        if process.is_alive():
-                            process.kill()
-                # Terminate metrics process if it exists
-                if hasattr(handler, 'metrics_provider_process') and handler.metrics_provider_process:
-                    if handler.metrics_provider_process.is_alive():
-                        handler.metrics_provider_process.terminate()
-                        handler.metrics_provider_process.join(timeout=1)
-                        if handler.metrics_provider_process.is_alive():
-                            handler.metrics_provider_process.kill()
+                handler.stop_processes()
             except Exception:
                 pass
 
@@ -930,13 +993,7 @@ class TestWorkerConfiguration(unittest.TestCase):
         # Clean up any started processes
         for handler in self.handlers:
             try:
-                # Terminate all task runner processes
-                for process in handler.task_runner_processes:
-                    if process.is_alive():
-                        process.terminate()
-                        process.join(timeout=1)
-                        if process.is_alive():
-                            process.kill()
+                handler.stop_processes()
             except Exception:
                 pass
         # Restore original environment
@@ -997,13 +1054,7 @@ class TestTaskHandlerPausedWorker(unittest.TestCase):
         # Clean up any started processes
         for handler in self.handlers:
             try:
-                # Terminate all task runner processes
-                for process in handler.task_runner_processes:
-                    if process.is_alive():
-                        process.terminate()
-                        process.join(timeout=1)
-                        if process.is_alive():
-                            process.kill()
+                handler.stop_processes()
             except Exception:
                 pass
 
