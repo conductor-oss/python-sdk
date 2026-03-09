@@ -33,6 +33,9 @@ class TestOrkesWorkflowClientIntg(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from tests.integration.conftest import skip_if_server_unavailable
+        skip_if_server_unavailable()
+
         cls.config = get_configuration()
         cls.workflow_client = OrkesWorkflowClient(cls.config)
         logger.info(f'setting up TestOrkesWorkflowClientIntg with config {cls.config}')

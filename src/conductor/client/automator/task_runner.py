@@ -180,9 +180,9 @@ class TaskRunner:
         """
         task_name = self.worker.get_task_definition_name()
 
-        logger.info("=" * 80)
-        logger.info(f"Registering task definition: {task_name}")
-        logger.info("=" * 80)
+        logger.debug("=" * 80)
+        logger.debug(f"Registering task definition: {task_name}")
+        logger.debug("=" * 80)
 
         try:
             # Create metadata client
@@ -195,7 +195,7 @@ class TaskRunner:
             schema_registry_available = True
 
             if hasattr(self.worker, 'execute_function'):
-                logger.info(f"Generating JSON schemas from function signature...")
+                logger.debug(f"Generating JSON schemas from function signature...")
                 # Pass strict_schema flag to control additionalProperties
                 strict_mode = getattr(self.worker, 'strict_schema', False)
                 logger.debug(f"  strict_schema mode: {strict_mode}")
@@ -206,9 +206,9 @@ class TaskRunner:
                     has_output_schema = schemas.get('output') is not None
 
                     if has_input_schema or has_output_schema:
-                        logger.info(f"  ✓ Generated schemas: input={'Yes' if has_input_schema else 'No'}, output={'Yes' if has_output_schema else 'No'}")
+                        logger.debug(f"  ✓ Generated schemas: input={'Yes' if has_input_schema else 'No'}, output={'Yes' if has_output_schema else 'No'}")
                     else:
-                        logger.info(f"  ⚠ No schemas generated (type hints not fully supported)")
+                        logger.debug(f"  ⚠ No schemas generated (type hints not fully supported)")
 
                     # Register schemas with schema client
                     try:
@@ -222,7 +222,7 @@ class TaskRunner:
                         schema_client = None
 
                     if schema_registry_available and schema_client:
-                        logger.info(f"Registering JSON schemas...")
+                        logger.debug(f"Registering JSON schemas...")
                         try:
                             # Register input schema
                             if schemas.get('input'):
@@ -236,7 +236,7 @@ class TaskRunner:
                                         data=schemas['input']
                                     )
                                     schema_client.register_schema(input_schema_def)
-                                    logger.info(f"  ✓ Registered input schema: {input_schema_name} (v1)")
+                                    logger.debug(f"  ✓ Registered input schema: {input_schema_name} (v1)")
 
                                 except Exception as e:
                                     # Check if this is a 404 (API endpoint doesn't exist on server)
@@ -261,7 +261,7 @@ class TaskRunner:
                                         data=schemas['output']
                                     )
                                     schema_client.register_schema(output_schema_def)
-                                    logger.info(f"  ✓ Registered output schema: {output_schema_name} (v1)")
+                                    logger.debug(f"  ✓ Registered output schema: {output_schema_name} (v1)")
 
                                 except Exception as e:
                                     # Check if this is a 404 (API endpoint doesn't exist on server)
@@ -276,12 +276,12 @@ class TaskRunner:
                         except Exception as e:
                             logger.debug(f"Could not register schemas for {task_name}: {e}")
                 else:
-                    logger.info(f"  ⚠ No schemas generated (unable to analyze function signature)")
+                    logger.debug(f"  ⚠ No schemas generated (unable to analyze function signature)")
             else:
-                logger.info(f"  ⚠ Class-based worker (no execute_function) - registering task without schemas")
+                logger.debug(f"  ⚠ Class-based worker (no execute_function) - registering task without schemas")
 
             # Create task definition
-            logger.info(f"Creating task definition for '{task_name}'...")
+            logger.debug(f"Creating task definition for '{task_name}'...")
 
             # Check if task_def_template is provided
             logger.debug(f"  task_def_template present: {hasattr(self.worker, 'task_def_template')}")
@@ -290,7 +290,7 @@ class TaskRunner:
 
             # Use provided task_def template if available, otherwise create minimal TaskDef
             if hasattr(self.worker, 'task_def_template') and self.worker.task_def_template:
-                logger.info(f"  Using provided TaskDef configuration:")
+                logger.debug(f"  Using provided TaskDef configuration:")
 
                 # Create a copy to avoid mutating the original
                 import copy
@@ -301,22 +301,22 @@ class TaskRunner:
 
                 # Log configuration being applied
                 if task_def.retry_count:
-                    logger.info(f"    - retry_count: {task_def.retry_count}")
+                    logger.debug(f"    - retry_count: {task_def.retry_count}")
                 if task_def.retry_logic:
-                    logger.info(f"    - retry_logic: {task_def.retry_logic}")
+                    logger.debug(f"    - retry_logic: {task_def.retry_logic}")
                 if task_def.timeout_seconds:
-                    logger.info(f"    - timeout_seconds: {task_def.timeout_seconds}")
+                    logger.debug(f"    - timeout_seconds: {task_def.timeout_seconds}")
                 if task_def.timeout_policy:
-                    logger.info(f"    - timeout_policy: {task_def.timeout_policy}")
+                    logger.debug(f"    - timeout_policy: {task_def.timeout_policy}")
                 if task_def.response_timeout_seconds:
-                    logger.info(f"    - response_timeout_seconds: {task_def.response_timeout_seconds}")
+                    logger.debug(f"    - response_timeout_seconds: {task_def.response_timeout_seconds}")
                 if task_def.concurrent_exec_limit:
-                    logger.info(f"    - concurrent_exec_limit: {task_def.concurrent_exec_limit}")
+                    logger.debug(f"    - concurrent_exec_limit: {task_def.concurrent_exec_limit}")
                 if task_def.rate_limit_per_frequency:
-                    logger.info(f"    - rate_limit: {task_def.rate_limit_per_frequency}/{task_def.rate_limit_frequency_in_seconds}s")
+                    logger.debug(f"    - rate_limit: {task_def.rate_limit_per_frequency}/{task_def.rate_limit_frequency_in_seconds}s")
             else:
                 # Create minimal task definition
-                logger.info(f"  Creating minimal TaskDef (no custom configuration)")
+                logger.debug(f"  Creating minimal TaskDef (no custom configuration)")
                 task_def = TaskDef(name=task_name)
 
             # Link schemas if they were generated (overrides any schemas in task_def_template)
@@ -352,7 +352,7 @@ class TaskRunner:
                         existing = metadata_client.get_task_def(task_name)
                         if existing:
                             logger.info(f"✓ Task definition '{task_name}' already exists - skipping (overwrite=False)")
-                            logger.info(f"  View at: {self.configuration.ui_host}/taskDef/{task_name}")
+                            logger.debug(f"  View at: {self.configuration.ui_host}/taskDef/{task_name}")
                             return
                     except Exception:
                         # Task doesn't exist, proceed to register
@@ -362,7 +362,7 @@ class TaskRunner:
                 # Print success message with link
                 task_def_url = f"{self.configuration.ui_host}/taskDef/{task_name}"
                 logger.info(f"✓ Registered/Updated task definition: {task_name} with {task_def.to_dict()}")
-                logger.info(f"  View at: {task_def_url}")
+                logger.debug(f"  View at: {task_def_url}")
 
                 if input_schema_name or output_schema_name:
                     schema_count = sum([1 for s in [input_schema_name, output_schema_name] if s])
@@ -375,7 +375,7 @@ class TaskRunner:
 
                     task_def_url = f"{self.configuration.ui_host}/taskDef/{task_name}"
                     logger.info(f"✓ Registered task definition: {task_name}")
-                    logger.info(f"  View at: {task_def_url}")
+                    logger.debug(f"  View at: {task_def_url}")
 
                     if input_schema_name or output_schema_name:
                         schema_count = sum([1 for s in [input_schema_name, output_schema_name] if s])
@@ -488,8 +488,13 @@ class TaskRunner:
                     output_size_bytes=output_size
                 ))
 
-                update_response = self.__update_task(task_result)
-                logger.debug("Successfully updated async task %s with output %s, response: %s", task_id, task_result.output_data, update_response)
+                next_task = self.__update_task(task_result)
+                logger.debug("Successfully updated async task %s with output %s, next_task: %s", task_id, task_result.output_data, next_task.task_id if next_task else None)
+
+                # If v2 returned a next task, submit it to the executor
+                if next_task is not None and next_task.task_id:
+                    future = self._executor.submit(self.__execute_and_update_task, next_task)
+                    self._running_tasks.add(future)
             except Exception as e:
                 logger.error(
                     "Error updating completed async task %s: %s",
@@ -498,19 +503,26 @@ class TaskRunner:
                 )
 
     def __execute_and_update_task(self, task: Task) -> None:
-        """Execute task and update result (runs in thread pool)"""
+        """Execute task and update result in a tight loop (runs in thread pool).
+
+        Uses the v2 update endpoint which returns the next task to process.
+        Loops: execute -> update_v2 (get next task) -> execute -> ...
+        The loop breaks when no next task is available, the task is async/in-progress,
+        or shutdown is requested.
+        """
         try:
-            task_result = self.__execute_task(task)
-            # If task returned None, it's an async task running in background - don't update yet
-            # (Note: __execute_task returns None for async tasks, regardless of their actual return value)
-            if task_result is None:
-                logger.debug("Task %s is running async, will update when complete", task.task_id)
-                return
-            # If task returned TaskInProgress, it's running async - don't update yet
-            if isinstance(task_result, TaskInProgress):
-                logger.debug("Task %s is in progress, will update when complete", task.task_id)
-                return
-            self.__update_task(task_result)
+            while task is not None and not self._shutdown:
+                task_result = self.__execute_task(task)
+                # If task returned None, it's an async task running in background - don't update yet
+                if task_result is None:
+                    logger.debug("Task %s is running async, will update when complete", task.task_id)
+                    return
+                # If task returned TaskInProgress, it's running async - don't update yet
+                if isinstance(task_result, TaskInProgress):
+                    logger.debug("Task %s is in progress, will update when complete", task.task_id)
+                    return
+                # Update task and get next task from v2 response
+                task = self.__update_task(task_result)
         except Exception as e:
             logger.error(
                 "Error executing/updating task %s: %s",
@@ -565,9 +577,8 @@ class TaskRunner:
                 tasks_received=len(tasks) if tasks else 0
             ))
 
-            # Success - reset auth failure counter
-            if tasks:
-                self._auth_failures = 0
+            # Success - reset auth failure counter (any successful HTTP response means auth is working)
+            self._auth_failures = 0
 
             return tasks if tasks else []
 
@@ -608,87 +619,6 @@ class TaskRunner:
                 traceback.format_exc()
             )
             return []
-
-    def __poll_task(self) -> Task:
-        task_definition_name = self.worker.get_task_definition_name()
-        if self.worker.paused:
-            logger.debug("Stop polling task for: %s", task_definition_name)
-            return None
-
-        # Apply exponential backoff if we have recent auth failures
-        if self._auth_failures > 0:
-            now = time.time()
-            # Exponential backoff: 2^failures seconds (2s, 4s, 8s, 16s, 32s)
-            backoff_seconds = min(2 ** self._auth_failures, 60)  # Cap at 60s
-            time_since_last_failure = now - self._last_auth_failure
-
-            if time_since_last_failure < backoff_seconds:
-                # Still in backoff period - skip polling
-                time.sleep(0.1)  # Small sleep to prevent tight loop
-                return None
-
-        if self.metrics_collector is not None:
-            self.metrics_collector.increment_task_poll(
-                task_definition_name
-            )
-
-        try:
-            start_time = time.time()
-            domain = self.worker.get_domain()
-            params = {"workerid": self.worker.get_identity()}
-            # Only add domain if it's not None and not empty string
-            if domain is not None and domain != "":
-                params["domain"] = domain
-            task = self.task_client.poll(tasktype=task_definition_name, **params)
-            finish_time = time.time()
-            time_spent = finish_time - start_time
-            if self.metrics_collector is not None:
-                self.metrics_collector.record_task_poll_time(task_definition_name, time_spent)
-        except AuthorizationException as auth_exception:
-            # Track auth failure for backoff
-            self._auth_failures += 1
-            self._last_auth_failure = time.time()
-            backoff_seconds = min(2 ** self._auth_failures, 60)
-
-            if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(task_definition_name, type(auth_exception))
-
-            if auth_exception.invalid_token:
-                logger.error(
-                    f"Failed to poll task {task_definition_name} due to invalid auth token "
-                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s). "
-                    "Please check your CONDUCTOR_AUTH_KEY and CONDUCTOR_AUTH_SECRET."
-                )
-            else:
-                logger.error(
-                    f"Failed to poll task {task_definition_name} error: {auth_exception.status} - {auth_exception.error_code} "
-                    f"(failure #{self._auth_failures}). Will retry with exponential backoff ({backoff_seconds}s)."
-                )
-            return None
-        except Exception as e:
-            if self.metrics_collector is not None:
-                self.metrics_collector.increment_task_poll_error(task_definition_name, type(e))
-            logger.error(
-                "Failed to poll task for: %s, reason: %s",
-                task_definition_name,
-                traceback.format_exc()
-            )
-            return None
-
-        # Success - reset auth failure counter
-        if task is not None:
-            self._auth_failures = 0
-            logger.trace(
-                "Polled task: %s, worker_id: %s, domain: %s",
-                task_definition_name,
-                self.worker.get_identity(),
-                self.worker.get_domain()
-            )
-        else:
-            # No task available - also reset auth failures since poll succeeded
-            self._auth_failures = 0
-
-        return task
 
     def __execute_task(self, task: Task) -> TaskResult:
         if not isinstance(task, Task):
@@ -894,6 +824,7 @@ class TaskRunner:
                 task_result.output_data = context_result.output_data
 
     def __update_task(self, task_result: TaskResult):
+        """Update task result using v2 endpoint. Returns the next Task to process, or None."""
         if not isinstance(task_result, TaskResult):
             return None
         task_definition_name = self.worker.get_task_definition_name()
@@ -914,15 +845,15 @@ class TaskRunner:
                 # Exponential backoff: [10s, 20s, 30s] before retry
                 time.sleep(attempt * 10)
             try:
-                response = self.task_client.update_task(body=task_result)
+                next_task = self.task_client.update_task_v2(body=task_result)
                 logger.debug(
-                    "Updated task, id: %s, workflow_instance_id: %s, task_definition_name: %s, response: %s",
+                    "Updated task (v2), id: %s, workflow_instance_id: %s, task_definition_name: %s, next_task: %s",
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
-                    response
+                    next_task.task_id if next_task else None
                 )
-                return response
+                return next_task
             except Exception as e:
                 last_exception = e
                 if self.metrics_collector is not None:

@@ -474,9 +474,11 @@ class TestTaskHandlerProcessManagement(unittest.TestCase):
         handler.queue = Mock()
         handler.logger_process = Mock()
 
-        # Mock the processes
-        for process in handler.task_runner_processes:
+        # Mock the processes with pid and is_alive so __stop_process doesn't short-circuit
+        for i, process in enumerate(handler.task_runner_processes):
             process.terminate = Mock()
+            process.is_alive = Mock(return_value=True)
+            type(process).pid = PropertyMock(return_value=10000 + i)
 
         handler.stop_processes()
 
@@ -508,10 +510,14 @@ class TestTaskHandlerProcessManagement(unittest.TestCase):
         handler.queue = Mock()
         handler.logger_process = Mock()
 
-        # Mock the terminate methods
+        # Mock the terminate methods and ensure pid/is_alive are set
         handler.metrics_provider_process.terminate = Mock()
-        for process in handler.task_runner_processes:
+        handler.metrics_provider_process.is_alive = Mock(return_value=True)
+        type(handler.metrics_provider_process).pid = PropertyMock(return_value=20000)
+        for i, process in enumerate(handler.task_runner_processes):
             process.terminate = Mock()
+            process.is_alive = Mock(return_value=True)
+            type(process).pid = PropertyMock(return_value=10000 + i)
 
         handler.stop_processes()
 
@@ -541,6 +547,7 @@ class TestTaskHandlerProcessManagement(unittest.TestCase):
         for process in handler.task_runner_processes:
             process.terminate = Mock(side_effect=Exception("terminate failed"))
             process.kill = Mock()
+            process.is_alive = Mock(return_value=True)
             # Use PropertyMock for pid
             type(process).pid = PropertyMock(return_value=12345)
 

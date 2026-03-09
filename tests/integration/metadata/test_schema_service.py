@@ -23,6 +23,9 @@ class TestOrkesSchemaClient(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from tests.integration.conftest import skip_if_server_unavailable
+        skip_if_server_unavailable()
+
         configuration = Configuration()
         cls.schema_client = OrkesSchemaClient(configuration)
 

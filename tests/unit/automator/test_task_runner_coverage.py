@@ -258,8 +258,8 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         worker = MockWorker('test_task')
         task_runner = TaskRunner(worker=worker)
 
-        # Mock __poll_task to raise an exception
-        with patch.object(task_runner, '_TaskRunner__poll_task', side_effect=Exception("Test error")):
+        # Mock __batch_poll_tasks to raise an exception
+        with patch.object(task_runner, '_TaskRunner__batch_poll_tasks', side_effect=Exception("Test error")):
             # Should not raise, exception is caught
             task_runner.run_once()
 
@@ -280,15 +280,15 @@ class TestTaskRunnerCoverage(unittest.TestCase):
 
     @patch('time.sleep')
     def test_poll_task_when_worker_paused(self, mock_sleep):
-        """Test polling returns None when worker is paused"""
+        """Test polling returns empty list when worker is paused"""
         worker = MockWorker('test_task')
         worker.paused = True
 
         task_runner = TaskRunner(worker=worker)
 
-        task = task_runner._TaskRunner__poll_task()
+        tasks = task_runner._TaskRunner__batch_poll_tasks(1)
 
-        self.assertIsNone(task)
+        self.assertEqual(tasks, [])
 
     @patch('time.sleep')
     def test_poll_task_with_auth_failure_backoff(self, mock_sleep):
@@ -302,11 +302,11 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         task_runner._auth_failures = 2
         task_runner._last_auth_failure = time.time()
 
-        with patch.object(TaskResourceApi, 'poll', return_value=None):
-            task = task_runner._TaskRunner__poll_task()
+        with patch.object(TaskResourceApi, 'batch_poll', return_value=[]):
+            tasks = task_runner._TaskRunner__batch_poll_tasks(1)
 
-            # Should skip polling and return None due to backoff
-            self.assertIsNone(task)
+            # Should skip polling and return empty list due to backoff
+            self.assertEqual(tasks, [])
             mock_sleep.assert_called_once_with(0.1)
 
     @patch('time.sleep')
@@ -328,10 +328,10 @@ class TestTaskRunnerCoverage(unittest.TestCase):
             http_resp=mock_http_resp
         )
 
-        with patch.object(TaskResourceApi, 'poll', side_effect=auth_exception):
-            task = task_runner._TaskRunner__poll_task()
+        with patch.object(TaskResourceApi, 'batch_poll', side_effect=auth_exception):
+            tasks = task_runner._TaskRunner__batch_poll_tasks(1)
 
-            self.assertIsNone(task)
+            self.assertEqual(tasks, [])
             self.assertEqual(task_runner._auth_failures, 1)
             self.assertGreater(task_runner._last_auth_failure, 0)
 
@@ -354,10 +354,10 @@ class TestTaskRunnerCoverage(unittest.TestCase):
             http_resp=mock_http_resp
         )
 
-        with patch.object(TaskResourceApi, 'poll', side_effect=auth_exception):
-            task = task_runner._TaskRunner__poll_task()
+        with patch.object(TaskResourceApi, 'batch_poll', side_effect=auth_exception):
+            tasks = task_runner._TaskRunner__batch_poll_tasks(1)
 
-            self.assertIsNone(task)
+            self.assertEqual(tasks, [])
             self.assertEqual(task_runner._auth_failures, 1)
 
     @patch('time.sleep')
@@ -372,28 +372,29 @@ class TestTaskRunnerCoverage(unittest.TestCase):
 
         test_task = Task(task_id='test_id', workflow_instance_id='wf_id')
 
-        with patch.object(TaskResourceApi, 'poll', return_value=test_task):
-            task = task_runner._TaskRunner__poll_task()
+        with patch.object(TaskResourceApi, 'batch_poll', return_value=[test_task]):
+            tasks = task_runner._TaskRunner__batch_poll_tasks(1)
 
-            self.assertEqual(task, test_task)
+            self.assertEqual(len(tasks), 1)
+            self.assertEqual(tasks[0], test_task)
             self.assertEqual(task_runner._auth_failures, 0)
 
     def test_poll_task_no_task_available_resets_auth_failures(self):
-        """Test that None result from successful poll resets auth failures"""
+        """Test that empty result from successful poll resets auth failures"""
         worker = MockWorker('test_task')
         task_runner = TaskRunner(worker=worker)
 
         # Set some auth failures
         task_runner._auth_failures = 2
 
-        with patch.object(TaskResourceApi, 'poll', return_value=None):
-            task = task_runner._TaskRunner__poll_task()
+        with patch.object(TaskResourceApi, 'batch_poll', return_value=[]):
+            tasks = task_runner._TaskRunner__batch_poll_tasks(1)
 
-            self.assertIsNone(task)
+            self.assertEqual(tasks, [])
             self.assertEqual(task_runner._auth_failures, 0)
 
     def test_poll_task_with_metrics_collector(self):
-        """Test polling with metrics collection enabled"""
+        """Test polling with metrics collection enabled publishes events"""
         worker = MockWorker('test_task')
         metrics_settings = MetricsSettings()
         task_runner = TaskRunner(
@@ -403,17 +404,14 @@ class TestTaskRunnerCoverage(unittest.TestCase):
 
         test_task = Task(task_id='test_id', workflow_instance_id='wf_id')
 
-        with patch.object(TaskResourceApi, 'poll', return_value=test_task):
-            with patch.object(task_runner.metrics_collector, 'increment_task_poll'):
-                with patch.object(task_runner.metrics_collector, 'record_task_poll_time'):
-                    task = task_runner._TaskRunner__poll_task()
+        with patch.object(TaskResourceApi, 'batch_poll', return_value=[test_task]):
+            tasks = task_runner._TaskRunner__batch_poll_tasks(1)
 
-                    self.assertEqual(task, test_task)
-                    task_runner.metrics_collector.increment_task_poll.assert_called_once()
-                    task_runner.metrics_collector.record_task_poll_time.assert_called_once()
+            self.assertEqual(len(tasks), 1)
+            self.assertEqual(tasks[0], test_task)
 
     def test_poll_task_with_metrics_on_auth_error(self):
-        """Test metrics collection on authorization error"""
+        """Test that auth error during poll publishes PollFailure event"""
         worker = MockWorker('test_task')
         metrics_settings = MetricsSettings()
         task_runner = TaskRunner(
@@ -434,15 +432,14 @@ class TestTaskRunnerCoverage(unittest.TestCase):
             http_resp=mock_http_resp
         )
 
-        with patch.object(TaskResourceApi, 'poll', side_effect=auth_exception):
-            with patch.object(task_runner.metrics_collector, 'increment_task_poll_error'):
-                task = task_runner._TaskRunner__poll_task()
+        with patch.object(TaskResourceApi, 'batch_poll', side_effect=auth_exception):
+            tasks = task_runner._TaskRunner__batch_poll_tasks(1)
 
-                self.assertIsNone(task)
-                task_runner.metrics_collector.increment_task_poll_error.assert_called_once()
+            self.assertEqual(tasks, [])
+            self.assertEqual(task_runner._auth_failures, 1)
 
     def test_poll_task_with_metrics_on_general_error(self):
-        """Test metrics collection on general polling error"""
+        """Test that general error during poll publishes PollFailure event"""
         worker = MockWorker('test_task')
         metrics_settings = MetricsSettings()
         task_runner = TaskRunner(
@@ -450,12 +447,10 @@ class TestTaskRunnerCoverage(unittest.TestCase):
             metrics_settings=metrics_settings
         )
 
-        with patch.object(TaskResourceApi, 'poll', side_effect=Exception("General error")):
-            with patch.object(task_runner.metrics_collector, 'increment_task_poll_error'):
-                task = task_runner._TaskRunner__poll_task()
+        with patch.object(TaskResourceApi, 'batch_poll', side_effect=Exception("General error")):
+            tasks = task_runner._TaskRunner__batch_poll_tasks(1)
 
-                self.assertIsNone(task)
-                task_runner.metrics_collector.increment_task_poll_error.assert_called_once()
+            self.assertEqual(tasks, [])
 
     def test_poll_task_with_domain(self):
         """Test polling with domain parameter"""
@@ -466,10 +461,11 @@ class TestTaskRunnerCoverage(unittest.TestCase):
 
         test_task = Task(task_id='test_id', workflow_instance_id='wf_id')
 
-        with patch.object(TaskResourceApi, 'poll', return_value=test_task) as mock_poll:
-            task = task_runner._TaskRunner__poll_task()
+        with patch.object(TaskResourceApi, 'batch_poll', return_value=[test_task]) as mock_poll:
+            tasks = task_runner._TaskRunner__batch_poll_tasks(1)
 
-            self.assertEqual(task, test_task)
+            self.assertEqual(len(tasks), 1)
+            self.assertEqual(tasks[0], test_task)
             # Verify domain was passed
             mock_poll.assert_called_once()
             call_kwargs = mock_poll.call_args[1]
@@ -767,15 +763,17 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         )
         task_result.status = TaskResultStatus.COMPLETED
 
+        mock_next_task = Task(task_id='next_id', workflow_instance_id='next_wf_id')
+
         # First call fails, second succeeds
         with patch.object(
             TaskResourceApi,
-            'update_task',
-            side_effect=[Exception("Network error"), "SUCCESS"]
+            'update_task_v2',
+            side_effect=[Exception("Network error"), mock_next_task]
         ) as mock_update:
             response = task_runner._TaskRunner__update_task(task_result)
 
-            self.assertEqual(response, "SUCCESS")
+            self.assertEqual(response, mock_next_task)
             self.assertEqual(mock_update.call_count, 2)
 
     @patch('time.sleep', Mock(return_value=None))
@@ -794,7 +792,7 @@ class TestTaskRunnerCoverage(unittest.TestCase):
             worker_id=worker.get_identity()
         )
 
-        with patch.object(TaskResourceApi, 'update_task', side_effect=Exception("Update failed")):
+        with patch.object(TaskResourceApi, 'update_task_v2', side_effect=Exception("Update failed")):
             with patch.object(task_runner.metrics_collector, 'increment_task_update_error'):
                 response = task_runner._TaskRunner__update_task(task_result)
 

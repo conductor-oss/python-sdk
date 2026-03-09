@@ -81,6 +81,9 @@ class TestOrkesMetadataClient(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from tests.integration.conftest import skip_if_server_unavailable
+        skip_if_server_unavailable()
+
         configuration = Configuration()
         cls.metadata_client = OrkesMetadataClient(configuration)
 

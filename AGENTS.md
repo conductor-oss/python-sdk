@@ -779,3 +779,24 @@ Remember: The goal is to make Conductor easy to use in every language while main
 
 ---
 
+## 🧪 Post-Session Testing Checklist
+
+**After every coding session, run the full test suite to ensure zero failures:**
+
+```bash
+# All suites — expect 0 failures, 0 errors
+python3 -m pytest tests/unit tests/backwardcompatibility tests/serdesertest tests/chaos tests/integration -v
+
+# Expected results:
+#   Unit tests:             ~626 passed
+#   Backward compatibility: ~1015 passed
+#   Serialization:          ~58 passed
+#   Chaos:                  2 skipped (require special setup)
+#   Integration:            128 skipped (require live Conductor server)
+#   TOTAL:                  0 failures, 0 errors
+```
+
+Integration tests skip gracefully when the Conductor server is not available (no `CONDUCTOR_SERVER_URL` / `CONDUCTOR_AUTH_KEY` / `CONDUCTOR_AUTH_SECRET` env vars). When a server is available, they run against it. **There should be NO failures in any suite.**
+
+---
+

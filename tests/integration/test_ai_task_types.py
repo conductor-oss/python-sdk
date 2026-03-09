@@ -52,6 +52,9 @@ class TestAITaskTypeRegistration(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from tests.integration.conftest import skip_if_server_unavailable
+        skip_if_server_unavailable()
+
         cls.config = Configuration(server_api_url="http://localhost:7001/api")
         cls.clients = OrkesClients(configuration=cls.config)
         cls.executor = WorkflowExecutor(configuration=cls.config)

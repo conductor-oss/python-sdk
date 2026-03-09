@@ -50,6 +50,9 @@ class TestAIExamples(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from tests.integration.conftest import skip_if_server_unavailable
+        skip_if_server_unavailable()
+
         cls.config = Configuration(server_api_url=SERVER_URL)
         cls.clients = OrkesClients(configuration=cls.config)
         cls.executor = WorkflowExecutor(configuration=cls.config)

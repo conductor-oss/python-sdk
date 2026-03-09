@@ -124,11 +124,14 @@ class TestComprehensiveE2E(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from tests.integration.conftest import skip_if_server_unavailable
+        skip_if_server_unavailable()
+
         logging.basicConfig(level=logging.INFO)
         cls.config = Configuration()
         cls.event_collector = EventCollector()
         cls.metrics_dir = '/tmp/conductor_test_metrics'
-        
+
         if os.path.exists(cls.metrics_dir):
             import shutil
             shutil.rmtree(cls.metrics_dir)
@@ -139,13 +142,6 @@ class TestComprehensiveE2E(unittest.TestCase):
             update_interval=1,
             file_name='metrics.prom'  # Enable file-based metrics
         )
-
-        # Test server connection
-        try:
-            metadata_client = OrkesMetadataClient(cls.config)
-            print(f"✓ Connected to: {cls.config.host}")
-        except Exception as e:
-            raise RuntimeError(f"Server not available: {e}")
 
         cls.workers_started = False
 
