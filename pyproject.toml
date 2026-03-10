@@ -153,6 +153,9 @@ line-ending = "auto"
 "tests/**/*.py" = ["B", "C4", "SIM"]
 "examples/**/*.py" = ["B", "C4", "SIM"]
 
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
 [tool.coverage.run]
 source = ["src/conductor"]
 omit = [

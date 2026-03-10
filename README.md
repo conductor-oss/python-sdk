@@ -7,33 +7,30 @@
 
 Python SDK for [Conductor](https://www.conductor-oss.org/) (OSS and Orkes Conductor) — an orchestration platform for building distributed applications, AI agents, and workflow-driven microservices. Define workflows as code, run workers anywhere, and let Conductor handle retries, state management, and observability.
 
-If you find [Conductor](https://github.com/conductor-oss/conductor) useful, please consider giving it a star on GitHub -- it helps the project grow.
+If you find [Conductor](https://github.com/conductor-oss/conductor) useful, please consider giving it a star on GitHub — it helps the project grow.
 
 [![GitHub stars](https://img.shields.io/github/stars/conductor-oss/conductor.svg?style=social&label=Star&maxAge=)](https://GitHub.com/conductor-oss/conductor/)
 
-
-
 <!-- TOC -->
-* [Python SDK for Conductor](#python-sdk-for-conductor)
-  * [Start  Conductor server](#start--conductor-server)
-  * [Install the SDK](#install-the-sdk)
-  * [60-Second Quickstart](#60-second-quickstart)
-  * [Comprehensive worker example](#comprehensive-worker-example-)
-  * [Workers](#workers)
-  * [Monitoring Workers](#monitoring-workers)
-  * [Workflows](#workflows)
-  * [Troubleshooting](#troubleshooting)
-  * [AI & LLM Workflows](#ai--llm-workflows)
-  * [Examples](#examples)
-  * [API Journey Examples](#api-journey-examples)
-  * [Documentation](#documentation)
-  * [Support](#support)
-  * [Frequently Asked Questions](#frequently-asked-questions)
-  * [License](#license)
+* [Start Conductor Server](#start-conductor-server)
+* [Install the SDK](#install-the-sdk)
+* [60-Second Quickstart](#60-second-quickstart)
+* [Feature Showcase](#feature-showcase)
+  * [Workers: Sync and Async](#workers-sync-and-async)
+  * [Workflows with HTTP Calls and Waits](#workflows-with-http-calls-and-waits)
+  * [Long-Running Tasks with TaskContext](#long-running-tasks-with-taskcontext)
+  * [Monitoring with Metrics](#monitoring-with-metrics)
+  * [Managing Workflow Executions](#managing-workflow-executions)
+* [AI & LLM Workflows](#ai--llm-workflows)
+* [Why Conductor?](#why-conductor)
+* [Examples](#examples)
+* [Documentation](#documentation)
+* [Frequently Asked Questions](#frequently-asked-questions)
+* [Support](#support)
+* [License](#license)
 <!-- TOC -->
 
-
-## Start  Conductor server
+## Start Conductor Server
 
 If you don't already have a Conductor server running, pick one:
 
@@ -84,7 +81,7 @@ workflow.output_parameters({'result': greet_task.output('result')})
 workflow.register(overwrite=True)
 ```
 
-**Step 2: Write worker**
+**Step 2: Write a worker**
 
 Workers are just Python functions decorated with `@worker_task` that poll Conductor for tasks and execute them.
 
@@ -149,216 +146,201 @@ Run it:
 python quickstart.py
 ```
 
-> ### Using Orkes Conductor / Remote Server? 
+> ### Using Orkes Conductor / Remote Server?
 > Export your authentication credentials as well:
-> 
+>
 > ```shell
 > export CONDUCTOR_SERVER_URL="https://your-cluster.orkesconductor.io/api"
-> 
+>
 > # If using Orkes Conductor that requires auth key/secret
 > export CONDUCTOR_AUTH_KEY="your-key"
 > export CONDUCTOR_AUTH_SECRET="your-secret"
-> 
+>
 > # Optional — set to false to force HTTP/1.1 if your network environment has unstable long-lived HTTP/2 connections (default: true)
 > # export CONDUCTOR_HTTP2_ENABLED=false
 > ```
 > See [Configuration](#configuration) for details.
 
-That's it -- you just defined a worker, built a workflow, and executed it. Open the Conductor UI (default:
+That's it — you just defined a worker, built a workflow, and executed it. Open the Conductor UI (default:
 [http://localhost:8127](http://localhost:8127)) to see the execution.
-
-## Comprehensive worker example 
-The example includes sync + async workers, metrics, and long-running tasks
-
-See [examples/workers_e2e.py](examples/workers_e2e.py)
 
 ---
 
-## Workers
+## Feature Showcase
 
-Workers are Python functions that execute Conductor tasks. Decorate any function with `@worker_task` to:
+### Workers: Sync and Async
 
-- register it as a worker (auto-discovered by `TaskHandler`)
-- use it as a workflow task (call it with `task_ref_name=...`)
-
-Note: Workers can also be used by LLMs for tool calling (see [AI & LLM Workflows](#ai--llm-workflows)).
+The SDK automatically selects the right runner based on your function signature — `TaskRunner` (thread pool) for sync functions, `AsyncTaskRunner` (event loop) for async.
 
 ```python
 from conductor.client.worker.worker_task import worker_task
 
-@worker_task(task_definition_name='greet')
-def greet(name: str) -> str:
-    return f'Hello {name}'
-```
+# Sync worker — for CPU-bound work (uses ThreadPoolExecutor)
+@worker_task(task_definition_name='process_image', thread_count=4)
+def process_image(image_url: str) -> dict:
+    import PIL.Image, io, requests
+    img = PIL.Image.open(io.BytesIO(requests.get(image_url).content))
+    img.thumbnail((256, 256))
+    return {'width': img.width, 'height': img.height}
 
-**Async workers** for I/O-bound tasks — the SDK automatically uses `AsyncTaskRunner` (event loop, no thread overhead):
 
-```python
-import httpx
-
-@worker_task(task_definition_name='fetch_data')
+# Async worker — for I/O-bound work (uses AsyncTaskRunner, no thread overhead)
+@worker_task(task_definition_name='fetch_data', thread_count=50)
 async def fetch_data(url: str) -> dict:
+    import httpx
     async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-    return response.json()
+        resp = await client.get(url)
+    return resp.json()
 ```
 
-**Start workers** with `TaskHandler`:
-
-Note: `@worker_task` functions are discovered only after their modules are imported. Either import your worker modules
-explicitly, or pass `import_modules=[...]` when constructing `TaskHandler`.
+Start workers with `TaskHandler` — it auto-discovers `@worker_task` functions and spawns one subprocess per worker:
 
 ```python
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 
-api_config = Configuration()
-task_handler = TaskHandler(
-    workers=[],
-    configuration=api_config,
-    scan_for_annotated_workers=True,  # auto-discover @worker_task functions
-    # monitor_processes=True and restart_on_failure=True by default
-)
-task_handler.start_processes()
-try:
-    task_handler.join_processes()  # blocks (workers poll forever)
-finally:
-    task_handler.stop_processes()
+config = Configuration()
+with TaskHandler(configuration=config, scan_for_annotated_workers=True) as task_handler:
+    task_handler.start_processes()
+    task_handler.join_processes()  # blocks forever (workers poll continuously)
 ```
 
-Workers support complex inputs (dataclasses), long-running tasks (`TaskInProgress`), and hierarchical configuration via environment variables.
+See [examples/worker_example.py](examples/worker_example.py) and [examples/workers_e2e.py](examples/workers_e2e.py) for complete examples.
 
-**Resilience: auto-restart and health checks**
+### Workflows with HTTP Calls and Waits
 
-
-Workers are typically long-lived services. By default, `TaskHandler` monitors worker subprocesses and restarts them if
-they exit unexpectedly.
-
-For a `/healthcheck` endpoint, you can use:
+Chain custom workers with built-in system tasks — HTTP calls, waits, JavaScript, JQ transforms — all in one workflow:
 
 ```python
-task_handler.is_healthy()
-task_handler.get_worker_process_status()
+from conductor.client.workflow.conductor_workflow import ConductorWorkflow
+from conductor.client.workflow.task.http_task import HttpTask
+from conductor.client.workflow.task.wait_task import WaitTask
+
+workflow = ConductorWorkflow(name='order_pipeline', version=1, executor=executor)
+
+# Custom worker task
+validate = validate_order(task_ref_name='validate', order_id=workflow.input('order_id'))
+
+# Built-in HTTP task — call any API, no worker needed
+charge_payment = HttpTask(task_ref_name='charge_payment', http_input={
+    'uri': 'https://api.stripe.com/v1/charges',
+    'method': 'POST',
+    'headers': {'Authorization': ['Bearer ${workflow.input.stripe_key}']},
+    'body': {'amount': '${validate.output.amount}'}
+})
+
+# Built-in Wait task — pause the workflow for 10 seconds
+cool_down = WaitTask(task_ref_name='cool_down', wait_for_seconds=10)
+
+# Another custom worker task
+notify = send_notification(task_ref_name='notify', message='Order complete')
+
+# Chain with >> operator
+workflow >> validate >> charge_payment >> cool_down >> notify
+
+# Execute synchronously and wait for the result
+result = workflow.execute(workflow_input={'order_id': 'ORD-123', 'stripe_key': 'sk_test_...'})
+print(result.output)
 ```
 
-To disable monitoring/restarts (e.g., local debugging):
+See [examples/kitchensink.py](examples/kitchensink.py) for all task types (HTTP, JavaScript, JQ, Switch, Terminate) and [examples/workflow_ops.py](examples/workflow_ops.py) for lifecycle operations.
+
+### Long-Running Tasks with TaskContext
+
+For tasks that take minutes or hours (batch processing, ML training, external approvals), use `TaskContext` to report progress and poll incrementally:
 
 ```python
-TaskHandler(..., monitor_processes=False, restart_on_failure=False)
+from typing import Union
+from conductor.client.worker.worker_task import worker_task
+from conductor.client.context.task_context import get_task_context, TaskInProgress
+
+@worker_task(task_definition_name='batch_job')
+def batch_job(batch_id: str) -> Union[dict, TaskInProgress]:
+    ctx = get_task_context()
+    ctx.add_log(f"Processing batch {batch_id}, poll #{ctx.get_poll_count()}")
+
+    if ctx.get_poll_count() < 3:
+        # Not done yet — re-queue and check again in 30 seconds
+        return TaskInProgress(callback_after_seconds=30, output={'progress': ctx.get_poll_count() * 33})
+
+    # Done after 3 polls
+    return {'status': 'completed', 'batch_id': batch_id}
 ```
 
-**Worker Configuration**
+`TaskContext` also provides access to task metadata, retry counts, workflow IDs, and the ability to add logs visible in the Conductor UI.
 
-Workers support hierarchical environment variable configuration — global settings that can be overridden per worker:
+See [examples/task_context_example.py](examples/task_context_example.py) for all patterns (polling, retry-aware logic, async context, input access).
 
-```shell
-# Global (all workers)
-export CONDUCTOR_WORKER_ALL_POLL_INTERVAL_MILLIS=250
-export CONDUCTOR_WORKER_ALL_THREAD_COUNT=20
-export CONDUCTOR_WORKER_ALL_DOMAIN=production
+### Monitoring with Metrics
 
-# Per-worker override
-export CONDUCTOR_WORKER_GREETINGS_THREAD_COUNT=50
-```
-
-See [WORKER_CONFIGURATION.md](WORKER_CONFIGURATION.md) for all options.
-
-## Monitoring Workers
-
-Enable Prometheus metrics:
+Enable Prometheus metrics with a single setting — the SDK exposes poll counts, execution times, error rates, and HTTP latency:
 
 ```python
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 
-api_config = Configuration()
-metrics_settings = MetricsSettings(directory='/tmp/conductor-metrics', http_port=8000)
+config = Configuration()
+metrics = MetricsSettings(directory='/tmp/conductor-metrics', http_port=8000)
 
-task_handler = TaskHandler(configuration=api_config, metrics_settings=metrics_settings, scan_for_annotated_workers=True)
-task_handler.start_processes()
-# Metrics at http://localhost:8000/metrics
-try:
-    task_handler.join_processes()  # blocks (workers poll forever)
-finally:
-    task_handler.stop_processes()
+with TaskHandler(configuration=config, metrics_settings=metrics, scan_for_annotated_workers=True) as task_handler:
+    task_handler.start_processes()
+    task_handler.join_processes()
 ```
 
-See [METRICS.md](METRICS.md) for details.
+```shell
+# Prometheus-compatible endpoint
+curl http://localhost:8000/metrics
+```
 
-**Learn more:**
-- [Worker Design & Architecture](docs/design/WORKER_DESIGN.md) — AsyncTaskRunner vs TaskRunner, discovery, lifecycle
-- [Worker Configuration](WORKER_CONFIGURATION.md) — Environment variable configuration system
-- [Complete Worker Guide](docs/WORKER.md) — All worker patterns (function, class, annotation, async)
+See [examples/metrics_example.py](examples/metrics_example.py) and [METRICS.md](METRICS.md) for details on all tracked metrics.
 
-## Workflows
+### Managing Workflow Executions
 
-Define workflows in Python using the `>>` operator to chain tasks:
+Full lifecycle control — start, execute, pause, resume, terminate, retry, restart, rerun, signal, and search:
 
 ```python
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.orkes_clients import OrkesClients
-from conductor.client.workflow.conductor_workflow import ConductorWorkflow
-
-api_config = Configuration()
-clients = OrkesClients(configuration=api_config)
-workflow_executor = clients.get_workflow_executor()
-
-workflow = ConductorWorkflow(name='greetings', version=1, executor=workflow_executor)
-# Assuming greet is defined (see Workers section above).
-workflow >> greet(task_ref_name='greet_ref', name=workflow.input('name'))
-# Registering is required if you want to start/execute by name+version; optional if you only execute inline.
-workflow.register(overwrite=True)
-```
-
-**Execute workflows:**
-
-```python
-# Synchronous (waits for completion)
-result = workflow_executor.execute(name='greetings', version=1, workflow_input={'name': 'Orkes'})
-print(result.output)
-
-# Asynchronous (returns workflow ID immediately)
-from conductor.client.http.models import StartWorkflowRequest
-request = StartWorkflowRequest(name='greetings', version=1, input={'name': 'Orkes'})
-workflow_id = workflow_executor.start_workflow(request)
-
-# Inline (sends the workflow definition with the request; no prior register required)
-run = workflow.execute(workflow_input={'name': 'Orkes'}, wait_for_seconds=10)
-print(run.output)
-```
-
-**Manage running workflows and send signals:**
-
-```python
+from conductor.client.http.models import StartWorkflowRequest, RerunWorkflowRequest, TaskResult
 from conductor.client.orkes_clients import OrkesClients
 
-clients = OrkesClients(configuration=api_config)
+config = Configuration()
+clients = OrkesClients(configuration=config)
 workflow_client = clients.get_workflow_client()
+task_client = clients.get_task_client()
+executor = clients.get_workflow_executor()
 
+# Start async (returns workflow ID immediately)
+workflow_id = executor.start_workflow(StartWorkflowRequest(name='my_workflow', input={'key': 'value'}))
+
+# Execute sync (blocks until workflow completes)
+result = executor.execute(name='my_workflow', version=1, workflow_input={'key': 'value'})
+
+# Lifecycle management
 workflow_client.pause_workflow(workflow_id)
 workflow_client.resume_workflow(workflow_id)
 workflow_client.terminate_workflow(workflow_id, reason='no longer needed')
-workflow_client.retry_workflow(workflow_id)
-workflow_client.restart_workflow(workflow_id)
+workflow_client.retry_workflow(workflow_id)          # retry from last failed task
+workflow_client.restart_workflow(workflow_id)         # restart from the beginning
+workflow_client.rerun_workflow(workflow_id,           # rerun from a specific task
+    RerunWorkflowRequest(re_run_from_task_id=task_id))
+
+# Send a signal to a waiting workflow (complete a WAIT task externally)
+task_client.update_task(TaskResult(
+    workflow_instance_id=workflow_id,
+    task_id=wait_task_id,
+    status='COMPLETED',
+    output_data={'approved': True}
+))
+
+# Search workflows
+results = workflow_client.search(query='status IN (RUNNING) AND correlationId = "order-123"')
 ```
 
-**Learn more:**
-- [Workflow Management](docs/WORKFLOW.md) — Start, pause, resume, terminate, retry, search
-- [Workflow Testing](docs/WORKFLOW_TESTING.md) — Unit testing with mock task outputs
-- [Metadata Management](docs/METADATA.md) — Task & workflow definitions
+See [examples/workflow_ops.py](examples/workflow_ops.py) for a complete walkthrough of every operation.
 
-## Troubleshooting
-
-- Worker stops polling or crashes: `TaskHandler` monitors and restarts worker subprocesses by default. Consider exposing
-  a `/healthcheck` endpoint using `task_handler.is_healthy()` + `task_handler.get_worker_process_status()`. If you
-  enable metrics, alert on `worker_restart_total`.
-- `httpcore.RemoteProtocolError: <ConnectionTerminated ...>`: the SDK recreates the underlying HTTP client and retries
-  once for idempotent requests. If your environment is still unstable with HTTP/2, set
-  `CONDUCTOR_HTTP2_ENABLED=false` (forces HTTP/1.1) — see `docs/WORKER.md`.
-- FastAPI/Uvicorn: avoid running `uvicorn` with multiple web workers unless you explicitly want multiple independent
-  `TaskHandler`s polling Conductor (see `examples/fastapi_worker_service.py`).
 ---
+
 ## AI & LLM Workflows
 
 Conductor supports AI-native workflows including agentic tool calling, RAG pipelines, and multi-agent orchestration.
@@ -394,6 +376,23 @@ pip install "markitdown[pdf]"
 python examples/rag_workflow.py document.pdf "What are the key findings?"
 ```
 
+---
+
+## Why Conductor?
+
+| | |
+|---|---|
+| **Language agnostic** | Workers in Python, Java, Go, JS, C# — all in one workflow |
+| **Durable execution** | Survives crashes, retries automatically, never loses state |
+| **Built-in HTTP/Wait/JS tasks** | No code needed for common operations |
+| **Horizontal scaling** | Built at Netflix for millions of workflows |
+| **Full visibility** | UI shows every execution, every task, every retry |
+| **Sync + Async execution** | Start-and-forget OR wait-for-result |
+| **Human-in-the-loop** | WAIT tasks pause until an external signal |
+| **AI-native** | LLM chat, RAG pipelines, function calling, MCP tools built-in |
+
+---
+
 ## Examples
 
 See the [Examples Guide](examples/README.md) for the full catalog. Key examples:
@@ -401,17 +400,16 @@ See the [Examples Guide](examples/README.md) for the full catalog. Key examples:
 | Example | Description | Run |
 |---------|-------------|-----|
 | [workers_e2e.py](examples/workers_e2e.py) | End-to-end: sync + async workers, metrics | `python examples/workers_e2e.py` |
-| [fastapi_worker_service.py](examples/fastapi_worker_service.py) | FastAPI: expose a workflow as an API (+ workers) (deps: fastapi, uvicorn) | `uvicorn examples.fastapi_worker_service:app --port 8081 --workers 1` |
+| [kitchensink.py](examples/kitchensink.py) | All task types (HTTP, JS, JQ, Switch) | `python examples/kitchensink.py` |
+| [workflow_ops.py](examples/workflow_ops.py) | Pause, resume, terminate, retry, restart, rerun, signal | `python examples/workflow_ops.py` |
+| [task_context_example.py](examples/task_context_example.py) | Long-running tasks with TaskInProgress | `python examples/task_context_example.py` |
+| [metrics_example.py](examples/metrics_example.py) | Prometheus metrics collection | `python examples/metrics_example.py` |
+| [fastapi_worker_service.py](examples/fastapi_worker_service.py) | FastAPI: expose a workflow as an API (+ workers) | `uvicorn examples.fastapi_worker_service:app --port 8081 --workers 1` |
 | [helloworld.py](examples/helloworld/helloworld.py) | Minimal hello world | `python examples/helloworld/helloworld.py` |
 | [dynamic_workflow.py](examples/dynamic_workflow.py) | Build workflows programmatically | `python examples/dynamic_workflow.py` |
-| [llm_chat.py](examples/agentic_workflows/llm_chat.py) | AI multi-turn chat | `python examples/agentic_workflows/llm_chat.py` |
-| [rag_workflow.py](examples/rag_workflow.py) | RAG pipeline (PDF → pgvector → answer) | `python examples/rag_workflow.py file.pdf "question"` |
-| [task_context_example.py](examples/task_context_example.py) | Long-running tasks with TaskInProgress | `python examples/task_context_example.py` |
-| [workflow_ops.py](examples/workflow_ops.py) | Pause, resume, terminate workflows | `python examples/workflow_ops.py` |
 | [test_workflows.py](examples/test_workflows.py) | Unit testing workflows | `python -m unittest examples.test_workflows` |
-| [kitchensink.py](examples/kitchensink.py) | All task types (HTTP, JS, JQ, Switch) | `python examples/kitchensink.py` |
 
-## API Journey Examples
+**API Journey Examples**
 
 End-to-end examples covering all APIs for each domain:
 
@@ -441,13 +439,6 @@ End-to-end examples covering all APIs for each domain:
 | [Metrics](METRICS.md) | Prometheus metrics collection |
 | [Examples](examples/README.md) | Complete examples catalog |
 
-## Support
-
-- [Open an issue (SDK)](https://github.com/conductor-sdk/conductor-python/issues) for SDK bugs, questions, and feature requests
-- [Open an issue (Conductor server)](https://github.com/conductor-oss/conductor/issues) for Conductor OSS server issues
-- [Join the Conductor Slack](https://join.slack.com/t/orkes-conductor/shared_invite/zt-2vdbx239s-Eacdyqya9giNLHfrCavfaA) for community discussion and help
-- [Orkes Community Forum](https://community.orkes.io/) for Q&A
-
 ## Frequently Asked Questions
 
 **Is this the same as Netflix Conductor?**
@@ -472,7 +463,7 @@ No. While Conductor excels at asynchronous orchestration, it also supports synch
 
 **Do I need to use a Conductor-specific framework?**
 
-No. Conductor is language and framework agnostic. Use your preferred language and framework -- the [SDKs](https://github.com/conductor-oss/conductor#conductor-sdks) provide native integration for Python, Java, JavaScript, Go, C#, and more.
+No. Conductor is language and framework agnostic. Use your preferred language and framework — the [SDKs](https://github.com/conductor-oss/conductor#conductor-sdks) provide native integration for Python, Java, JavaScript, Go, C#, and more.
 
 **Can I mix workers written in different languages?**
 
@@ -484,15 +475,22 @@ Python 3.9 and above.
 
 **Should I use `def` or `async def` for my workers?**
 
-Use `async def` for I/O-bound tasks (API calls, database queries) -- the SDK uses `AsyncTaskRunner` with a single event loop for high concurrency with low overhead. Use regular `def` for CPU-bound or blocking work -- the SDK uses `TaskRunner` with a thread pool. The SDK selects the right runner automatically based on your function signature.
+Use `async def` for I/O-bound tasks (API calls, database queries) — the SDK uses `AsyncTaskRunner` with a single event loop for high concurrency with low overhead. Use regular `def` for CPU-bound or blocking work — the SDK uses `TaskRunner` with a thread pool. The SDK selects the right runner automatically based on your function signature.
 
 **How do I run workers in production?**
 
-Workers are standard Python processes. Deploy them as you would any Python application -- in containers, VMs, or bare metal. Workers poll the Conductor server for tasks, so no inbound ports need to be opened. See [Worker Design](docs/design/WORKER_DESIGN.md) for architecture details.
+Workers are standard Python processes. Deploy them as you would any Python application — in containers, VMs, or bare metal. Workers poll the Conductor server for tasks, so no inbound ports need to be opened. See [Worker Design](docs/design/WORKER_DESIGN.md) for architecture details.
 
 **How do I test workflows without running a full Conductor server?**
 
 The SDK provides a test framework that uses Conductor's `POST /api/workflow/test` endpoint to evaluate workflows with mock task outputs. See [Workflow Testing](docs/WORKFLOW_TESTING.md) for details.
+
+## Support
+
+- [Open an issue (SDK)](https://github.com/conductor-sdk/conductor-python/issues) for SDK bugs, questions, and feature requests
+- [Open an issue (Conductor server)](https://github.com/conductor-oss/conductor/issues) for Conductor OSS server issues
+- [Join the Conductor Slack](https://join.slack.com/t/orkes-conductor/shared_invite/zt-2vdbx239s-Eacdyqya9giNLHfrCavfaA) for community discussion and help
+- [Orkes Community Forum](https://community.orkes.io/) for Q&A
 
 ## License
 

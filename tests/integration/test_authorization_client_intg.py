@@ -39,6 +39,9 @@ class TestOrkesAuthorizationClientIntg(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from tests.integration.conftest import skip_if_server_unavailable
+        skip_if_server_unavailable()
+
         cls.config = get_configuration()
         cls.client = OrkesAuthorizationClient(cls.config)
 

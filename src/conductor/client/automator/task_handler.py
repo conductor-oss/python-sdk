@@ -556,6 +556,16 @@ class TaskHandler:
         if process is None:
             return
         try:
+            # If the process was never started (pid is None), there's nothing to terminate.
+            if getattr(process, "pid", None) is None:
+                return
+            if not process.is_alive():
+                # Already stopped; attempt a short join to reap resources and return.
+                try:
+                    process.join(timeout=0.1)
+                except Exception:
+                    pass
+                return
             logger.debug("Terminating process: %s", process.pid)
             process.terminate()
             # Wait for graceful termination

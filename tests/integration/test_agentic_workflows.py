@@ -95,6 +95,9 @@ class AgenticWorkflowTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from tests.integration.conftest import skip_if_server_unavailable
+        skip_if_server_unavailable()
+
         cls.config = Configuration()
         cls.clients = OrkesClients(configuration=cls.config)
         cls.workflow_executor = cls.clients.get_workflow_executor()

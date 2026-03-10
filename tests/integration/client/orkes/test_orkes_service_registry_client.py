@@ -265,6 +265,9 @@ class TestOrkesServiceRegistryClientIntg(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from tests.integration.conftest import skip_if_server_unavailable
+        skip_if_server_unavailable()
+
         cls.config = get_configuration()
         logger.info(f'Setting up TestOrkesServiceRegistryClientIntg with config {cls.config}')
 

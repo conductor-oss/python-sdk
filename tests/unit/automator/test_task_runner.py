@@ -120,8 +120,8 @@ class TestTaskRunner(unittest.TestCase):
         ):
             with patch.object(
                     TaskResourceApi,
-                    'update_task',
-                    return_value=self.UPDATE_TASK_RESPONSE
+                    'update_task_v2',
+                    return_value=None
             ):
                 task_runner = self.__get_valid_task_runner()
                 # With mocked sleep, we just verify the method runs without errors
@@ -138,23 +138,23 @@ class TestTaskRunner(unittest.TestCase):
         expected_task = self.__get_valid_task()
         with patch.object(
                 TaskResourceApi,
-                'poll',
-                return_value=self.__get_valid_task()
+                'batch_poll',
+                return_value=[self.__get_valid_task()]
         ):
             task_runner = self.__get_valid_task_runner()
-            task = task_runner._TaskRunner__poll_task()
-            self.assertEqual(task, expected_task)
+            tasks = task_runner._TaskRunner__batch_poll_tasks(1)
+            self.assertEqual(len(tasks), 1)
+            self.assertEqual(tasks[0], expected_task)
 
     def test_poll_task_with_faulty_task_api(self):
-        expected_task = None
         with patch.object(
                 TaskResourceApi,
-                'poll',
+                'batch_poll',
                 side_effect=Exception()
         ):
             task_runner = self.__get_valid_task_runner()
-            task = task_runner._TaskRunner__poll_task()
-            self.assertEqual(task, expected_task)
+            tasks = task_runner._TaskRunner__batch_poll_tasks(1)
+            self.assertEqual(tasks, [])
 
     def test_execute_task_with_invalid_task(self):
         task_runner = self.__get_valid_task_runner()
@@ -200,23 +200,23 @@ class TestTaskRunner(unittest.TestCase):
     @patch('time.sleep', Mock(return_value=None))
     def test_update_task_with_faulty_task_api(self):
         expected_response = None
-        with patch.object(TaskResourceApi, 'update_task', side_effect=Exception()):
+        with patch.object(TaskResourceApi, 'update_task_v2', side_effect=Exception()):
             task_runner = self.__get_valid_task_runner()
             task_result = self.__get_valid_task_result()
             response = task_runner._TaskRunner__update_task(task_result)
             self.assertEqual(response, expected_response)
 
     def test_update_task(self):
-        expected_response = self.UPDATE_TASK_RESPONSE
+        mock_next_task = Task(task_id='next_task_id', workflow_instance_id='next_wf_id')
         with patch.object(
                 TaskResourceApi,
-                'update_task',
-                return_value=self.UPDATE_TASK_RESPONSE
+                'update_task_v2',
+                return_value=mock_next_task
         ):
             task_runner = self.__get_valid_task_runner()
             task_result = self.__get_valid_task_result()
             response = task_runner._TaskRunner__update_task(task_result)
-            self.assertEqual(response, expected_response)
+            self.assertEqual(response, mock_next_task)
 
     def test_wait_for_polling_interval_with_faulty_worker(self):
         expected_exception = Exception(

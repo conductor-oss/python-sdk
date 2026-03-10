@@ -97,7 +97,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
             runner.async_task_client.batch_poll = AsyncMock(return_value=mock_tasks)
 
             # Mock update_task to succeed
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             # Run one iteration
             await runner.run_once()
@@ -109,8 +109,8 @@ class TestAsyncTaskRunner(unittest.TestCase):
             runner.async_task_client.batch_poll.assert_called_once()
 
             # Verify update_task was called with correct result
-            runner.async_task_client.update_task.assert_called_once()
-            call_args = runner.async_task_client.update_task.call_args
+            runner.async_task_client.update_task_v2.assert_called_once()
+            call_args = runner.async_task_client.update_task_v2.call_args
             task_result = call_args.kwargs['body']
 
             self.assertEqual(task_result.task_id, self.TASK_ID)
@@ -152,13 +152,13 @@ class TestAsyncTaskRunner(unittest.TestCase):
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             await runner.run_once()
             await asyncio.sleep(0.1)
 
             # Verify task completed with None result
-            call_args = runner.async_task_client.update_task.call_args
+            call_args = runner.async_task_client.update_task_v2.call_args
             task_result = call_args.kwargs['body']
 
             self.assertEqual(task_result.status, TaskResultStatus.COMPLETED)
@@ -256,7 +256,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
                     return []
 
             runner.async_task_client.batch_poll = AsyncMock(side_effect=batch_poll_mock)
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             # First run_once - poll 2 tasks
             await runner.run_once()
@@ -397,7 +397,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             await runner.run_once()
             await asyncio.sleep(0.1)
@@ -408,7 +408,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
             self.assertIn("Intentional test error", str(failure_events[0].cause))
 
             # Verify update_task was called with FAILED status
-            call_args = runner.async_task_client.update_task.call_args
+            call_args = runner.async_task_client.update_task_v2.call_args
             task_result = call_args.kwargs['body']
             self.assertEqual(task_result.status, TaskResultStatus.FAILED)
 
@@ -444,7 +444,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
                 return [self.__create_task(task_id=f'task_{i}', input_data={'value': i}) for i in range(count)]
 
             runner.async_task_client.batch_poll = AsyncMock(side_effect=batch_poll_respects_count)
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             # First poll - should request 2 tasks (available_slots=2)
             await runner.run_once()
@@ -532,7 +532,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
             runner._semaphore = asyncio.Semaphore(3)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=mock_tasks)
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             await runner.run_once()
             await asyncio.sleep(0.2)
@@ -577,13 +577,13 @@ class TestAsyncTaskRunner(unittest.TestCase):
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             await runner.run_once()
             await asyncio.sleep(0.1)
 
             # Verify task result was serialized correctly
-            call_args = runner.async_task_client.update_task.call_args
+            call_args = runner.async_task_client.update_task_v2.call_args
             task_result = call_args.kwargs['body']
 
             self.assertIsInstance(task_result, TaskResult)
@@ -670,7 +670,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
 
             # Successful execution scenario
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             await runner.run_once()
             await asyncio.sleep(0.1)
@@ -756,7 +756,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             await runner.run_once()
             await asyncio.sleep(0.1)
@@ -811,7 +811,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             await runner.run_once()
             await asyncio.sleep(0.1)
@@ -866,7 +866,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             # Should complete without raising exception (listener error isolated)
             await runner.run_once()
@@ -876,7 +876,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
             self.assertEqual(len(good_listener_events), 1)
 
             # Update task should still be called (worker execution not affected)
-            runner.async_task_client.update_task.assert_called_once()
+            runner.async_task_client.update_task_v2.assert_called_once()
 
         asyncio.run(run_test())
 
@@ -922,7 +922,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             await runner.run_once()
             await asyncio.sleep(0.1)
@@ -997,7 +997,7 @@ class TestAsyncTaskRunner(unittest.TestCase):
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
-            runner.async_task_client.update_task = AsyncMock(return_value=self.UPDATE_TASK_RESPONSE)
+            runner.async_task_client.update_task_v2 = AsyncMock(return_value=None)
 
             await runner.run_once()
             await asyncio.sleep(0.1)
