@@ -25,7 +25,7 @@ from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.http.models.schema_def import SchemaDef, SchemaType
-from conductor.client.http.rest import AuthorizationException
+from conductor.client.http.rest import ApiException, AuthorizationException
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
 from conductor.client.telemetry.metrics_collector import MetricsCollector
@@ -92,6 +92,7 @@ class TaskRunner:
         self._last_poll_time = 0  # Track last poll to avoid excessive polling when queue is empty
         self._consecutive_empty_polls = 0  # Track empty polls to implement backoff
         self._shutdown = False  # Flag to indicate graceful shutdown
+        self._v2_available = True  # Tracks whether server supports update-task-v2
 
     def run(self) -> None:
         if self.configuration is not None:
@@ -506,18 +507,18 @@ class TaskRunner:
         """Execute task and update result in a tight loop (runs in thread pool).
 
         Uses the v2 update endpoint which returns the next task to process.
-        Loops: execute -> update_v2 (get next task) -> execute -> ...
-        The loop breaks when no next task is available, the task is async/in-progress,
-        or shutdown is requested.
+        Loops: execute → update_v2 (get next task) → execute → …
+        The loop breaks when no next task is available, the task is async /
+        in-progress, or shutdown is requested.
         """
         try:
             while task is not None and not self._shutdown:
                 task_result = self.__execute_task(task)
-                # If task returned None, it's an async task running in background - don't update yet
+                # If task returned None, it's an async task running in background
                 if task_result is None:
                     logger.debug("Task %s is running async, will update when complete", task.task_id)
                     return
-                # If task returned TaskInProgress, it's running async - don't update yet
+                # If task returned TaskInProgress, it's running async
                 if isinstance(task_result, TaskInProgress):
                     logger.debug("Task %s is in progress, will update when complete", task.task_id)
                     return
@@ -824,7 +825,10 @@ class TaskRunner:
                 task_result.output_data = context_result.output_data
 
     def __update_task(self, task_result: TaskResult):
-        """Update task result using v2 endpoint. Returns the next Task to process, or None."""
+        """Update task result. Uses v2 endpoint if available, falls back to v1 otherwise.
+
+        v2 returns the next Task to process (tight loop). v1 returns None (poll-based).
+        """
         if not isinstance(task_result, TaskResult):
             return None
         task_definition_name = self.worker.get_task_definition_name()
@@ -845,15 +849,53 @@ class TaskRunner:
                 # Exponential backoff: [10s, 20s, 30s] before retry
                 time.sleep(attempt * 10)
             try:
-                next_task = self.task_client.update_task_v2(body=task_result)
-                logger.debug(
-                    "Updated task (v2), id: %s, workflow_instance_id: %s, task_definition_name: %s, next_task: %s",
+                if self._v2_available:
+                    next_task = self.task_client.update_task_v2(body=task_result)
+                    logger.debug(
+                        "Updated task (v2), id: %s, workflow_instance_id: %s, task_definition_name: %s, next_task: %s",
+                        task_result.task_id,
+                        task_result.workflow_instance_id,
+                        task_definition_name,
+                        next_task.task_id if next_task else None
+                    )
+                    return next_task
+                else:
+                    self.task_client.update_task(body=task_result)
+                    logger.debug(
+                        "Updated task (v1), id: %s, workflow_instance_id: %s, task_definition_name: %s",
+                        task_result.task_id,
+                        task_result.workflow_instance_id,
+                        task_definition_name,
+                    )
+                    return None
+            except ApiException as e:
+                if self._v2_available and e.status in (404, 501):
+                    logger.warning(
+                        "update-task-v2 not supported by server (HTTP %s), falling back to v1 for task_definition: %s",
+                        e.status, task_definition_name
+                    )
+                    self._v2_available = False
+                    # Immediately retry this attempt with v1
+                    try:
+                        self.task_client.update_task(body=task_result)
+                        return None
+                    except Exception as fallback_err:
+                        last_exception = fallback_err
+                        continue
+                last_exception = e
+                if self.metrics_collector is not None:
+                    self.metrics_collector.increment_task_update_error(
+                        task_definition_name, type(e)
+                    )
+                logger.error(
+                    "Failed to update task (attempt %d/%d), id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
+                    attempt + 1,
+                    retry_count,
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
-                    next_task.task_id if next_task else None
+                    traceback.format_exc()
                 )
-                return next_task
             except Exception as e:
                 last_exception = e
                 if self.metrics_collector is not None:

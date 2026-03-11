@@ -24,7 +24,7 @@ from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.http.models.schema_def import SchemaDef, SchemaType
-from conductor.client.http.rest import AuthorizationException
+from conductor.client.http.rest import ApiException, AuthorizationException
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
 from conductor.client.telemetry.metrics_collector import MetricsCollector
@@ -111,6 +111,7 @@ class AsyncTaskRunner:
         # Semaphore will be created in run() within the event loop
         self._semaphore = None
         self._shutdown = False  # Flag to indicate graceful shutdown
+        self._v2_available = True  # Tracks whether server supports update-task-v2
 
     async def run(self) -> None:
         """Main async loop - runs continuously in single event loop."""
@@ -566,11 +567,15 @@ class AsyncTaskRunner:
         """Execute task and update result in a tight loop (async version).
 
         Uses the v2 update endpoint which returns the next task to process.
-        Loops: execute -> update_v2 (get next task) -> execute -> ...
-        The semaphore is held for the entire loop duration, keeping the slot occupied.
+        Loops: execute → update_v2 (get next task) → execute → …
+
+        The semaphore is held for the entire loop.  This is correct because
+        ``_running_tasks`` (which gates polling) tracks the *coroutine*, not
+        individual tasks — releasing the semaphore mid-loop would not allow
+        new coroutines to be created (the capacity gate would still block).
+        For async workers a slow ``await`` naturally yields to the event loop,
+        so other coroutines make progress regardless.
         """
-        # Acquire semaphore for entire task lifecycle (execution + update)
-        # This ensures we never exceed thread_count tasks in any stage of processing
         async with self._semaphore:
             try:
                 while task is not None and not self._shutdown:
@@ -793,7 +798,10 @@ class AsyncTaskRunner:
                 task_result.output_data = context_result.output_data
 
     async def __async_update_task(self, task_result: TaskResult):
-        """Async update task result using v2 endpoint. Returns the next Task to process, or None."""
+        """Update task result. Uses v2 endpoint if available, falls back to v1 otherwise.
+
+        v2 returns the next Task to process (tight loop). v1 returns None (poll-based).
+        """
         if not isinstance(task_result, TaskResult):
             return None
         task_definition_name = self.worker.get_task_definition_name()
@@ -815,15 +823,53 @@ class AsyncTaskRunner:
                 # Exponential backoff: [10s, 20s, 30s] before retry
                 await asyncio.sleep(attempt * 10)
             try:
-                next_task = await self.async_task_client.update_task_v2(body=task_result)
-                logger.debug(
-                    "Updated async task (v2), id: %s, workflow_instance_id: %s, task_definition_name: %s, next_task: %s",
+                if self._v2_available:
+                    next_task = await self.async_task_client.update_task_v2(body=task_result)
+                    logger.debug(
+                        "Updated async task (v2), id: %s, workflow_instance_id: %s, task_definition_name: %s, next_task: %s",
+                        task_result.task_id,
+                        task_result.workflow_instance_id,
+                        task_definition_name,
+                        next_task.task_id if next_task else None
+                    )
+                    return next_task
+                else:
+                    await self.async_task_client.update_task(body=task_result)
+                    logger.debug(
+                        "Updated async task (v1), id: %s, workflow_instance_id: %s, task_definition_name: %s",
+                        task_result.task_id,
+                        task_result.workflow_instance_id,
+                        task_definition_name,
+                    )
+                    return None
+            except ApiException as e:
+                if self._v2_available and e.status in (404, 501):
+                    logger.warning(
+                        "update-task-v2 not supported by server (HTTP %s), falling back to v1 for task_definition: %s",
+                        e.status, task_definition_name
+                    )
+                    self._v2_available = False
+                    # Immediately retry this attempt with v1
+                    try:
+                        await self.async_task_client.update_task(body=task_result)
+                        return None
+                    except Exception as fallback_err:
+                        last_exception = fallback_err
+                        continue
+                last_exception = e
+                if self.metrics_collector is not None:
+                    self.metrics_collector.increment_task_update_error(
+                        task_definition_name, type(e)
+                    )
+                logger.error(
+                    "Failed to update async task (attempt %d/%d), id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
+                    attempt + 1,
+                    retry_count,
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
-                    next_task.task_id if next_task else None
+                    traceback.format_exc()
                 )
-                return next_task
             except Exception as e:
                 last_exception = e
                 if self.metrics_collector is not None:

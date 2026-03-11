@@ -73,17 +73,17 @@ SUBMIT_RATE = float(os.environ.get("PERF_RATE", "20"))  # workflows/sec
 # ---------------------------------------------------------------------------
 
 @worker_task(task_definition_name="perf_type_a", thread_count=WORKER_THREADS, register_task_def=True)
-def perf_worker_a(task_index: int = 0) -> dict:
+async def perf_worker_a(task_index: int = 0) -> dict:
     return {"worker": "perf_type_a", "task_index": task_index}
 
 
 @worker_task(task_definition_name="perf_type_b", thread_count=WORKER_THREADS, register_task_def=True)
-def perf_worker_b(task_index: int = 0) -> dict:
+async def perf_worker_b(task_index: int = 0) -> dict:
     return {"worker": "perf_type_b", "task_index": task_index}
 
 
 @worker_task(task_definition_name="perf_type_c", thread_count=WORKER_THREADS, register_task_def=True)
-def perf_worker_c(task_index: int = 0) -> dict:
+async def perf_worker_c(task_index: int = 0) -> dict:
     return {"worker": "perf_type_c", "task_index": task_index}
 
 
