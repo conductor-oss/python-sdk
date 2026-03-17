@@ -23,7 +23,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
+python = ">=3.9"
 certifi = ">=14.05.14"
 prometheus-client = ">=0.13.1"
 six = ">=1.10"
