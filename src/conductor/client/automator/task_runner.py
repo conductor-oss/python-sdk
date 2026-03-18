@@ -875,7 +875,7 @@ class TaskRunner:
                     logger.warning(
                         "Server does not support update-task-v2 endpoint (HTTP 404). "
                         "Falling back to v1 update endpoint. "
-                        "Upgrade your Orkes Conductor instance to v5+ to enable the v2 endpoint."
+                        "Upgrade your Orkes instance to v5+ to enable the v2 endpoint."
                     )
                     self._use_update_v2 = False
                     # Retry immediately with v1
