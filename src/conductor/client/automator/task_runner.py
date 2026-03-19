@@ -25,7 +25,7 @@ from conductor.client.http.models.task_exec_log import TaskExecLog
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_result_status import TaskResultStatus
 from conductor.client.http.models.schema_def import SchemaDef, SchemaType
-from conductor.client.http.rest import AuthorizationException
+from conductor.client.http.rest import AuthorizationException, ApiException
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
 from conductor.client.telemetry.metrics_collector import MetricsCollector
@@ -92,6 +92,7 @@ class TaskRunner:
         self._last_poll_time = 0  # Track last poll to avoid excessive polling when queue is empty
         self._consecutive_empty_polls = 0  # Track empty polls to implement backoff
         self._shutdown = False  # Flag to indicate graceful shutdown
+        self._use_update_v2 = True  # Will be set to False if server doesn't support v2 endpoint
 
     def run(self) -> None:
         if self.configuration is not None:
@@ -523,6 +524,11 @@ class TaskRunner:
                     return
                 # Update task and get next task from v2 response
                 task = self.__update_task(task_result)
+                # v2 returns the next task; if v1 was used (returns None), immediately
+                # poll for the next task to preserve tight-loop behaviour on older servers
+                if task is None and not self._use_update_v2 and not self._shutdown:
+                    tasks = self.__batch_poll_tasks(1)
+                    task = tasks[0] if tasks else None
         except Exception as e:
             logger.error(
                 "Error executing/updating task %s: %s",
@@ -845,15 +851,55 @@ class TaskRunner:
                 # Exponential backoff: [10s, 20s, 30s] before retry
                 time.sleep(attempt * 10)
             try:
-                next_task = self.task_client.update_task_v2(body=task_result)
-                logger.debug(
-                    "Updated task (v2), id: %s, workflow_instance_id: %s, task_definition_name: %s, next_task: %s",
+                if self._use_update_v2:
+                    next_task = self.task_client.update_task_v2(body=task_result)
+                    logger.debug(
+                        "Updated task (v2), id: %s, workflow_instance_id: %s, task_definition_name: %s, next_task: %s",
+                        task_result.task_id,
+                        task_result.workflow_instance_id,
+                        task_definition_name,
+                        next_task.task_id if next_task else None
+                    )
+                    return next_task
+                else:
+                    self.task_client.update_task(body=task_result)
+                    logger.debug(
+                        "Updated task (v1), id: %s, workflow_instance_id: %s, task_definition_name: %s",
+                        task_result.task_id,
+                        task_result.workflow_instance_id,
+                        task_definition_name,
+                    )
+                    return None
+            except ApiException as e:
+                if e.status == 404 and self._use_update_v2:
+                    logger.warning(
+                        "Server does not support update-task-v2 endpoint (HTTP 404). "
+                        "Falling back to v1 update endpoint. "
+                        "Upgrade your Orkes instance to v5+ to enable the v2 endpoint."
+                    )
+                    self._use_update_v2 = False
+                    # Retry immediately with v1
+                    try:
+                        self.task_client.update_task(body=task_result)
+                        return None
+                    except Exception as fallback_e:
+                        last_exception = fallback_e
+                        continue
+                last_exception = e
+                if self.metrics_collector is not None:
+                    self.metrics_collector.increment_task_update_error(
+                        task_definition_name, type(e)
+                    )
+                logger.error(
+                    "Failed to update task (attempt %d/%d), id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
+                    attempt + 1,
+                    retry_count,
                     task_result.task_id,
                     task_result.workflow_instance_id,
                     task_definition_name,
-                    next_task.task_id if next_task else None
+                    traceback.format_exc()
                 )
-                return next_task
+                continue
             except Exception as e:
                 last_exception = e
                 if self.metrics_collector is not None:
