@@ -830,6 +830,29 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         self.assertIsNone(result)
 
     @patch('time.sleep', Mock(return_value=None))
+    def test_update_task_v2_405_falls_back_to_v1(self):
+        """When server returns 405 for v2 endpoint (older Conductor), should fall back to v1."""
+        worker = MockWorker('test_task')
+        task_runner = TaskRunner(worker=worker)
+
+        task_result = TaskResult(
+            task_id='test_id',
+            workflow_instance_id='wf_id',
+            worker_id=worker.get_identity(),
+            status=TaskResultStatus.COMPLETED
+        )
+
+        with patch.object(TaskResourceApi, 'update_task_v2',
+                          side_effect=ApiException(status=405)) as mock_v2, \
+             patch.object(TaskResourceApi, 'update_task', return_value='ok') as mock_v1:
+            result = task_runner._TaskRunner__update_task(task_result)
+
+        mock_v2.assert_called_once()
+        mock_v1.assert_called_once()
+        self.assertIsNone(result)
+        self.assertFalse(task_runner._use_update_v2)
+
+    @patch('time.sleep', Mock(return_value=None))
     def test_update_task_v2_404_sets_v1_flag(self):
         """After a 404 on v2, _use_update_v2 flag must be False."""
         worker = MockWorker('test_task')
