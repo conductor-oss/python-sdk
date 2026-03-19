@@ -841,11 +841,12 @@ class AsyncTaskRunner:
                     )
                     return None
             except ApiException as e:
-                if e.status == 404 and self._use_update_v2:
+                if e.status in (404, 405) and self._use_update_v2:
                     logger.warning(
-                        "Server does not support update-task-v2 endpoint (HTTP 404). "
+                        "Server does not support update-task-v2 endpoint (HTTP %d). "
                         "Falling back to v1 update endpoint. "
-                        "Upgrade your Conductor instance to v5+ to enable the v2 endpoint."
+                        "Upgrade your Conductor instance to v5+ to enable the v2 endpoint.",
+                        e.status,
                     )
                     self._use_update_v2 = False
                     # Retry immediately with v1
