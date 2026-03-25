@@ -67,3 +67,4 @@ from conductor.client.http.models.circuit_breaker_transition_response import Cir
 from conductor.client.http.models.signal_response import SignalResponse, TaskStatus
 from conductor.client.http.models.authentication_config import AuthenticationConfig
 from conductor.client.http.models.tag_object import TagObject
+from conductor.client.http.models.workflow_message import WorkflowMessage

@@ -283,6 +283,25 @@ class WorkflowExecutor:
             body=body
         )
 
+    def send_message(self, workflow_id: str, message: Dict[str, Any]) -> str:
+        """Push a message into the message queue of a running workflow (WMQ).
+
+        The workflow must have a PULL_WORKFLOW_MESSAGES task to consume messages.
+        Requires conductor.workflow-message-queue.enabled=true on the server.
+
+        Args:
+            workflow_id: The running workflow instance ID.
+            message: Arbitrary JSON-serialisable dict to deliver to the workflow.
+
+        Returns:
+            The UUID string assigned to the message by the server.
+
+        Raises:
+            ApiException: 404 if the workflow is not found, 409 if not in RUNNING state,
+                          429 if the queue is at capacity.
+        """
+        return self.workflow_client.send_message(workflow_id, message)
+
     def __get_task_result(self, task_id: str, workflow_id: str, task_output: Dict[str, Any], status: str) -> TaskResult:
         return TaskResult(
             workflow_instance_id=workflow_id,
