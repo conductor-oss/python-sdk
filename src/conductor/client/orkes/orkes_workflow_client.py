@@ -215,3 +215,17 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
             kwargs["wait_for_seconds"] = wait_for_seconds
 
         return self.workflowResourceApi.update_workflow_and_task_state(update_requesst=update_requesst, workflow_id=workflow_id, **kwargs)
+
+    def send_message(self, workflow_id: str, message: Dict[str, object]) -> str:
+        """Push a message into the message queue of a running workflow (WMQ).
+
+        Requires conductor.workflow-message-queue.enabled=true on the server.
+
+        Args:
+            workflow_id: The running workflow instance ID.
+            message: Arbitrary JSON-serialisable dict to deliver to the workflow.
+
+        Returns:
+            The UUID string assigned to the message by the server.
+        """
+        return self.workflowResourceApi.send_workflow_message(message, workflow_id)

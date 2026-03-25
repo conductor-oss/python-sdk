@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, List, Dict
 
 from conductor.client.http.models import WorkflowRun, SkipTaskRequest, WorkflowStatus, \
-    ScrollableSearchResultWorkflowSummary, SignalResponse
+    ScrollableSearchResultWorkflowSummary, SignalResponse, WorkflowMessage
 from conductor.client.http.models.correlation_ids_search_request import CorrelationIdsSearchRequest
 from conductor.client.http.models.rerun_workflow_request import RerunWorkflowRequest
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
@@ -119,4 +119,19 @@ class WorkflowClient(ABC):
     @abstractmethod
     def update_state(self, workflow_id: str, update_requesst: WorkflowStateUpdate,
                      wait_until_task_ref_names: Optional[List[str]] = None, wait_for_seconds: Optional[int] = None) -> WorkflowRun:
+        pass
+
+    @abstractmethod
+    def send_message(self, workflow_id: str, message: Dict[str, object]) -> str:
+        """Push a message into the message queue of a running workflow (WMQ).
+
+        Requires conductor.workflow-message-queue.enabled=true on the server.
+
+        Args:
+            workflow_id: The running workflow instance ID.
+            message: Arbitrary JSON-serialisable dict to deliver to the workflow.
+
+        Returns:
+            The UUID string assigned to the message by the server.
+        """
         pass
