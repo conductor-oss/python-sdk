@@ -3255,7 +3255,7 @@ class WorkflowResourceApi(object):
         auth_settings = ['api_key']  # noqa: E501
 
         return self.api_client.call_api(
-            '/workflow/{workflowId}/message', 'POST',
+            '/workflow/{workflowId}/messages', 'POST',
             path_params,
             query_params,
             header_params,
