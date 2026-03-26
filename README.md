@@ -62,6 +62,14 @@ conductor server start
 pip install conductor-python
 ```
 
+> **Ubuntu / Debian users:** Python 3.12+ on Ubuntu 22.04+ and Debian 12+ blocks system-wide `pip install` by default ([PEP 668](https://peps.python.org/pep-0668/)). Use a virtual environment:
+>
+> ```shell
+> python3 -m venv conductor-env
+> source conductor-env/bin/activate
+> pip install conductor-python
+> ```
+
 ## 60-Second Quickstart
 
 **Step 1: Create a workflow**
@@ -162,7 +170,7 @@ python quickstart.py
 > See [Configuration](#configuration) for details.
 
 That's it — you just defined a worker, built a workflow, and executed it. Open the Conductor UI (default:
-[http://localhost:8127](http://localhost:8127)) to see the execution.
+[http://localhost:8080](http://localhost:8080)) to see the execution.
 
 ---
 
