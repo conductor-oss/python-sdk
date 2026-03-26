@@ -59,16 +59,12 @@ conductor server start
 ## Install the SDK
 
 ```shell
+python3 -m venv conductor-env
+source conductor-env/bin/activate  # Windows: conductor-env\Scripts\activate
 pip install conductor-python
 ```
 
-> **Ubuntu / Debian users:** Python 3.12+ on Ubuntu 22.04+ and Debian 12+ blocks system-wide `pip install` by default ([PEP 668](https://peps.python.org/pep-0668/)). Use a virtual environment:
->
-> ```shell
-> python3 -m venv conductor-env
-> source conductor-env/bin/activate
-> pip install conductor-python
-> ```
+> **Already in a virtual environment?** Skip the `venv` step and run `pip install conductor-python` directly. On macOS, Windows, or in containers where system Python is not locked down, you can also install globally.
 
 ## 60-Second Quickstart
 
