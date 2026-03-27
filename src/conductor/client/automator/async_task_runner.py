@@ -248,7 +248,7 @@ class AsyncTaskRunner:
                         schema_client = OrkesSchemaClient(self.configuration)
                     except Exception as e:
                         # Schema client not available (server doesn't support schemas)
-                        logger.warning(f"⚠ Schema registry not available on server - task will be registered without schemas")
+                        logger.debug(f"⚠ Schema registry not available on server - task will be registered without schemas")
                         logger.debug(f"  Error: {e}")
                         schema_registry_available = False
                         schema_client = None
@@ -273,7 +273,7 @@ class AsyncTaskRunner:
                                 except Exception as e:
                                     # Check if this is a 404 (API endpoint doesn't exist on server)
                                     if hasattr(e, 'status') and e.status == 404:
-                                        logger.warning(f"⚠ Schema registry API not available on server (404) - task will be registered without schemas")
+                                        logger.debug(f"⚠ Schema registry API not available on server (404) - task will be registered without schemas")
                                         schema_registry_available = False
                                         input_schema_name = None
                                     else:
@@ -298,7 +298,7 @@ class AsyncTaskRunner:
                                 except Exception as e:
                                     # Check if this is a 404 (API endpoint doesn't exist on server)
                                     if hasattr(e, 'status') and e.status == 404:
-                                        logger.warning(f"⚠ Schema registry API not available on server (404)")
+                                        logger.debug(f"⚠ Schema registry API not available on server (404)")
                                         schema_registry_available = False
                                     else:
                                         # Other error - log and continue without this schema
@@ -393,7 +393,7 @@ class AsyncTaskRunner:
 
                 # Print success message with link
                 task_def_url = f"{self.configuration.ui_host}/taskDef/{task_name}"
-                logger.info(f"✓ Registered/Updated task definition: {task_name} with {task_def.to_dict()}")
+                logger.debug(f"✓ Registered/Updated task definition: {task_name} with {task_def.to_dict()}")
                 logger.debug(f"  View at: {task_def_url}")
 
                 if input_schema_name or output_schema_name:
