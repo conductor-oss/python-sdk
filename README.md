@@ -59,8 +59,12 @@ conductor server start
 ## Install the SDK
 
 ```shell
+python3 -m venv conductor-env
+source conductor-env/bin/activate  # Windows: conductor-env\Scripts\activate
 pip install conductor-python
 ```
+
+> **Already in a virtual environment?** Skip the `venv` step and run `pip install conductor-python` directly. On macOS, Windows, or in containers where system Python is not locked down, you can also install globally.
 
 ## 60-Second Quickstart
 
@@ -162,7 +166,7 @@ python quickstart.py
 > See [Configuration](#configuration) for details.
 
 That's it — you just defined a worker, built a workflow, and executed it. Open the Conductor UI (default:
-[http://localhost:8127](http://localhost:8127)) to see the execution.
+[http://localhost:8080](http://localhost:8080)) to see the execution.
 
 ---
 
