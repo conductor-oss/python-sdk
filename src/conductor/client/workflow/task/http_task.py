@@ -44,7 +44,7 @@ class HttpInput:
     def __init__(self,
                  method: HttpMethod = HttpMethod.GET,
                  uri: Optional[str] = None,
-                 headers: Optional[Dict[str, List[str]]] = None,
+                 headers: Optional[Dict[str, str]] = None,
                  accept: Optional[str] = None,
                  content_type: Optional[str] = None,
                  connection_time_out: Optional[int] = None,
