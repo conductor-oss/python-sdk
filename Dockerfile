@@ -41,6 +41,19 @@ ENV CONDUCTOR_AUTH_SECRET ${CONDUCTOR_AUTH_SECRET}
 ENV CONDUCTOR_SERVER_URL ${CONDUCTOR_SERVER_URL}
 RUN python3 ./tests/integration/main.py
 
+FROM python_test_base AS harness-build
+COPY /harness /package/harness
+
+FROM python:3.12-alpine AS harness
+RUN adduser -D -u 65532 nonroot
+WORKDIR /app
+COPY --from=harness-build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=harness-build /package/src /app/src
+COPY --from=harness-build /package/harness /app/harness
+ENV PYTHONPATH=/app/src
+USER nonroot
+ENTRYPOINT ["python", "-u", "harness/main.py"]
+
 FROM python:3.12-alpine AS publish
 RUN apk add --no-cache tk curl
 WORKDIR /package

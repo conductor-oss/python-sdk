@@ -1,0 +1,13 @@
+---
+# ConfigMap for certification-az cluster
+# Contains Conductor connection details specific to this cluster
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: python-sdk-harness-config
+  # namespace: xxxxx # supply this in kubectl command
+  labels:
+    app: python-sdk-harness-worker
+data:
+  CONDUCTOR_SERVER_URL: "https://certification-az.orkesconductor.io/api"
+  CONDUCTOR_AUTH_KEY: "bf170d61-2797-11f1-833e-4ae04d100a03"
