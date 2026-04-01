@@ -4,6 +4,7 @@ import importlib
 import inspect
 import logging
 import os
+import signal
 import threading
 import time
 from multiprocessing import Process, freeze_support, Queue, set_start_method
@@ -52,6 +53,7 @@ def _run_sync_worker_process(
         event_listeners: Optional[List[Any]],
 ) -> None:
     """Process target: construct TaskRunner after fork/spawn and run forever."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     task_runner = TaskRunner(worker, configuration, metrics_settings, event_listeners)
     task_runner.run()
 
@@ -63,6 +65,7 @@ def _run_async_worker_process(
         event_listeners: Optional[List[Any]],
 ) -> None:
     """Process target: construct AsyncTaskRunner after fork/spawn and run forever."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     async_task_runner = AsyncTaskRunner(worker, configuration, metrics_settings, event_listeners)
     asyncio.run(async_task_runner.run())
 
@@ -607,6 +610,7 @@ def _setup_logging_queue(configuration: Configuration):
 
 # This process performs the centralized logging
 def __logger_process(queue, log_level, logger_format=None):
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     c_logger = logging.getLogger(
         Configuration.get_logging_formatted_name(
             __name__
