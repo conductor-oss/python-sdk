@@ -105,7 +105,7 @@ Create a `quickstart.py` with the following:
 ```python
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.orkes_clients import OrkesClients
+from conductor.client.orkes_clients import OrkesClients  # works with OSS Conductor and Orkes Conductor
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.worker.worker_task import worker_task
 
@@ -131,6 +131,8 @@ def main():
     workflow.register(overwrite=True)
 
     # Start polling for tasks (one worker subprocess per worker function).
+    # Note: scan_for_annotated_workers=True only discovers @worker_task functions that have
+    # already been imported. If workers are in a separate module, import it first.
     with TaskHandler(configuration=config, scan_for_annotated_workers=True) as task_handler:
         task_handler.start_processes()
 
