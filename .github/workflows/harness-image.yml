@@ -59,3 +59,19 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+
+  dispatch-deploy:
+    # TODO: remove the github.ref condition prior to merging
+    if: github.event_name == 'release' || github.ref == 'refs/heads/certification-worker'
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.CI_UTIL_DISPATCH_TOKEN }}
+          repository: conductor-oss/oss-ci-util
+          event-type: sdk_release
+          client-payload: |-
+            {"tag": "${{ github.event.release.tag_name || 'latest' }}", "repo": "${{ github.repository }}"}
