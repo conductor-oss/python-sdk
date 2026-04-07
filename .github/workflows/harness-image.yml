@@ -2,7 +2,7 @@ name: Harness Worker Image
 
 on:
   push:
-    branches: [main, certification-worker]
+    branches: [main]
     paths:
       - "Dockerfile"
       - "harness/**"
@@ -61,8 +61,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
 
   dispatch-deploy:
-    # TODO: remove the github.ref condition prior to merging
-    if: github.event_name == 'release' || github.ref == 'refs/heads/certification-worker'
+    if: github.event_name == 'release'
     needs: build-and-push
     runs-on: ubuntu-latest
     permissions:
