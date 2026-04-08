@@ -36,6 +36,7 @@ deprecated = ">=1.2.14"
 python-dateutil = "^2.8.2"
 httpx = {version = ">=0.26.0", extras = ["http2"]}
 h2 = ">=4.1.0"
+urllib3 = ">=2.6.3"
 
 [tool.poetry.group.dev.dependencies]
 pylint = ">=2.17.5"
@@ -45,6 +46,8 @@ ruff = "^0.12.0"
 pre-commit = "^4.2.0"
 setuptools = "^80.9.0"
 pytest = "^8.4.1"
+filelock = ">=3.20.3"
+virtualenv = ">=20.36.1"
 
 [tool.ruff]
 target-version = "py39"
