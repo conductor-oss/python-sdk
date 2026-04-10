@@ -149,6 +149,29 @@ class TaskHandler:
         - 10-100x better concurrency for I/O-bound workloads
         - Automatically detected - no configuration needed
 
+    Parameters:
+        scan_for_annotated_workers: When True (default), discovers workers decorated with
+            @worker_task that have already been imported into the current Python process.
+            This does NOT scan the filesystem — it only finds functions registered at
+            import time. Workers defined in modules that have not yet been imported will
+            be silently ignored.
+
+            To load workers from separate files, import them before creating TaskHandler:
+
+                import myapp.workers  # must import first
+                with TaskHandler(configuration=config) as th:
+                    th.start_processes()
+
+            Or use the import_modules parameter to have TaskHandler import them for you:
+
+                with TaskHandler(configuration=config,
+                                 import_modules=['myapp.workers']) as th:
+                    th.start_processes()
+
+        import_modules: List of module dotted-path strings to import before scanning for
+            annotated workers (e.g. ['myapp.workers', 'myapp.other_workers']). Use this
+            instead of manual imports when scan_for_annotated_workers=True.
+
     Usage:
         # Default configuration
         handler = TaskHandler(configuration=config)
