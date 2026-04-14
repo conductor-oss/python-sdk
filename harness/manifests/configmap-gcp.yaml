@@ -9,5 +9,5 @@ metadata:
   labels:
     app: python-sdk-harness-worker
 data:
-  CONDUCTOR_SERVER_URL: "https://certification-gcp.orkesconductor.com/api"
-  CONDUCTOR_AUTH_KEY: "e6c1ac61-286b-11f1-be01-c682b5750c3a"
+  CONDUCTOR_SERVER_URL: "https://certification-gcp.orkesconductor.io/api"
+  CONDUCTOR_AUTH_KEY: "25b681c1-34ec-11f1-b07a-9601c7a63373"
