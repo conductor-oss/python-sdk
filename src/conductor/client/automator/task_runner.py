@@ -79,9 +79,25 @@ class TaskRunner:
             )
         )
 
-        # Auth failure backoff tracking to prevent retry storms
+        # Auth failure backoff tracking to prevent retry storms.
+        # `_auth_failures` is capped at `_max_auth_failure_exp` so that
+        # 2**N cannot overflow on a long-lived worker whose auth is broken.
+        # The resulting sleep is further clamped to `_auth_backoff_cap_seconds`.
         self._auth_failures = 0
         self._last_auth_failure = 0
+        self._auth_backoff_cap_seconds = 60
+        self._max_auth_failure_exp = 6  # 2**6 = 64s, sleep clamped to cap
+
+        # Generic poll-failure backoff. This is distinct from the empty-poll
+        # adaptive delay (`_consecutive_empty_polls`) and from the auth-error
+        # backoff above. It kicks in when batch_poll raises an exception
+        # (server 5xx, NGINX 502/504 under load, DNS hiccup, a closed httpx
+        # client that couldn't heal, etc.) so we don't hot-loop the log with
+        # stack traces while waiting for the server to recover.
+        self._poll_failures = 0
+        self._last_poll_failure = 0
+        self._poll_backoff_cap_seconds = 120  # max 2 minutes between retries
+        self._max_poll_failure_exp = 7  # 2**7 = 128s, sleep clamped to cap
 
         # Thread pool for concurrent task execution
         # thread_count from worker configuration controls concurrency
@@ -543,11 +559,29 @@ class TaskRunner:
             logger.debug("Stop polling task for: %s", task_definition_name)
             return []
 
-        # Apply exponential backoff if we have recent auth failures
+        # Apply exponential backoff if we have recent auth failures.
         if self._auth_failures > 0:
             now = time.time()
-            backoff_seconds = min(2 ** self._auth_failures, 60)
+            backoff_seconds = min(
+                2 ** min(self._auth_failures, self._max_auth_failure_exp),
+                self._auth_backoff_cap_seconds,
+            )
             time_since_last_failure = now - self._last_auth_failure
+            if time_since_last_failure < backoff_seconds:
+                time.sleep(0.1)
+                return []
+
+        # Apply exponential backoff for generic poll failures (5xx, network
+        # errors, closed-client runtime errors that couldn't self-heal, etc.).
+        # Bounded at `_poll_backoff_cap_seconds` (2 min) to avoid log floods
+        # without giving up on recovery.
+        if self._poll_failures > 0:
+            now = time.time()
+            backoff_seconds = min(
+                2 ** min(self._poll_failures, self._max_poll_failure_exp),
+                self._poll_backoff_cap_seconds,
+            )
+            time_since_last_failure = now - self._last_poll_failure
             if time_since_last_failure < backoff_seconds:
                 time.sleep(0.1)
                 return []
@@ -583,15 +617,20 @@ class TaskRunner:
                 tasks_received=len(tasks) if tasks else 0
             ))
 
-            # Success - reset auth failure counter (any successful HTTP response means auth is working)
+            # Success - reset both failure counters (any successful HTTP
+            # response means auth and connectivity are working).
             self._auth_failures = 0
+            self._poll_failures = 0
 
             return tasks if tasks else []
 
         except AuthorizationException as auth_exception:
             self._auth_failures += 1
             self._last_auth_failure = time.time()
-            backoff_seconds = min(2 ** self._auth_failures, 60)
+            backoff_seconds = min(
+                2 ** min(self._auth_failures, self._max_auth_failure_exp),
+                self._auth_backoff_cap_seconds,
+            )
 
             # Publish PollFailure event (metrics collector will handle via event)
             self.event_dispatcher.publish(PollFailure(
@@ -619,10 +658,51 @@ class TaskRunner:
                 duration_ms=(time.time() - start_time) * 1000,
                 cause=e
             ))
-            logger.error(
-                "Failed to batch poll task for: %s, reason: %s",
+
+            # Bump the poll-failure counter so the next poll waits with
+            # exponential backoff instead of hot-looping on a broken server
+            # or connection.
+            self._poll_failures += 1
+            self._last_poll_failure = time.time()
+            backoff_seconds = min(
+                2 ** min(self._poll_failures, self._max_poll_failure_exp),
+                self._poll_backoff_cap_seconds,
+            )
+
+            # Belt-and-suspenders: if the underlying httpx client got closed
+            # and rest.request() couldn't heal it (e.g. because the error
+            # arrived as a non-RuntimeError), nudge it here. The rest client
+            # exposes `_is_client_closed` and `_reset_connection` for this.
+            try:
+                rest_client = getattr(
+                    getattr(self.task_client, "api_client", None),
+                    "rest_client",
+                    None,
+                )
+                if rest_client is not None and getattr(rest_client, "_is_client_closed", lambda: False)():
+                    logger.warning(
+                        "rest_client was closed after poll failure; resetting"
+                    )
+                    rest_client._reset_connection()
+            except Exception:
+                # Healing is best-effort; never let it mask the original error.
+                pass
+
+            # Log a single-line warning at a modest level to avoid drowning
+            # ops in tracebacks when the server is flapping. Full traceback
+            # goes to debug for when operators need it.
+            logger.warning(
+                "Failed to batch poll task for: %s (failure #%d). Will retry with exponential backoff (%ss). Reason: %s: %s",
                 task_definition_name,
-                traceback.format_exc()
+                self._poll_failures,
+                backoff_seconds,
+                type(e).__name__,
+                e,
+            )
+            logger.debug(
+                "batch poll failure traceback for %s:\n%s",
+                task_definition_name,
+                traceback.format_exc(),
             )
             return []
 

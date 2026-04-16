@@ -1,10 +1,25 @@
 import io
 import json
+import logging
 import os
 import re
 
 import httpx
 from six.moves.urllib.parse import urlencode
+
+logger = logging.getLogger(__name__)
+
+# Substrings that indicate httpx has marked its Client as closed and is
+# refusing further requests. httpx raises a plain RuntimeError in this case
+# (e.g. "Cannot send a request, as the client has been closed."), so we
+# detect it by message rather than exception type.
+_CLOSED_CLIENT_MARKERS = ("has been closed", "is closed")
+
+
+def _is_closed_client_error(exc: BaseException) -> bool:
+    """Return True if the exception indicates the httpx client is closed."""
+    msg = str(exc) if exc else ""
+    return any(marker in msg for marker in _CLOSED_CLIENT_MARKERS)
 
 
 class RESTResponse(io.IOBase):
@@ -82,15 +97,34 @@ class RESTClientObject(object):
             http2=bool(self._http2_enabled)
         )
 
+    def _is_client_closed(self) -> bool:
+        """Return True if the underlying httpx client is closed.
+
+        We check the client's `is_closed` flag defensively because not every
+        mock or subclass exposes it.
+        """
+        try:
+            return bool(getattr(self.connection, "is_closed", False))
+        except Exception:
+            return False
+
     def _reset_connection(self) -> None:
-        if not getattr(self, "_owns_connection", False):
-            return
+        """Close the current httpx client (if any) and create a fresh one.
+
+        Previously this would silently no-op when `_owns_connection` was
+        False, which meant an externally-provided `httpx.Client` that got
+        closed could never be healed. We now take ownership of the
+        replacement client so self-healing also works in that path.
+        """
         try:
             if getattr(self, "connection", None) is not None:
                 self.connection.close()
         except Exception:
             pass
+        if getattr(self, "_http2_enabled", None) is None:
+            self._http2_enabled = self._is_http2_enabled()
         self.connection = self._create_default_httpx_client()
+        self._owns_connection = True
 
     def __del__(self):
         """Cleanup httpx client on object destruction."""
@@ -152,6 +186,16 @@ class RESTClientObject(object):
         if 'Content-Type' not in headers:
             headers['Content-Type'] = 'application/json'
 
+        # Proactively heal a client that is already closed before we even try
+        # to send. This avoids unnecessary tracebacks from httpx and keeps the
+        # worker self-healing when the parent process (or a fork-related
+        # cleanup) has closed our underlying client out from under us.
+        if self._is_client_closed():
+            logger.warning(
+                "httpx client was closed before request; re-establishing a fresh client"
+            )
+            self._reset_connection()
+
         for attempt in range(2):
             try:
                 # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
@@ -190,11 +234,26 @@ class RESTClientObject(object):
                 # A stale/broken keep-alive connection can cause protocol errors (esp. with HTTP/2).
                 # Reset the client to recover without requiring process restart.
                 # Only auto-retry idempotent methods to avoid duplicating side effects.
-                if attempt == 0 and self._owns_connection:
+                if attempt == 0:
+                    logger.warning("httpx protocol error; re-establishing client: %s", e)
                     self._reset_connection()
                     if method in idempotent_methods:
                         continue
                 msg = f"Protocol error: {e}"
+                raise ApiException(status=0, reason=msg)
+            except RuntimeError as e:
+                # httpx raises a plain RuntimeError ("Cannot send a request, as the
+                # client has been closed.") once its Client is closed. This can
+                # happen after a fork, an errant cleanup, or a GC of a sibling
+                # RESTClientObject. Heal and retry once for idempotent methods.
+                if attempt == 0 and _is_closed_client_error(e):
+                    logger.warning(
+                        "httpx client was closed mid-request; re-establishing and retrying"
+                    )
+                    self._reset_connection()
+                    if method in idempotent_methods:
+                        continue
+                msg = f"Runtime error: {e}"
                 raise ApiException(status=0, reason=msg)
             except httpx.TimeoutException as e:
                 msg = f"Request timeout: {e}"
