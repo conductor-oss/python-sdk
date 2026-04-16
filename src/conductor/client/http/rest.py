@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import re
+import threading
 
 import httpx
 from six.moves.urllib.parse import urlencode
@@ -61,6 +62,10 @@ class RESTResponse(io.IOBase):
 
 class RESTClientObject(object):
     def __init__(self, connection=None):
+        # Serializes self-healing resets so that a thundering herd of threads
+        # discovering the same broken connection produces at most ONE real
+        # reset + warning line, not N.
+        self._reset_lock = threading.Lock()
         if connection is None:
             self._http2_enabled = self._is_http2_enabled()
             self.connection = self._create_default_httpx_client()
@@ -108,23 +113,40 @@ class RESTClientObject(object):
         except Exception:
             return False
 
-    def _reset_connection(self) -> None:
+    def _reset_connection(self, expected=None) -> bool:
         """Close the current httpx client (if any) and create a fresh one.
 
-        Previously this would silently no-op when `_owns_connection` was
-        False, which meant an externally-provided `httpx.Client` that got
-        closed could never be healed. We now take ownership of the
-        replacement client so self-healing also works in that path.
+        This is a thread-safe compare-and-swap:
+
+        - If `expected` is provided, the reset is only performed when the
+          current `self.connection` is still that exact client instance.
+          This is the thundering-herd guard: when thread A discovers the
+          shared client is broken and heals it, threads B/C/D whose
+          in-flight requests on the OLD client also fail will try to heal
+          too. With `expected=the_old_client` they'll see the connection
+          has already moved on and no-op instead of closing thread A's
+          freshly-built replacement.
+        - If `expected` is None, the reset always happens (legacy callers).
+
+        Returns True if this call actually replaced the client, False if
+        another thread had already healed it. Callers can use the return
+        value to decide whether to emit a WARNING or drop to DEBUG.
         """
-        try:
-            if getattr(self, "connection", None) is not None:
-                self.connection.close()
-        except Exception:
-            pass
-        if getattr(self, "_http2_enabled", None) is None:
-            self._http2_enabled = self._is_http2_enabled()
-        self.connection = self._create_default_httpx_client()
-        self._owns_connection = True
+        with self._reset_lock:
+            current = getattr(self, "connection", None)
+            if expected is not None and current is not expected:
+                # Someone else already healed since our caller last looked.
+                return False
+            try:
+                if current is not None:
+                    current.close()
+            except Exception:
+                pass
+            if getattr(self, "_http2_enabled", None) is None:
+                self._http2_enabled = self._is_http2_enabled()
+            self.connection = self._create_default_httpx_client()
+            self._owns_connection = True
+            return True
 
     def __del__(self):
         """Cleanup httpx client on object destruction."""
@@ -190,13 +212,20 @@ class RESTClientObject(object):
         # to send. This avoids unnecessary tracebacks from httpx and keeps the
         # worker self-healing when the parent process (or a fork-related
         # cleanup) has closed our underlying client out from under us.
+        # Use compare-and-swap with a snapshot so that concurrent proactive
+        # heals don't churn the client.
+        pre_check_client = self.connection
         if self._is_client_closed():
-            logger.warning(
-                "httpx client was closed before request; re-establishing a fresh client"
-            )
-            self._reset_connection()
+            if self._reset_connection(expected=pre_check_client):
+                logger.warning(
+                    "httpx client was closed before request; re-established a fresh client"
+                )
 
         for attempt in range(2):
+            # Snapshot the client we're about to use so that if the request
+            # fails we can ask for a reset only if the client is still this
+            # one (i.e. nobody else healed it in the meantime).
+            client_at_send = self.connection
             try:
                 # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
                 if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
@@ -209,7 +238,7 @@ class RESTClientObject(object):
                             request_body = json.dumps(body)
                             if isinstance(body, str):
                                 request_body = request_body.strip('"')
-                        r = self.connection.request(
+                        r = client_at_send.request(
                             method, request_url,
                             content=request_body,
                             timeout=timeout,
@@ -223,7 +252,7 @@ class RESTClientObject(object):
                         raise ApiException(status=0, reason=msg)
                 # For `GET`, `HEAD`
                 else:
-                    r = self.connection.request(
+                    r = client_at_send.request(
                         method, url,
                         params=query_params,
                         timeout=timeout,
@@ -235,8 +264,14 @@ class RESTClientObject(object):
                 # Reset the client to recover without requiring process restart.
                 # Only auto-retry idempotent methods to avoid duplicating side effects.
                 if attempt == 0:
-                    logger.warning("httpx protocol error; re-establishing client: %s", e)
-                    self._reset_connection()
+                    reset_done = self._reset_connection(expected=client_at_send)
+                    if reset_done:
+                        logger.warning("httpx protocol error; re-established client: %s", e)
+                    else:
+                        logger.debug(
+                            "httpx protocol error on stale client (already healed by another thread): %s",
+                            e,
+                        )
                     if method in idempotent_methods:
                         continue
                 msg = f"Protocol error: {e}"
@@ -247,10 +282,15 @@ class RESTClientObject(object):
                 # happen after a fork, an errant cleanup, or a GC of a sibling
                 # RESTClientObject. Heal and retry once for idempotent methods.
                 if attempt == 0 and _is_closed_client_error(e):
-                    logger.warning(
-                        "httpx client was closed mid-request; re-establishing and retrying"
-                    )
-                    self._reset_connection()
+                    reset_done = self._reset_connection(expected=client_at_send)
+                    if reset_done:
+                        logger.warning(
+                            "httpx client was closed mid-request; re-established and retrying"
+                        )
+                    else:
+                        logger.debug(
+                            "httpx client closed on stale reference (already healed by another thread); retrying"
+                        )
                     if method in idempotent_methods:
                         continue
                 msg = f"Runtime error: {e}"

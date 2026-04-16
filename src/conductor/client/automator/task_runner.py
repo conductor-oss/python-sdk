@@ -671,8 +671,10 @@ class TaskRunner:
 
             # Belt-and-suspenders: if the underlying httpx client got closed
             # and rest.request() couldn't heal it (e.g. because the error
-            # arrived as a non-RuntimeError), nudge it here. The rest client
-            # exposes `_is_client_closed` and `_reset_connection` for this.
+            # arrived as a non-RuntimeError), nudge it here. Pass the current
+            # connection as `expected` so concurrent threads racing to heal
+            # can't cause a reset storm: only the first caller per client
+            # generation actually replaces it.
             try:
                 rest_client = getattr(
                     getattr(self.task_client, "api_client", None),
@@ -680,10 +682,12 @@ class TaskRunner:
                     None,
                 )
                 if rest_client is not None and getattr(rest_client, "_is_client_closed", lambda: False)():
-                    logger.warning(
-                        "rest_client was closed after poll failure; resetting"
-                    )
-                    rest_client._reset_connection()
+                    current_conn = getattr(rest_client, "connection", None)
+                    reset = rest_client._reset_connection(expected=current_conn)
+                    if reset:
+                        logger.warning(
+                            "rest_client was closed after poll failure; reset"
+                        )
             except Exception:
                 # Healing is best-effort; never let it mask the original error.
                 pass
