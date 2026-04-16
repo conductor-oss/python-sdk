@@ -975,15 +975,33 @@ class TaskRunner:
                     self.metrics_collector.increment_task_update_error(
                         task_definition_name, type(e)
                     )
-                logger.error(
-                    "Failed to update task (attempt %d/%d), id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
-                    attempt + 1,
-                    retry_count,
-                    task_result.task_id,
-                    task_result.workflow_instance_id,
-                    task_definition_name,
-                    traceback.format_exc()
-                )
+                is_last_attempt = (attempt + 1) >= retry_count
+                # Known recoverable transport hiccups (stale keep-alive,
+                # HTTP/2 GOAWAY race, client closed mid-request) are flagged
+                # `transient=True` by the REST layer after it self-heals. For
+                # those, skip the stack trace until the final attempt — the
+                # retry normally succeeds immediately and a full traceback per
+                # in-flight task just spams the log.
+                if getattr(e, "transient", False) and not is_last_attempt:
+                    logger.warning(
+                        "Transient transport error updating task; will retry (attempt %d/%d), id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
+                        attempt + 1,
+                        retry_count,
+                        task_result.task_id,
+                        task_result.workflow_instance_id,
+                        task_definition_name,
+                        getattr(e, "reason", None) or str(e),
+                    )
+                else:
+                    logger.error(
+                        "Failed to update task (attempt %d/%d), id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
+                        attempt + 1,
+                        retry_count,
+                        task_result.task_id,
+                        task_result.workflow_instance_id,
+                        task_definition_name,
+                        traceback.format_exc()
+                    )
                 continue
             except Exception as e:
                 last_exception = e

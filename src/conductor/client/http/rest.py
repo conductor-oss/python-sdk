@@ -274,8 +274,8 @@ class RESTClientObject(object):
                         )
                     if method in idempotent_methods:
                         continue
-                msg = f"Protocol error: {e}"
-                raise ApiException(status=0, reason=msg)
+                msg = f"Protocol error ({type(e).__name__}): {e}"
+                raise ApiException(status=0, reason=msg, transient=True) from e
             except RuntimeError as e:
                 # httpx raises a plain RuntimeError ("Cannot send a request, as the
                 # client has been closed.") once its Client is closed. This can
@@ -293,8 +293,12 @@ class RESTClientObject(object):
                         )
                     if method in idempotent_methods:
                         continue
+                    # Not an idempotent method; surface as transient so the
+                    # caller's retry loop can log it cleanly.
+                    msg = f"Client was closed mid-request: {e}"
+                    raise ApiException(status=0, reason=msg, transient=True) from e
                 msg = f"Runtime error: {e}"
-                raise ApiException(status=0, reason=msg)
+                raise ApiException(status=0, reason=msg) from e
             except httpx.TimeoutException as e:
                 msg = f"Request timeout: {e}"
                 raise ApiException(status=0, reason=msg)
@@ -384,7 +388,15 @@ class RESTClientObject(object):
 
 class ApiException(Exception):
 
-    def __init__(self, status=None, reason=None, http_resp=None, body=None):
+    def __init__(self, status=None, reason=None, http_resp=None, body=None,
+                 transient=False):
+        # `transient=True` means the SDK recognised this as a recoverable
+        # transport-layer hiccup (stale keep-alive, HTTP/2 GOAWAY race, client
+        # closed by a fork cleanup, etc.) and has already self-healed the
+        # underlying httpx client. Callers that implement their own retry loop
+        # (e.g. TaskRunner.__update_task) can use this flag to log a concise
+        # warning instead of a full traceback until the final attempt.
+        self.transient = transient
         if http_resp:
             self.status = http_resp.status
             self.code = http_resp.status
