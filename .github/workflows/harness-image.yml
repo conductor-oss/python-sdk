@@ -13,6 +13,11 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Dispatch downstream deploy after the image is built"
+        type: boolean
+        default: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -61,7 +66,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
 
   dispatch-deploy:
-    if: github.event_name == 'release'
+    if: |
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' && inputs.deploy)
     needs: build-and-push
     runs-on: ubuntu-latest
     permissions:
