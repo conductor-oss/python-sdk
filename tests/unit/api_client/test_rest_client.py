@@ -111,7 +111,10 @@ class TestRESTClientObject(unittest.TestCase):
         self.assertEqual(first_client.request.call_count, 1)
         self.assertTrue(first_client.close.called)
         self.assertEqual(second_client.request.call_count, 0)
-        self.assertIn("Runtime error", str(ctx.exception))
+        # Surfaced as a transient ApiException so the caller's retry loop can
+        # log it concisely rather than dumping a full traceback.
+        self.assertIn("Client was closed mid-request", str(ctx.exception))
+        self.assertTrue(getattr(ctx.exception, "transient", False))
 
     @patch.object(rest.RESTClientObject, "_create_default_httpx_client")
     def test_unrelated_runtime_error_is_not_retried(self, mock_create_client):
