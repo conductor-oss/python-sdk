@@ -296,13 +296,13 @@ class TaskHandler:
     def start_processes(self) -> None:
         if self._processes_started:
             return
-        self._processes_started = True
         logger.info("Starting worker processes...")
         freeze_support()
         self._monitor_stop_event.clear()
         self.__start_task_runner_processes()
         self.__start_metrics_provider_process()
         self.__start_monitor_thread()
+        self._processes_started = True
         logger.info("Started all processes")
 
     def join_processes(self) -> None:
