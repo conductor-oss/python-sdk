@@ -46,13 +46,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Calculate branch tag
+        id: vars
+        shell: bash
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          CLEANED_BRANCH_NAME=$(echo "$BRANCH" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
+          echo "cleaned-branch-name=$CLEANED_BRANCH_NAME" >> "$GITHUB_OUTPUT"
+
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/conductor-oss/python-sdk/harness-worker
           tags: |
-            type=raw,value=latest
+            type=raw,value=${{ steps.vars.outputs.cleaned-branch-name }}-latest,enable=${{ github.event_name != 'release' }}
             type=raw,value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
 
       - name: Build and push
@@ -64,6 +72,12 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          # Registry-backed BuildKit cache. Unchanged layers are reused across
+          # runs so rebuilding the same commit (or one with only minor diffs)
+          # is near-instant. The `:buildcache` tag lives alongside the image
+          # but only stores layer blobs, not a runnable image.
+          cache-from: type=registry,ref=ghcr.io/conductor-oss/python-sdk/harness-worker:buildcache
+          cache-to: type=registry,ref=ghcr.io/conductor-oss/python-sdk/harness-worker:buildcache,mode=max
 
   dispatch-deploy:
     if: |
