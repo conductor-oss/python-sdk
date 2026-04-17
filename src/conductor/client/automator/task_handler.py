@@ -274,7 +274,13 @@ class TaskHandler:
         logger.info("TaskHandler initialized")
 
     def __enter__(self):
-        self.start_processes()
+        try:
+            self.start_processes()
+        except BaseException:
+            # __exit__ is not called if __enter__ raises, so clean up any
+            # partially-spawned workers here before propagating.
+            self.stop_processes()
+            raise
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
