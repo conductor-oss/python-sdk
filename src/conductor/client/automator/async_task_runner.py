@@ -5,7 +5,6 @@ import os
 import sys
 import time
 import traceback
-from dataclasses import dataclass
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
@@ -33,26 +32,13 @@ from conductor.client.worker.worker_interface import WorkerInterface
 from conductor.client.worker.worker_config import resolve_worker_config, get_worker_config_oneline
 from conductor.client.worker.exception import NonRetryableException
 from conductor.client.automator.json_schema_generator import generate_json_schema_from_function
+from conductor.client.automator.lease_tracker import LeaseInfo, LEASE_EXTEND_RETRY_COUNT, LEASE_EXTEND_DURATION_FACTOR
 
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(
         __name__
     )
 )
-
-# Lease extension constants (matches Java SDK)
-LEASE_EXTEND_RETRY_COUNT = 3
-LEASE_EXTEND_DURATION_FACTOR = 0.8
-
-
-@dataclass
-class _LeaseInfo:
-    """Tracks when a heartbeat is next due for an in-flight task."""
-    task_id: str
-    workflow_instance_id: str
-    response_timeout_seconds: float
-    last_heartbeat_time: float  # time.monotonic() of last heartbeat (or task start)
-    interval_seconds: float     # 80% of responseTimeoutSeconds
 
 
 class AsyncTaskRunner:
@@ -127,7 +113,7 @@ class AsyncTaskRunner:
         self._semaphore = None
         self._shutdown = False  # Flag to indicate graceful shutdown
         self._use_update_v2 = True  # Will be set to False if server doesn't support v2 endpoint
-        self._lease_info = {}  # task_id -> _LeaseInfo for lease extension heartbeats
+        self._lease_info = {}  # task_id -> LeaseInfo for lease extension heartbeats
 
     async def run(self) -> None:
         """Main async loop - runs continuously in single event loop."""
@@ -599,10 +585,6 @@ class AsyncTaskRunner:
             try:
                 while task is not None and not self._shutdown:
                     task_result = await self.__async_execute_task(task)
-                    # If task returned TaskInProgress, don't update yet
-                    if isinstance(task_result, TaskInProgress):
-                        logger.debug("Task %s is in progress, will update when complete", task.task_id)
-                        return
                     if task_result is None:
                         return
                     self._untrack_lease(task.task_id)
@@ -949,7 +931,7 @@ class AsyncTaskRunner:
         interval = timeout * LEASE_EXTEND_DURATION_FACTOR
         if interval < 1:
             return
-        self._lease_info[task.task_id] = _LeaseInfo(
+        self._lease_info[task.task_id] = LeaseInfo(
             task_id=task.task_id,
             workflow_instance_id=task.workflow_instance_id,
             response_timeout_seconds=timeout,
@@ -979,7 +961,7 @@ class AsyncTaskRunner:
             await self._send_heartbeat(info)
             info.last_heartbeat_time = time.monotonic()
 
-    async def _send_heartbeat(self, info: _LeaseInfo) -> None:
+    async def _send_heartbeat(self, info: LeaseInfo) -> None:
         """Send a single lease extension heartbeat with retry (async)."""
         result = TaskResult(
             task_id=info.task_id,
@@ -991,13 +973,13 @@ class AsyncTaskRunner:
                 await self.async_task_client.update_task(body=result)
                 logger.debug("Extended lease for task %s", info.task_id)
                 return
-            except Exception:
+            except Exception as e:
                 if attempt < LEASE_EXTEND_RETRY_COUNT - 1:
                     await asyncio.sleep(0.5 * (attempt + 2))
                 else:
                     logger.error(
-                        "Failed to extend lease for task %s after %d attempts",
-                        info.task_id, LEASE_EXTEND_RETRY_COUNT,
+                        "Failed to extend lease for task %s after %d attempts: %s",
+                        info.task_id, LEASE_EXTEND_RETRY_COUNT, e,
                     )
 
     # --------------------------------------------------------------------------
