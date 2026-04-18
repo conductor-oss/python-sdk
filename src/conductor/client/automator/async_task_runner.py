@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import traceback
+from dataclasses import dataclass
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
@@ -38,6 +39,20 @@ logger = logging.getLogger(
         __name__
     )
 )
+
+# Lease extension constants (matches Java SDK)
+LEASE_EXTEND_RETRY_COUNT = 3
+LEASE_EXTEND_DURATION_FACTOR = 0.8
+
+
+@dataclass
+class _LeaseInfo:
+    """Tracks when a heartbeat is next due for an in-flight task."""
+    task_id: str
+    workflow_instance_id: str
+    response_timeout_seconds: float
+    last_heartbeat_time: float  # time.monotonic() of last heartbeat (or task start)
+    interval_seconds: float     # 80% of responseTimeoutSeconds
 
 
 class AsyncTaskRunner:
@@ -112,6 +127,7 @@ class AsyncTaskRunner:
         self._semaphore = None
         self._shutdown = False  # Flag to indicate graceful shutdown
         self._use_update_v2 = True  # Will be set to False if server doesn't support v2 endpoint
+        self._lease_info = {}  # task_id -> _LeaseInfo for lease extension heartbeats
 
     async def run(self) -> None:
         """Main async loop - runs continuously in single event loop."""
@@ -165,6 +181,9 @@ class AsyncTaskRunner:
     async def _cleanup(self) -> None:
         """Clean up async resources."""
         logger.debug("Cleaning up AsyncTaskRunner resources...")
+
+        # Stop all lease extension tracking
+        self._lease_info.clear()
 
         # Cancel any running tasks (EAFP style)
         try:
@@ -423,6 +442,9 @@ class AsyncTaskRunner:
     async def run_once(self) -> None:
         """Execute one iteration of the polling loop (async version)."""
         try:
+            # Send lease extension heartbeats for any tasks that are due
+            await self._send_due_heartbeats()
+
             # No need for manual cleanup - tasks remove themselves via add_done_callback
             # Just check capacity directly
             current_capacity = len(self._running_tasks)
@@ -573,6 +595,7 @@ class AsyncTaskRunner:
         # Acquire semaphore for entire task lifecycle (execution + update)
         # This ensures we never exceed thread_count tasks in any stage of processing
         async with self._semaphore:
+            self._track_lease(task)
             try:
                 while task is not None and not self._shutdown:
                     task_result = await self.__async_execute_task(task)
@@ -582,6 +605,7 @@ class AsyncTaskRunner:
                         return
                     if task_result is None:
                         return
+                    self._untrack_lease(task.task_id)
                     # Update task and get next task from v2 response
                     task = await self.__async_update_task(task_result)
                     # v2 returns the next task; if v1 was used (returns None), immediately
@@ -589,12 +613,17 @@ class AsyncTaskRunner:
                     if task is None and not self._use_update_v2 and not self._shutdown:
                         tasks = await self.__async_batch_poll(1)
                         task = tasks[0] if tasks else None
+                    if task is not None:
+                        self._track_lease(task)
             except Exception as e:
                 logger.error(
                     "Error executing/updating task %s: %s",
                     task.task_id if task else "unknown",
                     traceback.format_exc()
                 )
+            finally:
+                if task is not None:
+                    self._untrack_lease(task.task_id)
 
     async def __async_execute_task(self, task: Task) -> TaskResult:
         """Execute async worker function directly (no threads, no BackgroundEventLoop)."""
@@ -907,6 +936,71 @@ class AsyncTaskRunner:
         ))
 
         return None
+
+    # -- Lease extension (heartbeat) methods ----------------------------------
+
+    def _track_lease(self, task) -> None:
+        """Start tracking a task for lease extension heartbeat."""
+        if not getattr(self.worker, 'lease_extend_enabled', False):
+            return
+        timeout = getattr(task, 'response_timeout_seconds', None) or 0
+        if timeout <= 0:
+            return
+        interval = timeout * LEASE_EXTEND_DURATION_FACTOR
+        if interval < 1:
+            return
+        self._lease_info[task.task_id] = _LeaseInfo(
+            task_id=task.task_id,
+            workflow_instance_id=task.workflow_instance_id,
+            response_timeout_seconds=timeout,
+            last_heartbeat_time=time.monotonic(),
+            interval_seconds=interval,
+        )
+        logger.debug(
+            "Tracking lease for task %s (timeout=%ss, heartbeat every %ss)",
+            task.task_id, timeout, interval,
+        )
+
+    def _untrack_lease(self, task_id: str) -> None:
+        """Stop tracking a task for lease extension."""
+        removed = self._lease_info.pop(task_id, None)
+        if removed is not None:
+            logger.debug("Untracked lease for task %s", task_id)
+
+    async def _send_due_heartbeats(self) -> None:
+        """Check all tracked tasks and send heartbeats for any that are due."""
+        if not self._lease_info:
+            return
+        now = time.monotonic()
+        for info in list(self._lease_info.values()):
+            elapsed = now - info.last_heartbeat_time
+            if elapsed < info.interval_seconds:
+                continue
+            await self._send_heartbeat(info)
+            info.last_heartbeat_time = time.monotonic()
+
+    async def _send_heartbeat(self, info: _LeaseInfo) -> None:
+        """Send a single lease extension heartbeat with retry (async)."""
+        result = TaskResult(
+            task_id=info.task_id,
+            workflow_instance_id=info.workflow_instance_id,
+            extend_lease=True,
+        )
+        for attempt in range(LEASE_EXTEND_RETRY_COUNT):
+            try:
+                await self.async_task_client.update_task(body=result)
+                logger.debug("Extended lease for task %s", info.task_id)
+                return
+            except Exception:
+                if attempt < LEASE_EXTEND_RETRY_COUNT - 1:
+                    await asyncio.sleep(0.5 * (attempt + 2))
+                else:
+                    logger.error(
+                        "Failed to extend lease for task %s after %d attempts",
+                        info.task_id, LEASE_EXTEND_RETRY_COUNT,
+                    )
+
+    # --------------------------------------------------------------------------
 
     def __set_worker_properties(self) -> None:
         """
