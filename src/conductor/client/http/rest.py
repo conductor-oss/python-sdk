@@ -15,7 +15,10 @@ class RESTResponse:
         self.headers = resp.headers
         # Break httpx Response <-> BoundSyncStream reference cycle (issue #395)
         resp.stream = None
-        resp._request = None
+        try:
+            resp._request = None
+        except AttributeError:
+            pass
 
     def _get_reason_phrase(self, status_code):
         """Get HTTP reason phrase from status code."""
