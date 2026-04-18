@@ -182,7 +182,7 @@ class TestApiClientCoverage(unittest.TestCase):
 
             # Mock response with JSON
             response = Mock()
-            response.resp.json.return_value = {'key': 'value'}
+            response.json.return_value = {'key': 'value'}
 
             result = client.deserialize(response, 'dict(str, str)')
             self.assertEqual(result, {'key': 'value'})
@@ -194,8 +194,8 @@ class TestApiClientCoverage(unittest.TestCase):
 
             # Mock response that fails JSON parsing
             response = Mock()
-            response.resp.json.side_effect = Exception("Not JSON")
-            response.resp.text = "plain text"
+            response.json.side_effect = Exception("Not JSON")
+            response.data = "plain text"
 
             with patch.object(client, '_ApiClient__deserialize', return_value="deserialized") as mock_deserialize:
                 result = client.deserialize(response, 'str')
@@ -207,7 +207,7 @@ class TestApiClientCoverage(unittest.TestCase):
             client = ApiClient(configuration=self.config)
 
             response = Mock()
-            response.resp.json.return_value = {'key': 'value'}
+            response.json.return_value = {'key': 'value'}
 
             with patch.object(client, '_ApiClient__deserialize', side_effect=ValueError("Invalid")):
                 result = client.deserialize(response, 'SomeClass')
