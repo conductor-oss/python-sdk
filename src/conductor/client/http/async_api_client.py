@@ -184,8 +184,6 @@ class AsyncApiClient(object):
             _preload_content=_preload_content,
             _request_timeout=_request_timeout)
 
-        self.last_response = response_data
-
         return_data = response_data
         if _preload_content:
             # deserialize response data
@@ -277,9 +275,9 @@ class AsyncApiClient(object):
 
         # fetch data from response object
         try:
-            data = response.resp.json()
+            data = response.json()
         except Exception:
-            data = response.resp.text
+            data = response.data
 
         try:
             return self.__deserialize(data, response_type)

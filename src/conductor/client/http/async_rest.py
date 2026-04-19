@@ -1,4 +1,3 @@
-import io
 import json
 import os
 import re
@@ -7,38 +6,37 @@ import httpx
 from six.moves.urllib.parse import urlencode
 
 
-class RESTResponse(io.IOBase):
+class RESTResponse:
 
     def __init__(self, resp):
         self.status = resp.status_code
-        # httpx.Response doesn't have reason attribute, derive it from status_code
-        self.reason = resp.reason_phrase if hasattr(resp, 'reason_phrase') else self._get_reason_phrase(resp.status_code)
-        self.resp = resp
+        self.reason = getattr(resp, 'reason_phrase', '') or self._get_reason_phrase(resp.status_code)
+        self.data = resp.text                # eagerly read body
         self.headers = resp.headers
+        # Break httpx Response <-> BoundAsyncStream reference cycle (issue #395)
+        resp.stream = None
+        try:
+            resp._request = None
+        except AttributeError:
+            pass
 
     def _get_reason_phrase(self, status_code):
         """Get HTTP reason phrase from status code."""
         phrases = {
-            200: 'OK',
-            201: 'Created',
-            202: 'Accepted',
-            204: 'No Content',
-            301: 'Moved Permanently',
-            302: 'Found',
-            304: 'Not Modified',
-            400: 'Bad Request',
-            401: 'Unauthorized',
-            403: 'Forbidden',
-            404: 'Not Found',
-            405: 'Method Not Allowed',
-            409: 'Conflict',
-            429: 'Too Many Requests',
-            500: 'Internal Server Error',
-            502: 'Bad Gateway',
-            503: 'Service Unavailable',
-            504: 'Gateway Timeout',
+            200: 'OK', 201: 'Created', 202: 'Accepted', 204: 'No Content',
+            301: 'Moved Permanently', 302: 'Found', 304: 'Not Modified',
+            400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden',
+            404: 'Not Found', 405: 'Method Not Allowed', 409: 'Conflict',
+            429: 'Too Many Requests', 500: 'Internal Server Error',
+            502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout',
         }
         return phrases.get(status_code, 'Unknown')
+
+    def json(self):
+        return json.loads(self.data)
+
+    def getheader(self, name, default=None):
+        return self.headers.get(name, default)
 
     def getheaders(self):
         return self.headers
@@ -283,15 +281,15 @@ class ApiException(Exception):
             self.status = http_resp.status
             self.code = http_resp.status
             self.reason = http_resp.reason
-            self.body = http_resp.resp.text
+            self.body = http_resp.data
             try:
-                if http_resp.resp.text:
-                    error = json.loads(http_resp.resp.text)
+                if http_resp.data:
+                    error = json.loads(http_resp.data)
                     self.message = error['message']
                 else:
-                    self.message = http_resp.resp.text
+                    self.message = http_resp.data
             except Exception as e:
-                self.message = http_resp.resp.text
+                self.message = http_resp.data
             self.headers = http_resp.getheaders()
         else:
             self.status = status
@@ -324,7 +322,7 @@ RestException = ApiException
 class AuthorizationException(ApiException):
     def __init__(self, status=None, reason=None, http_resp=None, body=None):
         try:
-            data = json.loads(http_resp.resp.text)
+            data = json.loads(http_resp.data)
             if 'error' in data:
                 self._error_code = data['error']
             else:

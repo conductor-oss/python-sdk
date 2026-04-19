@@ -316,15 +316,13 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         task_runner = TaskRunner(worker=worker)
 
         # Create mock response with INVALID_TOKEN error
-        mock_resp = Mock()
-        mock_resp.text = '{"error": "INVALID_TOKEN"}'
-
         mock_http_resp = Mock()
-        mock_http_resp.resp = mock_resp
+        mock_http_resp.data = '{"error": "INVALID_TOKEN"}'
+        mock_http_resp.status = 401
+        mock_http_resp.reason = 'Unauthorized'
+        mock_http_resp.getheaders.return_value = {}
 
         auth_exception = AuthorizationException(
-            status=401,
-            reason='Unauthorized',
             http_resp=mock_http_resp
         )
 
@@ -342,15 +340,13 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         task_runner = TaskRunner(worker=worker)
 
         # Create mock response with different error code
-        mock_resp = Mock()
-        mock_resp.text = '{"error": "FORBIDDEN"}'
-
         mock_http_resp = Mock()
-        mock_http_resp.resp = mock_resp
+        mock_http_resp.data = '{"error": "FORBIDDEN"}'
+        mock_http_resp.status = 403
+        mock_http_resp.reason = 'Forbidden'
+        mock_http_resp.getheaders.return_value = {}
 
         auth_exception = AuthorizationException(
-            status=403,
-            reason='Forbidden',
             http_resp=mock_http_resp
         )
 
@@ -420,15 +416,13 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         )
 
         # Create mock response with INVALID_TOKEN error
-        mock_resp = Mock()
-        mock_resp.text = '{"error": "INVALID_TOKEN"}'
-
         mock_http_resp = Mock()
-        mock_http_resp.resp = mock_resp
+        mock_http_resp.data = '{"error": "INVALID_TOKEN"}'
+        mock_http_resp.status = 401
+        mock_http_resp.reason = 'Unauthorized'
+        mock_http_resp.getheaders.return_value = {}
 
         auth_exception = AuthorizationException(
-            status=401,
-            reason='Unauthorized',
             http_resp=mock_http_resp
         )
 

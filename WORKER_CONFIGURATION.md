@@ -29,12 +29,12 @@ The following properties can be configured via environment variables:
 | `overwrite_task_def` | bool | Overwrite existing task definitions when registering (default: true) | `false` | ✅ Yes |
 | `strict_schema` | bool | Enforce strict schema validation - additionalProperties=false (default: false) | `true` | ✅ Yes |
 | `poll_timeout` | int | Poll request timeout in milliseconds | `100` | ✅ Yes |
-| `lease_extend_enabled` | bool | ⚠️ **Not implemented** - reserved for future use | `false` | ✅ Yes |
+| `lease_extend_enabled` | bool | Auto-extend task lease via heartbeat (see below) | `false` | ✅ Yes |
 | `paused` | bool | Pause worker from polling/executing tasks | `true` | ❌ **Environment-only** |
 
 **Notes**:
 - The `paused` property is intentionally **not available** in the `@worker_task` decorator. It can only be controlled via environment variables, allowing operators to pause/resume workers at runtime without code changes or redeployment.
-- The `lease_extend_enabled` parameter is accepted but **not currently implemented**. For lease extension, use manual `TaskInProgress` returns (see below).
+- When `lease_extend_enabled=True`, the SDK automatically sends heartbeats at 80% of `responseTimeoutSeconds` to keep long-running tasks alive. Without it, tasks that exceed `responseTimeoutSeconds` are timed out and retried by the server.
 - The `register_task_def` parameter automatically registers task definitions with JSON Schema (draft-07) generated from Python type hints.
 - The `overwrite_task_def` parameter controls whether to overwrite existing task definitions (default: true).
 - The `strict_schema` parameter controls JSON schema validation strictness (default: false for lenient validation).
@@ -97,7 +97,7 @@ def long_task(job_id: str) -> Union[dict, TaskInProgress]:
         return {'status': 'completed', 'result': processed}
 ```
 
-**⚠️ Note**: The `lease_extend_enabled=True` configuration parameter does **not** provide automatic lease extension. You must explicitly return `TaskInProgress` to extend the lease.
+**Automatic lease extension**: When `lease_extend_enabled=True`, the SDK sends a heartbeat to the server at 80% of `responseTimeoutSeconds`, resetting the timeout clock. This keeps the task alive without requiring manual `TaskInProgress` returns. The `TaskInProgress` pattern is still useful for chunked/checkpoint-based execution where the worker yields the task back to the queue.
 
 **For detailed patterns**, see [Long-Running Tasks & Lease Extension](docs/design/WORKER_DESIGN.md#long-running-tasks--lease-extension).
 

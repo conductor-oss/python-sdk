@@ -3,8 +3,10 @@ import logging
 import os
 import sys
 import time
+import threading
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from typing import List, Optional, Any
 
 from conductor.client.configuration.configuration import Configuration
@@ -34,6 +36,7 @@ from conductor.client.worker.worker_interface import WorkerInterface
 from conductor.client.worker.worker_config import resolve_worker_config, get_worker_config_oneline
 from conductor.client.worker.exception import NonRetryableException
 from conductor.client.automator.json_schema_generator import generate_json_schema_from_function
+from conductor.client.automator.lease_tracker import LeaseInfo, LEASE_EXTEND_RETRY_COUNT, LEASE_EXTEND_DURATION_FACTOR
 
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(
@@ -93,6 +96,8 @@ class TaskRunner:
         self._consecutive_empty_polls = 0  # Track empty polls to implement backoff
         self._shutdown = False  # Flag to indicate graceful shutdown
         self._use_update_v2 = True  # Will be set to False if server doesn't support v2 endpoint
+        self._lease_info = {}  # task_id -> LeaseInfo for lease extension heartbeats
+        self._lease_lock = threading.Lock()  # Protects _lease_info for free-threaded Python
 
     def run(self) -> None:
         if self.configuration is not None:
@@ -131,6 +136,10 @@ class TaskRunner:
     def _cleanup(self) -> None:
         """Clean up resources - called on exit."""
         logger.debug("Cleaning up TaskRunner resources...")
+
+        # Stop all lease extension tracking
+        with self._lease_lock:
+            self._lease_info.clear()
 
         # Shutdown ThreadPoolExecutor (EAFP style - more Pythonic)
         try:
@@ -391,6 +400,9 @@ class TaskRunner:
 
     def run_once(self) -> None:
         try:
+            # Send lease extension heartbeats for any tasks that are due
+            self._send_due_heartbeats()
+
             # Check completed async tasks first (non-blocking)
             self.__check_completed_async_tasks()
 
@@ -465,6 +477,9 @@ class TaskRunner:
 
         for task_id, task_result, submit_time, task in completed:
             try:
+                # Async task finished — stop heartbeating for it
+                self._untrack_lease(task_id)
+
                 # Calculate actual execution time (from submission to completion)
                 finish_time = time.time()
                 time_spent = finish_time - submit_time
@@ -511,17 +526,19 @@ class TaskRunner:
         The loop breaks when no next task is available, the task is async/in-progress,
         or shutdown is requested.
         """
+        self._track_lease(task)
+        async_running = False  # True when task is running async in background
         try:
             while task is not None and not self._shutdown:
                 task_result = self.__execute_task(task)
-                # If task returned None, it's an async task running in background - don't update yet
+                # If task returned None, it's an async task running in background.
+                # Keep the lease tracked — __check_completed_async_tasks will untrack
+                # when the async task finishes.
                 if task_result is None:
                     logger.debug("Task %s is running async, will update when complete", task.task_id)
+                    async_running = True
                     return
-                # If task returned TaskInProgress, it's running async - don't update yet
-                if isinstance(task_result, TaskInProgress):
-                    logger.debug("Task %s is in progress, will update when complete", task.task_id)
-                    return
+                self._untrack_lease(task.task_id)
                 # Update task and get next task from v2 response
                 task = self.__update_task(task_result)
                 # v2 returns the next task; if v1 was used (returns None), immediately
@@ -529,12 +546,19 @@ class TaskRunner:
                 if task is None and not self._use_update_v2 and not self._shutdown:
                     tasks = self.__batch_poll_tasks(1)
                     task = tasks[0] if tasks else None
+                if task is not None:
+                    self._track_lease(task)
         except Exception as e:
             logger.error(
                 "Error executing/updating task %s: %s",
                 task.task_id if task else "unknown",
                 traceback.format_exc()
             )
+        finally:
+            # Don't untrack if the task is still running async in the background —
+            # the lease must stay active until __check_completed_async_tasks handles it.
+            if task is not None and not async_running:
+                self._untrack_lease(task.task_id)
 
     def __batch_poll_tasks(self, count: int) -> list:
         """Poll for multiple tasks at once (more efficient than polling one at a time)"""
@@ -937,6 +961,77 @@ class TaskRunner:
         ))
 
         return None
+
+    # -- Lease extension (heartbeat) methods ----------------------------------
+
+    def _track_lease(self, task: Task) -> None:
+        """Start tracking a task for lease extension heartbeat."""
+        lease_enabled = getattr(self.worker, 'lease_extend_enabled', False)
+        if not lease_enabled:
+            return
+        timeout = getattr(task, 'response_timeout_seconds', None) or 0
+        if timeout <= 0:
+            return
+        interval = timeout * LEASE_EXTEND_DURATION_FACTOR
+        if interval < 1:
+            return
+        info = LeaseInfo(
+            task_id=task.task_id,
+            workflow_instance_id=task.workflow_instance_id,
+            response_timeout_seconds=timeout,
+            last_heartbeat_time=time.monotonic(),
+            interval_seconds=interval,
+        )
+        with self._lease_lock:
+            self._lease_info[task.task_id] = info
+        logger.debug(
+            "Tracking lease for task %s (timeout=%ss, heartbeat every %ss)",
+            task.task_id, timeout, interval,
+        )
+
+    def _untrack_lease(self, task_id: str) -> None:
+        """Stop tracking a task for lease extension."""
+        with self._lease_lock:
+            removed = self._lease_info.pop(task_id, None)
+        if removed is not None:
+            logger.debug("Untracked lease for task %s", task_id)
+
+    def _send_due_heartbeats(self) -> None:
+        """Check all tracked tasks and send heartbeats for any that are due."""
+        if not self._lease_info:
+            return
+        now = time.monotonic()
+        with self._lease_lock:
+            infos = list(self._lease_info.values())
+        for info in infos:
+            elapsed = now - info.last_heartbeat_time
+            if elapsed < info.interval_seconds:
+                continue
+            self._send_heartbeat(info)
+            info.last_heartbeat_time = time.monotonic()
+
+    def _send_heartbeat(self, info: LeaseInfo) -> None:
+        """Send a single lease extension heartbeat with retry."""
+        result = TaskResult(
+            task_id=info.task_id,
+            workflow_instance_id=info.workflow_instance_id,
+            extend_lease=True,
+        )
+        for attempt in range(LEASE_EXTEND_RETRY_COUNT):
+            try:
+                self.task_client.update_task(body=result)
+                logger.debug("Extended lease for task %s", info.task_id)
+                return
+            except Exception as e:
+                if attempt < LEASE_EXTEND_RETRY_COUNT - 1:
+                    time.sleep(0.5 * (attempt + 2))
+                else:
+                    logger.error(
+                        "Failed to extend lease for task %s after %d attempts: %s",
+                        info.task_id, LEASE_EXTEND_RETRY_COUNT, e,
+                    )
+
+    # --------------------------------------------------------------------------
 
     def __wait_for_polling_interval(self) -> None:
         polling_interval = self.worker.get_polling_interval_in_seconds()
