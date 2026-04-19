@@ -30,7 +30,8 @@ class Configuration:
             debug: bool = False,
             authentication_settings: AuthenticationSettings = None,
             server_api_url: Optional[str] = None,
-            auth_token_ttl_min: int = 45
+            auth_token_ttl_min: int = 45,
+            register_schema: Optional[bool] = None
     ):
         if server_api_url is not None:
             self.host = server_api_url
@@ -83,6 +84,16 @@ class Configuration:
 
         # Provide an alterative to requests.Session() for HTTP connection.
         self.http_connection = None
+
+        # Global default for schema registration (None = defer to per-worker config)
+        if register_schema is not None:
+            self.register_schema = register_schema
+        else:
+            env_val = os.getenv("CONDUCTOR_REGISTER_SCHEMAS")
+            if env_val is not None:
+                self.register_schema = env_val.strip().lower() in ('true', '1', 'yes', 'on')
+            else:
+                self.register_schema = None  # No global override; per-worker default (True) applies
 
         # not updated yet
         self.token_update_time = 0

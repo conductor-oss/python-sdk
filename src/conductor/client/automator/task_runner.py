@@ -204,7 +204,18 @@ class TaskRunner:
             output_schema_name = None
             schema_registry_available = True
 
-            if hasattr(self.worker, 'execute_function'):
+            # Check if schema registration is enabled for this worker
+            register_schema = getattr(self.worker, 'register_schema', False)
+            # Also check global Configuration default
+            if hasattr(self.configuration, 'register_schema') and self.configuration.register_schema is not None:
+                # Worker-level setting takes precedence if explicitly set (not default)
+                if not hasattr(self.worker, 'register_schema'):
+                    register_schema = self.configuration.register_schema
+
+            if not register_schema:
+                logger.debug(f"Schema registration disabled for {task_name} (register_schema=False)")
+
+            if register_schema and hasattr(self.worker, 'execute_function'):
                 logger.debug(f"Generating JSON schemas from function signature...")
                 # Pass strict_schema flag to control additionalProperties
                 strict_mode = getattr(self.worker, 'strict_schema', False)
@@ -287,6 +298,8 @@ class TaskRunner:
                             logger.debug(f"Could not register schemas for {task_name}: {e}")
                 else:
                     logger.debug(f"  ⚠ No schemas generated (unable to analyze function signature)")
+            elif not register_schema:
+                pass  # Already logged above
             else:
                 logger.debug(f"  ⚠ Class-based worker (no execute_function) - registering task without schemas")
 

@@ -302,7 +302,8 @@ class Worker(WorkerInterface):
                  paused: bool = False,
                  task_def_template: Optional['TaskDef'] = None,
                  overwrite_task_def: bool = True,
-                 strict_schema: bool = False
+                 strict_schema: bool = False,
+                 register_schema: bool = False
                  ) -> Self:
         super().__init__(task_definition_name)
         self.api_client = ApiClient()
@@ -324,6 +325,7 @@ class Worker(WorkerInterface):
         self.task_def_template = task_def_template  # Optional TaskDef configuration
         self.overwrite_task_def = overwrite_task_def  # Whether to overwrite existing task definitions
         self.strict_schema = strict_schema  # Whether to enforce strict schema (additionalProperties=false)
+        self.register_schema = register_schema  # Whether to register JSON schemas alongside task definitions
 
         # Initialize background event loop for async workers
         self._background_loop = None
