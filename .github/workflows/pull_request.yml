@@ -10,7 +10,6 @@ jobs:
   unit-test:
     runs-on: ubuntu-latest
     env:
-      COVERAGE_FILE: coverage.xml
       COVERAGE_DIR: .coverage-reports
     steps:
       - name: Checkout code
@@ -67,23 +66,21 @@ jobs:
 
       - name: Generate coverage report
         id: coverage_report
-        continue-on-error: true
         run: |
           coverage combine ${{ env.COVERAGE_DIR }}/.coverage.*
           coverage report
-          coverage xml
+          coverage xml -o coverage.xml
 
       - name: Verify coverage file
         id: verify_coverage
         if: always()
-        continue-on-error: true
         run: |
-          if [ ! -s "${{ env.COVERAGE_FILE }}" ]; then
-            echo "Coverage file is empty or does not exist"
-            ls -la ${{ env.COVERAGE_FILE }} ${{ env.COVERAGE_DIR }}
+          if [ ! -s coverage.xml ]; then
+            echo "coverage.xml is empty or does not exist"
+            ls -la coverage.xml ${{ env.COVERAGE_DIR }} || true
             exit 1
           fi
-          echo "Coverage file exists and is not empty"
+          echo "coverage.xml exists and is not empty"
 
       - name: Upload coverage to Codecov
         if: always() && steps.verify_coverage.outcome == 'success'
@@ -91,7 +88,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ${{ env.COVERAGE_FILE }}
+          file: coverage.xml
 
       - name: Check test results
         if: steps.unit_tests.outcome == 'failure' || steps.bc_tests.outcome == 'failure' || steps.serdeser_tests.outcome == 'failure'
