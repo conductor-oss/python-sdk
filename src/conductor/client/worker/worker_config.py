@@ -38,7 +38,8 @@ ENV_PROPERTY_NAMES = {
     'lease_extend_enabled': 'lease_extend_enabled',
     'paused': 'paused',
     'overwrite_task_def': 'overwrite_task_def',
-    'strict_schema': 'strict_schema'
+    'strict_schema': 'strict_schema',
+    'register_schema': 'register_schema'
 }
 
 
@@ -186,7 +187,8 @@ def resolve_worker_config(
     lease_extend_enabled: Optional[bool] = None,
     paused: Optional[bool] = None,
     overwrite_task_def: Optional[bool] = None,
-    strict_schema: Optional[bool] = None
+    strict_schema: Optional[bool] = None,
+    register_schema: Optional[bool] = None
 ) -> dict:
     """
     Resolve worker configuration with hierarchical override.
@@ -208,6 +210,7 @@ def resolve_worker_config(
         paused: Whether worker is paused (code-level default)
         overwrite_task_def: Whether to overwrite existing task definitions (code-level default, default=True)
         strict_schema: Whether to set additionalProperties=false in schemas (code-level default, default=False)
+        register_schema: Whether to register JSON schemas alongside task definitions (code-level default, default=False)
 
     Returns:
         Dict with resolved configuration values
@@ -268,6 +271,11 @@ def resolve_worker_config(
     # Resolve strict_schema (default: False)
     env_strict = _get_env_value(worker_name, 'strict_schema', bool)
     resolved['strict_schema'] = env_strict if env_strict is not None else (strict_schema if strict_schema is not None else False)
+
+    # Resolve register_schema (default: False)
+    # Priority: per-worker env > global env (conductor.worker.all) > code-level > default (False)
+    env_register_schema = _get_env_value(worker_name, 'register_schema', bool)
+    resolved['register_schema'] = env_register_schema if env_register_schema is not None else (register_schema if register_schema is not None else False)
 
     return resolved
 

@@ -89,7 +89,8 @@ class TestTaskRunnerRegistration(unittest.TestCase):
         worker = Worker(
             task_definition_name='process_order',
             execute_function=process_order,
-            register_task_def=True
+            register_task_def=True,
+            register_schema=True
         )
 
         # Setup mocks
@@ -153,8 +154,8 @@ class TestTaskRunnerRegistration(unittest.TestCase):
 
     @patch('conductor.client.automator.task_runner.OrkesMetadataClient')
     @patch('conductor.client.automator.task_runner.OrkesSchemaClient')
-    def test_always_registers_schemas(self, mock_schema_client_class, mock_metadata_client_class):
-        """Schemas are always registered (may overwrite existing)."""
+    def test_registers_schemas_when_enabled(self, mock_schema_client_class, mock_metadata_client_class):
+        """Schemas are registered when register_schema=True."""
 
         def worker_func(name: str) -> str:
             return name
@@ -162,7 +163,8 @@ class TestTaskRunnerRegistration(unittest.TestCase):
         worker = Worker(
             task_definition_name='task_with_schemas',
             execute_function=worker_func,
-            register_task_def=True
+            register_task_def=True,
+            register_schema=True
         )
 
         mock_metadata = Mock()
@@ -176,11 +178,48 @@ class TestTaskRunnerRegistration(unittest.TestCase):
         task_runner = TaskRunner(worker, self.config)
         task_runner._TaskRunner__register_task_definition()
 
-        # Should always register schemas (2 calls: input and output)
+        # Should register schemas when register_schema=True (2 calls: input and output)
         self.assertEqual(mock_schema.register_schema.call_count, 2)
 
         # Should register task definition
         self.assertTrue(mock_metadata.update_task_def.called or mock_metadata.register_task_def.called)
+
+    @patch('conductor.client.automator.task_runner.OrkesMetadataClient')
+    @patch('conductor.client.automator.task_runner.OrkesSchemaClient')
+    def test_skips_schemas_when_disabled(self, mock_schema_client_class, mock_metadata_client_class):
+        """Schemas are NOT registered when register_schema=False (default)."""
+
+        def worker_func(name: str) -> str:
+            return name
+
+        worker = Worker(
+            task_definition_name='task_no_schemas',
+            execute_function=worker_func,
+            register_task_def=True
+            # register_schema defaults to False
+        )
+
+        mock_metadata = Mock()
+        mock_schema = Mock()
+        mock_metadata_client_class.return_value = mock_metadata
+        mock_schema_client_class.return_value = mock_schema
+
+        setup_update_then_register_mock(mock_metadata)
+
+        task_runner = TaskRunner(worker, self.config)
+        task_runner._TaskRunner__register_task_definition()
+
+        # Schema client should NOT be created (register_schema=False)
+        mock_schema_client_class.assert_not_called()
+        mock_schema.register_schema.assert_not_called()
+
+        # Task definition should still be registered
+        self.assertTrue(mock_metadata.update_task_def.called or mock_metadata.register_task_def.called)
+
+        # TaskDef should have no schema links
+        task_def = get_registered_or_updated_task_def(mock_metadata)
+        self.assertIsNone(task_def.input_schema)
+        self.assertIsNone(task_def.output_schema)
 
     @patch('conductor.client.automator.task_runner.OrkesMetadataClient')
     def test_registration_without_type_hints(self, mock_metadata_client_class):
@@ -250,7 +289,8 @@ class TestTaskRunnerRegistration(unittest.TestCase):
         worker = Worker(
             task_definition_name='test_task',
             execute_function=worker_func,
-            register_task_def=True
+            register_task_def=True,
+            register_schema=True
         )
 
         mock_metadata = Mock()
@@ -364,7 +404,8 @@ class TestSchemaLinking(unittest.TestCase):
         worker = Worker(
             task_definition_name='my_task',
             execute_function=worker_func,
-            register_task_def=True
+            register_task_def=True,
+            register_schema=True
         )
 
         mock_metadata = Mock()
@@ -454,7 +495,8 @@ class TestErrorHandling(unittest.TestCase):
         worker = Worker(
             task_definition_name='test_task',
             execute_function=worker_func,
-            register_task_def=True
+            register_task_def=True,
+            register_schema=True
         )
 
         mock_metadata = Mock()
@@ -507,7 +549,8 @@ class TestComplexDataTypes(unittest.TestCase):
         worker = Worker(
             task_definition_name='update_user',
             execute_function=update_user,
-            register_task_def=True
+            register_task_def=True,
+            register_schema=True
         )
 
         mock_metadata = Mock()
@@ -547,7 +590,8 @@ class TestComplexDataTypes(unittest.TestCase):
         worker = Worker(
             task_definition_name='long_task',
             execute_function=long_task,
-            register_task_def=True
+            register_task_def=True,
+            register_schema=True
         )
 
         mock_metadata = Mock()
@@ -738,6 +782,7 @@ class TestStrictSchemaConfiguration(unittest.TestCase):
             task_definition_name='test_task',
             execute_function=worker,
             register_task_def=True,
+            register_schema=True,
             strict_schema=False  # Lenient
         )
 
@@ -772,6 +817,7 @@ class TestStrictSchemaConfiguration(unittest.TestCase):
             task_definition_name='strict_task',
             execute_function=worker,
             register_task_def=True,
+            register_schema=True,
             strict_schema=True  # Strict
         )
 

@@ -7,7 +7,7 @@ from conductor.client.workflow.task.simple_task import SimpleTask
 
 def WorkerTask(task_definition_name: str, poll_interval: int = 100, domain: Optional[str] = None, worker_id: Optional[str] = None,
                poll_interval_seconds: int = 0, thread_count: int = 1, register_task_def: bool = False,
-               poll_timeout: int = 100, lease_extend_enabled: bool = False):
+               poll_timeout: int = 100, lease_extend_enabled: bool = False, register_schema: Optional[bool] = None):
     """
     Decorator to register a function as a Conductor worker task (legacy CamelCase name).
 
@@ -62,7 +62,7 @@ def WorkerTask(task_definition_name: str, poll_interval: int = 100, domain: Opti
         register_decorated_fn(name=task_definition_name, poll_interval=poll_interval_millis, domain=domain,
                               worker_id=worker_id, thread_count=thread_count, register_task_def=register_task_def,
                               poll_timeout=poll_timeout, lease_extend_enabled=lease_extend_enabled,
-                              func=func)
+                              register_schema=register_schema, func=func)
 
         @functools.wraps(func)
         def wrapper_func(*args, **kwargs):
@@ -80,7 +80,8 @@ def WorkerTask(task_definition_name: str, poll_interval: int = 100, domain: Opti
 
 def worker_task(task_definition_name: str, poll_interval_millis: int = 100, domain: Optional[str] = None, worker_id: Optional[str] = None,
                 thread_count: int = 1, register_task_def: bool = False, poll_timeout: int = 100, lease_extend_enabled: bool = False,
-                task_def: Optional['TaskDef'] = None, overwrite_task_def: bool = True, strict_schema: bool = False):
+                task_def: Optional['TaskDef'] = None, overwrite_task_def: bool = True, strict_schema: bool = False,
+                register_schema: Optional[bool] = None):
     """
     Decorator to register a function as a Conductor worker task.
 
@@ -156,6 +157,14 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
             - When True: additionalProperties=false (strict validation)
             - Can be overridden via env: conductor.worker.<name>.strict_schema=true
 
+        register_schema: Whether to register JSON schemas alongside task definitions.
+            - Default: None (inherits from Configuration.register_schema or False)
+            - When True: Input/output JSON schemas are generated from type hints and registered
+            - When False: Task definition is registered without schemas
+            - Can be set globally via Configuration(register_schema=True) or env: CONDUCTOR_REGISTER_SCHEMAS=true
+            - Can be overridden per-worker via env: conductor.worker.<name>.register_schema=true
+            - Priority: per-worker env > global env (conductor.worker.all) > decorator > Configuration > default (False)
+
     Returns:
         Decorated function that can be called normally or used as a workflow task
 
@@ -189,7 +198,8 @@ def worker_task(task_definition_name: str, poll_interval_millis: int = 100, doma
         register_decorated_fn(name=task_definition_name, poll_interval=poll_interval_millis, domain=domain,
                               worker_id=worker_id, thread_count=thread_count, register_task_def=register_task_def,
                               poll_timeout=poll_timeout, lease_extend_enabled=lease_extend_enabled, task_def=task_def,
-                              overwrite_task_def=overwrite_task_def, strict_schema=strict_schema, func=func)
+                              overwrite_task_def=overwrite_task_def, strict_schema=strict_schema,
+                              register_schema=register_schema, func=func)
 
         @functools.wraps(func)
         def wrapper_func(*args, **kwargs):

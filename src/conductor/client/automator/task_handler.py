@@ -73,7 +73,8 @@ def _run_async_worker_process(
 def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func,
                          thread_count: int = 1, register_task_def: bool = False,
                          poll_timeout: int = 100, lease_extend_enabled: bool = False, task_def: Optional['TaskDef'] = None,
-                         overwrite_task_def: bool = True, strict_schema: bool = False):
+                         overwrite_task_def: bool = True, strict_schema: bool = False,
+                         register_schema: Optional[bool] = None):
     logger.debug("decorated %s", name)
     _decorated_functions[(name, domain)] = {
         "func": func,
@@ -86,7 +87,8 @@ def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id:
         "lease_extend_enabled": lease_extend_enabled,
         "task_def": task_def,
         "overwrite_task_def": overwrite_task_def,
-        "strict_schema": strict_schema
+        "strict_schema": strict_schema,
+        "register_schema": register_schema
     }
 
 
@@ -112,7 +114,8 @@ def get_registered_workers() -> List[Worker]:
             paused=False,  # Always default to False, only env vars can set to True
             task_def_template=record.get("task_def"),  # Optional TaskDef configuration
             overwrite_task_def=record.get("overwrite_task_def", True),
-            strict_schema=record.get("strict_schema", False)
+            strict_schema=record.get("strict_schema", False),
+            register_schema=record.get("register_schema") if record.get("register_schema") is not None else False
         )
         workers.append(worker)
     return workers
@@ -254,8 +257,14 @@ class TaskHandler:
                     'poll_timeout': record.get("poll_timeout", 100),
                     'lease_extend_enabled': record.get("lease_extend_enabled", True),
                     'overwrite_task_def': record.get("overwrite_task_def", True),
-                    'strict_schema': record.get("strict_schema", False)
+                    'strict_schema': record.get("strict_schema", False),
+                    'register_schema': record.get("register_schema")
                 }
+
+                # Apply global Configuration.register_schema as fallback when
+                # the decorator doesn't set it explicitly (None).
+                if code_config['register_schema'] is None and hasattr(configuration, 'register_schema') and configuration.register_schema is not None:
+                    code_config['register_schema'] = configuration.register_schema
 
                 # Resolve configuration with environment variable overrides
                 resolved_config = resolve_worker_config(
@@ -275,7 +284,8 @@ class TaskHandler:
                     lease_extend_enabled=resolved_config['lease_extend_enabled'],
                     task_def_template=record.get("task_def"),  # Pass TaskDef configuration
                     overwrite_task_def=resolved_config.get('overwrite_task_def', True),
-                    strict_schema=resolved_config.get('strict_schema', False))
+                    strict_schema=resolved_config.get('strict_schema', False),
+                    register_schema=resolved_config.get('register_schema', False))
                 logger.debug("created worker with name=%s and domain=%s", task_def_name, resolved_config['domain'])
                 workers.append(worker)
 
