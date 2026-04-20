@@ -377,3 +377,117 @@ class TestTaskRunner(unittest.TestCase):
             # 'domain' SHOULD be in the kwargs with value 'production'
             self.assertIn('domain', call_args.kwargs)
             self.assertEqual(call_args.kwargs['domain'], 'production')
+
+    # -------- Poll-failure backoff --------
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_poll_failure_increments_counter_and_records_time(self):
+        """Any non-auth exception from batch_poll must bump the poll-failure
+        counter so the next poll backs off."""
+        task_runner = self.__get_valid_task_runner()
+        self.assertEqual(task_runner._poll_failures, 0)
+
+        with patch.object(TaskResourceApi, 'batch_poll', side_effect=Exception("boom")):
+            result = task_runner._TaskRunner__batch_poll_tasks(1)
+
+        self.assertEqual(result, [])
+        self.assertEqual(task_runner._poll_failures, 1)
+        self.assertGreater(task_runner._last_poll_failure, 0)
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_poll_failure_backoff_skips_batch_poll_within_window(self):
+        """Within the backoff window we should return [] without calling batch_poll."""
+        task_runner = self.__get_valid_task_runner()
+        task_runner._poll_failures = 3  # 2**3 = 8s window
+        task_runner._last_poll_failure = time.time()
+
+        with patch.object(TaskResourceApi, 'batch_poll') as mock_batch_poll:
+            result = task_runner._TaskRunner__batch_poll_tasks(1)
+
+        self.assertEqual(result, [])
+        mock_batch_poll.assert_not_called()
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_poll_failure_backoff_allows_retry_after_window(self):
+        """Once the backoff window elapses we should actually call batch_poll again."""
+        task_runner = self.__get_valid_task_runner()
+        task_runner._poll_failures = 1  # 2**1 = 2s window
+        task_runner._last_poll_failure = time.time() - 10  # long past
+
+        with patch.object(TaskResourceApi, 'batch_poll', return_value=[]) as mock_batch_poll:
+            task_runner._TaskRunner__batch_poll_tasks(1)
+
+        mock_batch_poll.assert_called_once()
+
+    def test_poll_failure_backoff_is_capped(self):
+        """Runaway failure counters must not produce unbounded backoff."""
+        task_runner = self.__get_valid_task_runner()
+        # Pretend we've been failing for a long time.
+        task_runner._poll_failures = 10_000
+        task_runner._last_poll_failure = time.time() - 10_000
+
+        cap = task_runner._poll_backoff_cap_seconds
+        exp_cap = task_runner._max_poll_failure_exp
+        self.assertLessEqual(2 ** min(task_runner._poll_failures, exp_cap), cap * 4)
+        # The sleep the code computes must never exceed the cap (2 min).
+        backoff = min(
+            2 ** min(task_runner._poll_failures, exp_cap),
+            cap,
+        )
+        self.assertLessEqual(backoff, 120)
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_successful_poll_clears_both_failure_counters(self):
+        """A successful response means auth AND connectivity are fine."""
+        task_runner = self.__get_valid_task_runner()
+        task_runner._auth_failures = 3
+        task_runner._poll_failures = 4
+
+        with patch.object(TaskResourceApi, 'batch_poll', return_value=[]):
+            task_runner._TaskRunner__batch_poll_tasks(1)
+
+        self.assertEqual(task_runner._auth_failures, 0)
+        self.assertEqual(task_runner._poll_failures, 0)
+
+    def test_auth_failure_backoff_is_capped(self):
+        """The existing auth backoff should also have a hard upper bound."""
+        task_runner = self.__get_valid_task_runner()
+        task_runner._auth_failures = 10_000
+        cap = task_runner._auth_backoff_cap_seconds
+        exp_cap = task_runner._max_auth_failure_exp
+        backoff = min(
+            2 ** min(task_runner._auth_failures, exp_cap),
+            cap,
+        )
+        self.assertLessEqual(backoff, cap)
+        self.assertLessEqual(backoff, 60)
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_poll_failure_resets_closed_rest_client(self):
+        """When the rest client reports it's closed at the time of a poll
+        failure we should nudge it back to life (belt-and-suspenders for cases
+        that never hit rest.request's own heal path)."""
+        task_runner = self.__get_valid_task_runner()
+
+        fake_rest = Mock()
+        fake_rest._is_client_closed.return_value = True
+        task_runner.task_client.api_client.rest_client = fake_rest
+
+        with patch.object(TaskResourceApi, 'batch_poll', side_effect=Exception("boom")):
+            task_runner._TaskRunner__batch_poll_tasks(1)
+
+        fake_rest._reset_connection.assert_called_once()
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_poll_failure_does_not_reset_healthy_rest_client(self):
+        """If the rest client looks fine we should not churn it on every error."""
+        task_runner = self.__get_valid_task_runner()
+
+        fake_rest = Mock()
+        fake_rest._is_client_closed.return_value = False
+        task_runner.task_client.api_client.rest_client = fake_rest
+
+        with patch.object(TaskResourceApi, 'batch_poll', side_effect=Exception("boom")):
+            task_runner._TaskRunner__batch_poll_tasks(1)
+
+        fake_rest._reset_connection.assert_not_called()

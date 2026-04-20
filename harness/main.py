@@ -6,6 +6,7 @@ import sys
 
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
+from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.http.models.task_def import TaskDef
 from conductor.client.orkes_clients import OrkesClients
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
@@ -79,10 +80,15 @@ def main() -> None:
         worker = SimulatedTaskWorker(task_name, codename, sleep_seconds, batch_size, poll_interval_ms)
         workers.append(worker)
 
+    metrics_port = env_int_or_default("HARNESS_METRICS_PORT", 9991)
+    metrics_settings = MetricsSettings(http_port=metrics_port)
+    print(f"Prometheus metrics will be served on port {metrics_port}")
+
     task_handler = TaskHandler(
         workers=workers,
         configuration=configuration,
         scan_for_annotated_workers=False,
+        metrics_settings=metrics_settings,
     )
 
     workflow_executor = clients.get_workflow_executor()

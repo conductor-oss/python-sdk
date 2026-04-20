@@ -18,7 +18,7 @@ spec:
       # note: imagePullSecrets is not needed for public images
       containers:
       - name: harness
-        image: ghcr.io/conductor-oss/python-sdk/harness-worker:latest
+        image: ghcr.io/conductor-oss/python-sdk/harness-worker:main-latest
         imagePullPolicy: Always
         env:
         # === CONDUCTOR CONNECTION (from per-cloud ConfigMap) ===
@@ -50,6 +50,11 @@ spec:
 
         - name: HARNESS_POLL_INTERVAL_MS
           value: "100"
+
+        ports:
+        - name: metrics
+          containerPort: 9991
+          protocol: TCP
 
         resources:
           requests:

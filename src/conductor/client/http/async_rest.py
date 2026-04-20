@@ -185,8 +185,8 @@ class AsyncRESTClientObject(object):
                     await self._reset_connection()
                     if method in idempotent_methods:
                         continue
-                msg = f"Protocol error: {e}"
-                raise ApiException(status=0, reason=msg)
+                msg = f"Protocol error ({type(e).__name__}): {e}"
+                raise ApiException(status=0, reason=msg, transient=True) from e
             except httpx.TimeoutException as e:
                 msg = f"Request timeout: {e}"
                 raise ApiException(status=0, reason=msg)
@@ -276,7 +276,10 @@ class AsyncRESTClientObject(object):
 
 class ApiException(Exception):
 
-    def __init__(self, status=None, reason=None, http_resp=None, body=None):
+    def __init__(self, status=None, reason=None, http_resp=None, body=None,
+                 transient=False):
+        # See rest.ApiException for a description of `transient`.
+        self.transient = transient
         if http_resp:
             self.status = http_resp.status
             self.code = http_resp.status

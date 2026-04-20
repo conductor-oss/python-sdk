@@ -48,12 +48,32 @@ docker run -d \
   python-sdk-harness
 ```
 
-You can also run the harness locally without Docker (from the repo root):
+You can also run the harness locally without Docker (from the repo root).
+A virtual environment keeps dependencies isolated from your system Python:
 
 ```bash
-# Install the SDK in development mode (one-time)
+# Check if a .venv already exists
+ls .venv/bin/activate 2>/dev/null && echo "venv exists" || echo "no venv found"
+
+# Create one if needed (one-time)
+python3 -m venv .venv
+
+# Activate it (required every time you open a new terminal)
+source .venv/bin/activate    # Windows: .venv\Scripts\activate
+
+# Verify you're in the venv (should print the .venv path)
+which python3
+
+# Install the SDK in development mode (one-time, or after pulling new deps)
 pip3 install -e .
 
+# When you're done, deactivate the venv to restore your normal shell
+deactivate
+```
+
+Once the venv is active and the SDK is installed:
+
+```bash
 export CONDUCTOR_SERVER_URL=https://your-cluster.example.com/api
 export CONDUCTOR_AUTH_KEY=$CONDUCTOR_AUTH_KEY
 export CONDUCTOR_AUTH_SECRET=$CONDUCTOR_AUTH_SECRET
