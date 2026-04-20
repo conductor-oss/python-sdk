@@ -36,7 +36,7 @@ from conductor.client.worker.worker_interface import WorkerInterface
 from conductor.client.worker.worker_config import resolve_worker_config, get_worker_config_oneline
 from conductor.client.worker.exception import NonRetryableException
 from conductor.client.automator.json_schema_generator import generate_json_schema_from_function
-from conductor.client.automator.lease_tracker import LeaseInfo, LEASE_EXTEND_RETRY_COUNT, LEASE_EXTEND_DURATION_FACTOR
+from conductor.client.automator.lease_tracker import LeaseManager
 
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(
@@ -112,8 +112,9 @@ class TaskRunner:
         self._consecutive_empty_polls = 0  # Track empty polls to implement backoff
         self._shutdown = False  # Flag to indicate graceful shutdown
         self._use_update_v2 = True  # Will be set to False if server doesn't support v2 endpoint
-        self._lease_info = {}  # task_id -> LeaseInfo for lease extension heartbeats
-        self._lease_lock = threading.Lock()  # Protects _lease_info for free-threaded Python
+        self._lease_manager = LeaseManager.get_instance()
+        self._tracked_task_ids = set()  # Local set for cleanup on shutdown
+        self._tracked_task_ids_lock = threading.Lock()
 
     def run(self) -> None:
         if self.configuration is not None:
@@ -153,9 +154,12 @@ class TaskRunner:
         """Clean up resources - called on exit."""
         logger.debug("Cleaning up TaskRunner resources...")
 
-        # Stop all lease extension tracking
-        with self._lease_lock:
-            self._lease_info.clear()
+        # Untrack all tasks this runner was tracking from the shared LeaseManager
+        with self._tracked_task_ids_lock:
+            task_ids = list(self._tracked_task_ids)
+            self._tracked_task_ids.clear()
+        for task_id in task_ids:
+            self._lease_manager.untrack(task_id)
 
         # Shutdown ThreadPoolExecutor (EAFP style - more Pythonic)
         try:
@@ -429,9 +433,6 @@ class TaskRunner:
 
     def run_once(self) -> None:
         try:
-            # Send lease extension heartbeats for any tasks that are due
-            self._send_due_heartbeats()
-
             # Check completed async tasks first (non-blocking)
             self.__check_completed_async_tasks()
 
@@ -1077,74 +1078,29 @@ class TaskRunner:
 
         return None
 
-    # -- Lease extension (heartbeat) methods ----------------------------------
+    # -- Lease extension (heartbeat) delegation to LeaseManager ----------------
 
     def _track_lease(self, task: Task) -> None:
-        """Start tracking a task for lease extension heartbeat."""
-        lease_enabled = getattr(self.worker, 'lease_extend_enabled', False)
-        if not lease_enabled:
+        """Start tracking a task for lease extension via the shared LeaseManager."""
+        if not getattr(self.worker, 'lease_extend_enabled', False):
             return
         timeout = getattr(task, 'response_timeout_seconds', None) or 0
         if timeout <= 0:
             return
-        interval = timeout * LEASE_EXTEND_DURATION_FACTOR
-        if interval < 1:
-            return
-        info = LeaseInfo(
+        self._lease_manager.track(
             task_id=task.task_id,
             workflow_instance_id=task.workflow_instance_id,
             response_timeout_seconds=timeout,
-            last_heartbeat_time=time.monotonic(),
-            interval_seconds=interval,
+            task_client=self.task_client,
         )
-        with self._lease_lock:
-            self._lease_info[task.task_id] = info
-        logger.debug(
-            "Tracking lease for task %s (timeout=%ss, heartbeat every %ss)",
-            task.task_id, timeout, interval,
-        )
+        with self._tracked_task_ids_lock:
+            self._tracked_task_ids.add(task.task_id)
 
     def _untrack_lease(self, task_id: str) -> None:
         """Stop tracking a task for lease extension."""
-        with self._lease_lock:
-            removed = self._lease_info.pop(task_id, None)
-        if removed is not None:
-            logger.debug("Untracked lease for task %s", task_id)
-
-    def _send_due_heartbeats(self) -> None:
-        """Check all tracked tasks and send heartbeats for any that are due."""
-        if not self._lease_info:
-            return
-        now = time.monotonic()
-        with self._lease_lock:
-            infos = list(self._lease_info.values())
-        for info in infos:
-            elapsed = now - info.last_heartbeat_time
-            if elapsed < info.interval_seconds:
-                continue
-            self._send_heartbeat(info)
-            info.last_heartbeat_time = time.monotonic()
-
-    def _send_heartbeat(self, info: LeaseInfo) -> None:
-        """Send a single lease extension heartbeat with retry."""
-        result = TaskResult(
-            task_id=info.task_id,
-            workflow_instance_id=info.workflow_instance_id,
-            extend_lease=True,
-        )
-        for attempt in range(LEASE_EXTEND_RETRY_COUNT):
-            try:
-                self.task_client.update_task(body=result)
-                logger.debug("Extended lease for task %s", info.task_id)
-                return
-            except Exception as e:
-                if attempt < LEASE_EXTEND_RETRY_COUNT - 1:
-                    time.sleep(0.5 * (attempt + 2))
-                else:
-                    logger.error(
-                        "Failed to extend lease for task %s after %d attempts: %s",
-                        info.task_id, LEASE_EXTEND_RETRY_COUNT, e,
-                    )
+        self._lease_manager.untrack(task_id)
+        with self._tracked_task_ids_lock:
+            self._tracked_task_ids.discard(task_id)
 
     # --------------------------------------------------------------------------
 
