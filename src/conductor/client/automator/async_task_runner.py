@@ -202,6 +202,13 @@ class AsyncTaskRunner:
             except (IOError, OSError) as e:
                 logger.warning(f"Error closing async client: {e}")
 
+        # Close sync HTTP client used for lease heartbeats
+        if self._sync_task_client:
+            try:
+                self._sync_task_client.api_client.rest_client.connection.close()
+            except Exception:
+                pass
+
         # Clear event listeners
         self.event_dispatcher = None
 
