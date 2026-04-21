@@ -2,8 +2,7 @@ import logging
 import os
 import threading
 import time
-from collections import deque
-from typing import Any, ClassVar, Dict, List, Tuple
+from typing import Any, Dict, List, Union
 
 # Lazy imports - these will be imported when first needed
 # This is necessary for multiprocess mode where PROMETHEUS_MULTIPROC_DIR
@@ -69,6 +68,24 @@ logger = logging.getLogger(
 )
 
 
+def _exception_label(exception) -> str:
+    """
+    Return a bounded-cardinality label value for an exception.
+
+    Callers may pass either an exception instance, an exception class, or an
+    arbitrary string/None. In every case we reduce to the class-qualified name
+    to prevent unbounded label cardinality from error messages.
+    """
+    if exception is None:
+        return "None"
+    if isinstance(exception, type):
+        return f"<class '{exception.__module__}.{exception.__name__}'>"
+    if isinstance(exception, BaseException):
+        cls = type(exception)
+        return f"<class '{cls.__module__}.{cls.__name__}'>"
+    return str(exception)
+
+
 class MetricsCollector:
     """
     Prometheus-based metrics collector for Conductor operations.
@@ -93,7 +110,6 @@ class MetricsCollector:
     Note: Uses Python's Protocol for structural subtyping rather than explicit
     inheritance to avoid circular imports and maintain backward compatibility.
     """
-    QUANTILE_WINDOW_SIZE = 1000  # Keep last 1000 observations for quantile calculation
 
     def __init__(self, settings: MetricsSettings):
         # Instance state (avoid cross-test/dir interference from class-level caches).
@@ -101,8 +117,6 @@ class MetricsCollector:
         self.gauges: Dict[str, Gauge] = {}
         self.histograms: Dict[str, Histogram] = {}
         self.summaries: Dict[str, Summary] = {}
-        self.quantile_metrics: Dict[str, Gauge] = {}  # metric_name -> Gauge with quantile label (used as summary)
-        self.quantile_data: Dict[str, deque] = {}  # metric_name+labels -> deque of values
         self.registry = None
         self.must_collect_metrics = False
         self._lock = threading.RLock()  # Reentrant lock for thread-safe access to internal dictionaries
@@ -320,9 +334,24 @@ class MetricsCollector:
             }
         )
 
-    def increment_task_poll_error(self, task_type: str, exception: Exception) -> None:
-        # No-op: Poll errors are already tracked via task_poll_time_seconds_count with status=FAILURE
-        pass
+    def increment_task_poll_error(self, task_type: str, exception) -> None:
+        self.__increment_counter(
+            name=MetricName.TASK_POLL_ERROR,
+            documentation=MetricDocumentation.TASK_POLL_ERROR,
+            labels={
+                MetricLabel.TASK_TYPE: task_type,
+                MetricLabel.EXCEPTION: _exception_label(exception),
+            }
+        )
+
+    def increment_task_execution_started(self, task_type: str) -> None:
+        self.__increment_counter(
+            name=MetricName.TASK_EXECUTION_STARTED,
+            documentation=MetricDocumentation.TASK_EXECUTION_STARTED,
+            labels={
+                MetricLabel.TASK_TYPE: task_type
+            }
+        )
 
     def increment_task_paused(self, task_type: str) -> None:
         self.__increment_counter(
@@ -394,6 +423,7 @@ class MetricsCollector:
         )
 
     def record_workflow_input_payload_size(self, workflow_type: str, version: str, payload_size: int) -> None:
+        # Legacy name (pre-harmonization): workflow_input_size
         self.__record_gauge(
             name=MetricName.WORKFLOW_INPUT_SIZE,
             documentation=MetricDocumentation.WORKFLOW_INPUT_SIZE,
@@ -403,8 +433,19 @@ class MetricsCollector:
             },
             value=payload_size
         )
+        # Canonical name: workflow_input_size_bytes
+        self.__record_gauge(
+            name=MetricName.WORKFLOW_INPUT_SIZE_BYTES,
+            documentation=MetricDocumentation.WORKFLOW_INPUT_SIZE_BYTES,
+            labels={
+                MetricLabel.WORKFLOW_TYPE: workflow_type,
+                MetricLabel.WORKFLOW_VERSION: version
+            },
+            value=payload_size
+        )
 
     def record_task_result_payload_size(self, task_type: str, payload_size: int) -> None:
+        # Legacy name (pre-harmonization): task_result_size
         self.__record_gauge(
             name=MetricName.TASK_RESULT_SIZE,
             documentation=MetricDocumentation.TASK_RESULT_SIZE,
@@ -413,8 +454,18 @@ class MetricsCollector:
             },
             value=payload_size
         )
+        # Canonical name: task_result_size_bytes
+        self.__record_gauge(
+            name=MetricName.TASK_RESULT_SIZE_BYTES,
+            documentation=MetricDocumentation.TASK_RESULT_SIZE_BYTES,
+            labels={
+                MetricLabel.TASK_TYPE: task_type
+            },
+            value=payload_size
+        )
 
     def record_task_poll_time(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
+        # Legacy last-value gauge (deprecated, kept for backward compatibility).
         self.__record_gauge(
             name=MetricName.TASK_POLL_TIME,
             documentation=MetricDocumentation.TASK_POLL_TIME,
@@ -423,8 +474,7 @@ class MetricsCollector:
             },
             value=time_spent
         )
-        # Record as quantile gauges for percentile tracking
-        self.__record_quantiles(
+        self.__observe_histogram(
             name=MetricName.TASK_POLL_TIME_HISTOGRAM,
             documentation=MetricDocumentation.TASK_POLL_TIME_HISTOGRAM,
             labels={
@@ -435,6 +485,7 @@ class MetricsCollector:
         )
 
     def record_task_execute_time(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
+        # Legacy last-value gauge (deprecated, kept for backward compatibility).
         self.__record_gauge(
             name=MetricName.TASK_EXECUTE_TIME,
             documentation=MetricDocumentation.TASK_EXECUTE_TIME,
@@ -443,8 +494,7 @@ class MetricsCollector:
             },
             value=time_spent
         )
-        # Record as quantile gauges for percentile tracking
-        self.__record_quantiles(
+        self.__observe_histogram(
             name=MetricName.TASK_EXECUTE_TIME_HISTOGRAM,
             documentation=MetricDocumentation.TASK_EXECUTE_TIME_HISTOGRAM,
             labels={
@@ -455,8 +505,8 @@ class MetricsCollector:
         )
 
     def record_task_poll_time_histogram(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
-        """Record task poll time with quantile gauges for percentile tracking."""
-        self.__record_quantiles(
+        """Record task poll latency into the task_poll_time_seconds Histogram."""
+        self.__observe_histogram(
             name=MetricName.TASK_POLL_TIME_HISTOGRAM,
             documentation=MetricDocumentation.TASK_POLL_TIME_HISTOGRAM,
             labels={
@@ -467,8 +517,8 @@ class MetricsCollector:
         )
 
     def record_task_execute_time_histogram(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
-        """Record task execution time with quantile gauges for percentile tracking."""
-        self.__record_quantiles(
+        """Record task execution latency into the task_execute_time_seconds Histogram."""
+        self.__observe_histogram(
             name=MetricName.TASK_EXECUTE_TIME_HISTOGRAM,
             documentation=MetricDocumentation.TASK_EXECUTE_TIME_HISTOGRAM,
             labels={
@@ -479,8 +529,8 @@ class MetricsCollector:
         )
 
     def record_task_update_time_histogram(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
-        """Record task update time with quantile gauges for percentile tracking."""
-        self.__record_quantiles(
+        """Record task update latency into the task_update_time_seconds Histogram."""
+        self.__observe_histogram(
             name=MetricName.TASK_UPDATE_TIME_HISTOGRAM,
             documentation=MetricDocumentation.TASK_UPDATE_TIME_HISTOGRAM,
             labels={
@@ -491,8 +541,8 @@ class MetricsCollector:
         )
 
     def record_api_request_time(self, method: str, uri: str, status: str, time_spent: float) -> None:
-        """Record API request time with quantile gauges for percentile tracking."""
-        self.__record_quantiles(
+        """Record HTTP API client request latency into the http_api_client_request_seconds Histogram."""
+        self.__observe_histogram(
             name=MetricName.API_REQUEST_TIME,
             documentation=MetricDocumentation.API_REQUEST_TIME,
             labels={
@@ -622,12 +672,13 @@ class MetricsCollector:
             documentation: MetricDocumentation,
             labelnames: List[MetricLabel]
     ) -> Histogram:
-        # Standard buckets for timing metrics: 1ms to 10s
+        # Canonical bucket set for timing metrics: 1ms..10s. Kept in sync with
+        # sdk-metrics-harmonization.md so Go/Java/Ruby/Rust match.
         return Histogram(
             name=name,
             documentation=documentation,
             labelnames=labelnames,
-            buckets=(0.001, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
+            buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
             registry=self.registry
         )
 
@@ -676,151 +727,6 @@ class MetricsCollector:
             registry=self.registry
         )
 
-    def __record_quantiles(
-            self,
-            name: MetricName,
-            documentation: MetricDocumentation,
-            labels: Dict[MetricLabel, str],
-            value: float
-    ) -> None:
-        """
-        Record a value and update quantile gauges (p50, p75, p90, p95, p99).
-        Also maintains _count and _sum for proper summary metrics.
-
-        Maintains a sliding window of observations and calculates quantiles.
-        """
-        if not self.must_collect_metrics:
-            return
-
-        with self._lock:
-            # Create a key for this metric+labels combination
-            label_values = tuple(labels.values())
-            data_key = f"{name}_{label_values}"
-
-            # Initialize data window if needed
-            if data_key not in self.quantile_data:
-                self.quantile_data[data_key] = deque(maxlen=self.QUANTILE_WINDOW_SIZE)
-
-            # Add new observation
-            self.quantile_data[data_key].append(value)
-
-            # Calculate and update quantiles
-            observations = sorted(self.quantile_data[data_key])
-            n = len(observations)
-
-            if n > 0:
-                quantiles = [0.5, 0.75, 0.9, 0.95, 0.99]
-                for q in quantiles:
-                    quantile_value = self.__calculate_quantile(observations, q)
-
-                    # Get or create gauge for this quantile
-                    gauge = self.__get_quantile_gauge(
-                        name=name,
-                        documentation=documentation,
-                        labelnames=[label.value for label in labels.keys()] + ["quantile"],
-                        quantile=q
-                    )
-
-                    # Set gauge value with labels + quantile
-                    gauge.labels(*labels.values(), str(q)).set(quantile_value)
-
-                # Also publish _count and _sum for proper summary metrics
-                self.__update_summary_aggregates(
-                    name=name,
-                    documentation=documentation,
-                    labels=labels,
-                    observations=list(self.quantile_data[data_key])
-                )
-
-    def __calculate_quantile(self, sorted_values: List[float], quantile: float) -> float:
-        """Calculate quantile from sorted list of values."""
-        if not sorted_values:
-            return 0.0
-
-        n = len(sorted_values)
-        index = quantile * (n - 1)
-
-        if index.is_integer():
-            return sorted_values[int(index)]
-        else:
-            # Linear interpolation
-            lower_index = int(index)
-            upper_index = min(lower_index + 1, n - 1)
-            fraction = index - lower_index
-            return sorted_values[lower_index] + fraction * (sorted_values[upper_index] - sorted_values[lower_index])
-
-    def __get_quantile_gauge(
-            self,
-            name: MetricName,
-            documentation: MetricDocumentation,
-            labelnames: List[str],
-            quantile: float
-    ) -> Gauge:
-        """Get or create a gauge for quantiles (single gauge with quantile label)."""
-        if name not in self.quantile_metrics:
-            # Create a single gauge with quantile as a label
-            # This gauge will be shared across all quantiles for this metric
-            # Note: In multiprocess mode, prometheus_client automatically adds 'pid' label
-            # We use multiprocess_mode='all' to aggregate across processes and remove pid
-            self.quantile_metrics[name] = Gauge(
-                name=name,
-                documentation=documentation,
-                labelnames=labelnames,
-                registry=self.registry,
-                multiprocess_mode='all'  # Aggregate across processes, don't include pid
-            )
-
-        return self.quantile_metrics[name]
-
-    def __update_summary_aggregates(
-            self,
-            name: MetricName,
-            documentation: MetricDocumentation,
-            labels: Dict[MetricLabel, str],
-            observations: List[float]
-    ) -> None:
-        """
-        Update _count and _sum gauges for proper summary metric format.
-        This makes the metrics compatible with Prometheus summary type.
-
-        Note: This method should only be called while holding self._lock
-        (called from __record_quantiles which already holds the lock).
-        """
-        if not observations:
-            return
-
-        # Convert enum to string value
-        base_name = name.value if hasattr(name, 'value') else str(name)
-
-        # Convert documentation enum to string
-        doc_str = documentation.value if hasattr(documentation, 'value') else str(documentation)
-
-        # Get or create _count gauge
-        count_name = f"{base_name}_count"
-        if count_name not in self.gauges:
-            self.gauges[count_name] = Gauge(
-                name=count_name,
-                documentation=f"{doc_str} - count",
-                labelnames=[label.value for label in labels.keys()],
-                registry=self.registry,
-                multiprocess_mode='all'  # Aggregate across processes, don't include pid
-            )
-
-        # Get or create _sum gauge
-        sum_name = f"{base_name}_sum"
-        if sum_name not in self.gauges:
-            self.gauges[sum_name] = Gauge(
-                name=sum_name,
-                documentation=f"{doc_str} - sum",
-                labelnames=[label.value for label in labels.keys()],
-                registry=self.registry,
-                multiprocess_mode='all'  # Aggregate across processes, don't include pid
-            )
-
-        # Update values
-        self.gauges[count_name].labels(*labels.values()).set(len(observations))
-        self.gauges[sum_name].labels(*labels.values()).set(sum(observations))
-
     # =========================================================================
     # Event Listener Protocol Implementation (TaskRunnerEventsListener)
     # =========================================================================
@@ -856,10 +762,9 @@ class MetricsCollector:
     def on_task_execution_started(self, event: TaskExecutionStarted) -> None:
         """
         Handle task execution started event.
-        No direct metric equivalent in old system - could be used for
-        tracking in-flight tasks in the future.
+        Maps to increment_task_execution_started() (canonical task_execution_started_total counter).
         """
-        pass  # No corresponding metric in existing system
+        self.increment_task_execution_started(event.task_type)
 
     def on_task_execution_completed(self, event: TaskExecutionCompleted) -> None:
         """

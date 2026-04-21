@@ -863,6 +863,7 @@ class AsyncTaskRunner:
             if attempt > 0:
                 # Exponential backoff: [10s, 20s, 30s] before retry
                 await asyncio.sleep(attempt * 10)
+            update_start = time.time()
             try:
                 if self._use_update_v2:
                     next_task = await self.async_task_client.update_task_v2(body=task_result)
@@ -873,6 +874,10 @@ class AsyncTaskRunner:
                         task_definition_name,
                         next_task.task_id if next_task else None
                     )
+                    if self.metrics_collector is not None:
+                        self.metrics_collector.record_task_update_time_histogram(
+                            task_definition_name, time.time() - update_start, status="SUCCESS"
+                        )
                     return next_task
                 else:
                     await self.async_task_client.update_task(body=task_result)
@@ -882,6 +887,10 @@ class AsyncTaskRunner:
                         task_result.workflow_instance_id,
                         task_definition_name,
                     )
+                    if self.metrics_collector is not None:
+                        self.metrics_collector.record_task_update_time_histogram(
+                            task_definition_name, time.time() - update_start, status="SUCCESS"
+                        )
                     return None
             except ApiException as e:
                 if e.status in (404, 405) and self._use_update_v2:
@@ -895,14 +904,25 @@ class AsyncTaskRunner:
                     # Retry immediately with v1
                     try:
                         await self.async_task_client.update_task(body=task_result)
+                        if self.metrics_collector is not None:
+                            self.metrics_collector.record_task_update_time_histogram(
+                                task_definition_name, time.time() - update_start, status="SUCCESS"
+                            )
                         return None
                     except Exception as fallback_e:
                         last_exception = fallback_e
+                        if self.metrics_collector is not None:
+                            self.metrics_collector.record_task_update_time_histogram(
+                                task_definition_name, time.time() - update_start, status="FAILURE"
+                            )
                         continue
                 last_exception = e
                 if self.metrics_collector is not None:
                     self.metrics_collector.increment_task_update_error(
                         task_definition_name, type(e)
+                    )
+                    self.metrics_collector.record_task_update_time_histogram(
+                        task_definition_name, time.time() - update_start, status="FAILURE"
                     )
                 logger.error(
                     "Failed to update async task (attempt %d/%d), id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
@@ -919,6 +939,9 @@ class AsyncTaskRunner:
                 if self.metrics_collector is not None:
                     self.metrics_collector.increment_task_update_error(
                         task_definition_name, type(e)
+                    )
+                    self.metrics_collector.record_task_update_time_histogram(
+                        task_definition_name, time.time() - update_start, status="FAILURE"
                     )
                 logger.error(
                     "Failed to update async task (attempt %d/%d), id: %s, workflow_instance_id: %s, task_definition_name: %s, reason: %s",
