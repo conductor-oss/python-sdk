@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-sdk-harness-worker
+  # namespace: xxxxx # supply this in kubectl command
+  labels:
+    app: python-sdk-harness-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: python-sdk-harness-worker
+  template:
+    metadata:
+      labels:
+        app: python-sdk-harness-worker
+    spec:
+      # note: imagePullSecrets is not needed for public images
+      containers:
+      - name: harness
+        image: ghcr.io/conductor-oss/python-sdk/harness-worker:main-latest
+        imagePullPolicy: Always
+        env:
+        # === CONDUCTOR CONNECTION (from per-cloud ConfigMap) ===
+
+        - name: CONDUCTOR_SERVER_URL
+          valueFrom:
+            configMapKeyRef:
+              name: python-sdk-harness-config
+              key: CONDUCTOR_SERVER_URL
+
+        - name: CONDUCTOR_AUTH_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: python-sdk-harness-config
+              key: CONDUCTOR_AUTH_KEY
+
+        - name: CONDUCTOR_AUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: conductor-credentials
+              key: auth-secret
+
+        # === HARNESS TUNING (defaults match main.py) ===
+        - name: HARNESS_WORKFLOWS_PER_SEC
+          value: "1"
+
+        - name: HARNESS_BATCH_SIZE
+          value: "20"
+
+        - name: HARNESS_POLL_INTERVAL_MS
+          value: "100"
+
+        ports:
+        - name: metrics
+          containerPort: 9991
+          protocol: TCP
+
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - test -e /proc/1/cmdline
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - test -e /proc/1/cmdline
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+      restartPolicy: Always

@@ -1,44 +1,58 @@
-import io
 import json
+import logging
 import os
 import re
+import threading
 
 import httpx
 from six.moves.urllib.parse import urlencode
 
+logger = logging.getLogger(__name__)
 
-class RESTResponse(io.IOBase):
+# Substrings that indicate httpx has marked its Client as closed and is
+# refusing further requests. httpx raises a plain RuntimeError in this case
+# (e.g. "Cannot send a request, as the client has been closed."), so we
+# detect it by message rather than exception type.
+_CLOSED_CLIENT_MARKERS = ("has been closed", "is closed")
+
+
+def _is_closed_client_error(exc: BaseException) -> bool:
+    """Return True if the exception indicates the httpx client is closed."""
+    msg = str(exc) if exc else ""
+    return any(marker in msg for marker in _CLOSED_CLIENT_MARKERS)
+
+
+class RESTResponse:
 
     def __init__(self, resp):
         self.status = resp.status_code
-        # httpx.Response doesn't have reason attribute, derive it from status_code
-        self.reason = resp.reason_phrase if hasattr(resp, 'reason_phrase') else self._get_reason_phrase(resp.status_code)
-        self.resp = resp
+        self.reason = getattr(resp, 'reason_phrase', '') or self._get_reason_phrase(resp.status_code)
+        self.data = resp.text                # eagerly read body
         self.headers = resp.headers
+        # Break httpx Response <-> BoundSyncStream reference cycle (issue #395)
+        resp.stream = None
+        try:
+            resp._request = None
+        except AttributeError:
+            pass
 
     def _get_reason_phrase(self, status_code):
         """Get HTTP reason phrase from status code."""
         phrases = {
-            200: 'OK',
-            201: 'Created',
-            202: 'Accepted',
-            204: 'No Content',
-            301: 'Moved Permanently',
-            302: 'Found',
-            304: 'Not Modified',
-            400: 'Bad Request',
-            401: 'Unauthorized',
-            403: 'Forbidden',
-            404: 'Not Found',
-            405: 'Method Not Allowed',
-            409: 'Conflict',
-            429: 'Too Many Requests',
-            500: 'Internal Server Error',
-            502: 'Bad Gateway',
-            503: 'Service Unavailable',
-            504: 'Gateway Timeout',
+            200: 'OK', 201: 'Created', 202: 'Accepted', 204: 'No Content',
+            301: 'Moved Permanently', 302: 'Found', 304: 'Not Modified',
+            400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden',
+            404: 'Not Found', 405: 'Method Not Allowed', 409: 'Conflict',
+            429: 'Too Many Requests', 500: 'Internal Server Error',
+            502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout',
         }
         return phrases.get(status_code, 'Unknown')
+
+    def json(self):
+        return json.loads(self.data)
+
+    def getheader(self, name, default=None):
+        return self.headers.get(name, default)
 
     def getheaders(self):
         return self.headers
@@ -46,6 +60,10 @@ class RESTResponse(io.IOBase):
 
 class RESTClientObject(object):
     def __init__(self, connection=None):
+        # Serializes self-healing resets so that a thundering herd of threads
+        # discovering the same broken connection produces at most ONE real
+        # reset + warning line, not N.
+        self._reset_lock = threading.Lock()
         if connection is None:
             self._http2_enabled = self._is_http2_enabled()
             self.connection = self._create_default_httpx_client()
@@ -82,15 +100,51 @@ class RESTClientObject(object):
             http2=bool(self._http2_enabled)
         )
 
-    def _reset_connection(self) -> None:
-        if not getattr(self, "_owns_connection", False):
-            return
+    def _is_client_closed(self) -> bool:
+        """Return True if the underlying httpx client is closed.
+
+        We check the client's `is_closed` flag defensively because not every
+        mock or subclass exposes it.
+        """
         try:
-            if getattr(self, "connection", None) is not None:
-                self.connection.close()
+            return bool(getattr(self.connection, "is_closed", False))
         except Exception:
-            pass
-        self.connection = self._create_default_httpx_client()
+            return False
+
+    def _reset_connection(self, expected=None) -> bool:
+        """Close the current httpx client (if any) and create a fresh one.
+
+        This is a thread-safe compare-and-swap:
+
+        - If `expected` is provided, the reset is only performed when the
+          current `self.connection` is still that exact client instance.
+          This is the thundering-herd guard: when thread A discovers the
+          shared client is broken and heals it, threads B/C/D whose
+          in-flight requests on the OLD client also fail will try to heal
+          too. With `expected=the_old_client` they'll see the connection
+          has already moved on and no-op instead of closing thread A's
+          freshly-built replacement.
+        - If `expected` is None, the reset always happens (legacy callers).
+
+        Returns True if this call actually replaced the client, False if
+        another thread had already healed it. Callers can use the return
+        value to decide whether to emit a WARNING or drop to DEBUG.
+        """
+        with self._reset_lock:
+            current = getattr(self, "connection", None)
+            if expected is not None and current is not expected:
+                # Someone else already healed since our caller last looked.
+                return False
+            try:
+                if current is not None:
+                    current.close()
+            except Exception:
+                pass
+            if getattr(self, "_http2_enabled", None) is None:
+                self._http2_enabled = self._is_http2_enabled()
+            self.connection = self._create_default_httpx_client()
+            self._owns_connection = True
+            return True
 
     def __del__(self):
         """Cleanup httpx client on object destruction."""
@@ -152,7 +206,24 @@ class RESTClientObject(object):
         if 'Content-Type' not in headers:
             headers['Content-Type'] = 'application/json'
 
+        # Proactively heal a client that is already closed before we even try
+        # to send. This avoids unnecessary tracebacks from httpx and keeps the
+        # worker self-healing when the parent process (or a fork-related
+        # cleanup) has closed our underlying client out from under us.
+        # Use compare-and-swap with a snapshot so that concurrent proactive
+        # heals don't churn the client.
+        pre_check_client = self.connection
+        if self._is_client_closed():
+            if self._reset_connection(expected=pre_check_client):
+                logger.warning(
+                    "httpx client was closed before request; re-established a fresh client"
+                )
+
         for attempt in range(2):
+            # Snapshot the client we're about to use so that if the request
+            # fails we can ask for a reset only if the client is still this
+            # one (i.e. nobody else healed it in the meantime).
+            client_at_send = self.connection
             try:
                 # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
                 if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
@@ -165,7 +236,7 @@ class RESTClientObject(object):
                             request_body = json.dumps(body)
                             if isinstance(body, str):
                                 request_body = request_body.strip('"')
-                        r = self.connection.request(
+                        r = client_at_send.request(
                             method, request_url,
                             content=request_body,
                             timeout=timeout,
@@ -179,7 +250,7 @@ class RESTClientObject(object):
                         raise ApiException(status=0, reason=msg)
                 # For `GET`, `HEAD`
                 else:
-                    r = self.connection.request(
+                    r = client_at_send.request(
                         method, url,
                         params=query_params,
                         timeout=timeout,
@@ -190,12 +261,42 @@ class RESTClientObject(object):
                 # A stale/broken keep-alive connection can cause protocol errors (esp. with HTTP/2).
                 # Reset the client to recover without requiring process restart.
                 # Only auto-retry idempotent methods to avoid duplicating side effects.
-                if attempt == 0 and self._owns_connection:
-                    self._reset_connection()
+                if attempt == 0:
+                    reset_done = self._reset_connection(expected=client_at_send)
+                    if reset_done:
+                        logger.warning("httpx protocol error; re-established client: %s", e)
+                    else:
+                        logger.debug(
+                            "httpx protocol error on stale client (already healed by another thread): %s",
+                            e,
+                        )
                     if method in idempotent_methods:
                         continue
-                msg = f"Protocol error: {e}"
-                raise ApiException(status=0, reason=msg)
+                msg = f"Protocol error ({type(e).__name__}): {e}"
+                raise ApiException(status=0, reason=msg, transient=True) from e
+            except RuntimeError as e:
+                # httpx raises a plain RuntimeError ("Cannot send a request, as the
+                # client has been closed.") once its Client is closed. This can
+                # happen after a fork, an errant cleanup, or a GC of a sibling
+                # RESTClientObject. Heal and retry once for idempotent methods.
+                if attempt == 0 and _is_closed_client_error(e):
+                    reset_done = self._reset_connection(expected=client_at_send)
+                    if reset_done:
+                        logger.warning(
+                            "httpx client was closed mid-request; re-established and retrying"
+                        )
+                    else:
+                        logger.debug(
+                            "httpx client closed on stale reference (already healed by another thread); retrying"
+                        )
+                    if method in idempotent_methods:
+                        continue
+                    # Not an idempotent method; surface as transient so the
+                    # caller's retry loop can log it cleanly.
+                    msg = f"Client was closed mid-request: {e}"
+                    raise ApiException(status=0, reason=msg, transient=True) from e
+                msg = f"Runtime error: {e}"
+                raise ApiException(status=0, reason=msg) from e
             except httpx.TimeoutException as e:
                 msg = f"Request timeout: {e}"
                 raise ApiException(status=0, reason=msg)
@@ -285,20 +386,28 @@ class RESTClientObject(object):
 
 class ApiException(Exception):
 
-    def __init__(self, status=None, reason=None, http_resp=None, body=None):
+    def __init__(self, status=None, reason=None, http_resp=None, body=None,
+                 transient=False):
+        # `transient=True` means the SDK recognised this as a recoverable
+        # transport-layer hiccup (stale keep-alive, HTTP/2 GOAWAY race, client
+        # closed by a fork cleanup, etc.) and has already self-healed the
+        # underlying httpx client. Callers that implement their own retry loop
+        # (e.g. TaskRunner.__update_task) can use this flag to log a concise
+        # warning instead of a full traceback until the final attempt.
+        self.transient = transient
         if http_resp:
             self.status = http_resp.status
             self.code = http_resp.status
             self.reason = http_resp.reason
-            self.body = http_resp.resp.text
+            self.body = http_resp.data
             try:
-                if http_resp.resp.text:
-                    error = json.loads(http_resp.resp.text)
+                if http_resp.data:
+                    error = json.loads(http_resp.data)
                     self.message = error['message']
                 else:
-                    self.message = http_resp.resp.text
+                    self.message = http_resp.data
             except Exception as e:
-                self.message = http_resp.resp.text
+                self.message = http_resp.data
             self.headers = http_resp.getheaders()
         else:
             self.status = status
@@ -332,7 +441,7 @@ RestException = ApiException
 class AuthorizationException(ApiException):
     def __init__(self, status=None, reason=None, http_resp=None, body=None):
         try:
-            data = json.loads(http_resp.resp.text)
+            data = json.loads(http_resp.data)
             if 'error' in data:
                 self._error_code = data['error']
             else:

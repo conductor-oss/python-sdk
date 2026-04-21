@@ -294,6 +294,56 @@ class TestWorkerConfig(unittest.TestCase):
         self.assertFalse(config['lease_extend_enabled'])
 
 
+    def test_register_schema_defaults_to_false(self):
+        """Test register_schema defaults to False when not set anywhere"""
+        config = resolve_worker_config(
+            worker_name='test_worker',
+            poll_interval=1000
+        )
+        self.assertFalse(config['register_schema'])
+
+    def test_register_schema_code_level_false(self):
+        """Test register_schema can be set to False at code level"""
+        config = resolve_worker_config(
+            worker_name='test_worker',
+            register_schema=False
+        )
+        self.assertFalse(config['register_schema'])
+
+    def test_register_schema_env_override_per_worker(self):
+        """Test register_schema can be overridden per worker via env"""
+        os.environ['conductor.worker.my_task.register_schema'] = 'false'
+
+        config = resolve_worker_config(
+            worker_name='my_task',
+            register_schema=True  # Code says True
+        )
+        # Env override wins
+        self.assertFalse(config['register_schema'])
+
+    def test_register_schema_env_override_global(self):
+        """Test register_schema can be overridden globally via env"""
+        os.environ['conductor.worker.all.register_schema'] = 'false'
+
+        config = resolve_worker_config(
+            worker_name='test_worker',
+            register_schema=None  # Not set in code
+        )
+        self.assertFalse(config['register_schema'])
+
+    def test_register_schema_per_worker_env_beats_global_env(self):
+        """Test per-worker env var takes precedence over global env var"""
+        os.environ['conductor.worker.all.register_schema'] = 'false'
+        os.environ['conductor.worker.special_task.register_schema'] = 'true'
+
+        config = resolve_worker_config(
+            worker_name='special_task',
+            register_schema=None
+        )
+        # Per-worker override wins
+        self.assertTrue(config['register_schema'])
+
+
 class TestWorkerConfigIntegration(unittest.TestCase):
     """Integration tests for worker configuration in realistic scenarios"""
 

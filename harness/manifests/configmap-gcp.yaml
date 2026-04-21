@@ -1,0 +1,13 @@
+---
+# ConfigMap for certification-gcp cluster
+# Contains Conductor connection details specific to this cluster
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: python-sdk-harness-config
+  # namespace: xxxxx # supply this in kubectl command
+  labels:
+    app: python-sdk-harness-worker
+data:
+  CONDUCTOR_SERVER_URL: "https://certification-gcp.orkesconductor.io/api"
+  CONDUCTOR_AUTH_KEY: "25b681c1-34ec-11f1-b07a-9601c7a63373"

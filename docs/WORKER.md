@@ -593,7 +593,7 @@ class SimpleCppWorker(WorkerInterface):
 
 ## Long-Running Tasks and Lease Extension
 
-For tasks that take longer than the configured `responseTimeoutSeconds`, the SDK provides automatic lease extension to prevent timeouts. See the comprehensive [Lease Extension Guide](../../LEASE_EXTENSION.md) for:
+For tasks that take longer than the configured `responseTimeoutSeconds`, the SDK provides automatic lease extension to prevent timeouts. See the comprehensive [Lease Extension Guide](../LEASE_EXTENSION.md) for:
 
 - How lease extension works
 - Automatic vs manual control

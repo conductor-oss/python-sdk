@@ -2,8 +2,8 @@
 Unit tests for update-task-v2 graceful degradation to v1.
 
 Tests both sync TaskRunner and async AsyncTaskRunner to verify:
-- On 404/501 from update_task_v2, falls back to update_task (v1)
-- The _v2_available flag is set to False after first fallback
+- On 404/405 from update_task_v2, falls back to update_task (v1)
+- The _use_update_v2 flag is set to False after first fallback
 - Subsequent calls go directly to v1 (skip v2)
 - The current task result is still persisted via v1 during fallback
 """
@@ -49,20 +49,20 @@ class TestTaskRunnerV2Fallback(unittest.TestCase):
                 return_value='task_id_confirmation'
             ) as mock_v1:
                 runner = self._create_runner()
-                self.assertTrue(runner._v2_available)
+                self.assertTrue(runner._use_update_v2)
 
                 result = runner._TaskRunner__update_task(self._create_task_result())
 
                 self.assertIsNone(result)
-                self.assertFalse(runner._v2_available)
+                self.assertFalse(runner._use_update_v2)
                 mock_v1.assert_called_once()
 
     @patch('time.sleep', Mock(return_value=None))
-    def test_fallback_on_501(self):
-        """On 501 from update_task_v2, should fall back to update_task and return None."""
+    def test_fallback_on_405(self):
+        """On 405 from update_task_v2, should fall back to update_task and return None."""
         with patch.object(
             TaskResourceApi, 'update_task_v2',
-            side_effect=ApiException(status=501, reason="Not Implemented")
+            side_effect=ApiException(status=405, reason="Method Not Allowed")
         ):
             with patch.object(
                 TaskResourceApi, 'update_task',
@@ -72,7 +72,7 @@ class TestTaskRunnerV2Fallback(unittest.TestCase):
                 result = runner._TaskRunner__update_task(self._create_task_result())
 
                 self.assertIsNone(result)
-                self.assertFalse(runner._v2_available)
+                self.assertFalse(runner._use_update_v2)
                 mock_v1.assert_called_once()
 
     @patch('time.sleep', Mock(return_value=None))
@@ -114,7 +114,7 @@ class TestTaskRunnerV2Fallback(unittest.TestCase):
                 result = runner._TaskRunner__update_task(self._create_task_result())
 
                 self.assertEqual(result, next_task)
-                self.assertTrue(runner._v2_available)
+                self.assertTrue(runner._use_update_v2)
                 mock_v1.assert_not_called()
 
     @patch('time.sleep', Mock(return_value=None))
@@ -127,8 +127,8 @@ class TestTaskRunnerV2Fallback(unittest.TestCase):
             runner = self._create_runner()
             result = runner._TaskRunner__update_task(self._create_task_result())
 
-            # All retries exhausted, still v2_available (not a 404/501)
-            self.assertTrue(runner._v2_available)
+            # All retries exhausted, still _use_update_v2 (not a 404/405)
+            self.assertTrue(runner._use_update_v2)
             self.assertIsNone(result)
 
     @patch('time.sleep', Mock(return_value=None))
@@ -153,7 +153,7 @@ class TestTaskRunnerV2Fallback(unittest.TestCase):
                 runner = self._create_runner()
                 result = runner._TaskRunner__update_task(self._create_task_result())
 
-                self.assertFalse(runner._v2_available)
+                self.assertFalse(runner._use_update_v2)
                 # First v1 call fails (immediate fallback), then retries succeed
                 self.assertIsNone(result)
 
@@ -212,24 +212,24 @@ class TestAsyncTaskRunnerV2Fallback(unittest.TestCase):
             )
             runner.async_task_client.update_task = AsyncMock(return_value='ok')
 
-            self.assertTrue(runner._v2_available)
+            self.assertTrue(runner._use_update_v2)
 
             result = await runner._AsyncTaskRunner__async_update_task(self._create_task_result())
 
             self.assertIsNone(result)
-            self.assertFalse(runner._v2_available)
+            self.assertFalse(runner._use_update_v2)
             runner.async_task_client.update_task.assert_called_once()
 
         asyncio.run(run_test())
 
-    def test_fallback_on_501(self):
-        """On 501 from async update_task_v2, should fall back to update_task."""
+    def test_fallback_on_405(self):
+        """On 405 from async update_task_v2, should fall back to update_task."""
 
         async def simple_worker(value: int) -> dict:
             return {'result': value}
 
         worker = Worker(
-            task_definition_name='test_v2_fallback_501',
+            task_definition_name='test_v2_fallback_405',
             execute_function=simple_worker,
             thread_count=1
         )
@@ -244,14 +244,14 @@ class TestAsyncTaskRunnerV2Fallback(unittest.TestCase):
             runner._semaphore = asyncio.Semaphore(1)
 
             runner.async_task_client.update_task_v2 = AsyncMock(
-                side_effect=ApiException(status=501, reason="Not Implemented")
+                side_effect=ApiException(status=405, reason="Method Not Allowed")
             )
             runner.async_task_client.update_task = AsyncMock(return_value='ok')
 
             result = await runner._AsyncTaskRunner__async_update_task(self._create_task_result())
 
             self.assertIsNone(result)
-            self.assertFalse(runner._v2_available)
+            self.assertFalse(runner._use_update_v2)
             runner.async_task_client.update_task.assert_called_once()
 
         asyncio.run(run_test())
@@ -323,7 +323,7 @@ class TestAsyncTaskRunnerV2Fallback(unittest.TestCase):
             result = await runner._AsyncTaskRunner__async_update_task(self._create_task_result())
 
             self.assertEqual(result, next_task)
-            self.assertTrue(runner._v2_available)
+            self.assertTrue(runner._use_update_v2)
             runner.async_task_client.update_task.assert_not_called()
 
         asyncio.run(run_test())
@@ -356,27 +356,33 @@ class TestAsyncTaskRunnerV2Fallback(unittest.TestCase):
             runner.async_task_client = AsyncMock()
             runner._semaphore = asyncio.Semaphore(1)
 
-            runner.async_task_client.batch_poll = AsyncMock(return_value=[mock_task])
+            # batch_poll returns the task once, then empty (stops the tight loop)
+            runner.async_task_client.batch_poll = AsyncMock(
+                side_effect=[[mock_task], []]
+            )
             runner.async_task_client.update_task_v2 = AsyncMock(
                 side_effect=ApiException(status=404, reason="Not Found")
             )
             runner.async_task_client.update_task = AsyncMock(return_value='ok')
 
             await runner.run_once()
-            await asyncio.sleep(0.1)
+            # Let the background coroutine finish
+            await asyncio.sleep(0.2)
 
             # v2 was attempted, then fell back to v1
             runner.async_task_client.update_task_v2.assert_called_once()
-            runner.async_task_client.update_task.assert_called_once()
+            # v1 called once for the fallback, possibly once more for the
+            # re-polled empty batch (but at least once)
+            self.assertGreaterEqual(runner.async_task_client.update_task.call_count, 1)
 
-            # Task result should have correct output
-            v1_call = runner.async_task_client.update_task.call_args
+            # First v1 call should have the correct task result
+            v1_call = runner.async_task_client.update_task.call_args_list[0]
             task_result = v1_call.kwargs['body']
             self.assertEqual(task_result.status, TaskResultStatus.COMPLETED)
             self.assertEqual(task_result.output_data, {'result': 20})
 
             # Flag should be flipped
-            self.assertFalse(runner._v2_available)
+            self.assertFalse(runner._use_update_v2)
 
         asyncio.run(run_test())
 

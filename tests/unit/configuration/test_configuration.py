@@ -34,6 +34,39 @@ class TestConfiguration(unittest.TestCase):
             'https://developer.orkescloud.com/api'
         )
 
+    def test_register_schema_default_is_none(self):
+        """register_schema defaults to None when not set anywhere"""
+        configuration = Configuration(server_api_url='http://localhost:8080/api')
+        self.assertIsNone(configuration.register_schema)
+
+    def test_register_schema_explicit_false(self):
+        """register_schema can be set explicitly to False"""
+        configuration = Configuration(server_api_url='http://localhost:8080/api', register_schema=False)
+        self.assertFalse(configuration.register_schema)
+
+    def test_register_schema_explicit_true(self):
+        """register_schema can be set explicitly to True"""
+        configuration = Configuration(server_api_url='http://localhost:8080/api', register_schema=True)
+        self.assertTrue(configuration.register_schema)
+
+    @mock.patch.dict(os.environ, {"CONDUCTOR_REGISTER_SCHEMAS": "false"})
+    def test_register_schema_from_env_var(self):
+        """register_schema reads CONDUCTOR_REGISTER_SCHEMAS env var"""
+        configuration = Configuration(server_api_url='http://localhost:8080/api')
+        self.assertFalse(configuration.register_schema)
+
+    @mock.patch.dict(os.environ, {"CONDUCTOR_REGISTER_SCHEMAS": "true"})
+    def test_register_schema_from_env_var_true(self):
+        """register_schema reads CONDUCTOR_REGISTER_SCHEMAS env var as True"""
+        configuration = Configuration(server_api_url='http://localhost:8080/api')
+        self.assertTrue(configuration.register_schema)
+
+    @mock.patch.dict(os.environ, {"CONDUCTOR_REGISTER_SCHEMAS": "false"})
+    def test_register_schema_explicit_overrides_env(self):
+        """Explicit register_schema param takes precedence over env var"""
+        configuration = Configuration(server_api_url='http://localhost:8080/api', register_schema=True)
+        self.assertTrue(configuration.register_schema)
+
     def test_initialization_with_basic_auth_server_api_url(self):
         configuration = Configuration(
             server_api_url="https://user:password@developer.orkescloud.com/api"

@@ -23,7 +23,7 @@ from conductor.client.http.api.task_resource_api import TaskResourceApi
 from conductor.client.http.models.task import Task
 from conductor.client.http.models.task_result import TaskResult
 from conductor.client.http.models.task_result_status import TaskResultStatus
-from conductor.client.http.rest import AuthorizationException
+from conductor.client.http.rest import AuthorizationException, ApiException
 from conductor.client.worker.worker_interface import WorkerInterface
 
 
@@ -316,15 +316,13 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         task_runner = TaskRunner(worker=worker)
 
         # Create mock response with INVALID_TOKEN error
-        mock_resp = Mock()
-        mock_resp.text = '{"error": "INVALID_TOKEN"}'
-
         mock_http_resp = Mock()
-        mock_http_resp.resp = mock_resp
+        mock_http_resp.data = '{"error": "INVALID_TOKEN"}'
+        mock_http_resp.status = 401
+        mock_http_resp.reason = 'Unauthorized'
+        mock_http_resp.getheaders.return_value = {}
 
         auth_exception = AuthorizationException(
-            status=401,
-            reason='Unauthorized',
             http_resp=mock_http_resp
         )
 
@@ -342,15 +340,13 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         task_runner = TaskRunner(worker=worker)
 
         # Create mock response with different error code
-        mock_resp = Mock()
-        mock_resp.text = '{"error": "FORBIDDEN"}'
-
         mock_http_resp = Mock()
-        mock_http_resp.resp = mock_resp
+        mock_http_resp.data = '{"error": "FORBIDDEN"}'
+        mock_http_resp.status = 403
+        mock_http_resp.reason = 'Forbidden'
+        mock_http_resp.getheaders.return_value = {}
 
         auth_exception = AuthorizationException(
-            status=403,
-            reason='Forbidden',
             http_resp=mock_http_resp
         )
 
@@ -420,15 +416,13 @@ class TestTaskRunnerCoverage(unittest.TestCase):
         )
 
         # Create mock response with INVALID_TOKEN error
-        mock_resp = Mock()
-        mock_resp.text = '{"error": "INVALID_TOKEN"}'
-
         mock_http_resp = Mock()
-        mock_http_resp.resp = mock_resp
+        mock_http_resp.data = '{"error": "INVALID_TOKEN"}'
+        mock_http_resp.status = 401
+        mock_http_resp.reason = 'Unauthorized'
+        mock_http_resp.getheaders.return_value = {}
 
         auth_exception = AuthorizationException(
-            status=401,
-            reason='Unauthorized',
             http_resp=mock_http_resp
         )
 
@@ -802,6 +796,173 @@ class TestTaskRunnerCoverage(unittest.TestCase):
                     task_runner.metrics_collector.increment_task_update_error.call_count,
                     4
                 )
+
+    # ========================================
+    # v1 Fallback Tests (backward compat with Orkes Conductor < v5)
+    # ========================================
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_update_task_v2_404_falls_back_to_v1(self):
+        """When server returns 404 for v2 endpoint, should fall back to v1 and return None."""
+        worker = MockWorker('test_task')
+        task_runner = TaskRunner(worker=worker)
+
+        task_result = TaskResult(
+            task_id='test_id',
+            workflow_instance_id='wf_id',
+            worker_id=worker.get_identity(),
+            status=TaskResultStatus.COMPLETED
+        )
+
+        with patch.object(TaskResourceApi, 'update_task_v2',
+                          side_effect=ApiException(status=404)) as mock_v2, \
+             patch.object(TaskResourceApi, 'update_task', return_value='ok') as mock_v1:
+            result = task_runner._TaskRunner__update_task(task_result)
+
+        mock_v2.assert_called_once()
+        mock_v1.assert_called_once()
+        self.assertIsNone(result)
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_update_task_v2_405_falls_back_to_v1(self):
+        """When server returns 405 for v2 endpoint (older Conductor), should fall back to v1."""
+        worker = MockWorker('test_task')
+        task_runner = TaskRunner(worker=worker)
+
+        task_result = TaskResult(
+            task_id='test_id',
+            workflow_instance_id='wf_id',
+            worker_id=worker.get_identity(),
+            status=TaskResultStatus.COMPLETED
+        )
+
+        with patch.object(TaskResourceApi, 'update_task_v2',
+                          side_effect=ApiException(status=405)) as mock_v2, \
+             patch.object(TaskResourceApi, 'update_task', return_value='ok') as mock_v1:
+            result = task_runner._TaskRunner__update_task(task_result)
+
+        mock_v2.assert_called_once()
+        mock_v1.assert_called_once()
+        self.assertIsNone(result)
+        self.assertFalse(task_runner._use_update_v2)
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_update_task_v2_404_sets_v1_flag(self):
+        """After a 404 on v2, _use_update_v2 flag must be False."""
+        worker = MockWorker('test_task')
+        task_runner = TaskRunner(worker=worker)
+        self.assertTrue(task_runner._use_update_v2)
+
+        task_result = TaskResult(
+            task_id='test_id',
+            workflow_instance_id='wf_id',
+            worker_id=worker.get_identity(),
+            status=TaskResultStatus.COMPLETED
+        )
+
+        with patch.object(TaskResourceApi, 'update_task_v2',
+                          side_effect=ApiException(status=404)), \
+             patch.object(TaskResourceApi, 'update_task', return_value='ok'):
+            task_runner._TaskRunner__update_task(task_result)
+
+        self.assertFalse(task_runner._use_update_v2)
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_update_task_uses_v1_only_after_flag_set(self):
+        """Once _use_update_v2 is False, v2 is never called again."""
+        worker = MockWorker('test_task')
+        task_runner = TaskRunner(worker=worker)
+        task_runner._use_update_v2 = False  # pre-set as if fallback already happened
+
+        task_result = TaskResult(
+            task_id='test_id',
+            workflow_instance_id='wf_id',
+            worker_id=worker.get_identity(),
+            status=TaskResultStatus.COMPLETED
+        )
+
+        with patch.object(TaskResourceApi, 'update_task_v2') as mock_v2, \
+             patch.object(TaskResourceApi, 'update_task', return_value='ok') as mock_v1:
+            result = task_runner._TaskRunner__update_task(task_result)
+
+        mock_v2.assert_not_called()
+        mock_v1.assert_called_once()
+        self.assertIsNone(result)
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_update_task_non_404_api_exception_does_not_fallback(self):
+        """A non-404 ApiException (e.g. 500) should not trigger v1 fallback."""
+        worker = MockWorker('test_task')
+        task_runner = TaskRunner(worker=worker)
+
+        task_result = TaskResult(
+            task_id='test_id',
+            workflow_instance_id='wf_id',
+            worker_id=worker.get_identity(),
+            status=TaskResultStatus.COMPLETED
+        )
+
+        with patch.object(TaskResourceApi, 'update_task_v2',
+                          side_effect=ApiException(status=500)) as mock_v2, \
+             patch.object(TaskResourceApi, 'update_task') as mock_v1:
+            result = task_runner._TaskRunner__update_task(task_result)
+
+        # v2 called 4 times (all retries), v1 never called, flag unchanged
+        self.assertEqual(mock_v2.call_count, 4)
+        mock_v1.assert_not_called()
+        self.assertTrue(task_runner._use_update_v2)
+        self.assertIsNone(result)
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_execute_and_update_task_tight_loop_with_v1_polls_for_next(self):
+        """When v1 is used, the tight loop should poll immediately for the next task."""
+        worker = MockWorker('test_task')
+        task_runner = TaskRunner(worker=worker)
+        task_runner._use_update_v2 = False  # simulate post-fallback state
+
+        first_task = Task(task_id='task_1', workflow_instance_id='wf_1')
+        second_task = Task(task_id='task_2', workflow_instance_id='wf_1')
+
+        # Execute returns a result, update v1 returns None, poll returns second task then empty
+        with patch.object(TaskResourceApi, 'update_task', return_value='ok') as mock_v1, \
+             patch.object(TaskResourceApi, 'batch_poll',
+                          side_effect=[[second_task], []]) as mock_poll:
+            task_runner._TaskRunner__execute_and_update_task(first_task)
+
+        # update_task called twice (once per task), poll called twice (second_task then empty)
+        self.assertEqual(mock_v1.call_count, 2)
+        self.assertEqual(mock_poll.call_count, 2)
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_execute_and_update_task_tight_loop_stops_when_queue_empty_on_v1(self):
+        """With v1, if poll returns nothing the tight loop exits cleanly."""
+        worker = MockWorker('test_task')
+        task_runner = TaskRunner(worker=worker)
+        task_runner._use_update_v2 = False
+
+        task = Task(task_id='task_1', workflow_instance_id='wf_1')
+
+        with patch.object(TaskResourceApi, 'update_task', return_value='ok') as mock_v1, \
+             patch.object(TaskResourceApi, 'batch_poll', return_value=[]) as mock_poll:
+            task_runner._TaskRunner__execute_and_update_task(task)
+
+        mock_v1.assert_called_once()
+        mock_poll.assert_called_once()
+
+    @patch('time.sleep', Mock(return_value=None))
+    def test_execute_and_update_task_tight_loop_not_pollled_when_v2(self):
+        """With v2, poll is NOT called inside the tight loop (v2 returns next task directly)."""
+        worker = MockWorker('test_task')
+        task_runner = TaskRunner(worker=worker)
+
+        first_task = Task(task_id='task_1', workflow_instance_id='wf_1')
+
+        with patch.object(TaskResourceApi, 'update_task_v2', return_value=None) as mock_v2, \
+             patch.object(TaskResourceApi, 'batch_poll') as mock_poll:
+            task_runner._TaskRunner__execute_and_update_task(first_task)
+
+        mock_v2.assert_called_once()
+        mock_poll.assert_not_called()
 
     # ========================================
     # Property and Environment Tests

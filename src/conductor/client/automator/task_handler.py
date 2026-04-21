@@ -4,6 +4,7 @@ import importlib
 import inspect
 import logging
 import os
+import signal
 import threading
 import time
 from multiprocessing import Process, freeze_support, Queue, set_start_method
@@ -52,6 +53,7 @@ def _run_sync_worker_process(
         event_listeners: Optional[List[Any]],
 ) -> None:
     """Process target: construct TaskRunner after fork/spawn and run forever."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     task_runner = TaskRunner(worker, configuration, metrics_settings, event_listeners)
     task_runner.run()
 
@@ -63,6 +65,7 @@ def _run_async_worker_process(
         event_listeners: Optional[List[Any]],
 ) -> None:
     """Process target: construct AsyncTaskRunner after fork/spawn and run forever."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     async_task_runner = AsyncTaskRunner(worker, configuration, metrics_settings, event_listeners)
     asyncio.run(async_task_runner.run())
 
@@ -70,7 +73,8 @@ def _run_async_worker_process(
 def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id: str, func,
                          thread_count: int = 1, register_task_def: bool = False,
                          poll_timeout: int = 100, lease_extend_enabled: bool = False, task_def: Optional['TaskDef'] = None,
-                         overwrite_task_def: bool = True, strict_schema: bool = False):
+                         overwrite_task_def: bool = True, strict_schema: bool = False,
+                         register_schema: Optional[bool] = None):
     logger.debug("decorated %s", name)
     _decorated_functions[(name, domain)] = {
         "func": func,
@@ -83,7 +87,8 @@ def register_decorated_fn(name: str, poll_interval: int, domain: str, worker_id:
         "lease_extend_enabled": lease_extend_enabled,
         "task_def": task_def,
         "overwrite_task_def": overwrite_task_def,
-        "strict_schema": strict_schema
+        "strict_schema": strict_schema,
+        "register_schema": register_schema
     }
 
 
@@ -109,7 +114,8 @@ def get_registered_workers() -> List[Worker]:
             paused=False,  # Always default to False, only env vars can set to True
             task_def_template=record.get("task_def"),  # Optional TaskDef configuration
             overwrite_task_def=record.get("overwrite_task_def", True),
-            strict_schema=record.get("strict_schema", False)
+            strict_schema=record.get("strict_schema", False),
+            register_schema=record.get("register_schema") if record.get("register_schema") is not None else False
         )
         workers.append(worker)
     return workers
@@ -145,6 +151,29 @@ class TaskHandler:
         - Async polling, execution, and updates (httpx.AsyncClient)
         - 10-100x better concurrency for I/O-bound workloads
         - Automatically detected - no configuration needed
+
+    Parameters:
+        scan_for_annotated_workers: When True (default), discovers workers decorated with
+            @worker_task that have already been imported into the current Python process.
+            This does NOT scan the filesystem — it only finds functions registered at
+            import time. Workers defined in modules that have not yet been imported will
+            be silently ignored.
+
+            To load workers from separate files, import them before creating TaskHandler:
+
+                import myapp.workers  # must import first
+                with TaskHandler(configuration=config) as th:
+                    th.start_processes()
+
+            Or use the import_modules parameter to have TaskHandler import them for you:
+
+                with TaskHandler(configuration=config,
+                                 import_modules=['myapp.workers']) as th:
+                    th.start_processes()
+
+        import_modules: List of module dotted-path strings to import before scanning for
+            annotated workers (e.g. ['myapp.workers', 'myapp.other_workers']). Use this
+            instead of manual imports when scan_for_annotated_workers=True.
 
     Usage:
         # Default configuration
@@ -228,8 +257,14 @@ class TaskHandler:
                     'poll_timeout': record.get("poll_timeout", 100),
                     'lease_extend_enabled': record.get("lease_extend_enabled", True),
                     'overwrite_task_def': record.get("overwrite_task_def", True),
-                    'strict_schema': record.get("strict_schema", False)
+                    'strict_schema': record.get("strict_schema", False),
+                    'register_schema': record.get("register_schema")
                 }
+
+                # Apply global Configuration.register_schema as fallback when
+                # the decorator doesn't set it explicitly (None).
+                if code_config['register_schema'] is None and hasattr(configuration, 'register_schema') and configuration.register_schema is not None:
+                    code_config['register_schema'] = configuration.register_schema
 
                 # Resolve configuration with environment variable overrides
                 resolved_config = resolve_worker_config(
@@ -249,7 +284,8 @@ class TaskHandler:
                     lease_extend_enabled=resolved_config['lease_extend_enabled'],
                     task_def_template=record.get("task_def"),  # Pass TaskDef configuration
                     overwrite_task_def=resolved_config.get('overwrite_task_def', True),
-                    strict_schema=resolved_config.get('strict_schema', False))
+                    strict_schema=resolved_config.get('strict_schema', False),
+                    register_schema=resolved_config.get('register_schema', False))
                 logger.debug("created worker with name=%s and domain=%s", task_def_name, resolved_config['domain'])
                 workers.append(worker)
 
@@ -607,6 +643,7 @@ def _setup_logging_queue(configuration: Configuration):
 
 # This process performs the centralized logging
 def __logger_process(queue, log_level, logger_format=None):
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     c_logger = logging.getLogger(
         Configuration.get_logging_formatted_name(
             __name__

@@ -19,6 +19,7 @@ If you find [Conductor](https://github.com/conductor-oss/conductor) useful, plea
   * [Workers: Sync and Async](#workers-sync-and-async)
   * [Workflows with HTTP Calls and Waits](#workflows-with-http-calls-and-waits)
   * [Long-Running Tasks with TaskContext](#long-running-tasks-with-taskcontext)
+  * [Lease Extension for Long-Running Tasks](#lease-extension-for-long-running-tasks)
   * [Monitoring with Metrics](#monitoring-with-metrics)
   * [Managing Workflow Executions](#managing-workflow-executions)
 * [AI & LLM Workflows](#ai--llm-workflows)
@@ -59,8 +60,12 @@ conductor server start
 ## Install the SDK
 
 ```shell
+python3 -m venv conductor-env
+source conductor-env/bin/activate  # Windows: conductor-env\Scripts\activate
 pip install conductor-python
 ```
+
+> **Already in a virtual environment?** Skip the `venv` step and run `pip install conductor-python` directly. On macOS, Windows, or in containers where system Python is not locked down, you can also install globally.
 
 ## 60-Second Quickstart
 
@@ -101,7 +106,7 @@ Create a `quickstart.py` with the following:
 ```python
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.orkes_clients import OrkesClients
+from conductor.client.orkes_clients import OrkesClients  # works with OSS Conductor and Orkes Conductor
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.worker.worker_task import worker_task
 
@@ -127,6 +132,8 @@ def main():
     workflow.register(overwrite=True)
 
     # Start polling for tasks (one worker subprocess per worker function).
+    # Note: scan_for_annotated_workers=True only discovers @worker_task functions that have
+    # already been imported. If workers are in a separate module, import it first.
     with TaskHandler(configuration=config, scan_for_annotated_workers=True) as task_handler:
         task_handler.start_processes()
 
@@ -162,7 +169,7 @@ python quickstart.py
 > See [Configuration](#configuration) for details.
 
 That's it — you just defined a worker, built a workflow, and executed it. Open the Conductor UI (default:
-[http://localhost:8127](http://localhost:8127)) to see the execution.
+[http://localhost:8080](http://localhost:8080)) to see the execution.
 
 ---
 
@@ -270,6 +277,26 @@ def batch_job(batch_id: str) -> Union[dict, TaskInProgress]:
 `TaskContext` also provides access to task metadata, retry counts, workflow IDs, and the ability to add logs visible in the Conductor UI.
 
 See [examples/task_context_example.py](examples/task_context_example.py) for all patterns (polling, retry-aware logic, async context, input access).
+
+### Lease Extension for Long-Running Tasks
+
+For tasks that run longer than `responseTimeoutSeconds` (e.g., LLM inference, data pipelines, batch jobs), enable automatic lease extension. The SDK sends heartbeats at 80% of `responseTimeoutSeconds`, resetting the server's timeout timer so the task stays alive:
+
+```python
+from conductor.client.worker.worker_task import worker_task
+
+@worker_task(
+    task_definition_name='train_model',
+    lease_extend_enabled=True,  # Automatic heartbeat — keeps task alive
+)
+def train_model(dataset_id: str) -> dict:
+    """Runs for 10 minutes, but responseTimeoutSeconds is only 60s.
+    Heartbeats at 48s intervals keep the lease alive."""
+    model = train(dataset_id)
+    return {'model_id': model.id, 'accuracy': model.accuracy}
+```
+
+Disabled by default. Enable per-worker via decorator, constructor, or environment variable (`conductor_worker_<task>_lease_extend_enabled=true`). See [LEASE_EXTENSION.md](LEASE_EXTENSION.md) for the full guide.
 
 ### Monitoring with Metrics
 
@@ -403,6 +430,7 @@ See the [Examples Guide](examples/README.md) for the full catalog. Key examples:
 | [kitchensink.py](examples/kitchensink.py) | All task types (HTTP, JS, JQ, Switch) | `python examples/kitchensink.py` |
 | [workflow_ops.py](examples/workflow_ops.py) | Pause, resume, terminate, retry, restart, rerun, signal | `python examples/workflow_ops.py` |
 | [task_context_example.py](examples/task_context_example.py) | Long-running tasks with TaskInProgress | `python examples/task_context_example.py` |
+| [lease_extension_example.py](examples/lease_extension_example.py) | Automatic heartbeat for long-running tasks | `python examples/lease_extension_example.py` |
 | [metrics_example.py](examples/metrics_example.py) | Prometheus metrics collection | `python examples/metrics_example.py` |
 | [fastapi_worker_service.py](examples/fastapi_worker_service.py) | FastAPI: expose a workflow as an API (+ workers) | `uvicorn examples.fastapi_worker_service:app --port 8081 --workers 1` |
 | [helloworld.py](examples/helloworld/helloworld.py) | Minimal hello world | `python examples/helloworld/helloworld.py` |
@@ -427,6 +455,7 @@ End-to-end examples covering all APIs for each domain:
 | [Worker Design](docs/design/WORKER_DESIGN.md) | Architecture: AsyncTaskRunner vs TaskRunner, discovery, lifecycle |
 | [Worker Guide](docs/WORKER.md) | All worker patterns (function, class, annotation, async) |
 | [Worker Configuration](WORKER_CONFIGURATION.md) | Hierarchical environment variable configuration |
+| [Lease Extension](LEASE_EXTENSION.md) | Automatic heartbeat for long-running tasks |
 | [Workflow Management](docs/WORKFLOW.md) | Start, pause, resume, terminate, retry, search |
 | [Workflow Testing](docs/WORKFLOW_TESTING.md) | Unit testing with mock outputs |
 | [Task Management](docs/TASK_MANAGEMENT.md) | Task operations |
