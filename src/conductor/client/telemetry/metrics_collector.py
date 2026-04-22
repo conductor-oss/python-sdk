@@ -1,5 +1,6 @@
 import logging
 import os
+import signal
 import threading
 import time
 from typing import Any, Dict, List, Union
@@ -145,7 +146,18 @@ class MetricsCollector:
         if settings is None:
             return
 
-        # Set environment variable for this process
+        # Ignore SIGINT in this subprocess: Ctrl-C in the controlling terminal
+        # delivers SIGINT to every member of the foreground process group, and
+        # without this handler the default behaviour is to raise
+        # KeyboardInterrupt out of time.sleep() and dump a traceback. The
+        # parent's TaskHandler.stop_processes() already shuts this process down
+        # cleanly via process.terminate() (SIGTERM), so ignoring SIGINT here
+        # just suppresses the noisy traceback on Ctrl-C.
+        try:
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
+        except Exception:
+            pass
+
         os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.directory
 
         # Import prometheus_client in this process too (after setting env var)

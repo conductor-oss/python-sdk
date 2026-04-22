@@ -33,18 +33,58 @@ logger = logging.getLogger(
 )
 
 _decorated_functions = {}
-_mp_fork_set = False
-if not _mp_fork_set:
+
+# multiprocessing start method.
+#
+# We deliberately default to "spawn" on all platforms, including Linux. The
+# alternative ("fork") is unsafe whenever the parent process has any live
+# thread holding a non-reentrant lock at Process.start() time, because fork
+# only preserves the calling thread in the child and any locks held by other
+# threads are inherited in a permanently-locked state. That class of bug is
+# silent (the child deadlocks on the first acquire) and race-dependent, so it
+# is extremely hard to diagnose in production.
+#
+# The concrete case that motivated making this the default: prometheus_client
+# in multiprocess mode uses a single module-level threading.Lock to guard its
+# mmap-backed value files. Any SDK code path that emits a metric from a
+# non-main thread (e.g. a WorkflowGovernor-style scheduler thread calling
+# OrkesWorkflowClient.start_workflow, or an auth-token refresh timer in
+# ApiClient) holds that lock briefly. If TaskHandler.start_processes() — or
+# the supervisor thread's worker-restart path — forks while that lock is
+# held, the child inherits it locked forever and stops polling.
+#
+# "spawn" sidesteps the entire class of problems: each child is a fresh
+# interpreter that imports modules from scratch and creates its own locks,
+# so no parent state can be inherited. Workers still share metrics with the
+# parent via the PROMETHEUS_MULTIPROC_DIR mmap files, so /metrics aggregation
+# is unaffected.
+#
+# Users with workloads that genuinely require fork semantics (rare — it
+# usually means "I rely on copy-on-write inheritance of some large in-memory
+# object") can opt back in by setting CONDUCTOR_MP_START_METHOD=fork. Note
+# that doing so re-exposes the fork-with-held-lock hazard described above.
+_MP_START_METHOD_ENV = "CONDUCTOR_MP_START_METHOD"
+_VALID_MP_START_METHODS = {"spawn", "fork", "forkserver"}
+_mp_start_method_set = False
+if not _mp_start_method_set:
+    chosen = os.environ.get(_MP_START_METHOD_ENV, "").strip().lower() or "spawn"
+    if chosen not in _VALID_MP_START_METHODS:
+        logger.warning(
+            "Ignoring invalid %s=%r; falling back to 'spawn'",
+            _MP_START_METHOD_ENV, chosen,
+        )
+        chosen = "spawn"
     try:
-        if platform == "win32":
-            set_start_method("spawn")
-        else:
-            set_start_method("fork")
-        _mp_fork_set = True
+        set_start_method(chosen)
+        _mp_start_method_set = True
+        logger.info("multiprocessing start method: %s", chosen)
     except Exception as e:
-        logger.info("error when setting multiprocessing.set_start_method - maybe the context is set %s", e.args)
+        logger.info(
+            "error when setting multiprocessing.set_start_method - maybe the context is already set: %s",
+            e.args,
+        )
 if platform == "darwin":
-        os.environ["no_proxy"] = "*"
+    os.environ["no_proxy"] = "*"
 
 def _run_sync_worker_process(
         worker: WorkerInterface,
