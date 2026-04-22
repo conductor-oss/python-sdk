@@ -27,6 +27,43 @@ logger = logging.getLogger(
 )
 
 
+_UUID_RE = re.compile(
+    r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+)
+_ALL_DIGITS_RE = re.compile(r"^\d+$")
+_LONG_OPAQUE_RE = re.compile(r"^[A-Za-z0-9_\-]{24,}$")
+
+
+def _templatize_uri(path: str) -> str:
+    """Collapse high-cardinality path segments so the ``uri`` metric label
+    stays bounded.
+
+    Conductor workflow/task IDs are UUIDs (or custom user IDs) interpolated
+    directly into paths like ``/api/tasks/<taskId>/ack`` or
+    ``/api/workflow/<workflowId>/status``. Using the raw path as a Prometheus
+    label produces unbounded cardinality. We heuristically replace segments
+    that look like IDs (UUID shape, all-digit, or long opaque tokens) with a
+    ``{id}`` placeholder; the remaining segments (``api``, ``tasks``,
+    ``workflow``, task-type, workflow-name, etc.) are bounded.
+    """
+    if not path:
+        return path
+    try:
+        segments = path.split("/")
+        for i, seg in enumerate(segments):
+            if not seg:
+                continue
+            if _UUID_RE.fullmatch(seg):
+                segments[i] = "{id}"
+            elif _ALL_DIGITS_RE.fullmatch(seg):
+                segments[i] = "{id}"
+            elif _LONG_OPAQUE_RE.fullmatch(seg):
+                segments[i] = "{id}"
+        return "/".join(segments)
+    except Exception:
+        return path
+
+
 class ApiClient(object):
     PRIMITIVE_TYPES = (float, bool, bytes, six.text_type) + six.integer_types
     NATIVE_TYPES_MAPPING = {

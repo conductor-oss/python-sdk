@@ -22,8 +22,9 @@ from conductor.client.orkes.api.tags_api import TagsApi
 
 
 class OrkesBaseClient(object):
-    def __init__(self, configuration: Configuration):
-        self.api_client = ApiClient(configuration)
+    def __init__(self, configuration: Configuration, metrics_collector=None):
+        self.metrics_collector = metrics_collector
+        self.api_client = ApiClient(configuration, metrics_collector=metrics_collector)
         self.logger = logging.getLogger(
             Configuration.get_logging_formatted_name(__name__)
         )

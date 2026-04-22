@@ -1,4 +1,5 @@
 import inspect
+import json
 import logging
 import os
 import sys
@@ -43,6 +44,25 @@ logger = logging.getLogger(
         __name__
     )
 )
+
+
+def _task_result_size_bytes(task_result) -> int:
+    """Return the serialized JSON byte length of a TaskResult.
+
+    We report the same bytes we'd send on the wire so output_size_bytes
+    matches what the server receives, rather than the in-memory object
+    footprint reported by sys.getsizeof.
+    """
+    if task_result is None:
+        return 0
+    try:
+        if hasattr(task_result, "to_dict"):
+            payload = task_result.to_dict()
+        else:
+            payload = task_result
+        return len(json.dumps(payload, default=str).encode("utf-8"))
+    except Exception:
+        return 0
 
 
 class TaskRunner:
@@ -121,6 +141,8 @@ class TaskRunner:
             self.configuration.apply_logging_config()
         else:
             logger.setLevel(logging.DEBUG)
+
+        self.__install_uncaught_exception_hook()
 
         # Log worker configuration with correct PID (after fork)
         task_name = self.worker.get_task_definition_name()
@@ -524,7 +546,7 @@ class TaskRunner:
                 )
 
                 # Publish TaskExecutionCompleted event with actual execution time
-                output_size = sys.getsizeof(task_result) if task_result else 0
+                output_size = _task_result_size_bytes(task_result)
                 self.event_dispatcher.publish(TaskExecutionCompleted(
                     task_type=task.task_def_name,
                     task_id=task_id,
@@ -833,7 +855,7 @@ class TaskRunner:
             time_spent = finish_time - start_time
 
             # Publish TaskExecutionCompleted event (metrics collector will handle via event)
-            output_size = sys.getsizeof(task_result) if task_result else 0
+            output_size = _task_result_size_bytes(task_result)
             self.event_dispatcher.publish(TaskExecutionCompleted(
                 task_type=task_definition_name,
                 task_id=task.task_id,
@@ -1130,6 +1152,37 @@ class TaskRunner:
     def __wait_for_polling_interval(self) -> None:
         polling_interval = self.worker.get_polling_interval_in_seconds()
         time.sleep(polling_interval)
+
+    def __install_uncaught_exception_hook(self) -> None:
+        """
+        Install a ``threading.excepthook`` so that uncaught exceptions in
+        any thread within this worker subprocess are reflected into the
+        canonical ``thread_uncaught_exceptions_total`` counter (bounded
+        ``exception`` label = class name), mirroring Java / Go.
+
+        We chain to the previously-installed hook to preserve default
+        logging behaviour.
+        """
+        if self.metrics_collector is None:
+            return
+
+        try:
+            previous_hook = threading.excepthook
+
+            def _conductor_thread_excepthook(args: "threading.ExceptHookArgs") -> None:  # type: ignore[name-defined]
+                try:
+                    self.metrics_collector.increment_uncaught_exception(args.exc_value)
+                except Exception:
+                    pass
+                try:
+                    if previous_hook is not None:
+                        previous_hook(args)
+                except Exception:
+                    pass
+
+            threading.excepthook = _conductor_thread_excepthook
+        except Exception as e:
+            logger.debug("Failed to install threading.excepthook: %s", e)
 
     def __set_worker_properties(self) -> None:
         """

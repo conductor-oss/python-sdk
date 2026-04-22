@@ -73,16 +73,16 @@ def _exception_label(exception) -> str:
     Return a bounded-cardinality label value for an exception.
 
     Callers may pass either an exception instance, an exception class, or an
-    arbitrary string/None. In every case we reduce to the class-qualified name
+    arbitrary string/None. In every case we reduce to the bare class name
+    (mirroring the Java / Go SDK convention and keeping dashboards readable)
     to prevent unbounded label cardinality from error messages.
     """
     if exception is None:
         return "None"
     if isinstance(exception, type):
-        return f"<class '{exception.__module__}.{exception.__name__}'>"
+        return exception.__name__
     if isinstance(exception, BaseException):
-        cls = type(exception)
-        return f"<class '{cls.__module__}.{cls.__name__}'>"
+        return type(exception).__name__
     return str(exception)
 
 
@@ -317,11 +317,23 @@ class MetricsCollector:
             }
         )
 
-    def increment_uncaught_exception(self):
+    def increment_uncaught_exception(self, exception=None):
+        """
+        Increment the canonical thread_uncaught_exceptions_total counter
+        (exposed as ``thread_uncaught_exceptions`` via prometheus_client; the
+        ``_total`` suffix is appended automatically by the library).
+
+        ``exception`` may be an exception instance, an exception class, or
+        ``None``. It is reduced to the bare class name to keep the
+        ``exception`` label at bounded cardinality — mirroring the Java /
+        Go SDKs.
+        """
         self.__increment_counter(
             name=MetricName.THREAD_UNCAUGHT_EXCEPTION,
             documentation=MetricDocumentation.THREAD_UNCAUGHT_EXCEPTION,
-            labels={}
+            labels={
+                MetricLabel.EXCEPTION: _exception_label(exception),
+            }
         )
 
     def increment_worker_restart(self, task_type: str) -> None:
@@ -368,7 +380,7 @@ class MetricsCollector:
             documentation=MetricDocumentation.TASK_EXECUTE_ERROR,
             labels={
                 MetricLabel.TASK_TYPE: task_type,
-                MetricLabel.EXCEPTION: str(exception)
+                MetricLabel.EXCEPTION: _exception_label(exception),
             }
         )
 
@@ -387,7 +399,7 @@ class MetricsCollector:
             documentation=MetricDocumentation.TASK_ACK_ERROR,
             labels={
                 MetricLabel.TASK_TYPE: task_type,
-                MetricLabel.EXCEPTION: str(exception)
+                MetricLabel.EXCEPTION: _exception_label(exception),
             }
         )
 
@@ -397,7 +409,7 @@ class MetricsCollector:
             documentation=MetricDocumentation.TASK_UPDATE_ERROR,
             labels={
                 MetricLabel.TASK_TYPE: task_type,
-                MetricLabel.EXCEPTION: str(exception)
+                MetricLabel.EXCEPTION: _exception_label(exception),
             }
         )
 
@@ -418,7 +430,7 @@ class MetricsCollector:
             documentation=MetricDocumentation.WORKFLOW_START_ERROR,
             labels={
                 MetricLabel.WORKFLOW_TYPE: workflow_type,
-                MetricLabel.EXCEPTION: str(exception)
+                MetricLabel.EXCEPTION: _exception_label(exception),
             }
         )
 

@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import json
 import logging
 import os
 import sys
@@ -39,6 +40,25 @@ logger = logging.getLogger(
         __name__
     )
 )
+
+
+def _task_result_size_bytes(task_result) -> int:
+    """Return the serialized JSON byte length of a TaskResult.
+
+    We report the same bytes we'd send on the wire so output_size_bytes
+    matches what the server receives, rather than the in-memory object
+    footprint reported by sys.getsizeof.
+    """
+    if task_result is None:
+        return 0
+    try:
+        if hasattr(task_result, "to_dict"):
+            payload = task_result.to_dict()
+        else:
+            payload = task_result
+        return len(json.dumps(payload, default=str).encode("utf-8"))
+    except Exception:
+        return 0
 
 
 class AsyncTaskRunner:
@@ -727,7 +747,7 @@ class AsyncTaskRunner:
             time_spent = finish_time - start_time
 
             # Publish TaskExecutionCompleted event (same as TaskRunner:484)
-            output_size = sys.getsizeof(task_result) if task_result else 0
+            output_size = _task_result_size_bytes(task_result)
             self.event_dispatcher.publish(TaskExecutionCompleted(
                 task_type=task_definition_name,
                 task_id=task.task_id,

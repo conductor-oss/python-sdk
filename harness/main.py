@@ -9,6 +9,7 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.http.models.task_def import TaskDef
 from conductor.client.orkes_clients import OrkesClients
+from conductor.client.telemetry.metrics_collector import MetricsCollector
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.task.simple_task import SimpleTask
 
@@ -67,7 +68,16 @@ def register_metadata(clients: OrkesClients) -> None:
 
 def main() -> None:
     configuration = Configuration()
-    clients = OrkesClients(configuration)
+
+    metrics_port = env_int_or_default("HARNESS_METRICS_PORT", 9991)
+    metrics_settings = MetricsSettings(http_port=metrics_port)
+    print(f"Prometheus metrics will be served on port {metrics_port}")
+
+    # Main-process MetricsCollector: writes workflow-client / HTTP metrics into
+    # the shared PROMETHEUS_MULTIPROC_DIR so they merge with worker subprocess
+    # metrics in the exported /metrics payload.
+    metrics_collector = MetricsCollector(metrics_settings)
+    clients = OrkesClients(configuration, metrics_collector=metrics_collector)
 
     register_metadata(clients)
 
@@ -79,10 +89,6 @@ def main() -> None:
     for task_name, codename, sleep_seconds in SIMULATED_WORKERS:
         worker = SimulatedTaskWorker(task_name, codename, sleep_seconds, batch_size, poll_interval_ms)
         workers.append(worker)
-
-    metrics_port = env_int_or_default("HARNESS_METRICS_PORT", 9991)
-    metrics_settings = MetricsSettings(http_port=metrics_port)
-    print(f"Prometheus metrics will be served on port {metrics_port}")
 
     task_handler = TaskHandler(
         workers=workers,

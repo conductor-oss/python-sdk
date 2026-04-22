@@ -27,11 +27,11 @@ from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 
 
 class WorkflowExecutor:
-    def __init__(self, configuration: Configuration) -> Self:
-        api_client = ApiClient(configuration)
+    def __init__(self, configuration: Configuration, metrics_collector=None) -> Self:
+        api_client = ApiClient(configuration, metrics_collector=metrics_collector)
         self.metadata_client = MetadataResourceApi(api_client)
         self.task_client = TaskResourceApi(api_client)
-        self.workflow_client = OrkesWorkflowClient(configuration)
+        self.workflow_client = OrkesWorkflowClient(configuration, metrics_collector=metrics_collector)
 
     def register_workflow(self, workflow: WorkflowDef, overwrite: Optional[bool] = None) -> object:
         """Create a new workflow definition"""
