@@ -99,7 +99,6 @@ def main() -> None:
 
     workflow_executor = clients.get_workflow_executor()
     governor = WorkflowGovernor(workflow_executor, WORKFLOW_NAME, workflows_per_sec)
-    governor.start()
 
     main_pid = os.getpid()
     shutting_down = False
@@ -117,7 +116,16 @@ def main() -> None:
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
+    # Fork worker processes BEFORE starting the governor thread. The parent's
+    # MetricsCollector uses prometheus_client's multiprocess mode, which
+    # guards its mmapped value files with a module-level threading.Lock. If
+    # the governor thread is already running at fork() time it can be holding
+    # that lock when a worker forks, and since only the forking thread
+    # survives in the child, the lock is inherited permanently locked and
+    # the child deadlocks on its first metric emission. Forking while the
+    # main process is still single-threaded avoids that hazard.
     task_handler.start_processes()
+    governor.start()
     task_handler.join_processes()
 
 
