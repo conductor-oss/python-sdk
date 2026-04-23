@@ -3,7 +3,7 @@
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.automator.task_runner import TaskRunner
-from conductor.client.orkes_clients import OrkesClients
+from conductor.client.orkes_clients import OrkesClients, ConductorClients
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.worker.worker_task import worker_task
@@ -18,6 +18,7 @@ __all__ = [
     "TaskHandler",
     "TaskRunner",
     "OrkesClients",
+    "ConductorClients",
     "ConductorWorkflow",
     "WorkflowExecutor",
     "worker_task",
