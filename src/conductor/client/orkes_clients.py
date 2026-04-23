@@ -55,3 +55,6 @@ class OrkesClients:
 
     def get_schema_client(self) -> SchemaClient:
         return OrkesSchemaClient(self.configuration)
+
+
+ConductorClients = OrkesClients

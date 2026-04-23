@@ -106,7 +106,7 @@ Create a `quickstart.py` with the following:
 ```python
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.orkes_clients import OrkesClients  # works with OSS Conductor and Orkes Conductor
+from conductor.client.orkes_clients import ConductorClients  # OrkesClients is an alias for the same class
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.worker.worker_task import worker_task
 
@@ -121,7 +121,7 @@ def main():
     # Configure the SDK (reads CONDUCTOR_SERVER_URL / CONDUCTOR_AUTH_* from env).
     config = Configuration()
 
-    clients = OrkesClients(configuration=config)
+    clients = ConductorClients(configuration=config)
     executor = clients.get_workflow_executor()
 
     # Build a workflow with the >> operator.
@@ -329,10 +329,10 @@ Full lifecycle control — start, execute, pause, resume, terminate, retry, rest
 ```python
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models import StartWorkflowRequest, RerunWorkflowRequest, TaskResult
-from conductor.client.orkes_clients import OrkesClients
+from conductor.client.orkes_clients import ConductorClients
 
 config = Configuration()
-clients = OrkesClients(configuration=config)
+clients = ConductorClients(configuration=config)
 workflow_client = clients.get_workflow_client()
 task_client = clients.get_task_client()
 executor = clients.get_workflow_executor()
