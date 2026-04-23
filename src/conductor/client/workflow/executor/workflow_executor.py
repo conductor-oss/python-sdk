@@ -1,9 +1,6 @@
 from __future__ import annotations
-import logging
 import uuid
 from typing import Any, Dict, List, Optional
-
-logger = logging.getLogger(__name__)
 
 from typing_extensions import Self
 
@@ -109,26 +106,12 @@ class WorkflowExecutor:
         if domain is not None:
             request.task_to_domain = {"*": domain}
 
-        workflow_run = self.workflow_client.execute_workflow(
+        return self.workflow_client.execute_workflow(
             start_workflow_request=request,
             request_id=request_id,
             wait_until_task_ref=wait_until_task_ref,
             wait_for_seconds=wait_for_seconds,
         )
-        if getattr(workflow_run, 'status', None) == 'RUNNING':
-            try:
-                full = self.workflow_client.get_workflow(workflow_run.workflow_id, include_tasks=True)
-                failed = [t for t in (full.tasks or []) if t.status in ('FAILED', 'FAILED_WITH_TERMINAL_ERROR')]
-                if failed:
-                    t = failed[0]
-                    reason = getattr(t, 'reason_for_incompletion', None) or 'see server logs'
-                    logger.warning(
-                        "Workflow %s returned RUNNING after timeout, but task '%s' has status %s: %s",
-                        workflow_run.workflow_id, t.reference_task_name, t.status, reason,
-                    )
-            except Exception:
-                pass
-        return workflow_run
 
     def remove_workflow(self, workflow_id: str, archive_workflow: Optional[bool] = None) -> None:
         """Removes the workflow permanently from the system"""
