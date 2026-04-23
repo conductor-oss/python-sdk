@@ -153,6 +153,8 @@ Run it:
 python quickstart.py
 ```
 
+> **About `OrkesClients`:** This is the standard client factory for Conductor. The `Orkes` prefix reflects the implementing organization — it works identically with self-hosted OSS Conductor. No Orkes account or paid service is required.
+
 > ### Using Orkes Conductor / Remote Server?
 > Export your authentication credentials as well:
 >
@@ -329,7 +331,7 @@ Full lifecycle control — start, execute, pause, resume, terminate, retry, rest
 ```python
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models import StartWorkflowRequest, RerunWorkflowRequest, TaskResult
-from conductor.client.orkes_clients import OrkesClients
+from conductor.client.orkes_clients import OrkesClients  # works with OSS Conductor and Orkes Conductor
 
 config = Configuration()
 clients = OrkesClients(configuration=config)
