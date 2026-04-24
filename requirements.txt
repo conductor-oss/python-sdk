@@ -1,12 +1,13 @@
 certifi >= 14.05.14
 prometheus-client >= 0.13.1
 six >= 1.10
-requests >= 2.31.0
-typing-extensions==4.15.0
+requests >= 2.33.0
+typing-extensions >= 4.2.0
 astor >= 0.8.1
 shortuuid >= 1.0.11
 dacite >= 1.8.1
 deprecated >= 1.2.14
-httpx >=0.26.0
+httpx[http2] >= 0.26.0
+h2 >= 4.1.0
 python-dateutil >= 2.8.2
 urllib3 >= 2.6.3
