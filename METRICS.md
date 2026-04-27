@@ -37,7 +37,7 @@ The Conductor Python SDK includes built-in metrics collection using Prometheus t
 | `task_result_size_bytes` | Gauge | `taskType` | Last-seen task-result payload size. |
 | `workflow_input_size_bytes` | Gauge | `workflowType`, `version` | Last-seen workflow-input payload size. |
 
-The bucket set used by all four Histograms is `(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)` seconds — matched to the canonical set in [`sdk-metrics-harmonization.md`](https://github.com/conductor-oss/longrunning-wfstest/blob/main/sdk-metrics-harmonization.md).
+The bucket set used by all four Histograms is `(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)` seconds — matched to the canonical set in [`sdk-metrics-harmonization.md`](https://github.com/orkes-io/certification-cloud-util/blob/main/sdk-metrics-harmonization.md).
 
 ### Deprecated metrics (still emitted for backward compatibility)
 
