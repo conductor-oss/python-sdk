@@ -80,9 +80,7 @@ jobs:
           cache-to: type=registry,ref=ghcr.io/conductor-oss/python-sdk/harness-worker:buildcache,mode=max
 
   dispatch-deploy:
-    if: |
-      github.event_name == 'release' ||
-      (github.event_name == 'workflow_dispatch' && inputs.deploy)
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
     needs: build-and-push
     runs-on: ubuntu-latest
     permissions:
