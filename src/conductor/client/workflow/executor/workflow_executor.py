@@ -91,8 +91,21 @@ class WorkflowExecutor:
     def execute(self, name: str, version: Optional[int] = None, workflow_input: Any = None,
                 wait_until_task_ref: Optional[str] = None, wait_for_seconds: int = 10,
                 request_id: Optional[str] = None, correlation_id: Optional[str] = None, domain: Optional[str] = None) -> WorkflowRun:
-        """Executes a workflow with StartWorkflowRequest and waits for the completion of the workflow or until a
-        specific task in the workflow """
+        """Execute a workflow synchronously and wait for it to complete.
+
+        Returns when the workflow reaches a terminal state or ``wait_for_seconds`` elapses.
+        If the timeout fires first, returns ``status='RUNNING'`` with empty output — not an error.
+
+        **Getting RUNNING with no output after a worker exception?** The default ``wait_for_seconds=10`` is shorter than the
+        default task ``retryDelaySeconds=60``. A failing worker triggers a 60 s retry wait,
+        so the 10 s timeout fires while the retry is pending. Raise ``wait_for_seconds``
+        (e.g. 70) or inspect failed tasks::
+
+            wf = executor.get_workflow(run.workflow_id, include_tasks=True)
+            for task in wf.tasks:
+                if task.status in ('FAILED', 'FAILED_WITH_TERMINAL_ERROR'):
+                    print(task.reference_task_name, task.reason_for_incompletion)
+        """
         workflow_input = workflow_input or {}
         if request_id is None:
             request_id = str(uuid.uuid4())
