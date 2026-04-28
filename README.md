@@ -490,6 +490,37 @@ Yes. Conductor ensures workflows complete reliably even in the face of infrastru
 
 No. While Conductor excels at asynchronous orchestration, it also supports synchronous workflow execution when immediate results are required.
 
+**Why did `execute()` return `status: RUNNING` with no output?**
+
+`execute()` blocks until the workflow finishes **or** `wait_for_seconds` elapses (default: 10 s),
+whichever comes first. If it times out, you get `status='RUNNING'` — that is correct behavior,
+not a bug.
+
+The most common cause: your worker raised an exception. Conductor marks the task FAILED and
+schedules a retry after `retryDelaySeconds` (default: **60 s**). The default 10 s wait expires
+while the retry is pending, so `execute()` returns before the workflow completes.
+
+**To fix**: increase `wait_for_seconds` to outlast the retry cycle:
+
+```python
+# default retryDelaySeconds is 60 — wait long enough to cover one retry
+run = executor.execute(name='my_workflow', version=1, workflow_input={...}, wait_for_seconds=70)
+```
+
+**To debug** when a workflow is stuck:
+
+```python
+# Inspect task statuses and failure reasons
+wf = executor.get_workflow(run.workflow_id, include_tasks=True)
+for task in wf.tasks:
+    if task.status in ('FAILED', 'FAILED_WITH_TERMINAL_ERROR'):
+        print(task.reference_task_name, task.reason_for_incompletion)
+```
+
+You can also open the Conductor UI at `<server>/execution/<workflow_id>` — it shows each task's
+status, retry count, and the worker exception message directly. Worker tracebacks are also logged
+at ERROR level by the SDK in the `TaskHandler` process.
+
 **Do I need to use a Conductor-specific framework?**
 
 No. Conductor is language and framework agnostic. Use your preferred language and framework — the [SDKs](https://github.com/conductor-oss/conductor#conductor-sdks) provide native integration for Python, Java, JavaScript, Go, C#, and more.

@@ -91,8 +91,34 @@ class WorkflowExecutor:
     def execute(self, name: str, version: Optional[int] = None, workflow_input: Any = None,
                 wait_until_task_ref: Optional[str] = None, wait_for_seconds: int = 10,
                 request_id: Optional[str] = None, correlation_id: Optional[str] = None, domain: Optional[str] = None) -> WorkflowRun:
-        """Executes a workflow with StartWorkflowRequest and waits for the completion of the workflow or until a
-        specific task in the workflow """
+        """Execute a workflow synchronously and return the result.
+
+        Blocks until the workflow reaches a terminal state (COMPLETED, FAILED, TIMED_OUT,
+        TERMINATED) or until ``wait_for_seconds`` elapses, whichever comes first. If the
+        timeout fires first, returns a ``WorkflowRun`` with ``status='RUNNING'`` and empty
+        output — this is normal behavior, not an error.
+
+        **Common gotcha — RUNNING with no output after a worker exception:**
+        The default ``wait_for_seconds=10`` is shorter than the default task
+        ``retryDelaySeconds=60``. If your worker raises an exception, Conductor marks the task
+        FAILED and schedules a retry after 60 s. The 10 s wait expires while the retry is
+        pending, so you see ``status='RUNNING'``. Increase ``wait_for_seconds`` to outlast the
+        full retry cycle (e.g. ``wait_for_seconds=70`` for one retry with the default delay).
+
+        **Debugging a RUNNING result:**
+
+        - Open the Conductor UI at ``<server>/execution/<workflow_id>`` — the UI shows task
+          failures and worker exception messages directly.
+        - Fetch task details programmatically::
+
+              wf = executor.get_workflow(run.workflow_id, include_tasks=True)
+              for task in wf.tasks:
+                  if task.status in ('FAILED', 'FAILED_WITH_TERMINAL_ERROR'):
+                      print(task.reference_task_name, task.reason_for_incompletion)
+
+        - Check ``TaskHandler`` / worker process logs for the Python traceback. Worker
+          exceptions are logged at ERROR level by the SDK before the task result is reported.
+        """
         workflow_input = workflow_input or {}
         if request_id is None:
             request_id = str(uuid.uuid4())
