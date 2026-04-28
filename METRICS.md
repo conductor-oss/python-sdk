@@ -28,7 +28,7 @@ The Conductor Python SDK includes built-in metrics collection using Prometheus t
 | `task_paused_total` | Counter | `taskType` | Poll happened while the worker was paused. |
 | `thread_uncaught_exceptions_total` | Counter | — | Uncaught exception inside a worker thread. |
 | `worker_restart_total` | Counter | `taskType` | TaskHandler restarted a worker subprocess (Python-only). |
-| `external_payload_used_total` | Counter | `entityName`, `operation`, `payload_type` | External payload storage used (READ / WRITE). |
+| `external_payload_used_total` | Counter | `entityName`, `operation`, `payloadType`, `payload_type` | External payload storage used (READ / WRITE). `payloadType` is canonical; `payload_type` is deprecated (kept for backward compatibility). |
 | `workflow_start_error_total` | Counter | `workflowType`, `exception` | `startWorkflow` failed client-side. |
 | `task_poll_time_seconds` | **Histogram** | `taskType`, `status` | Task poll latency (seconds). Emits `_bucket{le=...}`, `_count`, `_sum`. |
 | `task_execute_time_seconds` | **Histogram** | `taskType`, `status` | Task execution latency. |
@@ -55,7 +55,7 @@ The bucket set used by all four Histograms is `(0.001, 0.005, 0.01, 0.025, 0.05,
 - `method`: `GET`, `POST`, `PUT`, `DELETE`, etc.
 - `uri`: API endpoint **path template**, not the interpolated path (e.g. `/tasks/poll/batch/{taskType}`)
 - `exception`: exception class name (bounded cardinality), e.g. `<class 'conductor.client.http.rest.ApiException'>`
-- `operation` / `payload_type`: `READ` / `WRITE`, `TASK_INPUT` / `TASK_OUTPUT` / `WORKFLOW_INPUT` / `WORKFLOW_OUTPUT`
+- `operation` / `payloadType`: `READ` / `WRITE`, `TASK_INPUT` / `TASK_OUTPUT` / `WORKFLOW_INPUT` / `WORKFLOW_OUTPUT` (the deprecated `payload_type` label carries the same value)
 
 ### Example Prometheus output
 
