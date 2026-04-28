@@ -96,7 +96,7 @@ class WorkflowExecutor:
         Returns when the workflow reaches a terminal state or ``wait_for_seconds`` elapses.
         If the timeout fires first, returns ``status='RUNNING'`` with empty output — not an error.
 
-        **Getting RUNNING back?** The default ``wait_for_seconds=10`` is shorter than the
+        **Getting RUNNING with no output after a worker exception?** The default ``wait_for_seconds=10`` is shorter than the
         default task ``retryDelaySeconds=60``. A failing worker triggers a 60 s retry wait,
         so the 10 s timeout fires while the retry is pending. Raise ``wait_for_seconds``
         (e.g. 70) or inspect failed tasks::
