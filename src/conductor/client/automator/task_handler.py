@@ -33,6 +33,7 @@ logger = logging.getLogger(
 )
 
 _decorated_functions = {}
+_VALID_MP_START_METHODS = {"spawn", "fork", "forkserver"}
 _mp_fork_set = False
 if not _mp_fork_set:
     try:
@@ -42,7 +43,13 @@ if not _mp_fork_set:
         # deadlock.  Default is fork for backward compatibility (spawn requires
         # all Process arguments to be picklable).
         _default_method = "spawn" if platform == "win32" else "fork"
-        _method = os.environ.get("CONDUCTOR_MP_START_METHOD", _default_method).strip().lower()
+        _method = os.environ.get("CONDUCTOR_MP_START_METHOD", "").strip().lower() or _default_method
+        if _method not in _VALID_MP_START_METHODS:
+            logger.warning(
+                "Ignoring invalid CONDUCTOR_MP_START_METHOD=%r; falling back to %r",
+                _method, _default_method,
+            )
+            _method = _default_method
         set_start_method(_method)
         _mp_fork_set = True
     except Exception as e:
