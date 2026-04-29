@@ -149,8 +149,6 @@ class MetricsCollectorBase(abc.ABC):
             settings.file_name
         )
 
-        time.sleep(0.5)
-
         registry = CollectorRegistry()
         from prometheus_client.multiprocess import MultiProcessCollector as MPCollector
         from prometheus_client.samples import Sample
