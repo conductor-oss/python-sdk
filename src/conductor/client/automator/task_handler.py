@@ -18,7 +18,7 @@ from conductor.client.configuration.settings.metrics_settings import MetricsSett
 from conductor.client.event.task_runner_events import TaskRunnerEvent
 from conductor.client.event.sync_event_dispatcher import SyncEventDispatcher
 from conductor.client.event.sync_listener_register import register_task_runner_listener
-from conductor.client.telemetry.metrics_collector import MetricsCollector
+from conductor.client.telemetry.metrics_collector_base import MetricsCollectorBase
 from conductor.client.telemetry.model.metric_documentation import MetricDocumentation
 from conductor.client.telemetry.model.metric_label import MetricLabel
 from conductor.client.telemetry.model.metric_name import MetricName
@@ -36,10 +36,14 @@ _decorated_functions = {}
 _mp_fork_set = False
 if not _mp_fork_set:
     try:
-        if platform == "win32":
-            set_start_method("spawn")
-        else:
-            set_start_method("fork")
+        # The prometheus_client library holds a module-level threading lock;
+        # forking while that lock is held causes a deadlock in child processes.
+        # Set CONDUCTOR_MP_START_METHOD=spawn to avoid this if you hit the
+        # deadlock.  Default is fork for backward compatibility (spawn requires
+        # all Process arguments to be picklable).
+        _default_method = "spawn" if platform == "win32" else "fork"
+        _method = os.environ.get("CONDUCTOR_MP_START_METHOD", _default_method).strip().lower()
+        set_start_method(_method)
         _mp_fork_set = True
     except Exception as e:
         logger.info("error when setting multiprocessing.set_start_method - maybe the context is set %s", e.args)
@@ -345,7 +349,7 @@ class TaskHandler:
             self.metrics_provider_process = None
             return
         self.metrics_provider_process = Process(
-            target=MetricsCollector.provide_metrics,
+            target=MetricsCollectorBase.provide_metrics,
             args=(metrics_settings,)
         )
         logger.info("Created MetricsProvider process")

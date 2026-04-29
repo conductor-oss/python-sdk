@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 from typing import Optional, List, Dict
 
 from conductor.client.configuration.configuration import Configuration
@@ -18,9 +19,10 @@ from conductor.client.workflow_client import WorkflowClient
 class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def __init__(
             self,
-            configuration: Configuration
+            configuration: Configuration,
+            metrics_collector=None,
     ):
-        super(OrkesWorkflowClient, self).__init__(configuration)
+        super(OrkesWorkflowClient, self).__init__(configuration, metrics_collector=metrics_collector)
 
     def start_workflow_by_name(
             self,
@@ -38,10 +40,44 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if priority:
             kwargs.update({"priority": priority})
 
-        return self.workflowResourceApi.start_workflow1(input, name, **kwargs)
+        self._record_workflow_input_payload_size(name, version, input)
+        try:
+            return self.workflowResourceApi.start_workflow1(input, name, **kwargs)
+        except Exception as e:
+            self._record_workflow_start_error(name, e)
+            raise
 
     def start_workflow(self, start_workflow_request: StartWorkflowRequest) -> str:
-        return self.workflowResourceApi.start_workflow(start_workflow_request)
+        self._record_workflow_input_payload_size(
+            start_workflow_request.name,
+            start_workflow_request.version,
+            getattr(start_workflow_request, "input", None),
+        )
+        try:
+            return self.workflowResourceApi.start_workflow(start_workflow_request)
+        except Exception as e:
+            self._record_workflow_start_error(start_workflow_request.name, e)
+            raise
+
+    def _record_workflow_input_payload_size(self, name: str, version, workflow_input) -> None:
+        if self.metrics_collector is None:
+            return
+        try:
+            encoded = json.dumps(workflow_input if workflow_input is not None else {}, default=str)
+            size_bytes = len(encoded.encode("utf-8"))
+            self.metrics_collector.record_workflow_input_payload_size(
+                name, str(version) if version is not None else "", size_bytes,
+            )
+        except Exception:
+            pass
+
+    def _record_workflow_start_error(self, name: str, exception: Exception) -> None:
+        if self.metrics_collector is None:
+            return
+        try:
+            self.metrics_collector.increment_workflow_start_error(name, exception)
+        except Exception:
+            pass
 
     def execute_workflow(
             self,
