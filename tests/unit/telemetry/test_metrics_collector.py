@@ -501,6 +501,45 @@ class TestMetricsCollector(unittest.TestCase):
     # is handled internally by prometheus_client Summary objects
 
     # =========================================================================
+    # active_workers tracking (base class counter, legacy no-op gauge)
+    # =========================================================================
+
+    def test_active_workers_count_tracks_in_base_class(self):
+        collector = MetricsCollector(self.metrics_settings)
+
+        start = TaskExecutionStarted(task_type='test_task', task_id='t1', worker_id='w', workflow_instance_id='wf')
+        collector.on_task_execution_started(start)
+        collector.on_task_execution_started(start)
+        self.assertEqual(collector._active_worker_counts['test_task'], 2)
+
+        complete = TaskExecutionCompleted(
+            task_type='test_task', task_id='t1', worker_id='w',
+            workflow_instance_id='wf', duration_ms=100.0, output_size_bytes=None,
+        )
+        collector.on_task_execution_completed(complete)
+        self.assertEqual(collector._active_worker_counts['test_task'], 1)
+
+    def test_active_workers_count_floors_at_zero(self):
+        collector = MetricsCollector(self.metrics_settings)
+
+        complete = TaskExecutionCompleted(
+            task_type='test_task', task_id='t1', worker_id='w',
+            workflow_instance_id='wf', duration_ms=100.0, output_size_bytes=None,
+        )
+        collector.on_task_execution_completed(complete)
+        self.assertEqual(collector._active_worker_counts['test_task'], 0)
+
+    def test_active_workers_not_emitted_in_legacy_mode(self):
+        collector = MetricsCollector(self.metrics_settings)
+
+        start = TaskExecutionStarted(task_type='test_task', task_id='t1', worker_id='w', workflow_instance_id='wf')
+        collector.on_task_execution_started(start)
+
+        self._write_metrics(collector)
+        metrics_content = self._read_metrics_file()
+        self.assertNotIn('active_workers', metrics_content)
+
+    # =========================================================================
     # Edge Cases and Boundary Conditions
     # =========================================================================
 

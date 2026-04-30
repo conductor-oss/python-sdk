@@ -1,4 +1,5 @@
 import abc
+import collections
 import logging
 import os
 import signal
@@ -106,6 +107,7 @@ class MetricsCollectorBase(abc.ABC):
         self.registry = None
         self.must_collect_metrics = False
         self._lock = threading.RLock()
+        self._active_worker_counts: Dict[str, int] = collections.defaultdict(int)
 
         if settings is None:
             return
@@ -418,6 +420,9 @@ class MetricsCollectorBase(abc.ABC):
     @abc.abstractmethod
     def record_workflow_input_payload_size(self, workflow_type: str, version: str, payload_size: int) -> None: ...
 
+    @abc.abstractmethod
+    def set_active_workers(self, task_type: str, count: int) -> None: ...
+
     # =========================================================================
     # Concrete event handlers -- delegate to the abstract metric methods.
     # These satisfy the event listener protocols in event/listeners.py.
@@ -436,16 +441,22 @@ class MetricsCollectorBase(abc.ABC):
 
     def on_task_execution_started(self, event: TaskExecutionStarted) -> None:
         self.increment_task_execution_started(event.task_type)
+        self._active_worker_counts[event.task_type] += 1
+        self.set_active_workers(event.task_type, self._active_worker_counts[event.task_type])
 
     def on_task_execution_completed(self, event: TaskExecutionCompleted) -> None:
         self.record_task_execute_time(event.task_type, event.duration_ms / 1000, status="SUCCESS")
         if event.output_size_bytes is not None:
             self.record_task_result_payload_size(event.task_type, event.output_size_bytes)
+        self._active_worker_counts[event.task_type] = max(0, self._active_worker_counts[event.task_type] - 1)
+        self.set_active_workers(event.task_type, self._active_worker_counts[event.task_type])
 
     def on_task_execution_failure(self, event: TaskExecutionFailure) -> None:
         self.increment_task_execution_error(event.task_type, event.cause)
         if hasattr(event, 'duration_ms') and event.duration_ms is not None:
             self.record_task_execute_time(event.task_type, event.duration_ms / 1000, status="FAILURE")
+        self._active_worker_counts[event.task_type] = max(0, self._active_worker_counts[event.task_type] - 1)
+        self.set_active_workers(event.task_type, self._active_worker_counts[event.task_type])
 
     def on_workflow_started(self, event: WorkflowStarted) -> None:
         if not event.success and event.cause is not None:

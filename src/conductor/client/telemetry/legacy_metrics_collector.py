@@ -130,6 +130,13 @@ class LegacyMetricsCollector(MetricsCollectorBase):
         )
 
     # ------------------------------------------------------------------
+    # Gauges (canonical-only, no-op in legacy)
+    # ------------------------------------------------------------------
+
+    def set_active_workers(self, task_type: str, count: int) -> None:
+        pass
+
+    # ------------------------------------------------------------------
     # Timing (last-value gauges + quantile gauges)
     # ------------------------------------------------------------------
 

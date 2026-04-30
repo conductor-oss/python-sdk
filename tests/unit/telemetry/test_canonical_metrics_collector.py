@@ -195,6 +195,63 @@ class TestCanonicalMetricsCollector(unittest.TestCase):
         self.assertIn("task_execute_error_total", text)
         self.assertIn("task_execute_time_seconds_bucket", text)
 
+    # ------------------------------------------------------------------
+    # active_workers gauge
+    # ------------------------------------------------------------------
+
+    def test_active_workers_gauge_increments_on_start(self):
+        event = TaskExecutionStarted(task_type="t", task_id="id", worker_id="w", workflow_instance_id="wf")
+        self.collector.on_task_execution_started(event)
+        text = self._get_metrics_text()
+        self.assertIn('active_workers{taskType="t"}', text)
+        self.assertIn("1.0", text)
+
+    def test_active_workers_gauge_decrements_on_complete(self):
+        start = TaskExecutionStarted(task_type="t", task_id="id", worker_id="w", workflow_instance_id="wf")
+        self.collector.on_task_execution_started(start)
+        self.collector.on_task_execution_started(start)
+
+        complete = TaskExecutionCompleted(
+            task_type="t", task_id="id", worker_id="w",
+            workflow_instance_id="wf", duration_ms=100.0, output_size_bytes=None,
+        )
+        self.collector.on_task_execution_completed(complete)
+        text = self._get_metrics_text()
+        self.assertIn('active_workers{taskType="t"} 1.0', text)
+
+    def test_active_workers_gauge_decrements_on_failure(self):
+        start = TaskExecutionStarted(task_type="t", task_id="id", worker_id="w", workflow_instance_id="wf")
+        self.collector.on_task_execution_started(start)
+
+        failure = TaskExecutionFailure(
+            task_type="t", task_id="id", worker_id="w",
+            workflow_instance_id="wf", cause=ValueError("x"), duration_ms=50.0,
+        )
+        self.collector.on_task_execution_failure(failure)
+        text = self._get_metrics_text()
+        self.assertIn('active_workers{taskType="t"} 0.0', text)
+
+    def test_active_workers_gauge_floors_at_zero(self):
+        complete = TaskExecutionCompleted(
+            task_type="t", task_id="id", worker_id="w",
+            workflow_instance_id="wf", duration_ms=100.0, output_size_bytes=None,
+        )
+        self.collector.on_task_execution_completed(complete)
+        text = self._get_metrics_text()
+        self.assertIn('active_workers{taskType="t"} 0.0', text)
+
+    def test_active_workers_tracks_multiple_task_types(self):
+        self.collector.on_task_execution_started(
+            TaskExecutionStarted(task_type="a", task_id="1", worker_id="w", workflow_instance_id="wf"))
+        self.collector.on_task_execution_started(
+            TaskExecutionStarted(task_type="a", task_id="2", worker_id="w", workflow_instance_id="wf"))
+        self.collector.on_task_execution_started(
+            TaskExecutionStarted(task_type="b", task_id="3", worker_id="w", workflow_instance_id="wf"))
+
+        text = self._get_metrics_text()
+        self.assertIn('active_workers{taskType="a"} 2.0', text)
+        self.assertIn('active_workers{taskType="b"} 1.0', text)
+
 
 class TestExceptionLabel(unittest.TestCase):
     """Test the _exception_label helper."""

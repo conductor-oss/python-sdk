@@ -146,6 +146,18 @@ class CanonicalMetricsCollector(MetricsCollectorBase):
         )
 
     # ------------------------------------------------------------------
+    # Gauges
+    # ------------------------------------------------------------------
+
+    def set_active_workers(self, task_type: str, count: int) -> None:
+        self._record_gauge(
+            name=MetricName.ACTIVE_WORKERS,
+            documentation=MetricDocumentation.ACTIVE_WORKERS,
+            labels={MetricLabel.TASK_TYPE: task_type},
+            value=count,
+        )
+
+    # ------------------------------------------------------------------
     # Timing (real Prometheus Histograms)
     # ------------------------------------------------------------------
 
