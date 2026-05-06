@@ -234,7 +234,18 @@ Key changes:
 - Canonical `exception` labels are bounded to exception class names. Legacy
   error counters may include raw exception messages.
 
-Common replacements:
+Legacy metrics that change name or type in canonical mode:
+
+| Legacy metric | Canonical metric | Change |
+|---|---|---|
+| `task_poll_time` (gauge) | — | Removed; use the histogram instead. |
+| `task_execute_time` (gauge) | — | Removed; use the histogram instead. |
+| `task_result_size` (gauge) | `task_result_size_bytes` (histogram) | Renamed; gauge becomes histogram with buckets. |
+| `workflow_input_size` (gauge) | `workflow_input_size_bytes` (histogram) | Renamed; gauge becomes histogram with buckets. |
+| `http_api_client_request` (quantile gauge) | `http_api_client_request_seconds` (histogram) | Renamed with `_seconds` suffix; quantile gauge becomes histogram. |
+| `external_payload_used_total{payload_type=…}` | `external_payload_used_total{payloadType=…}` | Label renamed from `payload_type` to `payloadType`. |
+
+Common PromQL replacements:
 
 | Legacy | Canonical |
 |---|---|
