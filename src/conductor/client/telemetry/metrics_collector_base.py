@@ -364,6 +364,11 @@ class MetricsCollectorBase(abc.ABC):
     # =========================================================================
 
     @abc.abstractmethod
+    def collector_name(self) -> str:
+        """Return the name of this collector implementation ('legacy', 'canonical')."""
+        ...
+
+    @abc.abstractmethod
     def increment_task_poll(self, task_type: str) -> None: ...
 
     @abc.abstractmethod

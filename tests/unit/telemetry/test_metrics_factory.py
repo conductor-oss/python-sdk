@@ -61,6 +61,19 @@ class TestMetricsFactory(unittest.TestCase):
         collector = create_metrics_collector(self.settings)
         self.assertIsInstance(collector, CanonicalMetricsCollector)
 
+    def test_legacy_collector_name(self):
+        """LegacyMetricsCollector.collector_name() returns 'legacy'."""
+        collector = create_metrics_collector(self.settings)
+        self.assertEqual(collector.collector_name(), "legacy")
+
+    def test_canonical_collector_name(self):
+        """CanonicalMetricsCollector.collector_name() returns 'canonical'."""
+        os.environ["WORKER_CANONICAL_METRICS"] = "true"
+        collector = create_metrics_collector(
+            MetricsSettings(directory=tempfile.mkdtemp())
+        )
+        self.assertEqual(collector.collector_name(), "canonical")
+
     def test_both_implementations_satisfy_same_interface(self):
         """Both implementations have the same public method surface."""
         legacy = LegacyMetricsCollector(self.settings)
@@ -70,6 +83,7 @@ class TestMetricsFactory(unittest.TestCase):
         )
 
         required_methods = [
+            "collector_name",
             "increment_task_poll",
             "increment_task_poll_error",
             "increment_task_execution_started",

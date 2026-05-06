@@ -26,6 +26,9 @@ class LegacyMetricsCollector(MetricsCollectorBase):
         self.quantile_metrics: Dict[str, Any] = {}
         self.quantile_data: Dict[str, deque] = {}
 
+    def collector_name(self) -> str:
+        return "legacy"
+
     # ------------------------------------------------------------------
     # Counters
     # ------------------------------------------------------------------

@@ -29,6 +29,9 @@ class CanonicalMetricsCollector(MetricsCollectorBase):
     def __init__(self, settings: MetricsSettings):
         super().__init__(settings)
 
+    def collector_name(self) -> str:
+        return "canonical"
+
     # ------------------------------------------------------------------
     # Counters
     # ------------------------------------------------------------------

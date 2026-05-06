@@ -71,12 +71,9 @@ def main() -> None:
 
     metrics_port = env_int_or_default("HARNESS_METRICS_PORT", 9991)
     metrics_settings = MetricsSettings(http_port=metrics_port)
-    print(f"Prometheus metrics will be served on port {metrics_port}")
 
-    # Main-process MetricsCollector: writes workflow-client / HTTP metrics into
-    # the shared PROMETHEUS_MULTIPROC_DIR so they merge with worker subprocess
-    # metrics in the exported /metrics payload.
     metrics_collector = create_metrics_collector(metrics_settings)
+    print(f"Prometheus metrics server started on port {metrics_port} ({metrics_collector.collector_name()} metrics)")
     clients = OrkesClients(configuration, metrics_collector=metrics_collector)
 
     register_metadata(clients)
