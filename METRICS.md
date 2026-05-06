@@ -1,333 +1,280 @@
-# Metrics Documentation
+# Python SDK Metrics
 
-The Conductor Python SDK includes built-in metrics collection using Prometheus to monitor worker performance, API requests, and task execution.
+The Conductor Python SDK can expose Prometheus metrics for worker polling, task
+execution, task updates, workflow starts, external payload usage, and generated
+API-client HTTP calls.
 
-## Table of Contents
+The SDK currently has two mutually exclusive metric surfaces:
 
-- [Quick Reference](#quick-reference)
-- [Configuration](#configuration)
-- [Metric Types](#metric-types)
-- [Examples](#examples)
+- **Legacy metrics** are the default. They preserve the pre-harmonization Python
+  SDK names and shapes, including sliding-window quantile gauges for timing
+  metrics.
+- **Canonical metrics** are opt-in with `WORKER_CANONICAL_METRICS=true`. They
+  use the cross-SDK canonical names, labels, units, and Prometheus histogram
+  shapes.
 
-## Quick Reference
+Only one collector is active in a worker process. The SDK does not emit legacy
+and canonical metrics at the same time.
 
-| Metric Name | Type | Labels | Description |
-|------------|------|--------|-------------|
-| `api_request_time_seconds` | Timer (quantile gauge) | `method`, `uri`, `status`, `quantile` | API request latency to Conductor server |
-| `api_request_time_seconds_count` | Gauge | `method`, `uri`, `status` | Total number of API requests |
-| `api_request_time_seconds_sum` | Gauge | `method`, `uri`, `status` | Total time spent in API requests |
-| `task_poll_total` | Counter | `taskType` | Number of task poll attempts |
-| `task_poll_time` | Gauge | `taskType` | Most recent poll duration (legacy) |
-| `task_poll_time_seconds` | Timer (quantile gauge) | `taskType`, `status`, `quantile` | Task poll latency distribution |
-| `task_poll_time_seconds_count` | Gauge | `taskType`, `status` | Total number of poll attempts by status |
-| `task_poll_time_seconds_sum` | Gauge | `taskType`, `status` | Total time spent polling |
-| `task_execute_time` | Gauge | `taskType` | Most recent execution duration (legacy) |
-| `task_execute_time_seconds` | Timer (quantile gauge) | `taskType`, `status`, `quantile` | Task execution latency distribution |
-| `task_execute_time_seconds_count` | Gauge | `taskType`, `status` | Total number of task executions by status |
-| `task_execute_time_seconds_sum` | Gauge | `taskType`, `status` | Total time spent executing tasks |
-| `task_execute_error_total` | Counter | `taskType`, `exception` | Number of task execution errors |
-| `task_update_time_seconds` | Timer (quantile gauge) | `taskType`, `status`, `quantile` | Task update latency distribution |
-| `task_update_time_seconds_count` | Gauge | `taskType`, `status` | Total number of task updates by status |
-| `task_update_time_seconds_sum` | Gauge | `taskType`, `status` | Total time spent updating tasks |
-| `task_update_error_total` | Counter | `taskType`, `exception` | Number of task update errors |
-| `task_result_size` | Gauge | `taskType` | Size of task result payload (bytes) |
-| `task_execution_queue_full_total` | Counter | `taskType` | Number of times execution queue was full |
-| `task_paused_total` | Counter | `taskType` | Number of polls while worker paused |
-| `worker_restart_total` | Counter | `taskType` | Number of times TaskHandler restarted a worker subprocess |
-| `external_payload_used_total` | Counter | `taskType`, `payloadType` | External payload storage usage count |
-| `workflow_input_size` | Gauge | `workflowType`, `version` | Workflow input payload size (bytes) |
-| `workflow_start_error_total` | Counter | `workflowType`, `exception` | Workflow start error count |
-
-### Label Values
-
-**`status`**: `SUCCESS`, `FAILURE`
-**`method`**: `GET`, `POST`, `PUT`, `DELETE`
-**`uri`**: API endpoint path (e.g., `/tasks/poll/batch/{taskType}`, `/tasks/update-v2`)
-**`status` (HTTP)**: HTTP response code (`200`, `401`, `404`, `500`) or `error`
-**`quantile`**: `0.5` (p50), `0.75` (p75), `0.9` (p90), `0.95` (p95), `0.99` (p99)
-**`payloadType`**: `input`, `output`
-**`exception`**: Exception type or error message
-
-### Example Metrics Output
-
-```prometheus
-# API Request Metrics
-api_request_time_seconds{method="GET",uri="/tasks/poll/batch/myTask",status="200",quantile="0.5"} 0.112
-api_request_time_seconds{method="GET",uri="/tasks/poll/batch/myTask",status="200",quantile="0.99"} 0.245
-api_request_time_seconds_count{method="GET",uri="/tasks/poll/batch/myTask",status="200"} 1000.0
-api_request_time_seconds_sum{method="GET",uri="/tasks/poll/batch/myTask",status="200"} 114.5
-
-# Task Poll Metrics
-task_poll_total{taskType="myTask"} 10264.0
-task_poll_time_seconds{taskType="myTask",status="SUCCESS",quantile="0.95"} 0.025
-task_poll_time_seconds_count{taskType="myTask",status="SUCCESS"} 1000.0
-task_poll_time_seconds_count{taskType="myTask",status="FAILURE"} 95.0
-
-# Task Execution Metrics
-task_execute_time_seconds{taskType="myTask",status="SUCCESS",quantile="0.99"} 0.017
-task_execute_time_seconds_count{taskType="myTask",status="SUCCESS"} 120.0
-task_execute_error_total{taskType="myTask",exception="TimeoutError"} 3.0
-
-# Task Update Metrics
-task_update_time_seconds{taskType="myTask",status="SUCCESS",quantile="0.95"} 0.096
-task_update_time_seconds_count{taskType="myTask",status="SUCCESS"} 15.0
-```
+Metric names below are the names exposed in Prometheus text output. The Python
+`prometheus_client` library appends `_total` to counters in exposition output.
 
 ## Configuration
 
-### Enabling Metrics
-
-Metrics are enabled by providing a `MetricsSettings` object when creating a `TaskHandler`:
+Enable metrics by passing `MetricsSettings` to `TaskHandler`.
 
 ```python
+from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
-from conductor.client.automator.task_handler import TaskHandler
 
-# Configure metrics
-metrics_settings = MetricsSettings(
-    directory='/path/to/metrics',       # Directory where metrics file will be written
-    file_name='conductor_metrics.prom', # Metrics file name (default: 'conductor_metrics.prom')
-    update_interval=10                  # Update interval in seconds (default: 10)
+config = Configuration()
+metrics = MetricsSettings(
+    directory="/tmp/conductor-metrics",
+    http_port=8000,
 )
 
-# Configure Conductor connection
-api_config = Configuration(
-    server_api_url='http://localhost:8080/api',
-    debug=False
-)
-
-# Create task handler with metrics
 with TaskHandler(
-    configuration=api_config,
-    metrics_settings=metrics_settings,
-    workers=[...]
-) as task_handler:
-    task_handler.start_processes()
-```
-
-### AsyncIO Workers
-
-Usage with TaskHandler:
-
-```python
-from conductor.client.automator.task_handler import TaskHandler
-
-with TaskHandler(
-    configuration=api_config,
-    metrics_settings=metrics_settings,
+    configuration=config,
+    metrics_settings=metrics,
     scan_for_annotated_workers=True,
-    import_modules=['your_module']
 ) as task_handler:
     task_handler.start_processes()
     task_handler.join_processes()
 ```
 
-### Metrics File Cleanup
+With `http_port` set, the SDK starts a Prometheus-compatible HTTP endpoint:
 
-For multiprocess workers using Prometheus multiprocess mode, clean the metrics directory on startup to avoid stale data:
+```shell
+curl http://localhost:8000/metrics
+curl http://localhost:8000/health
+```
+
+Without `http_port`, the SDK writes Prometheus text output to
+`{directory}/{file_name}` at `update_interval` seconds:
 
 ```python
-import os
-import shutil
-
-metrics_dir = '/path/to/metrics'
-if os.path.exists(metrics_dir):
-    shutil.rmtree(metrics_dir)
-os.makedirs(metrics_dir, exist_ok=True)
-
-metrics_settings = MetricsSettings(
-    directory=metrics_dir,
-    file_name='conductor_metrics.prom',
-    update_interval=10
+metrics = MetricsSettings(
+    directory="/tmp/conductor-metrics",
+    file_name="conductor_metrics.prom",
+    update_interval=10,
+    http_port=None,
 )
 ```
 
+`MetricsSettings` cleans stale Prometheus multiprocess `.db` files by default.
+Use a dedicated metrics directory per worker process group.
 
-## Metric Types
+## Selecting Canonical Metrics
 
-### Quantile Gauges (Timers)
+Set `WORKER_CANONICAL_METRICS` before the worker starts:
 
-All timing metrics use quantile gauges to track latency distribution:
-
-- **Quantile labels**: Each metric includes 5 quantiles (p50, p75, p90, p95, p99)
-- **Count suffix**: `{metric_name}_count` tracks total number of observations
-- **Sum suffix**: `{metric_name}_sum` tracks total time spent
-
-**Example calculation (average):**
-```
-average = task_poll_time_seconds_sum / task_poll_time_seconds_count
-average = 18.75 / 1000.0 = 0.01875 seconds
+```shell
+WORKER_CANONICAL_METRICS=true python my_worker.py
 ```
 
-**Why quantiles instead of histograms?**
-- More accurate percentile tracking with sliding window (last 1000 observations)
-- No need to pre-configure bucket boundaries
-- Lower memory footprint
-- Direct percentile values without interpolation
+Accepted true values are `true`, `1`, and `yes`, case-insensitive. Any other
+value, or an unset variable, selects legacy metrics. The variable is read when
+the metrics collector is created, so changing it requires a worker restart.
 
-### Sliding Window
+## Canonical Metrics
 
-Quantile metrics use a sliding window of the last 1000 observations to calculate percentiles. This provides:
-- Recent performance data (not cumulative)
-- Accurate percentile estimation
-- Bounded memory usage
+Canonical timing values are seconds. Canonical size values are bytes. Label
+names use camelCase.
 
-## Examples
+Metrics are created lazily. A metric appears in `/metrics` only after the
+corresponding worker event or collector method records it. Some low-level
+surface metrics, such as ack, queue-full, paused, and uncaught-exception
+counters, may not appear in normal worker runs unless that path is exercised.
 
-### Querying Metrics with PromQL
+### Canonical Counters
 
-**Average API request latency:**
+| Metric | Labels | Description |
+|---|---|---|
+| `task_poll_total` | `taskType` | Incremented each time the worker issues a poll request. |
+| `task_execution_started_total` | `taskType` | Incremented when a polled task is dispatched to the worker function. |
+| `task_poll_error_total` | `taskType`, `exception` | Incremented when a poll request fails client-side. |
+| `task_execute_error_total` | `taskType`, `exception` | Incremented when the worker function throws. |
+| `task_update_error_total` | `taskType`, `exception` | Incremented when updating the task result fails. |
+| `task_ack_error_total` | `taskType`, `exception` | Collector surface for task ack errors. |
+| `task_ack_failed_total` | `taskType` | Collector surface for failed task ack responses. |
+| `task_execution_queue_full_total` | `taskType` | Collector surface for execution queue saturation events. |
+| `task_paused_total` | `taskType` | Collector surface for polls skipped while the worker is paused. |
+| `thread_uncaught_exceptions_total` | `exception` | Collector surface for uncaught worker-thread exceptions. |
+| `worker_restart_total` | `taskType` | Python-only counter for TaskHandler subprocess restarts. |
+| `external_payload_used_total` | `entityName`, `operation`, `payloadType` | Incremented when external payload storage is used. |
+| `workflow_start_error_total` | `workflowType`, `exception` | Incremented when starting a workflow fails client-side. |
+
+### Canonical Time Histograms
+
+All canonical time histograms use buckets:
+`0.001`, `0.005`, `0.01`, `0.025`, `0.05`, `0.1`, `0.25`, `0.5`, `1`, `2.5`,
+`5`, `10`.
+
+| Metric | Labels | Description |
+|---|---|---|
+| `task_poll_time_seconds` | `taskType`, `status` | Poll request latency. `status` is `SUCCESS` or `FAILURE`. |
+| `task_execute_time_seconds` | `taskType`, `status` | Worker function execution duration. `status` is `SUCCESS` or `FAILURE`. |
+| `task_update_time_seconds` | `taskType`, `status` | Task-result update latency. `status` is `SUCCESS` or `FAILURE`. |
+| `http_api_client_request_seconds` | `method`, `uri`, `status` | Generated API-client HTTP request latency. |
+
+Each histogram exposes Prometheus series such as:
+
+```prometheus
+task_execute_time_seconds_bucket{taskType="my_task",status="SUCCESS",le="0.1"} 42.0
+task_execute_time_seconds_count{taskType="my_task",status="SUCCESS"} 50.0
+task_execute_time_seconds_sum{taskType="my_task",status="SUCCESS"} 2.3
+```
+
+### Canonical Size Histograms
+
+All canonical size histograms use buckets:
+`100`, `1000`, `10000`, `100000`, `1000000`, `10000000`.
+
+| Metric | Labels | Description |
+|---|---|---|
+| `task_result_size_bytes` | `taskType` | Serialized task result output size. |
+| `workflow_input_size_bytes` | `workflowType`, `version` | Serialized workflow input size. |
+
+### Canonical Gauges
+
+| Metric | Labels | Description |
+|---|---|---|
+| `active_workers` | `taskType` | Current number of workers actively executing a task. |
+
+## Legacy Metrics
+
+Legacy mode is the default so existing dashboards and alerts continue to work.
+Timing metrics are sliding-window quantile gauges over the latest 1,000
+observations. Legacy timing metrics also expose `_count` and `_sum` gauge
+series for the current sliding window.
+
+As in canonical mode, metrics are created lazily and rare or surface-only
+counters appear only when the corresponding code path records them.
+
+### Legacy Counters
+
+| Metric | Labels | Description |
+|---|---|---|
+| `task_poll_total` | `taskType` | Incremented each time polling is done. |
+| `task_execute_error_total` | `taskType`, `exception` | Task execution errors. `exception` is `str(exception)`. |
+| `task_update_error_total` | `taskType`, `exception` | Task update errors. `exception` is `str(exception)`. |
+| `task_ack_error_total` | `taskType`, `exception` | Collector surface for task ack errors. `exception` is `str(exception)`. |
+| `task_ack_failed_total` | `taskType` | Collector surface for failed task ack responses. |
+| `task_execution_queue_full_total` | `taskType` | Collector surface for execution queue saturation events. |
+| `task_paused_total` | `taskType` | Collector surface for polls skipped while the worker is paused. |
+| `thread_uncaught_exceptions_total` | none | Collector surface for uncaught worker-thread exceptions. |
+| `worker_restart_total` | `taskType` | TaskHandler subprocess restarts. |
+| `external_payload_used_total` | `entityName`, `operation`, `payload_type` | External payload storage usage. |
+| `workflow_start_error_total` | `workflowType`, `exception` | Workflow start errors. `exception` is `str(exception)`. |
+
+Legacy mode does not emit `task_poll_error_total`,
+`task_execution_started_total`, or `active_workers`.
+
+### Legacy Time Metrics
+
+| Metric | Type | Labels | Description |
+|---|---|---|---|
+| `task_poll_time` | Gauge | `taskType` | Most recent poll duration, in seconds. |
+| `task_poll_time_seconds` | Quantile gauge | `taskType`, `status`, `quantile` | Sliding-window poll latency quantiles. |
+| `task_poll_time_seconds_count` | Gauge | `taskType`, `status` | Sliding-window poll observation count. |
+| `task_poll_time_seconds_sum` | Gauge | `taskType`, `status` | Sliding-window poll duration sum. |
+| `task_execute_time` | Gauge | `taskType` | Most recent task execution duration, in seconds. |
+| `task_execute_time_seconds` | Quantile gauge | `taskType`, `status`, `quantile` | Sliding-window execution latency quantiles. |
+| `task_execute_time_seconds_count` | Gauge | `taskType`, `status` | Sliding-window execution observation count. |
+| `task_execute_time_seconds_sum` | Gauge | `taskType`, `status` | Sliding-window execution duration sum. |
+| `task_update_time_seconds` | Quantile gauge | `taskType`, `status`, `quantile` | Sliding-window task update latency quantiles. |
+| `task_update_time_seconds_count` | Gauge | `taskType`, `status` | Sliding-window task update observation count. |
+| `task_update_time_seconds_sum` | Gauge | `taskType`, `status` | Sliding-window task update duration sum. |
+| `http_api_client_request` | Quantile gauge | `method`, `uri`, `status`, `quantile` | Sliding-window API-client request latency quantiles. |
+| `http_api_client_request_count` | Gauge | `method`, `uri`, `status` | Sliding-window API-client request observation count. |
+| `http_api_client_request_sum` | Gauge | `method`, `uri`, `status` | Sliding-window API-client request duration sum. |
+
+### Legacy Size Gauges
+
+| Metric | Labels | Description |
+|---|---|---|
+| `task_result_size` | `taskType` | Most recent serialized task result output size, in bytes. |
+| `workflow_input_size` | `workflowType`, `version` | Most recent serialized workflow input size, in bytes. |
+
+## Labels
+
+| Label | Used by | Values |
+|---|---|---|
+| `taskType` | Worker metrics | Task definition name. |
+| `workflowType` | Workflow metrics | Workflow definition name. |
+| `version` | `workflow_input_size`, `workflow_input_size_bytes` | Workflow version as a string. If absent, the SDK uses `1`. |
+| `status` | Task time metrics | `SUCCESS` or `FAILURE`. For HTTP metrics, the response code as a string, an exception `status` or `code`, or `error` when unavailable. |
+| `exception` | Error counters | Legacy uses `str(exception)`. Canonical uses the exception class name, such as `TimeoutError`. |
+| `entityName` | `external_payload_used_total` | Task type or workflow name associated with the external payload. |
+| `operation` | `external_payload_used_total` | External payload operation, such as `READ` or `WRITE`. |
+| `payload_type` | Legacy `external_payload_used_total` | Payload type, such as `TASK_INPUT`, `TASK_OUTPUT`, `WORKFLOW_INPUT`, or `WORKFLOW_OUTPUT`. |
+| `payloadType` | Canonical `external_payload_used_total` | Payload type, such as `TASK_INPUT`, `TASK_OUTPUT`, `WORKFLOW_INPUT`, or `WORKFLOW_OUTPUT`. |
+| `method` | HTTP metrics | HTTP verb. |
+| `uri` | HTTP metrics | Request path passed by the generated API client. |
+| `quantile` | Legacy time metrics | `0.5`, `0.75`, `0.9`, `0.95`, or `0.99`. |
+
+## Migrating From Legacy to Canonical
+
+Canonical mode is opt-in during the deprecation period. Before switching a
+production worker, update dashboards and alerts against a staging worker with
+`WORKER_CANONICAL_METRICS=true`.
+
+Key changes:
+
+- Time and size distribution metrics are real Prometheus histograms in
+  canonical mode. Query `_bucket` series with `histogram_quantile()` instead of
+  reading `{quantile="..."}` gauges.
+- Legacy last-value gauges `task_poll_time`, `task_execute_time`,
+  `task_result_size`, and `workflow_input_size` are not emitted in canonical
+  mode.
+- Canonical adds `task_poll_error_total`, `task_execution_started_total`, and
+  `active_workers`.
+- `external_payload_used_total` changes label `payload_type` to `payloadType`.
+- Canonical `exception` labels are bounded to exception class names. Legacy
+  error counters may include raw exception messages.
+
+Common replacements:
+
+| Legacy | Canonical |
+|---|---|
+| `task_poll_time_seconds{quantile="0.95"}` | `histogram_quantile(0.95, sum by (le, taskType, status) (rate(task_poll_time_seconds_bucket[5m])))` |
+| `task_execute_time_seconds{quantile="0.95"}` | `histogram_quantile(0.95, sum by (le, taskType, status) (rate(task_execute_time_seconds_bucket[5m])))` |
+| `task_update_time_seconds{quantile="0.95"}` | `histogram_quantile(0.95, sum by (le, taskType, status) (rate(task_update_time_seconds_bucket[5m])))` |
+| `http_api_client_request{quantile="0.95"}` | `histogram_quantile(0.95, sum by (le, method, uri, status) (rate(http_api_client_request_seconds_bucket[5m])))` |
+| `task_result_size` | `task_result_size_bytes_bucket`, `_count`, and `_sum` |
+| `workflow_input_size` | `workflow_input_size_bytes_bucket`, `_count`, and `_sum` |
+| `external_payload_used_total{payload_type="TASK_OUTPUT"}` | `external_payload_used_total{payloadType="TASK_OUTPUT"}` |
+
+Average latency queries continue to use `_sum` divided by `_count`, but the
+canonical series are cumulative histogram counters:
+
 ```promql
-rate(api_request_time_seconds_sum[5m]) / rate(api_request_time_seconds_count[5m])
-```
-
-**API error rate:**
-```promql
-sum(rate(api_request_time_seconds_count{status=~"4..|5.."}[5m]))
+sum(rate(task_execute_time_seconds_sum[5m])) by (taskType)
 /
-sum(rate(api_request_time_seconds_count[5m]))
+sum(rate(task_execute_time_seconds_count[5m])) by (taskType)
 ```
-
-**Task poll success rate:**
-```promql
-sum(rate(task_poll_time_seconds_count{status="SUCCESS"}[5m]))
-/
-sum(rate(task_poll_time_seconds_count[5m]))
-```
-
-**p95 task execution time:**
-```promql
-task_execute_time_seconds{quantile="0.95"}
-```
-
-**Slowest API endpoints (p99):**
-```promql
-topk(10, api_request_time_seconds{quantile="0.99"})
-```
-
-### Complete Example
-
-```python
-import os
-import shutil
-from conductor.client.configuration.configuration import Configuration
-from conductor.client.configuration.settings.metrics_settings import MetricsSettings
-from conductor.client.automator.task_handler import TaskHandler
-from conductor.client.worker.worker_interface import WorkerInterface
-
-# Clean metrics directory
-metrics_dir = os.path.join(os.path.expanduser('~'), 'conductor_metrics')
-if os.path.exists(metrics_dir):
-    shutil.rmtree(metrics_dir)
-os.makedirs(metrics_dir, exist_ok=True)
-
-# Configure metrics
-metrics_settings = MetricsSettings(
-    directory=metrics_dir,
-    file_name='conductor_metrics.prom',
-    update_interval=10  # Update file every 10 seconds
-)
-
-# Configure Conductor
-api_config = Configuration(
-    server_api_url='http://localhost:8080/api',
-    debug=False
-)
-
-# Define worker
-class MyWorker(WorkerInterface):
-    def execute(self, task):
-        return {'status': 'completed'}
-
-    def get_task_definition_name(self):
-        return 'my_task'
-
-# Start with metrics
-with TaskHandler(
-    configuration=api_config,
-    metrics_settings=metrics_settings,
-    workers=[MyWorker()]
-) as task_handler:
-    task_handler.start_processes()
-```
-
-### Scraping with Prometheus
-
-Configure Prometheus to scrape the metrics file:
-
-```yaml
-# prometheus.yml
-scrape_configs:
-  - job_name: 'conductor-python-sdk'
-    static_configs:
-      - targets: ['localhost:8000']  # Use file_sd or custom exporter
-    metric_relabel_configs:
-      - source_labels: [taskType]
-        target_label: task_type
-```
-
-**Note:** Since metrics are written to a file, you'll need to either:
-1. Use Prometheus's `textfile` collector with Node Exporter
-2. Create a simple HTTP server to expose the metrics file
-3. Use a custom exporter to read and serve the file
-
-### Example HTTP Metrics Server
-
-```python
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-import os
-
-class MetricsHandler(SimpleHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == '/metrics':
-            metrics_file = '/path/to/conductor_metrics.prom'
-            if os.path.exists(metrics_file):
-                with open(metrics_file, 'rb') as f:
-                    content = f.read()
-                self.send_response(200)
-                self.send_header('Content-Type', 'text/plain; version=0.0.4')
-                self.end_headers()
-                self.wfile.write(content)
-            else:
-                self.send_response(404)
-                self.end_headers()
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-# Run server
-httpd = HTTPServer(('0.0.0.0', 8000), MetricsHandler)
-httpd.serve_forever()
-```
-
-## Best Practices
-
-1. **Clean metrics directory on startup** to avoid stale multiprocess metrics
-2. **Monitor disk space** as metrics files can grow with many task types
-3. **Use appropriate update_interval** (10-60 seconds recommended)
-4. **Set up alerts** on error rates and high latencies
-5. **Monitor queue saturation** (`task_execution_queue_full_total`) for backpressure
-6. **Track API errors** by status code to identify authentication or server issues
-7. **Use p95/p99 latencies** for SLO monitoring rather than averages
 
 ## Troubleshooting
 
-### Metrics file is empty
-- Ensure `MetricsCollector` is registered as an event listener
-- Check that workers are actually polling and executing tasks
-- Verify the metrics directory has write permissions
+### Metrics Are Empty
 
-### Stale metrics after restart
-- Clean the metrics directory on startup (see Configuration section)
-- Prometheus's `multiprocess` mode requires cleanup between runs
+- Verify that `metrics_settings` is passed to `TaskHandler`.
+- Verify workers have polled or executed tasks. Metrics are created lazily when
+  the relevant event occurs.
+- Check that the metrics directory is writable.
 
-### High memory usage
-- Reduce the sliding window size (default: 1000 observations)
-- Increase `update_interval` to write less frequently
-- Limit the number of unique label combinations
+### Stale or Unexpected Series
 
-### Missing metrics
-- Verify `metrics_settings` is passed to TaskHandler
-- Check that the SDK version supports the metric you're looking for
-- Ensure workers are properly registered and running
+- Use a dedicated `directory` for each worker process group.
+- Leave `clean_directory=True` on `MetricsSettings` unless another process owns
+  the same Prometheus multiprocess directory.
+- Restart workers after changing `WORKER_CANONICAL_METRICS`.
+
+### High Cardinality
+
+- Prefer canonical mode for bounded `exception` labels.
+- Watch the `uri` label on HTTP metrics. The Python SDK records the request path
+  available at the generated API-client call site.
+- Avoid embedding user identifiers or unbounded values in task type, workflow
+  type, or external payload labels.
