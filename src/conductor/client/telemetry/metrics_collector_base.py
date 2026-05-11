@@ -429,6 +429,21 @@ class MetricsCollectorBase(abc.ABC):
     def set_active_workers(self, task_type: str, count: int) -> None: ...
 
     # =========================================================================
+    # Workflow-client hooks.
+    # Called by OrkesWorkflowClient on start_workflow paths.  No-ops by
+    # default so legacy mode adds zero overhead and emits no new metrics.
+    # Canonical overrides these to measure payload size and record errors.
+    # =========================================================================
+
+    def measure_workflow_input_payload_size(self, name: str, version, workflow_input) -> None:
+        """Measure and record the serialised size of *workflow_input*.  No-op by default."""
+        pass
+
+    def measure_workflow_start_error(self, name: str, exception: Exception) -> None:
+        """Record a workflow-start error from the client call-site.  No-op by default."""
+        pass
+
+    # =========================================================================
     # Concrete event handlers -- delegate to the abstract metric methods.
     # These satisfy the event listener protocols in event/listeners.py.
     # =========================================================================

@@ -172,12 +172,7 @@ class LegacyMetricsCollector(MetricsCollectorBase):
         )
 
     def record_task_update_time(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
-        self._record_quantiles(
-            name=MetricName.TASK_UPDATE_TIME_HISTOGRAM,
-            documentation=MetricDocumentation.TASK_UPDATE_TIME_HISTOGRAM,
-            labels={MetricLabel.TASK_TYPE: task_type, MetricLabel.STATUS: status},
-            value=time_spent,
-        )
+        pass  # canonical-only; call sites were added in this branch and didn't exist on main
 
     def record_api_request_time(self, method: str, uri: str, status: str, time_spent: float) -> None:
         self._record_quantiles(

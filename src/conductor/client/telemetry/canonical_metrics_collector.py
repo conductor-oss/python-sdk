@@ -228,3 +228,21 @@ class CanonicalMetricsCollector(MetricsCollectorBase):
             value=payload_size,
             buckets=SIZE_BUCKETS,
         )
+
+    # ------------------------------------------------------------------
+    # Workflow-client hooks (canonical-only)
+    # ------------------------------------------------------------------
+
+    def measure_workflow_input_payload_size(self, name: str, version, workflow_input) -> None:
+        import json
+        try:
+            encoded = json.dumps(workflow_input if workflow_input is not None else {}, default=str)
+            size_bytes = len(encoded.encode("utf-8"))
+            self.record_workflow_input_payload_size(
+                name, str(version) if version is not None else "", size_bytes,
+            )
+        except Exception:
+            pass
+
+    def measure_workflow_start_error(self, name: str, exception: Exception) -> None:
+        self.increment_workflow_start_error(name, exception)
