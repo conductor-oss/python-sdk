@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New abstract `MetricsCollectorBase` consolidates Prometheus infrastructure (lazy `prometheus_client` imports, multiprocess `NoPidCollector` aggregation, HTTP server, exception-label cardinality bounding) and event handlers shared by both collectors.
   - `(Async)TaskRunner` now records `task_update_time` (`status="SUCCESS"` / `"FAILURE"`) on every update path.
   - `OrkesWorkflowClient.start_workflow*` records workflow input payload size and increments `workflow_start_error` on exception; `OrkesClients` / `OrkesBaseClient` accept an optional `metrics_collector`.
-  - `MetricsSettings(clean_directory=True)` removes leftover `*.db` files in the multiprocess directory at init.
+  - `create_metrics_collector` partitions the metrics directory into a `legacy/` or `canonical/` subdirectory, so switching implementations never produces stale metric names from the previous type.
+  - `MetricsSettings` gains `clean_directory` (default `False`) to wipe all `.db` files and `clean_dead_pids` (default `False`) to remove only `.db` files from PIDs that no longer exist. Both are executed by the factory against the final partitioned subdirectory.
   - `CONDUCTOR_MP_START_METHOD` env var (`spawn` / `fork` / `forkserver`; default `fork` on POSIX, `spawn` on Windows) to control the worker pool's multiprocessing start method (motivated by a `prometheus_client` lock-fork deadlock).
   - Harness manifest sets `WORKER_CANONICAL_METRICS=true`; `harness/main.py` logs which collector is active.
 

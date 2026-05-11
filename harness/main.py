@@ -70,7 +70,11 @@ def main() -> None:
     configuration = Configuration()
 
     metrics_port = env_int_or_default("HARNESS_METRICS_PORT", 9991)
-    metrics_settings = MetricsSettings(http_port=metrics_port)
+    metrics_settings = MetricsSettings(
+        http_port=metrics_port,
+        clean_directory=True,
+        clean_dead_pids=True,
+    )
 
     metrics_collector = create_metrics_collector(metrics_settings)
     print(f"Prometheus metrics server started on port {metrics_port} ({metrics_collector.collector_name()} metrics)")
