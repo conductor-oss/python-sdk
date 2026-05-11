@@ -118,7 +118,7 @@ class LegacyMetricsCollector(MetricsCollectorBase):
             labels={
                 MetricLabel.ENTITY_NAME: entity_name,
                 MetricLabel.OPERATION: operation,
-                MetricLabel.PAYLOAD_TYPE_LEGACY: payload_type,
+                MetricLabel.PAYLOAD_TYPE: payload_type,
             },
         )
 

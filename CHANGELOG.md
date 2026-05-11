@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Metrics harmonization** - defaults preserved; legacy metrics emit unchanged when `WORKER_CANONICAL_METRICS` is unset
-  - `MetricLabel.PAYLOAD_TYPE` value changed from `"payload_type"` to `"payloadType"` to align with canonical camelCase labels; `PAYLOAD_TYPE_LEGACY = "payload_type"` was added so the legacy collector keeps emitting the snake-case label on `external_payload_used_total`.
+  - `MetricLabel.PAYLOAD_TYPE` retains its original value `"payload_type"`; a new `PAYLOAD_TYPE_CAMEL = "payloadType"` constant is used only by the canonical collector on `external_payload_used_total`.
   - `metrics_collector.py` is now a thin compatibility shim: `MetricsCollector = LegacyMetricsCollector`, so `from conductor.client.telemetry.metrics_collector import MetricsCollector` continues to work.
   - Default behavior is unchanged: with no env var set, the legacy metric names, label conventions, and quantile-gauge timing shape from prior releases are preserved.
   - Rewrote `METRICS.md` to document both surfaces, the env-var gate, full canonical and legacy catalogs, labels, a "Migrating From Legacy to Canonical" mapping (including the `payload_type` → `payloadType` label change and PromQL replacements), and troubleshooting.

@@ -134,7 +134,7 @@ class CanonicalMetricsCollector(MetricsCollectorBase):
             labels={
                 MetricLabel.ENTITY_NAME: entity_name,
                 MetricLabel.OPERATION: operation,
-                MetricLabel.PAYLOAD_TYPE: payload_type,
+                MetricLabel.PAYLOAD_TYPE_CAMEL: payload_type,
             },
         )
 
