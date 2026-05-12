@@ -232,9 +232,12 @@ class TaskHandler:
         self._configuration = configuration
         self._metrics_settings = metrics_settings
 
-        # Set prometheus multiprocess directory BEFORE any worker processes start
-        # This must be done before prometheus_client is imported in worker processes
+        # Resolve the metrics subdirectory and set PROMETHEUS_MULTIPROC_DIR
+        # BEFORE any worker processes start.  resolve_metrics_type is
+        # idempotent so it's safe if the caller already called it.
         if metrics_settings is not None:
+            from conductor.client.telemetry.metrics_factory import resolve_metrics_type
+            resolve_metrics_type(metrics_settings)
             os.environ["PROMETHEUS_MULTIPROC_DIR"] = metrics_settings.metrics_directory
             logger.info(f"Set PROMETHEUS_MULTIPROC_DIR={metrics_settings.metrics_directory}")
 

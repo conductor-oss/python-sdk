@@ -277,8 +277,9 @@ sum(rate(task_execute_time_seconds_count[5m])) by (taskType)
 
 ### Stale or Unexpected Series
 
-- The factory partitions the metrics directory into `legacy/` or `canonical/`
-  subdirectories, so switching implementations never mixes stale metric names.
+- Legacy metrics use the base directory unchanged from prior releases.
+  Canonical metrics use a `canonical/` subdirectory, so switching
+  implementations never mixes stale metric names.
 - Pass `clean_dead_pids=True` to `MetricsSettings` to remove `.db` files from
   PIDs that no longer exist.  Use `clean_directory=True` only when you are sure
   no other live process shares the same directory.

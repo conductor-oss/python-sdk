@@ -293,7 +293,8 @@ class MetricsCollectorBase(abc.ABC):
             name: MetricName,
             documentation: MetricDocumentation,
             labels: Dict[MetricLabel, str],
-            value: Any
+            value: Any,
+            multiprocess_mode: str = 'all'
     ) -> None:
         if not self.must_collect_metrics:
             return
@@ -301,7 +302,8 @@ class MetricsCollectorBase(abc.ABC):
             gauge = self._get_gauge(
                 name=name,
                 documentation=documentation,
-                labelnames=[label.value for label in labels.keys()]
+                labelnames=[label.value for label in labels.keys()],
+                multiprocess_mode=multiprocess_mode
             )
             gauge.labels(*labels.values()).set(value)
 
@@ -334,14 +336,14 @@ class MetricsCollectorBase(abc.ABC):
             )
         return self.counters[name]
 
-    def _get_gauge(self, name, documentation, labelnames):
+    def _get_gauge(self, name, documentation, labelnames, multiprocess_mode='all'):
         if name not in self.gauges:
             self.gauges[name] = Gauge(
                 name=name,
                 documentation=documentation,
                 labelnames=labelnames,
                 registry=self.registry,
-                multiprocess_mode='all'
+                multiprocess_mode=multiprocess_mode
             )
         return self.gauges[name]
 

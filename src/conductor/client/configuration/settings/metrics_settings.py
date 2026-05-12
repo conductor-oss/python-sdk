@@ -32,10 +32,10 @@ class MetricsSettings:
 
         Args:
             directory: Base directory for storing multiprocess metrics .db files.
-                      The factory (``create_metrics_collector``) appends a
-                      collector-type subdirectory (``legacy/`` or ``canonical/``)
-                      so that switching implementations never produces stale
-                      metric names.
+                      Legacy metrics use this directory directly (unchanged from
+                      prior releases).  Canonical metrics use a ``canonical/``
+                      subdirectory so that switching implementations never
+                      produces stale metric names.
             file_name: Name of the metrics output file (only used when http_port is None)
             update_interval: How often to update metrics (in seconds)
             http_port: Optional HTTP port to expose metrics endpoint for Prometheus scraping.
@@ -62,26 +62,20 @@ class MetricsSettings:
         self.http_port = http_port
         self.clean_directory = clean_directory
         self.clean_dead_pids = clean_dead_pids
-        self._owner_pid: Optional[int] = None
-        self._collector_subdir: str = ""
-        self._metrics_directory: str = self.directory
-
-    @property
-    def collector_subdir(self) -> str:
-        return self._collector_subdir
-
-    @collector_subdir.setter
-    def collector_subdir(self, value: str) -> None:
-        self._collector_subdir = value
-        if value:
-            self._metrics_directory = os.path.join(self.directory, value)
-        else:
-            self._metrics_directory = self.directory
+        self._subdir: Optional[str] = None
 
     @property
     def metrics_directory(self) -> str:
-        """Full path where .db files live (base directory + collector subdir)."""
-        return self._metrics_directory
+        """Full path where .db files live (base directory + optional subdir).
+
+        The subdirectory is set by ``metrics_factory.resolve_metrics_type``
+        before any child processes are forked.  Legacy leaves it empty (base
+        directory unchanged from prior releases); canonical sets it to
+        ``"canonical"`` to avoid stale metric-name collisions.
+        """
+        if self._subdir:
+            return os.path.join(self.directory, self._subdir)
+        return self.directory
 
     def __set_dir(self, dir: str) -> None:
         if not os.path.isdir(dir):

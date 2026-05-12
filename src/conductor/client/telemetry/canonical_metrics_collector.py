@@ -158,6 +158,7 @@ class CanonicalMetricsCollector(MetricsCollectorBase):
             documentation=MetricDocumentation.ACTIVE_WORKERS,
             labels={MetricLabel.TASK_TYPE: task_type},
             value=count,
+            multiprocess_mode='livesum',
         )
 
     # ------------------------------------------------------------------

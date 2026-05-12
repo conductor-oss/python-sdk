@@ -21,6 +21,9 @@ logger = logging.getLogger(
 )
 
 
+_CANONICAL_SUBDIR = "canonical"
+
+
 def _env_bool(name: str, default: bool) -> bool:
     value = os.environ.get(name, "")
     if not value:
@@ -28,37 +31,53 @@ def _env_bool(name: str, default: bool) -> bool:
     return value.strip().lower() in ("true", "1", "yes")
 
 
+_cleaned_directories: set = set()
+
+
+def resolve_metrics_type(settings: MetricsSettings) -> None:
+    """Read ``WORKER_CANONICAL_METRICS`` once and store the result on *settings*.
+
+    Idempotent -- subsequent calls are no-ops.  Must be called before
+    ``settings.metrics_directory`` is read so that the subdirectory is
+    resolved in the main process before any child processes are forked.
+
+    Both ``TaskHandler.__init__`` and ``create_metrics_collector`` call this.
+    """
+    if settings._subdir is not None:
+        return
+    if _env_bool("WORKER_CANONICAL_METRICS", default=False):
+        settings._subdir = _CANONICAL_SUBDIR
+    else:
+        settings._subdir = ""
+
+
 def create_metrics_collector(settings: MetricsSettings) -> MetricsCollectorBase:
     """
     Create the metrics collector selected by environment variables.
 
-    Sets ``settings.collector_subdir`` to ``"legacy"`` or ``"canonical"`` so
-    that ``settings.metrics_directory`` resolves to a type-specific
-    subdirectory.  This is idempotent: calling the factory more than once on
-    the same *settings* object (e.g. once in the main process and again in
-    each forked worker) always produces the same directory.
+    Calls ``resolve_metrics_type`` to ensure ``settings.metrics_directory``
+    returns the correct path, then instantiates the appropriate collector.
 
     Returns a fully-initialised collector (legacy or canonical) that satisfies
     the MetricsCollector Protocol and can be registered as an event listener.
     """
-    collector_type = "canonical" if _env_bool("WORKER_CANONICAL_METRICS", default=False) else "legacy"
+    resolve_metrics_type(settings)
 
-    settings.collector_subdir = collector_type
-    os.makedirs(settings.metrics_directory, exist_ok=True)
+    metrics_dir = settings.metrics_directory
+    os.makedirs(metrics_dir, exist_ok=True)
 
-    is_owner = settings._owner_pid is None or os.getpid() == settings._owner_pid
-    if is_owner:
-        settings._owner_pid = os.getpid()
+    if metrics_dir not in _cleaned_directories:
+        _cleaned_directories.add(metrics_dir)
         if settings.clean_directory:
             settings._clean_stale_db_files()
         if settings.clean_dead_pids:
             settings._clean_dead_pid_files()
 
-    if collector_type == "canonical":
+    if settings._subdir == _CANONICAL_SUBDIR:
         from conductor.client.telemetry.canonical_metrics_collector import CanonicalMetricsCollector
-        logger.info("WORKER_CANONICAL_METRICS is true — using CanonicalMetricsCollector (dir=%s)", settings.metrics_directory)
+        logger.info("WORKER_CANONICAL_METRICS is true — using CanonicalMetricsCollector (dir=%s)", metrics_dir)
         return CanonicalMetricsCollector(settings)
 
     from conductor.client.telemetry.legacy_metrics_collector import LegacyMetricsCollector
-    logger.info("Using LegacyMetricsCollector (dir=%s; set WORKER_CANONICAL_METRICS=true for canonical)", settings.metrics_directory)
+    logger.info("Using LegacyMetricsCollector (dir=%s; set WORKER_CANONICAL_METRICS=true for canonical)", metrics_dir)
     return LegacyMetricsCollector(settings)

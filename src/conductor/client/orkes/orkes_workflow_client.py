@@ -40,26 +40,38 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
             kwargs.update({"priority": priority})
 
         if self.metrics_collector is not None:
-            self.metrics_collector.measure_workflow_input_payload_size(name, version, input)
+            try:
+                self.metrics_collector.measure_workflow_input_payload_size(name, version, input)
+            except Exception:
+                pass
         try:
             return self.workflowResourceApi.start_workflow1(input, name, **kwargs)
         except Exception as e:
             if self.metrics_collector is not None:
-                self.metrics_collector.measure_workflow_start_error(name, e)
+                try:
+                    self.metrics_collector.measure_workflow_start_error(name, e)
+                except Exception:
+                    pass
             raise
 
     def start_workflow(self, start_workflow_request: StartWorkflowRequest) -> str:
         if self.metrics_collector is not None:
-            self.metrics_collector.measure_workflow_input_payload_size(
-                start_workflow_request.name,
-                start_workflow_request.version,
-                getattr(start_workflow_request, "input", None),
-            )
+            try:
+                self.metrics_collector.measure_workflow_input_payload_size(
+                    start_workflow_request.name,
+                    start_workflow_request.version,
+                    getattr(start_workflow_request, "input", None),
+                )
+            except Exception:
+                pass
         try:
             return self.workflowResourceApi.start_workflow(start_workflow_request)
         except Exception as e:
             if self.metrics_collector is not None:
-                self.metrics_collector.measure_workflow_start_error(start_workflow_request.name, e)
+                try:
+                    self.metrics_collector.measure_workflow_start_error(start_workflow_request.name, e)
+                except Exception:
+                    pass
             raise
 
     def execute_workflow(
