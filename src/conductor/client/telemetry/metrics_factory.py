@@ -46,10 +46,13 @@ def create_metrics_collector(settings: MetricsSettings) -> MetricsCollectorBase:
     settings.collector_subdir = collector_type
     os.makedirs(settings.metrics_directory, exist_ok=True)
 
-    if settings.clean_directory:
-        settings._clean_stale_db_files()
-    if settings.clean_dead_pids:
-        settings._clean_dead_pid_files()
+    is_owner = settings._owner_pid is None or os.getpid() == settings._owner_pid
+    if is_owner:
+        settings._owner_pid = os.getpid()
+        if settings.clean_directory:
+            settings._clean_stale_db_files()
+        if settings.clean_dead_pids:
+            settings._clean_dead_pid_files()
 
     if collector_type == "canonical":
         from conductor.client.telemetry.canonical_metrics_collector import CanonicalMetricsCollector

@@ -62,6 +62,7 @@ class MetricsSettings:
         self.http_port = http_port
         self.clean_directory = clean_directory
         self.clean_dead_pids = clean_dead_pids
+        self._owner_pid: Optional[int] = None
         self._collector_subdir: str = ""
         self._metrics_directory: str = self.directory
 
