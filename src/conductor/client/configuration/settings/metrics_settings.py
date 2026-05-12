@@ -62,6 +62,25 @@ class MetricsSettings:
         self.http_port = http_port
         self.clean_directory = clean_directory
         self.clean_dead_pids = clean_dead_pids
+        self._collector_subdir: str = ""
+        self._metrics_directory: str = self.directory
+
+    @property
+    def collector_subdir(self) -> str:
+        return self._collector_subdir
+
+    @collector_subdir.setter
+    def collector_subdir(self, value: str) -> None:
+        self._collector_subdir = value
+        if value:
+            self._metrics_directory = os.path.join(self.directory, value)
+        else:
+            self._metrics_directory = self.directory
+
+    @property
+    def metrics_directory(self) -> str:
+        """Full path where .db files live (base directory + collector subdir)."""
+        return self._metrics_directory
 
     def __set_dir(self, dir: str) -> None:
         if not os.path.isdir(dir):
@@ -76,7 +95,7 @@ class MetricsSettings:
     def _clean_stale_db_files(self) -> None:
         """Remove all prometheus_client multiprocess .db files."""
         import glob
-        pattern = os.path.join(self.directory, "*.db")
+        pattern = os.path.join(self.metrics_directory, "*.db")
         for path in glob.glob(pattern):
             try:
                 os.remove(path)
@@ -87,14 +106,14 @@ class MetricsSettings:
         """Remove .db files whose owning PID no longer exists."""
         import glob
         import re
-        pattern = os.path.join(self.directory, "*.db")
+        pattern = os.path.join(self.metrics_directory, "*.db")
         for path in glob.glob(pattern):
             match = re.search(r'_(\d+)\.db$', os.path.basename(path))
             if not match:
                 continue
             pid = int(match.group(1))
             try:
-                os.kill(pid, 0) # Check if the process is still running (0 = simple probe, doesn't send a signal), if it isn't we'll get a ProcessLookupError which is an OSError
+                os.kill(pid, 0)
             except OSError:
                 try:
                     os.remove(path)

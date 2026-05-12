@@ -112,7 +112,7 @@ class MetricsCollectorBase(abc.ABC):
         if settings is None:
             return
 
-        os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.directory
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.metrics_directory
 
         _ensure_prometheus_imported()
 
@@ -121,7 +121,7 @@ class MetricsCollectorBase(abc.ABC):
         self.must_collect_metrics = True
         logger.debug(
             "MetricsCollector initialized with directory=%s, must_collect=%s",
-            settings.directory,
+            settings.metrics_directory,
             self.must_collect_metrics,
         )
 
@@ -142,12 +142,12 @@ class MetricsCollectorBase(abc.ABC):
         except Exception:
             pass
 
-        os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.directory
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.metrics_directory
 
         _ensure_prometheus_imported()
 
         OUTPUT_FILE_PATH = os.path.join(
-            settings.directory,
+            settings.metrics_directory,
             settings.file_name
         )
 

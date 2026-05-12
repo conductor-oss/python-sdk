@@ -235,8 +235,8 @@ class TaskHandler:
         # Set prometheus multiprocess directory BEFORE any worker processes start
         # This must be done before prometheus_client is imported in worker processes
         if metrics_settings is not None:
-            os.environ["PROMETHEUS_MULTIPROC_DIR"] = metrics_settings.directory
-            logger.info(f"Set PROMETHEUS_MULTIPROC_DIR={metrics_settings.directory}")
+            os.environ["PROMETHEUS_MULTIPROC_DIR"] = metrics_settings.metrics_directory
+            logger.info(f"Set PROMETHEUS_MULTIPROC_DIR={metrics_settings.metrics_directory}")
 
         # Store event listeners to pass to each worker process
         self.event_listeners = event_listeners or []

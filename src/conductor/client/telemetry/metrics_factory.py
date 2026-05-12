@@ -32,20 +32,19 @@ def create_metrics_collector(settings: MetricsSettings) -> MetricsCollectorBase:
     """
     Create the metrics collector selected by environment variables.
 
-    Appends a collector-type subdirectory (``legacy/`` or ``canonical/``) to
-    ``settings.directory`` so that switching implementations never produces
-    stale metric names from the previous type.  Cleanup flags on *settings*
-    (``clean_directory``, ``clean_dead_pids``) are executed against the final
-    subdirectory before the collector is constructed.
+    Sets ``settings.collector_subdir`` to ``"legacy"`` or ``"canonical"`` so
+    that ``settings.metrics_directory`` resolves to a type-specific
+    subdirectory.  This is idempotent: calling the factory more than once on
+    the same *settings* object (e.g. once in the main process and again in
+    each forked worker) always produces the same directory.
 
     Returns a fully-initialised collector (legacy or canonical) that satisfies
     the MetricsCollector Protocol and can be registered as an event listener.
     """
     collector_type = "canonical" if _env_bool("WORKER_CANONICAL_METRICS", default=False) else "legacy"
 
-    partitioned_dir = os.path.join(settings.directory, collector_type)
-    os.makedirs(partitioned_dir, exist_ok=True)
-    settings.directory = partitioned_dir
+    settings.collector_subdir = collector_type
+    os.makedirs(settings.metrics_directory, exist_ok=True)
 
     if settings.clean_directory:
         settings._clean_stale_db_files()
@@ -54,9 +53,9 @@ def create_metrics_collector(settings: MetricsSettings) -> MetricsCollectorBase:
 
     if collector_type == "canonical":
         from conductor.client.telemetry.canonical_metrics_collector import CanonicalMetricsCollector
-        logger.info("WORKER_CANONICAL_METRICS is true — using CanonicalMetricsCollector (dir=%s)", partitioned_dir)
+        logger.info("WORKER_CANONICAL_METRICS is true — using CanonicalMetricsCollector (dir=%s)", settings.metrics_directory)
         return CanonicalMetricsCollector(settings)
 
     from conductor.client.telemetry.legacy_metrics_collector import LegacyMetricsCollector
-    logger.info("Using LegacyMetricsCollector (dir=%s; set WORKER_CANONICAL_METRICS=true for canonical)", partitioned_dir)
+    logger.info("Using LegacyMetricsCollector (dir=%s; set WORKER_CANONICAL_METRICS=true for canonical)", settings.metrics_directory)
     return LegacyMetricsCollector(settings)
