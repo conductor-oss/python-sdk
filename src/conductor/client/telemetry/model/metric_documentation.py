@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class MetricDocumentation(str, Enum):
+    # Shared / legacy documentation strings
     API_REQUEST_TIME = "API request duration in seconds with quantiles"
     EXTERNAL_PAYLOAD_USED = "Incremented each time external payload storage is used"
     TASK_ACK_ERROR = "Task ack has encountered an exception"
@@ -21,3 +22,11 @@ class MetricDocumentation(str, Enum):
     WORKER_RESTART = "Worker subprocess restarted"
     WORKFLOW_START_ERROR = "Counter for workflow start errors"
     WORKFLOW_INPUT_SIZE = "Records input payload size of a workflow"
+
+    # Canonical-only documentation strings
+    API_REQUEST_TIME_CANONICAL = "Latency of HTTP API client requests in seconds"
+    TASK_EXECUTION_STARTED = "Incremented when a polled task is dispatched to the worker function"
+    TASK_POLL_ERROR = "Incremented when a poll request fails client-side"
+    TASK_RESULT_SIZE_BYTES = "Serialized byte size of task result output"
+    WORKFLOW_INPUT_SIZE_BYTES = "Serialized byte size of workflow input"
+    ACTIVE_WORKERS = "Current number of worker threads actively executing a task"

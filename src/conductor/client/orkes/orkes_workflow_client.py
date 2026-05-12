@@ -18,9 +18,10 @@ from conductor.client.workflow_client import WorkflowClient
 class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def __init__(
             self,
-            configuration: Configuration
+            configuration: Configuration,
+            metrics_collector=None,
     ):
-        super(OrkesWorkflowClient, self).__init__(configuration)
+        super(OrkesWorkflowClient, self).__init__(configuration, metrics_collector=metrics_collector)
 
     def start_workflow_by_name(
             self,
@@ -38,10 +39,40 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if priority:
             kwargs.update({"priority": priority})
 
-        return self.workflowResourceApi.start_workflow1(input, name, **kwargs)
+        if self.metrics_collector is not None:
+            try:
+                self.metrics_collector.measure_workflow_input_payload_size(name, version, input)
+            except Exception:
+                pass
+        try:
+            return self.workflowResourceApi.start_workflow1(input, name, **kwargs)
+        except Exception as e:
+            if self.metrics_collector is not None:
+                try:
+                    self.metrics_collector.measure_workflow_start_error(name, e)
+                except Exception:
+                    pass
+            raise
 
     def start_workflow(self, start_workflow_request: StartWorkflowRequest) -> str:
-        return self.workflowResourceApi.start_workflow(start_workflow_request)
+        if self.metrics_collector is not None:
+            try:
+                self.metrics_collector.measure_workflow_input_payload_size(
+                    start_workflow_request.name,
+                    start_workflow_request.version,
+                    getattr(start_workflow_request, "input", None),
+                )
+            except Exception:
+                pass
+        try:
+            return self.workflowResourceApi.start_workflow(start_workflow_request)
+        except Exception as e:
+            if self.metrics_collector is not None:
+                try:
+                    self.metrics_collector.measure_workflow_start_error(start_workflow_request.name, e)
+                except Exception:
+                    pass
+            raise
 
     def execute_workflow(
             self,

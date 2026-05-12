@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class MetricName(str, Enum):
+    # Legacy metric names (pre-harmonization)
     API_REQUEST_TIME = "http_api_client_request"
     EXTERNAL_PAYLOAD_USED = "external_payload_used"
     TASK_ACK_ERROR = "task_ack_error"
@@ -21,3 +22,11 @@ class MetricName(str, Enum):
     WORKER_RESTART = "worker_restart"
     WORKFLOW_INPUT_SIZE = "workflow_input_size"
     WORKFLOW_START_ERROR = "workflow_start_error"
+
+    # Canonical-only metric names (harmonization additions)
+    API_REQUEST_TIME_CANONICAL = "http_api_client_request_seconds"
+    TASK_EXECUTION_STARTED = "task_execution_started"
+    TASK_POLL_ERROR = "task_poll_error"
+    TASK_RESULT_SIZE_BYTES = "task_result_size_bytes"
+    WORKFLOW_INPUT_SIZE_BYTES = "workflow_input_size_bytes"
+    ACTIVE_WORKERS = "active_workers"

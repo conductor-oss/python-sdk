@@ -26,7 +26,6 @@ logger = logging.getLogger(
     )
 )
 
-
 class ApiClient(object):
     PRIMITIVE_TYPES = (float, bool, bytes, six.text_type) + six.integer_types
     NATIVE_TYPES_MAPPING = {
@@ -124,6 +123,9 @@ class ApiClient(object):
             header_params = dict(self.parameters_to_tuples(header_params,
                                                            collection_formats))
 
+        # Save the URI template before path param substitution for metrics
+        metric_uri = resource_path
+
         # path parameters
         if path_params:
             path_params = self.sanitize_for_serialization(path_params)
@@ -171,7 +173,8 @@ class ApiClient(object):
             method, url, query_params=query_params, headers=header_params,
             post_params=post_params, body=body,
             _preload_content=_preload_content,
-            _request_timeout=_request_timeout)
+            _request_timeout=_request_timeout,
+            metric_uri=metric_uri)
 
         return_data = response_data
         if _preload_content:
@@ -386,7 +389,7 @@ class ApiClient(object):
 
     def request(self, method, url, query_params=None, headers=None,
                 post_params=None, body=None, _preload_content=True,
-                _request_timeout=None):
+                _request_timeout=None, metric_uri=None):
         """Makes the HTTP request using RESTClient."""
         # Extract URI path from URL (remove query params and domain)
         try:
@@ -468,7 +471,8 @@ class ApiClient(object):
                     method=method,
                     uri=uri,
                     status=status_code,
-                    time_spent=elapsed_time
+                    time_spent=elapsed_time,
+                    metric_uri=metric_uri,
                 )
 
             return response
@@ -489,7 +493,8 @@ class ApiClient(object):
                     method=method,
                     uri=uri,
                     status=status_code,
-                    time_spent=elapsed_time
+                    time_spent=elapsed_time,
+                    metric_uri=metric_uri,
                 )
 
             # Re-raise the exception

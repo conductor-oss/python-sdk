@@ -18,7 +18,7 @@ from conductor.client.configuration.settings.metrics_settings import MetricsSett
 from conductor.client.event.task_runner_events import TaskRunnerEvent
 from conductor.client.event.sync_event_dispatcher import SyncEventDispatcher
 from conductor.client.event.sync_listener_register import register_task_runner_listener
-from conductor.client.telemetry.metrics_collector import MetricsCollector
+from conductor.client.telemetry.metrics_collector_base import MetricsCollectorBase
 from conductor.client.telemetry.model.metric_documentation import MetricDocumentation
 from conductor.client.telemetry.model.metric_label import MetricLabel
 from conductor.client.telemetry.model.metric_name import MetricName
@@ -33,13 +33,24 @@ logger = logging.getLogger(
 )
 
 _decorated_functions = {}
+_VALID_MP_START_METHODS = {"spawn", "fork", "forkserver"}
 _mp_fork_set = False
 if not _mp_fork_set:
     try:
-        if platform == "win32":
-            set_start_method("spawn")
-        else:
-            set_start_method("fork")
+        # The prometheus_client library holds a module-level threading lock;
+        # forking while that lock is held causes a deadlock in child processes.
+        # Set CONDUCTOR_MP_START_METHOD=spawn to avoid this if you hit the
+        # deadlock.  Default is fork for backward compatibility (spawn requires
+        # all Process arguments to be picklable).
+        _default_method = "spawn" if platform == "win32" else "fork"
+        _method = os.environ.get("CONDUCTOR_MP_START_METHOD", "").strip().lower() or _default_method
+        if _method not in _VALID_MP_START_METHODS:
+            logger.warning(
+                "Ignoring invalid CONDUCTOR_MP_START_METHOD=%r; falling back to %r",
+                _method, _default_method,
+            )
+            _method = _default_method
+        set_start_method(_method)
         _mp_fork_set = True
     except Exception as e:
         logger.info("error when setting multiprocessing.set_start_method - maybe the context is set %s", e.args)
@@ -221,11 +232,14 @@ class TaskHandler:
         self._configuration = configuration
         self._metrics_settings = metrics_settings
 
-        # Set prometheus multiprocess directory BEFORE any worker processes start
-        # This must be done before prometheus_client is imported in worker processes
+        # Resolve the metrics subdirectory and set PROMETHEUS_MULTIPROC_DIR
+        # BEFORE any worker processes start.  resolve_metrics_type is
+        # idempotent so it's safe if the caller already called it.
         if metrics_settings is not None:
-            os.environ["PROMETHEUS_MULTIPROC_DIR"] = metrics_settings.directory
-            logger.info(f"Set PROMETHEUS_MULTIPROC_DIR={metrics_settings.directory}")
+            from conductor.client.telemetry.metrics_factory import resolve_metrics_type
+            resolve_metrics_type(metrics_settings)
+            os.environ["PROMETHEUS_MULTIPROC_DIR"] = metrics_settings.metrics_directory
+            logger.info(f"Set PROMETHEUS_MULTIPROC_DIR={metrics_settings.metrics_directory}")
 
         # Store event listeners to pass to each worker process
         self.event_listeners = event_listeners or []
@@ -345,7 +359,7 @@ class TaskHandler:
             self.metrics_provider_process = None
             return
         self.metrics_provider_process = Process(
-            target=MetricsCollector.provide_metrics,
+            target=MetricsCollectorBase.provide_metrics,
             args=(metrics_settings,)
         )
         logger.info("Created MetricsProvider process")

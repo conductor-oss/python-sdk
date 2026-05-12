@@ -320,7 +320,7 @@ with TaskHandler(configuration=config, metrics_settings=metrics, scan_for_annota
 curl http://localhost:8000/metrics
 ```
 
-See [examples/metrics_example.py](examples/metrics_example.py) and [METRICS.md](METRICS.md) for details on all tracked metrics.
+Legacy metrics are emitted by default. Set `WORKER_CANONICAL_METRICS=true` before starting workers to use the canonical metric catalog. See [examples/metrics_example.py](examples/metrics_example.py) and [METRICS.md](METRICS.md) for the full legacy and canonical reference.
 
 ### Managing Workflow Executions
 

@@ -7,6 +7,7 @@ class MetricLabel(str, Enum):
     METHOD = "method"
     OPERATION = "operation"
     PAYLOAD_TYPE = "payload_type"
+    PAYLOAD_TYPE_CAMEL = "payloadType"
     STATUS = "status"
     TASK_TYPE = "taskType"
     URI = "uri"
