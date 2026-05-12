@@ -62,8 +62,11 @@ metrics = MetricsSettings(
 )
 ```
 
-`MetricsSettings` cleans stale Prometheus multiprocess `.db` files by default.
-Use a dedicated metrics directory per worker process group.
+`MetricsSettings` provides opt-in cleanup of stale Prometheus multiprocess
+`.db` files. Pass `clean_directory=True` to remove all `.db` files on startup,
+or `clean_dead_pids=True` to remove only files from PIDs that no longer exist.
+Both default to `False`. Use a dedicated metrics directory per worker process
+group.
 
 ## Selecting Canonical Metrics
 
@@ -76,6 +79,11 @@ WORKER_CANONICAL_METRICS=true python my_worker.py
 Accepted true values are `true`, `1`, and `yes`, case-insensitive. Any other
 value, or an unset variable, selects legacy metrics. The variable is read when
 the metrics collector is created, so changing it requires a worker restart.
+
+`WORKER_LEGACY_METRICS` is reserved for future use. After the deprecation
+period ends and canonical becomes the default, setting
+`WORKER_LEGACY_METRICS=true` will allow opting back into legacy metrics. It is
+not currently read.
 
 ## Canonical Metrics
 
@@ -96,11 +104,11 @@ counters, may not appear in normal worker runs unless that path is exercised.
 | `task_poll_error_total` | `taskType`, `exception` | Incremented when a poll request fails client-side. |
 | `task_execute_error_total` | `taskType`, `exception` | Incremented when the worker function throws. |
 | `task_update_error_total` | `taskType`, `exception` | Incremented when updating the task result fails. |
-| `task_ack_error_total` | `taskType`, `exception` | Collector surface for task ack errors. |
-| `task_ack_failed_total` | `taskType` | Collector surface for failed task ack responses. |
-| `task_execution_queue_full_total` | `taskType` | Collector surface for execution queue saturation events. |
-| `task_paused_total` | `taskType` | Collector surface for polls skipped while the worker is paused. |
-| `thread_uncaught_exceptions_total` | `exception` | Collector surface for uncaught worker-thread exceptions. |
+| `task_ack_error_total` | `taskType`, `exception` | Collector surface for task ack errors. Not yet wired -- no runtime call site. |
+| `task_ack_failed_total` | `taskType` | Collector surface for failed task ack responses. Not yet wired -- no runtime call site. |
+| `task_execution_queue_full_total` | `taskType` | Collector surface for execution queue saturation events. Not yet wired -- no runtime call site. |
+| `task_paused_total` | `taskType` | Collector surface for polls skipped while the worker is paused. Not yet wired -- no runtime call site. |
+| `thread_uncaught_exceptions_total` | `exception` | Collector surface for uncaught worker-thread exceptions. Not yet wired -- no runtime call site. |
 | `worker_restart_total` | `taskType` | Python-only counter for TaskHandler subprocess restarts. |
 | `external_payload_used_total` | `entityName`, `operation`, `payloadType` | Incremented when external payload storage is used. |
 | `workflow_start_error_total` | `workflowType`, `exception` | Incremented when starting a workflow fails client-side. |
@@ -159,11 +167,11 @@ counters appear only when the corresponding code path records them.
 | `task_poll_total` | `taskType` | Incremented each time polling is done. |
 | `task_execute_error_total` | `taskType`, `exception` | Task execution errors. `exception` is `str(exception)`. |
 | `task_update_error_total` | `taskType`, `exception` | Task update errors. `exception` is `str(exception)`. |
-| `task_ack_error_total` | `taskType`, `exception` | Collector surface for task ack errors. `exception` is `str(exception)`. |
-| `task_ack_failed_total` | `taskType` | Collector surface for failed task ack responses. |
-| `task_execution_queue_full_total` | `taskType` | Collector surface for execution queue saturation events. |
-| `task_paused_total` | `taskType` | Collector surface for polls skipped while the worker is paused. |
-| `thread_uncaught_exceptions_total` | none | Collector surface for uncaught worker-thread exceptions. |
+| `task_ack_error_total` | `taskType`, `exception` | Collector surface for task ack errors. Not yet wired -- no runtime call site. `exception` is `str(exception)`. |
+| `task_ack_failed_total` | `taskType` | Collector surface for failed task ack responses. Not yet wired -- no runtime call site. |
+| `task_execution_queue_full_total` | `taskType` | Collector surface for execution queue saturation events. Not yet wired -- no runtime call site. |
+| `task_paused_total` | `taskType` | Collector surface for polls skipped while the worker is paused. Not yet wired -- no runtime call site. |
+| `thread_uncaught_exceptions_total` | none | Collector surface for uncaught worker-thread exceptions. Not yet wired -- no runtime call site. |
 | `worker_restart_total` | `taskType` | TaskHandler subprocess restarts. |
 | `external_payload_used_total` | `entityName`, `operation`, `payload_type` | External payload storage usage. |
 | `workflow_start_error_total` | `workflowType`, `exception` | Workflow start errors. `exception` is `str(exception)`. |
@@ -183,9 +191,9 @@ Legacy mode does not emit `task_poll_error_total`,
 | `task_execute_time_seconds` | Quantile gauge | `taskType`, `status`, `quantile` | Sliding-window execution latency quantiles. |
 | `task_execute_time_seconds_count` | Gauge | `taskType`, `status` | Sliding-window execution observation count. |
 | `task_execute_time_seconds_sum` | Gauge | `taskType`, `status` | Sliding-window execution duration sum. |
-| `task_update_time_seconds` | Quantile gauge | `taskType`, `status`, `quantile` | Sliding-window task update latency quantiles. |
-| `task_update_time_seconds_count` | Gauge | `taskType`, `status` | Sliding-window task update observation count. |
-| `task_update_time_seconds_sum` | Gauge | `taskType`, `status` | Sliding-window task update duration sum. |
+| `task_update_time_seconds` | Quantile gauge | `taskType`, `status`, `quantile` | Sliding-window task update latency quantiles. Never emitted -- no call sites existed on main. Legacy no-ops this metric; only canonical mode records task update time. |
+| `task_update_time_seconds_count` | Gauge | `taskType`, `status` | Sliding-window task update observation count. Never emitted (see above). |
+| `task_update_time_seconds_sum` | Gauge | `taskType`, `status` | Sliding-window task update duration sum. Never emitted (see above). |
 | `http_api_client_request` | Quantile gauge | `method`, `uri`, `status`, `quantile` | Sliding-window API-client request latency quantiles. |
 | `http_api_client_request_count` | Gauge | `method`, `uri`, `status` | Sliding-window API-client request observation count. |
 | `http_api_client_request_sum` | Gauge | `method`, `uri`, `status` | Sliding-window API-client request duration sum. |
@@ -203,7 +211,7 @@ Legacy mode does not emit `task_poll_error_total`,
 |---|---|---|
 | `taskType` | Worker metrics | Task definition name. |
 | `workflowType` | Workflow metrics | Workflow definition name. |
-| `version` | `workflow_input_size`, `workflow_input_size_bytes` | Workflow version as a string. If absent, the SDK uses `1`. |
+| `version` | `workflow_input_size`, `workflow_input_size_bytes` | Workflow version as a string. If absent, the label is an empty string. |
 | `status` | Task time metrics | `SUCCESS` or `FAILURE`. For HTTP metrics, the response code as a string, an exception `status` or `code`, or `error` when unavailable. |
 | `exception` | Error counters | Legacy uses `str(exception)`. Canonical uses the exception class name, such as `TimeoutError`. |
 | `entityName` | `external_payload_used_total` | Task type or workflow name associated with the external payload. |
@@ -251,7 +259,7 @@ Common PromQL replacements:
 |---|---|
 | `task_poll_time_seconds{quantile="0.95"}` | `histogram_quantile(0.95, sum by (le, taskType, status) (rate(task_poll_time_seconds_bucket[5m])))` |
 | `task_execute_time_seconds{quantile="0.95"}` | `histogram_quantile(0.95, sum by (le, taskType, status) (rate(task_execute_time_seconds_bucket[5m])))` |
-| `task_update_time_seconds{quantile="0.95"}` | `histogram_quantile(0.95, sum by (le, taskType, status) (rate(task_update_time_seconds_bucket[5m])))` |
+| `task_update_time_seconds{quantile="0.95"}` (never emitted in legacy) | `histogram_quantile(0.95, sum by (le, taskType, status) (rate(task_update_time_seconds_bucket[5m])))` |
 | `http_api_client_request{quantile="0.95"}` | `histogram_quantile(0.95, sum by (le, method, uri, status) (rate(http_api_client_request_seconds_bucket[5m])))` |
 | `task_result_size` | `task_result_size_bytes_bucket`, `_count`, and `_sum` |
 | `workflow_input_size` | `workflow_input_size_bytes_bucket`, `_count`, and `_sum` |
@@ -292,3 +300,74 @@ sum(rate(task_execute_time_seconds_count[5m])) by (taskType)
   available at the generated API-client call site.
 - Avoid embedding user identifiers or unbounded values in task type, workflow
   type, or external payload labels.
+
+## Detailed Technical Notes -- Unreleased
+
+Implementation details, internal design decisions, and migration notes for the
+unreleased metrics harmonization work. For a summary, see the project
+[CHANGELOG](CHANGELOG.md).
+
+### Added
+
+- **Metrics harmonization** -- canonical metric surface aligned with the
+  cross-SDK catalog, opt-in via `WORKER_CANONICAL_METRICS=true`
+  - New `CanonicalMetricsCollector` emits the harmonized cross-SDK catalog using
+    real Prometheus `Histogram`s for timing and size, replacing the legacy
+    quantile-gauge timing shape. New canonical-only metrics:
+    `task_poll_error_total`, `task_execution_started_total`,
+    `task_result_size_bytes`, `workflow_input_size_bytes`,
+    `http_api_client_request_seconds`, `active_workers`. Time buckets
+    `0.001…10s`; size buckets `100…10_000_000` bytes.
+  - `metrics_factory.create_metrics_collector(settings)` selects
+    `LegacyMetricsCollector` (default) or `CanonicalMetricsCollector` based on
+    `WORKER_CANONICAL_METRICS` (truthy: `true`, `1`, `yes`, case-insensitive,
+    whitespace-trimmed). `WORKER_LEGACY_METRICS` is reserved for future use and
+    is not currently read.
+  - New abstract `MetricsCollectorBase` consolidates Prometheus infrastructure
+    (lazy `prometheus_client` imports, multiprocess `NoPidCollector` aggregation,
+    HTTP server, exception-label cardinality bounding) and event handlers shared
+    by both collectors.
+  - `TaskRunner` and `AsyncTaskRunner` now record `task_update_time`
+    (`status="SUCCESS"` / `"FAILURE"`) on every update path.
+  - `OrkesWorkflowClient.start_workflow*` calls
+    `measure_workflow_input_payload_size` and `measure_workflow_start_error` on
+    the collector; canonical records workflow input size and start errors, legacy
+    no-ops (preserving existing behavior). `OrkesClients` / `OrkesBaseClient`
+    accept an optional `metrics_collector`.
+  - Legacy metrics use the base directory unchanged from prior releases;
+    canonical metrics use a `canonical/` subdirectory so that switching
+    implementations never produces stale metric names.
+    `MetricsSettings.metrics_directory` is a computed property that derives the
+    correct path from `WORKER_CANONICAL_METRICS`, ensuring consistent paths
+    across all processes (main, workers, MetricsProvider).
+  - `MetricsSettings` gains `clean_directory` (default `False`) to wipe all
+    `.db` files and `clean_dead_pids` (default `False`) to remove only `.db`
+    files from PIDs that no longer exist. Both are executed by the factory
+    against the resolved metrics directory.
+  - `CONDUCTOR_MP_START_METHOD` env var (`spawn` / `fork` / `forkserver`;
+    default `fork` on POSIX, `spawn` on Windows) to control the worker pool's
+    multiprocessing start method (motivated by a `prometheus_client` lock-fork
+    deadlock).
+  - Harness manifest sets `WORKER_CANONICAL_METRICS=true`; `harness/main.py`
+    logs which collector is active.
+
+### Changed
+
+- **Metrics harmonization** -- defaults preserved; legacy metrics emit unchanged
+  when `WORKER_CANONICAL_METRICS` is unset
+  - `MetricLabel.PAYLOAD_TYPE` retains its original value `"payload_type"`; a
+    new `PAYLOAD_TYPE_CAMEL = "payloadType"` constant is used only by the
+    canonical collector on `external_payload_used_total`.
+  - `metrics_collector.py` is now a thin compatibility shim:
+    `MetricsCollector = LegacyMetricsCollector`, so
+    `from conductor.client.telemetry.metrics_collector import MetricsCollector`
+    continues to work.
+  - Default behavior is unchanged: with no env var set, the legacy metric names,
+    label conventions, and quantile-gauge timing shape from prior releases are
+    preserved.
+  - Rewrote `METRICS.md` to document both surfaces, the env-var gate, full
+    canonical and legacy catalogs, labels, a "Migrating From Legacy to
+    Canonical" mapping (including the `payload_type` → `payloadType` label
+    change and PromQL replacements), and troubleshooting.
+  - Updated `README.md`, `WORKER_CONFIGURATION.md`, and
+    `docs/design/WORKER_DESIGN.md` to point at `METRICS.md`.

@@ -486,7 +486,7 @@ class MetricsCollectorBase(abc.ABC):
             self.increment_workflow_start_error(event.name, event.cause)
 
     def on_workflow_input_payload_size(self, event: WorkflowInputPayloadSize) -> None:
-        version_str = str(event.version) if event.version is not None else "1"
+        version_str = str(event.version) if event.version is not None else ""
         self.record_workflow_input_payload_size(event.name, version_str, event.size_bytes)
 
     def on_workflow_payload_used(self, event: WorkflowPayloadUsed) -> None:

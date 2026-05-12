@@ -3,10 +3,11 @@ Factory that selects the correct MetricsCollector implementation based on
 environment variables.
 
   WORKER_CANONICAL_METRICS=true  ->  CanonicalMetricsCollector
-  WORKER_LEGACY_METRICS=true     ->  LegacyMetricsCollector  (default during deprecation)
+  (unset / any other value)      ->  LegacyMetricsCollector  (default during deprecation)
 
-If WORKER_CANONICAL_METRICS is true it takes priority regardless of the value
-of WORKER_LEGACY_METRICS.
+WORKER_LEGACY_METRICS is reserved for future use.  After the deprecation
+period ends and canonical becomes the default, setting WORKER_LEGACY_METRICS=true
+will allow opting back into legacy metrics.  It is not currently read.
 """
 
 import logging
