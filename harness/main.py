@@ -15,6 +15,7 @@ from conductor.client.workflow.task.simple_task import SimpleTask
 
 from simulated_task_worker import SimulatedTaskWorker
 from workflow_governor import WorkflowGovernor
+from workflow_status_probe import WorkflowStatusProbe
 
 WORKFLOW_NAME = "python_simulated_tasks_workflow"
 
@@ -99,7 +100,15 @@ def main() -> None:
     )
 
     workflow_executor = clients.get_workflow_executor()
-    governor = WorkflowGovernor(workflow_executor, WORKFLOW_NAME, workflows_per_sec)
+    workflow_client = clients.get_workflow_client()
+
+    probe_rate = env_int_or_default("HARNESS_PROBE_RATE_PER_SEC", 0)
+    probe = WorkflowStatusProbe(workflow_client, probe_rate)
+
+    governor = WorkflowGovernor(
+        workflow_executor, WORKFLOW_NAME, workflows_per_sec,
+        id_sink=probe.offer,
+    )
 
     main_pid = os.getpid()
     shutting_down = False
@@ -110,6 +119,7 @@ def main() -> None:
             return
         shutting_down = True
         print("Shutting down...")
+        probe.shutdown()
         governor.stop()
         task_handler.stop_processes()
         sys.exit(0)
@@ -123,6 +133,7 @@ def main() -> None:
     # already running at fork() time, a child can inherit that lock in a held
     # state and deadlock on its first metric write.
     task_handler.start_processes()
+    probe.start()
     governor.start()
     task_handler.join_processes()
 
