@@ -12,6 +12,7 @@ from typing import Any, Dict, List
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.telemetry import metrics_collector_base as _mcb
 from conductor.client.telemetry.metrics_collector_base import MetricsCollectorBase
+from conductor.client.event.workflow_events import WorkflowInputPayloadSize
 from conductor.client.telemetry.model.metric_documentation import MetricDocumentation
 from conductor.client.telemetry.model.metric_label import MetricLabel
 from conductor.client.telemetry.model.metric_name import MetricName
@@ -186,6 +187,18 @@ class LegacyMetricsCollector(MetricsCollectorBase):
             },
             value=time_spent,
         )
+
+    # ------------------------------------------------------------------
+    # Event handler overrides
+    # ------------------------------------------------------------------
+
+    def on_workflow_input_payload_size(self, event: WorkflowInputPayloadSize) -> None:
+        # The original metrics_collector.py defaulted version to "1" when
+        # absent.  The canonical standard across all SDKs is "" (empty
+        # string).  We preserve "1" here so that legacy upgraders don't see
+        # a time-series label change.
+        version_str = str(event.version) if event.version is not None else "1"
+        self.record_workflow_input_payload_size(event.name, version_str, event.size_bytes)
 
     # ------------------------------------------------------------------
     # Sizes (last-value gauges)
