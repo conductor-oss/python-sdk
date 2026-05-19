@@ -5,7 +5,7 @@ import os
 import signal
 import threading
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 # Lazy imports - these will be imported when first needed.
 # PROMETHEUS_MULTIPROC_DIR must be set before prometheus_client is imported.
@@ -103,7 +103,6 @@ class MetricsCollectorBase(abc.ABC):
         self.counters: Dict[str, Any] = {}
         self.gauges: Dict[str, Any] = {}
         self.histograms: Dict[str, Any] = {}
-        self.summaries: Dict[str, Any] = {}
         self.registry = None
         self.must_collect_metrics = False
         self._lock = threading.RLock()
