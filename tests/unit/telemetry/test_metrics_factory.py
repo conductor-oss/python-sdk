@@ -6,9 +6,13 @@ import os
 import shutil
 import tempfile
 import unittest
+from unittest import mock
 
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
-from conductor.client.telemetry.metrics_factory import create_metrics_collector
+from conductor.client.telemetry.metrics_factory import (
+    create_metrics_collector,
+    _reset_cleaned_directories,
+)
 from conductor.client.telemetry.legacy_metrics_collector import LegacyMetricsCollector
 from conductor.client.telemetry.canonical_metrics_collector import CanonicalMetricsCollector
 
@@ -16,6 +20,7 @@ from conductor.client.telemetry.canonical_metrics_collector import CanonicalMetr
 class TestMetricsFactory(unittest.TestCase):
 
     def setUp(self):
+        _reset_cleaned_directories()
         self.metrics_dir = tempfile.mkdtemp()
         self.settings = MetricsSettings(directory=self.metrics_dir)
         self._saved_env = {}
@@ -30,6 +35,7 @@ class TestMetricsFactory(unittest.TestCase):
                 os.environ[key] = val
         if os.path.exists(self.metrics_dir):
             shutil.rmtree(self.metrics_dir)
+        _reset_cleaned_directories()
 
     def test_default_returns_legacy(self):
         """With no env vars set, factory returns LegacyMetricsCollector."""
@@ -125,6 +131,39 @@ class TestMetricsFactory(unittest.TestCase):
                 hasattr(canonical, method_name) and callable(getattr(canonical, method_name)),
                 f"CanonicalMetricsCollector missing method: {method_name}",
             )
+
+    def test_cleanup_runs_once_per_directory(self):
+        """clean_directory cleanup fires only on the first collector for a given
+        directory; a second collector on the same directory must skip it so that
+        live .db files written by existing workers are never wiped."""
+        settings = MetricsSettings(directory=self.metrics_dir, clean_directory=True)
+
+        with mock.patch.object(
+            MetricsSettings, "_clean_stale_db_files", autospec=True
+        ) as clean_spy:
+            create_metrics_collector(settings)
+            create_metrics_collector(settings)
+
+        self.assertEqual(
+            clean_spy.call_count,
+            1,
+            "stale-db cleanup must run exactly once per directory per process",
+        )
+
+    def test_cleanup_runs_again_after_reset(self):
+        """Resetting the per-process guard allows cleanup to run again, proving
+        the global state is what gates the skip (and that setUp/tearDown isolate
+        tests from each other)."""
+        settings = MetricsSettings(directory=self.metrics_dir, clean_directory=True)
+
+        with mock.patch.object(
+            MetricsSettings, "_clean_stale_db_files", autospec=True
+        ) as clean_spy:
+            create_metrics_collector(settings)
+            _reset_cleaned_directories()
+            create_metrics_collector(settings)
+
+        self.assertEqual(clean_spy.call_count, 2)
 
 
 if __name__ == "__main__":

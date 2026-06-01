@@ -109,9 +109,20 @@ class MetricsSettings:
             pid = int(match.group(1))
             try:
                 os.kill(pid, 0)
-            except OSError:
+            except ProcessLookupError:
+                # ESRCH: no process owns this PID -> safe to remove its db file.
                 try:
                     os.remove(path)
                     logger.debug("Removed dead-pid metrics file %s (pid %d)", path, pid)
-                except Exception as e:
+                except OSError as e:
                     logger.debug("Could not remove dead-pid metrics db file %s: %s", path, e)
+            except OSError as e:
+                # Any non-ESRCH probe failure (commonly EPERM: the process is
+                # alive but owned by another user) -> keep the file; deleting it
+                # could corrupt a live worker's metrics in a shared directory.
+                logger.debug(
+                    "Keeping metrics db file %s; pid %d probe returned a "
+                    "non-ProcessLookupError OSError (process likely alive): %s",
+                    path, pid, e,
+                )
+                continue

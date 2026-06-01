@@ -35,6 +35,13 @@ def _env_bool(name: str, default: bool) -> bool:
 _cleaned_directories: set = set()
 
 
+def _reset_cleaned_directories() -> None:
+    """Clear the per-process cleanup guard.  Intended for tests so that each
+    test starts from a known-clean state and does not inherit or leak entries
+    via this module-level global."""
+    _cleaned_directories.clear()
+
+
 def resolve_metrics_type(settings: MetricsSettings) -> None:
     """Read ``WORKER_CANONICAL_METRICS`` once and store the result on *settings*.
 
