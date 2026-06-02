@@ -11,6 +11,8 @@ consumed as no-ops.  This class is selected at runtime when
 WORKER_CANONICAL_METRICS=true.
 """
 
+from typing import Optional
+
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.telemetry.metrics_collector_base import (
     MetricsCollectorBase,
@@ -193,7 +195,7 @@ class CanonicalMetricsCollector(MetricsCollectorBase):
         )
 
     def record_api_request_time(self, method: str, uri: str, status: str, time_spent: float,
-                                metric_uri: str = None) -> None:
+                                metric_uri: Optional[str] = None) -> None:
         resolved_uri = (metric_uri or uri).replace("{tasktype}", "{taskType}")
         self._observe_histogram(
             name=MetricName.API_REQUEST_TIME_CANONICAL,

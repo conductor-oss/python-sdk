@@ -7,7 +7,7 @@ This class is selected at runtime when WORKER_CANONICAL_METRICS is not true.
 """
 
 from collections import deque
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.telemetry import metrics_collector_base as _mcb
@@ -176,7 +176,7 @@ class LegacyMetricsCollector(MetricsCollectorBase):
         pass  # canonical-only; call sites were added in this branch and didn't exist on main
 
     def record_api_request_time(self, method: str, uri: str, status: str, time_spent: float,
-                                metric_uri: str = None) -> None:
+                                metric_uri: Optional[str] = None) -> None:
         self._record_quantiles(
             name=MetricName.API_REQUEST_TIME,
             documentation=MetricDocumentation.API_REQUEST_TIME,

@@ -22,16 +22,6 @@ logger = logging.getLogger(
 )
 
 
-_CANONICAL_SUBDIR = "canonical"
-
-
-def _env_bool(name: str, default: bool) -> bool:
-    value = os.environ.get(name, "")
-    if not value:
-        return default
-    return value.strip().lower() in ("true", "1", "yes")
-
-
 _cleaned_directories: set = set()
 
 
@@ -42,35 +32,16 @@ def _reset_cleaned_directories() -> None:
     _cleaned_directories.clear()
 
 
-def resolve_metrics_type(settings: MetricsSettings) -> None:
-    """Read ``WORKER_CANONICAL_METRICS`` once and store the result on *settings*.
-
-    Idempotent -- subsequent calls are no-ops.  Must be called before
-    ``settings.metrics_directory`` is read so that the subdirectory is
-    resolved in the main process before any child processes are forked.
-
-    Both ``TaskHandler.__init__`` and ``create_metrics_collector`` call this.
-    """
-    if settings._subdir is not None:
-        return
-    if _env_bool("WORKER_CANONICAL_METRICS", default=False):
-        settings._subdir = _CANONICAL_SUBDIR
-    else:
-        settings._subdir = ""
-
-
 def create_metrics_collector(settings: MetricsSettings) -> MetricsCollectorBase:
     """
-    Create the metrics collector selected by environment variables.
+    Create the metrics collector indicated by ``settings.is_canonical``.
 
-    Calls ``resolve_metrics_type`` to ensure ``settings.metrics_directory``
-    returns the correct path, then instantiates the appropriate collector.
+    ``MetricsSettings`` reads ``WORKER_CANONICAL_METRICS`` at construction
+    time, so the directory and collector type are already determined.
 
     Returns a fully-initialised collector (legacy or canonical) that satisfies
     the MetricsCollector Protocol and can be registered as an event listener.
     """
-    resolve_metrics_type(settings)
-
     metrics_dir = settings.metrics_directory
     os.makedirs(metrics_dir, exist_ok=True)
 
@@ -81,7 +52,7 @@ def create_metrics_collector(settings: MetricsSettings) -> MetricsCollectorBase:
         if settings.clean_dead_pids:
             settings._clean_dead_pid_files()
 
-    if settings._subdir == _CANONICAL_SUBDIR:
+    if settings.is_canonical:
         from conductor.client.telemetry.canonical_metrics_collector import CanonicalMetricsCollector
         logger.info("WORKER_CANONICAL_METRICS is true — using CanonicalMetricsCollector (dir=%s)", metrics_dir)
         return CanonicalMetricsCollector(settings)

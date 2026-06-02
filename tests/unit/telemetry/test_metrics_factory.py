@@ -21,11 +21,10 @@ class TestMetricsFactory(unittest.TestCase):
 
     def setUp(self):
         _reset_cleaned_directories()
-        self.metrics_dir = tempfile.mkdtemp()
-        self.settings = MetricsSettings(directory=self.metrics_dir)
         self._saved_env = {}
         for key in ("WORKER_CANONICAL_METRICS", "WORKER_LEGACY_METRICS"):
             self._saved_env[key] = os.environ.pop(key, None)
+        self.metrics_dir = tempfile.mkdtemp()
 
     def tearDown(self):
         for key, val in self._saved_env.items():
@@ -37,62 +36,62 @@ class TestMetricsFactory(unittest.TestCase):
             shutil.rmtree(self.metrics_dir)
         _reset_cleaned_directories()
 
+    def _make_settings(self, **kwargs):
+        kwargs.setdefault("directory", self.metrics_dir)
+        return MetricsSettings(**kwargs)
+
     def test_default_returns_legacy(self):
         """With no env vars set, factory returns LegacyMetricsCollector."""
-        collector = create_metrics_collector(self.settings)
+        collector = create_metrics_collector(self._make_settings())
         self.assertIsInstance(collector, LegacyMetricsCollector)
 
     def test_canonical_true_returns_canonical(self):
         """WORKER_CANONICAL_METRICS=true selects CanonicalMetricsCollector."""
         os.environ["WORKER_CANONICAL_METRICS"] = "true"
-        collector = create_metrics_collector(self.settings)
+        collector = create_metrics_collector(self._make_settings())
         self.assertIsInstance(collector, CanonicalMetricsCollector)
 
     def test_canonical_1_returns_canonical(self):
         """WORKER_CANONICAL_METRICS=1 selects CanonicalMetricsCollector."""
         os.environ["WORKER_CANONICAL_METRICS"] = "1"
-        collector = create_metrics_collector(self.settings)
+        collector = create_metrics_collector(self._make_settings())
         self.assertIsInstance(collector, CanonicalMetricsCollector)
 
     def test_canonical_yes_returns_canonical(self):
         """WORKER_CANONICAL_METRICS=yes selects CanonicalMetricsCollector."""
         os.environ["WORKER_CANONICAL_METRICS"] = "yes"
-        collector = create_metrics_collector(self.settings)
+        collector = create_metrics_collector(self._make_settings())
         self.assertIsInstance(collector, CanonicalMetricsCollector)
 
     def test_canonical_false_returns_legacy(self):
         """WORKER_CANONICAL_METRICS=false selects LegacyMetricsCollector."""
         os.environ["WORKER_CANONICAL_METRICS"] = "false"
-        collector = create_metrics_collector(self.settings)
+        collector = create_metrics_collector(self._make_settings())
         self.assertIsInstance(collector, LegacyMetricsCollector)
 
     def test_canonical_takes_priority_over_legacy(self):
         """WORKER_CANONICAL_METRICS=true wins even if WORKER_LEGACY_METRICS=true."""
         os.environ["WORKER_CANONICAL_METRICS"] = "true"
         os.environ["WORKER_LEGACY_METRICS"] = "true"
-        collector = create_metrics_collector(self.settings)
+        collector = create_metrics_collector(self._make_settings())
         self.assertIsInstance(collector, CanonicalMetricsCollector)
 
     def test_legacy_collector_name(self):
         """LegacyMetricsCollector.collector_name() returns 'legacy'."""
-        collector = create_metrics_collector(self.settings)
+        collector = create_metrics_collector(self._make_settings())
         self.assertEqual(collector.collector_name(), "legacy")
 
     def test_canonical_collector_name(self):
         """CanonicalMetricsCollector.collector_name() returns 'canonical'."""
         os.environ["WORKER_CANONICAL_METRICS"] = "true"
-        collector = create_metrics_collector(
-            MetricsSettings(directory=tempfile.mkdtemp())
-        )
+        collector = create_metrics_collector(self._make_settings())
         self.assertEqual(collector.collector_name(), "canonical")
 
     def test_both_implementations_satisfy_same_interface(self):
         """Both implementations have the same public method surface."""
-        legacy = LegacyMetricsCollector(self.settings)
+        legacy = LegacyMetricsCollector(self._make_settings())
         os.environ["WORKER_CANONICAL_METRICS"] = "true"
-        canonical = create_metrics_collector(
-            MetricsSettings(directory=tempfile.mkdtemp())
-        )
+        canonical = create_metrics_collector(self._make_settings())
 
         required_methods = [
             "collector_name",

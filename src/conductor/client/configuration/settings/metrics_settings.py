@@ -14,6 +14,16 @@ logger = logging.getLogger(
 )
 
 
+CANONICAL_SUBDIR = "canonical"
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.environ.get(name, "")
+    if not value:
+        return default
+    return value.strip().lower() in ("true", "1", "yes")
+
+
 def get_default_temporary_folder() -> str:
     return f"{Path.home()!s}/tmp/"
 
@@ -29,6 +39,11 @@ class MetricsSettings:
             clean_dead_pids: bool = False):
         """
         Configure metrics collection settings.
+
+        The ``WORKER_CANONICAL_METRICS`` env var is read at construction time
+        to decide whether ``.db`` files go in *directory* (legacy) or in a
+        ``canonical/`` subdirectory (canonical mode).  Set the env var before
+        creating this object.
 
         Args:
             directory: Base directory for storing multiprocess metrics .db files.
@@ -62,16 +77,24 @@ class MetricsSettings:
         self.http_port = http_port
         self.clean_directory = clean_directory
         self.clean_dead_pids = clean_dead_pids
-        self._subdir: Optional[str] = None
+        self._subdir: str = (
+            CANONICAL_SUBDIR
+            if _env_bool("WORKER_CANONICAL_METRICS", False)
+            else ""
+        )
+
+    @property
+    def is_canonical(self) -> bool:
+        return self._subdir == CANONICAL_SUBDIR
 
     @property
     def metrics_directory(self) -> str:
         """Full path where .db files live (base directory + optional subdir).
 
-        The subdirectory is set by ``metrics_factory.resolve_metrics_type``
-        before any child processes are forked.  Legacy leaves it empty (base
-        directory unchanged from prior releases); canonical sets it to
-        ``"canonical"`` to avoid stale metric-name collisions.
+        Legacy leaves the subdirectory empty (base directory unchanged from
+        prior releases); canonical sets it to ``"canonical"`` to avoid stale
+        metric-name collisions.  Resolved eagerly at construction time from
+        the ``WORKER_CANONICAL_METRICS`` env var.
         """
         if self._subdir:
             return os.path.join(self.directory, self._subdir)

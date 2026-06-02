@@ -5,7 +5,7 @@ import os
 import signal
 import threading
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # Lazy imports - these will be imported when first needed.
 # PROMETHEUS_MULTIPROC_DIR must be set before prometheus_client is imported.
@@ -419,7 +419,7 @@ class MetricsCollectorBase(abc.ABC):
 
     @abc.abstractmethod
     def record_api_request_time(self, method: str, uri: str, status: str, time_spent: float,
-                                metric_uri: str = None) -> None: ...
+                                metric_uri: Optional[str] = None) -> None: ...
 
     @abc.abstractmethod
     def record_task_result_payload_size(self, task_type: str, payload_size: int) -> None: ...
