@@ -170,7 +170,7 @@ class CanonicalMetricsCollector(MetricsCollectorBase):
     def record_task_poll_time(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
         self._observe_histogram(
             name=MetricName.TASK_POLL_TIME_HISTOGRAM,
-            documentation=MetricDocumentation.TASK_POLL_TIME_HISTOGRAM,
+            documentation=MetricDocumentation.TASK_POLL_TIME_HISTOGRAM_CANONICAL,
             labels={MetricLabel.TASK_TYPE: task_type, MetricLabel.STATUS: status},
             value=time_spent,
             buckets=TIME_BUCKETS,
@@ -179,7 +179,7 @@ class CanonicalMetricsCollector(MetricsCollectorBase):
     def record_task_execute_time(self, task_type: str, time_spent: float, status: str = "SUCCESS") -> None:
         self._observe_histogram(
             name=MetricName.TASK_EXECUTE_TIME_HISTOGRAM,
-            documentation=MetricDocumentation.TASK_EXECUTE_TIME_HISTOGRAM,
+            documentation=MetricDocumentation.TASK_EXECUTE_TIME_HISTOGRAM_CANONICAL,
             labels={MetricLabel.TASK_TYPE: task_type, MetricLabel.STATUS: status},
             value=time_spent,
             buckets=TIME_BUCKETS,
