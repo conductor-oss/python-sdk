@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, TYPE_CHECKING
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models import SkipTaskRequest, WorkflowStatus, \
@@ -14,12 +14,15 @@ from conductor.client.http.models.workflow_test_request import WorkflowTestReque
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.workflow_client import WorkflowClient
 
+if TYPE_CHECKING:
+    from conductor.client.telemetry.metrics_collector_base import MetricsCollectorBase
+
 
 class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def __init__(
             self,
             configuration: Configuration,
-            metrics_collector=None,
+            metrics_collector: Optional[MetricsCollectorBase] = None,
     ):
         super(OrkesWorkflowClient, self).__init__(configuration, metrics_collector=metrics_collector)
 
@@ -39,13 +42,10 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if priority:
             kwargs.update({"priority": priority})
 
-        if self.metrics_collector is not None:
-            try:
-                self.metrics_collector.measure_workflow_input_payload_size(name, version, input)
-            except Exception:
-                pass
         try:
-            return self.workflowResourceApi.start_workflow1(input, name, **kwargs)
+            data, _status, _headers, request_body_size = (
+                self.workflowResourceApi.start_workflow1_with_http_info(input, name, **kwargs)
+            )
         except Exception as e:
             if self.metrics_collector is not None:
                 try:
@@ -54,18 +54,20 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
                     pass
             raise
 
-    def start_workflow(self, start_workflow_request: StartWorkflowRequest) -> str:
         if self.metrics_collector is not None:
             try:
-                self.metrics_collector.measure_workflow_input_payload_size(
-                    start_workflow_request.name,
-                    start_workflow_request.version,
-                    getattr(start_workflow_request, "input", None),
-                )
+                version_str = str(version) if version is not None else ""
+                self.metrics_collector.record_workflow_input_payload_size(name, version_str, request_body_size)
             except Exception:
                 pass
+
+        return data
+
+    def start_workflow(self, start_workflow_request: StartWorkflowRequest) -> str:
         try:
-            return self.workflowResourceApi.start_workflow(start_workflow_request)
+            data, _status, _headers, request_body_size = (
+                self.workflowResourceApi.start_workflow_with_http_info(start_workflow_request)
+            )
         except Exception as e:
             if self.metrics_collector is not None:
                 try:
@@ -73,6 +75,17 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
                 except Exception:
                     pass
             raise
+
+        if self.metrics_collector is not None:
+            try:
+                version_str = str(start_workflow_request.version) if start_workflow_request.version is not None else ""
+                self.metrics_collector.record_workflow_input_payload_size(
+                    start_workflow_request.name, version_str, request_body_size,
+                )
+            except Exception:
+                pass
+
+        return data
 
     def execute_workflow(
             self,

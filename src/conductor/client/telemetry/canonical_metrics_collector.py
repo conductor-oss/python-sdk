@@ -194,12 +194,13 @@ class CanonicalMetricsCollector(MetricsCollectorBase):
 
     def record_api_request_time(self, method: str, uri: str, status: str, time_spent: float,
                                 metric_uri: str = None) -> None:
+        resolved_uri = (metric_uri or uri).replace("{tasktype}", "{taskType}")
         self._observe_histogram(
             name=MetricName.API_REQUEST_TIME_CANONICAL,
             documentation=MetricDocumentation.API_REQUEST_TIME_CANONICAL,
             labels={
                 MetricLabel.METHOD: method,
-                MetricLabel.URI: metric_uri or uri,
+                MetricLabel.URI: resolved_uri,
                 MetricLabel.STATUS: status,
             },
             value=time_spent,

@@ -54,6 +54,12 @@ class TestMetricsFactory(unittest.TestCase):
         collector = create_metrics_collector(self.settings)
         self.assertIsInstance(collector, CanonicalMetricsCollector)
 
+    def test_canonical_yes_returns_canonical(self):
+        """WORKER_CANONICAL_METRICS=yes selects CanonicalMetricsCollector."""
+        os.environ["WORKER_CANONICAL_METRICS"] = "yes"
+        collector = create_metrics_collector(self.settings)
+        self.assertIsInstance(collector, CanonicalMetricsCollector)
+
     def test_canonical_false_returns_legacy(self):
         """WORKER_CANONICAL_METRICS=false selects LegacyMetricsCollector."""
         os.environ["WORKER_CANONICAL_METRICS"] = "false"
@@ -164,6 +170,66 @@ class TestMetricsFactory(unittest.TestCase):
             create_metrics_collector(settings)
 
         self.assertEqual(clean_spy.call_count, 2)
+
+    def test_clean_directory_removes_db_files(self):
+        """clean_directory=True actually removes .db files from the metrics dir."""
+        db_path = os.path.join(self.metrics_dir, "gauge_livesum_12345.db")
+        with open(db_path, "w") as f:
+            f.write("fake")
+
+        settings = MetricsSettings(directory=self.metrics_dir, clean_directory=True)
+        create_metrics_collector(settings)
+
+        self.assertFalse(
+            os.path.exists(db_path),
+            "clean_directory=True should remove existing .db files",
+        )
+
+    def test_clean_dead_pids_removes_dead_pid_file(self):
+        """clean_dead_pids=True removes .db files whose PID no longer exists."""
+        dead_pid = 2_000_000_000
+        db_path = os.path.join(self.metrics_dir, f"gauge_livesum_{dead_pid}.db")
+        with open(db_path, "w") as f:
+            f.write("fake")
+
+        settings = MetricsSettings(directory=self.metrics_dir, clean_dead_pids=True)
+        create_metrics_collector(settings)
+
+        self.assertFalse(
+            os.path.exists(db_path),
+            "clean_dead_pids=True should remove .db file for a non-existent PID",
+        )
+
+    def test_clean_dead_pids_keeps_live_pid_file(self):
+        """clean_dead_pids=True keeps .db files whose PID is still alive."""
+        live_pid = os.getpid()
+        db_path = os.path.join(self.metrics_dir, f"gauge_livesum_{live_pid}.db")
+        with open(db_path, "w") as f:
+            f.write("fake")
+
+        settings = MetricsSettings(directory=self.metrics_dir, clean_dead_pids=True)
+        create_metrics_collector(settings)
+
+        self.assertTrue(
+            os.path.exists(db_path),
+            "clean_dead_pids=True must keep .db files for live PIDs",
+        )
+
+    @mock.patch("os.kill", side_effect=PermissionError("Operation not permitted"))
+    def test_clean_dead_pids_keeps_file_on_permission_error(self, _mock_kill):
+        """PermissionError from os.kill means the process is alive but owned
+        by another user -- the .db file must be kept."""
+        db_path = os.path.join(self.metrics_dir, "gauge_livesum_99999.db")
+        with open(db_path, "w") as f:
+            f.write("fake")
+
+        settings = MetricsSettings(directory=self.metrics_dir, clean_dead_pids=True)
+        create_metrics_collector(settings)
+
+        self.assertTrue(
+            os.path.exists(db_path),
+            "PermissionError should be treated as 'process alive' -- file must be kept",
+        )
 
 
 if __name__ == "__main__":

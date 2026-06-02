@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import datetime
 import logging
@@ -6,7 +8,7 @@ import os
 import re
 import tempfile
 import time
-from typing import Dict
+from typing import Dict, Optional, TYPE_CHECKING
 import uuid
 
 import six
@@ -18,6 +20,9 @@ import conductor.client.http.models as http_models
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http import async_rest
 from conductor.client.http.async_rest import AuthorizationException
+
+if TYPE_CHECKING:
+    from conductor.client.telemetry.metrics_collector_base import MetricsCollectorBase
 
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(
@@ -47,7 +52,7 @@ class AsyncApiClient(object):
             header_name=None,
             header_value=None,
             cookie=None,
-            metrics_collector=None
+            metrics_collector: Optional[MetricsCollectorBase] = None
     ):
         if configuration is None:
             configuration = Configuration()

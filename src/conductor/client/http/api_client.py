@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import datetime
 import logging
@@ -6,7 +8,7 @@ import os
 import re
 import tempfile
 import time
-from typing import Dict
+from typing import Dict, Optional, TYPE_CHECKING
 import uuid
 
 import six
@@ -19,6 +21,9 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.http import rest
 from conductor.client.http.rest import AuthorizationException
 from conductor.client.http.thread import AwaitableThread
+
+if TYPE_CHECKING:
+    from conductor.client.telemetry.metrics_collector_base import MetricsCollectorBase
 
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(
@@ -45,7 +50,7 @@ class ApiClient(object):
             header_name=None,
             header_value=None,
             cookie=None,
-            metrics_collector=None
+            metrics_collector: Optional[MetricsCollectorBase] = None
     ):
         if configuration is None:
             configuration = Configuration()
@@ -188,7 +193,8 @@ class ApiClient(object):
             return (return_data)
         else:
             return (return_data, response_data.status,
-                    response_data.getheaders())
+                    response_data.getheaders(),
+                    getattr(response_data, 'request_body_size', 0))
 
     def sanitize_for_serialization(self, obj):
         """Builds a JSON POST object.

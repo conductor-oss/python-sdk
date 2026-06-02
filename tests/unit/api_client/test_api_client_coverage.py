@@ -683,6 +683,40 @@ class TestApiClientCoverage(unittest.TestCase):
                 self.assertEqual(call_args[1]['method'], 'GET')
                 self.assertEqual(call_args[1]['status'], '200')
 
+    def test_request_passes_metric_uri_to_collector(self):
+        """metric_uri kwarg is forwarded to record_api_request_time on success."""
+        metrics_collector = Mock()
+        with patch.object(ApiClient, '_ApiClient__refresh_auth_token'):
+            client = ApiClient(configuration=self.config, metrics_collector=metrics_collector)
+
+            with patch.object(client.rest_client, 'GET', return_value=Mock(status=200)):
+                client.request(
+                    'GET', 'http://localhost:8080/api/workflow/test-id',
+                    metric_uri='/api/workflow/{workflowId}',
+                )
+
+                call_args = metrics_collector.record_api_request_time.call_args
+                self.assertEqual(call_args[1]['metric_uri'], '/api/workflow/{workflowId}')
+
+    def test_request_passes_metric_uri_to_collector_on_error(self):
+        """metric_uri kwarg is forwarded to record_api_request_time on error."""
+        metrics_collector = Mock()
+        with patch.object(ApiClient, '_ApiClient__refresh_auth_token'):
+            client = ApiClient(configuration=self.config, metrics_collector=metrics_collector)
+
+            error = Exception('Test error')
+            error.status = 500
+
+            with patch.object(client.rest_client, 'GET', side_effect=error):
+                with self.assertRaises(Exception):
+                    client.request(
+                        'GET', 'http://localhost:8080/api/workflow/test-id',
+                        metric_uri='/api/workflow/{workflowId}',
+                    )
+
+                call_args = metrics_collector.record_api_request_time.call_args
+                self.assertEqual(call_args[1]['metric_uri'], '/api/workflow/{workflowId}')
+
     def test_request_with_metrics_collector_on_error(self):
         """Test request method with metrics collector on error"""
         metrics_collector = Mock()

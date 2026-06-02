@@ -1,6 +1,6 @@
 from __future__ import annotations
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from typing_extensions import Self
 
@@ -25,9 +25,12 @@ from conductor.client.http.models.correlation_ids_search_request import (
 )
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 
+if TYPE_CHECKING:
+    from conductor.client.telemetry.metrics_collector_base import MetricsCollectorBase
+
 
 class WorkflowExecutor:
-    def __init__(self, configuration: Configuration, metrics_collector=None) -> Self:
+    def __init__(self, configuration: Configuration, metrics_collector: Optional[MetricsCollectorBase] = None) -> Self:
         api_client = ApiClient(configuration, metrics_collector=metrics_collector)
         self.metadata_client = MetadataResourceApi(api_client)
         self.task_client = TaskResourceApi(api_client)
