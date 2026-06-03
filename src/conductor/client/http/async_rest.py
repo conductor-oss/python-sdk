@@ -1,9 +1,12 @@
 import json
+import logging
 import os
 import re
 
 import httpx
 from six.moves.urllib.parse import urlencode
+
+logger = logging.getLogger(__name__)
 
 
 class RESTResponse:
@@ -44,6 +47,8 @@ class RESTResponse:
 
 class AsyncRESTClientObject(object):
     def __init__(self, connection=None):
+        # Set once we fall back from HTTP/2 to HTTP/1.1 after a protocol error.
+        self._http2_downgraded = False
         if connection is None:
             self._http2_enabled = self._is_http2_enabled()
             self.connection = self._create_default_httpx_client()
@@ -55,6 +60,13 @@ class AsyncRESTClientObject(object):
 
     def _is_http2_enabled(self) -> bool:
         val = os.getenv("CONDUCTOR_HTTP2_ENABLED", "true").strip().lower()
+        return val not in ("0", "false", "no", "off")
+
+    def _is_http2_auto_fallback_enabled(self) -> bool:
+        # A protocol-level error on an HTTP/2 connection triggers a one-way
+        # fallback to HTTP/1.1 for the rest of the process. Opt out with
+        # CONDUCTOR_HTTP2_AUTO_FALLBACK=false to keep retrying on HTTP/2.
+        val = os.getenv("CONDUCTOR_HTTP2_AUTO_FALLBACK", "true").strip().lower()
         return val not in ("0", "false", "no", "off")
 
     def _create_default_httpx_client(self) -> httpx.AsyncClient:
@@ -77,9 +89,21 @@ class AsyncRESTClientObject(object):
             http2=bool(self._http2_enabled)
         )
 
-    async def _reset_connection(self) -> None:
+    async def _reset_connection(self, downgrade_http2=False) -> None:
         if not getattr(self, "_owns_connection", False):
             return
+        if (downgrade_http2
+                and getattr(self, "_http2_enabled", None)
+                and self._is_http2_auto_fallback_enabled()):
+            # Protocol error on a long-lived HTTP/2 connection — fall back to
+            # HTTP/1.1 for the rest of this process instead of rebuilding
+            # another HTTP/2 client that stalls the poll loop the same way.
+            self._http2_enabled = False
+            self._http2_downgraded = True
+            logger.warning(
+                "httpx protocol error on HTTP/2 connection; disabled HTTP/2 "
+                "and fell back to HTTP/1.1 for this process"
+            )
         try:
             if getattr(self, "connection", None) is not None:
                 await self.connection.aclose()
@@ -182,7 +206,9 @@ class AsyncRESTClientObject(object):
                 break
             except (httpx.ProtocolError, httpx.ReadError, httpx.WriteError) as e:
                 if attempt == 0 and self._owns_connection:
-                    await self._reset_connection()
+                    await self._reset_connection(
+                        downgrade_http2=bool(getattr(self, "_http2_enabled", False))
+                    )
                     if method in idempotent_methods:
                         continue
                 msg = f"Protocol error ({type(e).__name__}): {e}"

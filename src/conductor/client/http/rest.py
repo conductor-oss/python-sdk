@@ -64,6 +64,9 @@ class RESTClientObject(object):
         # discovering the same broken connection produces at most ONE real
         # reset + warning line, not N.
         self._reset_lock = threading.Lock()
+        # Set once we fall back from HTTP/2 to HTTP/1.1 after a protocol error,
+        # so we don't keep rebuilding HTTP/2 clients that hit the same wall.
+        self._http2_downgraded = False
         if connection is None:
             self._http2_enabled = self._is_http2_enabled()
             self.connection = self._create_default_httpx_client()
@@ -76,6 +79,13 @@ class RESTClientObject(object):
     def _is_http2_enabled(self) -> bool:
         # Default to HTTP/2 enabled. Some environments (proxies/LBs) may be unstable with long-lived HTTP/2.
         val = os.getenv("CONDUCTOR_HTTP2_ENABLED", "true").strip().lower()
+        return val not in ("0", "false", "no", "off")
+
+    def _is_http2_auto_fallback_enabled(self) -> bool:
+        # When HTTP/2 is enabled, a protocol-level error on the connection
+        # triggers a one-way fallback to HTTP/1.1 for the rest of the process.
+        # Opt out with CONDUCTOR_HTTP2_AUTO_FALLBACK=false to keep retrying on HTTP/2.
+        val = os.getenv("CONDUCTOR_HTTP2_AUTO_FALLBACK", "true").strip().lower()
         return val not in ("0", "false", "no", "off")
 
     def _create_default_httpx_client(self) -> httpx.Client:
@@ -111,8 +121,16 @@ class RESTClientObject(object):
         except Exception:
             return False
 
-    def _reset_connection(self, expected=None) -> bool:
+    def _reset_connection(self, expected=None, downgrade_http2=False) -> bool:
         """Close the current httpx client (if any) and create a fresh one.
+
+        When `downgrade_http2` is True and HTTP/2 is currently enabled, the
+        replacement client is built on HTTP/1.1 and HTTP/2 stays disabled for
+        the remainder of this process. This is the auto-fallback path: a
+        protocol-level error on a long-lived HTTP/2 connection (common with
+        proxies/LBs that mishandle h2, e.g. GOAWAY storms) would otherwise be
+        "healed" into another HTTP/2 client that fails the same way, stalling
+        the poll loop. Downgrading once breaks that cycle.
 
         This is a thread-safe compare-and-swap:
 
@@ -135,6 +153,11 @@ class RESTClientObject(object):
             if expected is not None and current is not expected:
                 # Someone else already healed since our caller last looked.
                 return False
+            if (downgrade_http2
+                    and getattr(self, "_http2_enabled", None)
+                    and self._is_http2_auto_fallback_enabled()):
+                self._http2_enabled = False
+                self._http2_downgraded = True
             try:
                 if current is not None:
                     current.close()
@@ -262,9 +285,20 @@ class RESTClientObject(object):
                 # Reset the client to recover without requiring process restart.
                 # Only auto-retry idempotent methods to avoid duplicating side effects.
                 if attempt == 0:
-                    reset_done = self._reset_connection(expected=client_at_send)
+                    # If we're on HTTP/2, treat a protocol error as a signal to
+                    # fall back to HTTP/1.1 for the rest of this process.
+                    downgrade = bool(getattr(self, "_http2_enabled", False))
+                    reset_done = self._reset_connection(
+                        expected=client_at_send, downgrade_http2=downgrade
+                    )
                     if reset_done:
-                        logger.warning("httpx protocol error; re-established client: %s", e)
+                        if downgrade and getattr(self, "_http2_downgraded", False):
+                            logger.warning(
+                                "httpx protocol error on HTTP/2 connection; disabled HTTP/2 "
+                                "and fell back to HTTP/1.1 for this process: %s", e
+                            )
+                        else:
+                            logger.warning("httpx protocol error; re-established client: %s", e)
                     else:
                         logger.debug(
                             "httpx protocol error on stale client (already healed by another thread): %s",
