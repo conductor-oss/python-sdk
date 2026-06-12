@@ -44,6 +44,28 @@ logger = logging.getLogger(
     )
 )
 
+# Exit code used when the poll-loop liveness watchdog restarts a wedged worker.
+# Distinct, non-zero value so operators can recognise watchdog restarts and so
+# TaskHandler's supervisor (restart_on_failure) treats it as a failure exit.
+POLL_STALL_EXIT_CODE = 70  # EX_SOFTWARE
+
+
+def _get_poll_stall_timeout_seconds() -> int:
+    """Max seconds the poll loop may be silent before the watchdog restarts the
+    worker process. ``0`` disables the watchdog.
+
+    Override via env ``CONDUCTOR_WORKER_POLL_STALL_TIMEOUT_SECONDS``
+    (default 300s). The default is intentionally generous: a healthy poll loop
+    iterates within milliseconds even when every slot is busy, so a multi-minute
+    silence means the loop is wedged on a call that never returned rather than
+    legitimately busy.
+    """
+    raw = os.getenv("CONDUCTOR_WORKER_POLL_STALL_TIMEOUT_SECONDS", "300")
+    try:
+        return max(0, int(float(raw)))
+    except (TypeError, ValueError):
+        return 300
+
 
 class TaskRunner:
     def __init__(
@@ -116,6 +138,17 @@ class TaskRunner:
         self._tracked_task_ids = set()  # Local set for cleanup on shutdown
         self._tracked_task_ids_lock = threading.Lock()
 
+        # Poll-loop liveness watchdog. If the poll thread wedges on a call that
+        # never returns (e.g. a stale keep-alive connection silently dropped by
+        # a proxy/LB), polling stops silently. TaskHandler's supervisor only
+        # restarts DEAD processes (is_alive()==False), so a wedged-but-alive
+        # worker stays stuck until a manual restart. The watchdog (a daemon
+        # thread) detects a stalled poll loop and exits the process so the
+        # supervisor restarts it.
+        self._poll_stall_timeout = _get_poll_stall_timeout_seconds()
+        self._last_loop_activity = time.monotonic()
+        self._watchdog_thread = None
+
     def run(self) -> None:
         if self.configuration is not None:
             self.configuration.apply_logging_config()
@@ -139,6 +172,10 @@ class TaskRunner:
             self.worker.get_polling_interval_in_seconds()
         )
 
+        # Start the poll-loop liveness watchdog (runs in this worker subprocess)
+        self._last_loop_activity = time.monotonic()
+        self.__start_poll_watchdog()
+
         try:
             while not self._shutdown:
                 self.run_once()
@@ -149,6 +186,60 @@ class TaskRunner:
     def stop(self) -> None:
         """Signal the runner to stop gracefully."""
         self._shutdown = True
+
+    # -- Poll-loop liveness watchdog -------------------------------------------
+
+    def __start_poll_watchdog(self) -> None:
+        """Start the daemon watchdog thread (no-op if disabled)."""
+        if self._poll_stall_timeout <= 0:
+            logger.debug("Poll-loop watchdog disabled (stall timeout <= 0)")
+            return
+        if self._watchdog_thread is not None and self._watchdog_thread.is_alive():
+            return
+        self._watchdog_thread = threading.Thread(
+            target=self.__poll_watchdog_loop,
+            name=f"poll-watchdog-{self.worker.get_task_definition_name()}",
+            daemon=True,
+        )
+        self._watchdog_thread.start()
+        logger.info(
+            "Poll-loop watchdog started for '%s' (stall_timeout=%ss)",
+            self.worker.get_task_definition_name(),
+            self._poll_stall_timeout,
+        )
+
+    def __poll_watchdog_loop(self) -> None:
+        check_interval = max(1.0, min(self._poll_stall_timeout / 5.0, 30.0))
+        while not self._shutdown:
+            time.sleep(check_interval)
+            self._check_poll_stall()
+
+    def _check_poll_stall(self) -> bool:
+        """Restart the process if the poll loop has been silent too long.
+
+        Returns True if a stall was detected (after which the process exits).
+        Extracted from the watchdog loop so it can be unit-tested without the
+        sleep loop. Calls ``os._exit`` so a wedged loop can't intercept it.
+        """
+        if self._poll_stall_timeout <= 0 or self._shutdown:
+            return False
+        idle = time.monotonic() - self._last_loop_activity
+        if idle < self._poll_stall_timeout:
+            return False
+        logger.critical(
+            "Poll loop for '%s' stalled %.0fs (>= %ss): the poll loop is wedged "
+            "and not polling. Exiting (code %d) so the supervisor restarts this "
+            "worker. If this recurs, capture a stack dump (py-spy dump --pid <pid>) "
+            "to find the blocked call.",
+            self.worker.get_task_definition_name(),
+            idle,
+            self._poll_stall_timeout,
+            POLL_STALL_EXIT_CODE,
+        )
+        os._exit(POLL_STALL_EXIT_CODE)
+        return True  # pragma: no cover - process has exited
+
+    # --------------------------------------------------------------------------
 
     def _cleanup(self) -> None:
         """Clean up resources - called on exit."""
@@ -432,6 +523,10 @@ class TaskRunner:
             logger.warning(f"Failed to register task definition for {task_name}: {e}")
 
     def run_once(self) -> None:
+        # Liveness heartbeat for the watchdog: a healthy loop reaches this every
+        # iteration (within ms, even at full capacity). A stale value means the
+        # previous iteration is wedged on a call that never returned.
+        self._last_loop_activity = time.monotonic()
         try:
             # Check completed async tasks first (non-blocking)
             self.__check_completed_async_tasks()
