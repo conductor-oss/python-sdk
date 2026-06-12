@@ -141,7 +141,10 @@ class AsyncRESTClientObject(object):
             else:
                 timeout = httpx.Timeout(_request_timeout)
         else:
-            timeout = None  # Use client default
+            # httpx treats timeout=None as "no timeout" (infinite), so a
+            # half-open connection would hang forever. Use the sentinel so the
+            # client's configured timeout actually applies.
+            timeout = httpx.USE_CLIENT_DEFAULT
 
         if 'Content-Type' not in headers:
             headers['Content-Type'] = 'application/json'
