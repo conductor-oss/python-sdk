@@ -383,6 +383,26 @@ class AsyncApiClient(object):
                                _return_http_data_only, collection_formats,
                                _preload_content, _request_timeout)
 
+    def _safe_record_api_request_time(self, method, uri, status, time_spent,
+                                      metric_uri):
+        """Record the api-request metric without ever raising.
+
+        Metrics are best-effort instrumentation; a failure here must not
+        propagate and take down the actual API call.
+        """
+        if self.metrics_collector is None:
+            return
+        try:
+            self.metrics_collector.record_api_request_time(
+                method=method,
+                uri=uri,
+                status=status,
+                time_spent=time_spent,
+                metric_uri=metric_uri,
+            )
+        except Exception as e:
+            logger.debug(f'Failed to record api request metric (ignored): {e}')
+
     async def request(self, method, url, query_params=None, headers=None,
                 post_params=None, body=None, _preload_content=True,
                 _request_timeout=None, metric_uri=None):
@@ -460,15 +480,12 @@ class AsyncApiClient(object):
             # Extract status code from response
             status_code = str(response.status) if hasattr(response, 'status') else "200"
 
-            # Record metrics
+            # Record metrics. A metrics failure must never turn a successful
+            # request into a failed one, so the emit is isolated.
             if self.metrics_collector is not None:
                 elapsed_time = time.time() - start_time
-                self.metrics_collector.record_api_request_time(
-                    method=method,
-                    uri=uri,
-                    status=status_code,
-                    time_spent=elapsed_time,
-                    metric_uri=metric_uri,
+                self._safe_record_api_request_time(
+                    method, uri, status_code, elapsed_time, metric_uri,
                 )
 
             return response
@@ -482,15 +499,12 @@ class AsyncApiClient(object):
             else:
                 status_code = "error"
 
-            # Record metrics for failed requests
+            # Record metrics for failed requests. Guard the emit so a metrics
+            # error can't mask the original request exception below.
             if self.metrics_collector is not None:
                 elapsed_time = time.time() - start_time
-                self.metrics_collector.record_api_request_time(
-                    method=method,
-                    uri=uri,
-                    status=status_code,
-                    time_spent=elapsed_time,
-                    metric_uri=metric_uri,
+                self._safe_record_api_request_time(
+                    method, uri, status_code, elapsed_time, metric_uri,
                 )
 
             # Re-raise the exception

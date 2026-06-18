@@ -42,8 +42,15 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if priority:
             kwargs.update({"priority": priority})
 
+        # Pass workflow metadata down so the API layer can record the input
+        # payload size (computed once during serialization) against the
+        # workflow_type/version labels it would not otherwise know.
+        if self.metrics_collector is not None:
+            version_str = str(version) if version is not None else ""
+            kwargs["metric_context"] = {"workflow_name": name, "version": version_str}
+
         try:
-            data, _status, _headers, request_body_size = (
+            data, _status, _headers = (
                 self.workflowResourceApi.start_workflow1_with_http_info(input, name, **kwargs)
             )
         except Exception as e:
@@ -54,19 +61,20 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
                     pass
             raise
 
-        if self.metrics_collector is not None:
-            try:
-                version_str = str(version) if version is not None else ""
-                self.metrics_collector.record_workflow_input_payload_size(name, version_str, request_body_size)
-            except Exception:
-                pass
-
         return data
 
     def start_workflow(self, start_workflow_request: StartWorkflowRequest) -> str:
+        kwargs = {}
+        if self.metrics_collector is not None:
+            version_str = str(start_workflow_request.version) if start_workflow_request.version is not None else ""
+            kwargs["metric_context"] = {
+                "workflow_name": start_workflow_request.name,
+                "version": version_str,
+            }
+
         try:
-            data, _status, _headers, request_body_size = (
-                self.workflowResourceApi.start_workflow_with_http_info(start_workflow_request)
+            data, _status, _headers = (
+                self.workflowResourceApi.start_workflow_with_http_info(start_workflow_request, **kwargs)
             )
         except Exception as e:
             if self.metrics_collector is not None:
@@ -75,15 +83,6 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
                 except Exception:
                     pass
             raise
-
-        if self.metrics_collector is not None:
-            try:
-                version_str = str(start_workflow_request.version) if start_workflow_request.version is not None else ""
-                self.metrics_collector.record_workflow_input_payload_size(
-                    start_workflow_request.name, version_str, request_body_size,
-                )
-            except Exception:
-                pass
 
         return data
 

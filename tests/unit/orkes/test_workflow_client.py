@@ -41,38 +41,65 @@ class TestOrkesWorkflowClient(unittest.TestCase):
 
     @patch.object(WorkflowResourceApi, 'start_workflow1_with_http_info')
     def test_startWorkflowByName(self, mock):
-        mock.return_value = (WORKFLOW_UUID, 200, {}, 42)
+        mock.return_value = (WORKFLOW_UUID, 200, {})
         wfId = self.workflow_client.start_workflow_by_name(WORKFLOW_NAME, self.input)
         mock.assert_called_with(self.input, WORKFLOW_NAME)
         self.assertEqual(wfId, WORKFLOW_UUID)
 
     @patch.object(WorkflowResourceApi, 'start_workflow1_with_http_info')
     def test_startWorkflowByName_with_version(self, mock):
-        mock.return_value = (WORKFLOW_UUID, 200, {}, 42)
+        mock.return_value = (WORKFLOW_UUID, 200, {})
         wfId = self.workflow_client.start_workflow_by_name(WORKFLOW_NAME, self.input, version=1)
         mock.assert_called_with(self.input, WORKFLOW_NAME, version=1)
         self.assertEqual(wfId, WORKFLOW_UUID)
 
     @patch.object(WorkflowResourceApi, 'start_workflow1_with_http_info')
     def test_startWorkflowByName_with_correlation_id(self, mock):
-        mock.return_value = (WORKFLOW_UUID, 200, {}, 42)
+        mock.return_value = (WORKFLOW_UUID, 200, {})
         wfId = self.workflow_client.start_workflow_by_name(WORKFLOW_NAME, self.input, correlationId=CORRELATION_ID)
         mock.assert_called_with(self.input, WORKFLOW_NAME, correlation_id=CORRELATION_ID)
         self.assertEqual(wfId, WORKFLOW_UUID)
 
     @patch.object(WorkflowResourceApi, 'start_workflow1_with_http_info')
     def test_startWorkflowByName_with_version_and_priority(self, mock):
-        mock.return_value = (WORKFLOW_UUID, 200, {}, 42)
+        mock.return_value = (WORKFLOW_UUID, 200, {})
         wfId = self.workflow_client.start_workflow_by_name(WORKFLOW_NAME, self.input, version=1, priority=1)
         mock.assert_called_with(self.input, WORKFLOW_NAME, version=1, priority=1)
         self.assertEqual(wfId, WORKFLOW_UUID)
 
     @patch.object(WorkflowResourceApi, 'start_workflow_with_http_info')
     def test_startWorkflow(self, mock):
-        mock.return_value = (WORKFLOW_UUID, 200, {}, 42)
+        mock.return_value = (WORKFLOW_UUID, 200, {})
         startWorkflowReq = StartWorkflowRequest()
         wfId = self.workflow_client.start_workflow(startWorkflowReq)
         mock.assert_called_with(startWorkflowReq)
+        self.assertEqual(wfId, WORKFLOW_UUID)
+
+    @patch.object(WorkflowResourceApi, 'start_workflow_with_http_info')
+    def test_startWorkflow_forwards_metric_context_when_collecting(self, mock):
+        mock.return_value = (WORKFLOW_UUID, 200, {})
+        configuration = Configuration("http://localhost:8080/api")
+        client = OrkesWorkflowClient(configuration, metrics_collector=MagicMock())
+        startWorkflowReq = StartWorkflowRequest()
+        startWorkflowReq.name = WORKFLOW_NAME
+        startWorkflowReq.version = 2
+        wfId = client.start_workflow(startWorkflowReq)
+        mock.assert_called_with(
+            startWorkflowReq,
+            metric_context={"workflow_name": WORKFLOW_NAME, "version": "2"},
+        )
+        self.assertEqual(wfId, WORKFLOW_UUID)
+
+    @patch.object(WorkflowResourceApi, 'start_workflow1_with_http_info')
+    def test_startWorkflowByName_forwards_metric_context_when_collecting(self, mock):
+        mock.return_value = (WORKFLOW_UUID, 200, {})
+        configuration = Configuration("http://localhost:8080/api")
+        client = OrkesWorkflowClient(configuration, metrics_collector=MagicMock())
+        wfId = client.start_workflow_by_name(WORKFLOW_NAME, self.input, version=1)
+        mock.assert_called_with(
+            self.input, WORKFLOW_NAME, version=1,
+            metric_context={"workflow_name": WORKFLOW_NAME, "version": "1"},
+        )
         self.assertEqual(wfId, WORKFLOW_UUID)
 
     @patch.object(WorkflowResourceApi, 'execute_workflow')

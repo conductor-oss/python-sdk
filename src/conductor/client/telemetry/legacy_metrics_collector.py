@@ -177,12 +177,13 @@ class LegacyMetricsCollector(MetricsCollectorBase):
 
     def record_api_request_time(self, method: str, uri: str, status: str, time_spent: float,
                                 metric_uri: Optional[str] = None) -> None:
+        resolved_uri = self._resolve_uri_label(uri, metric_uri)
         self._record_quantiles(
             name=MetricName.API_REQUEST_TIME,
             documentation=MetricDocumentation.API_REQUEST_TIME,
             labels={
                 MetricLabel.METHOD: method,
-                MetricLabel.URI: uri,
+                MetricLabel.URI: resolved_uri,
                 MetricLabel.STATUS: status,
             },
             value=time_spent,

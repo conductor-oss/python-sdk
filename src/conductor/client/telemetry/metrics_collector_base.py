@@ -359,6 +359,16 @@ class MetricsCollectorBase(abc.ABC):
             self.histograms[name] = Histogram(**kwargs)
         return self.histograms[name]
 
+    @staticmethod
+    def _resolve_uri_label(uri: str, metric_uri: Optional[str]) -> str:
+        """Return the URI label value for api-request metrics.
+
+        Prefers the low-cardinality URI template (e.g. ``/workflow/{workflowId}``)
+        over the resolved path to bound time-series cardinality, and normalizes
+        the path-param casing so legacy and canonical agree on the label value.
+        """
+        return (metric_uri or uri).replace("{tasktype}", "{taskType}")
+
     # =========================================================================
     # Abstract metric methods -- the full union surface.
     # Subclasses implement each with real logic or pass (no-op).
@@ -436,10 +446,6 @@ class MetricsCollectorBase(abc.ABC):
     # default so legacy mode adds zero overhead and emits no new metrics.
     # Canonical overrides these to measure payload size and record errors.
     # =========================================================================
-
-    def measure_workflow_input_payload_size(self, name: str, version, workflow_input) -> None:
-        """Measure and record the serialised size of *workflow_input*.  No-op by default."""
-        pass
 
     def measure_workflow_start_error(self, name: str, exception: Exception) -> None:
         """Record a workflow-start error from the client call-site.  No-op by default."""

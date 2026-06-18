@@ -404,6 +404,24 @@ class TestMetricsCollector(unittest.TestCase):
         self.assertIn('http_api_client_request_count', metrics_content)
         self.assertIn('http_api_client_request_sum', metrics_content)
 
+    def test_record_api_request_time_uses_template_uri(self):
+        """Legacy uses the metric_uri template (low cardinality), not the resolved path"""
+        collector = MetricsCollector(self.metrics_settings)
+
+        collector.record_api_request_time(
+            method='GET',
+            uri='/workflow/abc-123',
+            status='200',
+            time_spent=0.125,
+            metric_uri='/workflow/{workflowId}',
+        )
+
+        self._write_metrics(collector)
+        metrics_content = self._read_metrics_file()
+
+        self.assertIn('uri="/workflow/{workflowId}"', metrics_content)
+        self.assertNotIn('uri="/workflow/abc-123"', metrics_content)
+
     def test_record_api_request_time_error_status(self):
         """Test record_api_request_time with error status"""
         collector = MetricsCollector(self.metrics_settings)

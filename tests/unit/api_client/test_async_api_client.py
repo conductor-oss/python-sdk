@@ -53,6 +53,35 @@ class TestAsyncApiClientMetricUri(unittest.TestCase):
         call_args = metrics_collector.record_api_request_time.call_args
         self.assertEqual(call_args[1]['metric_uri'], '/api/workflow/{workflowId}')
 
+    def test_request_metrics_failure_does_not_break_successful_request(self):
+        """A throwing metrics emit must not turn a success into a failure."""
+        metrics_collector = Mock()
+        metrics_collector.record_api_request_time.side_effect = RuntimeError('metrics boom')
+        client = AsyncApiClient(configuration=self.config, metrics_collector=metrics_collector)
+
+        response = Mock(status=200)
+        client.async_rest_client.GET = AsyncMock(return_value=response)
+
+        result = self._run(client.request('GET', 'http://localhost:8080/test'))
+
+        self.assertIs(result, response)
+        metrics_collector.record_api_request_time.assert_called_once()
+
+    def test_request_metrics_failure_preserves_original_exception(self):
+        """A throwing metrics emit on the error path must not mask the real error."""
+        metrics_collector = Mock()
+        metrics_collector.record_api_request_time.side_effect = RuntimeError('metrics boom')
+        client = AsyncApiClient(configuration=self.config, metrics_collector=metrics_collector)
+
+        error = ValueError('original request failure')
+        client.async_rest_client.GET = AsyncMock(side_effect=error)
+
+        with self.assertRaises(ValueError) as ctx:
+            self._run(client.request('GET', 'http://localhost:8080/test'))
+
+        self.assertIs(ctx.exception, error)
+        metrics_collector.record_api_request_time.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main()
