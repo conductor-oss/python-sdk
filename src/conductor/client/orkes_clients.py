@@ -1,5 +1,12 @@
+from __future__ import annotations
+
+from typing import Optional, TYPE_CHECKING
+
 from conductor.client.authorization_client import AuthorizationClient
 from conductor.client.configuration.configuration import Configuration
+
+if TYPE_CHECKING:
+    from conductor.client.telemetry.metrics_collector_base import MetricsCollectorBase
 from conductor.client.integration_client import IntegrationClient
 from conductor.client.metadata_client import MetadataClient
 from conductor.client.orkes.orkes_integration_client import OrkesIntegrationClient
@@ -21,13 +28,14 @@ from conductor.client.workflow_client import WorkflowClient
 
 
 class OrkesClients:
-    def __init__(self, configuration: Configuration = None):
+    def __init__(self, configuration: Configuration = None, metrics_collector: Optional[MetricsCollectorBase] = None):
         if configuration is None:
             configuration = Configuration()
         self.configuration = configuration
+        self.metrics_collector = metrics_collector
 
     def get_workflow_client(self) -> WorkflowClient:
-        return OrkesWorkflowClient(self.configuration)
+        return OrkesWorkflowClient(self.configuration, metrics_collector=self.metrics_collector)
 
     def get_authorization_client(self) -> AuthorizationClient:
         return OrkesAuthorizationClient(self.configuration)
@@ -48,7 +56,7 @@ class OrkesClients:
         return OrkesIntegrationClient(self.configuration)
 
     def get_workflow_executor(self) -> WorkflowExecutor:
-        return WorkflowExecutor(self.configuration)
+        return WorkflowExecutor(self.configuration, metrics_collector=self.metrics_collector)
 
     def get_prompt_client(self) -> PromptClient:
         return OrkesPromptClient(self.configuration)

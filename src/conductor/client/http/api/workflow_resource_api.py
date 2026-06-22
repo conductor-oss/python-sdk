@@ -2329,6 +2329,7 @@ class WorkflowResourceApi(object):
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
         all_params.append('_request_timeout')
+        all_params.append('metric_context')
 
         params = locals()
         for key, val in six.iteritems(params['kwargs']):
@@ -2383,7 +2384,8 @@ class WorkflowResourceApi(object):
             _return_http_data_only=params.get('_return_http_data_only'),
             _preload_content=params.get('_preload_content', True),
             _request_timeout=params.get('_request_timeout'),
-            collection_formats=collection_formats)
+            collection_formats=collection_formats,
+            metric_context=params.get('metric_context'))
 
     def start_workflow1(self, body, name, **kwargs):  # noqa: E501
         """Start a new workflow. Returns the ID of the workflow instance that can be later used for tracking  # noqa: E501
@@ -2434,6 +2436,7 @@ class WorkflowResourceApi(object):
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
         all_params.append('_request_timeout')
+        all_params.append('metric_context')
 
         params = locals()
         for key, val in six.iteritems(params['kwargs']):
@@ -2500,7 +2503,8 @@ class WorkflowResourceApi(object):
             _return_http_data_only=params.get('_return_http_data_only'),
             _preload_content=params.get('_preload_content', True),
             _request_timeout=params.get('_request_timeout'),
-            collection_formats=collection_formats)
+            collection_formats=collection_formats,
+            metric_context=params.get('metric_context'))
 
     def terminate1(self, workflow_id, **kwargs):  # noqa: E501
         """

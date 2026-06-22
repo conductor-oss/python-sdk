@@ -27,7 +27,7 @@ from conductor.client.http.models.schema_def import SchemaDef, SchemaType
 from conductor.client.http.rest import AuthorizationException, ApiException
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
-from conductor.client.telemetry.metrics_collector import MetricsCollector
+from conductor.client.telemetry.metrics_factory import create_metrics_collector
 from conductor.client.worker.worker_interface import WorkerInterface
 from conductor.client.worker.worker_config import resolve_worker_config, get_worker_config_oneline
 from conductor.client.worker.exception import NonRetryableException
@@ -88,7 +88,7 @@ class AsyncTaskRunner:
 
         self.metrics_collector = None
         if metrics_settings is not None:
-            self.metrics_collector = MetricsCollector(
+            self.metrics_collector = create_metrics_collector(
                 metrics_settings
             )
             # Register metrics collector as event listener
@@ -863,6 +863,7 @@ class AsyncTaskRunner:
             if attempt > 0:
                 # Exponential backoff: [10s, 20s, 30s] before retry
                 await asyncio.sleep(attempt * 10)
+            update_start = time.time()
             try:
                 if self._use_update_v2:
                     next_task = await self.async_task_client.update_task_v2(body=task_result)
@@ -873,6 +874,10 @@ class AsyncTaskRunner:
                         task_definition_name,
                         next_task.task_id if next_task else None
                     )
+                    if self.metrics_collector is not None:
+                        self.metrics_collector.record_task_update_time(
+                            task_definition_name, time.time() - update_start, status="SUCCESS"
+                        )
                     return next_task
                 else:
                     await self.async_task_client.update_task(body=task_result)
@@ -882,6 +887,10 @@ class AsyncTaskRunner:
                         task_result.workflow_instance_id,
                         task_definition_name,
                     )
+                    if self.metrics_collector is not None:
+                        self.metrics_collector.record_task_update_time(
+                            task_definition_name, time.time() - update_start, status="SUCCESS"
+                        )
                     return None
             except ApiException as e:
                 if e.status in (404, 405) and self._use_update_v2:
@@ -895,12 +904,19 @@ class AsyncTaskRunner:
                     # Retry immediately with v1
                     try:
                         await self.async_task_client.update_task(body=task_result)
+                        if self.metrics_collector is not None:
+                            self.metrics_collector.record_task_update_time(
+                                task_definition_name, time.time() - update_start, status="SUCCESS"
+                            )
                         return None
                     except Exception as fallback_e:
                         last_exception = fallback_e
                         continue
                 last_exception = e
                 if self.metrics_collector is not None:
+                    self.metrics_collector.record_task_update_time(
+                        task_definition_name, time.time() - update_start, status="FAILURE"
+                    )
                     self.metrics_collector.increment_task_update_error(
                         task_definition_name, type(e)
                     )
@@ -917,6 +933,9 @@ class AsyncTaskRunner:
             except Exception as e:
                 last_exception = e
                 if self.metrics_collector is not None:
+                    self.metrics_collector.record_task_update_time(
+                        task_definition_name, time.time() - update_start, status="FAILURE"
+                    )
                     self.metrics_collector.increment_task_update_error(
                         task_definition_name, type(e)
                     )

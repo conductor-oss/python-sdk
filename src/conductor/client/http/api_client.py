@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import datetime
 import logging
@@ -6,7 +8,7 @@ import os
 import re
 import tempfile
 import time
-from typing import Dict
+from typing import Dict, Optional, TYPE_CHECKING
 import uuid
 
 import six
@@ -20,12 +22,14 @@ from conductor.client.http import rest
 from conductor.client.http.rest import AuthorizationException
 from conductor.client.http.thread import AwaitableThread
 
+if TYPE_CHECKING:
+    from conductor.client.telemetry.metrics_collector_base import MetricsCollectorBase
+
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(
         __name__
     )
 )
-
 
 class ApiClient(object):
     PRIMITIVE_TYPES = (float, bool, bytes, six.text_type) + six.integer_types
@@ -46,7 +50,7 @@ class ApiClient(object):
             header_name=None,
             header_value=None,
             cookie=None,
-            metrics_collector=None
+            metrics_collector: Optional[MetricsCollectorBase] = None
     ):
         if configuration is None:
             configuration = Configuration()
@@ -75,14 +79,15 @@ class ApiClient(object):
             query_params=None, header_params=None, body=None, post_params=None,
             files=None, response_type=None, auth_settings=None,
             _return_http_data_only=None, collection_formats=None,
-            _preload_content=True, _request_timeout=None):
+            _preload_content=True, _request_timeout=None, metric_context=None):
         try:
             return self.__call_api_no_retry(
                 resource_path=resource_path, method=method, path_params=path_params,
                 query_params=query_params, header_params=header_params, body=body, post_params=post_params,
                 files=files, response_type=response_type, auth_settings=auth_settings,
                 _return_http_data_only=_return_http_data_only, collection_formats=collection_formats,
-                _preload_content=_preload_content, _request_timeout=_request_timeout
+                _preload_content=_preload_content, _request_timeout=_request_timeout,
+                metric_context=metric_context
             )
         except AuthorizationException as ae:
             if ae.token_expired or ae.invalid_token:
@@ -99,7 +104,8 @@ class ApiClient(object):
                         query_params=query_params, header_params=header_params, body=body, post_params=post_params,
                         files=files, response_type=response_type, auth_settings=auth_settings,
                         _return_http_data_only=_return_http_data_only, collection_formats=collection_formats,
-                        _preload_content=_preload_content, _request_timeout=_request_timeout
+                        _preload_content=_preload_content, _request_timeout=_request_timeout,
+                        metric_context=metric_context
                     )
                 else:
                     logger.error('Failed to renew authentication token. Please check your credentials.')
@@ -110,7 +116,7 @@ class ApiClient(object):
             query_params=None, header_params=None, body=None, post_params=None,
             files=None, response_type=None, auth_settings=None,
             _return_http_data_only=None, collection_formats=None,
-            _preload_content=True, _request_timeout=None):
+            _preload_content=True, _request_timeout=None, metric_context=None):
 
         config = self.configuration
 
@@ -123,6 +129,9 @@ class ApiClient(object):
             header_params = self.sanitize_for_serialization(header_params)
             header_params = dict(self.parameters_to_tuples(header_params,
                                                            collection_formats))
+
+        # Save the URI template before path param substitution for metrics
+        metric_uri = resource_path
 
         # path parameters
         if path_params:
@@ -171,7 +180,9 @@ class ApiClient(object):
             method, url, query_params=query_params, headers=header_params,
             post_params=post_params, body=body,
             _preload_content=_preload_content,
-            _request_timeout=_request_timeout)
+            _request_timeout=_request_timeout,
+            metric_uri=metric_uri,
+            metric_context=metric_context)
 
         return_data = response_data
         if _preload_content:
@@ -326,7 +337,7 @@ class ApiClient(object):
                  body=None, post_params=None, files=None,
                  response_type=None, auth_settings=None, async_req=None,
                  _return_http_data_only=None, collection_formats=None,
-                 _preload_content=True, _request_timeout=None):
+                 _preload_content=True, _request_timeout=None, metric_context=None):
         """Makes the HTTP request (synchronous) and returns deserialized data.
 
         To make an async request, set the async_req parameter.
@@ -369,7 +380,8 @@ class ApiClient(object):
                                    body, post_params, files,
                                    response_type, auth_settings,
                                    _return_http_data_only, collection_formats,
-                                   _preload_content, _request_timeout)
+                                   _preload_content, _request_timeout,
+                                   metric_context)
         thread = AwaitableThread(
             target=self.__call_api,
             args=(
@@ -378,15 +390,36 @@ class ApiClient(object):
                 body, post_params, files,
                 response_type, auth_settings,
                 _return_http_data_only, collection_formats,
-                _preload_content, _request_timeout
+                _preload_content, _request_timeout,
+                metric_context
             )
         )
         thread.start()
         return thread
 
+    def _safe_record_api_request_time(self, method, uri, status, time_spent,
+                                      metric_uri):
+        """Record the api-request metric without ever raising.
+
+        Metrics are best-effort instrumentation; a failure here must not
+        propagate and take down the actual API call.
+        """
+        if self.metrics_collector is None:
+            return
+        try:
+            self.metrics_collector.record_api_request_time(
+                method=method,
+                uri=uri,
+                status=status,
+                time_spent=time_spent,
+                metric_uri=metric_uri,
+            )
+        except Exception as e:
+            logger.debug(f'Failed to record api request metric (ignored): {e}')
+
     def request(self, method, url, query_params=None, headers=None,
                 post_params=None, body=None, _preload_content=True,
-                _request_timeout=None):
+                _request_timeout=None, metric_uri=None, metric_context=None):
         """Makes the HTTP request using RESTClient."""
         # Extract URI path from URL (remove query params and domain)
         try:
@@ -461,15 +494,27 @@ class ApiClient(object):
             # Extract status code from response
             status_code = str(response.status) if hasattr(response, 'status') else "200"
 
-            # Record metrics
+            # Record metrics. A metrics failure must never turn a successful
+            # request into a failed one, so the emit is isolated.
             if self.metrics_collector is not None:
                 elapsed_time = time.time() - start_time
-                self.metrics_collector.record_api_request_time(
-                    method=method,
-                    uri=uri,
-                    status=status_code,
-                    time_spent=elapsed_time
+                self._safe_record_api_request_time(
+                    method, uri, status_code, elapsed_time, metric_uri,
                 )
+
+                # Record workflow input payload size when the caller supplies
+                # workflow metadata (only the start-workflow paths do). The size
+                # was computed once in rest.py and lives on the response.
+                if metric_context is not None:
+                    try:
+                        size = getattr(response, 'request_body_size', 0)
+                        self.metrics_collector.record_workflow_input_payload_size(
+                            metric_context["workflow_name"],
+                            metric_context["version"],
+                            size,
+                        )
+                    except Exception:
+                        pass
 
             return response
 
@@ -482,14 +527,12 @@ class ApiClient(object):
             else:
                 status_code = "error"
 
-            # Record metrics for failed requests
+            # Record metrics for failed requests. Guard the emit so a metrics
+            # error can't mask the original request exception below.
             if self.metrics_collector is not None:
                 elapsed_time = time.time() - start_time
-                self.metrics_collector.record_api_request_time(
-                    method=method,
-                    uri=uri,
-                    status=status_code,
-                    time_spent=elapsed_time
+                self._safe_record_api_request_time(
+                    method, uri, status_code, elapsed_time, metric_uri,
                 )
 
             # Re-raise the exception

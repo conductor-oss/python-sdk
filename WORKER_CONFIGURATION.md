@@ -330,7 +330,6 @@ export conductor.worker.process_order.paused=true
 When a worker is paused:
 - It stops polling for new tasks
 - Already-executing tasks complete normally
-- The `task_paused_total` metric is incremented for each skipped poll
 - No code changes or process restarts required
 
 **Use cases:**
@@ -346,11 +345,7 @@ unset conductor.worker.all.paused
 export conductor.worker.all.paused=false
 ```
 
-**Monitor paused workers** using the `task_paused_total` metric:
-```promql
-# Check how many times workers were paused
-task_paused_total{taskType="process_order"}
-```
+See [METRICS.md](METRICS.md) for the current Python SDK metrics catalog.
 
 ### Multi-Region Deployment
 

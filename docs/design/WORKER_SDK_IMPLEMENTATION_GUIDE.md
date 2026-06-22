@@ -1789,44 +1789,15 @@ Response: void
 
 ## 15. Metrics & Monitoring
 
-### 15.1 Required Metrics
+The Python SDK's current metrics behavior is documented in
+[`../../METRICS.md`](../../METRICS.md). That file is the source of truth for:
 
-**Via Event System (Recommended):**
+- Enabling metrics with `MetricsSettings`
+- Selecting canonical metrics with `WORKER_CANONICAL_METRICS`
+- The complete legacy and canonical Prometheus catalogs
+- Migration guidance from legacy quantile gauges to canonical histograms
 
-Implement MetricsCollector as EventListener:
-
-```
-class MetricsCollector implements TaskRunnerEventsListener {
-    on_poll_started(event):
-        increment_counter("task_poll_total", labels={taskType: event.taskType})
-
-    on_poll_completed(event):
-        record_histogram("task_poll_time_seconds", event.durationMs / 1000)
-        increment_counter("task_poll_total", labels={taskType: event.taskType})
-
-    on_task_execution_completed(event):
-        record_histogram("task_execute_time_seconds", event.durationMs / 1000)
-        record_histogram("task_result_size_bytes", event.outputSizeBytes)
-
-    on_task_execution_failure(event):
-        increment_counter("task_execute_error_total",
-            labels={taskType: event.taskType, exception: event.cause.type})
-
-    on_task_update_failure(event):
-        increment_counter("task_update_failed_total",
-            labels={taskType: event.taskType})
-        // CRITICAL: Alert operations team
-}
-```
-
-**Metric Names (Prometheus format):**
-- `task_poll_total{taskType}`
-- `task_poll_time_seconds{taskType,quantile}`
-- `task_execute_time_seconds{taskType,quantile}`
-- `task_execute_error_total{taskType,exception}`
-- `task_result_size_bytes{taskType,quantile}`
-- `task_update_error_total{taskType,exception}`
-- `task_update_failed_total{taskType}` ← CRITICAL metric
+Do not duplicate metric names or PromQL examples in this implementation guide.
 
 ---
 

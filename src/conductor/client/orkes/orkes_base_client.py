@@ -1,6 +1,12 @@
+from __future__ import annotations
+
 import logging
+from typing import Optional, TYPE_CHECKING
 
 from conductor.client.configuration.configuration import Configuration
+
+if TYPE_CHECKING:
+    from conductor.client.telemetry.metrics_collector_base import MetricsCollectorBase
 from conductor.client.http.api.application_resource_api import ApplicationResourceApi
 from conductor.client.http.api.authorization_resource_api import AuthorizationResourceApi
 from conductor.client.http.api.gateway_auth_resource_api import GatewayAuthResourceApi
@@ -22,8 +28,9 @@ from conductor.client.orkes.api.tags_api import TagsApi
 
 
 class OrkesBaseClient(object):
-    def __init__(self, configuration: Configuration):
-        self.api_client = ApiClient(configuration)
+    def __init__(self, configuration: Configuration, metrics_collector: Optional[MetricsCollectorBase] = None):
+        self.metrics_collector = metrics_collector
+        self.api_client = ApiClient(configuration, metrics_collector=metrics_collector)
         self.logger = logging.getLogger(
             Configuration.get_logging_formatted_name(__name__)
         )

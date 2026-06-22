@@ -29,6 +29,7 @@ class RESTResponse:
         self.reason = getattr(resp, 'reason_phrase', '') or self._get_reason_phrase(resp.status_code)
         self.data = resp.text                # eagerly read body
         self.headers = resp.headers
+        self.request_body_size = 0
         # Break httpx Response <-> BoundSyncStream reference cycle (issue #395)
         resp.stream = None
         try:
@@ -222,36 +223,42 @@ class RESTClientObject(object):
                     "httpx client was closed before request; re-established a fresh client"
                 )
 
+        # Serialize the request body once, before the retry loop.
+        # The body never changes between attempts; only the httpx client does.
+        request_body = None
+        request_body_size = 0
+        request_url = url
+        has_body = method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']
+
+        if has_body:
+            if query_params:
+                request_url = url + '?' + urlencode(query_params)
+            if re.search('json', headers['Content-Type'], re.IGNORECASE) or isinstance(body, str):
+                request_body = '{}'
+                if body is not None:
+                    request_body = json.dumps(body)
+                    if isinstance(body, str):
+                        request_body = request_body.strip('"')
+                request_body_size = len(request_body.encode('utf-8'))
+            else:
+                msg = """Cannot prepare a request message for provided
+                         arguments. Please check that your arguments match
+                         declared content type."""
+                raise ApiException(status=0, reason=msg)
+
         for attempt in range(2):
             # Snapshot the client we're about to use so that if the request
             # fails we can ask for a reset only if the client is still this
             # one (i.e. nobody else healed it in the meantime).
             client_at_send = self.connection
             try:
-                # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
-                if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
-                    request_url = url
-                    if query_params:
-                        request_url += '?' + urlencode(query_params)
-                    if re.search('json', headers['Content-Type'], re.IGNORECASE) or isinstance(body, str):
-                        request_body = '{}'
-                        if body is not None:
-                            request_body = json.dumps(body)
-                            if isinstance(body, str):
-                                request_body = request_body.strip('"')
-                        r = client_at_send.request(
-                            method, request_url,
-                            content=request_body,
-                            timeout=timeout,
-                            headers=headers
-                        )
-                    else:
-                        # Cannot generate the request from given parameters
-                        msg = """Cannot prepare a request message for provided
-                                 arguments. Please check that your arguments match
-                                 declared content type."""
-                        raise ApiException(status=0, reason=msg)
-                # For `GET`, `HEAD`
+                if has_body:
+                    r = client_at_send.request(
+                        method, request_url,
+                        content=request_body,
+                        timeout=timeout,
+                        headers=headers
+                    )
                 else:
                     r = client_at_send.request(
                         method, url,
@@ -312,6 +319,7 @@ class RESTClientObject(object):
 
         if _preload_content:
             r = RESTResponse(r)
+            r.request_body_size = request_body_size
 
         if r.status == 401 or r.status == 403:
             raise AuthorizationException(http_resp=r)

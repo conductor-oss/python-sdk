@@ -9,11 +9,13 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.http.models.task_def import TaskDef
 from conductor.client.orkes_clients import OrkesClients
+from conductor.client.telemetry.metrics_factory import create_metrics_collector
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.task.simple_task import SimpleTask
 
 from simulated_task_worker import SimulatedTaskWorker
 from workflow_governor import WorkflowGovernor
+from workflow_status_probe import WorkflowStatusProbe
 
 WORKFLOW_NAME = "python_simulated_tasks_workflow"
 
@@ -67,7 +69,17 @@ def register_metadata(clients: OrkesClients) -> None:
 
 def main() -> None:
     configuration = Configuration()
-    clients = OrkesClients(configuration)
+
+    metrics_port = env_int_or_default("HARNESS_METRICS_PORT", 9991)
+    metrics_settings = MetricsSettings(
+        http_port=metrics_port,
+        clean_directory=True,
+        clean_dead_pids=True,
+    )
+
+    metrics_collector = create_metrics_collector(metrics_settings)
+    print(f"Prometheus metrics server started on port {metrics_port} ({metrics_collector.collector_name()} metrics)")
+    clients = OrkesClients(configuration, metrics_collector=metrics_collector)
 
     register_metadata(clients)
 
@@ -80,10 +92,6 @@ def main() -> None:
         worker = SimulatedTaskWorker(task_name, codename, sleep_seconds, batch_size, poll_interval_ms)
         workers.append(worker)
 
-    metrics_port = env_int_or_default("HARNESS_METRICS_PORT", 9991)
-    metrics_settings = MetricsSettings(http_port=metrics_port)
-    print(f"Prometheus metrics will be served on port {metrics_port}")
-
     task_handler = TaskHandler(
         workers=workers,
         configuration=configuration,
@@ -92,8 +100,15 @@ def main() -> None:
     )
 
     workflow_executor = clients.get_workflow_executor()
-    governor = WorkflowGovernor(workflow_executor, WORKFLOW_NAME, workflows_per_sec)
-    governor.start()
+    workflow_client = clients.get_workflow_client()
+
+    probe_rate = env_int_or_default("HARNESS_PROBE_RATE_PER_SEC", 0)
+    probe = WorkflowStatusProbe(workflow_client, probe_rate)
+
+    governor = WorkflowGovernor(
+        workflow_executor, WORKFLOW_NAME, workflows_per_sec,
+        id_sink=probe.offer,
+    )
 
     main_pid = os.getpid()
     shutting_down = False
@@ -104,6 +119,7 @@ def main() -> None:
             return
         shutting_down = True
         print("Shutting down...")
+        probe.shutdown()
         governor.stop()
         task_handler.stop_processes()
         sys.exit(0)
@@ -111,7 +127,14 @@ def main() -> None:
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
+    # Fork worker processes BEFORE starting the governor thread. The parent's
+    # MetricsCollector uses prometheus_client's multiprocess mode, which guards
+    # its mmapped value files with a threading.Lock. If the governor thread is
+    # already running at fork() time, a child can inherit that lock in a held
+    # state and deadlock on its first metric write.
     task_handler.start_processes()
+    probe.start()
+    governor.start()
     task_handler.join_processes()
 
 

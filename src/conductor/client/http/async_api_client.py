@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import datetime
 import logging
@@ -6,7 +8,7 @@ import os
 import re
 import tempfile
 import time
-from typing import Dict
+from typing import Dict, Optional, TYPE_CHECKING
 import uuid
 
 import six
@@ -18,6 +20,9 @@ import conductor.client.http.models as http_models
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http import async_rest
 from conductor.client.http.async_rest import AuthorizationException
+
+if TYPE_CHECKING:
+    from conductor.client.telemetry.metrics_collector_base import MetricsCollectorBase
 
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(
@@ -47,7 +52,7 @@ class AsyncApiClient(object):
             header_name=None,
             header_value=None,
             cookie=None,
-            metrics_collector=None
+            metrics_collector: Optional[MetricsCollectorBase] = None
     ):
         if configuration is None:
             configuration = Configuration()
@@ -135,6 +140,9 @@ class AsyncApiClient(object):
             header_params = dict(self.parameters_to_tuples(header_params,
                                                            collection_formats))
 
+        # Save the URI template before path param substitution for metrics
+        metric_uri = resource_path
+
         # path parameters
         if path_params:
             path_params = self.sanitize_for_serialization(path_params)
@@ -182,7 +190,8 @@ class AsyncApiClient(object):
             method, url, query_params=query_params, headers=header_params,
             post_params=post_params, body=body,
             _preload_content=_preload_content,
-            _request_timeout=_request_timeout)
+            _request_timeout=_request_timeout,
+            metric_uri=metric_uri)
 
         return_data = response_data
         if _preload_content:
@@ -374,9 +383,29 @@ class AsyncApiClient(object):
                                _return_http_data_only, collection_formats,
                                _preload_content, _request_timeout)
 
+    def _safe_record_api_request_time(self, method, uri, status, time_spent,
+                                      metric_uri):
+        """Record the api-request metric without ever raising.
+
+        Metrics are best-effort instrumentation; a failure here must not
+        propagate and take down the actual API call.
+        """
+        if self.metrics_collector is None:
+            return
+        try:
+            self.metrics_collector.record_api_request_time(
+                method=method,
+                uri=uri,
+                status=status,
+                time_spent=time_spent,
+                metric_uri=metric_uri,
+            )
+        except Exception as e:
+            logger.debug(f'Failed to record api request metric (ignored): {e}')
+
     async def request(self, method, url, query_params=None, headers=None,
                 post_params=None, body=None, _preload_content=True,
-                _request_timeout=None):
+                _request_timeout=None, metric_uri=None):
         """Makes the async HTTP request using AsyncRESTClient."""
         # Extract URI path from URL (remove query params and domain)
         try:
@@ -451,14 +480,12 @@ class AsyncApiClient(object):
             # Extract status code from response
             status_code = str(response.status) if hasattr(response, 'status') else "200"
 
-            # Record metrics
+            # Record metrics. A metrics failure must never turn a successful
+            # request into a failed one, so the emit is isolated.
             if self.metrics_collector is not None:
                 elapsed_time = time.time() - start_time
-                self.metrics_collector.record_api_request_time(
-                    method=method,
-                    uri=uri,
-                    status=status_code,
-                    time_spent=elapsed_time
+                self._safe_record_api_request_time(
+                    method, uri, status_code, elapsed_time, metric_uri,
                 )
 
             return response
@@ -472,14 +499,12 @@ class AsyncApiClient(object):
             else:
                 status_code = "error"
 
-            # Record metrics for failed requests
+            # Record metrics for failed requests. Guard the emit so a metrics
+            # error can't mask the original request exception below.
             if self.metrics_collector is not None:
                 elapsed_time = time.time() - start_time
-                self.metrics_collector.record_api_request_time(
-                    method=method,
-                    uri=uri,
-                    status=status_code,
-                    time_spent=elapsed_time
+                self._safe_record_api_request_time(
+                    method, uri, status_code, elapsed_time, metric_uri,
                 )
 
             # Re-raise the exception

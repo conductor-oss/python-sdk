@@ -1,5 +1,11 @@
 # Event-Driven Interceptor System - Design Document
 
+> Historical design note: this document describes the event-driven interceptor
+> design and includes some pre-harmonization metrics examples. The current
+> Python SDK metrics setup, complete legacy and canonical catalogs,
+> `WORKER_CANONICAL_METRICS` behavior, and migration guidance are maintained in
+> [`../../METRICS.md`](../../METRICS.md).
+
 ## Table of Contents
 - [Overview](#overview)
 - [Current State Analysis](#current-state-analysis)
@@ -53,28 +59,10 @@ Design and implement an event-driven interceptor system that:
 
 ### Existing Metrics System
 
-**Location**: `src/conductor/client/telemetry/metrics_collector.py`
-
-```python
-class MetricsCollector:
-    def __init__(self, settings: MetricsSettings):
-        os.environ["PROMETHEUS_MULTIPROC_DIR"] = settings.directory
-        MultiProcessCollector(self.registry)
-
-    def increment_task_poll(self, task_type: str) -> None:
-        self.__increment_counter(
-            name=MetricName.TASK_POLL,
-            documentation=MetricDocumentation.TASK_POLL,
-            labels={MetricLabel.TASK_TYPE: task_type}
-        )
-```
-
-**Current Usage** in `task_runner_asyncio.py`:
-
-```python
-if self.metrics_collector is not None:
-    self.metrics_collector.increment_task_poll(task_definition_name)
-```
+The original design coupled task runner code directly to a metrics collector.
+The current implementation now routes metrics through telemetry collector
+classes and worker/client events. See [`../../METRICS.md`](../../METRICS.md) for
+current setup and metric names.
 
 ### Problems with Current Approach
 
@@ -86,18 +74,10 @@ if self.metrics_collector is not None:
 | Limited data | Can't access full context | Medium |
 | No filtering | All-or-nothing | Low |
 
-### Available Metrics (Current)
+### Current Metrics Reference
 
-**Counters:**
-- `task_poll`, `task_poll_error`, `task_execution_queue_full`
-- `task_execute_error`, `task_ack_error`, `task_ack_failed`
-- `task_update_error`, `task_paused`
-- `thread_uncaught_exceptions`, `workflow_start_error`
-- `external_payload_used`
-
-**Gauges:**
-- `task_poll_time`, `task_execute_time`
-- `task_result_size`, `workflow_input_size`
+The current Prometheus metric names, labels, and legacy/canonical mode behavior
+are maintained in [`../../METRICS.md`](../../METRICS.md).
 
 ---
 
@@ -760,13 +740,12 @@ class TaskResultSize(TaskClientEvent):
 
 ## Metrics Collection Flow
 
-### Old Flow (Current)
+### Earlier Direct Flow
 
 ```
 TaskRunner.poll_tasks()
-    └─> metrics_collector.increment_task_poll(task_type)
-        └─> counter.labels(task_type).inc()
-            └─> Prometheus registry
+    └─> direct metrics collector call
+        └─> Prometheus registry
 ```
 
 **Problems:**
@@ -774,14 +753,13 @@ TaskRunner.poll_tasks()
 - Synchronous call
 - Can't add custom logic without modifying SDK
 
-### New Flow (Proposed)
+### Event-Driven Flow
 
 ```
 TaskRunner.poll_tasks()
     └─> event_dispatcher.publish(PollStarted(...))
         └─> asyncio.create_task(dispatch_to_listeners())
-            ├─> PrometheusCollector.on_poll_started()
-            │   └─> counter.labels(task_type).inc()
+            ├─> Metrics listener
             ├─> DatadogCollector.on_poll_started()
             │   └─> datadog.increment('poll.started')
             └─> CustomListener.on_poll_started()
@@ -796,15 +774,7 @@ TaskRunner.poll_tasks()
 
 ### Integration with TaskRunnerAsyncIO
 
-**Current code** (`task_runner_asyncio.py`):
-
-```python
-# OLD - Direct metrics call
-if self.metrics_collector is not None:
-    self.metrics_collector.increment_task_poll(task_definition_name)
-```
-
-**New code** (with events):
+**Event publishing:**
 
 ```python
 # NEW - Event publishing
@@ -815,211 +785,12 @@ self.event_dispatcher.publish(PollStarted(
 ))
 ```
 
-### Adapter Pattern for Backward Compatibility
+### Current Metrics Implementation
 
-**Location**: `src/conductor/client/telemetry/metrics_collector_adapter.py`
-
-```python
-"""
-Adapter to make old MetricsCollector work with new event system.
-"""
-
-from conductor.client.telemetry.metrics_collector import MetricsCollector as OldMetricsCollector
-from conductor.client.events.listeners import MetricsCollector as NewMetricsCollector
-from conductor.client.events.task_runner_events import *
-
-
-class MetricsCollectorAdapter(NewMetricsCollector):
-    """
-    Adapter that wraps old MetricsCollector and implements new protocol.
-
-    This allows existing metrics collection to work with new event system
-    without any code changes.
-    """
-
-    def __init__(self, old_collector: OldMetricsCollector):
-        self.collector = old_collector
-
-    def on_poll_started(self, event: PollStarted) -> None:
-        self.collector.increment_task_poll(event.task_type)
-
-    def on_poll_completed(self, event: PollCompleted) -> None:
-        self.collector.record_task_poll_time(event.task_type, event.duration_ms / 1000.0)
-
-    def on_poll_failure(self, event: PollFailure) -> None:
-        # Create exception-like object for old API
-        error = type(event.error_type, (Exception,), {})()
-        self.collector.increment_task_poll_error(event.task_type, error)
-
-    def on_task_execution_started(self, event: TaskExecutionStarted) -> None:
-        # Old collector doesn't have this metric
-        pass
-
-    def on_task_execution_completed(self, event: TaskExecutionCompleted) -> None:
-        self.collector.record_task_execute_time(
-            event.task_type,
-            event.duration_ms / 1000.0
-        )
-
-    def on_task_execution_failure(self, event: TaskExecutionFailure) -> None:
-        error = type(event.error_type, (Exception,), {})()
-        self.collector.increment_task_execution_error(event.task_type, error)
-
-    # Implement other protocol methods...
-```
-
-### New Prometheus Collector (Reference Implementation)
-
-**Location**: `src/conductor/client/telemetry/prometheus/prometheus_metrics_collector.py`
-
-```python
-"""
-Reference implementation: Prometheus metrics collector using event system.
-"""
-
-from typing import Optional
-from prometheus_client import Counter, Histogram, CollectorRegistry
-from conductor.client.events.listeners import MetricsCollector
-from conductor.client.events.task_runner_events import *
-from conductor.client.events.workflow_events import *
-from conductor.client.events.task_client_events import *
-
-
-class PrometheusMetricsCollector(MetricsCollector):
-    """
-    Prometheus metrics collector implementing the MetricsCollector protocol.
-
-    Exposes metrics in Prometheus format for scraping.
-
-    Usage:
-        collector = PrometheusMetricsCollector()
-
-        # Register with task handler
-        handler = TaskHandler(
-            configuration=config,
-            event_listeners=[collector]
-        )
-    """
-
-    def __init__(
-        self,
-        registry: Optional[CollectorRegistry] = None,
-        namespace: str = "conductor"
-    ):
-        self.registry = registry or CollectorRegistry()
-        self.namespace = namespace
-
-        # Define metrics
-        self._poll_started_counter = Counter(
-            f'{namespace}_task_poll_started_total',
-            'Total number of task polling attempts',
-            ['task_type', 'worker_id'],
-            registry=self.registry
-        )
-
-        self._poll_duration_histogram = Histogram(
-            f'{namespace}_task_poll_duration_seconds',
-            'Task polling duration in seconds',
-            ['task_type', 'status'],  # status: success, failure
-            registry=self.registry
-        )
-
-        self._task_execution_started_counter = Counter(
-            f'{namespace}_task_execution_started_total',
-            'Total number of task executions started',
-            ['task_type', 'worker_id'],
-            registry=self.registry
-        )
-
-        self._task_execution_duration_histogram = Histogram(
-            f'{namespace}_task_execution_duration_seconds',
-            'Task execution duration in seconds',
-            ['task_type', 'status'],  # status: completed, failed
-            registry=self.registry
-        )
-
-        self._task_execution_failure_counter = Counter(
-            f'{namespace}_task_execution_failures_total',
-            'Total number of task execution failures',
-            ['task_type', 'error_type', 'retryable'],
-            registry=self.registry
-        )
-
-        self._workflow_started_counter = Counter(
-            f'{namespace}_workflow_started_total',
-            'Total number of workflow start attempts',
-            ['workflow_name', 'status'],  # status: success, failure
-            registry=self.registry
-        )
-
-    # Task Runner Event Handlers
-
-    def on_poll_started(self, event: PollStarted) -> None:
-        self._poll_started_counter.labels(
-            task_type=event.task_type,
-            worker_id=event.worker_id
-        ).inc()
-
-    def on_poll_completed(self, event: PollCompleted) -> None:
-        self._poll_duration_histogram.labels(
-            task_type=event.task_type,
-            status='success'
-        ).observe(event.duration_ms / 1000.0)
-
-    def on_poll_failure(self, event: PollFailure) -> None:
-        self._poll_duration_histogram.labels(
-            task_type=event.task_type,
-            status='failure'
-        ).observe(event.duration_ms / 1000.0)
-
-    def on_task_execution_started(self, event: TaskExecutionStarted) -> None:
-        self._task_execution_started_counter.labels(
-            task_type=event.task_type,
-            worker_id=event.worker_id
-        ).inc()
-
-    def on_task_execution_completed(self, event: TaskExecutionCompleted) -> None:
-        self._task_execution_duration_histogram.labels(
-            task_type=event.task_type,
-            status='completed'
-        ).observe(event.duration_ms / 1000.0)
-
-    def on_task_execution_failure(self, event: TaskExecutionFailure) -> None:
-        self._task_execution_duration_histogram.labels(
-            task_type=event.task_type,
-            status='failed'
-        ).observe(event.duration_ms / 1000.0)
-
-        self._task_execution_failure_counter.labels(
-            task_type=event.task_type,
-            error_type=event.error_type,
-            retryable=str(event.is_retryable)
-        ).inc()
-
-    # Workflow Event Handlers
-
-    def on_workflow_started(self, event: WorkflowStarted) -> None:
-        self._workflow_started_counter.labels(
-            workflow_name=event.workflow_name,
-            status='success' if event.success else 'failure'
-        ).inc()
-
-    def on_workflow_input_size(self, event: WorkflowInputSize) -> None:
-        # Could add histogram for input sizes
-        pass
-
-    def on_workflow_payload_used(self, event: WorkflowPayloadUsed) -> None:
-        # Could track external storage usage
-        pass
-
-    # Task Client Event Handlers
-
-    def on_task_payload_used(self, event: TaskPayloadUsed) -> None:
-        pass
-
-    def on_task_result_size(self, event: TaskResultSize) -> None:
-        pass
-```
+The implemented SDK metrics collector is selected by `MetricsSettings` and, for
+canonical mode, `WORKER_CANONICAL_METRICS`. It listens to worker and client
+events through the current telemetry collector classes. See
+[`../../METRICS.md`](../../METRICS.md) for current setup and metric names.
 
 ---
 
@@ -1045,50 +816,45 @@ class PrometheusMetricsCollector(MetricsCollector):
 **Tasks:**
 1. Add event_dispatcher to TaskRunnerAsyncIO
 2. Add event_dispatcher to TaskRunner (multiprocessing)
-3. Publish events alongside existing metrics calls
-4. Create MetricsCollectorAdapter
+3. Publish events for worker lifecycle changes
+4. Register metrics collectors as event listeners
 5. Integration tests
 
-**Backward Compatible**: Both old and new APIs work simultaneously
-
-```python
-# Both work at the same time
-if self.metrics_collector:
-    self.metrics_collector.increment_task_poll(task_type)  # OLD
-
-self.event_dispatcher.publish(PollStarted(...))  # NEW
-```
+**Backward Compatible**: Existing metrics setup continues to work while event
+publishing is introduced.
 
 ### Phase 3: Reference Implementation (Week 3)
 
 **Goal**: New Prometheus collector using events
 
 **Tasks:**
-1. Implement PrometheusMetricsCollector (new)
+1. Implement the built-in metrics collector
 2. Create example collectors (Datadog, CloudWatch)
 3. Documentation and examples
 4. Performance benchmarks
 
-**Backward Compatible**: Users can choose old or new collector
+**Backward Compatible**: Users can select legacy or canonical metrics through
+the documented metrics factory behavior.
 
 ### Phase 4: Deprecation (Future Release)
 
-**Goal**: Mark old API as deprecated
+**Goal**: Deprecate pre-harmonization metric shapes when canonical metrics
+become the default.
 
 **Tasks:**
-1. Add deprecation warnings to old MetricsCollector
-2. Update all examples to use new API
-3. Migration guide
+1. Announce canonical metrics as the default
+2. Update examples to use documented metrics setup
+3. Maintain migration guidance in `METRICS.md`
 
 **Timeline**: 6 months deprecation period
 
 ### Phase 5: Removal (Future Major Version)
 
-**Goal**: Remove old metrics API
+**Goal**: Remove legacy metric shapes in a future major version.
 
 **Tasks:**
-1. Remove old MetricsCollector implementation
-2. Remove adapter
+1. Remove legacy collector implementation
+2. Keep `METRICS.md` aligned with the released surface
 3. Update major version
 
 **Timeline**: Next major version (2.0.0)
@@ -1132,9 +898,9 @@ self.event_dispatcher.publish(PollStarted(...))  # NEW
 - [ ] Publish events (same as AsyncIO)
 - [ ] Handle multiprocess event publishing
 
-**Day 4: Adapter Pattern**
-- [ ] Implement MetricsCollectorAdapter
-- [ ] Tests for adapter
+**Day 4: Compatibility**
+- [ ] Verify existing metrics setup continues to work
+- [ ] Tests for compatibility behavior
 
 **Day 5: Integration Tests**
 - [ ] End-to-end tests with events
@@ -1143,8 +909,8 @@ self.event_dispatcher.publish(PollStarted(...))  # NEW
 
 ### Week 3: Reference Implementation & Examples
 
-**Day 1-2: New Prometheus Collector**
-- [ ] Implement PrometheusMetricsCollector using events
+**Day 1-2: Built-in Metrics Collector**
+- [ ] Implement metrics collection using events
 - [ ] HTTP server for metrics endpoint
 - [ ] Tests
 
@@ -1163,51 +929,29 @@ self.event_dispatcher.publish(PollStarted(...))  # NEW
 
 ## Examples
 
-### Example 1: Basic Usage (Prometheus)
+### Example 1: Current Metrics Usage
 
 ```python
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.automator.task_handler import TaskHandler
-from conductor.client.telemetry.prometheus.prometheus_metrics_collector import (
-    PrometheusMetricsCollector
-)
+from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 
 config = Configuration()
-
-# Create Prometheus collector
-prometheus = PrometheusMetricsCollector()
+metrics_settings = MetricsSettings(directory="/tmp/conductor-metrics", http_port=8000)
 
 # Create task handler with metrics
 with TaskHandler(
     configuration=config,
-    event_listeners=[prometheus]  # NEW API
+    metrics_settings=metrics_settings,
 ) as handler:
     handler.start_processes()
     handler.join_processes()
 ```
 
-### Example 2: Multiple Collectors
+For the current Prometheus metrics catalog and canonical mode selection, see
+[`../../METRICS.md`](../../METRICS.md).
 
-```python
-from conductor.client.telemetry.prometheus.prometheus_metrics_collector import (
-    PrometheusMetricsCollector
-)
-from my_app.metrics.datadog_collector import DatadogCollector
-from my_app.monitoring.sla_monitor import SLAMonitor
-
-# Create multiple collectors
-prometheus = PrometheusMetricsCollector()
-datadog = DatadogCollector(api_key=os.getenv('DATADOG_API_KEY'))
-sla_monitor = SLAMonitor(thresholds={'critical_task': 30.0})
-
-# Register all collectors
-handler = TaskHandler(
-    configuration=config,
-    event_listeners=[prometheus, datadog, sla_monitor]
-)
-```
-
-### Example 3: Custom Event Listener
+### Example 2: Custom Event Listener
 
 ```python
 from conductor.client.events.listeners import TaskRunnerEventsListener
@@ -1240,7 +984,7 @@ handler = TaskHandler(
 )
 ```
 
-### Example 4: Selective Listening (Lambda)
+### Example 3: Selective Listening (Lambda)
 
 ```python
 from conductor.client.events.event_dispatcher import EventDispatcher
@@ -1259,7 +1003,7 @@ dispatcher.register_sync(
 )
 ```
 
-### Example 5: Cost Tracking
+### Example 4: Cost Tracking
 
 ```python
 from decimal import Decimal
@@ -1292,27 +1036,6 @@ cost_tracker = CostTracker({
 handler = TaskHandler(
     configuration=config,
     event_listeners=[cost_tracker]
-)
-```
-
-### Example 6: Backward Compatibility
-
-```python
-from conductor.client.configuration.settings.metrics_settings import MetricsSettings
-from conductor.client.telemetry.metrics_collector import MetricsCollector
-from conductor.client.telemetry.metrics_collector_adapter import MetricsCollectorAdapter
-
-# OLD API (still works)
-metrics_settings = MetricsSettings(directory="/tmp/metrics")
-old_collector = MetricsCollector(metrics_settings)
-
-# Wrap old collector with adapter
-adapter = MetricsCollectorAdapter(old_collector)
-
-# Use with new event system
-handler = TaskHandler(
-    configuration=config,
-    event_listeners=[adapter]  # OLD collector works with NEW system!
 )
 ```
 
@@ -1482,16 +1205,13 @@ prometheus.start_http_server(port=9991, path='/metrics')
 
 ## Appendix A: API Comparison
 
-### Old API (Current)
+### Earlier Direct Metrics API
 
-```python
-# Direct coupling to metrics collector
-if self.metrics_collector:
-    self.metrics_collector.increment_task_poll(task_type)
-    self.metrics_collector.record_task_poll_time(task_type, duration)
-```
+The earlier design coupled task runner code directly to metric recording calls.
+Current user-facing metrics setup is documented in
+[`../../METRICS.md`](../../METRICS.md).
 
-### New API (Proposed)
+### Event-Driven API
 
 ```python
 # Event-driven, decoupled
@@ -1520,11 +1240,8 @@ src/conductor/client/
 │   └── task_client_events.py       # Task client event types
 │
 ├── telemetry/
-│   ├── metrics_collector.py        # OLD (keep for compatibility)
-│   ├── metrics_collector_adapter.py # Adapter for old → new
-│   └── prometheus/
-│       ├── __init__.py
-│       └── prometheus_metrics_collector.py  # NEW reference implementation
+│   ├── metrics_collector.py        # Compatibility shim
+│   └── metrics_collector_base.py   # Shared collector infrastructure
 │
 └── automator/
     ├── task_handler_asyncio.py     # Modified to publish events

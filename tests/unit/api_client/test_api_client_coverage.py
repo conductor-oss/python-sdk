@@ -605,6 +605,39 @@ class TestApiClientCoverage(unittest.TestCase):
                 client.request('GET', 'http://localhost:8080/test')
                 mock_get.assert_called_once()
 
+    def test_request_records_workflow_input_size_with_metric_context(self):
+        """request() records workflow input payload size when metric_context is supplied"""
+        with patch.object(ApiClient, '_ApiClient__refresh_auth_token'):
+            metrics_collector = Mock()
+            client = ApiClient(configuration=self.config, metrics_collector=metrics_collector)
+
+            response = Mock(status=200)
+            response.request_body_size = 123
+            with patch.object(client.rest_client, 'POST', return_value=response):
+                client.request(
+                    'POST', 'http://localhost:8080/api/workflow',
+                    body={'key': 'value'},
+                    metric_uri='/workflow',
+                    metric_context={"workflow_name": "wf", "version": "2"},
+                )
+
+            metrics_collector.record_workflow_input_payload_size.assert_called_once_with(
+                "wf", "2", 123,
+            )
+
+    def test_request_skips_workflow_input_size_without_metric_context(self):
+        """request() does not record workflow input size when metric_context is absent"""
+        with patch.object(ApiClient, '_ApiClient__refresh_auth_token'):
+            metrics_collector = Mock()
+            client = ApiClient(configuration=self.config, metrics_collector=metrics_collector)
+
+            response = Mock(status=200)
+            response.request_body_size = 123
+            with patch.object(client.rest_client, 'POST', return_value=response):
+                client.request('POST', 'http://localhost:8080/api/workflow', body={'key': 'value'})
+
+            metrics_collector.record_workflow_input_payload_size.assert_not_called()
+
     def test_request_head(self):
         """Test request method with HEAD"""
         with patch.object(ApiClient, '_ApiClient__refresh_auth_token'):
@@ -683,6 +716,40 @@ class TestApiClientCoverage(unittest.TestCase):
                 self.assertEqual(call_args[1]['method'], 'GET')
                 self.assertEqual(call_args[1]['status'], '200')
 
+    def test_request_passes_metric_uri_to_collector(self):
+        """metric_uri kwarg is forwarded to record_api_request_time on success."""
+        metrics_collector = Mock()
+        with patch.object(ApiClient, '_ApiClient__refresh_auth_token'):
+            client = ApiClient(configuration=self.config, metrics_collector=metrics_collector)
+
+            with patch.object(client.rest_client, 'GET', return_value=Mock(status=200)):
+                client.request(
+                    'GET', 'http://localhost:8080/api/workflow/test-id',
+                    metric_uri='/api/workflow/{workflowId}',
+                )
+
+                call_args = metrics_collector.record_api_request_time.call_args
+                self.assertEqual(call_args[1]['metric_uri'], '/api/workflow/{workflowId}')
+
+    def test_request_passes_metric_uri_to_collector_on_error(self):
+        """metric_uri kwarg is forwarded to record_api_request_time on error."""
+        metrics_collector = Mock()
+        with patch.object(ApiClient, '_ApiClient__refresh_auth_token'):
+            client = ApiClient(configuration=self.config, metrics_collector=metrics_collector)
+
+            error = Exception('Test error')
+            error.status = 500
+
+            with patch.object(client.rest_client, 'GET', side_effect=error):
+                with self.assertRaises(Exception):
+                    client.request(
+                        'GET', 'http://localhost:8080/api/workflow/test-id',
+                        metric_uri='/api/workflow/{workflowId}',
+                    )
+
+                call_args = metrics_collector.record_api_request_time.call_args
+                self.assertEqual(call_args[1]['metric_uri'], '/api/workflow/{workflowId}')
+
     def test_request_with_metrics_collector_on_error(self):
         """Test request method with metrics collector on error"""
         metrics_collector = Mock()
@@ -715,6 +782,35 @@ class TestApiClientCoverage(unittest.TestCase):
                 metrics_collector.record_api_request_time.assert_called_once()
                 call_args = metrics_collector.record_api_request_time.call_args
                 self.assertEqual(call_args[1]['status'], 'error')
+
+    def test_request_metrics_failure_does_not_break_successful_request(self):
+        """A throwing metrics emit must not turn a success into a failure."""
+        metrics_collector = Mock()
+        metrics_collector.record_api_request_time.side_effect = RuntimeError('metrics boom')
+        with patch.object(ApiClient, '_ApiClient__refresh_auth_token'):
+            client = ApiClient(configuration=self.config, metrics_collector=metrics_collector)
+
+            response = Mock(status=200)
+            with patch.object(client.rest_client, 'GET', return_value=response):
+                result = client.request('GET', 'http://localhost:8080/test')
+
+            self.assertIs(result, response)
+            metrics_collector.record_api_request_time.assert_called_once()
+
+    def test_request_metrics_failure_preserves_original_exception(self):
+        """A throwing metrics emit on the error path must not mask the real error."""
+        metrics_collector = Mock()
+        metrics_collector.record_api_request_time.side_effect = RuntimeError('metrics boom')
+        with patch.object(ApiClient, '_ApiClient__refresh_auth_token'):
+            client = ApiClient(configuration=self.config, metrics_collector=metrics_collector)
+
+            error = ValueError('original request failure')
+            with patch.object(client.rest_client, 'GET', side_effect=error):
+                with self.assertRaises(ValueError) as ctx:
+                    client.request('GET', 'http://localhost:8080/test')
+
+            self.assertIs(ctx.exception, error)
+            metrics_collector.record_api_request_time.assert_called_once()
 
     def test_parameters_to_tuples_with_collection_format_multi(self):
         """Test parameters_to_tuples with multi collection format"""

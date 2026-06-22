@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, TYPE_CHECKING
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models import SkipTaskRequest, WorkflowStatus, \
@@ -14,13 +14,17 @@ from conductor.client.http.models.workflow_test_request import WorkflowTestReque
 from conductor.client.orkes.orkes_base_client import OrkesBaseClient
 from conductor.client.workflow_client import WorkflowClient
 
+if TYPE_CHECKING:
+    from conductor.client.telemetry.metrics_collector_base import MetricsCollectorBase
+
 
 class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
     def __init__(
             self,
-            configuration: Configuration
+            configuration: Configuration,
+            metrics_collector: Optional[MetricsCollectorBase] = None,
     ):
-        super(OrkesWorkflowClient, self).__init__(configuration)
+        super(OrkesWorkflowClient, self).__init__(configuration, metrics_collector=metrics_collector)
 
     def start_workflow_by_name(
             self,
@@ -38,10 +42,49 @@ class OrkesWorkflowClient(OrkesBaseClient, WorkflowClient):
         if priority:
             kwargs.update({"priority": priority})
 
-        return self.workflowResourceApi.start_workflow1(input, name, **kwargs)
+        # Pass workflow metadata down so the API layer can record the input
+        # payload size (computed once during serialization) against the
+        # workflow_type/version labels it would not otherwise know.
+        if self.metrics_collector is not None:
+            version_str = str(version) if version is not None else ""
+            kwargs["metric_context"] = {"workflow_name": name, "version": version_str}
+
+        try:
+            data, _status, _headers = (
+                self.workflowResourceApi.start_workflow1_with_http_info(input, name, **kwargs)
+            )
+        except Exception as e:
+            if self.metrics_collector is not None:
+                try:
+                    self.metrics_collector.measure_workflow_start_error(name, e)
+                except Exception:
+                    pass
+            raise
+
+        return data
 
     def start_workflow(self, start_workflow_request: StartWorkflowRequest) -> str:
-        return self.workflowResourceApi.start_workflow(start_workflow_request)
+        kwargs = {}
+        if self.metrics_collector is not None:
+            version_str = str(start_workflow_request.version) if start_workflow_request.version is not None else ""
+            kwargs["metric_context"] = {
+                "workflow_name": start_workflow_request.name,
+                "version": version_str,
+            }
+
+        try:
+            data, _status, _headers = (
+                self.workflowResourceApi.start_workflow_with_http_info(start_workflow_request, **kwargs)
+            )
+        except Exception as e:
+            if self.metrics_collector is not None:
+                try:
+                    self.metrics_collector.measure_workflow_start_error(start_workflow_request.name, e)
+                except Exception:
+                    pass
+            raise
+
+        return data
 
     def execute_workflow(
             self,
