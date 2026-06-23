@@ -42,12 +42,7 @@ docker run -p 8080:8080 conductoross/conductor:latest
 ```
 The UI will be available at `http://localhost:8080` and the API at `http://localhost:8080/api`
 
-**MacOS / Linux (one-liner):** (If you don't want to use docker, you can install and run the binary directly)
-```shell
-curl -sSL https://raw.githubusercontent.com/conductor-oss/conductor/main/conductor_server.sh | sh
-```
-
-**Conductor CLI**
+**Conductor CLI** (macOS / Linux, if you don't want to use Docker)
 ```shell
 # Installs conductor cli
 npm install -g @conductor-oss/conductor-cli

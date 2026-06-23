@@ -663,11 +663,18 @@ class TestTaskHandlerContextManager(unittest.TestCase):
 
     @patch('conductor.client.automator.task_handler._setup_logging_queue')
     @patch('importlib.import_module')
-    def test_context_manager_exit(self, mock_import, mock_logging):
+    @patch('conductor.client.automator.task_handler.Process')
+    def test_context_manager_exit(self, mock_process_class, mock_import, mock_logging):
         """Test context manager __exit__ method."""
         mock_queue = Mock()
         mock_logger_process = Mock()
         mock_logging.return_value = (mock_logger_process, mock_queue)
+
+        mock_process = Mock()
+        mock_process.terminate = Mock()
+        mock_process.kill = Mock()
+        mock_process.is_alive = Mock(return_value=False)
+        mock_process_class.return_value = mock_process
 
         worker = ClassWorker('test_task')
         handler = TaskHandler(
@@ -679,10 +686,16 @@ class TestTaskHandlerContextManager(unittest.TestCase):
         # Override the queue and logger_process with fresh mocks
         handler.queue = Mock()
         handler.logger_process = Mock()
+        handler.logger_process.is_alive = Mock(return_value=False)
+        handler.metrics_provider_process = Mock()
+        handler.metrics_provider_process.terminate = Mock()
+        handler.metrics_provider_process.is_alive = Mock(return_value=False)
 
         # Mock terminate on all processes
         for process in handler.task_runner_processes:
             process.terminate = Mock()
+            process.kill = Mock()
+            process.is_alive = Mock(return_value=False)
 
         with handler:
             pass
