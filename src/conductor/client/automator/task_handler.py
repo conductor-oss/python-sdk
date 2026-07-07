@@ -4,10 +4,11 @@ import importlib
 import inspect
 import logging
 import os
+import pickle
 import signal
 import threading
 import time
-from multiprocessing import Process, freeze_support, Queue, set_start_method
+from multiprocessing import Process, freeze_support, Queue, set_start_method, get_start_method
 from sys import platform
 from typing import List, Optional, Any, Dict
 
@@ -37,12 +38,25 @@ _VALID_MP_START_METHODS = {"spawn", "fork", "forkserver"}
 _mp_fork_set = False
 if not _mp_fork_set:
     try:
-        # The prometheus_client library holds a module-level threading lock;
-        # forking while that lock is held causes a deadlock in child processes.
-        # Set CONDUCTOR_MP_START_METHOD=spawn to avoid this if you hit the
-        # deadlock.  Default is fork for backward compatibility (spawn requires
-        # all Process arguments to be picklable).
-        _default_method = "spawn" if platform == "win32" else "fork"
+        # Default start method: "spawn" on every platform.
+        #
+        # fork() is fundamentally unsafe in a process that holds native
+        # framework state or non-main threads:
+        #   - macOS: Apple frameworks (CFNetwork, Security, libdispatch) may
+        #     SIGSEGV in forked children, producing silently-restarting worker
+        #     processes with exitcode=-11. CPython switched its own macOS
+        #     default to spawn in 3.8 for the same reason (bpo-33725).
+        #   - all POSIX: forking while another thread holds a lock (e.g. the
+        #     prometheus_client module-level lock, or the TaskHandler monitor
+        #     thread restarting a worker) leaves that lock permanently held in
+        #     the child -> silent deadlock.
+        # Workers (including the @worker_task decorator path) are pickle-safe,
+        # so spawn works everywhere. Deployments that rely on fork's
+        # copy-on-write inheritance can opt back in with
+        # CONDUCTOR_MP_START_METHOD=fork (re-exposing the hazards above).
+        # NOTE: spawn requires the standard `if __name__ == "__main__":` guard
+        # in the entrypoint script.
+        _default_method = "spawn"
         _method = os.environ.get("CONDUCTOR_MP_START_METHOD", "").strip().lower() or _default_method
         if _method not in _VALID_MP_START_METHODS:
             logger.warning(
@@ -341,8 +355,26 @@ class TaskHandler:
         logger.info("Starting worker processes...")
         freeze_support()
         self._monitor_stop_event.clear()
-        self.__start_task_runner_processes()
-        self.__start_metrics_provider_process()
+        try:
+            self.__start_task_runner_processes()
+            self.__start_metrics_provider_process()
+        except (TypeError, pickle.PicklingError, AttributeError) as e:
+            # Under the 'spawn'/'forkserver' start methods, Process arguments
+            # are pickled at start(); unpicklable state fails here. Clean up
+            # everything already started - otherwise the non-daemon logger
+            # subprocess keeps the interpreter alive forever after the
+            # exception (observed as a hang after "cannot pickle
+            # '_thread.lock' object").
+            logger.error(
+                "Failed to start worker processes with start method %r: %s. "
+                "Workers must be defined at module level (not nested inside "
+                "functions), and configuration, metrics_settings and "
+                "event_listeners must be picklable. "
+                "See https://github.com/conductor-oss/conductor-python/issues/264",
+                get_start_method(allow_none=True), e,
+            )
+            self.stop_processes()
+            raise
         self.__start_monitor_thread()
         logger.info("Started all processes")
 
@@ -445,6 +477,21 @@ class TaskHandler:
                 worker = self.workers[i] if i < len(self.workers) else None
                 worker_name = worker.get_task_definition_name() if worker is not None else f"worker[{i}]"
                 logger.warning("Worker process exited (worker=%s, pid=%s, exitcode=%s)", worker_name, process.pid, exitcode)
+                if exitcode < 0:
+                    # Negative exitcode == killed by signal (e.g. -11 is
+                    # SIGSEGV). Under the 'fork' start method this is the
+                    # classic symptom of fork-unsafe native libraries in the
+                    # parent (Apple frameworks on macOS, numpy/Accelerate,
+                    # grpc, ...).
+                    logger.warning(
+                        "Worker process %s was killed by signal %s. If this "
+                        "repeats on every restart, the process is likely "
+                        "crashing at startup: use the 'spawn' start method "
+                        "(CONDUCTOR_MP_START_METHOD=spawn, the default) and "
+                        "set PYTHONFAULTHANDLER=1 to capture the crashing "
+                        "stack trace.",
+                        worker_name, -exitcode,
+                    )
                 if not self.restart_on_failure:
                     continue
                 self.__restart_worker_process(i)
