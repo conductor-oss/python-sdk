@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from conductor.client.http.models.task_result import TaskResult
+from conductor.client.http.models.task_result_status import TaskResultStatus
 
 logger = logging.getLogger(__name__)
 
@@ -196,6 +197,7 @@ class LeaseManager:
             task_id=info.task_id,
             workflow_instance_id=info.workflow_instance_id,
             extend_lease=True,
+            status=TaskResultStatus.IN_PROGRESS,
         )
         for attempt in range(LEASE_EXTEND_RETRY_COUNT):
             try:
