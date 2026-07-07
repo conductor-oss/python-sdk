@@ -83,6 +83,14 @@ See [agentic_workflows/](agentic_workflows/) for the full set of AI agent exampl
 
 ---
 
+### AI Agents
+
+Durable agent authoring (`Agent`, `AgentRuntime`, tools, guardrails, handoffs, multi-agent
+strategies) — a separate, more extensive catalog of 270+ examples, requiring
+`pip install 'conductor-python[agents]'`. See [agents/README.md](agents/README.md).
+
+---
+
 ### Monitoring
 
 | File | Description | Run |
@@ -406,6 +414,7 @@ export conductor.worker.all.thread_count=20
 - [Task Management API](../docs/TASK_MANAGEMENT.md) - Task operations (11 APIs)
 - [Workflow API](../docs/WORKFLOW.md) - Workflow operations
 - [Integration API](../docs/INTEGRATION.md) - AI/LLM provider integrations
+- [AI Agents](../docs/agents/README.md) - Durable agent authoring: `Agent`, `AgentRuntime`, tools, guardrails, handoffs
 
 ### Design Documents
 - [Worker Design](../docs/design/WORKER_DESIGN.md) - Complete architecture guide
