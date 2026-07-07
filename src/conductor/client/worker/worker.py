@@ -2,8 +2,10 @@ from __future__ import annotations
 import asyncio
 import atexit
 import dataclasses
+import importlib
 import inspect
 import logging
+import sys
 import threading
 import time
 import traceback
@@ -275,6 +277,79 @@ class BackgroundEventLoop:
         logger.debug("Background event loop stopped")
 
 
+class _ExecuteFunctionReference:
+    """Pickle surrogate for functions whose module-level name was rebound.
+
+    The ``@worker_task`` decorator registers the *original* function but rebinds
+    the module-level name to its wrapper. Standard pickle-by-reference then
+    fails with ``PicklingError: it's not the same object as module.name`` when
+    the ``spawn``/``forkserver`` start methods pickle Process arguments
+    (GitHub issues #264/#271).
+
+    Instead of the raw function we pickle ``(module, qualname, unwrap_depth)``
+    and re-resolve in the child process: import the module, walk the qualname,
+    then follow ``__wrapped__`` (set by ``functools.wraps``) ``unwrap_depth``
+    times to get back to the registered function.
+    """
+
+    __slots__ = ("module_name", "qualname", "unwrap_depth")
+
+    def __init__(self, module_name: str, qualname: str, unwrap_depth: int):
+        self.module_name = module_name
+        self.qualname = qualname
+        self.unwrap_depth = unwrap_depth
+
+    def resolve(self) -> Callable:
+        module = importlib.import_module(self.module_name)
+        obj: Any = module
+        for part in self.qualname.split("."):
+            obj = getattr(obj, part)
+        for _ in range(self.unwrap_depth):
+            obj = obj.__wrapped__
+        return obj
+
+
+_MAX_UNWRAP_DEPTH = 32
+
+
+def _importable_function_reference(func: Any) -> Optional[_ExecuteFunctionReference]:
+    """Return a pickle surrogate for *func* if it needs one, else None.
+
+    None is returned when normal pickle-by-reference works (module-level
+    function whose name still points at itself) or when the function is not
+    resolvable by import at all (lambdas, closures, bound methods); in the
+    latter case pickling fails with the standard, descriptive pickle error.
+    """
+    if not inspect.isfunction(func):
+        return None
+    module_name = getattr(func, "__module__", None)
+    qualname = getattr(func, "__qualname__", None)
+    if not module_name or not qualname or "<locals>" in qualname or "<lambda>" in qualname:
+        return None
+    module = sys.modules.get(module_name)
+    if module is None:
+        return None
+    obj: Any = module
+    try:
+        for part in qualname.split("."):
+            obj = getattr(obj, part)
+    except AttributeError:
+        return None
+    if obj is func:
+        # Plain module-level function: default pickling works, no surrogate.
+        return None
+    # The name was rebound (typically by @worker_task). Walk the wrapper chain
+    # to find the registered function and record how many hops it takes.
+    depth = 0
+    current = obj
+    while hasattr(current, "__wrapped__") and depth < _MAX_UNWRAP_DEPTH:
+        current = current.__wrapped__
+        depth += 1
+        if current is func:
+            return _ExecuteFunctionReference(module_name, qualname, depth)
+    return None
+
+
 def is_callable_input_parameter_a_task(callable: ExecuteTaskFunction, object_type: Any) -> bool:
     parameters = inspect.signature(callable).parameters
     if len(parameters) != 1:
@@ -306,7 +381,11 @@ class Worker(WorkerInterface):
                  register_schema: bool = False
                  ) -> Self:
         super().__init__(task_definition_name)
-        self.api_client = ApiClient()
+        # Lazily constructed (see the api_client property): an eager ApiClient
+        # holds an httpx.Client and threading locks, which made Worker
+        # unpicklable under the 'spawn' start method and initialized TLS state
+        # in the parent process before fork() (unsafe on macOS).
+        self._api_client = None
         if poll_interval is None:
             self.poll_interval = DEFAULT_POLLING_INTERVAL
         else:
@@ -334,6 +413,46 @@ class Worker(WorkerInterface):
         self._pending_async_tasks = {}
         # Add thread lock for safe concurrent access to _pending_async_tasks
         self._pending_tasks_lock = threading.Lock()
+
+    @property
+    def api_client(self) -> ApiClient:
+        """ApiClient used for output serialization, created on first use.
+
+        Lazy so that Worker instances remain picklable (required by the
+        'spawn'/'forkserver' multiprocessing start methods) and so the parent
+        process never initializes HTTP/TLS state on behalf of workers.
+        """
+        if self._api_client is None:
+            self._api_client = ApiClient()
+        return self._api_client
+
+    @api_client.setter
+    def api_client(self, value: ApiClient) -> None:
+        self._api_client = value
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Process-local runtime state must not cross process boundaries: the
+        # 'spawn'/'forkserver' start methods pickle Process args (issues
+        # #264/#271: "cannot pickle '_thread.lock' object"). Everything below
+        # is rebuilt lazily in the child process.
+        state["_api_client"] = None
+        state["_background_loop"] = None
+        state["_pending_async_tasks"] = {}
+        state["_pending_tasks_lock"] = None
+        ref = _importable_function_reference(state.get("_execute_function"))
+        if ref is not None:
+            state["_execute_function"] = ref
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        if self._pending_tasks_lock is None:
+            self._pending_tasks_lock = threading.Lock()
+        if isinstance(self._execute_function, _ExecuteFunctionReference):
+            # Assign through the property setter so the signature-derived
+            # flags are recomputed against the resolved function.
+            self.execute_function = self._execute_function.resolve()
 
     def execute(self, task: Task) -> TaskResult:
         task_input = {}

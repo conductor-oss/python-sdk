@@ -15,5 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Multiprocessing start method now defaults to `spawn` on all platforms** (was `fork` everywhere except Windows). `fork` caused silently-restarting `SIGSEGV` worker subprocesses on macOS (exitcode `-11`) and fork-with-held-lock deadlocks on POSIX. Opt back in with `CONDUCTOR_MP_START_METHOD=fork`. Entrypoint scripts must use the standard `if __name__ == "__main__":` guard, and workers must be defined at module level
 - Legacy metrics emit unchanged by default; no env var required
 - `metrics_collector.py` is now a compatibility shim; `from conductor.client.telemetry.metrics_collector import MetricsCollector` continues to work
+
+### Fixed
+
+- `@worker_task` workers are now picklable, making the decorator path work with the `spawn`/`forkserver` start methods (fixes `TypeError: cannot pickle '_thread.lock' object` and `PicklingError: it's not the same object as ...`; issues #264, #271): `Worker.api_client` is created lazily in the worker process, runtime state (locks, pending async tasks, background loop) is excluded from pickling and rebuilt in the child, and decorated functions are pickled as importable references resolved in the child
+- `TaskHandler.start_processes()` no longer hangs the interpreter when a worker fails to start (e.g., unpicklable state under `spawn`); it now cleans up already-started subprocesses and raises with actionable guidance
+- Worker processes killed by a signal now log a diagnostic hint (signal number, `PYTHONFAULTHANDLER=1` guidance) instead of restarting silently

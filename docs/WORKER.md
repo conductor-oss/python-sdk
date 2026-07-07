@@ -229,11 +229,6 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.worker.worker import Worker
 
-#### Add these lines if running on a mac####
-from multiprocessing import set_start_method
-set_start_method('fork')
-############################################
-
 SERVER_API_URL = 'http://localhost:8080/api'
 KEY_ID = '<KEY_ID>'
 KEY_SECRET = '<KEY_SECRET>'
@@ -261,9 +256,38 @@ workers = [
 
 # TaskHandler scans for @worker_task decorated workers by default.
 # Set scan_for_annotated_workers=False if you want to disable auto-discovery.
-with TaskHandler(workers, configuration, scan_for_annotated_workers=True) as task_handler:
-    task_handler.start_processes()
+# The __main__ guard is required: worker processes use the 'spawn'
+# multiprocessing start method by default, which re-imports this script.
+if __name__ == '__main__':
+    with TaskHandler(workers, configuration, scan_for_annotated_workers=True) as task_handler:
+        task_handler.start_processes()
 ```
+
+### Multiprocessing start method
+
+`TaskHandler` runs each worker in its own process using Python's `multiprocessing`
+with the **`spawn`** start method by default on all platforms. `spawn` starts each
+worker as a fresh interpreter, which avoids the crashes and deadlocks `fork`
+causes in processes holding native state — most visibly on macOS, where forked
+workers can die with `SIGSEGV` (exitcode `-11`) inside Apple system frameworks
+and get silently restarted by the supervisor.
+
+Requirements under `spawn` (standard Python multiprocessing rules):
+
+- Guard your entrypoint with `if __name__ == '__main__':`
+- Define workers at module level (not nested inside functions or lambdas)
+- `configuration`, `metrics_settings`, and `event_listeners` passed to
+  `TaskHandler` must be picklable
+
+To opt back into the previous behavior (e.g., a Linux deployment relying on
+fork's copy-on-write memory sharing):
+
+```shell
+export CONDUCTOR_MP_START_METHOD=fork   # spawn (default) | fork | forkserver
+```
+
+If a worker process dies from a signal repeatedly at startup, set
+`PYTHONFAULTHANDLER=1` to capture the crashing stack trace from the child.
 
 ### Resilience: auto-restart and health checks
 

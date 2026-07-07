@@ -3,15 +3,14 @@ Integration tests for worker configuration with @worker_task decorator
 """
 
 import os
-import sys
 import unittest
-import asyncio
-from unittest.mock import Mock, patch
 
-# Prevent actual task handler initialization
-sys.modules['conductor.client.automator.task_handler'] = Mock()
-
-from conductor.client.worker.worker_task import worker_task
+# NOTE: do NOT replace sys.modules['conductor.client.automator.task_handler']
+# with a Mock here. pytest imports every test module at collection time, so a
+# module-level sys.modules substitution leaks into the whole test session and
+# breaks pickling of task_handler functions by reference ("it's not the same
+# object as ...") - which the 'spawn' multiprocessing start method (the SDK
+# default) relies on to start worker/logger processes.
 from conductor.client.worker.worker_config import resolve_worker_config
 
 
