@@ -335,6 +335,67 @@ class Worker(WorkerInterface):
         # Add thread lock for safe concurrent access to _pending_async_tasks
         self._pending_tasks_lock = threading.Lock()
 
+    def _worker_task_registry_key(self):
+        # If this worker's execute_function is a @worker_task-registered function,
+        # return its (name, domain) key in _decorated_functions; else None.
+        # Matched by function identity so it is robust to env-based domain overrides.
+        from conductor.client.automator.task_handler import _decorated_functions
+        fn = self._execute_function
+        for key, record in _decorated_functions.items():
+            if record.get("func") is fn:
+                return key
+        return None
+
+    def __getstate__(self):
+        # Make the Worker picklable so multiprocessing 'spawn' can send it to a
+        # worker subprocess. Two kinds of state block stdlib pickle:
+        #
+        #   1. Transient, process-local objects holding unpicklable _thread.lock
+        #      objects (ApiClient connection pool, the locks, the event loop).
+        #      These are dropped here and rebuilt fresh in the child (__setstate__).
+        #   2. The execute_function: @worker_task returns a functools.wraps wrapper
+        #      that shadows the raw registered function at module scope, so the raw
+        #      function cannot be pickled by reference. For decorated workers we drop
+        #      the function and store its registry key so __setstate__ can re-resolve
+        #      the raw function in the child (which preserves async-worker detection).
+        #      Non-decorated workers keep execute_function and pickle it by reference.
+        state = self.__dict__.copy()
+        state.pop("api_client", None)
+        state.pop("_pending_tasks_lock", None)
+        state.pop("_background_loop", None)
+        state.pop("_pending_async_tasks", None)
+
+        key = self._worker_task_registry_key()
+        if key is not None:
+            state["_wt_registry_key"] = key
+            state.pop("_execute_function", None)
+        return state
+
+    def __setstate__(self, state):
+        key = state.pop("_wt_registry_key", None)
+        self.__dict__.update(state)
+        # Rebuild the transient members exactly as __init__ does, in the child.
+        self.api_client = ApiClient()
+        self._background_loop = None
+        self._pending_async_tasks = {}
+        self._pending_tasks_lock = threading.Lock()
+
+        if key is not None:
+            # Re-resolve the raw @worker_task function from this process's registry.
+            # Requires the worker's module to be imported in the child, which the
+            # 'spawn' start method already requires for annotated workers.
+            from conductor.client.automator.task_handler import _decorated_functions
+            record = _decorated_functions.get(key)
+            if record is None:
+                raise RuntimeError(
+                    f"Cannot restore @worker_task worker {key!r} in this process: its "
+                    f"module was not imported before the worker started. Import the "
+                    f"worker module (e.g. via TaskHandler(import_modules=[...]) or an "
+                    f"explicit import) so it is registered in this process."
+                )
+            # Setting via the property also restores the input/return-type flags.
+            self.execute_function = record["func"]
+
     def execute(self, task: Task) -> TaskResult:
         task_input = {}
         task_output = None

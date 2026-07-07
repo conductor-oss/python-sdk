@@ -8,11 +8,20 @@ import unittest
 import asyncio
 from unittest.mock import Mock, patch
 
-# Prevent actual task handler initialization
-sys.modules['conductor.client.automator.task_handler'] = Mock()
+# Prevent actual task handler initialization during the imports below, but do
+# NOT leave the module mocked in sys.modules afterwards — that poisons every
+# other test module that imports task_handler later in the same process.
+_TASK_HANDLER = 'conductor.client.automator.task_handler'
+_original_task_handler = sys.modules.get(_TASK_HANDLER)
+sys.modules[_TASK_HANDLER] = Mock()
 
 from conductor.client.worker.worker_task import worker_task
 from conductor.client.worker.worker_config import resolve_worker_config
+
+if _original_task_handler is not None:
+    sys.modules[_TASK_HANDLER] = _original_task_handler
+else:
+    del sys.modules[_TASK_HANDLER]
 
 
 class TestWorkerConfigWithDecorator(unittest.TestCase):
