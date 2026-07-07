@@ -1,6 +1,5 @@
 import logging
 import time
-from multiprocessing import set_start_method
 from time import sleep
 
 from conductor.client.automator.task_handler import TaskHandler
@@ -45,7 +44,6 @@ def run_workflow_execution_tests(configuration: Configuration, workflow_executor
         scan_for_annotated_workers=True,
         import_modules=['tests.integration.resources.worker.python.python_worker']
     )
-    set_start_method('fork', force=True)
     task_handler.start_processes()
     try:
         test_get_workflow_by_correlation_ids(workflow_executor)
