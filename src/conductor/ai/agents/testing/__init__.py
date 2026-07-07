@@ -15,6 +15,8 @@ Quick start::
     expect(result).completed().output_contains("Hi").no_errors()
 """
 
+from __future__ import annotations
+
 # Assertions
 from conductor.ai.agents.testing.assertions import (
     assert_agent_ran,

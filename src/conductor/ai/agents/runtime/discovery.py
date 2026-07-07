@@ -3,6 +3,8 @@
 
 """Agent discovery -- scan Python packages for Agent instances."""
 
+from __future__ import annotations
+
 import importlib
 import logging
 import pkgutil

@@ -3,6 +3,8 @@
 
 """Credential management subpackage for the Agentspan Python SDK."""
 
+from __future__ import annotations
+
 from conductor.ai.agents.runtime.credentials.accessor import get_secret
 from conductor.ai.agents.runtime.credentials.fetcher import WorkerCredentialFetcher
 from conductor.ai.agents.runtime.credentials.types import (

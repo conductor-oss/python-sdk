@@ -9,6 +9,8 @@ This package contains zero framework-specific code. It provides:
 - Callable extraction and worker registration
 """
 
+from __future__ import annotations
+
 from conductor.ai.agents.frameworks.serializer import (
     WorkerInfo,
     detect_framework,

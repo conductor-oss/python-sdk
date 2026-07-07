@@ -2,3 +2,5 @@
 # Licensed under the MIT License. See LICENSE file in the project root for details.
 
 # Private utilities — not part of the public API.
+
+from __future__ import annotations

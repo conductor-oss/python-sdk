@@ -1,5 +1,7 @@
 """Agent Skills integration — load agentskills.io skill directories as Agents."""
 
+from __future__ import annotations
+
 import re
 import shlex
 import subprocess

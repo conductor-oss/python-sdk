@@ -23,6 +23,8 @@ Quick start::
         print(result.output)
 """
 
+from __future__ import annotations
+
 # Core primitive
 from conductor.ai.agents.agent import (
     Agent,
