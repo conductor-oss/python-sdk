@@ -191,6 +191,13 @@ line-ending = "auto"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+markers = [
+    "integration: requires a live Agentspan-compatible server",
+    "e2e: requires a live server and AGENTSPAN_SERVER_URL",
+    "sse: requires SSE streaming (AGENTSPAN_STREAMING_ENABLED=true)",
+    "agent_correctness: marks tests as agent correctness tests",
+    "semantic: marks tests that use an LLM judge for semantic assertions",
+]
 
 [tool.coverage.run]
 source = ["src/conductor"]
