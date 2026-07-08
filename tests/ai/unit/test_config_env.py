@@ -84,7 +84,7 @@ class TestAgentConfigFromEnv:
     def test_defaults_to_localhost_when_nothing_set(self):
         with mock.patch.dict(os.environ, {}, clear=True):
             config = AgentConfig.from_env()
-            assert config.server_url == "http://localhost:6767/api"
+            assert config.server_url == "http://localhost:8080/api"
 
     def test_reads_agentspan_auth_key(self):
         env = {"AGENTSPAN_AUTH_KEY": "mykey", "AGENTSPAN_AUTH_SECRET": "mysecret"}
@@ -172,7 +172,7 @@ class TestServerUrlNormalisation:
     def test_default_url_has_api(self):
         with mock.patch.dict(os.environ, {}, clear=True):
             config = AgentConfig.from_env()
-            assert config.server_url == "http://localhost:6767/api"
+            assert config.server_url == "http://localhost:8080/api"
 
 
 class TestLogLevelConfig:

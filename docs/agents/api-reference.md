@@ -288,7 +288,7 @@ available.
 
 ## Config and credentials
 
-`AgentConfig` (dataclass) fields: `server_url="http://localhost:6767/api"`,
+`AgentConfig` (dataclass) fields: `server_url="http://localhost:8080/api"`,
 `api_key=None`, `auth_key=None`, `auth_secret=None`, `llm_retry_count=3`,
 `worker_poll_interval_ms=100`, `worker_thread_count=1`, `auto_start_workers=True`,
 `auto_start_server=True`, `daemon_workers=True`, `auto_register_integrations=False`,

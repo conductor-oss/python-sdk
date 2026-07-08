@@ -11,10 +11,10 @@ pip install 'conductor-python[agents]'
 Or, per framework, install just what you need — e.g. `conductor-python[langchain]`,
 `conductor-python[adk]`, `conductor-python[claude]`.
 
-Point the SDK at a running Agentspan server (defaults to `http://localhost:6767/api`):
+Point the SDK at a running Agentspan server (defaults to `http://localhost:8080/api`):
 
 ```bash
-export AGENTSPAN_SERVER_URL=http://localhost:6767/api
+export AGENTSPAN_SERVER_URL=http://localhost:8080/api
 export OPENAI_API_KEY=<YOUR-KEY>
 export AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini
 ```
@@ -52,7 +52,7 @@ the output if you prefer.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `AGENTSPAN_SERVER_URL` | `http://localhost:6767/api` | Server base URL |
+| `AGENTSPAN_SERVER_URL` | `http://localhost:8080/api` | Server base URL |
 | `AGENTSPAN_API_KEY` | — | API key auth |
 | `AGENTSPAN_AUTH_KEY` | — | Key/secret auth — key |
 | `AGENTSPAN_AUTH_SECRET` | — | Key/secret auth — secret |
