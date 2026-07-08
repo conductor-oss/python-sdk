@@ -22,16 +22,6 @@ logger = logging.getLogger(
 )
 
 
-_cleaned_directories: set = set()
-
-
-def _reset_cleaned_directories() -> None:
-    """Clear the per-process cleanup guard.  Intended for tests so that each
-    test starts from a known-clean state and does not inherit or leak entries
-    via this module-level global."""
-    _cleaned_directories.clear()
-
-
 def create_metrics_collector(settings: MetricsSettings) -> MetricsCollectorBase:
     """
     Create the metrics collector indicated by ``settings.is_canonical``.
@@ -41,16 +31,16 @@ def create_metrics_collector(settings: MetricsSettings) -> MetricsCollectorBase:
 
     Returns a fully-initialised collector (legacy or canonical) that satisfies
     the MetricsCollector Protocol and can be registered as an event listener.
+
+    This is non-destructive: it only ensures the directory exists.  It never
+    deletes ``.db`` files, because it runs in every spawned worker and a worker
+    must not wipe metrics belonging to live sibling processes.  Directory
+    cleanup is owned by the parent via
+    ``MetricsSettings.clean_metrics_directory()`` (invoked once by
+    ``TaskHandler`` before workers spawn).
     """
     metrics_dir = settings.metrics_directory
     os.makedirs(metrics_dir, exist_ok=True)
-
-    if metrics_dir not in _cleaned_directories:
-        _cleaned_directories.add(metrics_dir)
-        if settings.clean_directory:
-            settings._clean_stale_db_files()
-        if settings.clean_dead_pids:
-            settings._clean_dead_pid_files()
 
     if settings.is_canonical:
         from conductor.client.telemetry.canonical_metrics_collector import CanonicalMetricsCollector
@@ -60,3 +50,22 @@ def create_metrics_collector(settings: MetricsSettings) -> MetricsCollectorBase:
     from conductor.client.telemetry.legacy_metrics_collector import LegacyMetricsCollector
     logger.info("Using LegacyMetricsCollector (dir=%s; set WORKER_CANONICAL_METRICS=true for canonical)", metrics_dir)
     return LegacyMetricsCollector(settings)
+
+
+def create_metrics_collector_for_parent(settings: MetricsSettings) -> MetricsCollectorBase:
+    """Owner/parent entrypoint: prepare the shared metrics directory, then build
+    the collector.
+
+    Use this from the process that owns the metrics lifecycle (the one that
+    spawns workers, and that may itself collect metrics before spawning). It
+    cleans the directory up front -- honoring ``settings.clean_directory`` /
+    ``settings.clean_dead_pids`` -- so the parent's own first write is not
+    orphaned, then delegates to ``create_metrics_collector``.
+
+    Do NOT call this from a spawned worker: workers must use
+    ``create_metrics_collector`` (non-destructive) so they can never wipe ``.db``
+    files belonging to live sibling processes. ``clean_metrics_directory()`` is
+    idempotent per process, so a later ``TaskHandler`` call is a no-op.
+    """
+    settings.clean_metrics_directory()
+    return create_metrics_collector(settings)

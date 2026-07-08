@@ -9,7 +9,7 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.http.models.task_def import TaskDef
 from conductor.client.orkes_clients import OrkesClients
-from conductor.client.telemetry.metrics_factory import create_metrics_collector
+from conductor.client.telemetry.metrics_factory import create_metrics_collector_for_parent
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.task.simple_task import SimpleTask
 
@@ -77,7 +77,12 @@ def main() -> None:
         clean_dead_pids=True,
     )
 
-    metrics_collector = create_metrics_collector(metrics_settings)
+    # The parent collects metrics too (task/workflow registration below and the
+    # WorkflowGovernor), so use the parent factory: it cleans the directory up
+    # front -- before the collector's first write -- then creates the collector,
+    # avoiding orphaning the parent's own .db files. clean_metrics_directory() is
+    # idempotent per process, so TaskHandler's later call is a no-op.
+    metrics_collector = create_metrics_collector_for_parent(metrics_settings)
     print(f"Prometheus metrics server started on port {metrics_port} ({metrics_collector.collector_name()} metrics)")
     clients = OrkesClients(configuration, metrics_collector=metrics_collector)
 

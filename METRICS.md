@@ -68,6 +68,27 @@ or `clean_dead_pids=True` to remove only files from PIDs that no longer exist.
 Both default to `False`. Use a dedicated metrics directory per worker process
 group.
 
+Cleanup is owned by the parent process and performed by
+`MetricsSettings.clean_metrics_directory()`, which is idempotent per process
+(the destructive step runs at most once per directory). Spawned workers only
+ensure the directory exists (via `create_metrics_collector`) and never delete
+`.db` files, so a newly started or restarted worker can never wipe metrics
+belonging to live sibling processes.
+
+`TaskHandler.__init__` calls `clean_metrics_directory()` for you before any
+worker is spawned, which is sufficient for worker-only apps. If the parent
+process *also* collects metrics before constructing the `TaskHandler` (for
+example, registering task/workflow definitions or starting workflows through an
+instrumented client), build the parent's collector with
+`create_metrics_collector_for_parent(metrics_settings)` instead of
+`create_metrics_collector`. The parent factory cleans the directory up front --
+before the collector's first write -- and then creates the collector. Because
+`clean_metrics_directory()` is idempotent, `TaskHandler`'s later call is then a
+no-op and cannot orphan the parent's own `.db` files. For a long-lived parent
+that shares the directory, prefer `clean_dead_pids=True` over
+`clean_directory=True` -- it never deletes a live process's file regardless of
+ordering.
+
 ## Selecting Canonical Metrics
 
 Set `WORKER_CANONICAL_METRICS` before the worker starts:
@@ -290,7 +311,13 @@ sum(rate(task_execute_time_seconds_count[5m])) by (taskType)
   implementations never mixes stale metric names.
 - Pass `clean_dead_pids=True` to `MetricsSettings` to remove `.db` files from
   PIDs that no longer exist.  Use `clean_directory=True` only when you are sure
-  no other live process shares the same directory.
+  no other live process shares the same directory. Cleanup is idempotent per
+  process and runs in the parent (via `clean_metrics_directory()`, which
+  `TaskHandler.__init__` calls) before workers spawn; workers never wipe the
+  directory, so restarts and newly spawned workers preserve sibling metrics. If
+  the parent also collects, build its collector with
+  `create_metrics_collector_for_parent()` (cleans up front, then creates) so it
+  doesn't orphan the parent's own files.
 - Restart workers after changing `WORKER_CANONICAL_METRICS`.
 
 ### High Cardinality
@@ -342,8 +369,15 @@ unreleased metrics harmonization work. For a summary, see the project
     across all processes (main, workers, MetricsProvider).
   - `MetricsSettings` gains `clean_directory` (default `False`) to wipe all
     `.db` files and `clean_dead_pids` (default `False`) to remove only `.db`
-    files from PIDs that no longer exist. Both are executed by the factory
-    against the resolved metrics directory.
+    files from PIDs that no longer exist. Cleanup is applied by
+    `MetricsSettings.clean_metrics_directory()`, which is idempotent per process
+    and invoked by the parent (`TaskHandler.__init__` calls it, or a
+    parent that also collects builds its collector via
+    `create_metrics_collector_for_parent()`, which cleans up front then creates)
+    before workers spawn.
+    `create_metrics_collector` (the per-worker path) is non-destructive and
+    only ensures the directory exists, so spawned/restarted workers never wipe
+    live sibling metrics.
   - `CONDUCTOR_MP_START_METHOD` env var (`spawn` / `fork` / `forkserver`;
     default `fork` on POSIX, `spawn` on Windows) to control the worker pool's
     multiprocessing start method (motivated by a `prometheus_client` lock-fork
