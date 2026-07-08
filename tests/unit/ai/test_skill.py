@@ -3,7 +3,7 @@
 import pytest
 from pathlib import Path
 
-FIXTURES = Path(__file__).parent.parent / "fixtures" / "skills"
+FIXTURES = Path(__file__).parent.parent.parent / "ai" / "fixtures" / "skills"
 
 
 # ── Task 2: Tests for skill() core discovery ──────────────────────────
