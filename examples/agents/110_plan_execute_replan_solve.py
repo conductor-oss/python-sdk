@@ -44,7 +44,7 @@ Constraints for this demo:
     3. It has exactly EXPECTED_WORD_COUNT words (default 20).
 
 Requirements:
-  - AGENTSPAN_SERVER_URL=http://localhost:6767/api (default)
+  - AGENTSPAN_SERVER_URL=http://localhost:8080/api (default)
   - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini (default)
   - LLM key for the chosen model.
 """

@@ -28,7 +28,7 @@ MCP Test Server Setup (mcp-testkit) — required for examples 1-3:
 
 Requirements:
     - Conductor server with LLM support
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api as environment variable
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
     - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
     - mcp-testkit running on http://localhost:3001 (for examples 1-3, see setup above)
     - For GitHub example: agentspan credentials set GITHUB_TOKEN ghp_xxx

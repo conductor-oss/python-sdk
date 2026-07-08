@@ -15,7 +15,7 @@ continues when a worker service comes back online.
 
 Requirements:
     - Agentspan server running
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api in environment
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in environment
     - AGENTSPAN_LLM_MODEL set (default: openai/gpt-4o-mini via settings.py)
     - Provider API key configured on the server (for example OPENAI_API_KEY)
 """

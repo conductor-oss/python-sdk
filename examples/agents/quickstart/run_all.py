@@ -47,7 +47,7 @@ _m04 = _load_module("04_guardrails.py")
 # ── Config ──────────────────────────────────────────────
 
 TIMEOUT_SECONDS = 30
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
 
 
 @dataclass

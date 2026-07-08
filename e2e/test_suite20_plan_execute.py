@@ -35,7 +35,7 @@ from conductor.ai.agents import Agent, Context, Op, Plan, Ref, Step, Strategy, p
 
 pytestmark = pytest.mark.e2e
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
 BASE_URL = SERVER_URL.rstrip("/").replace("/api", "")
 MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
 

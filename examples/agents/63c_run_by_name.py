@@ -12,7 +12,7 @@ Requirements:
     - Conductor server running
     - Agent deployed (run 63_deploy.py first)
     - Workers running (run 63b_serve.py in another terminal)
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api in .env or environment
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
 """
 
 from conductor.ai.agents import AgentRuntime

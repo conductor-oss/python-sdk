@@ -21,7 +21,7 @@ Architecture:
 
 Requirements:
     - Conductor server with AgentTool + MCP support
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api in .env or environment
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
     - AGENTSPAN_LLM_MODEL=google_gemini/gemini-2.0-flash in .env or environment
     - GH_TOKEN in .env or environment
 """

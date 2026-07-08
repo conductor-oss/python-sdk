@@ -8,7 +8,7 @@ import requests
 
 # ── Configuration from env (set by orchestrator) ────────────────────────
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
 BASE_URL = SERVER_URL.rstrip("/").replace("/api", "")
 CLI_PATH = os.environ.get("AGENTSPAN_CLI_PATH", "agentspan")
 MCP_TESTKIT_URL = os.environ.get("MCP_TESTKIT_URL", "http://localhost:3001")

@@ -16,7 +16,7 @@ reject the draft via the AgentSpan UI or API. This is true human-in-the-loop,
 not an LLM simulating a reviewer.
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY for ChatOpenAI
 """
 

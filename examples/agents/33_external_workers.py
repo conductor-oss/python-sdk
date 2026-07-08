@@ -17,7 +17,7 @@ This is useful when:
 Requirements:
     - Conductor server with LLM support
     - The referenced workers must be running somewhere
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api as environment variable
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
     - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 

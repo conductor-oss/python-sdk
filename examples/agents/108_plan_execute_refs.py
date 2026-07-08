@@ -31,7 +31,7 @@ What to look for in the output:
     independently (two Refs in the same args map).
 
 Requirements:
-  - AGENTSPAN_SERVER_URL=http://localhost:6767/api (default)
+  - AGENTSPAN_SERVER_URL=http://localhost:8080/api (default)
   - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini (default)
 """
 
@@ -124,7 +124,7 @@ def _show_pipeline_outputs(execution_id: str) -> None:
 
     import requests
 
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
 
     parent = requests.get(

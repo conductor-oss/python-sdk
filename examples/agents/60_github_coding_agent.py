@@ -26,7 +26,7 @@ Architecture:
 
 Requirements:
     - Conductor server running
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api in .env or environment
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
     - gh CLI authenticated (gh auth status)
     - Git configured with push access to the repo
 """

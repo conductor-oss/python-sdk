@@ -10,7 +10,7 @@ Demonstrates:
     - Practical use case: data enrichment pipeline (fetch → transform → validate → summarize)
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY for ChatOpenAI
 """
 

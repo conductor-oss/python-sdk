@@ -55,7 +55,7 @@ from conductor.ai.agents.tool import ToolDef, agent_tool
 
 pytestmark = pytest.mark.integration
 
-AGENTSPAN_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+AGENTSPAN_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
 CONDUCTOR_BASE = AGENTSPAN_URL.replace("/api", "")
 MCP_URL = "http://localhost:3001/mcp"
 

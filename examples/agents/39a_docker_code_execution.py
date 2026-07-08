@@ -10,7 +10,7 @@ host filesystem is untouched.
 Requirements:
     - Conductor server with LLM support
     - Docker installed and daemon running
-    - export AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - export AGENTSPAN_SERVER_URL=http://localhost:8080/api
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, CodeExecutionConfig

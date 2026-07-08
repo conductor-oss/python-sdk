@@ -13,7 +13,7 @@ If it is broken, the task times out (TIMED_OUT / FAILED).
 
 Requirements:
     - Running Conductor server with conductor-python >= 1.3.11
-    - export AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - export AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - LLM provider configured
 """
 

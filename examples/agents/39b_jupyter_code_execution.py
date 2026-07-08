@@ -11,7 +11,7 @@ step by step.
 Requirements:
     - Conductor server with LLM support
     - pip install jupyter_client ipykernel
-    - export AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - export AGENTSPAN_SERVER_URL=http://localhost:8080/api
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, CodeExecutionConfig

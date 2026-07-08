@@ -34,7 +34,7 @@ from conductor.ai.agents.schedule import Schedule
 pytestmark = [pytest.mark.e2e]
 
 MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
-_API = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api").rstrip("/")
+_API = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api").rstrip("/")
 
 
 def _scheduler_available() -> bool:

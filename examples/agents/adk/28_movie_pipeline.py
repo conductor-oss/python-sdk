@@ -14,7 +14,7 @@ a multi-stage pipeline for creative content production.
 Requirements:
     - pip install google-adk
     - Conductor server
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api as environment variable
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
     - AGENTSPAN_LLM_MODEL=google_gemini/gemini-2.0-flash as environment variable
 """
 

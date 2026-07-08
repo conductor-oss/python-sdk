@@ -243,7 +243,7 @@ def _agent_with_strict_tool(model):
 
 
 def _get_workflow(execution_id):
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
     resp = requests.get(f"{base_url}/api/workflow/{execution_id}", timeout=10)
     resp.raise_for_status()

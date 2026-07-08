@@ -10,7 +10,7 @@ Demonstrates:
     - Practical use case: orchestrator dispatching to a math agent and a writing agent
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY for ChatOpenAI
 """
 

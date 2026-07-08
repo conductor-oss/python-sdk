@@ -40,7 +40,7 @@ What to look for in the output:
   * The loop exits when the threshold is met OR ``max_iterations`` hits.
 
 Requirements:
-  - AGENTSPAN_SERVER_URL=http://localhost:6767/api (default)
+  - AGENTSPAN_SERVER_URL=http://localhost:8080/api (default)
   - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini (default)
   - An LLM key for the chosen model (sections are generated, not static).
 """

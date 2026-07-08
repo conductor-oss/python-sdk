@@ -38,7 +38,7 @@ Production pattern:
     runtime.start("sales_analyst", "prompt")  # or via server API / UI
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY for ChatOpenAI
 """
 
@@ -52,7 +52,7 @@ from langchain_openai import ChatOpenAI
 from conductor.ai.agents import AgentRuntime
 
 SESSION_FILE = "/tmp/agentspan_langgraph_resume.session"
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
 UI_BASE = SERVER_URL.replace("/api", "")
 
 

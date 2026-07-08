@@ -18,7 +18,7 @@ then runs an agent that executes code through it.
 
 Requirements:
     - Conductor server with LLM support
-    - export AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - export AGENTSPAN_SERVER_URL=http://localhost:8080/api
 """
 
 import json

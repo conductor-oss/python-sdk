@@ -16,7 +16,7 @@ explicitly list every agent when serving a large codebase.
 
 Requirements:
     - Conductor server running
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api in .env or environment
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
     - A Python package with Agent instances at module level
 """
 

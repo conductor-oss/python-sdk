@@ -36,7 +36,7 @@ agents that accumulate very large tool outputs.
 
 Requirements:
     - Conductor server with LLM support + ``agentspan.default-context-window=10000``
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api as environment variable
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
     - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 

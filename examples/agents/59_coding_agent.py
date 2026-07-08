@@ -20,7 +20,7 @@ Flow (swarm — LLM-driven handoffs):
 
 Requirements:
     - Conductor server running
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api in .env or environment
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, Strategy

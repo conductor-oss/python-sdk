@@ -13,7 +13,7 @@ Demonstrates composable termination conditions using ``&`` (AND) and
 
 Requirements:
     - Conductor server with LLM support
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api as environment variable
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
     - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 

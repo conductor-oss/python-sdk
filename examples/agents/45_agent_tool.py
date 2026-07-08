@@ -14,7 +14,7 @@ own workflow and returns the result as a tool output.
 
 Requirements:
     - Conductor server with AgentTool support
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api as environment variable
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
     - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 

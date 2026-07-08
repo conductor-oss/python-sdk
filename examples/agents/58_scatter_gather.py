@@ -14,7 +14,7 @@ dispatches 100 worker agents in parallel, and synthesizes the results.
 
 Requirements:
     - Conductor server running
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api in .env or environment
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
     - AGENT_SECONDARY_LLM_MODEL=openai/gpt-4o in .env or environment
 """
 

@@ -52,7 +52,7 @@ import requests
 
 from conductor.ai.agents import AgentRuntime, plan_execute, tool
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
 BASE = SERVER_URL.rstrip("/").replace("/api", "")
 MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
 MAX_ITER = int(os.environ.get("REPORT_MAX_ITER", "5"))

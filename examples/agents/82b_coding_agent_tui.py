@@ -20,7 +20,7 @@ Usage:
 
 Requirements:
     - AgentSpan server running at http://localhost:6767
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - AGENTSPAN_LLM_MODEL=openai/gpt-4o
 """
 

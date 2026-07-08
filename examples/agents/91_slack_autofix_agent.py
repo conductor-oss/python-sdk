@@ -18,7 +18,7 @@ Architecture:
     └── pr_creator        — creates branch + commit + PR
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - AGENTSPAN_LLM_MODEL=anthropic/claude-opus-4-6 (or gpt-4o)
     - SLACK_BOT_TOKEN=xoxb-...     (Bot token with channels:read, channels:history)
     - SLACK_CHANNEL_ID=C...        (Channel to monitor)

@@ -30,7 +30,7 @@ Add to ``server/src/main/resources/application.properties`` and restart::
     agentspan.default-context-window=10000
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY
 """
 

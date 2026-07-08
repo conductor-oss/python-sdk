@@ -100,7 +100,7 @@ class AllCallbackHandler(CallbackHandler):
 
 def _get_workflow(execution_id):
     """Fetch workflow execution from server API."""
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
     resp = requests.get(f"{base_url}/api/workflow/{execution_id}", timeout=10)
     resp.raise_for_status()

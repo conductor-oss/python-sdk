@@ -75,7 +75,7 @@ Usage:
 
 Requirements:
     - Agentspan server with PLAN_EXECUTE strategy support
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-4o-mini)
 """
 

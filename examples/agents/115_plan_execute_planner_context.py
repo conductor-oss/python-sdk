@@ -57,7 +57,7 @@ What to look for in the run:
     the markdown that gets templated into the planner's user message.
 
 Requirements:
-  - AGENTSPAN_SERVER_URL=http://localhost:6767/api (default)
+  - AGENTSPAN_SERVER_URL=http://localhost:8080/api (default)
   - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini (default)
 """
 
@@ -202,7 +202,7 @@ def _show_executed_steps(execution_id: str) -> None:
     """Walk into the plan_exec sub-workflow and print the tool tasks."""
     import requests
 
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
 
     parent = requests.get(

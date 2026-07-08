@@ -8,7 +8,7 @@ Demonstrates the simplest possible agent: define an agent, call
 
 Requirements:
     - Agentspan server with LLM support
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api in .env or environment
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
     - AGENTSPAN_LLM_MODEL set in .env or environment (optional)
 """
 

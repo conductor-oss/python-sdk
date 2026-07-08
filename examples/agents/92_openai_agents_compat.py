@@ -28,7 +28,7 @@ Pattern B — use Agentspan for everything (no openai-agents dependency)::
     from conductor.ai.agents import Agent
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - AGENTSPAN_LLM_MODEL=openai/gpt-4o (or anthropic/claude-opus-4-6)
 
 Usage:

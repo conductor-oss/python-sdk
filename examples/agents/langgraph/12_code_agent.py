@@ -9,7 +9,7 @@ Demonstrates:
     - Multi-step tool usage: write then explain, or analyze then fix
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY for ChatOpenAI
 """
 

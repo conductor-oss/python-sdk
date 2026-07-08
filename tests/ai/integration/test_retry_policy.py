@@ -9,7 +9,7 @@ and retryDelaySeconds.
 
 Requirements:
     - Agentspan server running
-    - export AGENTSPAN_SERVER_URL=http://localhost:6767/api (or via env)
+    - export AGENTSPAN_SERVER_URL=http://localhost:8080/api (or via env)
 """
 
 import os
@@ -65,7 +65,7 @@ _EXPECTED = {
 
 
 def _conductor_base() -> str:
-    url = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+    url = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
     return url.rstrip("/").replace("/api", "")
 
 

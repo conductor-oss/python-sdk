@@ -17,7 +17,7 @@ The plan combines:
   - a ``validation`` block with a sandboxed success_condition
 
 Usage:
-    AGENTSPAN_SERVER_URL=http://localhost:6767/api \\
+    AGENTSPAN_SERVER_URL=http://localhost:8080/api \\
     OPENAI_API_KEY=... \\
     python 103_plan_and_compile.py "Compute factorials of 1..5 and explain"
 
@@ -36,7 +36,7 @@ from conductor.ai.agents import AgentRuntime, plan_execute, tool
 from settings import settings
 
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
 CONDUCTOR_BASE = SERVER_URL.rstrip("/").replace("/api", "")
 
 

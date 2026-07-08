@@ -35,7 +35,7 @@ from conductor.ai.agents import (
     tool,
 )
 
-_SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+_SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
 
 pytestmark = pytest.mark.integration
 

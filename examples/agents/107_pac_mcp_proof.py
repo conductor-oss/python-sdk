@@ -48,7 +48,7 @@ from conductor.ai.agents.tool import ToolDef, agent_tool
 
 # ── Endpoints ─────────────────────────────────────────────────────────
 
-AGENTSPAN_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:6767/api")
+AGENTSPAN_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
 # Conductor REST runs alongside agentspan; we'll read the compiled
 # WorkflowDef directly off Conductor to *prove* PAC emitted the right
 # task types (not just trust the SDK's view of execution.status).

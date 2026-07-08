@@ -11,7 +11,7 @@ Demonstrates:
 Requirements:
     - pip install openai-agents
     - Conductor server with OpenAI LLM integrations configured
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api as environment variable
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
     - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
     - AGENTSPAN_SECONDARY_LLM_MODEL=openai/gpt-4o as environment variable
 """

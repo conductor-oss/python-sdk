@@ -9,7 +9,7 @@ Demonstrates:
     - Using an LLM at the analysis and reporting stages
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:6767/api
+    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY for ChatOpenAI
 """
 
