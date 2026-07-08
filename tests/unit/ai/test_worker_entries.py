@@ -246,15 +246,6 @@ class TestUserCallablePolicy:
         with pytest.raises(SpawnSafetyError, match="not spawn-safe"):
             probe_spawn_safety(entry, "t_before_model", group="system")
 
-    def test_lambda_tolerated_under_fork(self, monkeypatch):
-        from conductor.ai.agents.runtime._worker_entries import CallbackEntry
-
-        monkeypatch.setattr(
-            we.multiprocessing, "get_start_method", lambda allow_none=True: "fork"
-        )
-        entry = CallbackEntry("before_model", [], lambda **kw: {}, "t_before_model")
-        probe_spawn_safety(entry, "t_before_model", group="system")  # no raise
-
     def test_module_level_callback_passes_probe(self, force_spawn_probe):
         from conductor.ai.agents.runtime._worker_entries import CallbackEntry
 

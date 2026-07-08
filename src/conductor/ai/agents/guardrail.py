@@ -252,24 +252,27 @@ class RegexGuardrail(Guardrail):
         self._mode = mode
         self._custom_message = message
 
-        def _check(content: str) -> GuardrailResult:
-            matched = any(p.search(content) for p in self._patterns)
-
-            if mode == "block" and matched:
-                msg = message or "Content matched a blocked pattern."
-                return GuardrailResult(passed=False, message=msg)
-            elif mode == "allow" and not matched:
-                msg = message or "Content did not match any allowed pattern."
-                return GuardrailResult(passed=False, message=msg)
-            return GuardrailResult(passed=True)
-
+        # Bound method, not a nested closure: bound methods pickle with their
+        # instance (all attrs here are plain data / re.Pattern), so the
+        # guardrail worker survives 'spawn' pickling (idea-5 spawn safety).
         super().__init__(
-            func=_check,
+            func=self._check,
             position=position,
             on_fail=on_fail,
             name=name or "regex_guardrail",
             max_retries=max_retries,
         )
+
+    def _check(self, content: str) -> GuardrailResult:
+        matched = any(p.search(content) for p in self._patterns)
+
+        if self._mode == "block" and matched:
+            msg = self._custom_message or "Content matched a blocked pattern."
+            return GuardrailResult(passed=False, message=msg)
+        elif self._mode == "allow" and not matched:
+            msg = self._custom_message or "Content did not match any allowed pattern."
+            return GuardrailResult(passed=False, message=msg)
+        return GuardrailResult(passed=True)
 
     def __repr__(self) -> str:
         return (
@@ -319,11 +322,10 @@ class LLMGuardrail(Guardrail):
         self._policy = policy
         self._max_tokens = max_tokens
 
-        def _check(content: str) -> GuardrailResult:
-            return self._evaluate(content)
-
+        # Bound method, not a nested closure — spawn-picklable with the
+        # instance (idea-5 spawn safety).
         super().__init__(
-            func=_check,
+            func=self._evaluate,
             position=position,
             on_fail=on_fail,
             name=name or "llm_guardrail",

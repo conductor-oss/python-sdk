@@ -24,9 +24,13 @@ This module provides the building blocks for spawn-safe workers:
   worker group as each group's workers become spawn-safe.
 
 Design: idea-5 ``design.md`` in the combine-agentspan analysis workspace.
-"""
 
-from __future__ import annotations
+NOTE: deliberately NO ``from __future__ import annotations`` here — the task
+runners read parameter types from ``inspect.signature(execute_function)``
+(the class ``__call__``'s annotations for entry instances) and pass them to
+``isinstance``-based input conversion; string annotations would break that
+(``TypeError: isinstance() arg 2 must be a type``).
+"""
 
 import importlib
 import inspect
@@ -173,9 +177,9 @@ class ToolWorkerEntry:
     def for_callable(cls, fn, tool_name, guardrails=None, credential_names=None):
         """Build an entry for *fn*, preferring by-reference transport.
 
-        Falls back to direct transport for callable instances (picklable by
-        value) and for closures — the latter only work under ``fork``; the
-        registration probe polices that under ``spawn``.
+        Falls back to direct transport for picklable callables (instances,
+        bound methods of picklable objects); unpicklable closures are caught
+        by the registration probe with an actionable error.
         """
         framework = bool(getattr(fn, "_agentspan_framework_callable", False))
         try:
@@ -218,8 +222,9 @@ class ToolWorkerEntry:
 def wrap_callable(fn):
     """Best transport for a user callable: FunctionRef when resolvable, raw otherwise.
 
-    Raw transport only survives ``fork`` (or picklable instances); the
-    registration probe polices that under ``spawn``.
+    Raw transport works for picklable callables (instances with plain-data
+    attrs, bound methods of picklable objects); anything else is caught by the
+    registration probe with an actionable error.
     """
     if fn is None:
         return None
@@ -354,7 +359,8 @@ class StopWhenEntry:
     def __init__(self, stop_when_fn):
         self.fn_t = wrap_callable(stop_when_fn)
 
-    async def __call__(self, result="", iteration: int = 0, messages=None) -> object:
+    async def __call__(self, result: object = "", iteration: int = 0,
+                       messages: object = None) -> object:
         from conductor.ai.agents.runtime.runtime import _call_user_fn, _resolve_loop_iteration
 
         iteration = _resolve_loop_iteration(iteration)

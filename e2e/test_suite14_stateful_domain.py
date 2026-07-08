@@ -65,6 +65,13 @@ def echo_tool(message: str) -> str:
     return f"ECHO:{message}"
 
 
+def should_stop_on_echo(context, **kwargs):
+    """Module-level stop_when predicate — spawn workers require importable
+    callables (nested defs can't cross the process boundary)."""
+    result = context.get("result", "")
+    return "ECHO:" in result
+
+
 @tool(stateful=True)
 def stateful_echo(message: str) -> str:
     """A stateful tool that echoes with a prefix."""
@@ -250,10 +257,6 @@ class TestSuite14StatefulDomain:
         The stop_when function checks for a marker in the output.
         Validates the stop_when worker task is COMPLETED with the correct domain.
         """
-        def _should_stop(context, **kwargs):
-            result = context.get("result", "")
-            return "ECHO:" in result
-
         agent = Agent(
             name="e2e_s14_stateful_stop",
             model=model,
@@ -264,7 +267,7 @@ class TestSuite14StatefulDomain:
                 "Then report the tool's response."
             ),
             tools=[echo_tool],
-            stop_when=_should_stop,
+            stop_when=should_stop_on_echo,
         )
         result = fresh_runtime.run(agent, "Call echo_tool with stop_test", timeout=TIMEOUT)
         diag = _run_diagnostic(result)
