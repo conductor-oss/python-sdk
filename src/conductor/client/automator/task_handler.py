@@ -251,10 +251,13 @@ class TaskHandler:
         if metrics_settings is not None:
             os.environ["PROMETHEUS_MULTIPROC_DIR"] = metrics_settings.metrics_directory
             logger.info(f"Set PROMETHEUS_MULTIPROC_DIR={metrics_settings.metrics_directory}")
-            # Clean the shared metrics directory exactly once, here in the
-            # parent, before any worker process is spawned. Spawned workers
-            # call create_metrics_collector (non-destructive) and must never
-            # wipe .db files belonging to live sibling processes.
+            # Clean the shared metrics directory in the parent, before any
+            # worker process is spawned. This is a convenience for worker-only
+            # apps; clean_metrics_directory() is idempotent per process, so if
+            # the entrypoint already cleaned up front (recommended when the
+            # parent itself collects metrics), this call is a no-op and will not
+            # wipe .db files the parent already began writing. Spawned workers
+            # call create_metrics_collector (non-destructive) and never clean.
             metrics_settings.clean_metrics_directory()
 
         # Store event listeners to pass to each worker process

@@ -8,8 +8,14 @@ import tempfile
 import unittest
 from unittest import mock
 
-from conductor.client.configuration.settings.metrics_settings import MetricsSettings
-from conductor.client.telemetry.metrics_factory import create_metrics_collector
+from conductor.client.configuration.settings.metrics_settings import (
+    MetricsSettings,
+    _reset_cleaned_metrics_directories,
+)
+from conductor.client.telemetry.metrics_factory import (
+    create_metrics_collector,
+    create_metrics_collector_for_parent,
+)
 from conductor.client.telemetry.legacy_metrics_collector import LegacyMetricsCollector
 from conductor.client.telemetry.canonical_metrics_collector import CanonicalMetricsCollector
 
@@ -17,6 +23,7 @@ from conductor.client.telemetry.canonical_metrics_collector import CanonicalMetr
 class TestMetricsFactory(unittest.TestCase):
 
     def setUp(self):
+        _reset_cleaned_metrics_directories()
         self._saved_env = {}
         for key in ("WORKER_CANONICAL_METRICS", "WORKER_LEGACY_METRICS"):
             self._saved_env[key] = os.environ.pop(key, None)
@@ -30,6 +37,7 @@ class TestMetricsFactory(unittest.TestCase):
                 os.environ[key] = val
         if os.path.exists(self.metrics_dir):
             shutil.rmtree(self.metrics_dir)
+        _reset_cleaned_metrics_directories()
 
     def _make_settings(self, **kwargs):
         kwargs.setdefault("directory", self.metrics_dir)
@@ -149,6 +157,23 @@ class TestMetricsFactory(unittest.TestCase):
             "create_metrics_collector must not delete .db files (worker path)",
         )
 
+    def test_create_for_parent_cleans_then_returns_collector(self):
+        """create_metrics_collector_for_parent is the parent/owner entrypoint: it
+        cleans the directory up front (honoring clean_directory) and then returns
+        a valid collector, so the parent's own first write is not orphaned."""
+        db_path = os.path.join(self.metrics_dir, "gauge_livesum_12345.db")
+        with open(db_path, "w") as f:
+            f.write("fake")
+
+        settings = MetricsSettings(directory=self.metrics_dir, clean_directory=True)
+        collector = create_metrics_collector_for_parent(settings)
+
+        self.assertFalse(
+            os.path.exists(db_path),
+            "create_metrics_collector_for_parent must clean .db files with clean_directory=True",
+        )
+        self.assertIsInstance(collector, LegacyMetricsCollector)
+
     def test_clean_directory_removes_db_files(self):
         """MetricsSettings.clean_metrics_directory() removes .db files when
         clean_directory=True."""
@@ -177,6 +202,26 @@ class TestMetricsFactory(unittest.TestCase):
         self.assertTrue(
             os.path.exists(db_path),
             "clean_metrics_directory() must not delete files when no flag is set",
+        )
+
+    def test_clean_metrics_directory_idempotent_per_process(self):
+        """The destructive cleanup runs only on the first call per directory.
+        A second call must not wipe .db files a live process (e.g. the parent's
+        collector) started writing after the first clean -- this is what lets
+        the entrypoint clean up front and TaskHandler safely call it again."""
+        settings = MetricsSettings(directory=self.metrics_dir, clean_directory=True)
+        settings.clean_metrics_directory()
+
+        # Simulate a live process creating a .db file after the first clean.
+        live_db = os.path.join(self.metrics_dir, f"gauge_livesum_{os.getpid()}.db")
+        with open(live_db, "w") as f:
+            f.write("fake")
+
+        settings.clean_metrics_directory()
+
+        self.assertTrue(
+            os.path.exists(live_db),
+            "second clean_metrics_directory() call must be a no-op and keep the file",
         )
 
     def test_clean_dead_pids_removes_dead_pid_file(self):

@@ -17,6 +17,20 @@ logger = logging.getLogger(
 CANONICAL_SUBDIR = "canonical"
 
 
+# Directories already cleaned in THIS process. Cleanup must run at most once
+# per directory per process so that a second caller (e.g. TaskHandler after the
+# owning entrypoint already cleaned up front) cannot wipe .db files that a live
+# process started writing after the first clean. Safe under spawn because only
+# the parent ever cleans; spawned workers never call clean_metrics_directory.
+_cleaned_metrics_directories: set = set()
+
+
+def _reset_cleaned_metrics_directories() -> None:
+    """Clear the per-process cleanup guard. Intended for tests so each starts
+    from a known state and does not leak entries via this module-level global."""
+    _cleaned_metrics_directories.clear()
+
+
 def _env_bool(name: str, default: bool) -> bool:
     value = os.environ.get(name, "")
     if not value:
@@ -101,22 +115,33 @@ class MetricsSettings:
         return self.directory
 
     def clean_metrics_directory(self) -> None:
-        """Prepare the shared metrics directory exactly once, before any worker
-        writes to it.
+        """Prepare the shared metrics directory, at most once per process.
 
         This is the destructive counterpart to metrics collection and must be
-        invoked only by the process that owns the worker lifecycle (i.e. the
-        parent that spawns workers, via ``TaskHandler``), never by a spawned
-        worker.  A worker cannot know whether sibling processes are already
-        live and sharing this directory, so it must never wipe ``.db`` files.
+        invoked only by the process that owns the metrics lifecycle, and as
+        early as possible -- before that process (or any worker it spawns)
+        creates a collector and starts writing ``.db`` files. It must never be
+        called by a spawned worker: a worker cannot know whether sibling
+        processes are already live and sharing this directory, so it must never
+        wipe ``.db`` files.
 
-        Ensures the directory exists, then applies the configured cleanup:
+        Idempotent per process: the destructive cleanup runs only on the first
+        call for a given directory. Later calls (e.g. ``TaskHandler`` invoking
+        this after the entrypoint already cleaned up front) only ensure the
+        directory exists, so they cannot wipe files a live process began
+        writing after the first clean.
+
+        On the first call, ensures the directory exists and applies the
+        configured cleanup:
           - ``clean_directory``: remove all prometheus_client ``.db`` files.
           - ``clean_dead_pids``: remove only ``.db`` files whose owning PID no
             longer exists.
         Both are no-ops when their respective flag is ``False``.
         """
         os.makedirs(self.metrics_directory, exist_ok=True)
+        if self.metrics_directory in _cleaned_metrics_directories:
+            return
+        _cleaned_metrics_directories.add(self.metrics_directory)
         if self.clean_directory:
             self._clean_stale_db_files()
         if self.clean_dead_pids:
