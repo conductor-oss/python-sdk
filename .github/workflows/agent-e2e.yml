@@ -1,8 +1,10 @@
 name: Agent E2E
 
-# Runs the agent e2e suites (e2e/) and agent integration tests
-# (tests/integration/ai) against the released Agentspan server JAR —
-# a full Conductor server with the agent runtime baked in.
+# Runs the agent e2e suites (e2e/) against the released Agentspan
+# server JAR — a full Conductor server with the agent runtime baked in.
+# tests/integration/ai stays manual-only (same as upstream Agentspan,
+# which never ran its tests/integration in CI): run it locally against
+# a live server with `pytest tests/integration/ai`.
 #
 # These tests call real LLMs via the OPENAI_API_KEY / ANTHROPIC_API_KEY
 # repo secrets. Fork PRs cannot see repo secrets, so for them the run
@@ -92,13 +94,9 @@ jobs:
           tail -100 server.log
           exit 1
 
-      - name: Run agent integration tests
-        run: |
-          mkdir -p results
-          pytest tests/integration/ai -v --junitxml=results/junit-integration.xml
-
       - name: Run e2e suites
         run: |
+          mkdir -p results
           pytest e2e/ -v --tb=short -n 3 --dist=loadgroup \
             --junitxml=results/junit-e2e.xml
 
