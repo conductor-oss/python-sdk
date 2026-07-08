@@ -97,8 +97,10 @@ class CodeExecutor(ABC):
     def as_tool(self, name: Optional[str] = None, description: Optional[str] = None) -> Any:
         """Create a ``@tool``-compatible function for this executor.
 
-        Returns a decorated function that can be passed directly to
-        ``Agent(tools=[...])``.
+        Returns a tool callable that can be passed directly to
+        ``Agent(tools=[...])``. The callable is a picklable
+        :class:`ExecutorToolEntry` carrying this executor by value — not a
+        closure — so it survives 'spawn' worker pickling (idea-5).
 
         Args:
             name: Override tool name (default: ``"execute_code"``).
@@ -106,40 +108,13 @@ class CodeExecutor(ABC):
         """
         from conductor.ai.agents.tool import tool
 
-        executor = self
         tool_name = name or "execute_code"
         tool_desc = description or (
             f"Execute {self.language} code. Returns stdout, stderr, and exit code. "
             f"Timeout: {self.timeout}s."
         )
 
-        @tool(name=tool_name)
-        def execute_code(code: str) -> dict:
-            if not code:
-                return {
-                    "status": "success",
-                    "stdout": "No code provided. Nothing to execute.",
-                    "stderr": "",
-                }
-            result = executor.execute(code)
-            if result.success:
-                return {
-                    "status": "success",
-                    "stdout": result.output or "",
-                    "stderr": result.error or "",
-                }
-            else:
-                stderr_parts = []
-                if result.error:
-                    stderr_parts.append(result.error.rstrip())
-                if result.timed_out:
-                    stderr_parts.append(f"TIMED OUT after {executor.timeout}s")
-                stderr_parts.append(f"Exit code: {result.exit_code}")
-                return {
-                    "status": "error",
-                    "stdout": result.output or "",
-                    "stderr": "\n".join(stderr_parts),
-                }
+        execute_code = tool(name=tool_name)(ExecutorToolEntry(self))
 
         # Override the description on the tool def
         execute_code._tool_def.description = tool_desc
@@ -147,6 +122,46 @@ class CodeExecutor(ABC):
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(language={self.language!r}, timeout={self.timeout})"
+
+
+class ExecutorToolEntry:
+    """Execute code with the configured executor.
+
+    Picklable tool callable behind :meth:`CodeExecutor.as_tool` — carries the
+    executor by value instead of closing over it, so the worker survives
+    'spawn' pickling (idea-5 spawn safety). Note: ``JupyterCodeExecutor``
+    only pickles before its kernel starts; register such tools before use.
+    """
+
+    def __init__(self, executor: "CodeExecutor"):
+        self.executor = executor
+
+    def __call__(self, code: str) -> dict:
+        if not code:
+            return {
+                "status": "success",
+                "stdout": "No code provided. Nothing to execute.",
+                "stderr": "",
+            }
+        result = self.executor.execute(code)
+        if result.success:
+            return {
+                "status": "success",
+                "stdout": result.output or "",
+                "stderr": result.error or "",
+            }
+        else:
+            stderr_parts = []
+            if result.error:
+                stderr_parts.append(result.error.rstrip())
+            if result.timed_out:
+                stderr_parts.append(f"TIMED OUT after {self.executor.timeout}s")
+            stderr_parts.append(f"Exit code: {result.exit_code}")
+            return {
+                "status": "error",
+                "stdout": result.output or "",
+                "stderr": "\n".join(stderr_parts),
+            }
 
 
 class LocalCodeExecutor(CodeExecutor):

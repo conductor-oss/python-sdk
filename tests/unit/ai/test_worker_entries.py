@@ -128,6 +128,45 @@ class TestToolWorkerEntrySpawn:
         assert output == {"result": 12}  # decorated_sample(5) == 5 + 7
 
 
+class TestCodeExecutionEntrySpawn:
+    def test_code_execution_entry_runs_in_spawn_child(self):
+        """CodeExecutionEntry (was the _make_code_execution_tool closure)
+        pickles and executes real code across a spawn boundary."""
+        from conductor.ai.agents.code_execution_config import CodeExecutionEntry
+        from conductor.ai.agents.code_executor import LocalCodeExecutor
+
+        entry = CodeExecutionEntry(
+            LocalCodeExecutor(language="python", timeout=30),
+            allowed_languages=["python"],
+            allowed_commands=[],
+            timeout=30,
+        )
+        entry_bytes = pickle.dumps(entry)  # closure could never do this
+
+        ctx = multiprocessing.get_context("spawn")
+        q = ctx.Queue()
+        p = ctx.Process(
+            target=helpers.run_code_entry_child,
+            args=(entry_bytes, "print('spawn-ok')", q),
+        )
+        p.start()
+        try:
+            result = q.get(timeout=60)
+        finally:
+            p.join(timeout=60)
+        assert p.exitcode == 0
+        assert result["status"] == "success"
+        assert "spawn-ok" in result["stdout"]
+
+    def test_as_tool_entry_is_picklable(self):
+        from conductor.ai.agents.code_executor import LocalCodeExecutor
+
+        tool_fn = LocalCodeExecutor(language="python", timeout=10).as_tool()
+        td = tool_fn._tool_def
+        restored = pickle.loads(pickle.dumps(td.func))
+        assert restored.executor.language == "python"
+
+
 # ── Registration-time probe ──────────────────────────────────────────────
 
 

@@ -113,7 +113,12 @@ def schema_from_function(func: Callable[..., Any]) -> Dict[str, Any]:
     try:
         hints = get_type_hints(func)
     except Exception:
-        hints = {}
+        # Callable instances (spawn-safe worker entries): resolve hints from
+        # the class's __call__ — get_type_hints rejects instances directly.
+        try:
+            hints = get_type_hints(type(func).__call__)
+        except Exception:
+            hints = {}
 
     # Build input schema
     properties: Dict[str, Any] = {}

@@ -54,6 +54,12 @@ def resolve_and_call_child(ref_bytes: bytes, arg: int, q) -> None:
     q.put(fn(arg))
 
 
+def run_code_entry_child(entry_bytes: bytes, code: str, q) -> None:
+    """Spawn-child target: unpickle a CodeExecutionEntry and execute code."""
+    entry = pickle.loads(entry_bytes)
+    q.put(entry(code))
+
+
 def run_tool_entry_child(entry_bytes: bytes, x: int, q) -> None:
     """Spawn-child target: unpickle a ToolWorkerEntry and execute a real Task.
 

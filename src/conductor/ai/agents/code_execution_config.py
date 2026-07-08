@@ -242,29 +242,30 @@ class CommandValidator:
 # ── Tool factory ───────────────────────────────────────────────────────
 
 
-def _make_code_execution_tool(
-    executor: Any,
-    allowed_languages: List[str],
-    allowed_commands: List[str],
-    timeout: int,
-    agent_name: str = "",
-) -> Any:
-    """Create a ``@tool``-decorated function for code execution.
+class CodeExecutionEntry:
+    """Execute code in a sandboxed environment.
 
-    The returned function can be appended to ``Agent.tools`` directly.
-    The tool name is prefixed with the agent name to avoid collisions
-    when multiple agents define code execution with different configs.
+    Picklable replacement for the nested ``execute_code`` closure: a
+    module-level class whose attrs are the executor (plain-data for
+    Local/Docker/Serverless) and the validation config, so the worker
+    survives the ``spawn`` start method's pickling (idea-5 spawn safety).
+    The class docstring doubles as the tool description default.
     """
-    from conductor.ai.agents.code_executor import LocalCodeExecutor
-    from conductor.ai.agents.tool import tool
 
-    validator = CommandValidator(allowed_commands) if allowed_commands else None
-    langs_str = ", ".join(allowed_languages)
-    task_name = f"{agent_name}_execute_code" if agent_name else "execute_code"
+    def __init__(self, executor: Any, allowed_languages: List[str],
+                 allowed_commands: List[str], timeout: int):
+        self.executor = executor
+        self.allowed_languages = list(allowed_languages)
+        self.allowed_commands = list(allowed_commands or [])
+        self.timeout = timeout
 
-    @tool(name=task_name)
-    def execute_code(code: str, language: str = "python") -> dict:
-        """Execute code in a sandboxed environment."""
+    def __call__(self, code: str, language: str = "python") -> dict:
+        from conductor.ai.agents.code_executor import LocalCodeExecutor
+
+        # Rebuilt per call — cheap (frozenset), and keeps the pickled state
+        # plain data.
+        validator = CommandValidator(self.allowed_commands) if self.allowed_commands else None
+
         # Guard against bad parameters (LLM may omit args or send wrong types)
         if not code:
             return {
@@ -279,8 +280,10 @@ def _make_code_execution_tool(
             language = "python"
 
         # Validate language
-        if language not in allowed_languages:
-            raise ValueError(f"Language '{language}' is not allowed. Allowed: {langs_str}")
+        if language not in self.allowed_languages:
+            raise ValueError(
+                f"Language '{language}' is not allowed. Allowed: {', '.join(self.allowed_languages)}"
+            )
 
         # Validate commands
         if validator:
@@ -289,16 +292,16 @@ def _make_code_execution_tool(
                 raise ValueError(error)
 
         # Execute
-        if isinstance(executor, LocalCodeExecutor):
+        if isinstance(self.executor, LocalCodeExecutor):
             # LocalCodeExecutor is language-specific; create one per invocation
             lang_executor = LocalCodeExecutor(
                 language=language,
-                timeout=timeout,
-                working_dir=executor.working_dir,
+                timeout=self.timeout,
+                working_dir=self.executor.working_dir,
             )
             result = lang_executor.execute(code)
         else:
-            result = executor.execute(code)
+            result = self.executor.execute(code)
 
         # Always return structured result (never raise on code errors)
         if result.success:
@@ -312,13 +315,36 @@ def _make_code_execution_tool(
             if result.error:
                 stderr_parts.append(result.error.rstrip())
             if result.timed_out:
-                stderr_parts.append(f"TIMED OUT after {timeout}s")
+                stderr_parts.append(f"TIMED OUT after {self.timeout}s")
             stderr_parts.append(f"Exit code: {result.exit_code}")
             return {
                 "status": "error",
                 "stdout": result.output or "",
                 "stderr": "\n".join(stderr_parts),
             }
+
+
+def _make_code_execution_tool(
+    executor: Any,
+    allowed_languages: List[str],
+    allowed_commands: List[str],
+    timeout: int,
+    agent_name: str = "",
+) -> Any:
+    """Create a ``@tool``-compatible code-execution tool.
+
+    The returned tool can be appended to ``Agent.tools`` directly. The tool
+    name is prefixed with the agent name to avoid collisions when multiple
+    agents define code execution with different configs. The callable is a
+    picklable :class:`CodeExecutionEntry` (spawn-safe), not a closure.
+    """
+    from conductor.ai.agents.tool import tool
+
+    langs_str = ", ".join(allowed_languages)
+    task_name = f"{agent_name}_execute_code" if agent_name else "execute_code"
+
+    entry = CodeExecutionEntry(executor, allowed_languages, allowed_commands, timeout)
+    execute_code = tool(name=task_name)(entry)
 
     # Build dynamic description
     desc = f"Execute code in a sandboxed environment. Supported languages: {langs_str}. Timeout: {timeout}s."

@@ -266,6 +266,23 @@ def _needs_context(func):
         return False
 
 
+def _resolve_annotations_in_place(tool_func) -> None:
+    """Resolve PEP 563 string annotations to real types, best-effort.
+
+    For callable instances (spawn-safe worker entries) the hints come from
+    the class's ``__call__`` — ``get_type_hints`` rejects instances directly.
+    """
+    import typing
+
+    try:
+        tool_func.__annotations__ = typing.get_type_hints(tool_func)
+    except Exception:
+        try:
+            tool_func.__annotations__ = typing.get_type_hints(type(tool_func).__call__)
+        except Exception:
+            pass
+
+
 def make_tool_worker(tool_func, tool_name, guardrails=None, tool_def=None, credential_names=None):
     """Create a spawn-safe Conductor worker for a @tool function.
 
@@ -287,12 +304,7 @@ def make_tool_worker(tool_func, tool_name, guardrails=None, tool_def=None, crede
     # Resolve PEP 563 string annotations eagerly (documented factory behavior;
     # run_tool_task repeats this in the child, where re-imported functions
     # start over with string annotations).
-    import typing
-
-    try:
-        tool_func.__annotations__ = typing.get_type_hints(tool_func)
-    except Exception:
-        pass
+    _resolve_annotations_in_place(tool_func)
     creds = list(credential_names) if credential_names else []
     if not creds and tool_def is not None:
         creds = [c for c in (getattr(tool_def, "credentials", None) or []) if isinstance(c, str)]
@@ -330,12 +342,7 @@ def run_tool_task(task, *, tool_name, tool_func, guardrails=None, credential_nam
     # Resolve PEP 563 string annotations (from __future__ import annotations)
     # to real types so downstream code can use isinstance(). Idempotent —
     # done per call because the resolution must happen in the child process.
-    import typing
-
-    try:
-        tool_func.__annotations__ = typing.get_type_hints(tool_func)
-    except Exception:
-        pass
+    _resolve_annotations_in_place(tool_func)
 
     from conductor.client.http.models import Task, TaskResult
     from conductor.client.http.models.task_result_status import TaskResultStatus
