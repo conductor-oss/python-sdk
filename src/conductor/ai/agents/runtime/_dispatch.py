@@ -267,29 +267,69 @@ def _needs_context(func):
 
 
 def make_tool_worker(tool_func, tool_name, guardrails=None, tool_def=None, credential_names=None):
-    """Create a Conductor worker wrapper for a @tool function.
+    """Create a spawn-safe Conductor worker for a @tool function.
 
-    The wrapper accepts a ``Task`` object so it can extract metadata
-    (execution ID) for ``ToolContext`` injection, then maps the task's
-    ``inputParameters`` to the tool function's arguments.
-    On failure the exception propagates so Conductor marks the task FAILED.
+    Returns a picklable ``ToolWorkerEntry`` (module-level class instance) —
+    NOT a closure. Under the ``spawn`` start method every worker is pickled
+    at ``Process.start()``, so the entry carries everything the tool needs
+    (function reference, guardrails, credential names) as instance state;
+    parent-populated module registries are empty in spawn children.
 
-    If *guardrails* are provided, they wrap the tool execution:
-    - Pre-execution guardrails check the input parameters.
-    - Post-execution guardrails check the tool result.
-
-    If *credential_names* are provided (e.g. for framework-extracted tools),
-    they are captured in the closure and used as the primary source of
-    credential names at invocation time.
+    Credential-name priority is resolved here, at registration:
+    explicit *credential_names* (framework-extracted tools) > *tool_def*
+    credentials > the function's ``_tool_def`` attribute. The workflow-level
+    fallback stays a runtime lookup in :func:`run_tool_task`.
     """
-    # Capture credential names in closure for framework-extracted tools
-    _closure_cred_names = list(credential_names) if credential_names else []
-    # Store tool_def in module-level registry so it's accessible across
-    # spawn-mode multiprocessing boundaries (closures are not picklable).
     if tool_def is not None:
+        # Parent-side registry kept for in-process readers; spawn children
+        # rely on the entry's carried state instead.
         _tool_def_registry[tool_name] = tool_def
+    # Resolve PEP 563 string annotations eagerly (documented factory behavior;
+    # run_tool_task repeats this in the child, where re-imported functions
+    # start over with string annotations).
+    import typing
+
+    try:
+        tool_func.__annotations__ = typing.get_type_hints(tool_func)
+    except Exception:
+        pass
+    creds = list(credential_names) if credential_names else []
+    if not creds and tool_def is not None:
+        creds = [c for c in (getattr(tool_def, "credentials", None) or []) if isinstance(c, str)]
+    if not creds:
+        creds = [c for c in _get_credential_names_from_tool(tool_func) if isinstance(c, str)]
+
+    from conductor.ai.agents.runtime._worker_entries import ToolWorkerEntry
+
+    # No probe here: this factory is also used for in-process execution (and
+    # directly by tests). The spawn probe runs at the worker_task registration
+    # sites, where crossing a process boundary becomes real.
+    return ToolWorkerEntry.for_callable(
+        tool_func, tool_name, guardrails=guardrails, credential_names=creds
+    )
+
+
+def run_tool_task(task, *, tool_name, tool_func, guardrails=None, credential_names=None,
+                  framework_callable=False):
+    """Execute one tool task — the module-level body behind ``ToolWorkerEntry``.
+
+    Maps the task's ``inputParameters`` to the tool function's arguments,
+    injects ``ToolContext``/credentials, and applies guardrails. On failure
+    the returned ``TaskResult`` is marked FAILED (terminal for
+    ``TerminalToolError``). Runs in the worker child process; must not rely
+    on parent-populated registries beyond best-effort fallbacks.
+    """
+    if framework_callable:
+        # Re-apply the parent-side marker: a spawn child's re-imported
+        # function copy does not carry attributes set in the parent.
+        try:
+            tool_func._agentspan_framework_callable = True
+        except Exception:
+            pass
+    _closure_cred_names = list(credential_names) if credential_names else []
     # Resolve PEP 563 string annotations (from __future__ import annotations)
-    # to real types so downstream code can use isinstance().
+    # to real types so downstream code can use isinstance(). Idempotent —
+    # done per call because the resolution must happen in the child process.
     import typing
 
     try:
@@ -406,7 +446,9 @@ def make_tool_worker(tool_func, tool_name, guardrails=None, tool_def=None, crede
             if _closure_cred_names:
                 credential_names = list(_closure_cred_names)
             else:
-                _td = _tool_def_registry.get(tool_name) or tool_def
+                # Best-effort parent-side registry (empty in spawn children —
+                # the entry-carried credential_names above is the real path).
+                _td = _tool_def_registry.get(tool_name)
                 raw_secrets = (
                     list(getattr(_td, "credentials", []))
                     if _td
@@ -442,7 +484,11 @@ def make_tool_worker(tool_func, tool_name, guardrails=None, tool_def=None, crede
                     continue
                 if param_name in task.input_data:
                     raw_value = task.input_data[param_name]
-                    ann = tool_func.__annotations__.get(param_name, inspect.Parameter.empty)
+                    # getattr: callable-instance workers (e.g. skill entries)
+                    # have no __annotations__ of their own.
+                    ann = getattr(tool_func, "__annotations__", {}).get(
+                        param_name, inspect.Parameter.empty
+                    )
                     fn_kwargs[param_name] = _coerce_value(raw_value, ann)
                 elif sig.parameters[param_name].default is not inspect.Parameter.empty:
                     fn_kwargs[param_name] = sig.parameters[param_name].default
@@ -503,10 +549,11 @@ def make_tool_worker(tool_func, tool_name, guardrails=None, tool_def=None, crede
             task_result.reason_for_incompletion = str(e)
             return task_result
 
-    tool_worker.__name__ = tool_func.__name__
-    tool_worker.__qualname__ = tool_func.__qualname__
-    tool_worker.__doc__ = tool_func.__doc__
-    return tool_worker
+    # The nested helpers above exist only for the duration of this call — the
+    # picklable unit is ToolWorkerEntry; nothing here crosses a process
+    # boundary (the identity spoof that used to live here broke pickling:
+    # idea-5 spawn-vs-fork analysis).
+    return tool_worker(task)
 
 
 # ── Native function calling workers ─────────────────────────────────────

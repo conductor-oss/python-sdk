@@ -872,11 +872,13 @@ class AgentRuntime:
             # TaskHandler is created — avoids incremental fork() on macOS.
             from conductor.ai.agents.frameworks.serializer import serialize_agent
             from conductor.ai.agents.runtime._dispatch import make_tool_worker
+            from conductor.ai.agents.runtime._worker_entries import probe_spawn_safety
             from conductor.client.worker.worker_task import worker_task
 
             _, workers = serialize_agent(agent)
             for w in workers:
                 wrapper = make_tool_worker(w.func, w.name)
+                probe_spawn_safety(wrapper, w.name, group="tools")
                 worker_task(
                     task_definition_name=w.name,
                     task_def=_default_task_def(w.name),
@@ -1335,6 +1337,7 @@ class AgentRuntime:
     def _register_skill_workers(self, agent: Agent, domain: "Optional[str]" = None) -> None:
         """Register skill workers (scripts + read_skill_file) for a skill-based agent."""
         from conductor.ai.agents.runtime._dispatch import make_tool_worker
+        from conductor.ai.agents.runtime._worker_entries import probe_spawn_safety
         from conductor.ai.agents.skill import create_skill_workers
         from conductor.client.worker.worker_task import worker_task
 
@@ -1344,6 +1347,7 @@ class AgentRuntime:
 
         for sw in skill_workers:
             wrapper = make_tool_worker(sw.func, sw.name)
+            probe_spawn_safety(wrapper, sw.name, group="tools")
             worker_task(
                 task_definition_name=sw.name,
                 task_def=_default_task_def(sw.name),
@@ -3240,6 +3244,7 @@ class AgentRuntime:
             return
 
         from conductor.ai.agents.runtime._dispatch import make_tool_worker
+        from conductor.ai.agents.runtime._worker_entries import probe_spawn_safety
         from conductor.client.worker.worker_task import worker_task
 
         for w in workers:
@@ -3248,6 +3253,7 @@ class AgentRuntime:
             except Exception:
                 pass
             wrapper = make_tool_worker(w.func, w.name, credential_names=credentials)
+            probe_spawn_safety(wrapper, w.name, group="tools")
             worker_task(
                 task_definition_name=w.name,
                 task_def=_default_task_def(w.name),

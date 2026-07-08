@@ -33,11 +33,21 @@ def _real_conductor_task(workflow_instance_id="wf-integ-001"):
     return task
 
 
-def _make_lc_tool_and_graph():
-    """Create a real LangChain @lc_tool and a real create_react_agent graph.
+def _check_github_token_impl() -> str:
+    """Check if GitHub token is available in the environment."""
+    token = os.environ.get("GITHUB_TOKEN", "")
+    if token:
+        return f"found:{token[:8]}"
+    return "NOT_FOUND"
 
-    Returns (graph, tool_func) where tool_func is the raw @lc_tool object.
+
+def _make_lc_tool_and_graph():
+    """Create a real LangChain lc_tool and a real create_react_agent graph.
+
+    Returns (graph, tool_func) where tool_func is the raw lc_tool object.
     Uses a real ChatOpenAI with a fake key — no API call is made.
+    The implementation function lives at module level so the extracted worker
+    is spawn-safe (registration probes reject <locals> functions — idea-5).
     """
     os.environ.setdefault("OPENAI_API_KEY", "sk-fake-key-for-testing")
 
@@ -45,13 +55,7 @@ def _make_lc_tool_and_graph():
     from langchain_openai import ChatOpenAI
     from langgraph.prebuilt import create_react_agent
 
-    @lc_tool
-    def check_github_token() -> str:
-        """Check if GitHub token is available in the environment."""
-        token = os.environ.get("GITHUB_TOKEN", "")
-        if token:
-            return f"found:{token[:8]}"
-        return "NOT_FOUND"
+    check_github_token = lc_tool("check_github_token")(_check_github_token_impl)
 
     llm = ChatOpenAI(model="gpt-4o")
     graph = create_react_agent(llm, tools=[check_github_token])

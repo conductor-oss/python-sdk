@@ -52,3 +52,19 @@ def resolve_and_call_child(ref_bytes: bytes, arg: int, q) -> None:
     ref = pickle.loads(ref_bytes)
     fn = ref.resolve()
     q.put(fn(arg))
+
+
+def run_tool_entry_child(entry_bytes: bytes, x: int, q) -> None:
+    """Spawn-child target: unpickle a ToolWorkerEntry and execute a real Task.
+
+    Proves the whole worker unit crosses the boundary and executes without any
+    parent-populated registry state (the child imports everything fresh).
+    """
+    from conductor.client.http.models import Task
+
+    entry = pickle.loads(entry_bytes)
+    task = Task(task_id="t-spawn-1", workflow_instance_id="wf-spawn-1")
+    task.input_data = {"x": x}
+    task.task_def_name = entry.tool_name
+    result = entry(task)
+    q.put((str(result.status), dict(result.output_data or {})))

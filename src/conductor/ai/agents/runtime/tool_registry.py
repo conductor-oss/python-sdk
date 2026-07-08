@@ -67,10 +67,15 @@ class ToolRegistry:
                 _tool_approval_flags[td.name] = True
                 logger.info("Tool '%s' registered with approval_required=True", td.name)
 
+        from conductor.ai.agents.runtime._worker_entries import probe_spawn_safety
+
         for td in tool_defs:
             if td.func is not None and td.tool_type in ("worker", "cli"):
                 guardrails = td.guardrails if td.guardrails else None
                 wrapper = make_tool_worker(td.func, td.name, guardrails=guardrails, tool_def=td)
+                # Fail fast (with the offender named) if this worker can't
+                # cross the spawn process boundary — see idea-5 spawn safety.
+                probe_spawn_safety(wrapper, td.name, group="tools")
                 worker_task(
                     task_definition_name=td.name,
                     task_def=_default_task_def(

@@ -144,12 +144,84 @@ class FunctionRef:
         return obj
 
 
+# ── Worker entries ───────────────────────────────────────────────────────
+
+
+class ToolWorkerEntry:
+    """Spawn-safe replacement for ``make_tool_worker``'s nested ``tool_worker``.
+
+    Pickles by value (module-level class + picklable attrs) — no closure, no
+    identity spoof. The tool callable travels either as a :class:`FunctionRef`
+    (module-level functions) or directly (``fn_direct``) for picklable
+    callable instances and — under ``fork``, where nothing is pickled — legacy
+    closures. Credential names are resolved at registration and carried here,
+    because the parent's ``_dispatch`` registries are empty in spawn children.
+    """
+
+    def __init__(self, tool_name, fn_ref=None, fn_direct=None, guardrails=None,
+                 credential_names=None, framework_callable=False):
+        if (fn_ref is None) == (fn_direct is None):
+            raise ValueError("exactly one of fn_ref/fn_direct is required")
+        self.tool_name = tool_name
+        self.fn_ref = fn_ref
+        self.fn_direct = fn_direct
+        self.guardrails = guardrails
+        self.credential_names = list(credential_names) if credential_names else []
+        # Carried explicitly: the parent sets _agentspan_framework_callable on
+        # the function object, which a spawn child's re-imported copy lacks.
+        self.framework_callable = framework_callable
+
+    @classmethod
+    def for_callable(cls, fn, tool_name, guardrails=None, credential_names=None):
+        """Build an entry for *fn*, preferring by-reference transport.
+
+        Falls back to direct transport for callable instances (picklable by
+        value) and for closures — the latter only work under ``fork``; the
+        registration probe polices that under ``spawn``.
+        """
+        framework = bool(getattr(fn, "_agentspan_framework_callable", False))
+        try:
+            ref = FunctionRef.of(fn)
+        except SpawnSafetyError:
+            entry = cls(tool_name, fn_direct=fn, guardrails=guardrails,
+                        credential_names=credential_names, framework_callable=framework)
+        else:
+            entry = cls(tool_name, fn_ref=ref, guardrails=guardrails,
+                        credential_names=credential_names, framework_callable=framework)
+        # Introspection compatibility (logging etc.). Plain string INSTANCE
+        # attrs — unlike the old wrapper's reassigned function identity, these
+        # don't participate in pickling-by-reference, so they can't break it.
+        entry.__name__ = getattr(fn, "__name__", tool_name)
+        entry.__qualname__ = getattr(fn, "__qualname__", tool_name)
+        entry.__doc__ = getattr(fn, "__doc__", None)
+        return entry
+
+    def _target(self) -> Callable:
+        return self.fn_ref.resolve() if self.fn_ref is not None else self.fn_direct
+
+    def __call__(self, task):
+        # Late import: _dispatch owns the execution helpers; importing it here
+        # (not at module top) avoids an import cycle and works in the child.
+        from conductor.ai.agents.runtime._dispatch import run_tool_task
+
+        return run_tool_task(
+            task,
+            tool_name=self.tool_name,
+            tool_func=self._target(),
+            guardrails=self.guardrails,
+            credential_names=self.credential_names,
+            framework_callable=self.framework_callable,
+        )
+
+
 # ── Registration-time spawn probe ────────────────────────────────────────
 #
 # Groups are enabled stage-by-stage as each worker family is converted to a
 # spawn-safe form (idea-5 implementation plan): probing an unconverted group
 # would fail every registration immediately.
-_ENABLED_PROBE_GROUPS: FrozenSet[str] = frozenset()
+# - "tools": make_tool_worker/ToolWorkerEntry (native @tool, skill workers,
+#   framework-extracted) — converted in Stage 2.
+_ENABLED_PROBE_GROUPS: FrozenSet[str] = frozenset({"tools"})
 
 
 def _spawn_probe_active(group: str) -> bool:

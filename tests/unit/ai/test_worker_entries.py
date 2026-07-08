@@ -101,6 +101,33 @@ class TestFunctionRefResolve:
         assert p.exitcode == 0
 
 
+# ── ToolWorkerEntry across a real spawn boundary ─────────────────────────
+
+
+class TestToolWorkerEntrySpawn:
+    def test_entry_executes_tool_task_in_spawn_child(self):
+        """Full worker unit crosses spawn and runs a Task with NO parent registry
+        state — the exact scenario the 20 CI pickle failures never reached."""
+        from conductor.ai.agents.runtime._dispatch import make_tool_worker
+        from conductor.ai.agents.tool import get_tool_def
+
+        td = get_tool_def(helpers.decorated_sample)
+        entry = make_tool_worker(td.func, "decorated_sample", tool_def=td)
+        entry_bytes = pickle.dumps(entry)  # must pickle — this raised pre-fix
+
+        ctx = multiprocessing.get_context("spawn")
+        q = ctx.Queue()
+        p = ctx.Process(target=helpers.run_tool_entry_child, args=(entry_bytes, 5, q))
+        p.start()
+        try:
+            status, output = q.get(timeout=30)
+        finally:
+            p.join(timeout=30)
+        assert p.exitcode == 0
+        assert "COMPLETED" in status
+        assert output == {"result": 12}  # decorated_sample(5) == 5 + 7
+
+
 # ── Registration-time probe ──────────────────────────────────────────────
 
 

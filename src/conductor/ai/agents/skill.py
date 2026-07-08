@@ -401,6 +401,65 @@ class SkillWorker:
     func: Callable[..., str]
 
 
+class ScriptRunner:
+    """Picklable skill-script worker (replaces the ``make_script_func`` closure).
+
+    Module-level class + plain-data attrs so it survives the ``spawn`` start
+    method's pickling of worker Process args (idea-5 spawn safety).
+    """
+
+    def __init__(self, interpreter: str, script_path: str):
+        self.interpreter = interpreter
+        self.script_path = str(script_path)
+
+    def __call__(self, command: str = "") -> str:
+        try:
+            args = shlex.split(command) if command else []
+            result = subprocess.run(
+                [self.interpreter, self.script_path, *args],
+                capture_output=True,
+                text=True,
+                timeout=300,
+            )
+            if result.returncode != 0:
+                return f"ERROR (exit {result.returncode}):\n{result.stderr}"
+            return result.stdout
+        except subprocess.TimeoutExpired:
+            return "ERROR: Script execution timed out (300s)"
+        except Exception as e:
+            return f"ERROR: {e}"
+
+
+class SkillFileReader:
+    """Picklable ``read_skill_file`` worker (replaces the ``make_read_func`` closure)."""
+
+    def __init__(self, skill_dir: Path, allowed: set, sections: Dict[str, str]):
+        self.skill_dir = str(skill_dir)
+        self.allowed = set(allowed)
+        self.sections = dict(sections)
+
+    def __call__(self, path: str = "") -> str:
+        if path not in self.allowed:
+            return f"ERROR: '{path}' not found. Available: {sorted(self.allowed)}"
+        # Handle virtual skill_section:* paths
+        if path.startswith("skill_section:"):
+            section_name = path[len("skill_section:") :]
+            if section_name in self.sections:
+                return self.sections[section_name]
+            return f"ERROR: section '{section_name}' not found"
+        sdir = Path(self.skill_dir)
+        target = sdir / path
+        # Safety check: ensure resolved path is within skill directory
+        try:
+            target.resolve().relative_to(sdir.resolve())
+        except ValueError:
+            return f"ERROR: '{path}' is outside the skill directory"
+        try:
+            return target.read_text()
+        except Exception as e:
+            return f"ERROR reading '{path}': {e}"
+
+
 def create_skill_workers(agent: Agent) -> List[SkillWorker]:
     """Create worker functions for a skill-based agent.
 
@@ -430,31 +489,11 @@ def create_skill_workers(agent: Agent) -> List[SkillWorker]:
         }
         interpreter = interpreter_map.get(language, "bash")
 
-        def make_script_func(interp: str, spath: str) -> Callable[..., str]:
-            def run_script(command: str = "") -> str:
-                try:
-                    args = shlex.split(command) if command else []
-                    result = subprocess.run(
-                        [interp, spath, *args],
-                        capture_output=True,
-                        text=True,
-                        timeout=300,
-                    )
-                    if result.returncode != 0:
-                        return f"ERROR (exit {result.returncode}):\n{result.stderr}"
-                    return result.stdout
-                except subprocess.TimeoutExpired:
-                    return "ERROR: Script execution timed out (300s)"
-                except Exception as e:
-                    return f"ERROR: {e}"
-
-            return run_script
-
         workers.append(
             SkillWorker(
                 name=worker_name,
                 description=f"Run {tool_name} script from {skill_name} skill",
-                func=make_script_func(interpreter, script_file),
+                func=ScriptRunner(interpreter, script_file),
             )
         )
 
@@ -463,35 +502,12 @@ def create_skill_workers(agent: Agent) -> List[SkillWorker]:
     read_worker_name = f"{skill_name}__read_skill_file"
     skill_sections = getattr(agent, "_skill_sections", {})
 
-    def make_read_func(sdir: Path, allowed: set, sections: Dict[str, str]) -> Callable[..., str]:
-        def read_skill_file(path: str = "") -> str:
-            if path not in allowed:
-                return f"ERROR: '{path}' not found. Available: {sorted(allowed)}"
-            # Handle virtual skill_section:* paths
-            if path.startswith("skill_section:"):
-                section_name = path[len("skill_section:") :]
-                if section_name in sections:
-                    return sections[section_name]
-                return f"ERROR: section '{section_name}' not found"
-            target = sdir / path
-            # Safety check: ensure resolved path is within skill directory
-            try:
-                target.resolve().relative_to(sdir.resolve())
-            except ValueError:
-                return f"ERROR: '{path}' is outside the skill directory"
-            try:
-                return target.read_text()
-            except Exception as e:
-                return f"ERROR reading '{path}': {e}"
-
-        return read_skill_file
-
     if allowed_files:
         workers.append(
             SkillWorker(
                 name=read_worker_name,
                 description=f"Read resource files from {skill_name} skill",
-                func=make_read_func(skill_path, allowed_files, skill_sections),
+                func=SkillFileReader(skill_path, allowed_files, skill_sections),
             )
         )
 
