@@ -364,11 +364,8 @@ class AgentClient:
         if self._runtime is not None:
             return self._runtime.schedules_client()
         if self._schedule_client_instance is None:
-            from conductor.ai.agents.schedule.client import ScheduleClient
-
-            self._schedule_client_instance = ScheduleClient(
-                self._get_orkes_clients().get_scheduler_client(),
-                self._workflow_client,
+            self._schedule_client_instance = (
+                self._get_orkes_clients().get_agent_schedule_client()
             )
         return self._schedule_client_instance
 

@@ -64,5 +64,13 @@ class OrkesClients:
     def get_schema_client(self) -> SchemaClient:
         return OrkesSchemaClient(self.configuration)
 
+    def get_agent_schedule_client(self) -> "AgentScheduleClient":  # noqa: F821
+        """Client for the agent cron-schedule lifecycle (save/pause/reconcile/...)."""
+        # Imported lazily: this module is on virtually every SDK program's import
+        # path and must not grow import-time weight for the agent surface.
+        from conductor.client.ai.schedule_client import AgentScheduleClient
+
+        return AgentScheduleClient(self.get_scheduler_client(), self.get_workflow_client())
+
 
 ConductorClients = OrkesClients

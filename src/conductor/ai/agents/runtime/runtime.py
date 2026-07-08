@@ -2413,12 +2413,7 @@ class AgentRuntime:
         client expose the *same* schedule surface (one instance, not two).
         """
         if self._schedule_client_instance is None:
-            from conductor.ai.agents.schedule.client import ScheduleClient
-
-            self._schedule_client_instance = ScheduleClient(
-                self._clients.get_scheduler_client(),
-                self._workflow_client,
-            )
+            self._schedule_client_instance = self._clients.get_agent_schedule_client()
         return self._schedule_client_instance
 
     def _deploy_via_server(self, agent: Any, *, framework: Optional[str] = None) -> str:
