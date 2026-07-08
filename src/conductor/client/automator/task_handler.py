@@ -71,6 +71,18 @@ if not _mp_fork_set:
 if platform == "darwin":
         os.environ["no_proxy"] = "*"
 
+def _is_async_execute_callable(fn: Any) -> bool:
+    """True for ``async def`` functions AND instances whose ``__call__`` is async.
+
+    Spawn-safe workers may be module-level class instances (picklable by
+    value) rather than plain functions; ``iscoroutinefunction`` alone is blind
+    to an async ``__call__`` and would route such workers to the sync runner.
+    """
+    return inspect.iscoroutinefunction(fn) or inspect.iscoroutinefunction(
+        getattr(type(fn), "__call__", None)
+    )
+
+
 def _run_sync_worker_process(
         worker: WorkerInterface,
         configuration: Optional[Configuration],
@@ -427,7 +439,7 @@ class TaskHandler:
         is_async_worker = False
         if hasattr(worker, 'execute_function'):
             # Function-based worker (created with @worker_task decorator)
-            is_async_worker = inspect.iscoroutinefunction(worker.execute_function)
+            is_async_worker = _is_async_execute_callable(worker.execute_function)
         else:
             # Class-based worker (implements WorkerInterface)
             is_async_worker = inspect.iscoroutinefunction(worker.execute)
@@ -588,7 +600,7 @@ class TaskHandler:
         """Create a new worker process for the given worker (used for initial start + restarts)."""
         # Detect if worker function is async
         if hasattr(worker, 'execute_function'):
-            is_async_worker = inspect.iscoroutinefunction(worker.execute_function)
+            is_async_worker = _is_async_execute_callable(worker.execute_function)
         else:
             is_async_worker = inspect.iscoroutinefunction(worker.execute)
 
