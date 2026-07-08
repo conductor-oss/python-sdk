@@ -100,6 +100,28 @@ class MetricsSettings:
             return os.path.join(self.directory, self._subdir)
         return self.directory
 
+    def clean_metrics_directory(self) -> None:
+        """Prepare the shared metrics directory exactly once, before any worker
+        writes to it.
+
+        This is the destructive counterpart to metrics collection and must be
+        invoked only by the process that owns the worker lifecycle (i.e. the
+        parent that spawns workers, via ``TaskHandler``), never by a spawned
+        worker.  A worker cannot know whether sibling processes are already
+        live and sharing this directory, so it must never wipe ``.db`` files.
+
+        Ensures the directory exists, then applies the configured cleanup:
+          - ``clean_directory``: remove all prometheus_client ``.db`` files.
+          - ``clean_dead_pids``: remove only ``.db`` files whose owning PID no
+            longer exists.
+        Both are no-ops when their respective flag is ``False``.
+        """
+        os.makedirs(self.metrics_directory, exist_ok=True)
+        if self.clean_directory:
+            self._clean_stale_db_files()
+        if self.clean_dead_pids:
+            self._clean_dead_pid_files()
+
     def __set_dir(self, dir: str) -> None:
         if not os.path.isdir(dir):
             try:

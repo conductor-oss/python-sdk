@@ -9,10 +9,7 @@ import unittest
 from unittest import mock
 
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
-from conductor.client.telemetry.metrics_factory import (
-    create_metrics_collector,
-    _reset_cleaned_directories,
-)
+from conductor.client.telemetry.metrics_factory import create_metrics_collector
 from conductor.client.telemetry.legacy_metrics_collector import LegacyMetricsCollector
 from conductor.client.telemetry.canonical_metrics_collector import CanonicalMetricsCollector
 
@@ -20,7 +17,6 @@ from conductor.client.telemetry.canonical_metrics_collector import CanonicalMetr
 class TestMetricsFactory(unittest.TestCase):
 
     def setUp(self):
-        _reset_cleaned_directories()
         self._saved_env = {}
         for key in ("WORKER_CANONICAL_METRICS", "WORKER_LEGACY_METRICS"):
             self._saved_env[key] = os.environ.pop(key, None)
@@ -34,7 +30,6 @@ class TestMetricsFactory(unittest.TestCase):
                 os.environ[key] = val
         if os.path.exists(self.metrics_dir):
             shutil.rmtree(self.metrics_dir)
-        _reset_cleaned_directories()
 
     def _make_settings(self, **kwargs):
         kwargs.setdefault("directory", self.metrics_dir)
@@ -137,41 +132,11 @@ class TestMetricsFactory(unittest.TestCase):
                 f"CanonicalMetricsCollector missing method: {method_name}",
             )
 
-    def test_cleanup_runs_once_per_directory(self):
-        """clean_directory cleanup fires only on the first collector for a given
-        directory; a second collector on the same directory must skip it so that
-        live .db files written by existing workers are never wiped."""
-        settings = MetricsSettings(directory=self.metrics_dir, clean_directory=True)
-
-        with mock.patch.object(
-            MetricsSettings, "_clean_stale_db_files", autospec=True
-        ) as clean_spy:
-            create_metrics_collector(settings)
-            create_metrics_collector(settings)
-
-        self.assertEqual(
-            clean_spy.call_count,
-            1,
-            "stale-db cleanup must run exactly once per directory per process",
-        )
-
-    def test_cleanup_runs_again_after_reset(self):
-        """Resetting the per-process guard allows cleanup to run again, proving
-        the global state is what gates the skip (and that setUp/tearDown isolate
-        tests from each other)."""
-        settings = MetricsSettings(directory=self.metrics_dir, clean_directory=True)
-
-        with mock.patch.object(
-            MetricsSettings, "_clean_stale_db_files", autospec=True
-        ) as clean_spy:
-            create_metrics_collector(settings)
-            _reset_cleaned_directories()
-            create_metrics_collector(settings)
-
-        self.assertEqual(clean_spy.call_count, 2)
-
-    def test_clean_directory_removes_db_files(self):
-        """clean_directory=True actually removes .db files from the metrics dir."""
+    def test_create_collector_is_non_destructive(self):
+        """create_metrics_collector runs in every spawned worker, so it must
+        NEVER delete .db files -- doing so would wipe live sibling metrics.
+        Even with clean_directory=True, the factory leaves existing files
+        untouched; cleanup is the parent's responsibility."""
         db_path = os.path.join(self.metrics_dir, "gauge_livesum_12345.db")
         with open(db_path, "w") as f:
             f.write("fake")
@@ -179,9 +144,39 @@ class TestMetricsFactory(unittest.TestCase):
         settings = MetricsSettings(directory=self.metrics_dir, clean_directory=True)
         create_metrics_collector(settings)
 
+        self.assertTrue(
+            os.path.exists(db_path),
+            "create_metrics_collector must not delete .db files (worker path)",
+        )
+
+    def test_clean_directory_removes_db_files(self):
+        """MetricsSettings.clean_metrics_directory() removes .db files when
+        clean_directory=True."""
+        db_path = os.path.join(self.metrics_dir, "gauge_livesum_12345.db")
+        with open(db_path, "w") as f:
+            f.write("fake")
+
+        settings = MetricsSettings(directory=self.metrics_dir, clean_directory=True)
+        settings.clean_metrics_directory()
+
         self.assertFalse(
             os.path.exists(db_path),
             "clean_directory=True should remove existing .db files",
+        )
+
+    def test_clean_metrics_directory_noop_without_flags(self):
+        """clean_metrics_directory() leaves .db files untouched when neither
+        clean_directory nor clean_dead_pids is set."""
+        db_path = os.path.join(self.metrics_dir, "gauge_livesum_12345.db")
+        with open(db_path, "w") as f:
+            f.write("fake")
+
+        settings = MetricsSettings(directory=self.metrics_dir)
+        settings.clean_metrics_directory()
+
+        self.assertTrue(
+            os.path.exists(db_path),
+            "clean_metrics_directory() must not delete files when no flag is set",
         )
 
     def test_clean_dead_pids_removes_dead_pid_file(self):
@@ -192,7 +187,7 @@ class TestMetricsFactory(unittest.TestCase):
             f.write("fake")
 
         settings = MetricsSettings(directory=self.metrics_dir, clean_dead_pids=True)
-        create_metrics_collector(settings)
+        settings.clean_metrics_directory()
 
         self.assertFalse(
             os.path.exists(db_path),
@@ -207,7 +202,7 @@ class TestMetricsFactory(unittest.TestCase):
             f.write("fake")
 
         settings = MetricsSettings(directory=self.metrics_dir, clean_dead_pids=True)
-        create_metrics_collector(settings)
+        settings.clean_metrics_directory()
 
         self.assertTrue(
             os.path.exists(db_path),
@@ -223,7 +218,7 @@ class TestMetricsFactory(unittest.TestCase):
             f.write("fake")
 
         settings = MetricsSettings(directory=self.metrics_dir, clean_dead_pids=True)
-        create_metrics_collector(settings)
+        settings.clean_metrics_directory()
 
         self.assertTrue(
             os.path.exists(db_path),

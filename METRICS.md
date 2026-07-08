@@ -68,6 +68,15 @@ or `clean_dead_pids=True` to remove only files from PIDs that no longer exist.
 Both default to `False`. Use a dedicated metrics directory per worker process
 group.
 
+Cleanup is owned by the parent process and runs exactly once, in
+`TaskHandler.__init__`, before any worker is spawned. Spawned workers only
+ensure the directory exists (via `create_metrics_collector`) and never delete
+`.db` files, so a newly started or restarted worker can never wipe metrics
+belonging to live sibling processes. If you construct a collector directly with
+`create_metrics_collector` (without a `TaskHandler`), call
+`MetricsSettings.clean_metrics_directory()` yourself when you want the cleanup
+to run.
+
 ## Selecting Canonical Metrics
 
 Set `WORKER_CANONICAL_METRICS` before the worker starts:
@@ -290,7 +299,9 @@ sum(rate(task_execute_time_seconds_count[5m])) by (taskType)
   implementations never mixes stale metric names.
 - Pass `clean_dead_pids=True` to `MetricsSettings` to remove `.db` files from
   PIDs that no longer exist.  Use `clean_directory=True` only when you are sure
-  no other live process shares the same directory.
+  no other live process shares the same directory. Cleanup runs once in the
+  parent (`TaskHandler.__init__`) before workers spawn; workers never wipe the
+  directory, so restarts and newly spawned workers preserve sibling metrics.
 - Restart workers after changing `WORKER_CANONICAL_METRICS`.
 
 ### High Cardinality
@@ -342,8 +353,12 @@ unreleased metrics harmonization work. For a summary, see the project
     across all processes (main, workers, MetricsProvider).
   - `MetricsSettings` gains `clean_directory` (default `False`) to wipe all
     `.db` files and `clean_dead_pids` (default `False`) to remove only `.db`
-    files from PIDs that no longer exist. Both are executed by the factory
-    against the resolved metrics directory.
+    files from PIDs that no longer exist. Cleanup is applied by
+    `MetricsSettings.clean_metrics_directory()`, invoked exactly once by the
+    parent in `TaskHandler.__init__` before workers spawn.
+    `create_metrics_collector` (the per-worker path) is non-destructive and
+    only ensures the directory exists, so spawned/restarted workers never wipe
+    live sibling metrics.
   - `CONDUCTOR_MP_START_METHOD` env var (`spawn` / `fork` / `forkserver`;
     default `fork` on POSIX, `spawn` on Windows) to control the worker pool's
     multiprocessing start method (motivated by a `prometheus_client` lock-fork
