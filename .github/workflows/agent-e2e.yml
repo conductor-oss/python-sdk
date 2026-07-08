@@ -4,14 +4,11 @@ name: Agent E2E
 # (tests/integration/ai) against the released Agentspan server JAR —
 # a full Conductor server with the agent runtime baked in.
 #
-# Not a per-PR gate: these tests call real LLMs (OPENAI_API_KEY /
-# ANTHROPIC_API_KEY repo secrets, which fork PRs cannot see) and take
-# ~25-40 minutes. Nightly + manual dispatch instead.
+# These tests call real LLMs via the OPENAI_API_KEY / ANTHROPIC_API_KEY
+# repo secrets. Fork PRs cannot see repo secrets, so for them the run
+# fails at the silently-empty guard rather than passing vacuously.
 
-on:
-  schedule:
-    - cron: "0 6 * * *"
-  workflow_dispatch: {}
+on: [pull_request, workflow_dispatch]
 
 concurrency:
   group: agent-e2e-${{ github.ref }}
