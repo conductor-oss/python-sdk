@@ -19,7 +19,7 @@ Usage:
     python 82b_coding_agent_tui.py --cwd /path/to/repo
 
 Requirements:
-    - AgentSpan server running at http://localhost:6767
+    - AgentSpan server running at http://localhost:8080
     - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - AGENTSPAN_LLM_MODEL=openai/gpt-4o
 """

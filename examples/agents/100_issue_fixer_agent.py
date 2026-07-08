@@ -72,7 +72,7 @@ DOCS_DESIGN_DIR = "docs/design"
 QA_EVIDENCE_DIR = "qa-tests"           # QA testing evidence per issue
 
 # ── Server ───────────────────────────────────────────────────
-SERVER_URL = "http://localhost:6767"
+SERVER_URL = "http://localhost:8080"
 
 # ── Timeouts & Limits ────────────────────────────────────────
 SWARM_MAX_TURNS = 500

@@ -31,7 +31,7 @@ Usage:
     python 62_coding_agent_openai.py
 
 Environment variables:
-    AGENTSPAN_SERVER_URL   — Agentspan server (default: http://localhost:6767/api)
+    AGENTSPAN_SERVER_URL   — Agentspan server (default: http://localhost:8080/api)
     AGENTSPAN_LLM_MODEL    — override model (default: openai/gpt-4o)
     OPENAI_API_KEY         — required for default OpenAI model
     CODING_AGENT_CWD       — working directory for file ops (default: current dir)

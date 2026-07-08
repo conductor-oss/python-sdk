@@ -20,7 +20,7 @@ import requests
 from conductor.ai.agents import Agent, AgentRuntime
 from conductor.ai.agents.schedule import Schedule
 
-SERVER = "http://localhost:6767/api"
+SERVER = "http://localhost:8080/api"
 MODEL = os.environ.get("AGENTSPAN_MODEL", "anthropic/claude-sonnet-4-6")
 
 
@@ -120,7 +120,7 @@ def main() -> None:
         else:
             print(f"\n⏸  Schedule kept active for UI inspection: {agent_name}")
             print(f"    Sidebar → Definitions → Schedules, or")
-            print(f"    http://localhost:6767/scheduleDef?workflowName={agent_name}")
+            print(f"    http://localhost:8080/scheduleDef?workflowName={agent_name}")
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ It runs as a durable Conductor workflow, giving you things a local agent cannot:
   - Every tool call, LLM decision, and token is logged on the server automatically
   - /signal injects context mid-task without restarting the agent
   - Ctrl+C stops gracefully (current task finishes, output preserved)
-  - View the full execution graph live at http://localhost:6767
+  - View the full execution graph live at http://localhost:8080
 
 Usage:
     python 82_coding_agent.py                      # new session in current dir
@@ -18,7 +18,7 @@ Usage:
     python 82_coding_agent.py --resume             # resume last session
 
 Requirements:
-    - AgentSpan server running at http://localhost:6767
+    - AgentSpan server running at http://localhost:8080
     - AGENTSPAN_SERVER_URL=http://localhost:8080/api
     - AGENTSPAN_LLM_MODEL=anthropic/claude-sonnet-4-20250514
 """

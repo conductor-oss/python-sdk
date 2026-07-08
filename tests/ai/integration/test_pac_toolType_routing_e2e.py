@@ -33,7 +33,7 @@ Three layers of validation, all algorithmic — no LLM-as-judge per CLAUDE.md:
 
 Requirements (the test SKIPs cleanly if either is absent):
   - agentspan server reachable at ``AGENTSPAN_SERVER_URL`` (default
-    http://localhost:6767/api) with the PAC tool-type routing fix
+    http://localhost:8080/api) with the PAC tool-type routing fix
   - mcp-testkit running on http://localhost:3001/mcp
     (``uv run mcp-testkit --transport http --port 3001``)
 

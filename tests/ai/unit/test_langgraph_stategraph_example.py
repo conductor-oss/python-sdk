@@ -76,7 +76,7 @@ class TestCustomStateGraph:
         # Directly inject the graph as a sub-agent (bypassing type checks)
         wrapper.agents = [custom_graph]
 
-        config = AgentConfig(server_url="http://localhost:6767")
+        config = AgentConfig(server_url="http://localhost:8080")
         runtime = AgentRuntime.__new__(AgentRuntime)
         runtime._config = config
         runtime._prompt_client_instance = MagicMock()

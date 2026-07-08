@@ -17,7 +17,7 @@ How it works:
 
 The LLM drives the retry loop; validation is purely deterministic.
 Every tool call (each attempt + verdict) is logged under one execution
-ID and visible in the UI at http://localhost:6767.
+ID and visible in the UI at http://localhost:8080.
 
 This is the correct Agentspan adaptive loop pattern — not Python
 coordinating multiple runtime.run() calls, but the agent itself
@@ -191,7 +191,7 @@ def main(destination: str) -> None:
 
     print(f"Status:       {result.status}")
     print(f"Execution ID: {result.execution_id}")
-    print(f"View at:      http://localhost:6767/execution/{result.execution_id}")
+    print(f"View at:      http://localhost:8080/execution/{result.execution_id}")
     print(f"Turns used:   {result.turns_used if hasattr(result, 'turns_used') else 'see UI'}")
 
     # Show the final itinerary

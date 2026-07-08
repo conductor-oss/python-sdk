@@ -7,7 +7,7 @@ final output contains the stderr text produced by the failed command.
 
 Requirements:
   - Conductor server with LLM support
-  - AGENTSPAN_SERVER_URL  (e.g. http://localhost:6767/api)
+  - AGENTSPAN_SERVER_URL  (e.g. http://localhost:8080/api)
   - AGENTSPAN_LLM_MODEL   (e.g. openai/gpt-4o-mini)
 """
 

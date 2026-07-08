@@ -19,7 +19,7 @@ from conductor.ai.agents.runtime.credentials.types import (
 
 
 def _make_fetcher():
-    return WorkerCredentialFetcher(server_url="http://localhost:6767/api")
+    return WorkerCredentialFetcher(server_url="http://localhost:8080/api")
 
 
 class TestFetchWithoutToken:

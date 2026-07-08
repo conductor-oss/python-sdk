@@ -10,11 +10,11 @@ Proves that:
    server after responseTimeoutSeconds and is retried/failed.
 
 Run:
-    export CONDUCTOR_SERVER_URL="http://localhost:6767/api"
+    export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
     python3 -m pytest tests/integration/test_lease_extension.py -v -s
 
 Prerequisites:
-    - Conductor server running (default: http://localhost:6767/api)
+    - Conductor server running (default: http://localhost:8080/api)
 """
 
 import logging

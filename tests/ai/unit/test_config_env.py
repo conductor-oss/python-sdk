@@ -143,20 +143,20 @@ class TestServerUrlNormalisation:
     """Tests for BUG-P2-10: auto-append /api when missing."""
 
     def test_appends_api_when_missing(self):
-        config = AgentConfig(server_url="http://localhost:6767")
-        assert config.server_url == "http://localhost:6767/api"
+        config = AgentConfig(server_url="http://localhost:8080")
+        assert config.server_url == "http://localhost:8080/api"
 
     def test_appends_api_with_trailing_slash(self):
-        config = AgentConfig(server_url="http://localhost:6767/")
-        assert config.server_url == "http://localhost:6767/api"
+        config = AgentConfig(server_url="http://localhost:8080/")
+        assert config.server_url == "http://localhost:8080/api"
 
     def test_leaves_correct_url_unchanged(self):
-        config = AgentConfig(server_url="http://localhost:6767/api")
-        assert config.server_url == "http://localhost:6767/api"
+        config = AgentConfig(server_url="http://localhost:8080/api")
+        assert config.server_url == "http://localhost:8080/api"
 
     def test_leaves_correct_url_with_trailing_slash(self):
-        config = AgentConfig(server_url="http://localhost:6767/api/")
-        assert config.server_url == "http://localhost:6767/api"
+        config = AgentConfig(server_url="http://localhost:8080/api/")
+        assert config.server_url == "http://localhost:8080/api"
 
     def test_remote_url_without_api(self):
         config = AgentConfig(server_url="https://play.orkes.io")
@@ -204,7 +204,7 @@ class TestLogLevelConfig:
         import logging
 
         config = AgentConfig(
-            server_url="http://localhost:6767/api",
+            server_url="http://localhost:8080/api",
             log_level="WARNING",
         )
         with mock.patch("conductor.client.orkes_clients.OrkesClients"):

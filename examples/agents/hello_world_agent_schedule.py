@@ -25,7 +25,7 @@ import requests
 from conductor.ai.agents import Agent, AgentRuntime
 from conductor.ai.agents.schedule import Schedule
 
-SERVER = "http://localhost:6767/api"
+SERVER = "http://localhost:8080/api"
 MODEL = os.environ.get("AGENTSPAN_MODEL", "anthropic/claude-sonnet-4-6")
 
 
@@ -128,7 +128,7 @@ def main() -> None:
             print(f"\n✓ Cleaned up schedule and workflow '{agent_name}'")
         else:
             print(f"\n⏸  Skipping cleanup. Agent '{agent_name}' still scheduled.")
-            print(f"    UI: http://localhost:6767/scheduler/edit/{agent_name}-every-5s")
+            print(f"    UI: http://localhost:8080/scheduler/edit/{agent_name}-every-5s")
 
 
 if __name__ == "__main__":

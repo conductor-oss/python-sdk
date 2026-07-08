@@ -27,7 +27,7 @@ Key properties:
   - quality check is 100% deterministic (word count + topic presence) — no LLM judge.
 
 What you will see in the UI:
-  http://localhost:6767/execution/<id>
+  http://localhost:8080/execution/<id>
   → All iterations under one workflow ID.
   → FORK_JOIN branches for parallel section writes inside each sub-workflow.
   → Quality improvements iteration by iteration.
@@ -613,7 +613,7 @@ def main(argv: list[str]) -> None:
         print("starting PAE-replan loop...")
         execution_id = start_execution(topic, WORK_DIR)
         print(f"  execution_id: {execution_id}")
-        print(f"  view:         http://localhost:6767/execution/{execution_id}\n")
+        print(f"  view:         http://localhost:8080/execution/{execution_id}\n")
 
         print("polling until done (all sections pass or max iterations reached)...\n")
         wf = poll_until_done(execution_id)

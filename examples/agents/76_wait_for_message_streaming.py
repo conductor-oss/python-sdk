@@ -13,7 +13,7 @@ receives (by calling wait_for_message again), then waits again.  The caller
 drives the conversation by sending messages and reading streamed events.
 
 Requirements:
-    - AgentSpan server running at http://localhost:6767
+    - AgentSpan server running at http://localhost:8080
     - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
     - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """

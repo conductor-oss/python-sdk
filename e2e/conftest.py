@@ -98,7 +98,7 @@ class CredentialsCLI:
     """Wraps the agentspan CLI for credential operations.
 
     The CLI expects AGENTSPAN_SERVER_URL without the /api suffix
-    (e.g., http://localhost:6767). It appends /api internally.
+    (e.g., http://localhost:8080). It appends /api internally.
     """
 
     def __init__(self, cli_path: str, server_url: str):

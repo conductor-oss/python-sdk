@@ -44,7 +44,7 @@ Ephemeral tools via /tool <name>:
         bullet_split — split input into one bullet point per sentence
 
 Requirements:
-    - AgentSpan server running at http://localhost:6767
+    - AgentSpan server running at http://localhost:8080
     - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
     - AGENTSPAN_LLM_MODEL=anthropic/claude-sonnet-4-20250514 as environment variable
 """
