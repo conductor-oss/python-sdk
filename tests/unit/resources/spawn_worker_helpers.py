@@ -8,7 +8,7 @@ child process re-imports this module to resolve them.
 Regression tests for GitHub issues #264 / #271:
 @worker_task workers were unpicklable ("cannot pickle '_thread.lock' object" /
 "it's not the same object as module.name"), so TaskHandler could not start
-worker subprocesses with CONDUCTOR_MP_START_METHOD=spawn (the only safe start
+worker subprocesses with set_start_method("spawn") (the only safe start
 method on macOS).
 """
 from conductor.client.http.models.task import Task

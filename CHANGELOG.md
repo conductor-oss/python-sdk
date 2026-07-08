@@ -11,11 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Canonical metrics mode: opt-in harmonized metric surface via `WORKER_CANONICAL_METRICS=true` -- [details](METRICS.md#detailed-technical-notes--unreleased)
 - `MetricsSettings` gains `clean_directory` and `clean_dead_pids` for opt-in stale `.db` file cleanup (both default to `False`)
-- `CONDUCTOR_MP_START_METHOD` env var to control the worker pool's multiprocessing start method
 
 ### Changed
 
-- **Multiprocessing start method now defaults to `spawn` on all platforms** (was `fork` everywhere except Windows). `fork` caused silently-restarting `SIGSEGV` worker subprocesses on macOS (exitcode `-11`) and fork-with-held-lock deadlocks on POSIX. Opt back in with `CONDUCTOR_MP_START_METHOD=fork`. Entrypoint scripts must use the standard `if __name__ == "__main__":` guard, and workers must be defined at module level
+- **Multiprocessing start method now defaults to `spawn` on all platforms** (was `fork` everywhere except Windows). `fork` caused silently-restarting `SIGSEGV` worker subprocesses on macOS (exitcode `-11`) and fork-with-held-lock deadlocks on POSIX. 
 - Legacy metrics emit unchanged by default; no env var required
 - `metrics_collector.py` is now a compatibility shim; `from conductor.client.telemetry.metrics_collector import MetricsCollector` continues to work
 

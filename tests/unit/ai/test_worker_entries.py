@@ -230,8 +230,7 @@ class TestSystemEntries:
 
 @pytest.fixture
 def force_spawn_probe(monkeypatch):
-    """Pin the probe's start-method check to 'spawn' so these tests don't
-    depend on the ambient CONDUCTOR_MP_START_METHOD (hermeticity)."""
+    """Pin the probe's start-method check to 'spawn'."""
     monkeypatch.setattr(
         we.multiprocessing, "get_start_method", lambda allow_none=True: "spawn"
     )

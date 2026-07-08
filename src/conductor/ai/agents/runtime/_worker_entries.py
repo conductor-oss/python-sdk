@@ -40,9 +40,7 @@ from typing import Callable, Dict, FrozenSet
 _MAX_UNWRAP_DEPTH = 32
 
 _REMEDIES = (
-    "Define the callable at module level (importable by qualified name), "
-    "or run with CONDUCTOR_MP_START_METHOD=fork (compatibility mode; see the "
-    "start-method notes in conductor.client.automator.task_handler)."
+    "Define the callable at module level (importable by qualified name)."
 )
 
 

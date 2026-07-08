@@ -19,10 +19,6 @@ Fixed SDK output:   everything PASS.
 import os
 import sys
 
-# Force spawn BEFORE importing any conductor module: task_handler pins the
-# start method at import time from this env var.
-os.environ["CONDUCTOR_MP_START_METHOD"] = "spawn"
-
 import multiprocessing
 import pickle
 

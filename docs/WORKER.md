@@ -279,13 +279,6 @@ Requirements under `spawn` (standard Python multiprocessing rules):
 - `configuration`, `metrics_settings`, and `event_listeners` passed to
   `TaskHandler` must be picklable
 
-To opt back into the previous behavior (e.g., a Linux deployment relying on
-fork's copy-on-write memory sharing):
-
-```shell
-export CONDUCTOR_MP_START_METHOD=fork   # spawn (default) | fork | forkserver
-```
-
 If a worker process dies from a signal repeatedly at startup, set
 `PYTHONFAULTHANDLER=1` to capture the crashing stack trace from the child.
 
