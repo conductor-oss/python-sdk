@@ -1207,11 +1207,15 @@ class AgentRuntime:
                 None,
             )
             legacy_fn = getattr(agent, legacy_attr, None) if legacy_attr else None
+            # Chain only to decide whether a worker is needed; the entry
+            # rebuilds it per call (the chain closure is unpicklable).
             chained = _chain_callbacks_for_position(position, handlers, legacy_fn)
             if chained is not None:
                 task_name = f"{agent.name}_{position}"
                 if _server_needs(task_name):
-                    self._register_callback_worker(agent.name, position, chained, domain=domain)
+                    self._register_callback_worker(
+                        agent.name, position, handlers, legacy_fn, domain=domain
+                    )
 
         # 3c. Callable gate (sequential pipeline)
         if getattr(agent, "gate", None) is not None and callable(agent.gate):
@@ -1381,77 +1385,14 @@ class AgentRuntime:
         # Also register the combined worker (local compile path).
         task_name = f"{agent_name}_output_guardrail"
 
-        guardrail_specs = []
-        for g in guardrails:
-            guardrail_specs.append(
-                {
-                    "func": g.func,
-                    "name": g.name,
-                    "on_fail": g.on_fail,
-                    "max_retries": g.max_retries,
-                }
-            )
+        from conductor.ai.agents.runtime._worker_entries import (
+            CombinedGuardrailEntry,
+            probe_spawn_safety,
+        )
 
-        def make_combined(specs):
-            async def combined_guardrail_worker(
-                content: object = None, iteration: int = 0
-            ) -> object:
-                iteration = _resolve_loop_iteration(iteration)
-                if content is None:
-                    content_str = ""
-                elif isinstance(content, str):
-                    content_str = content
-                else:
-                    import json as _json
-
-                    try:
-                        content_str = _json.dumps(content, default=str)
-                    except (TypeError, ValueError):
-                        content_str = str(content)
-                for spec in specs:
-                    try:
-                        result = await _call_user_fn(spec["func"], content_str)
-                        if not result.passed:
-                            on_fail = spec["on_fail"]
-                            fixed_output = getattr(result, "fixed_output", None)
-                            if on_fail == "retry" and iteration >= spec["max_retries"]:
-                                on_fail = "raise"
-                            if on_fail == "fix" and fixed_output is None:
-                                on_fail = "raise"
-                            return {
-                                "passed": False,
-                                "message": result.message,
-                                "on_fail": on_fail,
-                                "fixed_output": fixed_output,
-                                "guardrail_name": spec["name"],
-                                "should_continue": on_fail == "retry",
-                            }
-                    except Exception as e:
-                        logger.error("Guardrail '%s' raised exception: %s", spec["name"], e)
-                        on_fail = spec["on_fail"]
-                        if on_fail == "retry" and iteration >= spec["max_retries"]:
-                            on_fail = "raise"
-                        return {
-                            "passed": False,
-                            "message": f"Guardrail error: {e}",
-                            "on_fail": on_fail,
-                            "fixed_output": None,
-                            "guardrail_name": spec["name"],
-                            "should_continue": on_fail == "retry",
-                        }
-                return {
-                    "passed": True,
-                    "message": "",
-                    "on_fail": "pass",
-                    "fixed_output": None,
-                    "guardrail_name": "",
-                    "should_continue": False,
-                }
-
-            return combined_guardrail_worker
-
-        worker_fn = make_combined(guardrail_specs)
+        worker_fn = CombinedGuardrailEntry(guardrails)
         worker_fn.__annotations__ = {"content": object, "iteration": int, "return": object}
+        probe_spawn_safety(worker_fn, task_name, group="system")
         worker_task(
             task_definition_name=task_name,
             task_def=_default_task_def(task_name),
@@ -1471,64 +1412,17 @@ class AgentRuntime:
         from conductor.client.worker.worker_task import worker_task
 
         task_name = guardrail.name
-        func = guardrail.func
-        on_fail = guardrail.on_fail
-        max_retries = guardrail.max_retries
-        g_name = guardrail.name
 
-        async def guardrail_worker(content: object = None, iteration: int = 0) -> object:
-            iteration = _resolve_loop_iteration(iteration)
-            if content is None:
-                content_str = ""
-            elif isinstance(content, str):
-                content_str = content
-            else:
-                import json as _json
+        from conductor.ai.agents.runtime._worker_entries import (
+            GuardrailEntry,
+            probe_spawn_safety,
+        )
 
-                try:
-                    content_str = _json.dumps(content, default=str)
-                except (TypeError, ValueError):
-                    content_str = str(content)
-            try:
-                result = await _call_user_fn(func, content_str)
-                if not result.passed:
-                    effective_on_fail = on_fail
-                    fixed_output = getattr(result, "fixed_output", None)
-                    if effective_on_fail == "retry" and iteration >= max_retries:
-                        effective_on_fail = "raise"
-                    if effective_on_fail == "fix" and fixed_output is None:
-                        effective_on_fail = "raise"
-                    return {
-                        "passed": False,
-                        "message": result.message,
-                        "on_fail": effective_on_fail,
-                        "fixed_output": fixed_output,
-                        "guardrail_name": g_name,
-                        "should_continue": effective_on_fail == "retry",
-                    }
-            except Exception as e:
-                logger.error("Guardrail '%s' raised exception: %s", g_name, e)
-                effective_on_fail = on_fail
-                if effective_on_fail == "retry" and iteration >= max_retries:
-                    effective_on_fail = "raise"
-                return {
-                    "passed": False,
-                    "message": f"Guardrail error: {e}",
-                    "on_fail": effective_on_fail,
-                    "fixed_output": None,
-                    "guardrail_name": g_name,
-                    "should_continue": effective_on_fail == "retry",
-                }
-            return {
-                "passed": True,
-                "message": "",
-                "on_fail": "pass",
-                "fixed_output": None,
-                "guardrail_name": "",
-                "should_continue": False,
-            }
-
+        guardrail_worker = GuardrailEntry(
+            guardrail.func, guardrail.name, guardrail.on_fail, guardrail.max_retries
+        )
         guardrail_worker.__annotations__ = {"content": object, "iteration": int, "return": object}
+        probe_spawn_safety(guardrail_worker, task_name, group="system")
         worker_task(
             task_definition_name=task_name,
             task_def=_default_task_def(task_name),
@@ -1547,16 +1441,13 @@ class AgentRuntime:
 
         task_name = f"{agent_name}_stop_when"
 
-        async def stop_when_worker(result="", iteration: int = 0, messages=None) -> object:
-            iteration = _resolve_loop_iteration(iteration)
-            context = {"result": result, "messages": messages or [], "iteration": iteration}
-            try:
-                should_stop = await _call_user_fn(stop_when_fn, context)
-                return {"should_continue": not should_stop}
-            except Exception as e:
-                logger.error("stop_when evaluation failed: %s", e)
-                return {"should_continue": True}
+        from conductor.ai.agents.runtime._worker_entries import (
+            StopWhenEntry,
+            probe_spawn_safety,
+        )
 
+        stop_when_worker = StopWhenEntry(stop_when_fn)
+        probe_spawn_safety(stop_when_worker, task_name, group="system")
         stop_when_worker.__annotations__ = {
             "result": object,
             "iteration": int,
@@ -1581,16 +1472,11 @@ class AgentRuntime:
 
         task_name = f"{agent_name}_gate"
 
-        async def gate_worker(result: str = "") -> object:
-            try:
-                output = {"result": result}
-                should_continue = await _call_user_fn(gate_fn, output)
-                return {"decision": "continue" if should_continue else "stop"}
-            except Exception as e:
-                logger.error("Gate evaluation failed: %s", e)
-                return {"decision": "continue"}  # safe fallback
+        from conductor.ai.agents.runtime._worker_entries import GateEntry, probe_spawn_safety
 
+        gate_worker = GateEntry(gate_fn)
         gate_worker.__annotations__ = {"result": str, "return": object}
+        probe_spawn_safety(gate_worker, task_name, group="system")
         worker_task(
             task_definition_name=task_name,
             task_def=_default_task_def(task_name),
@@ -1602,27 +1488,27 @@ class AgentRuntime:
         )(gate_worker)
 
     def _register_callback_worker(
-        self, agent_name: str, position: str, callback_fn, domain: "Optional[str]" = None
+        self, agent_name: str, position: str, handlers, legacy_fn,
+        domain: "Optional[str]" = None
     ) -> None:
-        """Register a before_model or after_model callback worker."""
+        """Register a before_model or after_model callback worker.
+
+        Takes the raw handlers/legacy callable (not a pre-built chain): the
+        chain closure is unpicklable, so CallbackEntry carries the parts and
+        rebuilds it per call (idea-5 spawn safety).
+        """
         from conductor.client.worker.worker_task import worker_task
 
         task_name = f"{agent_name}_{position}"
 
-        async def callback_worker(messages: object = None, llm_result: str = None) -> object:
-            try:
-                kwargs = {}
-                if messages is not None:
-                    kwargs["messages"] = messages
-                if llm_result is not None:
-                    kwargs["llm_result"] = llm_result
-                result = await _call_user_fn(callback_fn, **kwargs)
-                return result if isinstance(result, dict) else {}
-            except Exception as e:
-                logger.error("Callback %s failed: %s", task_name, e)
-                return {}
+        from conductor.ai.agents.runtime._worker_entries import (
+            CallbackEntry,
+            probe_spawn_safety,
+        )
 
+        callback_worker = CallbackEntry(position, handlers, legacy_fn, task_name)
         callback_worker.__annotations__ = {"messages": object, "llm_result": str, "return": object}
+        probe_spawn_safety(callback_worker, task_name, group="system")
         worker_task(
             task_definition_name=task_name,
             task_def=_default_task_def(task_name),
@@ -1641,17 +1527,14 @@ class AgentRuntime:
 
         task_name = f"{agent_name}_termination"
 
-        async def termination_worker(result: str = "", iteration: int = 0) -> object:
-            iteration = _resolve_loop_iteration(iteration)
-            context = {"result": result, "messages": [], "iteration": iteration}
-            try:
-                outcome = await _call_user_fn(termination_cond.should_terminate, context)
-                return {"should_continue": not outcome.should_terminate, "reason": outcome.reason}
-            except Exception as e:
-                logger.error("termination condition evaluation failed: %s", e)
-                return {"should_continue": True, "reason": ""}
+        from conductor.ai.agents.runtime._worker_entries import (
+            TerminationEntry,
+            probe_spawn_safety,
+        )
 
+        termination_worker = TerminationEntry(termination_cond)
         termination_worker.__annotations__ = {"result": str, "iteration": int, "return": object}
+        probe_spawn_safety(termination_worker, task_name, group="system")
         worker_task(
             task_definition_name=task_name,
             task_def=_default_task_def(task_name),
@@ -1670,13 +1553,13 @@ class AgentRuntime:
 
         task_name = f"{agent_name}_check_transfer"
 
-        async def check_transfer_worker(tool_calls: object = None, _unused: str = "") -> object:
-            for tc in tool_calls or []:
-                name = tc.get("name", "")
-                if "_transfer_to_" in name:
-                    return {"is_transfer": True, "transfer_to": name.split("_transfer_to_", 1)[1]}
-            return {"is_transfer": False, "transfer_to": ""}
+        from conductor.ai.agents.runtime._worker_entries import (
+            CheckTransferEntry,
+            probe_spawn_safety,
+        )
 
+        check_transfer_worker = CheckTransferEntry()
+        probe_spawn_safety(check_transfer_worker, task_name, group="system")
         check_transfer_worker.__annotations__ = {
             "tool_calls": object,
             "_unused": str,
@@ -1702,41 +1585,37 @@ class AgentRuntime:
         """
         from conductor.client.worker.worker_task import worker_task
 
-        def make_worker(tool_name: str, _domain: "Optional[str]" = domain) -> None:
-            async def transfer_worker() -> object:
-                return {}
+        from conductor.ai.agents.runtime._worker_entries import (
+            TransferNoopEntry,
+            probe_spawn_safety,
+        )
 
+        for sub in agent.agents:
+            tool_name = f"{agent.name}_transfer_to_{sub.name}"
+            transfer_worker = TransferNoopEntry()
             transfer_worker.__annotations__ = {"return": object}
+            probe_spawn_safety(transfer_worker, tool_name, group="system")
             worker_task(
                 task_definition_name=tool_name,
                 task_def=_default_task_def(tool_name),
                 register_task_def=True,
                 overwrite_task_def=True,
-                domain=_domain,
+                domain=domain,
                 thread_count=_SYSTEM_WORKER_THREADS,
                 lease_extend_enabled=True,
             )(transfer_worker)
-
-        for sub in agent.agents:
-            make_worker(f"{agent.name}_transfer_to_{sub.name}")
 
     def _register_router_worker(self, agent: Agent, domain: "Optional[str]" = None) -> None:
         """Register a function-based router worker."""
         from conductor.client.worker.worker_task import worker_task
 
         task_name = f"{agent.name}_router_fn"
-        router_fn = agent.router
-        agent_names = [a.name for a in agent.agents]
 
-        async def router_worker(prompt: str = "") -> object:
-            try:
-                result = await _call_user_fn(router_fn, prompt)
-                return {"selected_agent": str(result)}
-            except Exception as e:
-                logger.error("Router function failed: %s", e)
-                return {"selected_agent": agent_names[0] if agent_names else ""}
+        from conductor.ai.agents.runtime._worker_entries import RouterEntry, probe_spawn_safety
 
+        router_worker = RouterEntry(agent.router, [a.name for a in agent.agents])
         router_worker.__annotations__ = {"prompt": str, "return": object}
+        probe_spawn_safety(router_worker, task_name, group="system")
         worker_task(
             task_definition_name=task_name,
             task_def=_default_task_def(task_name),
@@ -1757,73 +1636,23 @@ class AgentRuntime:
         from conductor.client.worker.worker_task import worker_task
 
         task_name = f"{agent.name}_handoff_check"
-        handoff_conditions = agent.handoffs
         # Parent agent is "0", sub-agents are "1", "2", ...
         name_to_idx = {agent.name: "0"}
         name_to_idx.update({sub.name: str(i + 1) for i, sub in enumerate(agent.agents)})
         idx_to_name = {v: k for k, v in name_to_idx.items()}
-        allowed = agent.allowed_transitions
-        # Track consecutive blocked transfers per agent to prevent
-        # infinite loops. After max_blocked_retries, exit the loop.
-        max_blocked_retries = 3
-        blocked_counts: dict[str, int] = {}
 
-        def _is_transfer_truthy(val: object) -> bool:
-            if val is True:
-                return True
-            if isinstance(val, str):
-                return val.strip().lower() == "true"
-            return False
+        from conductor.ai.agents.runtime._worker_entries import (
+            HandoffCheckEntry,
+            probe_spawn_safety,
+        )
 
-        def _is_allowed(source_idx: str, target_name: str) -> bool:
-            """Check if transition is allowed. No constraints → allow all."""
-            if not allowed:
-                return True
-            source_name = idx_to_name.get(source_idx, "")
-            return target_name in allowed.get(source_name, [])
-
-        async def handoff_check_worker(
-            result: str = "",
-            active_agent: str = "0",
-            conversation: str = "",
-            is_transfer: object = False,
-            transfer_to: str = "",
-        ) -> object:
-            # Priority 1: Transfer tool detected
-            if _is_transfer_truthy(is_transfer):
-                if _is_allowed(active_agent, transfer_to):
-                    blocked_counts.pop(active_agent, None)
-                    target_idx = name_to_idx.get(transfer_to, active_agent)
-                    if target_idx != active_agent:
-                        return {"active_agent": target_idx, "handoff": True}
-                elif allowed:
-                    # Transfer blocked — give the agent a few retries to
-                    # self-correct, then exit the loop.
-                    count = blocked_counts.get(active_agent, 0) + 1
-                    blocked_counts[active_agent] = count
-                    if count <= max_blocked_retries:
-                        return {"active_agent": active_agent, "handoff": True}
-                    # Max retries exceeded — exit the loop
-                    blocked_counts.pop(active_agent, None)
-                    return {"active_agent": active_agent, "handoff": False}
-
-            # Priority 2: Condition-based handoffs (fallback)
-            context = {
-                "result": result,
-                "messages": conversation,
-                "tool_name": "",
-                "tool_result": "",
-            }
-            for cond in handoff_conditions:
-                if cond.should_handoff(context):
-                    if _is_allowed(active_agent, cond.target):
-                        target_idx = name_to_idx.get(cond.target, active_agent)
-                        if target_idx != active_agent:
-                            return {"active_agent": target_idx, "handoff": True}
-
-            # Neither transfer nor condition → loop exits
-            return {"active_agent": active_agent, "handoff": False}
-
+        handoff_check_worker = HandoffCheckEntry(
+            agent.handoffs,
+            name_to_idx,
+            idx_to_name,
+            agent.allowed_transitions,
+        )
+        probe_spawn_safety(handoff_check_worker, task_name, group="system")
         handoff_check_worker.__annotations__ = {
             "result": str,
             "active_agent": str,
@@ -1881,35 +1710,28 @@ class AgentRuntime:
                 # return an error message so the LLM knows to stop trying.
                 is_unreachable = allowed and peer_name not in valid_targets
 
-                def make_worker(tn, target, unreachable, _domain=domain):
-                    if unreachable:
+                from conductor.ai.agents.runtime._worker_entries import (
+                    TransferNoopEntry,
+                    TransferUnreachableEntry,
+                    probe_spawn_safety,
+                )
 
-                        async def transfer_worker() -> str:
-                            return (
-                                f"ERROR: {tn} is not available. "
-                                f"Use a different transfer tool, or if you are "
-                                f"done, just provide your final response without "
-                                f"calling any transfer tool."
-                            )
-
-                        transfer_worker.__annotations__ = {"return": str}
-                    else:
-
-                        async def transfer_worker() -> object:
-                            return {}
-
-                        transfer_worker.__annotations__ = {"return": object}
-                    worker_task(
-                        task_definition_name=tn,
-                        task_def=_default_task_def(tn),
-                        register_task_def=True,
-                        overwrite_task_def=True,
-                        domain=_domain,
-                        thread_count=_SYSTEM_WORKER_THREADS,
-                        lease_extend_enabled=True,
-                    )(transfer_worker)
-
-                make_worker(tool_name, peer_name, is_unreachable)
+                if is_unreachable:
+                    transfer_worker = TransferUnreachableEntry(tool_name)
+                    transfer_worker.__annotations__ = {"return": str}
+                else:
+                    transfer_worker = TransferNoopEntry()
+                    transfer_worker.__annotations__ = {"return": object}
+                probe_spawn_safety(transfer_worker, tool_name, group="system")
+                worker_task(
+                    task_definition_name=tool_name,
+                    task_def=_default_task_def(tool_name),
+                    register_task_def=True,
+                    overwrite_task_def=True,
+                    domain=domain,
+                    thread_count=_SYSTEM_WORKER_THREADS,
+                    lease_extend_enabled=True,
+                )(transfer_worker)
 
     def _register_manual_selection_worker(
         self, agent: Agent, domain: "Optional[str]" = None
@@ -1918,19 +1740,17 @@ class AgentRuntime:
         from conductor.client.worker.worker_task import worker_task
 
         task_name = f"{agent.name}_process_selection"
-        name_to_idx = {sub.name: str(i) for i, sub in enumerate(agent.agents)}
 
-        async def process_selection_worker(human_output: object = None) -> object:
-            if human_output is None:
-                return {"selected": "0"}
-            if isinstance(human_output, dict):
-                selected = human_output.get("selected", human_output.get("agent", "0"))
-                if selected in name_to_idx:
-                    return {"selected": name_to_idx[selected]}
-                return {"selected": str(selected)}
-            return {"selected": str(human_output)}
+        from conductor.ai.agents.runtime._worker_entries import (
+            ProcessSelectionEntry,
+            probe_spawn_safety,
+        )
 
+        process_selection_worker = ProcessSelectionEntry(
+            {sub.name: str(i) for i, sub in enumerate(agent.agents)}
+        )
         process_selection_worker.__annotations__ = {"human_output": object, "return": object}
+        probe_spawn_safety(process_selection_worker, task_name, group="system")
         worker_task(
             task_definition_name=task_name,
             task_def=_default_task_def(task_name),

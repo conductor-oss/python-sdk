@@ -167,6 +167,102 @@ class TestCodeExecutionEntrySpawn:
         assert restored.executor.language == "python"
 
 
+# ── System worker entries (Group B) ──────────────────────────────────────
+
+
+class TestSystemEntries:
+    def test_stop_when_entry_async_spawn_roundtrip(self):
+        """An async entry (was an async-def closure) crosses spawn and runs."""
+        from conductor.ai.agents.runtime._worker_entries import StopWhenEntry
+
+        entry = StopWhenEntry(helpers.stop_after_two)
+        ctx = multiprocessing.get_context("spawn")
+        q = ctx.Queue()
+        p = ctx.Process(
+            target=helpers.run_async_entry_child,
+            args=(pickle.dumps(entry), {"result": "r", "iteration": 3}, q),
+        )
+        p.start()
+        try:
+            assert q.get(timeout=30) == {"should_continue": False}
+        finally:
+            p.join(timeout=30)
+        assert p.exitcode == 0
+
+    def test_handoff_check_entry_pickles_and_decides(self):
+        import asyncio
+
+        from conductor.ai.agents.runtime._worker_entries import HandoffCheckEntry
+
+        entry = HandoffCheckEntry(
+            [], {"root": "0", "sub": "1"}, {"0": "root", "1": "sub"},
+            allowed={"root": ["sub"]},
+        )
+        restored = pickle.loads(pickle.dumps(entry))
+        out = asyncio.run(restored(is_transfer=True, active_agent="0", transfer_to="sub"))
+        assert out == {"active_agent": "1", "handoff": True}
+        # Blocked target retries then gives up (per-process instance state).
+        blocked = asyncio.run(restored(is_transfer=True, active_agent="1", transfer_to="root"))
+        assert blocked == {"active_agent": "1", "handoff": True}  # retry 1 of 3
+
+    def test_callback_entry_rebuilds_chain(self):
+        import asyncio
+
+        from conductor.ai.agents.runtime._worker_entries import CallbackEntry
+
+        entry = CallbackEntry("before_model", [], helpers.legacy_before_model, "t_before_model")
+        restored = pickle.loads(pickle.dumps(entry))
+        out = asyncio.run(restored(messages=[{"role": "user"}]))
+        assert out == {"seen": ["messages"]}
+
+    def test_transfer_entries_pickle(self):
+        import asyncio
+
+        from conductor.ai.agents.runtime._worker_entries import (
+            TransferNoopEntry,
+            TransferUnreachableEntry,
+        )
+
+        assert asyncio.run(pickle.loads(pickle.dumps(TransferNoopEntry()))()) == {}
+        msg = asyncio.run(pickle.loads(pickle.dumps(TransferUnreachableEntry("a_transfer_to_b")))())
+        assert "a_transfer_to_b is not available" in msg
+
+
+@pytest.fixture
+def force_spawn_probe(monkeypatch):
+    """Pin the probe's start-method check to 'spawn' so these tests don't
+    depend on the ambient CONDUCTOR_MP_START_METHOD (hermeticity)."""
+    monkeypatch.setattr(
+        we.multiprocessing, "get_start_method", lambda allow_none=True: "spawn"
+    )
+
+
+class TestUserCallablePolicy:
+    """Design §7: lambdas fail fast at registration with a named offender."""
+
+    def test_lambda_callback_fails_fast_at_registration(self, force_spawn_probe):
+        from conductor.ai.agents.runtime._worker_entries import CallbackEntry
+
+        entry = CallbackEntry("before_model", [], lambda **kw: {}, "t_before_model")
+        with pytest.raises(SpawnSafetyError, match="not spawn-safe"):
+            probe_spawn_safety(entry, "t_before_model", group="system")
+
+    def test_lambda_tolerated_under_fork(self, monkeypatch):
+        from conductor.ai.agents.runtime._worker_entries import CallbackEntry
+
+        monkeypatch.setattr(
+            we.multiprocessing, "get_start_method", lambda allow_none=True: "fork"
+        )
+        entry = CallbackEntry("before_model", [], lambda **kw: {}, "t_before_model")
+        probe_spawn_safety(entry, "t_before_model", group="system")  # no raise
+
+    def test_module_level_callback_passes_probe(self, force_spawn_probe):
+        from conductor.ai.agents.runtime._worker_entries import CallbackEntry
+
+        entry = CallbackEntry("before_model", [], helpers.legacy_before_model, "t")
+        probe_spawn_safety(entry, "t", group="system")  # no raise
+
+
 # ── Registration-time probe ──────────────────────────────────────────────
 
 
@@ -175,7 +271,7 @@ class TestProbe:
         # Ships with no groups enabled — even a lambda passes silently.
         probe_spawn_safety(lambda x: x, "t", group="not-enabled")
 
-    def test_probe_rejects_closure_when_enabled(self, monkeypatch):
+    def test_probe_rejects_closure_when_enabled(self, monkeypatch, force_spawn_probe):
         monkeypatch.setattr(we, "_ENABLED_PROBE_GROUPS", frozenset({"tools"}))
 
         def nested(x):
@@ -184,11 +280,11 @@ class TestProbe:
         with pytest.raises(SpawnSafetyError, match="not spawn-safe"):
             probe_spawn_safety(nested, "nested_task", group="tools")
 
-    def test_probe_accepts_module_level_fn_when_enabled(self, monkeypatch):
+    def test_probe_accepts_module_level_fn_when_enabled(self, monkeypatch, force_spawn_probe):
         monkeypatch.setattr(we, "_ENABLED_PROBE_GROUPS", frozenset({"tools"}))
         probe_spawn_safety(helpers.plain_sample, "plain_task", group="tools")
 
-    def test_probe_accepts_picklable_instance_when_enabled(self, monkeypatch):
+    def test_probe_accepts_picklable_instance_when_enabled(self, monkeypatch, force_spawn_probe):
         monkeypatch.setattr(we, "_ENABLED_PROBE_GROUPS", frozenset({"tools"}))
         probe_spawn_safety(helpers.SyncCallEntry(3), "entry_task", group="tools")
 

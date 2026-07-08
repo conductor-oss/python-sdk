@@ -214,6 +214,390 @@ class ToolWorkerEntry:
         )
 
 
+# ── User-callable transport helpers ──────────────────────────────────────
+
+
+def wrap_callable(fn):
+    """Best transport for a user callable: FunctionRef when resolvable, raw otherwise.
+
+    Raw transport only survives ``fork`` (or picklable instances); the
+    registration probe polices that under ``spawn``.
+    """
+    if fn is None:
+        return None
+    try:
+        return FunctionRef.of(fn)
+    except SpawnSafetyError:
+        return fn
+
+
+def unwrap_callable(x):
+    return x.resolve() if isinstance(x, FunctionRef) else x
+
+
+def _stringify_content(content) -> str:
+    """Shared guardrail-content normalization (was duplicated in both closures)."""
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    import json as _json
+
+    try:
+        return _json.dumps(content, default=str)
+    except (TypeError, ValueError):
+        return str(content)
+
+
+# ── System worker entries (Group B — nested closures in AgentRuntime._register_*) ──
+#
+# Each replaces an `async def` closure with a picklable module-level class.
+# `_call_user_fn` / `_resolve_loop_iteration` are imported lazily inside the
+# calls: they live in runtime.py, which imports this module at registration
+# time (top-level import here would be a cycle), and lazy import also works
+# in the spawn child.
+
+
+class GuardrailEntry:
+    """One output guardrail (was ``guardrail_worker``)."""
+
+    def __init__(self, func, name, on_fail, max_retries):
+        self.func_t = wrap_callable(func)
+        self.name = name
+        self.on_fail = on_fail
+        self.max_retries = max_retries
+
+    async def _check(self, content_str, iteration):
+        from conductor.ai.agents.runtime.runtime import _call_user_fn
+
+        try:
+            result = await _call_user_fn(unwrap_callable(self.func_t), content_str)
+            if not result.passed:
+                on_fail = self.on_fail
+                fixed_output = getattr(result, "fixed_output", None)
+                if on_fail == "retry" and iteration >= self.max_retries:
+                    on_fail = "raise"
+                if on_fail == "fix" and fixed_output is None:
+                    on_fail = "raise"
+                return {
+                    "passed": False,
+                    "message": result.message,
+                    "on_fail": on_fail,
+                    "fixed_output": fixed_output,
+                    "guardrail_name": self.name,
+                    "should_continue": on_fail == "retry",
+                }
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).error(
+                "Guardrail '%s' raised exception: %s", self.name, e
+            )
+            on_fail = self.on_fail
+            if on_fail == "retry" and iteration >= self.max_retries:
+                on_fail = "raise"
+            return {
+                "passed": False,
+                "message": f"Guardrail error: {e}",
+                "on_fail": on_fail,
+                "fixed_output": None,
+                "guardrail_name": self.name,
+                "should_continue": on_fail == "retry",
+            }
+        return None
+
+    async def __call__(self, content: object = None, iteration: int = 0) -> object:
+        from conductor.ai.agents.runtime.runtime import _resolve_loop_iteration
+
+        iteration = _resolve_loop_iteration(iteration)
+        failure = await self._check(_stringify_content(content), iteration)
+        if failure is not None:
+            return failure
+        return {
+            "passed": True,
+            "message": "",
+            "on_fail": "pass",
+            "fixed_output": None,
+            "guardrail_name": "",
+            "should_continue": False,
+        }
+
+
+class CombinedGuardrailEntry:
+    """All of an agent's output guardrails in order (was ``combined_guardrail_worker``)."""
+
+    def __init__(self, guardrails):
+        self.entries = [
+            GuardrailEntry(g.func, g.name, g.on_fail, g.max_retries) for g in guardrails
+        ]
+
+    async def __call__(self, content: object = None, iteration: int = 0) -> object:
+        from conductor.ai.agents.runtime.runtime import _resolve_loop_iteration
+
+        iteration = _resolve_loop_iteration(iteration)
+        content_str = _stringify_content(content)
+        for entry in self.entries:
+            failure = await entry._check(content_str, iteration)
+            if failure is not None:
+                return failure
+        return {
+            "passed": True,
+            "message": "",
+            "on_fail": "pass",
+            "fixed_output": None,
+            "guardrail_name": "",
+            "should_continue": False,
+        }
+
+
+class StopWhenEntry:
+    """Loop stop predicate (was ``stop_when_worker``)."""
+
+    def __init__(self, stop_when_fn):
+        self.fn_t = wrap_callable(stop_when_fn)
+
+    async def __call__(self, result="", iteration: int = 0, messages=None) -> object:
+        from conductor.ai.agents.runtime.runtime import _call_user_fn, _resolve_loop_iteration
+
+        iteration = _resolve_loop_iteration(iteration)
+        context = {"result": result, "messages": messages or [], "iteration": iteration}
+        try:
+            should_stop = await _call_user_fn(unwrap_callable(self.fn_t), context)
+            return {"should_continue": not should_stop}
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).error("stop_when evaluation failed: %s", e)
+            return {"should_continue": True}
+
+
+class GateEntry:
+    """Sequential-pipeline gate predicate (was ``gate_worker``)."""
+
+    def __init__(self, gate_fn):
+        self.fn_t = wrap_callable(gate_fn)
+
+    async def __call__(self, result: str = "") -> object:
+        from conductor.ai.agents.runtime.runtime import _call_user_fn
+
+        try:
+            output = {"result": result}
+            should_continue = await _call_user_fn(unwrap_callable(self.fn_t), output)
+            return {"decision": "continue" if should_continue else "stop"}
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).error("Gate evaluation failed: %s", e)
+            return {"decision": "continue"}  # safe fallback
+
+
+class CallbackEntry:
+    """Position callback worker (was ``callback_worker``).
+
+    Carries the CallbackHandler instances (by value) and the legacy callable
+    (by reference where possible) instead of the unpicklable ``chained``
+    closure; the chain is rebuilt per call via
+    ``_chain_callbacks_for_position``.
+    """
+
+    def __init__(self, position, handlers, legacy_fn, task_name):
+        self.position = position
+        self.handlers = list(handlers or [])
+        self.legacy_t = wrap_callable(legacy_fn)
+        self.task_name = task_name
+
+    async def __call__(self, messages: object = None, llm_result: str = None) -> object:
+        from conductor.ai.agents.callback import _chain_callbacks_for_position
+        from conductor.ai.agents.runtime.runtime import _call_user_fn
+
+        try:
+            chained = _chain_callbacks_for_position(
+                self.position, self.handlers, unwrap_callable(self.legacy_t)
+            )
+            if chained is None:
+                return {}
+            kwargs = {}
+            if messages is not None:
+                kwargs["messages"] = messages
+            if llm_result is not None:
+                kwargs["llm_result"] = llm_result
+            result = await _call_user_fn(chained, **kwargs)
+            return result if isinstance(result, dict) else {}
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).error("Callback %s failed: %s", self.task_name, e)
+            return {}
+
+
+class TerminationEntry:
+    """Termination-condition worker (was ``termination_worker``)."""
+
+    def __init__(self, termination_cond):
+        self.cond = termination_cond  # by value; conditions are plain-data classes
+
+    async def __call__(self, result: str = "", iteration: int = 0) -> object:
+        from conductor.ai.agents.runtime.runtime import _call_user_fn, _resolve_loop_iteration
+
+        iteration = _resolve_loop_iteration(iteration)
+        context = {"result": result, "messages": [], "iteration": iteration}
+        try:
+            outcome = await _call_user_fn(self.cond.should_terminate, context)
+            return {"should_continue": not outcome.should_terminate, "reason": outcome.reason}
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).error("termination condition evaluation failed: %s", e)
+            return {"should_continue": True, "reason": ""}
+
+
+class CheckTransferEntry:
+    """Detect transfer tool calls (was ``check_transfer_worker``; stateless)."""
+
+    async def __call__(self, tool_calls: object = None, _unused: str = "") -> object:
+        for tc in tool_calls or []:
+            name = tc.get("name", "")
+            if "_transfer_to_" in name:
+                return {"is_transfer": True, "transfer_to": name.split("_transfer_to_", 1)[1]}
+        return {"is_transfer": False, "transfer_to": ""}
+
+
+class TransferNoopEntry:
+    """No-op transfer tool (was the nested ``transfer_worker``; handoff is
+    detected by check_transfer from toolCalls output)."""
+
+    async def __call__(self) -> object:
+        return {}
+
+
+class TransferUnreachableEntry:
+    """Transfer tool for a target unreachable via allowed_transitions."""
+
+    def __init__(self, tool_name):
+        self.tool_name = tool_name
+
+    async def __call__(self) -> str:
+        return (
+            f"ERROR: {self.tool_name} is not available. "
+            f"Use a different transfer tool, or if you are "
+            f"done, just provide your final response without "
+            f"calling any transfer tool."
+        )
+
+
+class RouterEntry:
+    """Function-based router (was ``router_worker``)."""
+
+    def __init__(self, router_fn, agent_names):
+        self.fn_t = wrap_callable(router_fn)
+        self.agent_names = list(agent_names)
+
+    async def __call__(self, prompt: str = "") -> object:
+        from conductor.ai.agents.runtime.runtime import _call_user_fn
+
+        try:
+            result = await _call_user_fn(unwrap_callable(self.fn_t), prompt)
+            return {"selected_agent": str(result)}
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).error("Router function failed: %s", e)
+            return {"selected_agent": self.agent_names[0] if self.agent_names else ""}
+
+
+class HandoffCheckEntry:
+    """Swarm handoff decision (was ``handoff_check_worker``).
+
+    ``blocked_counts`` is instance state — per worker process, exactly the
+    closure-cell semantics it replaces. HandoffConditions travel by value
+    (``OnCondition`` lambdas are fork-only; the probe polices that).
+    """
+
+    def __init__(self, handoff_conditions, name_to_idx, idx_to_name, allowed,
+                 max_blocked_retries=3):
+        self.handoff_conditions = list(handoff_conditions or [])
+        self.name_to_idx = dict(name_to_idx)
+        self.idx_to_name = dict(idx_to_name)
+        self.allowed = allowed
+        self.max_blocked_retries = max_blocked_retries
+        self.blocked_counts = {}
+
+    @staticmethod
+    def _is_transfer_truthy(val: object) -> bool:
+        if val is True:
+            return True
+        if isinstance(val, str):
+            return val.strip().lower() == "true"
+        return False
+
+    def _is_allowed(self, source_idx: str, target_name: str) -> bool:
+        """Check if transition is allowed. No constraints → allow all."""
+        if not self.allowed:
+            return True
+        source_name = self.idx_to_name.get(source_idx, "")
+        return target_name in self.allowed.get(source_name, [])
+
+    async def __call__(
+        self,
+        result: str = "",
+        active_agent: str = "0",
+        conversation: str = "",
+        is_transfer: object = False,
+        transfer_to: str = "",
+    ) -> object:
+        # Priority 1: Transfer tool detected
+        if self._is_transfer_truthy(is_transfer):
+            if self._is_allowed(active_agent, transfer_to):
+                self.blocked_counts.pop(active_agent, None)
+                target_idx = self.name_to_idx.get(transfer_to, active_agent)
+                if target_idx != active_agent:
+                    return {"active_agent": target_idx, "handoff": True}
+            elif self.allowed:
+                # Transfer blocked — give the agent a few retries to
+                # self-correct, then exit the loop.
+                count = self.blocked_counts.get(active_agent, 0) + 1
+                self.blocked_counts[active_agent] = count
+                if count <= self.max_blocked_retries:
+                    return {"active_agent": active_agent, "handoff": True}
+                # Max retries exceeded — exit the loop
+                self.blocked_counts.pop(active_agent, None)
+                return {"active_agent": active_agent, "handoff": False}
+
+        # Priority 2: Condition-based handoffs (fallback)
+        context = {
+            "result": result,
+            "messages": conversation,
+            "tool_name": "",
+            "tool_result": "",
+        }
+        for cond in self.handoff_conditions:
+            if cond.should_handoff(context):
+                if self._is_allowed(active_agent, cond.target):
+                    target_idx = self.name_to_idx.get(cond.target, active_agent)
+                    if target_idx != active_agent:
+                        return {"active_agent": target_idx, "handoff": True}
+
+        # Neither transfer nor condition → loop exits
+        return {"active_agent": active_agent, "handoff": False}
+
+
+class ProcessSelectionEntry:
+    """Manual-strategy selection mapper (was ``process_selection_worker``)."""
+
+    def __init__(self, name_to_idx):
+        self.name_to_idx = dict(name_to_idx)
+
+    async def __call__(self, human_output: object = None) -> object:
+        if human_output is None:
+            return {"selected": "0"}
+        if isinstance(human_output, dict):
+            selected = human_output.get("selected", human_output.get("agent", "0"))
+            if selected in self.name_to_idx:
+                return {"selected": self.name_to_idx[selected]}
+            return {"selected": str(selected)}
+        return {"selected": str(human_output)}
+
+
 # ── Registration-time spawn probe ────────────────────────────────────────
 #
 # Groups are enabled stage-by-stage as each worker family is converted to a
@@ -221,7 +605,9 @@ class ToolWorkerEntry:
 # would fail every registration immediately.
 # - "tools": make_tool_worker/ToolWorkerEntry (native @tool, skill workers,
 #   framework-extracted) — converted in Stage 2.
-_ENABLED_PROBE_GROUPS: FrozenSet[str] = frozenset({"tools"})
+# - "system": AgentRuntime._register_* control workers (guardrails, callbacks,
+#   termination, transfer, router, handoff, selection) — converted in Stage 3.
+_ENABLED_PROBE_GROUPS: FrozenSet[str] = frozenset({"tools", "system"})
 
 
 def _spawn_probe_active(group: str) -> bool:

@@ -54,6 +54,24 @@ def resolve_and_call_child(ref_bytes: bytes, arg: int, q) -> None:
     q.put(fn(arg))
 
 
+def stop_after_two(context) -> bool:
+    """Module-level stop_when predicate for StopWhenEntry tests."""
+    return context["iteration"] >= 2
+
+
+def legacy_before_model(**kwargs) -> dict:
+    """Module-level legacy callback for CallbackEntry policy tests."""
+    return {"seen": sorted(kwargs)}
+
+
+def run_async_entry_child(entry_bytes: bytes, kwargs: dict, q) -> None:
+    """Spawn-child target: unpickle an async worker entry and await it."""
+    import asyncio
+
+    entry = pickle.loads(entry_bytes)
+    q.put(asyncio.run(entry(**kwargs)))
+
+
 def run_code_entry_child(entry_bytes: bytes, code: str, q) -> None:
     """Spawn-child target: unpickle a CodeExecutionEntry and execute code."""
     entry = pickle.loads(entry_bytes)
