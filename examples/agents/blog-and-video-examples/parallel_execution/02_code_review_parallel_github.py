@@ -13,7 +13,7 @@ Setup:
     pip install agentspan requests
     agentspan server start
 
-    # Store credentials in the AgentSpan UI (localhost:6767 → Credentials):
+    # Store credentials in the AgentSpan UI (localhost:8080 → Credentials):
     #   GITHUB_TOKEN = your GitHub personal access token (needs repo scope)
 
     python 02_code_review_parallel_github.py

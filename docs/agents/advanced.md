@@ -22,7 +22,7 @@ with AgentRuntime() as runtime:
     runtime.run(agent, "hi")
 
 # Explicit kwargs
-with AgentRuntime(server_url="https://prod:6767/api",
+with AgentRuntime(server_url="https://prod:8080/api",
                   api_key="...") as runtime:
     ...
 
@@ -45,7 +45,7 @@ For one-off scripts, top-level functions use a shared singleton runtime:
 ```python
 import conductor.ai.agents as ag
 
-ag.configure(server_url="https://prod:6767/api", auto_start_server=False)  # before first run
+ag.configure(server_url="https://prod:8080/api", auto_start_server=False)  # before first run
 result = ag.run(agent, "Hello!")
 ag.shutdown()    # explicit cleanup; not required for simple scripts
 ```

@@ -29,7 +29,7 @@ pip install conductor-agent-sdk
 agentspan server start
 ```
 
-This gives you a local Agentspan server with a visual dashboard at localhost:6767.
+This gives you a local Agentspan server with a visual dashboard at localhost:8080.
 
 ## What we are building
 

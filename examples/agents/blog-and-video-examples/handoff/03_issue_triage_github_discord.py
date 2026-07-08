@@ -23,7 +23,7 @@ Setup:
     pip install agentspan requests
     agentspan server start
 
-    # Store credentials in the AgentSpan UI (localhost:6767 → Credentials):
+    # Store credentials in the AgentSpan UI (localhost:8080 → Credentials):
     #   GITHUB_TOKEN  = GitHub personal access token (needs repo scope)
     #   DISCORD_TOKEN = Discord bot token
 

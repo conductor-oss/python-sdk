@@ -13,7 +13,7 @@ Setup:
     pip install agentspan requests
     agentspan server start
 
-    # Store credentials in the AgentSpan UI (localhost:6767 → Credentials):
+    # Store credentials in the AgentSpan UI (localhost:8080 → Credentials):
     #   ZENDESK_API   = your Zendesk API token
     #   ZENDESK_EMAIL = your Zendesk email (e.g. you@company.com)
 

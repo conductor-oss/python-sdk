@@ -9,7 +9,7 @@ instead of a real LLM Agent keeps the demo deterministic and free — the
 scheduling pipeline is identical either way.
 
 NOTE: Targets OSS Conductor at port 8089. The agentspan-runtime on port
-6767 doesn't (yet) include the scheduler module — see
+8080 doesn't (yet) include the scheduler module — see
 ``docs/design/plans/2026-05-27-agent-scheduling.md`` open dependency #1.
 
 Run::

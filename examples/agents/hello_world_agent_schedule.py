@@ -5,7 +5,7 @@ attached to a cron schedule in one call. Watches the agentspan-runtime fire
 the agent on a cadence and shows execution history with the LLM output.
 
 Requires:
-  - agentspan-runtime running on port 6767 with the scheduler module
+  - agentspan-runtime running on port 8080 with the scheduler module
     (see docs/design/plans/2026-05-27-agent-scheduling.md task 6)
   - An OPENAI_API_KEY (or change the model)
 

@@ -9,7 +9,7 @@ Constructor kwargs allow direct overrides (useful for tests).
 Usage::
 
     config = AgentConfig.from_env()                          # load from env
-    config = AgentConfig(server_url="http://custom:6767/api")  # explicit
+    config = AgentConfig(server_url="http://custom:8080/api")  # explicit
 """
 
 from __future__ import annotations
