@@ -28,6 +28,7 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       AGENTSPAN_SERVER_URL: http://localhost:8080/api
       AGENTSPAN_CLI_PATH: ${{ github.workspace }}/agentspan
+      CONDUCTOR_MP_START_METHOD: fork
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
