@@ -27,7 +27,6 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.orkes_clients import OrkesClients
 
 from conductor.ai.agents.schedule import Schedule
-from conductor.ai.agents.schedule.client import ScheduleClient
 
 CONDUCTOR_API = "http://localhost:8080/api"
 
@@ -108,12 +107,10 @@ def main() -> None:
     # 1. Register the workflow that the schedule will fire.
     register_hello_world_workflow(agent_name)
 
-    # 2. Build the agentspan ScheduleClient against the scheduler-enabled
+    # 2. Build the agent schedule client against the scheduler-enabled
     #    Conductor instance.
     clients = OrkesClients(configuration=Configuration(base_url="http://localhost:8080"))
-    sched_client = ScheduleClient(
-        clients.get_scheduler_client(), clients.get_workflow_client()
-    )
+    sched_client = clients.get_agent_schedule_client()
 
     # 3. Declarative deploy: one schedule, fires every 2 seconds.
     #    Quartz 6-field cron: 'sec min hour day month day-of-week'.

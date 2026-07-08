@@ -126,9 +126,14 @@ with AgentRuntime() as runtime:
 
 Key methods: `run`/`run_async`, `start`/`start_async`, `deploy`/`deploy_async`,
 `schedule(agent, schedules)`, `get_status`, `respond`, `stop`, `signal`,
-`stream_sse`, and `.schedules` (the `ScheduleClient`). Both sync and async forms
+`stream_sse`, and `.schedules` (the `AgentScheduleClient`). Both sync and async forms
 exist. Most users call `runtime.run/start/deploy` instead, which add local-worker
 management on top of this client.
+
+The raw `/agent/*` HTTP transport behind this client is
+`conductor.client.ai.AgentApiClient` — also reachable without the agents layer via
+`OrkesClients.get_agent_client()` (and `get_agent_schedule_client()` for the cron
+lifecycle). `AgentClient` composes that transport and adds the agent-level surface.
 
 ## Structured output
 
