@@ -23,7 +23,6 @@ sugar, ``AgentHandle`` plumbing) lives in
 
 from __future__ import annotations
 
-import base64
 import json
 import logging
 import time
@@ -42,23 +41,6 @@ logger = logging.getLogger("conductor.ai.agents.runtime.http_client")
 _SSE_NO_EVENT_TIMEOUT = 15  # seconds to wait for first real event before fallback
 
 
-def _decode_jwt_exp(token: str) -> float:
-    """Best-effort decode of a JWT's ``exp`` claim (unix seconds).
-
-    Returns 0.0 for opaque tokens, malformed JWTs, or tokens without ``exp`` —
-    callers treat 0 as "expiry unknown, re-mint rather than cache".
-    """
-    try:
-        parts = token.split(".")
-        if len(parts) < 2:
-            return 0.0
-        seg = parts[1] + "=" * (-len(parts[1]) % 4)
-        payload = json.loads(base64.urlsafe_b64decode(seg))
-        return float(payload.get("exp", 0) or 0)
-    except Exception:
-        return 0.0
-
-
 class SSEUnavailableError(Exception):
     """Raised when the server doesn't support SSE streaming."""
 
@@ -71,7 +53,9 @@ class AgentApiClient:
     1. an explicit ``token`` passed to the constructor — sent as-is;
     2. otherwise a JWT minted via ``POST {host}/token`` from the
        ``Configuration``'s ``authentication_settings`` (requires both key id
-       and secret), cached until ~expiry;
+       and secret), stored via ``Configuration.update_token()`` and reused
+       until the configuration's token TTL elapses — the same cache every
+       generated client built from that ``Configuration`` shares;
     3. no credentials → no header (anonymous / security-disabled servers).
     """
 
@@ -84,8 +68,6 @@ class AgentApiClient:
         self._server_url = (configuration.host or "").rstrip("/")
         self._token_static = token or ""
         self._client: Optional[httpx.AsyncClient] = None
-        self._token: str = ""
-        self._token_exp: float = 0.0
 
     def _mint_credentials(self) -> Optional[tuple]:
         """(key_id, key_secret) when the configuration can mint, else None."""
@@ -95,12 +77,16 @@ class AgentApiClient:
         return settings.key_id, settings.key_secret
 
     def _cached_token_header(self) -> Optional[Dict[str, str]]:
-        # Reuse the cached token only if it has a decodable expiry and isn't near
-        # it. A token with no decodable exp (_token_exp == 0.0) is NOT cached —
-        # re-mint it (matches the C# SDK; avoids serving a stale token forever).
-        if self._token and self._token_exp != 0.0 and time.time() < self._token_exp - 30:
-            return {"X-Authorization": self._token}
-        return None
+        # Same TTL rule as the generated ApiClient's auth headers: a token
+        # stored on the Configuration is reused until auth_token_ttl_msec
+        # elapses, then re-minted.
+        token = self._configuration.AUTH_TOKEN
+        if not token:
+            return None
+        now = round(time.time() * 1000)
+        if now - self._configuration.token_update_time > self._configuration.auth_token_ttl_msec:
+            return None
+        return {"X-Authorization": token}
 
     async def _auth_headers(self) -> Dict[str, str]:
         """``X-Authorization`` header for secured hosts (orkes); {} when anonymous."""
@@ -126,8 +112,7 @@ class AgentApiClient:
             return {}
         if not token:
             return {}
-        self._token = token
-        self._token_exp = _decode_jwt_exp(token)
+        self._configuration.update_token(token)
         return {"X-Authorization": token}
 
     def _sync_headers(self) -> Dict[str, str]:
@@ -156,8 +141,7 @@ class AgentApiClient:
             return {}
         if not token:
             return {}
-        self._token = token
-        self._token_exp = _decode_jwt_exp(token)
+        self._configuration.update_token(token)
         return {"X-Authorization": token}
 
     async def _get_client(self) -> httpx.AsyncClient:

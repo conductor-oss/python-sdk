@@ -210,8 +210,8 @@ def _jwt_with_exp(exp: int) -> str:
 
 @pytest.mark.asyncio
 async def test_auth_key_mints_token_and_caches_it():
-    """A minted token WITH a decodable (future) exp is cached across requests —
-    minted exactly once."""
+    """A minted token is stored on the Configuration and reused across
+    requests until its TTL elapses — minted exactly once."""
     token_calls = {"count": 0}
     jwt = _jwt_with_exp(4102444800)  # ~2100 → far future
 
@@ -232,9 +232,11 @@ async def test_auth_key_mints_token_and_caches_it():
 
 
 @pytest.mark.asyncio
-async def test_auth_key_opaque_token_is_reminted_not_cached_forever():
-    """A token with no decodable exp must NOT be cached indefinitely — it is
-    re-minted on each request (matches the C# SDK; avoids serving a stale token)."""
+async def test_opaque_token_cached_for_configuration_ttl():
+    """An opaque (non-JWT) token is cached like any other: stored on the
+    Configuration and reused until auth_token_ttl_min elapses — the same
+    fixed-TTL renewal rule every generated client uses, so a stale token can
+    never be served indefinitely."""
     token_calls = {"count": 0}
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -246,7 +248,12 @@ async def test_auth_key_opaque_token_is_reminted_not_cached_forever():
     client = _make_client(handler, auth_key="key1", auth_secret="secret1")
     await client.start_agent({"prompt": "one"})
     await client.start_agent({"prompt": "two"})
-    assert token_calls["count"] == 2  # no exp → not cached → minted each call
+    assert token_calls["count"] == 1  # cached on the Configuration for its TTL
+
+    # Force the TTL to lapse → the next request re-mints.
+    client._api._configuration.token_update_time = 0
+    await client.start_agent({"prompt": "three"})
+    assert token_calls["count"] == 2
     await client.close()
 
 
