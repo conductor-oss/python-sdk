@@ -422,8 +422,9 @@ with AgentRuntime() as runtime:
 
 `schedules=[]` purges all schedules for the agent; omitting `schedules` leaves them
 untouched. The schedule lifecycle client (`runtime.schedules_client()` or
-`runtime.client.schedules`) exposes `save`, `get`, `list_for_agent`, `pause`,
-`resume`, `delete`, `run_now`, `preview_next`, `reconcile`. See
+`runtime.client.schedules`) exposes `pause`, `resume`, `delete`, `run_now`,
+`preview_next`, `reconcile`, plus the native `get_schedule`/`save_schedule`/
+`get_all_schedules` for reads, writes, and lists. See
 [Advanced](advanced.md) and the [API reference](api-reference.md#schedule).
 
 ## Agents from a class

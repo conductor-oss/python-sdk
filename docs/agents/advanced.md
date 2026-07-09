@@ -126,14 +126,16 @@ with AgentRuntime() as runtime:
 
 Key methods: `run`/`run_async`, `start`/`start_async`, `deploy`/`deploy_async`,
 `schedule(agent, schedules)`, `get_status`, `respond`, `stop`, `signal`,
-`stream_sse`, and `.schedules` (the `AgentScheduleClient`). Both sync and async forms
-exist. Most users call `runtime.run/start/deploy` instead, which add local-worker
-management on top of this client.
+`stream_sse`, and `.schedules` (the schedule lifecycle — `pause`/`resume`/`delete`/
+`run_now`/`preview_next`/`reconcile`, now carried by `SchedulerClient` itself). Both
+sync and async forms exist. Most users call `runtime.run/start/deploy` instead,
+which add local-worker management on top of this client.
 
 The raw `/agent/*` HTTP transport behind this client is
 `conductor.client.ai.AgentApiClient` — also reachable without the agents layer via
-`OrkesClients.get_agent_client()` (and `get_agent_schedule_client()` for the cron
-lifecycle). `AgentClient` composes that transport and adds the agent-level surface.
+`OrkesClients.get_agent_client()` (and `get_scheduler_client()` for the cron
+lifecycle; `get_agent_schedule_client()` is deprecated). `AgentClient` composes that
+transport and adds the agent-level surface.
 
 ## Structured output
 
@@ -284,10 +286,12 @@ nightly = Schedule(name="nightly", cron="0 0 * * *", timezone="UTC",
 runtime.deploy(agent, schedules=[nightly])     # upsert; [] purges; omit leaves as-is
 
 sc = runtime.schedules_client()                # or runtime.client.schedules
-sc.list_for_agent(agent.name)
-sc.pause("greeter-nightly")
-sc.run_now(sc.get("greeter-nightly"))
+sc.get_all_schedules(workflow_name=agent.name) # list — source-of-truth read
+sc.pause("greeter-nightly", reason="ship freeze")
 print(sc.preview_next("0 0 * * *", n=5))       # next 5 fire times (epoch ms)
+
+from conductor.ai.agents.schedule import schedules
+schedules.run_now("greeter-nightly", runtime=runtime)  # fire once -> execution id
 ```
 
 ## Skills

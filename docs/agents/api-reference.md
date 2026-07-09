@@ -46,7 +46,7 @@ Context manager (sync and async: `with` / `async with`).
 | `signal` | `(execution_id, message) -> None` | Inject persistent context |
 | `shutdown` | `() -> None` | Stop all workers |
 | `client` (property) | `-> AgentClient` | Control-plane client |
-| `schedules_client` | `() -> AgentScheduleClient` | Shared schedule client |
+| `schedules_client` | `() -> SchedulerClient` | Shared schedule client (a deprecated `AgentScheduleClient` shim) |
 
 Async variants exist for status/respond/approve/reject/send/stop/shutdown
 (`*_async`). Module-level wrappers using a singleton runtime: `run`, `run_async`,
@@ -190,20 +190,26 @@ start_at=None, end_at=None, description=None)` — `cron` is a 5- or 6-field exp
 `ScheduleInfo` (read model) fields include `name`, `short_name`, `agent`, `cron`,
 `timezone`, `input`, `paused`, `catchup`, `next_run`, `create_time`, `update_time`, ...
 
-`AgentScheduleClient` (alias `ScheduleClient`; canonical home
-`conductor.client.ai` — via `runtime.schedules_client()`, `runtime.client.schedules`,
-or `OrkesClients.get_agent_schedule_client()`):
+The schedule lifecycle lives on `SchedulerClient` itself (via
+`runtime.schedules_client()`, `runtime.client.schedules`, or
+`OrkesClients.get_scheduler_client()`):
 
 | Method | Signature |
 |---|---|
-| `save` | `(schedule: Schedule, agent_name) -> None` |
-| `get` | `(wire_name, agent_name=None) -> ScheduleInfo` |
-| `list_for_agent` | `(agent_name) -> list[ScheduleInfo]` |
 | `pause` / `resume` | `(wire_name[, reason])` / `(wire_name)` |
 | `delete` | `(wire_name) -> None` |
 | `run_now` | `(info: ScheduleInfo) -> str` (execution_id) |
 | `preview_next` | `(cron, n=5, start_at=None, end_at=None) -> list[int]` |
 | `reconcile` | `(agent_name, desired: list[Schedule] | None) -> None` |
+
+Reads/writes/lists use the native source-of-truth methods: `get_schedule(wire) ->
+WorkflowSchedule | None`, `save_schedule(SaveScheduleRequest)`,
+`get_all_schedules(workflow_name=...) -> list[WorkflowSchedule]`. The mapped
+`ScheduleInfo` view is returned by the module-level `schedules.list/get`.
+
+`AgentScheduleClient` (alias `ScheduleClient`; `conductor.client.ai`) and
+`OrkesClients.get_agent_schedule_client()` are **deprecated** delegation shims,
+kept for backward compatibility and planned for removal in the next major release.
 
 Errors: `ScheduleError`, `ScheduleNameConflict`, `ScheduleNotFound`,
 `InvalidCronExpression`.
