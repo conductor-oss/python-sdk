@@ -142,3 +142,8 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
 
     def delete_scheduler_tags(self, tags: List[MetadataTag], name: str) -> List[MetadataTag]:
         self.schedulerResourceApi.delete_tag_for_schedule(tags, name)
+
+    def _start_workflow(self, request) -> str:
+        # Enables SchedulerClient.run_now — OrkesBaseClient already carries the
+        # workflow resource API.
+        return self.workflowResourceApi.start_workflow(body=request)
