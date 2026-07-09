@@ -1,14 +1,15 @@
 # Copyright (c) 2026 Agentspan
 # Licensed under the MIT License. See LICENSE file in the project root for details.
 
-"""Unit tests for SchedulerClient's concrete schedule-lifecycle surface.
+"""Unit tests for OrkesSchedulerClient's schedule-lifecycle surface.
 
-The six domain methods (pause/resume/delete/run_now/preview_next/reconcile) are
-concrete on the ABC, implemented over the abstract endpoint methods — any
-implementation gets them for free. Reads/writes/lists deliberately have NO
-domain twins: get_schedule/save_schedule/get_all_schedules are the source of
-truth (the mapped ScheduleInfo view lives in the module-level ``schedules.*``
-API via the private ``_get_info`` helper, covered here too).
+The six domain methods (pause/resume/delete/run_now/preview_next/reconcile)
+live on OrkesSchedulerClient, implemented over its endpoint methods; the
+SchedulerClient ABC stays a pure endpoint contract. Reads/writes/lists
+deliberately have NO domain twins: get_schedule/save_schedule/
+get_all_schedules are the source of truth (the mapped ScheduleInfo view lives
+in the module-level ``schedules.*`` API via the private ``_get_info`` helper,
+covered here too).
 
 No network calls.
 """
@@ -26,14 +27,18 @@ from conductor.client.ai.schedule import Schedule, _get_info, _to_save_request
 from conductor.client.ai.schedule_errors import InvalidCronExpression, ScheduleNotFound
 from conductor.client.http.models.workflow_schedule import WorkflowSchedule
 from conductor.client.http.rest import ApiException
+from conductor.client.orkes.orkes_scheduler_client import OrkesSchedulerClient
 from conductor.client.scheduler_client import SchedulerClient
 
 
-class MockScheduler(SchedulerClient):
-    """Minimal concrete SchedulerClient: endpoint methods delegate to a MagicMock."""
+class MockScheduler(OrkesSchedulerClient):
+    """OrkesSchedulerClient double: endpoint methods delegate to a MagicMock,
+    so the tests drive the REAL lifecycle methods over a controlled endpoint
+    layer. Skips OrkesBaseClient.__init__ (no HTTP machinery)."""
 
-    def __init__(self, sc: MagicMock, wc: MagicMock) -> None:
+    def __init__(self, sc: MagicMock, wc: MagicMock) -> None:  # noqa: D107 — no super()
         self._sc, self._wc = sc, wc
+        self.workflowResourceApi = wc  # run_now starts workflows through this
 
     def save_schedule(self, save_schedule_request):
         return self._sc.save_schedule(save_schedule_request)
@@ -85,9 +90,6 @@ class MockScheduler(SchedulerClient):
 
     def delete_scheduler_tags(self, tags, name: str):
         return self._sc.delete_scheduler_tags(tags, name)
-
-    def _start_workflow(self, request) -> str:
-        return self._wc.start_workflow(request)
 
 
 def _make() -> tuple:
@@ -141,18 +143,9 @@ class TestLifecycleDelegation:
         wc.start_workflow.return_value = "exec-123"
         info = _get_info_stub()
         assert client.run_now(info) == "exec-123"
-        req = wc.start_workflow.call_args[0][0]
+        req = wc.start_workflow.call_args.kwargs["body"]
         assert req.name == "digest"
         assert req.input == {"channel": "#eng"}
-
-    def test_run_now_without_start_capability_raises(self):
-        class Bare(MockScheduler):
-            def _start_workflow(self, request) -> str:
-                return SchedulerClient._start_workflow(self, request)
-
-        client = Bare(MagicMock(), MagicMock())
-        with pytest.raises(NotImplementedError):
-            client.run_now(_get_info_stub())
 
 
 def _get_info_stub():
@@ -271,8 +264,16 @@ class TestSourceOfTruth:
     def test_no_domain_twins_for_reads_writes_lists(self):
         # get_schedule/save_schedule/get_all_schedules ARE the API — the old
         # mapped wrappers (get/save/list_for_agent) must not creep back.
-        for method in ("get", "save", "list_for_agent"):
+        for cls in (SchedulerClient, OrkesSchedulerClient):
+            for method in ("get", "save", "list_for_agent"):
+                assert not hasattr(cls, method), f"{cls.__name__}.{method} must not exist"
+
+    def test_lifecycle_lives_on_orkes_client_not_the_abc(self):
+        # User decision: the SchedulerClient ABC is a pure endpoint contract;
+        # the domain lifecycle belongs to the Orkes implementation.
+        for method in ("pause", "resume", "delete", "run_now", "preview_next", "reconcile"):
             assert not hasattr(SchedulerClient, method), f"SchedulerClient.{method} must not exist"
+            assert hasattr(OrkesSchedulerClient, method), f"OrkesSchedulerClient.{method} missing"
 
     def test_agent_schedule_client_is_gone(self):
         # SchedulerClient is the ONE schedule client (user decision: no
@@ -296,12 +297,13 @@ class TestSourceOfTruth:
 
 
 class TestImportWeight:
-    def test_scheduler_client_does_not_import_agent_surface(self):
-        # scheduler_client.py is on virtually every SDK program's import path;
-        # its conductor.client.ai imports must stay lazy (call-time only).
+    def test_scheduler_clients_do_not_import_agent_surface(self):
+        # Both modules are on the OrkesClients import path; the lifecycle's
+        # conductor.client.ai imports must stay lazy (call-time only).
         code = (
             "import sys\n"
             "import conductor.client.scheduler_client\n"
+            "import conductor.client.orkes.orkes_scheduler_client\n"
             "leaked = [m for m in sys.modules if m.startswith('conductor.client.ai')]\n"
             "assert not leaked, f'agent surface leaked at import time: {leaked}'\n"
         )

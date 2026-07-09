@@ -46,7 +46,7 @@ Context manager (sync and async: `with` / `async with`).
 | `signal` | `(execution_id, message) -> None` | Inject persistent context |
 | `shutdown` | `() -> None` | Stop all workers |
 | `client` (property) | `-> AgentClient` | Control-plane client |
-| `schedules_client` | `() -> SchedulerClient` | Shared schedule client |
+| `schedules_client` | `() -> OrkesSchedulerClient` | Shared schedule client |
 
 Async variants exist for status/respond/approve/reject/send/stop/shutdown
 (`*_async`). Module-level wrappers using a singleton runtime: `run`, `run_async`,
@@ -190,7 +190,7 @@ start_at=None, end_at=None, description=None)` — `cron` is a 5- or 6-field exp
 `ScheduleInfo` (read model) fields include `name`, `short_name`, `agent`, `cron`,
 `timezone`, `input`, `paused`, `catchup`, `next_run`, `create_time`, `update_time`, ...
 
-The schedule lifecycle lives on `SchedulerClient` itself (via
+The schedule lifecycle lives on `OrkesSchedulerClient` itself (via
 `runtime.schedules_client()`, `runtime.client.schedules`, or
 `OrkesClients.get_scheduler_client()`):
 
@@ -284,7 +284,7 @@ The control-plane client (formerly `AgentHttpClient`, alias kept). Reach it via
 | `stop` | `(execution_id) -> None` | |
 | `signal` | `(execution_id, message) -> None` | |
 | `stream_sse` | `(execution_id) -> AsyncIterator[dict]` | |
-| `schedules` (property) | `-> SchedulerClient` | |
+| `schedules` (property) | `-> OrkesSchedulerClient` | |
 | `close` | `() -> None` (async) | |
 
 Lower-level endpoint methods (`start_agent`, `deploy_agent`, `compile_agent`) are also

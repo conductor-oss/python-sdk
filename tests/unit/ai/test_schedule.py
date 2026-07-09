@@ -35,7 +35,7 @@ from conductor.client.ai.schedule import (
     _to_save_request,
     _translate,
 )
-from conductor.client.scheduler_client import SchedulerClient
+from conductor.client.orkes.orkes_scheduler_client import OrkesSchedulerClient
 
 # ── Schedule dataclass ──────────────────────────────────────────────
 
@@ -261,15 +261,17 @@ class TestTranslate:
 # ── Declarative reconciliation ─────────────────────────────────────
 
 
-class _FakeScheduler(SchedulerClient):
-    """Concrete SchedulerClient whose endpoint methods delegate to a MagicMock.
+class _FakeScheduler(OrkesSchedulerClient):
+    """OrkesSchedulerClient double whose endpoint methods delegate to a MagicMock.
 
-    Lets the tests drive the REAL concrete lifecycle methods (reconcile etc.)
-    while controlling the endpoint layer via mock side effects.
+    Lets the tests drive the REAL lifecycle methods (reconcile etc.) while
+    controlling the endpoint layer via mock side effects. Skips
+    OrkesBaseClient.__init__ (no HTTP machinery).
     """
 
-    def __init__(self, sc, wc):
+    def __init__(self, sc, wc):  # noqa: D107 — no super()
         self._sc, self._wc = sc, wc
+        self.workflowResourceApi = wc  # run_now starts workflows through this
 
     def save_schedule(self, save_schedule_request):
         return self._sc.save_schedule(save_schedule_request)
@@ -321,9 +323,6 @@ class _FakeScheduler(SchedulerClient):
 
     def delete_scheduler_tags(self, tags, name):
         return self._sc.delete_scheduler_tags(tags, name)
-
-    def _start_workflow(self, request):
-        return self._wc.start_workflow(request)
 
 
 def _mock_clients():

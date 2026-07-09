@@ -127,7 +127,7 @@ with AgentRuntime() as runtime:
 Key methods: `run`/`run_async`, `start`/`start_async`, `deploy`/`deploy_async`,
 `schedule(agent, schedules)`, `get_status`, `respond`, `stop`, `signal`,
 `stream_sse`, and `.schedules` (the schedule lifecycle — `pause`/`resume`/`delete`/
-`run_now`/`preview_next`/`reconcile`, now carried by `SchedulerClient` itself). Both
+`run_now`/`preview_next`/`reconcile`, now carried by `OrkesSchedulerClient` itself). Both
 sync and async forms exist. Most users call `runtime.run/start/deploy` instead,
 which add local-worker management on top of this client.
 
