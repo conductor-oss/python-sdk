@@ -18,6 +18,12 @@ import time
 from typing import Any, List, Optional
 
 from conductor.ai.agents.schedule.schedule import Schedule, ScheduleInfo
+from conductor.client.ai.schedule import (
+    _get_info,
+    _list_infos,
+    _to_save_request,
+    _translate,
+)
 
 
 def _client(runtime: Optional[Any]) -> Any:
@@ -32,7 +38,7 @@ def list(  # noqa: A001 — module-level API mirrors the spec
     agent: str, *, runtime: Optional[Any] = None
 ) -> List[ScheduleInfo]:
     """List all schedules attached to ``agent`` (workflow name)."""
-    return _client(runtime).list_for_agent(agent)
+    return _list_infos(_client(runtime), agent)
 
 
 def get(name: str, *, runtime: Optional[Any] = None) -> ScheduleInfo:
@@ -41,7 +47,7 @@ def get(name: str, *, runtime: Optional[Any] = None) -> ScheduleInfo:
     The agent is recovered from the schedule's ``startWorkflowRequest.name``;
     ``short_name`` on the returned :class:`ScheduleInfo` is the user's original.
     """
-    return _client(runtime).get(name)
+    return _get_info(_client(runtime), name)
 
 
 def pause(name: str, reason: Optional[str] = None, *, runtime: Optional[Any] = None) -> None:
@@ -73,7 +79,7 @@ def run_now(
     seconds) — consistent with ``run()``'s completed-workflow result.
     """
     client = _client(runtime)
-    info = client.get(name)
+    info = _get_info(client, name)
     execution_id = client.run_now(info)
     if not wait:
         return execution_id
@@ -119,4 +125,8 @@ def save(schedule: Schedule, agent: str, *, runtime: Optional[Any] = None) -> No
     Useful for ad-hoc creation from the UI / scripts. Most users should
     prefer the declarative ``deploy(agent, schedules=[...])`` flow.
     """
-    _client(runtime).save(schedule, agent)
+    client = _client(runtime)
+    try:
+        client.save_schedule(_to_save_request(schedule, agent))
+    except Exception as exc:  # noqa: BLE001
+        raise _translate(exc) from exc

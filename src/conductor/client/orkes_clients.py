@@ -78,7 +78,15 @@ class OrkesClients:
         return AgentApiClient(self.configuration)
 
     def get_agent_schedule_client(self) -> "AgentScheduleClient":  # noqa: F821
-        """Client for the agent cron-schedule lifecycle (save/pause/reconcile/...)."""
+        """DEPRECATED — use :meth:`get_scheduler_client`; removal planned for the
+        next major release.
+
+        ``SchedulerClient`` now carries the schedule lifecycle itself
+        (``pause``/``resume``/``delete``/``run_now``/``preview_next``/``reconcile``),
+        with ``get_schedule``/``save_schedule``/``get_all_schedules`` as the
+        source of truth for reads/writes/lists. This returns a pure delegation
+        shim kept for backward compatibility.
+        """
         # Imported lazily: this module is on virtually every SDK program's import
         # path and must not grow import-time weight for the agent surface.
         from conductor.client.ai.schedule_client import AgentScheduleClient
