@@ -75,3 +75,32 @@ class SchedulerClient(ABC):
     @abstractmethod
     def delete_scheduler_tags(self, tags: List[MetadataTag], name: str) -> List[MetadataTag]:
         pass
+
+    @abstractmethod
+    def pause(self, wire_name: str, reason: Optional[str] = None) -> None:
+        pass
+
+    @abstractmethod
+    def resume(self, wire_name: str) -> None:
+        pass
+
+    @abstractmethod
+    def delete(self, wire_name: str) -> None:
+        pass
+
+    @abstractmethod
+    def preview_next(self,
+                     cron: str,
+                     n: int = 5,
+                     start_at: Optional[int] = None,
+                     end_at: Optional[int] = None,
+                     ) -> List[int]:
+        pass
+
+    @abstractmethod
+    def run_now(self, info: "ScheduleInfo") -> str:  # noqa: F821
+        pass
+
+    @abstractmethod
+    def reconcile(self, agent_name: str, desired: Optional[List["Schedule"]]) -> None:  # noqa: F821
+        pass

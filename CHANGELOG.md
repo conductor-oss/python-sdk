@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Canonical metrics mode: opt-in harmonized metric surface via `WORKER_CANONICAL_METRICS=true` -- [details](METRICS.md#detailed-technical-notes--unreleased)
 - `MetricsSettings` gains `clean_directory` and `clean_dead_pids` for opt-in stale `.db` file cleanup (both default to `False`)
-- `OrkesSchedulerClient` now carries the schedule lifecycle operations itself: `pause(reason=)`, `resume`, `delete`, `run_now`, `preview_next`, `reconcile` (declarative tri-state sync) — with typed errors (`ScheduleNotFound`, `InvalidCronExpression`, ...). `pause_schedule` gains an optional `reason=` (stored by OSS Conductor servers; ignored by Orkes servers)
+- `SchedulerClient` now carries the schedule lifecycle operations itself: `pause(reason=)`, `resume`, `delete`, `run_now`, `preview_next`, `reconcile` (declarative tri-state sync) — with typed errors (`ScheduleNotFound`, `InvalidCronExpression`, ...). `pause_schedule` gains an optional `reason=` (stored by OSS Conductor servers; ignored by Orkes servers)
 
 ### Changed
 
@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- **Breaking:** `AgentScheduleClient` (alias `ScheduleClient`) and `OrkesClients.get_agent_schedule_client()` are removed with no compatibility shim — `OrkesSchedulerClient` (via `OrkesClients.get_scheduler_client()`) is the one schedule client and carries the full lifecycle itself. Replace `AgentScheduleClient(scheduler_client, workflow_client)` constructions with `get_scheduler_client()`; `runtime.schedules_client()` and `AgentClient.schedules` now return that client directly (same methods, same shared instance)
+- **Breaking:** `AgentScheduleClient` (alias `ScheduleClient`) and `OrkesClients.get_agent_schedule_client()` are removed with no compatibility shim — `SchedulerClient` (via `OrkesClients.get_scheduler_client()`) is the one schedule client and carries the full lifecycle itself. Replace `AgentScheduleClient(scheduler_client, workflow_client)` constructions with `get_scheduler_client()`; `runtime.schedules_client()` and `AgentClient.schedules` now return that client directly (same methods, same shared instance)
 
 ### Fixed
 

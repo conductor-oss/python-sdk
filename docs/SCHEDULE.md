@@ -43,7 +43,7 @@ Operations for controlling schedule execution state.
 
 ## Schedule Lifecycle Helpers
 
-Beyond the endpoint methods above, `OrkesSchedulerClient` carries higher-level lifecycle
+Beyond the endpoint methods above, `SchedulerClient` carries higher-level lifecycle
 operations (shared with the agents layer). They raise typed errors
 (`ScheduleNotFound`, `InvalidCronExpression`, `ScheduleNameConflict` from
 `conductor.client.ai.schedule_errors`) instead of raw `ApiException`.

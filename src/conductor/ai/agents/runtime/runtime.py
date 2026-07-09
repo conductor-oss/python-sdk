@@ -2231,7 +2231,7 @@ class AgentRuntime:
         return self._http
 
     def schedules_client(self) -> Any:
-        """Return the shared :class:`OrkesSchedulerClient` for this runtime.
+        """Return the shared :class:`SchedulerClient` for this runtime.
 
         Delegates to :attr:`client` so the runtime and the control-plane
         client expose the *same* schedule surface (one instance, not two).

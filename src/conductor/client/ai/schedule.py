@@ -9,7 +9,7 @@ plus the mapping layer between them and Conductor's ``SchedulerClient`` models.
 prefixed wire name plus server-computed fields like ``next_run``.
 
 The private helpers below (payload mapping, wire-name prefixing, typed error
-translation) are shared by ``OrkesSchedulerClient``'s schedule-lifecycle
+translation) are shared by ``SchedulerClient``'s schedule-lifecycle
 methods and the module-level ``schedules.*`` API. The native
 ``get_schedule``/``save_schedule``/``get_all_schedules`` endpoint methods are
 the source of truth for reads/writes/lists; the ``ScheduleInfo`` view exists

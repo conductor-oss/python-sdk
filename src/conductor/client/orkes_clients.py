@@ -43,10 +43,7 @@ class OrkesClients:
     def get_metadata_client(self) -> MetadataClient:
         return OrkesMetadataClient(self.configuration)
 
-    def get_scheduler_client(self) -> OrkesSchedulerClient:
-        # Annotated with the concrete class: the schedule-lifecycle methods
-        # (pause/resume/delete/run_now/preview_next/reconcile) live on
-        # OrkesSchedulerClient, not on the SchedulerClient endpoint ABC.
+    def get_scheduler_client(self) -> SchedulerClient:
         return OrkesSchedulerClient(self.configuration)
 
     def get_secret_client(self) -> SecretClient:

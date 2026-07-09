@@ -1,15 +1,15 @@
 # Copyright (c) 2026 Agentspan
 # Licensed under the MIT License. See LICENSE file in the project root for details.
 
-"""Unit tests for OrkesSchedulerClient's schedule-lifecycle surface.
+"""Unit tests for the schedule-lifecycle surface.
 
 The six domain methods (pause/resume/delete/run_now/preview_next/reconcile)
-live on OrkesSchedulerClient, implemented over its endpoint methods; the
-SchedulerClient ABC stays a pure endpoint contract. Reads/writes/lists
-deliberately have NO domain twins: get_schedule/save_schedule/
-get_all_schedules are the source of truth (the mapped ScheduleInfo view lives
-in the module-level ``schedules.*`` API via the private ``_get_info`` helper,
-covered here too).
+are declared abstract on the SchedulerClient ABC — part of the contract, like
+the endpoint methods — and implemented by OrkesSchedulerClient over its
+endpoint methods. Reads/writes/lists deliberately have NO domain twins:
+get_schedule/save_schedule/get_all_schedules are the source of truth (the
+mapped ScheduleInfo view lives in the module-level ``schedules.*`` API via
+the private ``_get_info`` helper, covered here too).
 
 No network calls.
 """
@@ -268,12 +268,15 @@ class TestSourceOfTruth:
             for method in ("get", "save", "list_for_agent"):
                 assert not hasattr(cls, method), f"{cls.__name__}.{method} must not exist"
 
-    def test_lifecycle_lives_on_orkes_client_not_the_abc(self):
-        # User decision: the SchedulerClient ABC is a pure endpoint contract;
-        # the domain lifecycle belongs to the Orkes implementation.
+    def test_lifecycle_abstract_on_abc_concrete_on_orkes_client(self):
+        # User decision: the lifecycle is part of the SchedulerClient contract
+        # (abstract, like the endpoint methods); the implementation lives on
+        # OrkesSchedulerClient.
         for method in ("pause", "resume", "delete", "run_now", "preview_next", "reconcile"):
-            assert not hasattr(SchedulerClient, method), f"SchedulerClient.{method} must not exist"
-            assert hasattr(OrkesSchedulerClient, method), f"OrkesSchedulerClient.{method} missing"
+            assert method in SchedulerClient.__abstractmethods__, \
+                f"SchedulerClient.{method} must be abstract"
+        assert not OrkesSchedulerClient.__abstractmethods__, \
+            "OrkesSchedulerClient must implement the full SchedulerClient contract"
 
     def test_agent_schedule_client_is_gone(self):
         # SchedulerClient is the ONE schedule client (user decision: no
