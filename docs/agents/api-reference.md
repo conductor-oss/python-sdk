@@ -46,7 +46,7 @@ Context manager (sync and async: `with` / `async with`).
 | `signal` | `(execution_id, message) -> None` | Inject persistent context |
 | `shutdown` | `() -> None` | Stop all workers |
 | `client` (property) | `-> AgentClient` | Control-plane client |
-| `schedules_client` | `() -> SchedulerClient` | Shared schedule client (a deprecated `AgentScheduleClient` shim) |
+| `schedules_client` | `() -> SchedulerClient` | Shared schedule client |
 
 Async variants exist for status/respond/approve/reject/send/stop/shutdown
 (`*_async`). Module-level wrappers using a singleton runtime: `run`, `run_async`,
@@ -207,10 +207,6 @@ WorkflowSchedule | None`, `save_schedule(SaveScheduleRequest)`,
 `get_all_schedules(workflow_name=...) -> list[WorkflowSchedule]`. The mapped
 `ScheduleInfo` view is returned by the module-level `schedules.list/get`.
 
-`AgentScheduleClient` (alias `ScheduleClient`; `conductor.client.ai`) and
-`OrkesClients.get_agent_schedule_client()` are **deprecated** delegation shims,
-kept for backward compatibility and planned for removal in the next major release.
-
 Errors: `ScheduleError`, `ScheduleNameConflict`, `ScheduleNotFound`,
 `InvalidCronExpression`.
 
@@ -288,7 +284,7 @@ The control-plane client (formerly `AgentHttpClient`, alias kept). Reach it via
 | `stop` | `(execution_id) -> None` | |
 | `signal` | `(execution_id, message) -> None` | |
 | `stream_sse` | `(execution_id) -> AsyncIterator[dict]` | |
-| `schedules` (property) | `-> AgentScheduleClient` | |
+| `schedules` (property) | `-> SchedulerClient` | |
 | `close` | `() -> None` (async) | |
 
 Lower-level endpoint methods (`start_agent`, `deploy_agent`, `compile_agent`) are also

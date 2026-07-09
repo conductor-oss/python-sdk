@@ -134,8 +134,7 @@ which add local-worker management on top of this client.
 The raw `/agent/*` HTTP transport behind this client is
 `conductor.client.ai.AgentApiClient` — also reachable without the agents layer via
 `OrkesClients.get_agent_client()` (and `get_scheduler_client()` for the cron
-lifecycle; `get_agent_schedule_client()` is deprecated). `AgentClient` composes that
-transport and adds the agent-level surface.
+lifecycle). `AgentClient` composes that transport and adds the agent-level surface.
 
 ## Structured output
 

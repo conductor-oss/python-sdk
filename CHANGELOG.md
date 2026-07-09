@@ -21,9 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking (scoped):** schedule client objects no longer expose the mapped `get`/`save`/`list_for_agent` wrappers — `SchedulerClient`'s native methods are the source of truth: `get(wire)` → `get_schedule(wire)`, `save(schedule, agent)` → `save_schedule(SaveScheduleRequest)`, `list_for_agent(agent)` → `get_all_schedules(workflow_name=agent)`. The module-level `schedules.list/get/save` functions (and their `ScheduleInfo` returns) are unchanged
 - `get_schedule` returns a typed `WorkflowSchedule` (or `None` for missing schedules) instead of a raw camelCase dict, matching its declared annotation and [docs/SCHEDULE.md](docs/SCHEDULE.md); dict-consumers should switch to attribute access or `to_dict()`
 
-### Deprecated
+### Removed
 
-- `AgentScheduleClient`/`ScheduleClient` and `OrkesClients.get_agent_schedule_client()` — fully functional delegation shims over `SchedulerClient`; use `get_scheduler_client()`. Removal planned for the next major release
+- **Breaking:** `AgentScheduleClient` (alias `ScheduleClient`) and `OrkesClients.get_agent_schedule_client()` are removed with no compatibility shim — `SchedulerClient` (via `OrkesClients.get_scheduler_client()`) is the one schedule client and carries the full lifecycle itself. Replace `AgentScheduleClient(scheduler_client, workflow_client)` constructions with `get_scheduler_client()`; `runtime.schedules_client()` and `AgentClient.schedules` now return that `SchedulerClient` directly (same methods, same shared instance)
 
 ### Fixed
 
