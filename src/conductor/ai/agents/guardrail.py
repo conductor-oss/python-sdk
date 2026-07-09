@@ -192,6 +192,27 @@ class Guardrail:
             f"on_fail={self.on_fail!r}{extra})"
         )
 
+    # Spawn transport: ``self.func`` is often the function *extracted* from a
+    # decorator (``@guardrail`` rebinds the module global to a wraps-wrapper
+    # and keeps the original in ``_guardrail_def.func``), so pickling it by
+    # reference finds the wrapper instead — "not the same object". Travel as
+    # a FunctionRef where resolvable; other picklable callables (e.g. the
+    # bound methods of RegexGuardrail/LLMGuardrail) pass through unchanged.
+    # Late imports: guardrail.py loads early in the package import chain.
+
+    def __getstate__(self):
+        from conductor.ai.agents.runtime._worker_entries import wrap_callable
+
+        state = dict(self.__dict__)
+        state["func"] = wrap_callable(state.get("func"))
+        return state
+
+    def __setstate__(self, state):
+        from conductor.ai.agents.runtime._worker_entries import unwrap_callable
+
+        state["func"] = unwrap_callable(state.get("func"))
+        self.__dict__.update(state)
+
 
 # ── Specialised guardrail types ────────────────────────────────────────
 

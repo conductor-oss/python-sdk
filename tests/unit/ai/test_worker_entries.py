@@ -12,10 +12,12 @@ import pickle
 
 import pytest
 
+from conductor.ai.agents.guardrail import Guardrail, OnFail, Position, RegexGuardrail
 from conductor.ai.agents.runtime import _worker_entries as we
 from conductor.ai.agents.runtime._worker_entries import (
     FunctionRef,
     SpawnSafetyError,
+    ToolWorkerEntry,
     probe_spawn_safety,
 )
 from conductor.ai.agents.tool import get_tool_def
@@ -99,6 +101,109 @@ class TestFunctionRefResolve:
         finally:
             p.join(timeout=30)
         assert p.exitcode == 0
+
+
+# ── Container-attribute hop (langchain @tool → StructuredTool) ───────────
+
+
+class TestFunctionRefContainerHop:
+    """Decorators that rebind the global to a container object, not a
+    wraps-wrapper — the suite11 CI failure (langchain's @tool)."""
+
+    def test_sync_container_func_attr(self):
+        raw = helpers.container_sample.func
+        ref = FunctionRef.of(raw)
+        assert ref == FunctionRef(helpers.__name__, "container_sample", 0, "func")
+        assert ref.resolve() is raw
+
+    def test_async_container_coroutine_attr(self):
+        raw = helpers.async_container_sample.coroutine
+        ref = FunctionRef.of(raw)
+        assert ref.attr_hop == "coroutine"
+        assert ref.resolve() is raw
+
+    def test_ref_with_hop_pickles(self):
+        raw = helpers.container_sample.func
+        ref = pickle.loads(pickle.dumps(FunctionRef.of(raw)))
+        assert ref.resolve()(4) == 15
+
+    def test_entry_transports_container_held_fn_by_ref(self):
+        # Pre-fix this fell to fn_direct, whose reference pickling then found
+        # the container at the global name: "it's not the same object as …".
+        raw = helpers.container_sample.func
+        entry = ToolWorkerEntry.for_callable(raw, "container_tool")
+        assert entry.fn_ref is not None
+        clone = pickle.loads(pickle.dumps(entry))
+        assert clone._target() is raw
+
+    def test_real_langchain_tool_roundtrip(self):
+        pytest.importorskip("langchain_core")
+        from tests.unit.resources import langchain_entry_helpers as lch
+
+        raw = lch.lc_multiply.func
+        ref = FunctionRef.of(raw)
+        assert ref.attr_hop == "func"
+        assert pickle.loads(pickle.dumps(ref)).resolve() is raw
+
+        raw_async = lch.lc_multiply_async.coroutine
+        ref_async = FunctionRef.of(raw_async)
+        assert ref_async.attr_hop == "coroutine"
+        assert ref_async.resolve() is raw_async
+
+    def test_cross_process_spawn_roundtrip_with_hop(self):
+        ctx = multiprocessing.get_context("spawn")
+        q = ctx.Queue()
+        ref_bytes = pickle.dumps(FunctionRef.of(helpers.container_sample.func))
+        p = ctx.Process(target=helpers.resolve_and_call_child, args=(ref_bytes, 4, q))
+        p.start()
+        try:
+            assert q.get(timeout=30) == 15  # container_sample(4) == 4 + 11
+        finally:
+            p.join(timeout=30)
+        assert p.exitcode == 0
+
+
+# ── Guardrail spawn transport ─────────────────────────────────────────────
+
+
+class TestGuardrailSpawnTransport:
+    """Guardrail.func travels via wrap_callable — the suite8 CI failure:
+    @guardrail extracts the raw function (the global is the wraps-wrapper),
+    so pickling it by reference found the wrapper instead."""
+
+    @staticmethod
+    def _guard():
+        return Guardrail(
+            helpers.sample_guardrail, position=Position.INPUT, on_fail=OnFail.RAISE
+        )
+
+    def test_decorated_guardrail_pickles(self):
+        g = self._guard()
+        clone = pickle.loads(pickle.dumps(g))
+        assert clone.name == "no_marker"
+        assert clone.func is g.func  # FunctionRef resolves to the same object
+        assert clone.check("has MARKER").passed is False
+        assert clone.check("clean").passed is True
+
+    def test_tool_entry_with_guardrail_pickles(self):
+        # The exact suite8 shape: @guardrail func attached to a tool worker.
+        entry = ToolWorkerEntry.for_callable(
+            helpers.plain_sample, "safe_query", guardrails=[self._guard()]
+        )
+        clone = pickle.loads(pickle.dumps(entry))
+        assert clone.guardrails[0].check("MARKER!").passed is False
+
+    def test_regex_guardrail_bound_method_still_pickles(self):
+        rg = RegexGuardrail(patterns=[r"foo"], name="no_foo", message="no foo")
+        clone = pickle.loads(pickle.dumps(rg))
+        assert clone.check("has foo").passed is False
+        assert clone.check("clean").passed is True
+
+    def test_external_guardrail_pickles(self):
+        g = Guardrail(name="external_ref")
+        clone = pickle.loads(pickle.dumps(g))
+        assert clone.external is True
+        assert clone.func is None
 
 
 # ── ToolWorkerEntry across a real spawn boundary ─────────────────────────

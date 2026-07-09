@@ -38,7 +38,7 @@ import multiprocessing
 import pickle
 import sys
 from dataclasses import dataclass
-from typing import Callable, Dict, FrozenSet
+from typing import Callable, Dict, FrozenSet, Optional
 
 # Mirrors conductor.client.worker.worker._MAX_UNWRAP_DEPTH.
 _MAX_UNWRAP_DEPTH = 32
@@ -65,6 +65,23 @@ def _walk_qualname(module_obj, qualname: str):
     return obj
 
 
+# Attributes where container-style decorators keep the original function when
+# they rebind the module global: langchain's @tool → StructuredTool.func /
+# .coroutine; our Guardrail / ToolDef → .func.
+_CONTAINER_ATTRS = ("func", "coroutine")
+
+
+def _wrapped_depth_to(obj, fn) -> Optional[int]:
+    """Number of ``__wrapped__`` hops from *obj* down to *fn*, or ``None``."""
+    depth, current = 0, obj
+    while hasattr(current, "__wrapped__") and depth < _MAX_UNWRAP_DEPTH:
+        current = current.__wrapped__
+        depth += 1
+        if current is fn:
+            return depth
+    return None
+
+
 # Per-process memo of resolved refs — repopulated naturally in each spawn
 # child on first use (this is process-local state, never pickled).
 _RESOLVE_CACHE: Dict["FunctionRef", Callable] = {}
@@ -78,11 +95,17 @@ class FunctionRef:
     to the referenced function — e.g. 1 for a ``@tool``-decorated function,
     where the module global is the ``functools.wraps`` wrapper and
     ``ToolDef.func`` is the original underneath it.
+
+    ``attr_hop`` handles decorators that rebind the global to a container
+    object rather than a wraps-wrapper — e.g. langchain's ``@tool`` rebinds
+    it to a ``StructuredTool`` holding the original in ``.func`` (sync) or
+    ``.coroutine`` (async). The hop is taken before the ``__wrapped__`` walk.
     """
 
     module: str
     qualname: str
     unwrap_depth: int = 0
+    attr_hop: str = ""
 
     @classmethod
     def of(cls, fn: Callable) -> "FunctionRef":
@@ -122,24 +145,37 @@ class FunctionRef:
             return cls(module, qualname, 0)
         # The global was rebound (typically by a wrapping decorator like
         # @tool). Walk the __wrapped__ chain to find fn, recording the depth.
-        depth, current = 0, obj
-        while hasattr(current, "__wrapped__") and depth < _MAX_UNWRAP_DEPTH:
-            current = current.__wrapped__
-            depth += 1
-            if current is fn:
-                return cls(module, qualname, depth)
+        depth = _wrapped_depth_to(obj, fn)
+        if depth is not None:
+            return cls(module, qualname, depth)
+        # Not a wraps-style wrapper: the global may be a container object
+        # holding the original in an attribute — langchain's @tool rebinds
+        # the global to a StructuredTool (sync fn in .func, async in
+        # .coroutine); our Guardrail/ToolDef hold theirs in .func.
+        for attr in _CONTAINER_ATTRS:
+            inner = getattr(obj, attr, None)
+            if inner is None or inner is obj:
+                continue
+            if inner is fn:
+                return cls(module, qualname, 0, attr)
+            depth = _wrapped_depth_to(inner, fn)
+            if depth is not None:
+                return cls(module, qualname, depth, attr)
         raise SpawnSafetyError(
             f"'{module}.{qualname}' does not resolve back to {fn!r} (rebound "
-            f"without a __wrapped__ chain). {_REMEDIES}"
+            f"without a __wrapped__ chain or a func/coroutine container "
+            f"attribute). {_REMEDIES}"
         )
 
     def resolve(self) -> Callable:
-        """Import + walk + unwrap; memoized per process."""
+        """Import + walk + hop + unwrap; memoized per process."""
         cached = _RESOLVE_CACHE.get(self)
         if cached is not None:
             return cached
         module_obj = importlib.import_module(self.module)
         obj = _walk_qualname(module_obj, self.qualname)
+        if self.attr_hop:
+            obj = getattr(obj, self.attr_hop)
         for _ in range(self.unwrap_depth):
             obj = obj.__wrapped__
         _RESOLVE_CACHE[self] = obj

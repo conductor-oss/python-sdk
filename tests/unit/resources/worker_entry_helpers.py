@@ -8,6 +8,7 @@ spawn_worker_helpers.py (idea-2's spawn regression tests).
 """
 import pickle
 
+from conductor.ai.agents.guardrail import GuardrailResult, guardrail
 from conductor.ai.agents.tool import tool
 
 
@@ -25,6 +26,42 @@ def decorated_sample(x: int) -> int:
 async def async_sample(x: int) -> int:
     """Module-level async function for async-entry round-trips."""
     return x * 3
+
+
+class FuncContainer:
+    """Mimics langchain's ``@tool`` container (StructuredTool): the decorator
+    rebinds the module global to an object holding the original function in
+    ``.func`` (sync) or ``.coroutine`` (async), with no ``__wrapped__`` chain.
+    """
+
+    def __init__(self, func=None, coroutine=None):
+        self.func = func
+        self.coroutine = coroutine
+
+
+def container_sample(x: int) -> int:
+    """Rebound below: the global becomes a FuncContainer, .func is this fn."""
+    return x + 11
+
+
+container_sample = FuncContainer(func=container_sample)
+
+
+async def async_container_sample(x: int) -> int:
+    """Rebound below: the global becomes a FuncContainer, .coroutine is this fn."""
+    return x + 13
+
+
+async_container_sample = FuncContainer(coroutine=async_container_sample)
+
+
+@guardrail(name="no_marker")
+def sample_guardrail(content: str) -> GuardrailResult:
+    """@guardrail-decorated: global is the wraps-wrapper, GuardrailDef.func
+    the original — the suite8 `_sql_check` shape."""
+    if "MARKER" in content:
+        return GuardrailResult(passed=False, message="marker blocked")
+    return GuardrailResult(passed=True)
 
 
 class AsyncCallEntry:
