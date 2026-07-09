@@ -31,9 +31,9 @@ import requests
 from conductor.ai.agents.schedule import (
     Schedule,
     ScheduleNameConflict,
-    ScheduleNotFound,
 )
 from conductor.ai.agents.schedule.client import ScheduleClient
+from conductor.client.ai.schedule import _from_workflow_schedule
 
 pytestmark = [pytest.mark.e2e]
 
@@ -152,13 +152,13 @@ class TestDeployReconcile:
                 Schedule(name="weekly", cron="0 0 9 * * MON"),
             ],
         )
-        infos = schedule_client.list_for_agent(agent_name)
-        by_short = {i.short_name: i for i in infos}
-        assert set(by_short) == {"daily", "weekly"}
-        assert by_short["daily"].name == f"{agent_name}-daily"
-        assert by_short["daily"].cron == "0 0 9 * * ?"
-        assert by_short["daily"].input == {"k": 1}
-        assert by_short["daily"].agent == agent_name
+        scheds = schedule_client.get_all_schedules(workflow_name=agent_name)
+        by_wire = {s.name: s for s in scheds}
+        assert set(by_wire) == {f"{agent_name}-daily", f"{agent_name}-weekly"}
+        daily = by_wire[f"{agent_name}-daily"]
+        assert daily.cron_expression == "0 0 9 * * ?"
+        assert daily.start_workflow_request.input == {"k": 1}
+        assert daily.start_workflow_request.name == agent_name
 
     def test_upsert_and_prune(self, schedule_client, agent_name):
         schedule_client.reconcile(
@@ -176,21 +176,21 @@ class TestDeployReconcile:
                 Schedule(name="c", cron="0 0 17 * * ?"),
             ],
         )
-        infos = {i.short_name: i for i in schedule_client.list_for_agent(agent_name)}
-        assert set(infos) == {"a", "c"}
-        assert infos["a"].cron == "0 0 9 * * ?"
+        scheds = {s.name: s for s in schedule_client.get_all_schedules(workflow_name=agent_name)}
+        assert set(scheds) == {f"{agent_name}-a", f"{agent_name}-c"}
+        assert scheds[f"{agent_name}-a"].cron_expression == "0 0 9 * * ?"
 
     def test_empty_list_purges(self, schedule_client, agent_name):
         schedule_client.reconcile(agent_name, [Schedule(name="x", cron="0 * * * * ?")])
-        assert len(schedule_client.list_for_agent(agent_name)) == 1
+        assert len(schedule_client.get_all_schedules(workflow_name=agent_name)) == 1
         schedule_client.reconcile(agent_name, [])
-        assert schedule_client.list_for_agent(agent_name) == []
+        assert not schedule_client.get_all_schedules(workflow_name=agent_name)
 
     def test_none_preserves(self, schedule_client, agent_name):
         schedule_client.reconcile(agent_name, [Schedule(name="x", cron="0 * * * * ?")])
         schedule_client.reconcile(agent_name, None)
-        infos = schedule_client.list_for_agent(agent_name)
-        assert [i.short_name for i in infos] == ["x"]
+        scheds = schedule_client.get_all_schedules(workflow_name=agent_name)
+        assert [s.name for s in scheds] == [f"{agent_name}-x"]
 
     def test_duplicate_name_raises_before_io(self, schedule_client, agent_name):
         with pytest.raises(ScheduleNameConflict):
@@ -202,7 +202,7 @@ class TestDeployReconcile:
                 ],
             )
         # And nothing landed on the server.
-        assert schedule_client.list_for_agent(agent_name) == []
+        assert not schedule_client.get_all_schedules(workflow_name=agent_name)
 
 
 class TestPauseResume:
@@ -210,22 +210,22 @@ class TestPauseResume:
         schedule_client.reconcile(agent_name, [Schedule(name="p", cron="0 0 9 * * ?")])
         wire = f"{agent_name}-p"
 
-        info = schedule_client.get(wire)
-        assert info.paused is False
+        ws = schedule_client.get_schedule(wire)
+        assert not ws.paused
 
         schedule_client.pause(wire)
-        assert schedule_client.get(wire).paused is True
+        assert schedule_client.get_schedule(wire).paused is True
 
         schedule_client.resume(wire)
-        assert schedule_client.get(wire).paused is False
+        assert not schedule_client.get_schedule(wire).paused
 
     def test_paused_on_create_preserves_state(self, schedule_client, agent_name):
         """Spec §10 Q3: paused-on-create still records the schedule cleanly."""
         schedule_client.reconcile(
             agent_name, [Schedule(name="silent", cron="0 0 9 * * ?", paused=True)]
         )
-        info = schedule_client.get(f"{agent_name}-silent")
-        assert info.paused is True
+        ws = schedule_client.get_schedule(f"{agent_name}-silent")
+        assert ws.paused is True
 
 
 class TestDelete:
@@ -233,14 +233,13 @@ class TestDelete:
         schedule_client.reconcile(agent_name, [Schedule(name="d", cron="0 * * * * ?")])
         wire = f"{agent_name}-d"
         schedule_client.delete(wire)
-        assert schedule_client.list_for_agent(agent_name) == []
+        assert not schedule_client.get_all_schedules(workflow_name=agent_name)
 
-    def test_get_after_delete_raises(self, schedule_client, agent_name):
+    def test_get_after_delete_returns_none(self, schedule_client, agent_name):
         schedule_client.reconcile(agent_name, [Schedule(name="g", cron="0 * * * * ?")])
         wire = f"{agent_name}-g"
         schedule_client.delete(wire)
-        with pytest.raises(ScheduleNotFound):
-            schedule_client.get(wire)
+        assert schedule_client.get_schedule(wire) is None
 
 
 class TestPreviewNext:
@@ -257,7 +256,7 @@ class TestRunNow:
         schedule_client.reconcile(
             agent_name, [Schedule(name="r", cron="0 0 9 * * ?", input={"trigger": "manual"})]
         )
-        info = schedule_client.get(f"{agent_name}-r")
+        info = _from_workflow_schedule(schedule_client.get_schedule(f"{agent_name}-r"))
 
         t0 = time.monotonic()
         execution_id = schedule_client.run_now(info)

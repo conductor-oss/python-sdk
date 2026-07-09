@@ -403,10 +403,17 @@ def _runnow_runtime(*, wf_status, wf_output):
     # Enrichment fetch used inside the extraction helper.
     wc.get_workflow.return_value = terminal_wf
 
-    # ``run_now`` only forwards ``info`` to the (mocked) client; a stub suffices.
-    info = MagicMock(name="ScheduleInfo")
+    # ``run_now`` reads the schedule via the source-of-truth ``get_schedule``
+    # and forwards the mapped info to the (mocked) client's ``run_now``.
+    from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
+    from conductor.client.http.models.workflow_schedule import WorkflowSchedule
+
     sched_client = MagicMock()
-    sched_client.get.return_value = info
+    sched_client.get_schedule.return_value = WorkflowSchedule(
+        name="digest-daily",
+        cron_expression="0 9 * * *",
+        start_workflow_request=StartWorkflowRequest(name="digest", input={}),
+    )
     sched_client.run_now.return_value = exec_id
 
     rt = MagicMock()

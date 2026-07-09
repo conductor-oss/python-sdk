@@ -264,6 +264,21 @@ class TestGetInfoHelper:
             _get_info(sc, "missing")
 
 
+# ── source-of-truth guard (user decision: no domain twins for get/save/list) ──
+
+
+class TestSourceOfTruth:
+    def test_no_domain_twins_for_reads_writes_lists(self):
+        # get_schedule/save_schedule/get_all_schedules ARE the API — the old
+        # mapped wrappers (get/save/list_for_agent) must not creep back onto
+        # any schedule client.
+        from conductor.client.ai.schedule_client import AgentScheduleClient
+
+        for cls in (SchedulerClient, AgentScheduleClient):
+            for method in ("get", "save", "list_for_agent"):
+                assert not hasattr(cls, method), f"{cls.__name__}.{method} must not exist"
+
+
 # ── import-weight guard ─────────────────────────────────────────────
 
 

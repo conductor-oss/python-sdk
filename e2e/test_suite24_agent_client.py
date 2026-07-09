@@ -129,21 +129,20 @@ class TestSchedule:
 
         # Clean slate.
         schedules.reconcile(noop_agent_name, [])
-        assert schedules.list_for_agent(noop_agent_name) == []
+        assert not schedules.get_all_schedules(workflow_name=noop_agent_name)
 
         # Reconcile a single schedule via the client's schedule surface.
         schedules.reconcile(
             noop_agent_name,
             [Schedule(name="daily", cron="0 0 9 * * ?", input={"k": 1})],
         )
-        infos = {i.short_name: i for i in schedules.list_for_agent(noop_agent_name)}
-        assert set(infos) == {"daily"}
-        assert infos["daily"].name == f"{noop_agent_name}-daily"
-        assert infos["daily"].cron == "0 0 9 * * ?"
+        by_wire = {s.name: s for s in schedules.get_all_schedules(workflow_name=noop_agent_name)}
+        assert set(by_wire) == {f"{noop_agent_name}-daily"}
+        assert by_wire[f"{noop_agent_name}-daily"].cron_expression == "0 0 9 * * ?"
 
         # Counterfactual: reconcile with an empty list purges it.
         schedules.reconcile(noop_agent_name, [])
-        assert schedules.list_for_agent(noop_agent_name) == []
+        assert not schedules.get_all_schedules(workflow_name=noop_agent_name)
 
 
 # ── structural consistency: runtime + client share one schedule surface ──
