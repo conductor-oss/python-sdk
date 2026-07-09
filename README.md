@@ -23,6 +23,7 @@ If you find [Conductor](https://github.com/conductor-oss/conductor) useful, plea
   * [Monitoring with Metrics](#monitoring-with-metrics)
   * [Managing Workflow Executions](#managing-workflow-executions)
 * [AI & LLM Workflows](#ai--llm-workflows)
+* [AI Agents](#ai-agents)
 * [Why Conductor?](#why-conductor)
 * [Examples](#examples)
 * [Documentation](#documentation)
@@ -66,6 +67,13 @@ pip install conductor-python
 ```
 
 > **Already in a virtual environment?** Skip the `venv` step and run `pip install conductor-python` directly. On macOS, Windows, or in containers where system Python is not locked down, you can also install globally.
+
+Building durable AI agents instead? Install the `agents` extra (or a per-framework extra —
+see [AI Agents](#ai-agents)):
+
+```shell
+pip install 'conductor-python[agents]'
+```
 
 ## 60-Second Quickstart
 
@@ -407,6 +415,35 @@ python examples/rag_workflow.py document.pdf "What are the key findings?"
 
 ---
 
+## AI Agents
+
+Beyond the workflow-embedded LLM calls above, `conductor-python` also ships a durable
+agent-authoring layer — `Agent`, `AgentRuntime`, `tool`, guardrails, handoffs, and multi-agent
+strategies — where the agent itself compiles into a Conductor workflow that runs on the server,
+with retries, durable state, streaming, and human-in-the-loop pauses built in.
+
+```shell
+pip install 'conductor-python[agents]'
+```
+
+```python
+from conductor.ai.agents import Agent, AgentRuntime
+
+agent = Agent(name="greeter", model="anthropic/claude-sonnet-4-6",
+              instructions="You are a friendly assistant.")
+
+with AgentRuntime() as runtime:
+    result = runtime.run(agent, "Say hello.")
+    print(result.output)
+```
+
+Framework integrations (LangChain, LangGraph, Google ADK, the OpenAI Agents SDK, Claude Agent SDK)
+are optional extras — see [docs/agents/getting-started.md](docs/agents/getting-started.md) for
+per-framework install instructions, and [examples/agents/](examples/agents/) for 270+ runnable
+examples. Full docs: [docs/agents/](docs/agents/).
+
+---
+
 ## Why Conductor?
 
 | | |
@@ -467,6 +504,7 @@ End-to-end examples covering all APIs for each domain:
 | [Secrets](docs/SECRET_MANAGEMENT.md) | Secret storage |
 | [Prompts](docs/PROMPT.md) | AI/LLM prompt templates |
 | [Integrations](docs/INTEGRATION.md) | AI/LLM provider integrations |
+| [AI Agents](docs/agents/README.md) | Durable agent authoring: `Agent`, `AgentRuntime`, tools, guardrails, handoffs |
 | [Metrics](METRICS.md) | Prometheus metrics collection |
 | [Examples](examples/README.md) | Complete examples catalog |
 

@@ -173,7 +173,7 @@ class TestWorkerInRealSpawnChild(unittest.TestCase):
     """The definitive regression test: transfer a @worker_task Worker into a
     real 'spawn' child process (fresh interpreter, re-imports modules) and
     execute a task there. This is exactly what TaskHandler does when
-    CONDUCTOR_MP_START_METHOD=spawn (default), and exactly what failed in
+    set_start_method("spawn") (default), and exactly what failed in
     issues #264/#271."""
 
     def test_worker_executes_in_spawn_child_process(self):

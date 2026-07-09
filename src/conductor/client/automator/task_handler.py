@@ -38,38 +38,24 @@ _VALID_MP_START_METHODS = {"spawn", "fork", "forkserver"}
 _mp_fork_set = False
 if not _mp_fork_set:
     try:
-        # Default start method: "spawn" on every platform.
-        #
-        # fork() is fundamentally unsafe in a process that holds native
-        # framework state or non-main threads:
-        #   - macOS: Apple frameworks (CFNetwork, Security, libdispatch) may
-        #     SIGSEGV in forked children, producing silently-restarting worker
-        #     processes with exitcode=-11. CPython switched its own macOS
-        #     default to spawn in 3.8 for the same reason (bpo-33725).
-        #   - all POSIX: forking while another thread holds a lock (e.g. the
-        #     prometheus_client module-level lock, or the TaskHandler monitor
-        #     thread restarting a worker) leaves that lock permanently held in
-        #     the child -> silent deadlock.
-        # Workers (including the @worker_task decorator path) are pickle-safe,
-        # so spawn works everywhere. Deployments that rely on fork's
-        # copy-on-write inheritance can opt back in with
-        # CONDUCTOR_MP_START_METHOD=fork (re-exposing the hazards above).
-        # NOTE: spawn requires the standard `if __name__ == "__main__":` guard
-        # in the entrypoint script.
-        _default_method = "spawn"
-        _method = os.environ.get("CONDUCTOR_MP_START_METHOD", "").strip().lower() or _default_method
-        if _method not in _VALID_MP_START_METHODS:
-            logger.warning(
-                "Ignoring invalid CONDUCTOR_MP_START_METHOD=%r; falling back to %r",
-                _method, _default_method,
-            )
-            _method = _default_method
-        set_start_method(_method)
+        set_start_method("spawn")
         _mp_fork_set = True
     except Exception as e:
         logger.info("error when setting multiprocessing.set_start_method - maybe the context is set %s", e.args)
 if platform == "darwin":
         os.environ["no_proxy"] = "*"
+
+def _is_async_execute_callable(fn: Any) -> bool:
+    """True for ``async def`` functions AND instances whose ``__call__`` is async.
+
+    Spawn-safe workers may be module-level class instances (picklable by
+    value) rather than plain functions; ``iscoroutinefunction`` alone is blind
+    to an async ``__call__`` and would route such workers to the sync runner.
+    """
+    return inspect.iscoroutinefunction(fn) or inspect.iscoroutinefunction(
+        getattr(type(fn), "__call__", None)
+    )
+
 
 def _run_sync_worker_process(
         worker: WorkerInterface,
@@ -427,7 +413,7 @@ class TaskHandler:
         is_async_worker = False
         if hasattr(worker, 'execute_function'):
             # Function-based worker (created with @worker_task decorator)
-            is_async_worker = inspect.iscoroutinefunction(worker.execute_function)
+            is_async_worker = _is_async_execute_callable(worker.execute_function)
         else:
             # Class-based worker (implements WorkerInterface)
             is_async_worker = inspect.iscoroutinefunction(worker.execute)
@@ -494,10 +480,7 @@ class TaskHandler:
                     logger.warning(
                         "Worker process %s was killed by signal %s. If this "
                         "repeats on every restart, the process is likely "
-                        "crashing at startup: use the 'spawn' start method "
-                        "(CONDUCTOR_MP_START_METHOD=spawn, the default) and "
-                        "set PYTHONFAULTHANDLER=1 to capture the crashing "
-                        "stack trace.",
+                        "crashing at startup. set PYTHONFAULTHANDLER=1 to capture the crashing stack trace.",
                         worker_name, -exitcode,
                     )
                 if not self.restart_on_failure:
@@ -588,7 +571,7 @@ class TaskHandler:
         """Create a new worker process for the given worker (used for initial start + restarts)."""
         # Detect if worker function is async
         if hasattr(worker, 'execute_function'):
-            is_async_worker = inspect.iscoroutinefunction(worker.execute_function)
+            is_async_worker = _is_async_execute_callable(worker.execute_function)
         else:
             is_async_worker = inspect.iscoroutinefunction(worker.execute)
 

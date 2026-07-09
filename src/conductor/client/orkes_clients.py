@@ -64,5 +64,18 @@ class OrkesClients:
     def get_schema_client(self) -> SchemaClient:
         return OrkesSchemaClient(self.configuration)
 
+    def get_agent_client(self) -> "AgentApiClient":  # noqa: F821
+        """Transport client for the ``/agent/*`` control-plane endpoints.
+
+        Returns the raw :class:`AgentApiClient` (start/deploy/compile/status/
+        respond/stop/signal/SSE). The agent-DX surface (``run``/``deploy``
+        sugar, ``AgentHandle``) stays on ``AgentRuntime.client``.
+        """
+        # Imported lazily: this module is on virtually every SDK program's import
+        # path and must not grow import-time weight for the agent surface.
+        from conductor.client.ai.agent_api_client import AgentApiClient
+
+        return AgentApiClient(self.configuration)
+
 
 ConductorClients = OrkesClients
