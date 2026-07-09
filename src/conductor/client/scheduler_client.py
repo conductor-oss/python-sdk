@@ -1,19 +1,14 @@
 from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional, List, TYPE_CHECKING
+from typing import Optional, List
 from conductor.client.http.models.workflow_schedule import WorkflowSchedule
 from conductor.client.http.models.save_schedule_request import SaveScheduleRequest
 from conductor.client.http.models.search_result_workflow_schedule_execution_model import \
     SearchResultWorkflowScheduleExecutionModel
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 
-if TYPE_CHECKING:
-    from conductor.client.ai.schedule import Schedule, ScheduleInfo
-
-# AgentRuntime applies the user-configured log level to logging.getLogger("conductor.ai"),
-# and schedule reconciliation must keep honoring it — do not rename this logger.
-_logger = logging.getLogger("conductor.ai.agents.schedule")
+logger = logging.getLogger(__name__)
 
 
 class SchedulerClient(ABC):
@@ -178,11 +173,11 @@ class SchedulerClient(ABC):
 
         for short, wire in existing_wire_by_short.items():
             if short not in desired_short:
-                _logger.info("Pruning schedule %s for agent %s", wire, agent_name)
+                logger.info("Pruning schedule %s for agent %s", wire, agent_name)
                 self.delete(wire)
 
         for s in desired:
-            _logger.info(
+            logger.info(
                 "Upserting schedule %s for agent %s", _prefix(agent_name, s.name), agent_name
             )
             try:
