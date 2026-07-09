@@ -14,7 +14,7 @@ class SchedulerClient(ABC):
         pass
 
     @abstractmethod
-    def get_schedule(self, name: str) -> (Optional[WorkflowSchedule], str):
+    def get_schedule(self, name: str) -> Optional[WorkflowSchedule]:
         pass
 
     @abstractmethod
@@ -35,7 +35,7 @@ class SchedulerClient(ABC):
         pass
 
     @abstractmethod
-    def pause_schedule(self, name: str):
+    def pause_schedule(self, name: str, reason: Optional[str] = None):
         pass
 
     @abstractmethod
