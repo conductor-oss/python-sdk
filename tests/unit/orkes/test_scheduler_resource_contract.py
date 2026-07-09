@@ -124,18 +124,16 @@ class TestVerbFallback:
         assert args[2] == {"name": "sched-1"}
         assert ("reason", "maintenance") in args[3]
 
-    def test_405_result_is_cached_for_subsequent_calls(self):
+    def test_fallback_is_stateless(self):
         client = _client_with_mocks()
         client.schedulerResourceApi.pause_schedule.side_effect = ApiException(
             status=405, reason="Method Not Allowed"
         )
         client.pause_schedule("sched-1")
         client.pause_schedule("sched-2")
-        client.resume_schedule("sched-1")
-        # PUT attempted exactly once; everything after the 405 goes straight to GET.
-        assert client.schedulerResourceApi.pause_schedule.call_count == 1
-        client.schedulerResourceApi.resume_schedule.assert_not_called()
-        assert client.api_client.call_api.call_count == 3
+        # No dialect memoization: every call attempts PUT first, then falls back.
+        assert client.schedulerResourceApi.pause_schedule.call_count == 2
+        assert client.api_client.call_api.call_count == 2
 
     def test_404_propagates_without_fallback(self):
         client = _client_with_mocks()
@@ -145,7 +143,6 @@ class TestVerbFallback:
         with pytest.raises(ApiException):
             client.pause_schedule("missing")
         client.api_client.call_api.assert_not_called()
-        assert client._legacy_scheduler_verbs is False
 
     def test_resume_405_falls_back_to_get(self):
         client = _client_with_mocks()

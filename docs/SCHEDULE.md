@@ -37,9 +37,9 @@ Operations for controlling schedule execution state.
 
 > **Verb compatibility:** OSS Conductor maps per-schedule pause/resume as `PUT`;
 > Orkes Conductor servers map them as `GET`. The client sends `PUT` first and
-> transparently falls back to `GET` on a 405, remembering the working dialect for
-> the rest of the client's lifetime — both server families work without configuration.
-> The optional `reason` parameter on `pause_schedule` is stored by OSS servers only.
+> transparently falls back to `GET` on a 405 — both server families work without
+> configuration. The optional `reason` parameter on `pause_schedule` is stored by
+> OSS servers only.
 
 ## Schedule Lifecycle Helpers
 

@@ -15,10 +15,6 @@ from conductor.client.scheduler_client import SchedulerClient
 class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
     def __init__(self, configuration: Configuration):
         super(OrkesSchedulerClient, self).__init__(configuration)
-        # Per-schedule pause/resume verbs differ by server family: OSS Conductor maps them
-        # PUT-only, Orkes Conductor GET-only. We send PUT first and remember a 405 so
-        # subsequent calls go straight to the legacy GET dialect.
-        self._legacy_scheduler_verbs = False
 
     def save_schedule(self, save_schedule_request: SaveScheduleRequest):
         self.schedulerResourceApi.save_schedule(save_schedule_request)
@@ -57,9 +53,8 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         self.schedulerResourceApi.delete_schedule(name)
 
     def pause_schedule(self, name: str, reason: Optional[str] = None):
-        if self._legacy_scheduler_verbs:
-            self._pause_resume_via_get(name, "pause", reason)
-            return
+        # Per-schedule pause/resume verbs differ by server family: OSS Conductor maps
+        # them PUT-only, Orkes Conductor GET-only. Try PUT; on 405 retry via GET.
         try:
             if reason is None:
                 self.schedulerResourceApi.pause_schedule(name)
@@ -68,22 +63,17 @@ class OrkesSchedulerClient(OrkesBaseClient, SchedulerClient):
         except ApiException as e:
             if e.status != 405:
                 raise
-            self._legacy_scheduler_verbs = True
             self._pause_resume_via_get(name, "pause", reason)
 
     def pause_all_schedules(self):
         self.schedulerResourceApi.pause_all_schedules()
 
     def resume_schedule(self, name: str):
-        if self._legacy_scheduler_verbs:
-            self._pause_resume_via_get(name, "resume")
-            return
         try:
             self.schedulerResourceApi.resume_schedule(name)
         except ApiException as e:
             if e.status != 405:
                 raise
-            self._legacy_scheduler_verbs = True
             self._pause_resume_via_get(name, "resume")
 
     def _pause_resume_via_get(self, name: str, action: str, reason: Optional[str] = None):
