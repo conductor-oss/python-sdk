@@ -602,6 +602,74 @@ class ProcessSelectionEntry:
         return {"selected": str(human_output)}
 
 
+# ── Framework worker entries (Group C) ───────────────────────────────────
+
+
+class GraphWorkerEntry:
+    """Picklable langgraph graph-structure worker (node/router/llm/subgraph).
+
+    Carries the factory name, a transported user function, and plain-data
+    factory args; rebuilds the real worker via the langgraph ``make_*``
+    factory once per process. The LLM/subgraph objects are never pickled —
+    those workers reference them by variable NAME in the resolved function's
+    module globals, which the spawn child rebuilds by re-import.
+    """
+
+    def __init__(self, factory: str, fn, *args, **kwargs):
+        self.factory = factory
+        self.fn_t = wrap_callable(fn)
+        self.args = args
+        self.kwargs = kwargs
+        self._worker = None  # per-process memo, dropped on pickle
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_worker"] = None
+        return state
+
+    def __call__(self, task):
+        if self._worker is None:
+            from conductor.ai.agents.frameworks import langgraph as _lg
+
+            self._worker = getattr(_lg, self.factory)(
+                unwrap_callable(self.fn_t), *self.args, **self.kwargs
+            )
+        return self._worker(task)
+
+
+class PassthroughWorkerEntry:
+    """Picklable-by-value passthrough worker (claude / langchain / langgraph).
+
+    Carries the payload the factory needs. For claude the payload is a
+    plain-config dict (rebuilt into options in the child); for langchain /
+    langgraph it is the live executor/compiled graph — those typically hold
+    live clients and locks, so the registration probe fails fast under spawn
+    with an actionable message instead of an opaque PicklingError.
+    Rebuilds the real worker via the named factory once per process.
+    """
+
+    def __init__(self, module: str, factory: str, payload, *args, **kwargs):
+        self.module = module
+        self.factory = factory
+        self.payload = payload
+        self.args = args
+        self.kwargs = kwargs
+        self._worker = None  # per-process memo, dropped on pickle
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_worker"] = None
+        return state
+
+    def __call__(self, task):
+        if self._worker is None:
+            factory_mod = importlib.import_module(self.module)
+            self._worker = getattr(factory_mod, self.factory)(
+                self.payload, *self.args, **self.kwargs
+            )
+        return self._worker(task)
+
+
 # ── Registration-time spawn probe ────────────────────────────────────────
 #
 # Groups are enabled stage-by-stage as each worker family is converted to a
@@ -611,7 +679,10 @@ class ProcessSelectionEntry:
 #   framework-extracted) — converted in Stage 2.
 # - "system": AgentRuntime._register_* control workers (guardrails, callbacks,
 #   termination, transfer, router, handoff, selection) — converted in Stage 3.
-_ENABLED_PROBE_GROUPS: FrozenSet[str] = frozenset({"tools", "system"})
+# - "framework": langgraph graph workers + passthrough workers (claude /
+#   langchain / langgraph) — converted in Stage 4. Passthrough payloads that
+#   hold live clients/graphs fail here, by design, with a named offender.
+_ENABLED_PROBE_GROUPS: FrozenSet[str] = frozenset({"tools", "system", "framework"})
 
 
 def _spawn_probe_active(group: str) -> bool:

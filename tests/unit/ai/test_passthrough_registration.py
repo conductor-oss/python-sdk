@@ -99,12 +99,17 @@ class TestBuildPassthroughFunc:
         graph = MagicMock()
         type(graph).__name__ = "CompiledStateGraph"
 
+        # Build a minimal runtime just to call _build_passthrough_func. The
+        # factory is now deferred into a picklable PassthroughWorkerEntry
+        # (idea-5 spawn safety) and runs on first task — invoke the entry to
+        # verify the full propagation.
+        runtime = AgentRuntime.__new__(AgentRuntime)
+        runtime._config = config
+        entry = runtime._build_passthrough_func(graph, "langgraph", "test_graph")
+
         with patch("conductor.ai.agents.frameworks.langgraph.make_langgraph_worker") as mock_worker:
             mock_worker.return_value = MagicMock()
-            # Build a minimal runtime just to call _build_passthrough_func
-            runtime = AgentRuntime.__new__(AgentRuntime)
-            runtime._config = config
-            runtime._build_passthrough_func(graph, "langgraph", "test_graph")
+            entry(MagicMock())
 
         mock_worker.assert_called_once_with(
             graph,
@@ -129,16 +134,18 @@ class TestBuildPassthroughFunc:
         graph = MagicMock()
         type(graph).__name__ = "CompiledStateGraph"
 
+        runtime = AgentRuntime.__new__(AgentRuntime)
+        runtime._config = config
+        entry = runtime._build_passthrough_func(
+            graph,
+            "langgraph",
+            "test_graph",
+            credentials=["GITHUB_TOKEN"],
+        )
+
         with patch("conductor.ai.agents.frameworks.langgraph.make_langgraph_worker") as mock_worker:
             mock_worker.return_value = MagicMock()
-            runtime = AgentRuntime.__new__(AgentRuntime)
-            runtime._config = config
-            runtime._build_passthrough_func(
-                graph,
-                "langgraph",
-                "test_graph",
-                credentials=["GITHUB_TOKEN"],
-            )
+            entry(MagicMock())
 
         mock_worker.assert_called_once_with(
             graph,
@@ -159,25 +166,33 @@ class TestBuildPassthroughFunc:
             auth_secret="my_secret",
         )
 
-        options = MagicMock()
-        type(options).__name__ = "ClaudeCodeOptions"
+        claude_sdk = pytest.importorskip("claude_code_sdk")
+        options = claude_sdk.ClaudeCodeOptions(system_prompt="hello", max_turns=4)
+
+        runtime = AgentRuntime.__new__(AgentRuntime)
+        runtime._config = config
+        # Options travel as a plain-config dict inside a PassthroughWorkerEntry
+        # (ClaudeCodeOptions is never picklable as-is — debug_stderr) and are
+        # rebuilt in the worker process; invoke the entry to verify the chain.
+        entry = runtime._build_passthrough_func(options, "claude_agent_sdk", "test_agent")
 
         with patch(
             "conductor.ai.agents.frameworks.claude_agent_sdk.make_claude_agent_sdk_worker"
         ) as mock_worker:
             mock_worker.return_value = MagicMock()
-            runtime = AgentRuntime.__new__(AgentRuntime)
-            runtime._config = config
-            runtime._build_passthrough_func(options, "claude_agent_sdk", "test_agent")
+            entry(MagicMock())
 
-        mock_worker.assert_called_once_with(
-            options,
+        mock_worker.assert_called_once()
+        called_options = mock_worker.call_args.args[0]
+        assert called_options.system_prompt == "hello"
+        assert called_options.max_turns == 4
+        assert mock_worker.call_args.args[1:] == (
             "test_agent",
             "http://testserver:8080/api",
             "my_key",
             "my_secret",
-            credential_names=None,
         )
+        assert mock_worker.call_args.kwargs == {"credential_names": None}
 
 
 def _make_fake_task(workflow_instance_id="wf-123", prompt="test prompt"):

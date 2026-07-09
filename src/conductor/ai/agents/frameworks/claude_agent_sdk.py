@@ -155,6 +155,66 @@ def agent_to_claude_code_options(agent: Any) -> Any:
     )
 
 
+def claude_options_to_plain_config(options: Any) -> Dict[str, Any]:
+    """Extract the picklable plain-data fields of a ClaudeCodeOptions.
+
+    Spawn-safe transport for passthrough workers: ``ClaudeCodeOptions`` is
+    never picklable as-is (``debug_stderr`` defaults to ``sys.stderr``), so
+    the worker entry carries this config dict and rebuilds the options in the
+    child. ``debug_stderr`` is skipped (the child re-defaults to its own
+    stderr); any other unpicklable field (``hooks`` / ``can_use_tool``
+    callables, in-process MCP server instances) raises ``SpawnSafetyError``
+    naming the field — those objects cannot cross a process boundary.
+    """
+    import dataclasses
+    import pickle
+
+    from conductor.ai.agents.runtime._worker_entries import SpawnSafetyError
+
+    if not dataclasses.is_dataclass(options):
+        raise SpawnSafetyError(
+            f"expected a ClaudeCodeOptions dataclass, got {type(options).__name__!r}"
+        )
+
+    config: Dict[str, Any] = {}
+    for f in dataclasses.fields(options):
+        if f.name == "debug_stderr":
+            continue
+        value = getattr(options, f.name)
+        if value is not None:
+            try:
+                pickle.dumps(value)
+            except Exception as e:
+                raise SpawnSafetyError(
+                    f"ClaudeCodeOptions.{f.name} is not picklable and cannot "
+                    f"cross the spawn worker boundary ({e!r}). Remove it or "
+                    f"replace it with plain data."
+                ) from e
+        config[f.name] = value
+    return config
+
+
+def make_claude_agent_sdk_worker_from_config(
+    config: Dict[str, Any],
+    name: str,
+    server_url: str,
+    auth_key: str,
+    auth_secret: str,
+    credential_names: Optional[List[str]] = None,
+) -> Any:
+    """Rebuild ClaudeCodeOptions from a plain config and create the worker.
+
+    Runs in the worker child process (invoked by PassthroughWorkerEntry).
+    """
+    from claude_code_sdk import ClaudeCodeOptions
+
+    options = ClaudeCodeOptions(**config)
+    return make_claude_agent_sdk_worker(
+        options, name, server_url, auth_key, auth_secret,
+        credential_names=credential_names,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Passthrough worker
 # ---------------------------------------------------------------------------

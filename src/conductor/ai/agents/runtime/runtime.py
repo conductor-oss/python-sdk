@@ -3110,11 +3110,13 @@ class AgentRuntime:
         worker.func is already a pre-wrapped tool_worker(task) -> TaskResult closure.
         Uses _passthrough_task_def (600s timeout) instead of _default_task_def (10s).
         """
+        from conductor.ai.agents.runtime._worker_entries import probe_spawn_safety
         from conductor.client.worker.worker_task import worker_task
 
         # Add minimal annotations so the Conductor SDK can introspect the function
         worker.func.__annotations__ = {"task": object, "return": object}
 
+        probe_spawn_safety(worker.func, worker.name, group="framework")
         worker_task(
             task_definition_name=worker.name,
             task_def=_passthrough_task_def(worker.name),
@@ -3150,13 +3152,9 @@ class AgentRuntime:
         if not workers:
             return
 
-        from conductor.ai.agents.frameworks.langgraph import (
-            make_llm_finish_worker,
-            make_llm_prep_worker,
-            make_node_worker,
-            make_router_worker,
-            make_subgraph_finish_worker,
-            make_subgraph_prep_worker,
+        from conductor.ai.agents.runtime._worker_entries import (
+            GraphWorkerEntry,
+            probe_spawn_safety,
         )
         from conductor.client.worker.worker_task import worker_task
 
@@ -3175,20 +3173,32 @@ class AgentRuntime:
             subgraph_role = extra.get("subgraph_role")
             subgraph_var_name = extra.get("subgraph_var_name")
 
+            # Picklable entries (idea-5 spawn safety): the langgraph make_*
+            # factory runs per process inside the entry; the user function
+            # travels as a FunctionRef when module-level.
             if subgraph_role == "prep" and subgraph_var_name:
-                wrapped = make_subgraph_prep_worker(w.func, w.name, subgraph_var_name)
+                wrapped = GraphWorkerEntry(
+                    "make_subgraph_prep_worker", w.func, w.name, subgraph_var_name
+                )
             elif subgraph_role == "finish" and subgraph_var_name:
-                wrapped = make_subgraph_finish_worker(w.func, w.name, subgraph_var_name)
+                wrapped = GraphWorkerEntry(
+                    "make_subgraph_finish_worker", w.func, w.name, subgraph_var_name
+                )
             elif llm_role == "prep" and llm_var_name:
-                wrapped = make_llm_prep_worker(w.func, w.name, llm_var_name)
+                wrapped = GraphWorkerEntry("make_llm_prep_worker", w.func, w.name, llm_var_name)
             elif llm_role == "finish" and llm_var_name:
-                wrapped = make_llm_finish_worker(w.func, w.name, llm_var_name)
+                wrapped = GraphWorkerEntry(
+                    "make_llm_finish_worker", w.func, w.name, llm_var_name
+                )
             elif w.name in router_refs:
                 is_dynamic = extra.get("is_dynamic_fanout", False)
-                wrapped = make_router_worker(w.func, w.name, is_dynamic_fanout=is_dynamic)
+                wrapped = GraphWorkerEntry(
+                    "make_router_worker", w.func, w.name, is_dynamic_fanout=is_dynamic
+                )
             else:
-                wrapped = make_node_worker(w.func, w.name)
+                wrapped = GraphWorkerEntry("make_node_worker", w.func, w.name)
 
+            probe_spawn_safety(wrapped, w.name, group="framework")
             worker_task(
                 task_definition_name=w.name,
                 task_def=_default_task_def(w.name),
@@ -3223,10 +3233,18 @@ class AgentRuntime:
         auth_key = self._config.auth_key or ""
         auth_secret = self._config.auth_secret or ""
 
-        if framework == "langgraph":
-            from conductor.ai.agents.frameworks.langgraph import make_langgraph_worker
+        # All three return a picklable PassthroughWorkerEntry (idea-5 spawn
+        # safety) that rebuilds the real worker per process. For langgraph/
+        # langchain the payload is the live graph/executor — typically
+        # unpicklable, in which case the registration probe fails fast with
+        # an actionable message. For claude the payload is a plain-config
+        # dict, so that path is fully spawn-safe.
+        from conductor.ai.agents.runtime._worker_entries import PassthroughWorkerEntry
 
-            return make_langgraph_worker(
+        if framework == "langgraph":
+            return PassthroughWorkerEntry(
+                "conductor.ai.agents.frameworks.langgraph",
+                "make_langgraph_worker",
                 agent_obj,
                 name,
                 server_url,
@@ -3235,9 +3253,9 @@ class AgentRuntime:
                 credential_names=credentials,
             )
         elif framework == "langchain":
-            from conductor.ai.agents.frameworks.langchain import make_langchain_worker
-
-            return make_langchain_worker(
+            return PassthroughWorkerEntry(
+                "conductor.ai.agents.frameworks.langchain",
+                "make_langchain_worker",
                 agent_obj,
                 name,
                 server_url,
@@ -3249,7 +3267,7 @@ class AgentRuntime:
             from conductor.ai.agents.agent import Agent as AgentClass
             from conductor.ai.agents.frameworks.claude_agent_sdk import (
                 agent_to_claude_code_options,
-                make_claude_agent_sdk_worker,
+                claude_options_to_plain_config,
             )
 
             # CRITICAL: convert Agent → ClaudeCodeOptions before passing to worker
@@ -3258,8 +3276,10 @@ class AgentRuntime:
             else:
                 options = agent_obj  # Already ClaudeCodeOptions
 
-            return make_claude_agent_sdk_worker(
-                options,
+            return PassthroughWorkerEntry(
+                "conductor.ai.agents.frameworks.claude_agent_sdk",
+                "make_claude_agent_sdk_worker_from_config",
+                claude_options_to_plain_config(options),
                 name,
                 server_url,
                 auth_key,

@@ -54,6 +54,22 @@ def resolve_and_call_child(ref_bytes: bytes, arg: int, q) -> None:
     q.put(fn(arg))
 
 
+def graph_node(state: dict) -> dict:
+    """Module-level langgraph node function for GraphWorkerEntry tests."""
+    return {"result": f"node-saw-{state.get('x', '?')}"}
+
+
+def run_graph_entry_child(entry_bytes: bytes, q) -> None:
+    """Spawn-child target: unpickle a GraphWorkerEntry and run a node task."""
+    from conductor.client.http.models.task import Task
+
+    entry = pickle.loads(entry_bytes)
+    task = Task(task_id="t-g1", workflow_instance_id="wf-g1")
+    task.input_data = {"state": {"x": 7}}
+    result = entry(task)
+    q.put((str(result.status), dict(result.output_data or {})))
+
+
 def stop_after_two(context) -> bool:
     """Module-level stop_when predicate for StopWhenEntry tests."""
     return context["iteration"] >= 2

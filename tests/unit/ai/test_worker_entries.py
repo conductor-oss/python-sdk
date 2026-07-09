@@ -228,6 +228,83 @@ class TestSystemEntries:
         assert "a_transfer_to_b is not available" in msg
 
 
+# ── Framework worker entries (Group C) ───────────────────────────────────
+
+
+class TestFrameworkEntries:
+    def test_graph_worker_entry_spawn_roundtrip(self):
+        """A langgraph node worker crosses a real spawn boundary and executes."""
+        from conductor.ai.agents.runtime._worker_entries import GraphWorkerEntry
+
+        entry = GraphWorkerEntry("make_node_worker", helpers.graph_node, "test_node")
+        entry_bytes = pickle.dumps(entry)  # the nested worker never pickled
+
+        ctx = multiprocessing.get_context("spawn")
+        q = ctx.Queue()
+        p = ctx.Process(target=helpers.run_graph_entry_child, args=(entry_bytes, q))
+        p.start()
+        try:
+            status, output = q.get(timeout=30)
+        finally:
+            p.join(timeout=30)
+        assert p.exitcode == 0
+        assert "COMPLETED" in status
+        assert output["state"]["result"] == "node-saw-7"
+
+    def test_passthrough_entry_with_plain_payload_pickles(self):
+        from conductor.ai.agents.runtime._worker_entries import PassthroughWorkerEntry
+
+        entry = PassthroughWorkerEntry(
+            "conductor.ai.agents.frameworks.claude_agent_sdk",
+            "make_claude_agent_sdk_worker_from_config",
+            {"system_prompt": "hi", "max_turns": 3},
+            "w1", "http://localhost:8085/api", "", "",
+        )
+        restored = pickle.loads(pickle.dumps(entry))
+        assert restored.payload == {"system_prompt": "hi", "max_turns": 3}
+        assert restored._worker is None  # memo never pickled
+
+    def test_passthrough_entry_unpicklable_payload_fails_probe(self, force_spawn_probe):
+        import threading
+
+        from conductor.ai.agents.runtime._worker_entries import PassthroughWorkerEntry
+
+        entry = PassthroughWorkerEntry(
+            "conductor.ai.agents.frameworks.langchain",
+            "make_langchain_worker",
+            threading.Lock(),  # stands in for a live executor/compiled graph
+            "w2", "url", "", "",
+        )
+        with pytest.raises(SpawnSafetyError, match="not spawn-safe"):
+            probe_spawn_safety(entry, "w2", group="framework")
+
+    def test_claude_options_config_rejects_callables(self):
+        claude_sdk = pytest.importorskip("claude_code_sdk")
+        from conductor.ai.agents.frameworks.claude_agent_sdk import (
+            claude_options_to_plain_config,
+        )
+
+        options = claude_sdk.ClaudeCodeOptions(
+            system_prompt="x", can_use_tool=lambda *a: True
+        )
+        with pytest.raises(SpawnSafetyError, match="can_use_tool"):
+            claude_options_to_plain_config(options)
+
+    def test_claude_options_config_roundtrip(self):
+        claude_sdk = pytest.importorskip("claude_code_sdk")
+        from conductor.ai.agents.frameworks.claude_agent_sdk import (
+            claude_options_to_plain_config,
+        )
+
+        options = claude_sdk.ClaudeCodeOptions(system_prompt="x", max_turns=2)
+        config = claude_options_to_plain_config(options)
+        assert "debug_stderr" not in config  # child re-defaults its own stderr
+        assert config["system_prompt"] == "x" and config["max_turns"] == 2
+        pickle.dumps(config)  # the whole point
+        rebuilt = claude_sdk.ClaudeCodeOptions(**config)
+        assert rebuilt.system_prompt == "x"
+
+
 @pytest.fixture
 def force_spawn_probe(monkeypatch):
     """Pin the probe's start-method check to 'spawn'."""
