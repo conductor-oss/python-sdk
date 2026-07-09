@@ -2231,13 +2231,13 @@ class AgentRuntime:
         return self._http
 
     def schedules_client(self) -> Any:
-        """Return the shared :class:`ScheduleClient` for this runtime.
+        """Return the shared :class:`SchedulerClient` for this runtime.
 
         Delegates to :attr:`client` so the runtime and the control-plane
         client expose the *same* schedule surface (one instance, not two).
         """
         if self._schedule_client_instance is None:
-            self._schedule_client_instance = self._clients.get_agent_schedule_client()
+            self._schedule_client_instance = self._clients.get_scheduler_client()
         return self._schedule_client_instance
 
     def _deploy_via_server(self, agent: Any, *, framework: Optional[str] = None) -> str:

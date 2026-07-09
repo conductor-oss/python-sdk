@@ -4,9 +4,9 @@
 """Agent-facing clients and models for the Conductor SDK.
 
 Canonical home of the ``/agent/*`` transport (:class:`AgentApiClient`), the
-agent cron-schedule client (:class:`AgentScheduleClient`), their models, and
-the agent exception hierarchy. Build the clients via
-``OrkesClients.get_agent_client()`` / ``get_agent_schedule_client()``.
+agent schedule models (:class:`Schedule`/:class:`ScheduleInfo`), and the agent
+exception hierarchy. Build the transport via ``OrkesClients.get_agent_client()``;
+the schedule lifecycle lives on ``OrkesClients.get_scheduler_client()``.
 
 Everything here must stay importable without the ``[agents]`` extra and must
 not import ``conductor.ai`` (the agents authoring layer composes these
@@ -20,7 +20,6 @@ from conductor.client.ai.agent_errors import (
     AgentspanError,
 )
 from conductor.client.ai.schedule import Schedule, ScheduleInfo
-from conductor.client.ai.schedule_client import AgentScheduleClient, ScheduleClient
 from conductor.client.ai.schedule_errors import (
     InvalidCronExpression,
     ScheduleError,
@@ -32,11 +31,9 @@ __all__ = [
     "AgentApiClient",
     "AgentAPIError",
     "AgentNotFoundError",
-    "AgentScheduleClient",
     "AgentspanError",
     "InvalidCronExpression",
     "Schedule",
-    "ScheduleClient",
     "ScheduleError",
     "ScheduleInfo",
     "ScheduleNameConflict",

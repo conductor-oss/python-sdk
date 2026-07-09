@@ -270,13 +270,26 @@ class TestGetInfoHelper:
 class TestSourceOfTruth:
     def test_no_domain_twins_for_reads_writes_lists(self):
         # get_schedule/save_schedule/get_all_schedules ARE the API — the old
-        # mapped wrappers (get/save/list_for_agent) must not creep back onto
-        # any schedule client.
-        from conductor.client.ai.schedule_client import AgentScheduleClient
+        # mapped wrappers (get/save/list_for_agent) must not creep back.
+        for method in ("get", "save", "list_for_agent"):
+            assert not hasattr(SchedulerClient, method), f"SchedulerClient.{method} must not exist"
 
-        for cls in (SchedulerClient, AgentScheduleClient):
-            for method in ("get", "save", "list_for_agent"):
-                assert not hasattr(cls, method), f"{cls.__name__}.{method} must not exist"
+    def test_agent_schedule_client_is_gone(self):
+        # SchedulerClient is the ONE schedule client (user decision: no
+        # backward compatibility) — the wrapper class, its alias, its modules,
+        # and the OrkesClients accessor must not creep back.
+        with pytest.raises(ModuleNotFoundError):
+            import conductor.client.ai.schedule_client  # noqa: F401
+        with pytest.raises(ModuleNotFoundError):
+            import conductor.ai.agents.schedule.client  # noqa: F401
+
+        import conductor.client.ai as client_ai
+        from conductor.client.orkes_clients import OrkesClients
+
+        for name in ("AgentScheduleClient", "ScheduleClient"):
+            assert not hasattr(client_ai, name), f"conductor.client.ai.{name} must not exist"
+            assert name not in client_ai.__all__
+        assert not hasattr(OrkesClients, "get_agent_schedule_client")
 
 
 # ── import-weight guard ─────────────────────────────────────────────

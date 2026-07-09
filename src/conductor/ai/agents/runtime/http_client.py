@@ -203,18 +203,19 @@ class AgentClient:
 
     @property
     def schedules(self) -> Any:
-        """Cron schedule lifecycle client (:class:`AgentScheduleClient`).
+        """Cron schedule lifecycle client (:class:`SchedulerClient`).
 
-        Exposes ``save/get/list_for_agent/pause/resume/delete/run_now/
-        preview_next/reconcile``. When bound to a runtime, this is the
-        *same* :class:`AgentScheduleClient` instance the runtime uses — there
-        is one shared schedule surface, not two.
+        Exposes ``get_schedule/save_schedule/get_all_schedules`` plus the
+        lifecycle methods ``pause/resume/delete/run_now/preview_next/
+        reconcile``. When bound to a runtime, this is the *same*
+        :class:`SchedulerClient` instance the runtime uses — there is one
+        shared schedule surface, not two.
         """
         if self._runtime is not None:
             return self._runtime.schedules_client()
         if self._schedule_client_instance is None:
             self._schedule_client_instance = (
-                self._get_orkes_clients().get_agent_schedule_client()
+                self._get_orkes_clients().get_scheduler_client()
             )
         return self._schedule_client_instance
 

@@ -32,8 +32,8 @@ from conductor.ai.agents.schedule import (
     Schedule,
     ScheduleNameConflict,
 )
-from conductor.ai.agents.schedule.client import ScheduleClient
 from conductor.client.ai.schedule import _from_workflow_schedule
+from conductor.client.scheduler_client import SchedulerClient
 
 pytestmark = [pytest.mark.e2e]
 
@@ -125,15 +125,12 @@ def agent_name(conductor_clients) -> Iterator[str]:
 
 
 @pytest.fixture()
-def schedule_client(conductor_clients) -> ScheduleClient:
-    return ScheduleClient(
-        conductor_clients.get_scheduler_client(),
-        conductor_clients.get_workflow_client(),
-    )
+def schedule_client(conductor_clients) -> SchedulerClient:
+    return conductor_clients.get_scheduler_client()
 
 
 @pytest.fixture(autouse=True)
-def clean_schedules(schedule_client: ScheduleClient, agent_name: str):
+def clean_schedules(schedule_client: SchedulerClient, agent_name: str):
     """Purge any leftover schedules for this agent before each test."""
     schedule_client.reconcile(agent_name, [])
     yield

@@ -28,14 +28,14 @@ from conductor.ai.agents.schedule import (
     ScheduleNotFound,
     schedules,
 )
-from conductor.ai.agents.schedule.client import (
-    ScheduleClient,
+from conductor.ai.agents.schedule.schedule import _prefix, _unprefix
+from conductor.client.ai.schedule import (
     _check_unique_names,
     _from_workflow_schedule,
     _to_save_request,
     _translate,
 )
-from conductor.ai.agents.schedule.schedule import _prefix, _unprefix
+from conductor.client.scheduler_client import SchedulerClient
 
 # ── Schedule dataclass ──────────────────────────────────────────────
 
@@ -261,8 +261,73 @@ class TestTranslate:
 # ── Declarative reconciliation ─────────────────────────────────────
 
 
+class _FakeScheduler(SchedulerClient):
+    """Concrete SchedulerClient whose endpoint methods delegate to a MagicMock.
+
+    Lets the tests drive the REAL concrete lifecycle methods (reconcile etc.)
+    while controlling the endpoint layer via mock side effects.
+    """
+
+    def __init__(self, sc, wc):
+        self._sc, self._wc = sc, wc
+
+    def save_schedule(self, save_schedule_request):
+        return self._sc.save_schedule(save_schedule_request)
+
+    def get_schedule(self, name):
+        return self._sc.get_schedule(name)
+
+    def get_all_schedules(self, workflow_name=None):
+        return self._sc.get_all_schedules(workflow_name=workflow_name)
+
+    def get_next_few_schedule_execution_times(self, cron_expression, schedule_start_time=None,
+                                              schedule_end_time=None, limit=None):
+        return self._sc.get_next_few_schedule_execution_times(
+            cron_expression=cron_expression,
+            schedule_start_time=schedule_start_time,
+            schedule_end_time=schedule_end_time,
+            limit=limit,
+        )
+
+    def delete_schedule(self, name):
+        return self._sc.delete_schedule(name)
+
+    def pause_schedule(self, name, reason=None):
+        if reason is None:
+            return self._sc.pause_schedule(name)
+        return self._sc.pause_schedule(name, reason=reason)
+
+    def pause_all_schedules(self):
+        return self._sc.pause_all_schedules()
+
+    def resume_schedule(self, name):
+        return self._sc.resume_schedule(name)
+
+    def resume_all_schedules(self):
+        return self._sc.resume_all_schedules()
+
+    def search_schedule_executions(self, start=None, size=None, sort=None, free_text=None,
+                                   query=None):
+        return self._sc.search_schedule_executions()
+
+    def requeue_all_execution_records(self):
+        return self._sc.requeue_all_execution_records()
+
+    def set_scheduler_tags(self, tags, name):
+        return self._sc.set_scheduler_tags(tags, name)
+
+    def get_scheduler_tags(self, name):
+        return self._sc.get_scheduler_tags(name)
+
+    def delete_scheduler_tags(self, tags, name):
+        return self._sc.delete_scheduler_tags(tags, name)
+
+    def _start_workflow(self, request):
+        return self._wc.start_workflow(request)
+
+
 def _mock_clients():
-    """Build a ScheduleClient backed by an in-memory fake scheduler client."""
+    """Build a SchedulerClient double backed by an in-memory fake endpoint layer."""
     store: dict = {}
 
     sc = MagicMock()
@@ -300,7 +365,7 @@ def _mock_clients():
     sc.get_all_schedules.side_effect = get_all
 
     wc = MagicMock()
-    return ScheduleClient(sc, wc), sc, store
+    return _FakeScheduler(sc, wc), sc, store
 
 
 class TestReconcile:
