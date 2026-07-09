@@ -35,6 +35,31 @@ Operations for controlling schedule execution state.
 | `resume_schedule()` | `PUT /api/scheduler/schedules/{name}/resume` | Resume a specific schedule | [Example](#resume-schedule) |
 | `resume_all_schedules()` | `PUT /api/scheduler/schedules/resume` | Resume all schedules | [Example](#resume-all-schedules) |
 
+> **Verb compatibility:** OSS Conductor maps per-schedule pause/resume as `PUT`;
+> Orkes Conductor servers map them as `GET`. The client sends `PUT` first and
+> transparently falls back to `GET` on a 405, remembering the working dialect for
+> the rest of the client's lifetime — both server families work without configuration.
+> The optional `reason` parameter on `pause_schedule` is stored by OSS servers only.
+
+## Schedule Lifecycle Helpers
+
+Beyond the endpoint methods above, `SchedulerClient` carries higher-level lifecycle
+operations (shared with the agents layer). They raise typed errors
+(`ScheduleNotFound`, `InvalidCronExpression`, `ScheduleNameConflict` from
+`conductor.client.ai.schedule_errors`) instead of raw `ApiException`.
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `pause()` | `(wire_name, reason=None)` | Pause with typed errors |
+| `resume()` | `(wire_name)` | Resume with typed errors |
+| `delete()` | `(wire_name)` | Delete with typed errors |
+| `preview_next()` | `(cron, n=5, start_at=None, end_at=None) -> list[int]` | Next `n` epoch-ms fire times |
+| `run_now()` | `(info: ScheduleInfo) -> str` | Fire the schedule's workflow once, returns execution id |
+| `reconcile()` | `(workflow_name, desired: list[Schedule] \| None)` | Declarative sync: `None` no-op, `[]` purge, `[...]` upsert+prune |
+
+Reads, writes, and lists have no duplicated helper forms — `get_schedule()`,
+`save_schedule()`, and `get_all_schedules()` are the source of truth.
+
 ## Schedule Execution APIs
 
 APIs for managing and querying schedule executions.
@@ -169,6 +194,9 @@ Pause a specific schedule to stop executions.
 ```python
 scheduler_client.pause_schedule("daily_order_processing")
 print("Schedule paused")
+
+# Optionally record why (stored by OSS Conductor servers; ignored by Orkes servers):
+scheduler_client.pause_schedule("daily_order_processing", reason="maintenance window")
 ```
 
 #### Pause All Schedules
