@@ -1,0 +1,657 @@
+# Copyright (c) 2025 Agentspan
+# Licensed under the MIT License. See LICENSE file in the project root for details.
+
+"""Agent-level client for the Agent Runtime API.
+
+The raw ``/agent/*`` HTTP transport lives in
+:class:`conductor.client.ai.agent_api_client.AgentApiClient`; this module keeps
+the agent-DX surface — :class:`AgentClient` composes the transport and adds
+``run``/``start``/``deploy``/``schedule`` plus the :class:`AgentHandle`
+plumbing (``_ClientRuntimeAdapter``).
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from typing import Any, AsyncIterator, Dict, List, Optional, Union
+
+# SSEUnavailableError is re-exported here for backward compatibility — it moved
+# to conductor.client.ai with the transport.
+from conductor.client.ai.agent_api_client import (  # noqa: F401
+    AgentApiClient,
+    SSEUnavailableError,
+)
+
+logger = logging.getLogger("conductor.ai.agents.runtime.http_client")
+
+
+class AgentClient:
+    """Client for the Agent Runtime API.
+
+    This is the ``/agent/*`` control-plane client (compile / deploy / start /
+    status / respond / stream). On top of those raw endpoints it gains
+    agent-level convenience methods — :meth:`run`, :meth:`start`,
+    :meth:`deploy`, :meth:`schedule` — and a :attr:`schedules` accessor for the
+    cron schedule lifecycle.
+
+    **Run is control-plane only.** :meth:`run` compiles + starts the agent and
+    polls to a result; it does **not** register or poll local tool workers.
+    Agents that use local ``@tool`` functions must run through
+    :class:`AgentRuntime`, which owns worker orchestration. For LLM-only
+    agents, remote tools (HTTP/MCP), or pre-deployed workflows, this client is
+    sufficient.
+
+    Two construction modes:
+
+    - **Bound to a runtime** (``AgentClient(runtime=rt)``): reuses the
+      runtime's Conductor clients, schedule client, and result helpers so
+      there is a single shared schedule surface and no duplicated state.
+    - **Standalone** (``AgentClient(server_url=..., ...)``): builds its own
+      Conductor clients lazily for the schedule lifecycle and status/token
+      lookups.
+    """
+
+    def __init__(
+        self,
+        server_url: str = "",
+        api_key: str = "",
+        auth_key: str = "",
+        auth_secret: str = "",
+        *,
+        runtime: Any = None,
+    ) -> None:
+        # When bound to a runtime, inherit its connection settings so the two
+        # share a single schedule/result surface (no duplicated state).
+        self._runtime = runtime
+        explicit_override = bool(server_url or api_key or auth_key or auth_secret)
+        if runtime is not None:
+            cfg = runtime._config
+            server_url = server_url or cfg.server_url
+            api_key = api_key or (cfg.api_key or "")
+            auth_key = auth_key or (cfg.auth_key or "")
+            auth_secret = auth_secret or (cfg.auth_secret or "")
+
+        self._server_url = server_url.rstrip("/")
+        self._api_key = api_key
+        self._auth_key = auth_key
+        self._auth_secret = auth_secret
+
+        # All wire calls go through the relocated transport. When bound to a
+        # runtime with no credential overrides, reuse the runtime's
+        # Configuration so the two share one auth/token surface.
+        if runtime is not None and not explicit_override:
+            transport_configuration = runtime._conductor_config
+        else:
+            transport_configuration = self._build_transport_configuration()
+        self._api = AgentApiClient(transport_configuration, token=self._api_key or None)
+
+        # Lazily-built Conductor clients + schedule client for standalone use.
+        self._orkes_clients: Any = None
+        self._workflow_client_instance: Any = None
+        self._schedule_client_instance: Any = None
+
+    def _build_transport_configuration(self) -> Any:
+        """Conductor ``Configuration`` carrying exactly this client's credentials."""
+        from conductor.client.configuration.configuration import Configuration
+        from conductor.client.configuration.settings.authentication_settings import (
+            AuthenticationSettings,
+        )
+
+        configuration = Configuration(server_api_url=self._server_url or None)
+        if self._auth_key and self._auth_secret:
+            configuration.authentication_settings = AuthenticationSettings(
+                key_id=self._auth_key, key_secret=self._auth_secret
+            )
+        else:
+            # Never inherit ambient CONDUCTOR_AUTH_* env credentials the caller
+            # didn't pass — anonymous construction must stay anonymous.
+            configuration.authentication_settings = None
+        return configuration
+
+    @property
+    def _client(self) -> Any:
+        """The transport's underlying ``httpx.AsyncClient`` (test injection point)."""
+        return self._api._client
+
+    @_client.setter
+    def _client(self, value: Any) -> None:
+        self._api._client = value
+
+    async def _auth_headers(self) -> Dict[str, str]:
+        """``X-Authorization`` header for secured hosts (orkes); {} when anonymous."""
+        return await self._api._auth_headers()
+
+    async def _get_client(self) -> Any:
+        return await self._api._get_client()
+
+    def _url(self, path: str) -> str:
+        return self._api._url(path)
+
+    # ── Agent API endpoints (delegated to the transport) ─────────────
+
+    async def start_agent(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """POST /agent/start — start an agent execution."""
+        return await self._api.start_agent(payload)
+
+    async def deploy_agent(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """POST /agent/deploy — deploy agent (compile + register, no execution)."""
+        return await self._api.deploy_agent(payload)
+
+    async def compile_agent(self, config_json: Dict[str, Any]) -> Dict[str, Any]:
+        """POST /agent/compile — compile agent config to agent def."""
+        return await self._api.compile_agent(config_json)
+
+    async def get_status(self, execution_id: str) -> Dict[str, Any]:
+        """GET /agent/{id}/status — fetch execution status."""
+        return await self._api.get_status(execution_id)
+
+    async def respond(self, execution_id: str, body: Dict[str, Any]) -> None:
+        """POST /agent/{id}/respond — complete a pending human task."""
+        await self._api.respond(execution_id, body)
+
+    async def stop(self, execution_id: str) -> None:
+        """POST /agent/{id}/stop — graceful deterministic stop."""
+        await self._api.stop(execution_id)
+
+    async def signal(self, execution_id: str, message: str) -> None:
+        """POST /agent/{id}/signal — inject persistent context."""
+        await self._api.signal(execution_id, message)
+
+    async def stream_sse(self, execution_id: str) -> AsyncIterator[Dict[str, Any]]:
+        """GET /agent/stream/{id} — consume SSE events.
+
+        Yields parsed event dicts. Auto-reconnects with ``Last-Event-ID``
+        on connection drops. Raises :class:`SSEUnavailableError` if the
+        server doesn't support SSE or sends only heartbeats.
+        """
+        async for sse_event in self._api.stream_sse(execution_id):
+            yield sse_event
+
+    _parse_sse_async = staticmethod(AgentApiClient._parse_sse_async)
+
+    # ── Conductor clients (lazy; reused from runtime when bound) ─────
+
+    def _get_orkes_clients(self) -> Any:
+        """Build (or reuse the runtime's) ``OrkesClients`` for schedule/status."""
+        if self._runtime is not None:
+            return self._runtime._clients
+        if self._orkes_clients is None:
+            from dataclasses import replace
+
+            from conductor.ai.agents.runtime.config import AgentConfig
+            from conductor.client.orkes_clients import OrkesClients
+
+            cfg = replace(
+                AgentConfig.from_env(),
+                server_url=self._server_url,
+                api_key=self._api_key or None,
+                auth_key=self._auth_key or None,
+                auth_secret=self._auth_secret or None,
+            )
+            self._orkes_clients = OrkesClients(configuration=cfg.to_conductor_configuration())
+        return self._orkes_clients
+
+    @property
+    def _workflow_client(self) -> Any:
+        """Conductor workflow client (reused from runtime when bound)."""
+        if self._runtime is not None:
+            return self._runtime._workflow_client
+        if self._workflow_client_instance is None:
+            self._workflow_client_instance = self._get_orkes_clients().get_workflow_client()
+        return self._workflow_client_instance
+
+    @property
+    def schedules(self) -> Any:
+        """Cron schedule lifecycle client (:class:`AgentScheduleClient`).
+
+        Exposes ``save/get/list_for_agent/pause/resume/delete/run_now/
+        preview_next/reconcile``. When bound to a runtime, this is the
+        *same* :class:`AgentScheduleClient` instance the runtime uses — there
+        is one shared schedule surface, not two.
+        """
+        if self._runtime is not None:
+            return self._runtime.schedules_client()
+        if self._schedule_client_instance is None:
+            self._schedule_client_instance = (
+                self._get_orkes_clients().get_agent_schedule_client()
+            )
+        return self._schedule_client_instance
+
+    # ── Agent-level convenience (control-plane only — NO local workers) ──
+
+    async def run_async(
+        self,
+        agent: Any,
+        prompt: "Union[str, Any]" = None,
+        *,
+        media: Optional[List[str]] = None,
+        session_id: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+        timeout: Optional[int] = None,
+        context: Optional[Dict[str, Any]] = None,
+        static_plan: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """Compile + start an agent, then poll to an :class:`AgentResult`.
+
+        **Control-plane only** — does NOT register or poll local tool workers.
+        Use :meth:`AgentRuntime.run` for agents with local ``@tool`` functions.
+        Suitable for LLM-only agents, remote tools (HTTP/MCP), and pre-deployed
+        agents.
+        """
+        handle = await self.start_async(
+            agent,
+            prompt,
+            media=media,
+            session_id=session_id,
+            idempotency_key=idempotency_key,
+            timeout=timeout,
+            context=context,
+            static_plan=static_plan,
+        )
+        return await handle.join_async(timeout=timeout)
+
+    def run(
+        self,
+        agent: Any,
+        prompt: "Union[str, Any]" = None,
+        *,
+        media: Optional[List[str]] = None,
+        session_id: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+        timeout: Optional[int] = None,
+        context: Optional[Dict[str, Any]] = None,
+        static_plan: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """Synchronous :meth:`run_async`."""
+        return _run_sync(
+            self.run_async(
+                agent,
+                prompt,
+                media=media,
+                session_id=session_id,
+                idempotency_key=idempotency_key,
+                timeout=timeout,
+                context=context,
+                static_plan=static_plan,
+            )
+        )
+
+    async def start_async(
+        self,
+        agent: Any,
+        prompt: "Union[str, Any]" = None,
+        *,
+        media: Optional[List[str]] = None,
+        session_id: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+        timeout: Optional[int] = None,
+        context: Optional[Dict[str, Any]] = None,
+        static_plan: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """Compile + start an agent; return an :class:`AgentHandle`. No workers."""
+        from conductor.ai.agents.config_serializer import AgentConfigSerializer
+        from conductor.ai.agents.result import AgentHandle
+
+        prompt_str = prompt if isinstance(prompt, str) else (prompt or "")
+        config_json = AgentConfigSerializer().serialize(agent)
+        payload: Dict[str, Any] = {
+            "agentConfig": config_json,
+            "prompt": prompt_str,
+            "sessionId": session_id or "",
+            "media": media or [],
+        }
+        if context:
+            payload["context"] = context
+        if idempotency_key:
+            payload["idempotencyKey"] = idempotency_key
+        if timeout is not None:
+            payload["timeoutSeconds"] = timeout
+        if static_plan is not None:
+            payload["static_plan"] = static_plan
+
+        data = await self.start_agent(payload)
+        execution_id = data.get("executionId", "")
+        logger.info(
+            "Started agent '%s' via control-plane (execution_id=%s)", agent.name, execution_id
+        )
+        # Wrap in an AgentHandle backed by this client via a runtime-shaped
+        # adapter (no AgentRuntime, no local workers).
+        return AgentHandle(execution_id, _ClientRuntimeAdapter(self))
+
+    def start(
+        self,
+        agent: Any,
+        prompt: "Union[str, Any]" = None,
+        *,
+        media: Optional[List[str]] = None,
+        session_id: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+        timeout: Optional[int] = None,
+        context: Optional[Dict[str, Any]] = None,
+        static_plan: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """Synchronous :meth:`start_async`."""
+        return _run_sync(
+            self.start_async(
+                agent,
+                prompt,
+                media=media,
+                session_id=session_id,
+                idempotency_key=idempotency_key,
+                timeout=timeout,
+                context=context,
+                static_plan=static_plan,
+            )
+        )
+
+    async def deploy_async(self, *agents: Any) -> List[Any]:
+        """Compile + register one or more agents (no execution, no workers)."""
+        from conductor.ai.agents.config_serializer import AgentConfigSerializer
+        from conductor.ai.agents.frameworks.serializer import detect_framework, serialize_agent
+        from conductor.ai.agents.result import DeploymentInfo
+
+        if not agents:
+            raise ValueError("deploy() requires at least one agent.")
+
+        results: List[Any] = []
+        for agent in agents:
+            framework = detect_framework(agent)
+            if framework:
+                raw_config, _ = serialize_agent(agent)
+                payload = {"framework": framework, "rawConfig": raw_config}
+            else:
+                payload = {"agentConfig": AgentConfigSerializer().serialize(agent)}
+            data = await self.deploy_agent(payload)
+            registered_name = data.get("agentName", "") or getattr(agent, "name", "")
+            agent_name = getattr(agent, "name", registered_name)
+            results.append(DeploymentInfo(registered_name=registered_name, agent_name=agent_name))
+            logger.info("Deployed agent '%s' as '%s'", agent_name, registered_name)
+        return results
+
+    def deploy(self, *agents: Any) -> List[Any]:
+        """Synchronous :meth:`deploy_async`."""
+        return _run_sync(self.deploy_async(*agents))
+
+    def schedule(self, agent: Any, schedules: Optional[List[Any]]) -> Any:
+        """Deploy *agent* and reconcile its cron *schedules* declaratively.
+
+        Upserts the listed schedules and prunes any others for the agent.
+        Pass ``[]`` to purge all schedules; ``None`` to leave them untouched.
+        Returns the :class:`DeploymentInfo` for the deployed agent.
+        """
+        info = self.deploy(agent)[0]
+        self.schedules.reconcile(agent.name, schedules)
+        return info
+
+    # ── Runtime-compatible surface for AgentHandle (poll / build result) ──
+    #
+    # AgentHandle is normally backed by an AgentRuntime; a client-backed
+    # handle (from start()/run()) needs the same sync+async methods AgentHandle
+    # calls on its ``_runtime``. We expose them here. The raw async endpoint
+    # methods above (``get_status``/``respond``/``stop``) take an execution id
+    # and the same names are used by the runtime-compat surface below — the
+    # sync variants are the *_sync helpers, the async variants reuse them.
+
+    def _status(self, execution_id: str, data: Dict[str, Any]) -> Any:
+        from conductor.ai.agents.result import AgentStatus
+
+        return AgentStatus(
+            execution_id=execution_id,
+            is_complete=data.get("isComplete", False),
+            is_running=data.get("isRunning", False),
+            is_waiting=data.get("isWaiting", False),
+            output=data.get("output"),
+            status=data.get("status", "UNKNOWN"),
+            reason=data.get("reasonForIncompletion"),
+            pending_tool=data.get("pendingTool"),
+        )
+
+    async def get_status_async(self, execution_id: str) -> Any:
+        """Fetch current status as an :class:`AgentStatus` (async)."""
+        return self._status(execution_id, await self.get_status(execution_id))
+
+    def get_status_sync(self, execution_id: str) -> Any:
+        """Fetch current status as an :class:`AgentStatus` (sync)."""
+        return _run_sync(self.get_status_async(execution_id))
+
+    async def respond_async(self, execution_id: str, output: Any) -> None:
+        """Complete a pending human task (async)."""
+        body = output if isinstance(output, dict) else {"output": output}
+        await self.respond(execution_id, body)
+
+    async def stop_async(self, execution_id: str) -> None:
+        """Gracefully stop an execution (async)."""
+        await self.stop(execution_id)
+
+    def _extract_token_usage(self, execution_id: str) -> Any:
+        """Fetch aggregated token usage from the full execution tree."""
+        from conductor.ai.agents.result import TokenUsage
+
+        if not execution_id:
+            return None
+        prompt, completion, total, found = self._collect_tokens_by_id(execution_id, set())
+        if not found:
+            return None
+        if total == 0 and (prompt > 0 or completion > 0):
+            total = prompt + completion
+        return TokenUsage(prompt_tokens=prompt, completion_tokens=completion, total_tokens=total)
+
+    def _collect_tokens_by_id(self, execution_id: str, visited: set) -> tuple:
+        """Recursively collect token counts via GET /api/agent/execution/{id}."""
+        if execution_id in visited:
+            return 0, 0, 0, False
+        visited.add(execution_id)
+
+        try:
+            data = self._api.get_execution_sync(execution_id)
+        except Exception:
+            return 0, 0, 0, False
+
+        total_prompt = total_completion = total_total = 0
+        found_any = False
+        token_usage = data.get("tokenUsage")
+        if token_usage:
+            p = int(token_usage.get("promptTokens", 0))
+            c = int(token_usage.get("completionTokens", 0))
+            t = int(token_usage.get("totalTokens", 0))
+            if p or c or t:
+                found_any = True
+                total_prompt, total_completion, total_total = p, c, t
+        for task in data.get("tasks", []):
+            if "SUB_WORKFLOW" in str(task.get("taskType", "")).upper():
+                sub_id = task.get("subWorkflowId")
+                if sub_id and sub_id not in visited:
+                    p, c, t, f = self._collect_tokens_by_id(sub_id, visited)
+                    if f:
+                        found_any = True
+                        total_prompt += p
+                        total_completion += c
+                        total_total += t
+        return total_prompt, total_completion, total_total, found_any
+
+    def _sync_headers(self) -> Dict[str, str]:
+        """Build X-Authorization headers for synchronous ``requests`` calls."""
+        return self._api._sync_headers()
+
+    @staticmethod
+    def _normalize_output(
+        output: Any, raw_status: str, reason: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Normalize execution output to always be a dict.
+
+        Delegates to :meth:`AgentRuntime._normalize_output` so the contract
+        stays identical across the worker-managed and control-plane paths.
+        """
+        from conductor.ai.agents.runtime.runtime import AgentRuntime
+
+        return AgentRuntime._normalize_output(output, raw_status, reason)
+
+    @staticmethod
+    def _derive_finish_reason(raw_status: str, output: Any) -> Any:
+        """Derive a :class:`FinishReason` (delegates to AgentRuntime)."""
+        from conductor.ai.agents.runtime.runtime import AgentRuntime
+
+        return AgentRuntime._derive_finish_reason(raw_status, output)
+
+    # ── Lifecycle ────────────────────────────────────────────────────
+
+    async def close(self) -> None:
+        """Close the underlying httpx client."""
+        await self._api.close()
+
+
+def _run_sync(coro: Any) -> Any:
+    """Run a coroutine from a sync context, handling nested event loops."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop is not None and loop.is_running():
+        import concurrent.futures
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            return pool.submit(asyncio.run, coro).result()
+    return asyncio.run(coro)
+
+
+class _ClientRuntimeAdapter:
+    """Adapts an :class:`AgentClient` to the runtime surface :class:`AgentHandle` expects.
+
+    :class:`AgentHandle` was written against :class:`AgentRuntime`. For a
+    control-plane handle (returned by :meth:`AgentClient.start`) there is no
+    runtime — this thin shim provides the same sync+async methods AgentHandle
+    calls (``get_status`` / ``get_status_async`` / ``respond`` / ``stop`` /
+    ``_normalize_output`` / ``_derive_finish_reason`` / ``_extract_token_usage``)
+    by delegating to the client. It does NOT manage workers; ``_config`` is
+    absent so AgentHandle's liveness monitor stays disabled.
+    """
+
+    def __init__(self, client: "AgentClient") -> None:
+        self._client = client
+        self._workflow_client = client._workflow_client
+
+    # ── status (sync + async) ──
+    def get_status(self, execution_id: str) -> Any:
+        return self._client.get_status_sync(execution_id)
+
+    async def get_status_async(self, execution_id: str) -> Any:
+        return await self._client.get_status_async(execution_id)
+
+    # ── HITL / control (sync + async) ──
+    def respond(self, execution_id: str, output: Any) -> None:
+        _run_sync(self._client.respond_async(execution_id, output))
+
+    async def respond_async(self, execution_id: str, output: Any) -> None:
+        await self._client.respond_async(execution_id, output)
+
+    def stop(self, execution_id: str) -> None:
+        _run_sync(self._client.stop_async(execution_id))
+
+    async def stop_async(self, execution_id: str) -> None:
+        await self._client.stop_async(execution_id)
+
+    def pause(self, execution_id: str) -> None:
+        self._workflow_client.pause_workflow(execution_id)
+
+    async def pause_async(self, execution_id: str) -> None:
+        _run_sync(asyncio.sleep(0))  # keep coroutine semantics
+        self._workflow_client.pause_workflow(execution_id)
+
+    def _resume_workflow(self, execution_id: str) -> None:
+        self._workflow_client.resume_workflow(execution_id)
+
+    async def _resume_workflow_async(self, execution_id: str) -> None:
+        self._workflow_client.resume_workflow(execution_id)
+
+    def cancel(self, execution_id: str, reason: str = "") -> None:
+        self._workflow_client.terminate_workflow(workflow_id=execution_id, reason=reason)
+
+    async def cancel_async(self, execution_id: str, reason: str = "") -> None:
+        self._workflow_client.terminate_workflow(workflow_id=execution_id, reason=reason)
+
+    # ── streaming (delegates to the client's SSE endpoint) ──
+    def _stream_workflow(self, execution_id: str):
+        from conductor.ai.agents.result import AgentEvent, EventType
+
+        async def _aiter():
+            async for sse in self._client.stream_sse(execution_id):
+                yield sse
+
+        # Bridge async SSE → sync iterator for AgentHandle.stream().
+        gen = _aiter()
+
+        def _sync_iter():
+            loop = asyncio.new_event_loop()
+            try:
+                while True:
+                    try:
+                        sse = loop.run_until_complete(gen.__anext__())
+                    except StopAsyncIteration:
+                        return
+                    ev = _sse_to_event(sse, execution_id, AgentEvent, EventType)
+                    if ev is not None:
+                        yield ev
+            finally:
+                loop.close()
+
+        return _sync_iter()
+
+    async def _stream_workflow_async(self, execution_id: str):
+        from conductor.ai.agents.result import AgentEvent, EventType
+
+        async for sse in self._client.stream_sse(execution_id):
+            ev = _sse_to_event(sse, execution_id, AgentEvent, EventType)
+            if ev is not None:
+                yield ev
+
+    # ── result helpers (delegate to client / AgentRuntime statics) ──
+    def _normalize_output(self, output: Any, raw_status: str, reason: Optional[str] = None) -> Any:
+        return self._client._normalize_output(output, raw_status, reason)
+
+    def _derive_finish_reason(self, raw_status: str, output: Any) -> Any:
+        return self._client._derive_finish_reason(raw_status, output)
+
+    def _extract_token_usage(self, execution_id: str) -> Any:
+        return self._client._extract_token_usage(execution_id)
+
+
+def _sse_to_event(sse: Dict[str, Any], execution_id: str, AgentEvent: Any, EventType: Any) -> Any:
+    """Map a raw SSE event dict to an :class:`AgentEvent` (minimal mapping)."""
+    event_type = sse.get("event")
+    data = sse.get("data") or {}
+    if not isinstance(data, dict):
+        data = {"content": data}
+    type_map = {
+        "thinking": EventType.THINKING,
+        "tool_call": EventType.TOOL_CALL,
+        "tool_result": EventType.TOOL_RESULT,
+        "handoff": EventType.HANDOFF,
+        "waiting": EventType.WAITING,
+        "message": EventType.MESSAGE,
+        "error": EventType.ERROR,
+        "done": EventType.DONE,
+        "guardrail_pass": EventType.GUARDRAIL_PASS,
+        "guardrail_fail": EventType.GUARDRAIL_FAIL,
+    }
+    mapped = type_map.get(event_type)
+    if mapped is None:
+        return None
+    return AgentEvent(
+        type=mapped,
+        content=data.get("content") or data.get("message"),
+        tool_name=data.get("toolName") or data.get("tool_name"),
+        args=data.get("args"),
+        result=data.get("result"),
+        target=data.get("target"),
+        output=data.get("output"),
+        execution_id=execution_id,
+        guardrail_name=data.get("guardrailName") or data.get("guardrail_name"),
+    )
+
+
+# ── Backward-compatibility alias ────────────────────────────────────────
+# ``AgentHttpClient`` was renamed to ``AgentClient``; keep the old name so
+# existing imports (``from ...http_client import AgentHttpClient``) still work.
+AgentHttpClient = AgentClient

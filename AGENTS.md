@@ -122,6 +122,15 @@ conductor-{language}/
 
 #### 1.2 HTTP/API Layer
 
+> **HAND-FIX policy:** the bundled scheduler API spec is out of date, so
+> `scheduler_resource_api.py` carries hand-applied fixes marked with `HAND-FIX`
+> comments (per-schedule pause/resume verbs are `PUT` — the OSS Conductor dialect,
+> with a 405→`GET` fallback for Orkes servers living in `OrkesSchedulerClient` —
+> plus an optional `reason` query param and `get_schedule`
+> `response_type='WorkflowSchedule'`). Never regenerate that file without
+> re-applying them; `tests/unit/orkes/test_scheduler_resource_contract.py` fails
+> loudly if a regeneration reverts them.
+
 - [ ] Generate models from OpenAPI specification
 - [ ] Generate resource API classes
 - [ ] Implement ApiClient with:

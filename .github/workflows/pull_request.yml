@@ -27,6 +27,17 @@ jobs:
           pip install -e .
           pip install pytest pytest-cov coverage
 
+      - name: Verify agents import without extras installed
+        id: agent_base_import
+        continue-on-error: true
+        run: |
+          python -c "import conductor.ai.agents"
+
+      - name: Install agents extra
+        run: |
+          pip install -e '.[agents]'
+          pip install pytest-asyncio
+
       - name: Prepare coverage directory
         run: |
           mkdir -p ${{ env.COVERAGE_DIR }}
@@ -91,5 +102,5 @@ jobs:
           file: coverage.xml
 
       - name: Check test results
-        if: steps.unit_tests.outcome == 'failure' || steps.bc_tests.outcome == 'failure' || steps.serdeser_tests.outcome == 'failure'
+        if: steps.unit_tests.outcome == 'failure' || steps.bc_tests.outcome == 'failure' || steps.serdeser_tests.outcome == 'failure' || steps.agent_base_import.outcome == 'failure'
         run: exit 1

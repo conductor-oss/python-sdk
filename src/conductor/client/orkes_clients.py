@@ -64,5 +64,34 @@ class OrkesClients:
     def get_schema_client(self) -> SchemaClient:
         return OrkesSchemaClient(self.configuration)
 
+    def get_agent_client(self) -> "AgentApiClient":  # noqa: F821
+        """Transport client for the ``/agent/*`` control-plane endpoints.
+
+        Returns the raw :class:`AgentApiClient` (start/deploy/compile/status/
+        respond/stop/signal/SSE). The agent-DX surface (``run``/``deploy``
+        sugar, ``AgentHandle``) stays on ``AgentRuntime.client``.
+        """
+        # Imported lazily: this module is on virtually every SDK program's import
+        # path and must not grow import-time weight for the agent surface.
+        from conductor.client.ai.agent_api_client import AgentApiClient
+
+        return AgentApiClient(self.configuration)
+
+    def get_agent_schedule_client(self) -> "AgentScheduleClient":  # noqa: F821
+        """DEPRECATED — use :meth:`get_scheduler_client`; removal planned for the
+        next major release.
+
+        ``SchedulerClient`` now carries the schedule lifecycle itself
+        (``pause``/``resume``/``delete``/``run_now``/``preview_next``/``reconcile``),
+        with ``get_schedule``/``save_schedule``/``get_all_schedules`` as the
+        source of truth for reads/writes/lists. This returns a pure delegation
+        shim kept for backward compatibility.
+        """
+        # Imported lazily: this module is on virtually every SDK program's import
+        # path and must not grow import-time weight for the agent surface.
+        from conductor.client.ai.schedule_client import AgentScheduleClient
+
+        return AgentScheduleClient(self.get_scheduler_client(), self.get_workflow_client())
+
 
 ConductorClients = OrkesClients

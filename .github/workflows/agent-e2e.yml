@@ -1,0 +1,139 @@
+name: Agent E2E
+
+# Runs the agent e2e suites (e2e/) against the released Agentspan
+# server JAR — a full Conductor server with the agent runtime baked in.
+# tests/integration/ai stays manual-only (same as upstream Agentspan,
+# which never ran its tests/integration in CI): run it locally against
+# a live server with `pytest tests/integration/ai`.
+#
+# These tests call real LLMs via the OPENAI_API_KEY / ANTHROPIC_API_KEY
+# repo secrets. Fork PRs cannot see repo secrets, so for them the run
+# fails at the silently-empty guard rather than passing vacuously.
+
+on: [pull_request, workflow_dispatch]
+
+concurrency:
+  group: agent-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AGENTSPAN_VERSION: "0.4.0"   # pinned server/CLI release — bump deliberately
+
+jobs:
+  agent-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      AGENTSPAN_SERVER_URL: http://localhost:8080/api
+      AGENTSPAN_CLI_PATH: ${{ github.workspace }}/agentspan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache server JAR
+        id: jar_cache
+        uses: actions/cache@v4
+        with:
+          path: agentspan-server.jar
+          key: agentspan-server-${{ env.AGENTSPAN_VERSION }}
+
+      - name: Download server JAR from release
+        if: steps.jar_cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "v${AGENTSPAN_VERSION}" --repo agentspan-ai/agentspan \
+            --pattern "agentspan-server-${AGENTSPAN_VERSION}.jar" --output agentspan-server.jar
+
+      - name: Download CLI binary from release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "v${AGENTSPAN_VERSION}" --repo agentspan-ai/agentspan \
+            --pattern "agentspan_linux_amd64" --output agentspan
+          chmod +x agentspan
+
+      - name: Install SDK + test deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[agents]'
+          pip install pytest pytest-asyncio pytest-xdist pytest-rerunfailures mcp-testkit
+
+      - name: Start mcp-testkit
+        run: |
+          mcp-testkit --transport http --port 3001 &
+          sleep 2
+
+      - name: Start server
+        run: |
+          java -jar agentspan-server.jar --server.port=8080 > server.log 2>&1 &
+
+      - name: Wait for server health
+        run: |
+          for i in $(seq 1 45); do
+            if curl -sf http://localhost:8080/health | grep -q '"healthy"[[:space:]]*:[[:space:]]*true'; then
+              echo "server healthy after ~$((i*2))s"; exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::server failed to become healthy within 90s"
+          tail -100 server.log
+          exit 1
+
+      - name: Run e2e suites
+        run: |
+          mkdir -p results
+          pytest e2e/ -v --tb=short -n 3 --dist=loadgroup \
+            --junitxml=results/junit-e2e.xml
+
+      # e2e/conftest.py pytest.skip()s the whole session when the server is
+      # unreachable — without this guard a boot failure after the health gate
+      # (or a future gate regression) would yield a green job that ran nothing.
+      - name: Guard against silently-empty runs
+        if: always()
+        run: |
+          python - <<'EOF'
+          import glob
+          import sys
+          import xml.etree.ElementTree as ET
+
+          total = executed = 0
+          for path in glob.glob("results/junit-*.xml"):
+              root = ET.parse(path).getroot()
+              for suite in root.iter("testsuite"):
+                  t = int(suite.get("tests", 0))
+                  sk = int(suite.get("skipped", 0))
+                  total += t
+                  executed += t - sk
+          print(f"executed {executed}/{total} tests")
+          sys.exit(0 if executed > 0 else 1)
+          EOF
+
+      - name: Generate HTML report
+        if: always()
+        run: |
+          python e2e/report_generator.py results/junit-e2e.xml results/report.html || true
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-e2e-results
+          path: |
+            results/
+            server.log
+          retention-days: 14

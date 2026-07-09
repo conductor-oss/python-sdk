@@ -1,0 +1,22 @@
+{
+  "external": false,
+  "instructions": "Have a conversation. Say GOODBYE when you're finished.",
+  "maxTurns": 25,
+  "model": "anthropic/claude-sonnet-4-6",
+  "name": "chatbot",
+  "termination": {
+    "conditions": [
+      {
+        "caseSensitive": false,
+        "text": "GOODBYE",
+        "type": "text_mention"
+      },
+      {
+        "maxMessages": 20,
+        "type": "max_message"
+      }
+    ],
+    "type": "or"
+  },
+  "timeoutSeconds": 0
+}

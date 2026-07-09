@@ -378,10 +378,6 @@ unreleased metrics harmonization work. For a summary, see the project
     `create_metrics_collector` (the per-worker path) is non-destructive and
     only ensures the directory exists, so spawned/restarted workers never wipe
     live sibling metrics.
-  - `CONDUCTOR_MP_START_METHOD` env var (`spawn` / `fork` / `forkserver`;
-    default `fork` on POSIX, `spawn` on Windows) to control the worker pool's
-    multiprocessing start method (motivated by a `prometheus_client` lock-fork
-    deadlock).
   - Harness manifest sets `WORKER_CANONICAL_METRICS=true`; `harness/main.py`
     logs which collector is active.
 
