@@ -393,7 +393,10 @@ class SchedulerResourceApi(object):
             body=body_params,
             post_params=form_params,
             files=local_var_files,
-            response_type='object',  # noqa: E501
+            # HAND-FIX (do not regenerate away): the endpoint returns a WorkflowSchedule;
+            # 'object' made this method leak raw camelCase dicts, contradicting its own
+            # declared contract. Guarded by tests/unit/orkes/test_scheduler_resource_contract.py.
+            response_type='WorkflowSchedule',  # noqa: E501
             auth_settings=auth_settings,
             async_req=params.get('async_req'),
             _return_http_data_only=params.get('_return_http_data_only'),
@@ -522,7 +525,9 @@ class SchedulerResourceApi(object):
                  returns the request thread.
         """
 
-        all_params = ['name']  # noqa: E501
+        # HAND-FIX (do not regenerate away): optional `reason` query param + PUT verb below.
+        # Guarded by tests/unit/orkes/test_scheduler_resource_contract.py.
+        all_params = ['name', 'reason']  # noqa: E501
         all_params.append('async_req')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -549,6 +554,8 @@ class SchedulerResourceApi(object):
             path_params['name'] = params['name']  # noqa: E501
 
         query_params = []
+        if 'reason' in params and params['reason'] is not None:
+            query_params.append(('reason', params['reason']))  # noqa: E501
 
         header_params = {}
 
@@ -564,7 +571,11 @@ class SchedulerResourceApi(object):
         auth_settings = []  # noqa: E501
 
         return self.api_client.call_api(
-            '/scheduler/schedules/{name}/pause', 'GET',
+            # HAND-FIX (do not regenerate away): OSS Conductor's SchedulerResource maps
+            # per-schedule pause as PUT; the spec-generated GET is the Orkes-server dialect
+            # (OrkesSchedulerClient falls back to GET on 405). Guarded by
+            # tests/unit/orkes/test_scheduler_resource_contract.py.
+            '/scheduler/schedules/{name}/pause', 'PUT',
             path_params,
             query_params,
             header_params,
@@ -827,7 +838,11 @@ class SchedulerResourceApi(object):
         auth_settings = []  # noqa: E501
 
         return self.api_client.call_api(
-            '/scheduler/schedules/{name}/resume', 'GET',
+            # HAND-FIX (do not regenerate away): OSS Conductor's SchedulerResource maps
+            # per-schedule resume as PUT; the spec-generated GET is the Orkes-server dialect
+            # (OrkesSchedulerClient falls back to GET on 405). Guarded by
+            # tests/unit/orkes/test_scheduler_resource_contract.py.
+            '/scheduler/schedules/{name}/resume', 'PUT',
             path_params,
             query_params,
             header_params,
