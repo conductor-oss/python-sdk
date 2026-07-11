@@ -53,7 +53,7 @@ pytestmark = pytest.mark.integration
 def runtime():
     config = AgentConfig.from_env()
     config.streaming_enabled = False  # polling generates correct events
-    rt = AgentRuntime(config=config)
+    rt = AgentRuntime(settings=config)
     yield rt
     rt.shutdown()
 

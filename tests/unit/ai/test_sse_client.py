@@ -163,14 +163,30 @@ def _make_runtime(server_url: str, auth_key: str = None, auth_secret: str = None
     We only need the _stream_sse() method, so we bypass full initialization
     by creating the config and setting it directly.
     """
+    from conductor.client.configuration.configuration import Configuration
+    from conductor.client.configuration.settings.authentication_settings import (
+        AuthenticationSettings,
+    )
+    from conductor.client.orkes_clients import OrkesClients
+
     config = AgentConfig(
         server_url=server_url,
         auth_key=auth_key,
         auth_secret=auth_secret,
         streaming_enabled=True,
     )
+    auth = (
+        AuthenticationSettings(key_id=auth_key, key_secret=auth_secret or "")
+        if auth_key
+        else None
+    )
     rt = object.__new__(AgentRuntime)
     rt._config = config
+    rt._conductor_config = Configuration(
+        server_api_url=config.server_url, authentication_settings=auth
+    )
+    rt._clients = OrkesClients(configuration=rt._conductor_config)
+    rt._agent_client = rt._clients.get_agent_client()
     return rt
 
 

@@ -51,7 +51,7 @@ def runtime():
     # HANDOFF events.  Polling generates correct tool names, handoff
     # events, and guardrail events from Conductor task inspection.
     config.streaming_enabled = False
-    rt = AgentRuntime(config=config)
+    rt = AgentRuntime(settings=config)
     yield rt
     rt.shutdown()
 

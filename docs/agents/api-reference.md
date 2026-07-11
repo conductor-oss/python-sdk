@@ -19,7 +19,11 @@ agents](framework-agents.md), and [Advanced](advanced.md).
 
 ## AgentRuntime
 
-`AgentRuntime(*, server_url=None, api_key=None, api_secret=None, config=None)`
+`AgentRuntime(configuration=None, *, settings=None)` — `configuration` is the
+standard Conductor `Configuration` (host + auth; defaults to `Configuration()`,
+which resolves `CONDUCTOR_SERVER_URL` → `AGENTSPAN_SERVER_URL` and
+`CONDUCTOR_AUTH_*` from the environment); `settings` is an optional `AgentConfig`
+with runtime behaviour knobs (its connection fields are ignored).
 
 Context manager (sync and async: `with` / `async with`).
 
@@ -269,43 +273,46 @@ override. Pass instances via `Agent(callbacks=[...])`; they chain in list order.
 
 ## AgentClient
 
-The control-plane client (formerly `AgentHttpClient`, alias kept). Reach it via
-`runtime.client`, or construct standalone:
-`AgentClient(server_url="", api_key="", auth_key="", auth_secret="", *, runtime=None)`.
+The `/agent/*` control-plane client. `AgentClient` is an interface
+(`conductor.client.agent_client`) implemented by `OrkesAgentClient`
+(`conductor.client.orkes.orkes_agent_client`), following the same pattern as
+`WorkflowClient`/`OrkesWorkflowClient` and built on the shared `ApiClient`
+token machinery. Reach it via `runtime.client` or
+`OrkesClients(configuration).get_agent_client()`. Every method has an `*_async`
+counterpart.
 
 | Method | Signature | Purpose |
 |---|---|---|
-| `run` / `run_async` | `(agent, prompt=None, *, media=None, session_id=None, idempotency_key=None, timeout=None, context=None, static_plan=None) -> AgentResult` | Compile + start + poll (no local workers) |
-| `start` / `start_async` | same args | `-> AgentHandle` |
-| `deploy` / `deploy_async` | `(*agents) -> list[DeploymentInfo]` | Compile + register |
-| `schedule` | `(agent, schedules) -> DeploymentInfo` | Deploy + reconcile cron schedules |
-| `get_status` | `(execution_id) -> dict` | |
-| `respond` | `(execution_id, body) -> None` | |
-| `stop` | `(execution_id) -> None` | |
-| `signal` | `(execution_id, message) -> None` | |
-| `stream_sse` | `(execution_id) -> AsyncIterator[dict]` | |
-| `schedules` (property) | `-> SchedulerClient` | |
-| `close` | `() -> None` (async) | |
-
-Lower-level endpoint methods (`start_agent`, `deploy_agent`, `compile_agent`) are also
-available. The raw transport behind them is `conductor.client.ai.AgentApiClient`
-(build one with `OrkesClients.get_agent_client()`); `AgentClient` composes it and
-keeps the agent-level conveniences.
+| `start_agent` | `(payload) -> dict` | POST /agent/start |
+| `deploy_agent` | `(payload) -> dict` | POST /agent/deploy |
+| `compile_agent` | `(payload) -> dict` | POST /agent/compile |
+| `get_status` | `(execution_id) -> dict` | GET /agent/{id}/status |
+| `get_execution` | `(execution_id) -> dict` | GET /agent/execution/{id} |
+| `list_executions` | `(params=None) -> dict` | GET /agent/executions |
+| `respond` | `(execution_id, body) -> None` | POST /agent/{id}/respond |
+| `stop` | `(execution_id) -> None` | POST /agent/{id}/stop |
+| `signal` | `(execution_id, message) -> None` | POST /agent/{id}/signal |
+| `stream_sse` | `(execution_id, last_event_id=None) -> Iterator[dict]` | GET /agent/stream/{id} (SSE) |
+| `schedules` (property) | `-> SchedulerClient` | Cron schedule lifecycle |
+| `close` / `close_async` | `() -> None` | Release transport resources |
 
 ## Config and credentials
 
 `AgentConfig` (dataclass) fields: `server_url="http://localhost:8080/api"`,
 `api_key=None`, `auth_key=None`, `auth_secret=None`, `llm_retry_count=3`,
 `worker_poll_interval_ms=100`, `worker_thread_count=1`, `auto_start_workers=True`,
-`auto_start_server=True`, `daemon_workers=True`, `auto_register_integrations=False`,
+`daemon_workers=True`, `auto_register_integrations=False`,
 `streaming_enabled=True`, `secret_strict_mode=False`, `log_level="INFO"`. Classmethod
 `AgentConfig.from_env()` reads the `AGENTSPAN_*` variables (see [Getting
 started](getting-started.md#environment-variables)). Property `api_secret` aliases
-`auth_secret`.
+`auth_secret`. `AgentRuntime` uses it only for runtime *behaviour* knobs — server
+connection always comes from the Conductor `Configuration`.
 
 `get_secret(name) -> str` — read a credential inside a `@tool(credentials=[...])`
-function. `resolve_credentials(input_data, names) -> dict` — for external workers.
-Errors: `CredentialNotFoundError`, `CredentialAuthError`, `CredentialRateLimitError`,
+function. `resolve_credentials(task, names) -> dict` — for external workers; reads
+the host-resolved values the server delivers on `Task.runtimeMetadata` (declared via
+the tool/agent `credentials`, resolved at poll time). Errors:
+`CredentialNotFoundError`, `CredentialAuthError`, `CredentialRateLimitError`,
 `CredentialServiceError`.
 
 `ClaudeCode(model_name="", permission_mode=PermissionMode.ACCEPT_EDITS)` with

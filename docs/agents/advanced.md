@@ -12,31 +12,34 @@
 ## Runtime init and config
 
 `AgentRuntime` is the entry point. Use it as a context manager so workers shut down
-cleanly. Config comes from `AgentConfig.from_env()` by default, or pass overrides.
+cleanly. Server connection comes from the standard Conductor `Configuration` —
+the same object every other client uses — which resolves `CONDUCTOR_SERVER_URL`
+(falling back to `AGENTSPAN_SERVER_URL`) and `CONDUCTOR_AUTH_KEY`/`CONDUCTOR_AUTH_SECRET`
+from the environment when not passed explicitly.
 
 ```python
 from conductor.ai.agents import AgentRuntime, AgentConfig
+from conductor.client.configuration.configuration import Configuration
 
-# From env (AGENTSPAN_SERVER_URL etc.)
+# From env (CONDUCTOR_SERVER_URL → AGENTSPAN_SERVER_URL, CONDUCTOR_AUTH_*)
 with AgentRuntime() as runtime:
     runtime.run(agent, "hi")
 
-# Explicit kwargs
-with AgentRuntime(server_url="https://prod:8080/api",
-                  api_key="...") as runtime:
+# Explicit Configuration
+with AgentRuntime(Configuration(server_api_url="https://prod:8080/api")) as runtime:
     ...
 
-# Or an AgentConfig
-config = AgentConfig.from_env()
-config.auto_start_server = False
-with AgentRuntime(config=config) as runtime:
+# Runtime behaviour knobs (workers, streaming, log level) via AgentConfig
+settings = AgentConfig.from_env()
+settings.log_level = "DEBUG"
+with AgentRuntime(settings=settings) as runtime:
     ...
 ```
 
 `AgentConfig` is a dataclass; `from_env()` reads the `AGENTSPAN_*` environment
 variables (full list in [Getting started](getting-started.md#environment-variables)).
-The Conductor `Configuration` object underneath is built from `server_url` and the
-auth fields (`api_key`, or `auth_key`/`auth_secret`).
+It carries runtime *behaviour* settings only — server connection always comes from
+the `Configuration`.
 
 ### Module-level convenience functions
 
@@ -45,7 +48,7 @@ For one-off scripts, top-level functions use a shared singleton runtime:
 ```python
 import conductor.ai.agents as ag
 
-ag.configure(server_url="https://prod:8080/api", auto_start_server=False)  # before first run
+ag.configure(server_url="https://prod:8080/api")  # before first run
 result = ag.run(agent, "Hello!")
 ag.shutdown()    # explicit cleanup; not required for simple scripts
 ```

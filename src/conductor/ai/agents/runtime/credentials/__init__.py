@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 from conductor.ai.agents.runtime.credentials.accessor import get_secret
-from conductor.ai.agents.runtime.credentials.fetcher import WorkerCredentialFetcher
 from conductor.ai.agents.runtime.credentials.types import (
     CredentialAuthError,
     CredentialNotFoundError,
@@ -19,6 +18,5 @@ __all__ = [
     "CredentialAuthError",
     "CredentialRateLimitError",
     "CredentialServiceError",
-    "WorkerCredentialFetcher",
     "get_secret",
 ]

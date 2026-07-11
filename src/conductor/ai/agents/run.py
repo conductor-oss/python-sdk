@@ -10,10 +10,11 @@ but give no control over lifecycle or configuration.
 For production use, prefer creating an :class:`AgentRuntime` explicitly::
 
     from conductor.ai.agents import Agent, AgentRuntime
+    from conductor.client.configuration.configuration import Configuration
 
     agent = Agent(name="hello", model="openai/gpt-4o")
 
-    with AgentRuntime(server_url="https://play.orkes.io/api") as runtime:
+    with AgentRuntime(Configuration(server_api_url="https://play.orkes.io/api")) as runtime:
         result = runtime.run(agent, "Hello!")
         print(result.output)
 
@@ -27,7 +28,11 @@ from __future__ import annotations
 import atexit
 import logging
 import threading
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
+
+if TYPE_CHECKING:
+    from conductor.ai.agents.runtime.config import AgentConfig
+    from conductor.client.configuration.configuration import Configuration
 
 from conductor.ai.agents.agent import Agent
 from conductor.ai.agents.result import (
@@ -42,12 +47,12 @@ logger = logging.getLogger("conductor.ai.agents.run")
 
 # ── Singleton runtime ────────────────────────────────────────────────────
 
-_default_config: Optional[Any] = None
+_default_config: Optional[AgentConfig] = None
 _default_runtime = None
 _runtime_lock = threading.Lock()
 
 
-def configure(config=None, **kwargs):
+def configure(config: Optional[AgentConfig] = None, **kwargs):
     """Pre-configure the default singleton runtime.
 
     Must be called **before** the first :func:`run`, :func:`start`, or
@@ -59,8 +64,7 @@ def configure(config=None, **kwargs):
             are ignored.
         **kwargs: Individual config fields to override on top of
             :meth:`AgentConfig.from_env` defaults (e.g.
-            ``server_url="https://prod:8080/api"``,
-            ``auto_start_server=False``).
+            ``server_url="https://prod:8080/api"``).
 
     Raises:
         RuntimeError: If the singleton runtime already exists.  Call
@@ -71,7 +75,7 @@ def configure(config=None, **kwargs):
 
         import conductor.ai.agents as ag
 
-        ag.configure(server_url="https://prod:8080/api", auto_start_server=False)
+        ag.configure(server_url="https://prod:8080/api")
         result = ag.run(agent, "Hello!")
     """
     global _default_config, _default_runtime
@@ -93,6 +97,27 @@ def configure(config=None, **kwargs):
         _default_config = base
 
 
+def _configuration_from(cfg: AgentConfig) -> Configuration:
+    """Map an :class:`AgentConfig`'s connection fields to a conductor
+    :class:`Configuration` (the sugar layer owns this mapping — the runtime
+    itself only accepts a ``Configuration``)."""
+    from conductor.client.configuration.configuration import Configuration
+    from conductor.client.configuration.settings.authentication_settings import (
+        AuthenticationSettings,
+    )
+
+    effective_key = cfg.api_key or cfg.auth_key
+    authentication_settings = (
+        AuthenticationSettings(key_id=effective_key, key_secret=cfg.auth_secret or "")
+        if effective_key
+        else None
+    )
+    return Configuration(
+        server_api_url=cfg.server_url,
+        authentication_settings=authentication_settings,
+    )
+
+
 def _get_default_runtime():
     """Return (or create) the module-level default AgentRuntime singleton."""
     global _default_runtime
@@ -101,7 +126,12 @@ def _get_default_runtime():
             if _default_runtime is None:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                _default_runtime = AgentRuntime(config=_default_config)
+                if _default_config is not None:
+                    _default_runtime = AgentRuntime(
+                        _configuration_from(_default_config), settings=_default_config
+                    )
+                else:
+                    _default_runtime = AgentRuntime()
                 logger.info("Created default AgentRuntime singleton")
     return _default_runtime
 

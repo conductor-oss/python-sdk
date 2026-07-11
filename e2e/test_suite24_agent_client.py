@@ -1,18 +1,21 @@
-"""Suite 24: AgentClient — control-plane run + schedule surface.
+"""Suite 24: AgentClient (transport) + runtime run/start + schedule surface.
 
-Verifies the control-plane :class:`AgentClient` (formerly ``AgentHttpClient``)
-exposed via ``runtime.client``:
+``runtime.client`` is the transport :class:`AgentClient`
+(``conductor.client.orkes.orkes_agent_client.OrkesAgentClient``) — the
+``/agent/*`` control-plane endpoints built on the shared ``ApiClient``. The
+run/start DX lives on the runtime; the schedule lifecycle is reachable from both
+``runtime.schedules_client()`` and ``runtime.client.schedules``.
 
-- ``run`` on an LLM-only agent (no local tools) reaches status COMPLETED.
-  Control-plane only: no local tool workers are registered/polled.
-- ``schedule(agent, [Schedule(...)])`` deploys + reconciles; the schedule then
-  shows up in ``list_for_agent``. A counterfactual ``reconcile([])`` purges it.
-- The runtime's schedule surface (``runtime.schedules_client()``) and the
-  client's (``runtime.client.schedules``) are the *same* instance.
+Verifies:
+- ``runtime.run`` on an LLM-only agent (no local tools) reaches COMPLETED.
+- ``runtime.start`` returns a handle that joins to COMPLETED.
+- ``schedules.reconcile(agent, [Schedule(...)])`` upserts and lists; a
+  counterfactual ``reconcile([])`` purges it.
+- ``runtime.client`` is the runtime's own transport client, and both schedule
+  accessors return working ``SchedulerClient``s.
 
-No LLM is used for validation — assertions are on workflow status / schedule
-structure only (per CLAUDE.md rule 1). The scheduled "agent" target is a bare
-no-op Conductor workflow so no LLM is invoked for the schedule tests.
+The scheduled "agent" target is a bare no-op Conductor workflow so no LLM is
+invoked for the schedule tests.
 
 Targets the live Agentspan server (``AGENTSPAN_SERVER_URL``). The schedule
 tests are skipped automatically if the server's Conductor lacks the scheduler
@@ -63,24 +66,22 @@ class TestControlPlaneRun:
             instructions="You are a calculator. Reply with only the number.",
         )
 
-        result = runtime.client.run(agent, "What is 2 + 2? Reply with only the number.")
+        result = runtime.run(agent, "What is 2 + 2? Reply with only the number.")
 
         assert result.status == Status.COMPLETED, (
             f"expected COMPLETED, got {result.status} (error={result.error})"
         )
         assert result.execution_id
-        # No local tool workers were started for this control-plane run.
-        assert runtime._workers_started is False
 
     def test_start_returns_handle_then_joins(self, runtime, model):
-        """AgentClient.start returns a handle that joins to a COMPLETED result."""
+        """runtime.start returns a handle that joins to a COMPLETED result."""
         agent = Agent(
             name=f"e2e_client_start_{uuid.uuid4().hex[:8]}",
             model=model,
             instructions="Reply with the single word: ok",
         )
 
-        handle = runtime.client.start(agent, "Say ok")
+        handle = runtime.start(agent, "Say ok")
         assert handle.execution_id
         result = handle.join(timeout=120)
         assert result.status == Status.COMPLETED
@@ -145,16 +146,22 @@ class TestSchedule:
         assert not schedules.get_all_schedules(workflow_name=noop_agent_name)
 
 
-# ── structural consistency: runtime + client share one schedule surface ──
+# ── structural consistency: transport client + schedule accessors ────────
 
 
 class TestScheduleSurfaceConsistency:
-    def test_runtime_and_client_share_schedule_client(self, runtime):
-        """runtime.schedules_client() and runtime.client.schedules are identical."""
-        from_runtime = runtime.schedules_client()
-        from_client = runtime.client.schedules
-        assert from_runtime is from_client
+    def test_both_schedule_accessors_are_scheduler_clients(self, runtime):
+        """Both runtime.schedules_client() and runtime.client.schedules return a
+        working SchedulerClient (the transport client builds its own from the same
+        Configuration; they are no longer required to be the same instance)."""
+        from conductor.client.scheduler_client import SchedulerClient
 
-    def test_client_is_bound_to_runtime(self, runtime):
-        """runtime.client is the runtime's own control-plane client (not a copy)."""
-        assert runtime.client is runtime._http
+        assert isinstance(runtime.schedules_client(), SchedulerClient)
+        assert isinstance(runtime.client.schedules, SchedulerClient)
+
+    def test_client_is_the_runtime_agent_client(self, runtime):
+        """runtime.client is the runtime's own transport AgentClient (not a copy)."""
+        from conductor.client.agent_client import AgentClient
+
+        assert runtime.client is runtime._agent_client
+        assert isinstance(runtime.client, AgentClient)

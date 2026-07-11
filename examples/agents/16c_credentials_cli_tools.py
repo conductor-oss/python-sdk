@@ -11,7 +11,7 @@ Demonstrates:
 
 Setup (one-time, via CLI):
     agentspan login
-    agentspan credentials set GITHUB_TOKEN <your-github-token>
+    agentspan credentials set GH_TOKEN <your-github-token>
     agentspan credentials set AWS_ACCESS_KEY_ID <your-aws-access-key-id>
     agentspan credentials set AWS_SECRET_ACCESS_KEY <your-aws-secret-access-key>
 Requirements:
@@ -20,15 +20,16 @@ Requirements:
     - gh and aws CLIs installed
 """
 
-import os
 import subprocess
 
 from conductor.ai.agents import Agent, AgentRuntime, tool
 from settings import settings
 
 
-# gh tool — requires GITHUB_TOKEN
-@tool(credentials=["GITHUB_TOKEN"])
+# gh tool — requires GH_TOKEN (the env var the gh CLI reads natively). The
+# runtime injects the resolved secret into os.environ for the duration of the
+# call, so the subprocess inherits it — no manual env mapping needed.
+@tool(credentials=["GH_TOKEN"])
 def gh_list_prs(repo: str, state: str = "open") -> dict:
     """List pull requests for a GitHub repo using the gh CLI.
 
@@ -39,7 +40,6 @@ def gh_list_prs(repo: str, state: str = "open") -> dict:
         ["gh", "pr", "list", "--repo", repo, "--state", state,
          "--limit", "10", "--json", "number,title,author,createdAt,url"],
         capture_output=True, text=True, timeout=15,
-        env={**os.environ, "GH_TOKEN": os.environ.get("GITHUB_TOKEN", "")},
     )
     if result.returncode != 0:
         return {"error": result.stderr.strip()}
@@ -49,7 +49,7 @@ def gh_list_prs(repo: str, state: str = "open") -> dict:
     return {"repo": repo, "state": state, "pull_requests": prs}
 
 
-@tool(credentials=["GITHUB_TOKEN"])
+@tool(credentials=["GH_TOKEN"])
 def gh_create_pr(repo: str, title: str, body: str, head: str, base: str = "main") -> dict:
     """Create a pull request via the gh CLI.
 
@@ -61,7 +61,6 @@ def gh_create_pr(repo: str, title: str, body: str, head: str, base: str = "main"
          "--title", title, "--body", body,
          "--head", head, "--base", base],
         capture_output=True, text=True, timeout=15,
-        env={**os.environ, "GH_TOKEN": os.environ.get("GITHUB_TOKEN", "")},
     )
     if result.returncode != 0:
         return {"error": result.stderr.strip()}
@@ -108,7 +107,7 @@ github_aws_agent = Agent(
     model=settings.llm_model,
     tools=[gh_list_prs, gh_create_pr, aws_list_s3_buckets, aws_get_caller_identity],
     cli_allowed_commands=["gh", "aws"],
-    credentials=["GITHUB_TOKEN", "GH_TOKEN", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"],
+    credentials=["GH_TOKEN", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"],
     instructions=(
         "You are a DevOps assistant. You can manage GitHub pull requests and "
         "inspect AWS resources. Always confirm destructive actions before proceeding."

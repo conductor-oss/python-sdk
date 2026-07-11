@@ -63,7 +63,8 @@ class Task:
     _subworkflow_changed: bool = field(default=None)
     _parent_task_id: str = field(default=None)
     _first_start_time: int = field(default=None)
-    
+    _runtime_metadata: Dict[str, str] = field(default=None)
+
     # Fields that are in Python but not in Java
     _loop_over_task: bool = field(default=None)
     _task_definition: Any = field(default=None)
@@ -110,6 +111,7 @@ class Task:
         'subworkflow_changed': 'bool',
         'parent_task_id': 'str',
         'first_start_time': 'int',
+        'runtime_metadata': 'dict(str, str)',
         'loop_over_task': 'bool',
         'task_definition': 'TaskDef',
         'queue_wait_time': 'int'
@@ -156,6 +158,7 @@ class Task:
         'subworkflow_changed': 'subworkflowChanged',
         'parent_task_id': 'parentTaskId',
         'first_start_time': 'firstStartTime',
+        'runtime_metadata': 'runtimeMetadata',
         'loop_over_task': 'loopOverTask',
         'task_definition': 'taskDefinition',
         'queue_wait_time': 'queueWaitTime'
@@ -171,7 +174,8 @@ class Task:
                  external_input_payload_storage_path=None, external_output_payload_storage_path=None,
                  workflow_priority=None, execution_name_space=None, isolation_group_id=None, iteration=None,
                  sub_workflow_id=None, subworkflow_changed=None, loop_over_task=None, task_definition=None,
-                 queue_wait_time=None, parent_task_id=None, first_start_time=None):  # noqa: E501
+                 queue_wait_time=None, parent_task_id=None, first_start_time=None,
+                 runtime_metadata=None):  # noqa: E501
         """Task - a model defined in Swagger"""  # noqa: E501
         self._task_type = None
         self._status = None
@@ -216,6 +220,7 @@ class Task:
         self._loop_over_task = None
         self._task_definition = None
         self._queue_wait_time = None
+        self._runtime_metadata = None
         self.discriminator = None
         if task_type is not None:
             self.task_type = task_type
@@ -303,6 +308,8 @@ class Task:
             self.task_definition = task_definition
         if queue_wait_time is not None:
             self.queue_wait_time = queue_wait_time
+        if runtime_metadata is not None:
+            self.runtime_metadata = runtime_metadata
 
     def __post_init__(self):
         """Post initialization for dataclass"""
@@ -1191,6 +1198,30 @@ class Task:
         """
 
         self._queue_wait_time = queue_wait_time
+
+    @property
+    def runtime_metadata(self):
+        """Gets the runtime_metadata of this Task.  # noqa: E501
+
+        Secret values the server resolved for this task at poll time and delivered on the wire only
+        (never persisted). Populated when the task's TaskDef.runtimeMetadata declares secret names the
+        host resolves from its secret store (conductor-oss PR #1255). Empty/absent otherwise.
+
+        :return: The runtime_metadata of this Task.  # noqa: E501
+        :rtype: dict(str, str)
+        """
+        return self._runtime_metadata
+
+    @runtime_metadata.setter
+    def runtime_metadata(self, runtime_metadata):
+        """Sets the runtime_metadata of this Task.
+
+
+        :param runtime_metadata: The runtime_metadata of this Task.  # noqa: E501
+        :type: dict(str, str)
+        """
+
+        self._runtime_metadata = runtime_metadata
 
     def to_dict(self):
         """Returns the model properties as a dict"""

@@ -15,11 +15,6 @@ MCP_TESTKIT_URL = os.environ.get("MCP_TESTKIT_URL", "http://localhost:3001")
 MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
 
 
-# ── Prevent runtime from auto-starting a second server ──────────────────
-
-os.environ["AGENTSPAN_AUTO_START_SERVER"] = "false"
-
-
 # ── Markers ─────────────────────────────────────────────────────────────
 
 

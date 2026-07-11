@@ -10,6 +10,7 @@ into AgentEvent objects.  Zero external dependencies.
 import json
 
 from conductor.ai.agents.runtime.runtime import AgentRuntime
+from conductor.client.orkes.orkes_agent_client import OrkesAgentClient
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -56,7 +57,7 @@ class TestParseSSE:
                 "data": {"type": "thinking", "executionId": "wf-1", "content": "llm"},
             }
         )
-        events = list(AgentRuntime._parse_sse(iter(lines)))
+        events = list(OrkesAgentClient._parse_sse(iter(lines)))
         assert len(events) == 1
         assert events[0]["event"] == "thinking"
         assert events[0]["id"] == "1"
@@ -68,7 +69,7 @@ class TestParseSSE:
             {"event": "tool_call", "id": "2", "data": {"type": "tool_call", "toolName": "search"}},
             {"event": "done", "id": "3", "data": {"type": "done", "output": "answer"}},
         )
-        events = list(AgentRuntime._parse_sse(iter(lines)))
+        events = list(OrkesAgentClient._parse_sse(iter(lines)))
         assert len(events) == 3
         assert events[0]["event"] == "thinking"
         assert events[1]["event"] == "tool_call"
@@ -76,7 +77,7 @@ class TestParseSSE:
 
     def test_parse_heartbeat_comment(self):
         lines = [":heartbeat", ""]
-        events = list(AgentRuntime._parse_sse(iter(lines)))
+        events = list(OrkesAgentClient._parse_sse(iter(lines)))
         assert len(events) == 1
         assert events[0]["_heartbeat"] is True
 
@@ -95,7 +96,7 @@ class TestParseSSE:
             'data:{"output":"ok"}',
             "",
         ]
-        events = list(AgentRuntime._parse_sse(iter(lines)))
+        events = list(OrkesAgentClient._parse_sse(iter(lines)))
         assert len(events) == 4
         assert events[0]["_heartbeat"] is True
         assert events[1]["event"] == "thinking"
@@ -110,21 +111,21 @@ class TestParseSSE:
             b'data:{"type":"thinking","content":"processing"}',
             b"",
         ]
-        events = list(AgentRuntime._parse_sse(iter(lines)))
+        events = list(OrkesAgentClient._parse_sse(iter(lines)))
         assert len(events) == 1
         assert events[0]["event"] == "thinking"
         assert events[0]["data"]["content"] == "processing"
 
     def test_parse_event_without_id(self):
         lines = ["event:thinking", 'data:{"type":"thinking"}', ""]
-        events = list(AgentRuntime._parse_sse(iter(lines)))
+        events = list(OrkesAgentClient._parse_sse(iter(lines)))
         assert len(events) == 1
         assert events[0]["id"] is None
         assert events[0]["event"] == "thinking"
 
     def test_parse_event_without_event_type(self):
         lines = ["id:1", 'data:{"type":"message","content":"hi"}', ""]
-        events = list(AgentRuntime._parse_sse(iter(lines)))
+        events = list(OrkesAgentClient._parse_sse(iter(lines)))
         assert len(events) == 1
         assert events[0]["event"] is None
         assert events[0]["id"] == "1"
@@ -132,7 +133,7 @@ class TestParseSSE:
 
     def test_parse_invalid_json_falls_back_to_content(self):
         lines = ["event:error", "data:not-valid-json", ""]
-        events = list(AgentRuntime._parse_sse(iter(lines)))
+        events = list(OrkesAgentClient._parse_sse(iter(lines)))
         assert len(events) == 1
         assert events[0]["data"] == {"content": "not-valid-json"}
 
@@ -144,17 +145,17 @@ class TestParseSSE:
             'data:"hello world"}',
             "",
         ]
-        events = list(AgentRuntime._parse_sse(iter(lines)))
+        events = list(OrkesAgentClient._parse_sse(iter(lines)))
         assert len(events) == 1
         # Multiline data lines are joined with \n then parsed
         assert events[0]["data"]["output"] == "hello world"
 
     def test_parse_empty_input(self):
-        events = list(AgentRuntime._parse_sse(iter([])))
+        events = list(OrkesAgentClient._parse_sse(iter([])))
         assert len(events) == 0
 
     def test_parse_only_blank_lines(self):
-        events = list(AgentRuntime._parse_sse(iter(["", "", ""])))
+        events = list(OrkesAgentClient._parse_sse(iter(["", "", ""])))
         assert len(events) == 0
 
 
@@ -331,7 +332,7 @@ class TestParseAndConvert:
         ]
 
         lines = _make_sse_lines(*wire_events)
-        parsed = list(AgentRuntime._parse_sse(iter(lines)))
+        parsed = list(OrkesAgentClient._parse_sse(iter(lines)))
         assert len(parsed) == 10
 
         agent_events = [AgentRuntime._sse_to_agent_event(p, "wf-1") for p in parsed]

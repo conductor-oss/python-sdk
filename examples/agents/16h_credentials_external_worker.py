@@ -61,9 +61,9 @@ def run_external_worker():
     def github_lookup_worker(task: Task) -> TaskResult:
         username = task.input_data.get("username", "")
 
-        # resolve_credentials reads __agentspan_ctx__ from task input
-        # and calls the server to get the credential values
-        creds = resolve_credentials(task.input_data, ["GITHUB_TOKEN"])
+        # resolve_credentials reads the host-resolved secret values the server
+        # delivered on Task.runtimeMetadata (declared via the tool's credentials).
+        creds = resolve_credentials(task, ["GITHUB_TOKEN"])
         token = creds.get("GITHUB_TOKEN", "")
 
         headers = {"Authorization": f"Bearer {token}"} if token else {}
@@ -107,5 +107,5 @@ if __name__ == "__main__":
     print(f"  credentials: {agent.tools[0]._tool_def.credentials}")
     print()
     print("External worker pattern:")
-    print("  creds = resolve_credentials(task.input_data, ['GITHUB_TOKEN'])")
+    print("  creds = resolve_credentials(task, ['GITHUB_TOKEN'])")
     print("  token = creds['GITHUB_TOKEN']")

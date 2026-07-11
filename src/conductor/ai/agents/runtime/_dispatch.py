@@ -156,49 +156,33 @@ def _coerce_value(value, annotation):
     return value
 
 
-# Lazily created credential fetcher — initialized from AgentConfig on first use
-_credential_fetcher = None
+def _resolve_secrets_from_task(task, names: list) -> dict:
+    """Resolve declared secret *names* from the values the host delivered on the task.
 
+    Secured hosts (e.g. orkes/agentspan) resolve a worker's declared
+    ``TaskDef.runtimeMetadata`` secret names at poll time and deliver the values on
+    the wire-only ``Task.runtimeMetadata`` map (conductor-oss PR #1255) — never
+    persisted to task input. The worker just reads them here; there is no separate
+    fetch call or execution token.
 
-def _get_credential_fetcher():
-    """Return the module-level WorkerCredentialFetcher, creating it on first call.
-
-    The fetcher is initialized from AgentConfig.from_env() so it picks up
-    AGENTSPAN_SERVER_URL, AGENTSPAN_API_KEY, AGENTSPAN_SECRET_STRICT_MODE.
+    Raises :class:`CredentialNotFoundError` for any declared name the host did not
+    deliver (secret not stored, or the TaskDef didn't declare it).
     """
-    global _credential_fetcher
-    if _credential_fetcher is None:
-        from conductor.ai.agents.runtime.config import AgentConfig
-        from conductor.ai.agents.runtime.credentials.fetcher import WorkerCredentialFetcher
+    from conductor.ai.agents.runtime.credentials.types import CredentialNotFoundError
 
-        config = AgentConfig.from_env()
-        _credential_fetcher = WorkerCredentialFetcher(
-            server_url=config.server_url,
-            strict_mode=config.secret_strict_mode,
-            api_key=config.api_key or config.auth_key,
+    if not names:
+        return {}
+    delivered = getattr(task, "runtime_metadata", None) or {}
+    resolved = {n: delivered[n] for n in names if n in delivered}
+    missing = [n for n in names if n not in delivered]
+    if missing:
+        raise CredentialNotFoundError(
+            missing,
+            "Not delivered by the server on this task. Ensure each secret is stored "
+            "(agentspan credentials set --name <NAME>) and declared on the tool/agent "
+            "so the server resolves it at poll time.",
         )
-    return _credential_fetcher
-
-
-def _extract_execution_token(task) -> str | None:
-    """Extract __agentspan_ctx__.execution_token from a Conductor task.
-
-    Checks task.input_data first (most common), then task.workflow_input.
-    Returns None if not present.
-    """
-    # input_data is the primary source (set by Conductor enrichment scripts)
-    ctx = (task.input_data or {}).get("__agentspan_ctx__")
-    if isinstance(ctx, dict):
-        return ctx.get("execution_token") or None
-    if isinstance(ctx, str) and ctx:
-        return ctx
-    # Fallback: check workflow_input (set at workflow start)
-    ctx = (getattr(task, "workflow_input", None) or {}).get("__agentspan_ctx__")
-    if isinstance(ctx, dict):
-        return ctx.get("execution_token") or None
-    if isinstance(ctx, str) and ctx:
-        return ctx
-    return None
+    return resolved
 
 
 def _get_credential_names_from_tool(tool_func) -> list:
@@ -470,10 +454,8 @@ def run_tool_task(task, *, tool_name, tool_func, guardrails=None, credential_nam
                         )
             resolved_secrets = {}
             if credential_names:
-                token = _extract_execution_token(task)
-                fetcher = _get_credential_fetcher()
                 try:
-                    resolved_secrets = fetcher.fetch(token, credential_names)
+                    resolved_secrets = _resolve_secrets_from_task(task, credential_names)
                 except Exception as cred_err:
                     # Credential errors are configuration issues — non-retryable.
                     logger.error(

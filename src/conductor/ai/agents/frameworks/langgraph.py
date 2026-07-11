@@ -1531,8 +1531,7 @@ def make_langgraph_worker(
         resolved_secrets = {}
         try:
             from conductor.ai.agents.runtime._dispatch import (
-                _extract_execution_token,
-                _get_credential_fetcher,
+                _resolve_secrets_from_task,
                 _workflow_credentials,
                 _workflow_credentials_lock,
             )
@@ -1543,16 +1542,8 @@ def make_langgraph_worker(
                 with _workflow_credentials_lock:
                     cred_names = list(_workflow_credentials.get(exec_id, []))
             if cred_names:
-                token = _extract_execution_token(task)
-                if token:
-                    fetcher = _get_credential_fetcher()
-                    resolved_secrets = fetcher.fetch(token, cred_names)
-                else:
-                    logger.warning(
-                        "No execution token in task for LangGraph worker — "
-                        "credentials %s will not be injected",
-                        cred_names,
-                    )
+                # Values the host resolved and delivered on Task.runtimeMetadata.
+                resolved_secrets = _resolve_secrets_from_task(task, cred_names)
         except Exception as _cred_err:
             logger.warning("Failed to resolve credentials for LangGraph: %s", _cred_err)
 

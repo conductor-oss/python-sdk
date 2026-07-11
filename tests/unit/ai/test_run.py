@@ -171,7 +171,7 @@ class TestConfigure:
         from conductor.ai.agents.run import configure
         from conductor.ai.agents.runtime.config import AgentConfig
 
-        config = AgentConfig(server_url="https://prod:8080/api", auto_start_server=False)
+        config = AgentConfig(server_url="https://prod:8080/api")
         configure(config=config)
 
         mod = _get_run_module()
@@ -180,11 +180,10 @@ class TestConfigure:
     def test_configure_kwargs_override_env(self):
         from conductor.ai.agents.run import configure
 
-        configure(server_url="https://custom:9090/api", auto_start_server=False)
+        configure(server_url="https://custom:9090/api")
 
         mod = _get_run_module()
         assert mod._default_config.server_url == "https://custom:9090/api"
-        assert mod._default_config.auto_start_server is False
 
     def test_configure_raises_if_runtime_exists(self):
         mod = _get_run_module()
@@ -193,7 +192,7 @@ class TestConfigure:
         from conductor.ai.agents.run import configure
 
         with pytest.raises(RuntimeError, match="configure.*must be called before"):
-            configure(auto_start_server=False)
+            configure(server_url="https://custom:9090/api")
 
     def test_configure_raises_for_unknown_field(self):
         from conductor.ai.agents.run import configure
@@ -204,7 +203,7 @@ class TestConfigure:
     def test_shutdown_preserves_config(self):
         from conductor.ai.agents.run import configure, shutdown
 
-        configure(auto_start_server=False)
+        configure(server_url="https://custom:9090/api")
 
         mod = _get_run_module()
         mod._default_runtime = MagicMock()
@@ -212,7 +211,7 @@ class TestConfigure:
 
         assert mod._default_runtime is None
         assert mod._default_config is not None
-        assert mod._default_config.auto_start_server is False
+        assert mod._default_config.server_url == "https://custom:9090/api"
 
 
 class TestDeployFunction:

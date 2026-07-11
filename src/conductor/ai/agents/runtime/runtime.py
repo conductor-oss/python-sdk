@@ -20,10 +20,13 @@ import re
 import threading
 import time
 import uuid
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+
+if TYPE_CHECKING:
+    from conductor.ai.agents.runtime.config import AgentConfig
+    from conductor.client.configuration.configuration import Configuration
 
 from conductor.ai.agents.agent import Agent
-from conductor.ai.agents.exceptions import _raise_api_error
 from conductor.ai.agents.result import (
     AgentEvent,
     AgentHandle,
@@ -36,7 +39,7 @@ from conductor.ai.agents.result import (
     FinishReason,
     TokenUsage,
 )
-from conductor.ai.agents.runtime.http_client import AgentClient, SSEUnavailableError
+from conductor.client.agent_client import SSEUnavailableError
 
 logger = logging.getLogger("conductor.ai.agents.runtime")
 
@@ -63,6 +66,20 @@ def _resolve_retry_logic(policy: str) -> str:
     )
 
 
+def _credential_names(credentials: Any) -> List[str]:
+    """Extract the string secret names from a tool/agent ``credentials`` list.
+
+    Entries may be plain names or objects exposing a ``name`` attribute; anything
+    else is ignored. Order-preserving and de-duplicated.
+    """
+    names: List[str] = []
+    for c in credentials or []:
+        n = c if isinstance(c, str) else getattr(c, "name", None)
+        if isinstance(n, str) and n and n not in names:
+            names.append(n)
+    return names
+
+
 def _default_task_def(
     name: str,
     *,
@@ -70,6 +87,7 @@ def _default_task_def(
     retry_count: int = 2,
     retry_delay_seconds: int = 2,
     retry_policy: str = "linear_backoff",
+    runtime_metadata: Optional[List[str]] = None,
 ) -> Any:
     """Create a TaskDef with standard retry policy for agent worker tasks.
 
@@ -80,6 +98,11 @@ def _default_task_def(
     within this time, Conductor marks the task as timed out and retries.
     Kept short to detect dead workers quickly; lease extension heartbeats
     (at 80% of this value) keep long-running tasks alive automatically.
+
+    runtime_metadata: declared secret names the host resolves at poll time and
+    delivers on the wire-only ``Task.runtimeMetadata``. Stamped here so the
+    SDK's registration (``overwrite_task_def=True``) does not wipe the value
+    the server compiles from the tool's credentials.
     """
     from conductor.client.http.models.task_def import TaskDef
 
@@ -90,16 +113,19 @@ def _default_task_def(
     td.timeout_seconds = 0
     td.response_timeout_seconds = response_timeout_seconds
     td.timeout_policy = "RETRY"
+    if runtime_metadata:
+        td.runtime_metadata = list(runtime_metadata)
     return td
 
 
-def _passthrough_task_def(name: str) -> Any:
+def _passthrough_task_def(name: str, *, runtime_metadata: Optional[List[str]] = None) -> Any:
     """Create a TaskDef for framework passthrough workers.
 
     Timeout is 0 (no timeout) — the agent configuration controls execution
     duration, not the task definition.
 
     response_timeout_seconds is 10s: same reasoning as _default_task_def.
+    ``runtime_metadata``: see :func:`_default_task_def`.
     """
     from conductor.client.http.models.task_def import TaskDef
 
@@ -110,6 +136,8 @@ def _passthrough_task_def(name: str) -> Any:
     td.timeout_seconds = 0
     td.response_timeout_seconds = 10
     td.timeout_policy = "RETRY"
+    if runtime_metadata:
+        td.runtime_metadata = list(runtime_metadata)
     return td
 
 
@@ -238,7 +266,7 @@ def _normalize_handoff_target(task_ref: str) -> str:
     return name
 
 
-# Backward compat alias — SSEUnavailableError is now in http_client
+# Backward compat alias — SSEUnavailableError is now in conductor.client.agent_client
 _SSEUnavailableError = SSEUnavailableError
 
 
@@ -317,66 +345,45 @@ class AgentRuntime:
             result = runtime.run(agent, "Hello!")
             print(result.output)
 
-    Connection params can be passed directly or loaded from environment
-    variables (``AGENTSPAN_SERVER_URL``, ``AGENTSPAN_AUTH_KEY``,
-    ``AGENTSPAN_AUTH_SECRET``).
+    Like every other client, server connection comes from the standard
+    :class:`~conductor.client.configuration.configuration.Configuration`
+    (``CONDUCTOR_SERVER_URL`` → ``AGENTSPAN_SERVER_URL``, ``CONDUCTOR_AUTH_KEY``/
+    ``CONDUCTOR_AUTH_SECRET`` when not passed explicitly)::
+
+        from conductor.client.configuration.configuration import Configuration
+
+        with AgentRuntime(Configuration(server_api_url="https://prod:8080/api")) as runtime:
+            ...
 
     Args:
-        server_url: AgentSpan server API URL.  Overrides env and *config*.
-        api_key: Agentspan auth key.  Overrides env and *config*.
-        api_secret: Agentspan auth secret.  Overrides env and *config*.
-        config: Optional :class:`AgentConfig` for full control over all
-            settings.  Explicit keyword params take precedence over values
-            in *config*.
+        configuration: The conductor :class:`Configuration` (host + auth).
+            Defaults to ``Configuration()``, which resolves from the environment.
+        settings: Optional :class:`AgentConfig` with runtime *behaviour* knobs
+            (worker threads/polling, streaming, integrations, log level).
+            Defaults to :meth:`AgentConfig.from_env`. Connection fields on it
+            are ignored — *configuration* is the single source of server config.
     """
 
     def __init__(
         self,
+        configuration: Optional[Configuration] = None,
         *,
-        server_url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        api_secret: Optional[str] = None,
-        config: Optional[Any] = None,
+        settings: Optional[AgentConfig] = None,
     ) -> None:
-        from dataclasses import replace
-
         from conductor.ai.agents.runtime.config import AgentConfig
+        from conductor.client.configuration.configuration import Configuration
 
-        base = config if config is not None else AgentConfig.from_env()
-        overrides: dict = {}
-        if server_url is not None:
-            overrides["server_url"] = server_url
-        if api_key is not None:
-            overrides["api_key"] = api_key
-        if api_secret is not None:
-            overrides["auth_secret"] = api_secret
-        self._config = replace(base, **overrides) if overrides else base
+        # Server config (host, auth, token management) comes exclusively from
+        # the standard conductor Configuration — the same object ApiClient uses.
+        self._conductor_config = configuration if configuration is not None else Configuration()
+        # Runtime behaviour knobs only; connection fields are ignored.
+        self._config = settings if settings is not None else AgentConfig.from_env()
 
-        # Auto-start the server if it targets localhost and is not responding.
-        if self._config.auto_start_server:
-            from conductor.ai.agents.runtime.server import ensure_server_running
-
-            ensure_server_running(self._config.server_url)
-        else:
-            # Fail fast with a clear message when auto-start is disabled
-            # and the server is unreachable.
-            from conductor.ai.agents.runtime.server import _is_server_ready
-
-            if not _is_server_ready(self._config.server_url):
-                import sys
-
-                print(
-                    f"\n[agentspan] Error: Cannot connect to the Agentspan server at "
-                    f"{self._config.server_url}\n"
-                    f"[agentspan] The server does not appear to be running and "
-                    f"auto_start_server is disabled.\n"
-                    f"[agentspan] Please ensure the server is running at the configured "
-                    f"URL, or remove AGENTSPAN_AUTO_START_SERVER=false to start it automatically.",
-                    file=sys.stderr,
-                )
-                raise SystemExit(1)
-
-        self._conductor_config = self._config.to_conductor_configuration()
+        # Convenience credentials for worker subprocesses (picklable strings —
+        # a live ApiClient can't cross a process boundary).
+        auth = self._conductor_config.authentication_settings
+        self._auth_key = (auth.key_id if auth else "") or ""
+        self._auth_secret = (auth.key_secret if auth else "") or ""
 
         from conductor.client.orkes_clients import OrkesClients
 
@@ -412,14 +419,13 @@ class AgentRuntime:
             getattr(logging, self._config.log_level.upper(), logging.INFO)
         )
 
-        # Control-plane client for the agent API. Bound to this runtime so it
-        # shares the runtime's Conductor clients and schedule surface. It is
-        # both the async HTTP client (compile/start/status/respond/stream) and
-        # the control-plane run/deploy/schedule entry point exposed via
-        # :attr:`client`.
-        self._http = AgentClient(runtime=self)
+        # Control-plane client for the agent API (start/deploy/compile/status/
+        # execution/respond/stop/signal/SSE). Built from the same Conductor
+        # clients (and hence the same Configuration + token cache) as the rest of
+        # the runtime, and exposed via :attr:`client`.
+        self._agent_client = self._clients.get_agent_client()
 
-        logger.info("AgentRuntime initialized (server=%s)", self._config.server_url)
+        logger.info("AgentRuntime initialized (server=%s)", self._conductor_config.host)
 
     # ── Sync/async bridge ────────────────────────────────────────────
 
@@ -443,40 +449,6 @@ class AgentRuntime:
         return asyncio.run(coro)
 
     # ── Agent Runtime API helpers ────────────────────────────────────
-
-    def _agent_api_url(self, path: str) -> str:
-        """Build a URL for the agent runtime API."""
-        base = self._config.server_url.rstrip("/")
-        return f"{base}/agent{path}"
-
-    def _agent_api_token(self) -> "Optional[str]":
-        """Resolve the bearer token for agent runtime API calls (sent as X-Authorization).
-
-        Prefers an explicit ``api_key`` (already a token). Otherwise mints and caches a JWT
-        from ``auth_key``/``auth_secret`` via ``POST {server}/token`` — the orkes internal-key
-        (service-account) auth path, the same exchange the worker client and CLI use. Returns
-        ``None`` when no credentials are configured (anonymous / security-disabled servers).
-        """
-        from conductor.ai.agents._internal.token_utils import resolve_agent_api_token
-
-        return resolve_agent_api_token(
-            self._config.server_url,
-            api_key=self._config.api_key,
-            auth_key=self._config.auth_key,
-            auth_secret=self._config.auth_secret,
-        )
-
-    def _agent_api_headers(self, content_type: str = "application/json") -> Dict[str, str]:
-        """Build headers for agent runtime API requests."""
-        headers: Dict[str, str] = {}
-        if content_type:
-            headers["Content-Type"] = content_type
-        token = self._agent_api_token()
-        if token:
-            # orkes accepts X-Authorization (and Authorization: Bearer); the standalone
-            # anonymous server ignores it. X-Authorization matches the UI/CLI convention.
-            headers["X-Authorization"] = token
-        return headers
 
     def _register_workflow_credentials(
         self, execution_id: str, credentials: Optional[List[str]]
@@ -577,8 +549,6 @@ class AgentRuntime:
         Returns:
             The execution ID.
         """
-        import requests as req_lib
-
         pre_deployed_skills = self._pre_deploy_nested_skills(agent)
 
         from conductor.ai.agents.config_serializer import AgentConfigSerializer
@@ -608,13 +578,7 @@ class AgentRuntime:
             # discarded when this is set.
             payload["static_plan"] = static_plan
 
-        url = self._agent_api_url("/start")
-        resp = req_lib.post(url, json=payload, headers=self._agent_api_headers(), timeout=30)
-        try:
-            resp.raise_for_status()
-        except req_lib.exceptions.HTTPError as exc:
-            _raise_api_error(exc, url=url)
-        data = resp.json()
+        data = self._agent_client.start_agent(payload)
         execution_id = data.get("executionId", "")
         required_workers: Optional[set] = None
         if "requiredWorkers" in data:
@@ -667,7 +631,7 @@ class AgentRuntime:
         if run_id:
             payload["runId"] = run_id
 
-        data = await self._http.start_agent(payload)
+        data = await self._agent_client.start_agent_async(payload)
         execution_id = data.get("executionId", "")
         required_workers: Optional[set] = None
         if "requiredWorkers" in data:
@@ -708,7 +672,7 @@ class AgentRuntime:
         if credentials:
             payload["credentials"] = credentials
 
-        data = await self._http.start_agent(payload)
+        data = await self._agent_client.start_agent_async(payload)
         execution_id = data.get("executionId", "")
         logger.info(
             "Started %s framework agent via server (execution_id=%s)",
@@ -757,25 +721,12 @@ class AgentRuntime:
         raw ``WorkflowDef`` that implements the interface the runtime
         needs (``to_workflow_def()``, ``start_workflow_with_input()``).
         """
-        import requests
-
         from conductor.ai.agents.config_serializer import AgentConfigSerializer
 
         serializer = AgentConfigSerializer()
         config_json = serializer.serialize(agent)
 
-        server_url = self._config.server_url.rstrip("/")
-        url = f"{server_url}/agent/compile"
-
-        headers = self._agent_api_headers()
-
-        payload = {"agentConfig": config_json}
-        response = requests.post(url, json=payload, headers=headers, timeout=30)
-        try:
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as exc:
-            _raise_api_error(exc, url=url)
-        data = response.json()
+        data = self._agent_client.compile_agent({"agentConfig": config_json})
 
         workflow_def_dict = data.get("workflowDef", data)
 
@@ -791,7 +742,7 @@ class AgentRuntime:
         serializer = AgentConfigSerializer()
         config_json = serializer.serialize(agent)
 
-        data = await self._http.compile_agent({"agentConfig": config_json})
+        data = await self._agent_client.compile_agent_async({"agentConfig": config_json})
         workflow_def_dict = data.get("workflowDef", data)
 
         return ServerCompiledWorkflow(
@@ -1121,9 +1072,9 @@ class AgentRuntime:
                 worker_fn = make_claude_agent_sdk_worker(
                     cc_opts,
                     agent.name,
-                    self._config.server_url,
-                    self._config.auth_key or "",
-                    self._config.auth_secret or "",
+                    self._conductor_config.host,
+                    self._auth_key,
+                    self._auth_secret,
                 )
                 worker = WorkerInfo(
                     name=agent.name,
@@ -1290,9 +1241,9 @@ class AgentRuntime:
                     worker_func = make_claude_agent_sdk_worker(
                         cc_options,
                         sub.name,
-                        self._config.server_url,
-                        self._config.auth_key or "",
-                        self._config.auth_secret or "",
+                        self._conductor_config.host,
+                        self._auth_key,
+                        self._auth_secret,
                     )
                     worker = WorkerInfo(
                         name=sub.name,
@@ -2092,8 +2043,6 @@ class AgentRuntime:
             The raw server response dict with ``workflowDef`` and
             ``requiredWorkers`` keys.
         """
-        import requests
-
         from conductor.ai.agents.frameworks.serializer import detect_framework
 
         framework = detect_framework(agent)
@@ -2112,17 +2061,7 @@ class AgentRuntime:
             config_json = serializer.serialize(agent)
             payload = {"agentConfig": config_json}
 
-        server_url = self._config.server_url.rstrip("/")
-        url = f"{server_url}/agent/compile"
-
-        headers = self._agent_api_headers()
-
-        response = requests.post(url, json=payload, headers=headers, timeout=30)
-        try:
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as exc:
-            _raise_api_error(exc, url=url)
-        return response.json()
+        return self._agent_client.compile_agent(payload)
 
     # ── Deploy (CI/CD) ─────────────────────────────────────────────
 
@@ -2222,13 +2161,13 @@ class AgentRuntime:
     def client(self) -> Any:
         """The control-plane :class:`AgentClient` for this runtime.
 
-        Exposes ``run``/``run_async``, ``start``/``start_async``, ``deploy``,
-        ``schedule``, the schedule lifecycle (:attr:`AgentClient.schedules`),
-        and the raw ``/agent/*`` endpoints. **Control-plane only** — its
-        ``run`` does NOT manage local tool workers (use :meth:`run` on the
-        runtime for agents with local ``@tool`` functions).
+        Exposes the ``/agent/*`` endpoints (start/deploy/compile/status/
+        execution/respond/stop/signal/SSE) and the schedule lifecycle
+        (:attr:`AgentClient.schedules`). Built on the shared ``ApiClient`` token
+        machinery. For running agents with local ``@tool`` functions use
+        :meth:`run` on the runtime, which manages workers.
         """
-        return self._http
+        return self._agent_client
 
     def schedules_client(self) -> Any:
         """Return the shared :class:`SchedulerClient` for this runtime.
@@ -2242,8 +2181,6 @@ class AgentRuntime:
 
     def _deploy_via_server(self, agent: Any, *, framework: Optional[str] = None) -> str:
         """Deploy agent via /api/agent/deploy.  Returns registered name."""
-        import requests as req_lib
-
         if framework:
             from conductor.ai.agents.frameworks.serializer import serialize_agent
 
@@ -2258,13 +2195,7 @@ class AgentRuntime:
             serializer = AgentConfigSerializer()
             payload = {"agentConfig": serializer.serialize(agent)}
 
-        url = self._agent_api_url("/deploy")
-        resp = req_lib.post(url, json=payload, headers=self._agent_api_headers(), timeout=30)
-        try:
-            resp.raise_for_status()
-        except req_lib.exceptions.HTTPError as exc:
-            _raise_api_error(exc, url=url)
-        deploy_data = resp.json()
+        deploy_data = self._agent_client.deploy_agent(payload)
         return deploy_data.get("agentName", "")
 
     async def _deploy_via_server_async(self, agent: Any, *, framework: Optional[str] = None) -> str:
@@ -2283,7 +2214,7 @@ class AgentRuntime:
             serializer = AgentConfigSerializer()
             payload = {"agentConfig": serializer.serialize(agent)}
 
-        data = await self._http.deploy_agent(payload)
+        data = await self._agent_client.deploy_agent_async(payload)
         return data.get("agentName", "")
 
     # ── Serve (runtime worker service) ─────────────────────────────
@@ -3026,8 +2957,6 @@ class AgentRuntime:
         context: Optional[Dict[str, Any]] = None,
     ) -> str:
         """POST to /api/agent/start with framework + rawConfig."""
-        import requests as req_lib
-
         payload: Dict[str, Any] = {
             "framework": framework,
             "rawConfig": raw_config,
@@ -3041,13 +2970,7 @@ class AgentRuntime:
         if credentials:
             payload["credentials"] = credentials
 
-        url = self._agent_api_url("/start")
-        resp = req_lib.post(url, json=payload, headers=self._agent_api_headers(), timeout=30)
-        try:
-            resp.raise_for_status()
-        except req_lib.exceptions.HTTPError as exc:
-            _raise_api_error(exc, url=url)
-        data = resp.json()
+        data = self._agent_client.start_agent(payload)
         execution_id = data.get("executionId", "")
         logger.info(
             "Started %s framework agent via server (execution_id=%s)",
@@ -3076,7 +2999,7 @@ class AgentRuntime:
             probe_spawn_safety(wrapper, w.name, group="tools")
             worker_task(
                 task_definition_name=w.name,
-                task_def=_default_task_def(w.name),
+                task_def=_default_task_def(w.name, runtime_metadata=_credential_names(credentials)),
                 register_task_def=True,
                 overwrite_task_def=True,
                 lease_extend_enabled=True,
@@ -3117,9 +3040,13 @@ class AgentRuntime:
         worker.func.__annotations__ = {"task": object, "return": object}
 
         probe_spawn_safety(worker.func, worker.name, group="framework")
+        # Credentials are baked into the passthrough entry (PassthroughWorkerEntry.
+        # credential_names); stamp them onto the TaskDef so the host resolves them
+        # at poll time and this registration doesn't wipe them.
+        cred_names = _credential_names(getattr(worker.func, "credential_names", None))
         worker_task(
             task_definition_name=worker.name,
-            task_def=_passthrough_task_def(worker.name),
+            task_def=_passthrough_task_def(worker.name, runtime_metadata=cred_names),
             register_task_def=True,
             overwrite_task_def=True,
             thread_count=self._config.worker_thread_count,
@@ -3229,9 +3156,9 @@ class AgentRuntime:
         self, agent_obj: Any, framework: str, name: str, credentials: Optional[List[str]] = None
     ) -> Any:
         """Build the pre-wrapped tool_worker function for a passthrough worker."""
-        server_url = self._config.server_url
-        auth_key = self._config.auth_key or ""
-        auth_secret = self._config.auth_secret or ""
+        server_url = self._conductor_config.host
+        auth_key = self._auth_key
+        auth_secret = self._auth_secret
 
         # All three return a picklable PassthroughWorkerEntry (idea-5 spawn
         # safety) that rebuilds the real worker per process. For langgraph/
@@ -3505,129 +3432,23 @@ class AgentRuntime:
         :class:`AgentEvent` objects as they arrive.  Auto-reconnects with
         ``Last-Event-ID`` if the connection drops.
 
-        If the server connects but only sends heartbeats (no real events)
-        for ``_SSE_NO_EVENT_TIMEOUT`` seconds, raises
-        :class:`_SSEUnavailableError` so the caller can fall back to polling.
+        If the server connects but only sends heartbeats (no real events),
+        the underlying client raises :class:`_SSEUnavailableError` so the caller
+        can fall back to polling.
 
         Raises:
             _SSEUnavailableError: If the server doesn't support SSE
                 (non-200 response, connection timeout, or heartbeat-only stream).
         """
-        import requests
-
-        _SSE_NO_EVENT_TIMEOUT = 15  # seconds to wait for first real event
-
-        server_url = self._config.server_url.rstrip("/")
-        url = f"{server_url}/agent/stream/{execution_id}"
-        headers: Dict[str, str] = {"Accept": "text/event-stream"}
-        token = self._agent_api_token()
-        if token:
-            headers["X-Authorization"] = token
-
-        last_event_id: Optional[str] = None
-        first_connect = True
-        got_real_event = False
-
-        while True:
-            try:
-                req_headers = dict(headers)
-                if last_event_id is not None:
-                    req_headers["Last-Event-ID"] = last_event_id
-
-                with requests.get(url, headers=req_headers, stream=True, timeout=(5, 30)) as resp:
-                    if resp.status_code != 200:
-                        if first_connect:
-                            raise _SSEUnavailableError(f"Server returned {resp.status_code}")
-                        # Reconnection failed — stop
-                        logger.warning(
-                            "SSE reconnect failed (status=%s), stopping stream",
-                            resp.status_code,
-                        )
-                        return
-
-                    first_connect = False
-                    connect_time = time.monotonic()
-
-                    for sse_event in self._parse_sse(resp.iter_lines()):
-                        # Heartbeat marker — check timeout
-                        if sse_event.get("_heartbeat"):
-                            if (
-                                not got_real_event
-                                and time.monotonic() - connect_time > _SSE_NO_EVENT_TIMEOUT
-                            ):
-                                raise _SSEUnavailableError(
-                                    "SSE connected but no events received "
-                                    f"(only heartbeats for "
-                                    f"{_SSE_NO_EVENT_TIMEOUT}s)"
-                                )
-                            continue
-
-                        if sse_event.get("id"):
-                            last_event_id = sse_event["id"]
-
-                        agent_event = self._sse_to_agent_event(sse_event, execution_id)
-                        if agent_event is not None:
-                            got_real_event = True
-                            yield agent_event
-                            if agent_event.type in (
-                                EventType.DONE,
-                                EventType.ERROR,
-                            ):
-                                return
-
-                # Stream ended cleanly (server completed the emitter)
-                return
-
-            except _SSEUnavailableError:
-                raise
-            except Exception as e:
-                if first_connect:
-                    raise _SSEUnavailableError(str(e))
-                logger.warning("SSE connection lost (%s), reconnecting in 1s...", e)
-                time.sleep(1)
-
-    @staticmethod
-    def _parse_sse(lines: Iterator) -> Iterator[Dict[str, Any]]:
-        """Parse SSE wire format into event dicts.
-
-        Comment lines (heartbeats) yield a ``{"_heartbeat": True}`` marker
-        so callers can implement timeout logic even when no real events
-        are being emitted.
-        """
-        event_type: Optional[str] = None
-        event_id: Optional[str] = None
-        data_lines: List[str] = []
-
-        for raw_line in lines:
-            line = raw_line.decode("utf-8") if isinstance(raw_line, bytes) else raw_line
-
-            if line.startswith(":"):
-                yield {"_heartbeat": True}
-                continue  # Comment (heartbeat)
-            if line == "":
-                # End of event
-                if data_lines:
-                    data_str = "\n".join(data_lines)
-                    try:
-                        data = json.loads(data_str)
-                    except (json.JSONDecodeError, ValueError):
-                        data = {"content": data_str}
-                    yield {
-                        "event": event_type,
-                        "id": event_id,
-                        "data": data,
-                    }
-                event_type = None
-                event_id = None
-                data_lines = []
-                continue
-
-            if line.startswith("event:"):
-                event_type = line[6:].strip()
-            elif line.startswith("id:"):
-                event_id = line[3:].strip()
-            elif line.startswith("data:"):
-                data_lines.append(line[5:].strip())
+        # Transport, auth, reconnect and heartbeat detection live in the agent
+        # client; the runtime only maps raw events to AgentEvent and stops on
+        # DONE/ERROR.
+        for sse_event in self._agent_client.stream_sse(execution_id):
+            agent_event = self._sse_to_agent_event(sse_event, execution_id)
+            if agent_event is not None:
+                yield agent_event
+                if agent_event.type in (EventType.DONE, EventType.ERROR):
+                    return
 
     @staticmethod
     def _sse_to_agent_event(sse_event: Dict[str, Any], execution_id: str) -> Optional[AgentEvent]:
@@ -4341,7 +4162,7 @@ class AgentRuntime:
 
     async def _stream_sse_async(self, execution_id: str) -> AsyncIterator[AgentEvent]:
         """Async version of :meth:`_stream_sse`."""
-        async for sse_event in self._http.stream_sse(execution_id):
+        async for sse_event in self._agent_client.stream_sse_async(execution_id):
             agent_event = self._sse_to_agent_event(sse_event, execution_id)
             if agent_event is not None:
                 yield agent_event
@@ -4718,8 +4539,8 @@ class AgentRuntime:
             if self._workers_started and self._worker_manager is not None:
                 self._worker_manager.stop()
                 self._workers_started = False
-            if self._http is not None:
-                await self._http.close()
+            if self._agent_client is not None:
+                await self._agent_client.close_async()
             self._is_shutdown = True
 
     # ── Status / interaction ────────────────────────────────────────
@@ -4735,15 +4556,7 @@ class AgentRuntime:
         Returns:
             An :class:`AgentStatus`.
         """
-        import requests as req_lib
-
-        url = self._agent_api_url(f"/{execution_id}/status")
-        resp = req_lib.get(url, headers=self._agent_api_headers(content_type=""), timeout=30)
-        try:
-            resp.raise_for_status()
-        except req_lib.exceptions.HTTPError as exc:
-            _raise_api_error(exc, url=url)
-        data = resp.json()
+        data = self._agent_client.get_status(execution_id)
 
         raw_status = data.get("status", "UNKNOWN")
         is_complete = data.get("isComplete", False)
@@ -4777,15 +4590,8 @@ class AgentRuntime:
             execution_id: The execution ID.
             output: Any JSON-serialisable value to pass as the task output.
         """
-        import requests as req_lib
-
-        url = self._agent_api_url(f"/{execution_id}/respond")
         body = output if isinstance(output, dict) else {"output": output}
-        resp = req_lib.post(url, json=body, headers=self._agent_api_headers(), timeout=30)
-        try:
-            resp.raise_for_status()
-        except req_lib.exceptions.HTTPError as exc:
-            _raise_api_error(exc, url=url)
+        self._agent_client.respond(execution_id, body)
         logger.info("Responded to execution %s", execution_id)
 
     def approve(self, execution_id: str) -> None:
@@ -4921,14 +4727,7 @@ class AgentRuntime:
         Args:
             execution_id: The Conductor execution ID.
         """
-        import requests as req_lib
-
-        url = self._agent_api_url(f"/{execution_id}/stop")
-        resp = req_lib.post(url, headers=self._agent_api_headers(), timeout=30)
-        try:
-            resp.raise_for_status()
-        except req_lib.exceptions.HTTPError as exc:
-            _raise_api_error(exc, url=url)
+        self._agent_client.stop(execution_id)
 
         # Also unblock any blocking PULL_WORKFLOW_MESSAGES wait.
         try:
@@ -4954,16 +4753,7 @@ class AgentRuntime:
             execution_id: The Conductor execution ID.
             message: The signal text.  Empty string clears the signal.
         """
-        import requests as req_lib
-
-        url = self._agent_api_url(f"/{execution_id}/signal")
-        resp = req_lib.post(
-            url, json={"message": message}, headers=self._agent_api_headers(), timeout=30
-        )
-        try:
-            resp.raise_for_status()
-        except req_lib.exceptions.HTTPError as exc:
-            _raise_api_error(exc, url=url)
+        self._agent_client.signal(execution_id, message)
 
     async def resume_async(
         self,
@@ -4999,7 +4789,7 @@ class AgentRuntime:
 
     async def get_status_async(self, execution_id: str) -> AgentStatus:
         """Async version of :meth:`get_status`."""
-        data = await self._http.get_status(execution_id)
+        data = await self._agent_client.get_status_async(execution_id)
 
         raw_status = data.get("status", "UNKNOWN")
         is_complete = data.get("isComplete", False)
@@ -5023,7 +4813,7 @@ class AgentRuntime:
     async def respond_async(self, execution_id: str, output: Any) -> None:
         """Async version of :meth:`respond`."""
         body = output if isinstance(output, dict) else {"output": output}
-        await self._http.respond(execution_id, body)
+        await self._agent_client.respond_async(execution_id, body)
         logger.info("Responded to execution %s (async)", execution_id)
 
     async def approve_async(self, execution_id: str) -> None:
@@ -5063,7 +4853,7 @@ class AgentRuntime:
 
     async def stop_async(self, execution_id: str) -> None:
         """Async version of :meth:`stop`."""
-        await self._http.stop(execution_id)
+        await self._agent_client.stop_async(execution_id)
         # Also unblock any blocking PULL_WORKFLOW_MESSAGES wait.
         try:
             loop = asyncio.get_event_loop()
@@ -5075,16 +4865,13 @@ class AgentRuntime:
 
     async def signal_async(self, execution_id: str, message: str) -> None:
         """Async version of :meth:`signal`."""
-        await self._http.signal(execution_id, message)
+        await self._agent_client.signal_async(execution_id, message)
 
     # ── Session continuity helpers ────────────────────────────────────
 
     def _get_session_messages(self, session_id: str, agent_name: str) -> List[Dict[str, Any]]:
         """Fetch conversation messages from the most recent execution with this session_id."""
         try:
-            import requests as req_lib
-
-            url = self._agent_api_url("/executions")
             params = {
                 "agentName": agent_name,
                 "freeText": session_id,
@@ -5092,17 +4879,7 @@ class AgentRuntime:
                 "size": 5,
                 "status": "COMPLETED",
             }
-            resp = req_lib.get(
-                url,
-                params=params,
-                headers=self._agent_api_headers(content_type=""),
-                timeout=10,
-            )
-            try:
-                resp.raise_for_status()
-            except req_lib.exceptions.HTTPError as exc:
-                _raise_api_error(exc, url=url)
-            executions = resp.json().get("results", [])
+            executions = self._agent_client.list_executions(params).get("results", [])
 
             for execution in executions:
                 exec_id = execution.get("executionId")
@@ -5433,13 +5210,8 @@ class AgentRuntime:
 
     def _fetch_agent_workflow(self, execution_id: str) -> Optional[dict]:
         """Fetch an execution with its full task list from GET /api/agent/execution/{id}."""
-        import requests
-
         try:
-            url = self._agent_api_url(f"/execution/{execution_id}")
-            resp = requests.get(url, headers=self._agent_api_headers(), timeout=10)
-            resp.raise_for_status()
-            return resp.json()
+            return self._agent_client.get_execution(execution_id)
         except Exception:
             return None
 

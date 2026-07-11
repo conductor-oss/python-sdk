@@ -101,17 +101,6 @@ class TestAgentConfigFromEnv:
             # api_key is a separate field populated from AGENTSPAN_API_KEY
             assert config.api_key is None
 
-    def test_auto_start_server_defaults_true(self):
-        with mock.patch.dict(os.environ, {}, clear=True):
-            config = AgentConfig.from_env()
-            assert config.auto_start_server is True
-
-    def test_auto_start_server_env_false(self):
-        env = {"AGENTSPAN_AUTO_START_SERVER": "false"}
-        with mock.patch.dict(os.environ, env, clear=True):
-            config = AgentConfig.from_env()
-            assert config.auto_start_server is False
-
     def test_boolean_env_vars(self):
         env = {
             "AGENTSPAN_DAEMON_WORKERS": "false",
@@ -198,8 +187,7 @@ class TestLogLevelConfig:
             config = AgentConfig.from_env()
             assert config.log_level == "INFO"
 
-    @mock.patch("conductor.ai.agents.runtime.server._is_server_ready", return_value=True)
-    def test_log_level_applied_to_logger(self, mock_ready):
+    def test_log_level_applied_to_logger(self):
         """AgentRuntime.__init__ applies log_level to the conductor.ai logger."""
         import logging
 
@@ -211,7 +199,7 @@ class TestLogLevelConfig:
             with mock.patch("conductor.ai.agents.runtime.worker_manager.WorkerManager"):
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                rt = AgentRuntime(config=config)
+                rt = AgentRuntime(settings=config)
 
         assert logging.getLogger("conductor.ai").level == logging.WARNING
         # Reset to avoid affecting other tests

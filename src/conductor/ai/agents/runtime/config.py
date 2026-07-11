@@ -58,7 +58,6 @@ class AgentConfig:
         worker_thread_count: Number of threads per worker.
         auto_start_workers: Whether to auto-start worker processes.
         daemon_workers: Whether worker processes are daemon (killed on exit).
-        auto_start_server: Whether to auto-start the local server process.
         auto_register_integrations: Auto-create LLM integrations on startup.
         secret_strict_mode: When ``True``, disables env var fallback for
             credential resolution. Required credentials must come from the
@@ -74,7 +73,6 @@ class AgentConfig:
     worker_poll_interval_ms: int = 100
     worker_thread_count: int = 1
     auto_start_workers: bool = True
-    auto_start_server: bool = True
     daemon_workers: bool = True
     auto_register_integrations: bool = False
     streaming_enabled: bool = True
@@ -109,7 +107,6 @@ class AgentConfig:
             worker_poll_interval_ms=_env_int("AGENTSPAN_WORKER_POLL_INTERVAL", 100),
             worker_thread_count=_env_int("AGENTSPAN_WORKER_THREADS", 1),
             auto_start_workers=_env_bool("AGENTSPAN_AUTO_START_WORKERS", True),
-            auto_start_server=_env_bool("AGENTSPAN_AUTO_START_SERVER", True),
             daemon_workers=_env_bool("AGENTSPAN_DAEMON_WORKERS", True),
             auto_register_integrations=_env_bool("AGENTSPAN_INTEGRATIONS_AUTO_REGISTER", False),
             streaming_enabled=_env_bool("AGENTSPAN_STREAMING_ENABLED", True),
@@ -121,27 +118,3 @@ class AgentConfig:
     def api_secret(self) -> Optional[str]:
         """Alias for :attr:`auth_secret` (industry-standard naming)."""
         return self.auth_secret
-
-    def to_conductor_configuration(self) -> "Configuration":  # noqa: F821
-        """Convert to a ``conductor-python`` :class:`Configuration` object."""
-        from conductor.client.configuration.configuration import Configuration
-
-        config = Configuration(server_api_url=self.server_url)
-        # Propagate our log level to the Conductor logger process.
-        # Configuration.log_level has no public setter (only debug=True/False),
-        # so we write the private attribute directly.
-        import logging as _logging
-
-        config._Configuration__log_level = getattr(_logging, self.log_level.upper(), _logging.INFO)
-        # Prefer api_key; fall back to auth_key for backward compat
-        effective_key = self.api_key or self.auth_key
-        if effective_key:
-            from conductor.client.configuration.settings.authentication_settings import (
-                AuthenticationSettings,
-            )
-
-            config.authentication_settings = AuthenticationSettings(
-                key_id=effective_key,
-                key_secret=self.auth_secret or "",
-            )
-        return config

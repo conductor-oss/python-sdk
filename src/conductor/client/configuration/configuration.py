@@ -38,7 +38,7 @@ class Configuration:
         elif base_url is not None:
             self.host = base_url + "/api"
         else:
-            self.host = os.getenv("CONDUCTOR_SERVER_URL")
+            self.host = os.getenv("CONDUCTOR_SERVER_URL") or os.getenv("AGENTSPAN_SERVER_URL")
 
         if self.host is None or self.host == "":
             self.host = "http://localhost:8080/api"

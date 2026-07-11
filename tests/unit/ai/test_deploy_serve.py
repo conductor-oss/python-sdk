@@ -21,7 +21,7 @@ def _make_runtime():
                 server_url="http://fake:8080",
                 auto_start_workers=False,
             )
-            return AgentRuntime(config=config)
+            return AgentRuntime(settings=config)
 
 
 # ── Deploy tests ──────────────────────────────────────────────────────

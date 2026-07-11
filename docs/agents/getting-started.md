@@ -60,7 +60,6 @@ the output if you prefer.
 | `AGENTSPAN_WORKER_POLL_INTERVAL` | `100` | Worker poll interval (ms) |
 | `AGENTSPAN_WORKER_THREADS` | `1` | Worker thread count |
 | `AGENTSPAN_AUTO_START_WORKERS` | `true` | Auto-start local tool workers |
-| `AGENTSPAN_AUTO_START_SERVER` | `true` | Auto-start a local server if none is reachable |
 | `AGENTSPAN_DAEMON_WORKERS` | `true` | Run workers as daemon threads |
 | `AGENTSPAN_INTEGRATIONS_AUTO_REGISTER` | `false` | Auto-register provider integrations |
 | `AGENTSPAN_STREAMING_ENABLED` | `true` | Enable SSE streaming |

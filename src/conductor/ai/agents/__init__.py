@@ -147,33 +147,28 @@ from conductor.ai.agents.skill import (
 )
 
 
-def resolve_credentials(input_data: dict, names: list) -> dict:
-    """Resolve credentials from Conductor task input data.
+def resolve_credentials(task: object, names: list) -> dict:
+    """Resolve declared credentials for an external (non-``@tool``) worker.
 
-    For external workers that need to resolve credentials from the
-    agentspan credential store. Extracts the execution token from
-    ``__agentspan_ctx__`` in the task input and calls the server.
+    Secured hosts resolve a worker's declared ``TaskDef.runtimeMetadata`` secret
+    names at poll time and deliver the values on the wire-only
+    ``Task.runtimeMetadata`` (conductor-oss PR #1255). This reads those values off
+    the polled ``task`` — there is no separate fetch call or execution token.
 
     Args:
-        input_data: The Conductor task's ``input_data`` dict.
-        names: Credential names to resolve.
+        task: The Conductor ``Task`` object delivered to the worker.
+        names: Credential names to resolve (must be declared on the tool/agent so
+            the server resolves them).
 
     Returns:
         Dict mapping credential name to resolved plaintext value.
+
+    Raises:
+        CredentialNotFoundError: If any declared name was not delivered by the host.
     """
-    from conductor.ai.agents.runtime.config import AgentConfig
-    from conductor.ai.agents.runtime.credentials.fetcher import WorkerCredentialFetcher
+    from conductor.ai.agents.runtime._dispatch import _resolve_secrets_from_task
 
-    token = None
-    ctx = input_data.get("__agentspan_ctx__")
-    if isinstance(ctx, dict):
-        token = ctx.get("execution_token")
-    elif isinstance(ctx, str):
-        token = ctx
-
-    config = AgentConfig.from_env()
-    fetcher = WorkerCredentialFetcher(server_url=config.server_url)
-    return fetcher.fetch(token, names)
+    return _resolve_secrets_from_task(task, names)
 
 
 # Agent discovery

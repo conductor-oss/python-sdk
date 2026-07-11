@@ -18,24 +18,6 @@ from conductor.ai.agents.agent import Agent
 from conductor.ai.agents.result import AgentStatus, EventType
 
 
-def _mock_requests_post(response_json=None, status_code=200):
-    """Create a mock for requests.post that returns a fake Response."""
-    mock_resp = MagicMock()
-    mock_resp.status_code = status_code
-    mock_resp.json.return_value = response_json or {}
-    mock_resp.raise_for_status.return_value = None
-    return MagicMock(return_value=mock_resp)
-
-
-def _mock_requests_get(response_json=None, status_code=200):
-    """Create a mock for requests.get that returns a fake Response."""
-    mock_resp = MagicMock()
-    mock_resp.status_code = status_code
-    mock_resp.json.return_value = response_json or {}
-    mock_resp.raise_for_status.return_value = None
-    return MagicMock(return_value=mock_resp)
-
-
 class MockWorkflowRun:
     """Mock workflow run result."""
 
@@ -65,7 +47,7 @@ class TestExtractOutput:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_extract_simple_output(self, runtime):
         agent = Agent(name="test", model="openai/gpt-4o")
@@ -103,7 +85,7 @@ class TestExtractHandoffResult:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_simple_handoff(self, runtime):
         result = {"agent_a": "Answer from A", "agent_b": None}
@@ -139,7 +121,7 @@ class TestExtractMessages:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_extracts_from_variables(self, runtime):
         msgs = [{"role": "user", "message": "Hi"}]
@@ -222,29 +204,26 @@ class TestSingletonRuntime:
 
         with patch("conductor.client.orkes_clients.OrkesClients"):
             with patch("conductor.ai.agents.runtime.worker_manager.TaskHandler", create=True):
-                with patch("conductor.ai.agents.runtime.server.ensure_server_running"):
-                    rt1 = _get_default_runtime()
-                    rt2 = _get_default_runtime()
-                    assert rt1 is rt2
+                rt1 = _get_default_runtime()
+                rt2 = _get_default_runtime()
+                assert rt1 is rt2
 
         # Cleanup
         run_module._default_runtime = None
 
 
 class TestAgentRuntimeInit:
-    """Test AgentRuntime constructor signature and resolution logic."""
+    """Test AgentRuntime constructor: Configuration for server config,
+    AgentConfig settings for runtime behaviour only."""
 
     def test_no_args_falls_back_to_env(self):
-        """AgentRuntime() with no args loads config from environment."""
+        """AgentRuntime() resolves the server via Configuration's env fallback
+        (CONDUCTOR_SERVER_URL → AGENTSPAN_SERVER_URL)."""
         import os
 
-        env_backup = {}
-        for key in ["AGENTSPAN_SERVER_URL", "AGENTSPAN_AUTH_KEY", "AGENTSPAN_AUTH_SECRET"]:
-            env_backup[key] = os.environ.pop(key, None)
-
+        keys = ["CONDUCTOR_SERVER_URL", "AGENTSPAN_SERVER_URL"]
+        env_backup = {k: os.environ.pop(k, None) for k in keys}
         os.environ["AGENTSPAN_SERVER_URL"] = "http://env-server/api"
-        os.environ["AGENTSPAN_AUTH_KEY"] = "env-key"
-        os.environ["AGENTSPAN_AUTH_SECRET"] = "env-secret"
 
         try:
             with patch("conductor.client.orkes_clients.OrkesClients"):
@@ -252,80 +231,62 @@ class TestAgentRuntimeInit:
                     from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                     rt = AgentRuntime()
-                    assert rt._config.server_url == "http://env-server/api"
-                    assert rt._config.auth_key == "env-key"
-                    assert rt._config.auth_secret == "env-secret"
+                    assert rt._conductor_config.host == "http://env-server/api"
         finally:
-            for key in ["AGENTSPAN_SERVER_URL", "AGENTSPAN_AUTH_KEY", "AGENTSPAN_AUTH_SECRET"]:
+            for key in keys:
                 os.environ.pop(key, None)
             for key, val in env_backup.items():
                 if val is not None:
                     os.environ[key] = val
 
-    def test_explicit_params(self):
-        """AgentRuntime(server_url=..., api_key=..., api_secret=...) uses explicit values."""
+    def test_explicit_configuration(self):
+        """AgentRuntime(Configuration(...)) uses the given Configuration verbatim."""
         with patch("conductor.client.orkes_clients.OrkesClients"):
             with patch("conductor.ai.agents.runtime.worker_manager.TaskHandler", create=True):
+                from conductor.client.configuration.configuration import Configuration
+                from conductor.client.configuration.settings.authentication_settings import (
+                    AuthenticationSettings,
+                )
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                rt = AgentRuntime(
-                    server_url="http://explicit/api",
-                    api_key="explicit-key",
-                    api_secret="explicit-secret",
+                configuration = Configuration(
+                    server_api_url="http://explicit/api",
+                    authentication_settings=AuthenticationSettings(
+                        key_id="explicit-key", key_secret="explicit-secret"
+                    ),
                 )
-                assert rt._config.server_url == "http://explicit/api"
-                assert rt._config.api_key == "explicit-key"
-                assert rt._config.auth_secret == "explicit-secret"
+                rt = AgentRuntime(configuration)
+                assert rt._conductor_config is configuration
+                assert rt._conductor_config.host == "http://explicit/api"
+                assert rt._auth_key == "explicit-key"
+                assert rt._auth_secret == "explicit-secret"
 
-    def test_config_object(self):
-        """AgentRuntime(config=AgentConfig(...)) uses the config object."""
-        with patch("conductor.client.orkes_clients.OrkesClients"):
-            with patch("conductor.ai.agents.runtime.worker_manager.TaskHandler", create=True):
-                from conductor.ai.agents.runtime.config import AgentConfig
-                from conductor.ai.agents.runtime.runtime import AgentRuntime
-
-                cfg = AgentConfig(
-                    server_url="http://config/api",
-                    auth_key="config-key",
-                    auth_secret="config-secret",
-                )
-                rt = AgentRuntime(config=cfg)
-                assert rt._config.server_url == "http://config/api"
-                assert rt._config.auth_key == "config-key"
-                assert rt._config.auth_secret == "config-secret"
-
-    def test_explicit_overrides_config(self):
-        """Explicit params take precedence over config object values."""
+    def test_settings_carries_behaviour_knobs(self):
+        """AgentRuntime(settings=AgentConfig(...)) applies runtime behaviour knobs."""
         with patch("conductor.client.orkes_clients.OrkesClients"):
             with patch("conductor.ai.agents.runtime.worker_manager.TaskHandler", create=True):
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                cfg = AgentConfig(
-                    server_url="http://config/api",
-                    auth_key="config-key",
-                    auth_secret="config-secret",
-                )
-                rt = AgentRuntime(config=cfg, server_url="http://override/api")
-                assert rt._config.server_url == "http://override/api"
-                # Non-overridden values come from config
-                assert rt._config.auth_key == "config-key"
-                assert rt._config.auth_secret == "config-secret"
-
-    def test_config_preserves_tuning_knobs(self):
-        """Tuning knobs from config are preserved when using explicit connection params."""
-        with patch("conductor.client.orkes_clients.OrkesClients"):
-            with patch("conductor.ai.agents.runtime.worker_manager.TaskHandler", create=True):
-                from conductor.ai.agents.runtime.config import AgentConfig
-                from conductor.ai.agents.runtime.runtime import AgentRuntime
-
-                cfg = AgentConfig(
-                    server_url="http://config/api",
-                    worker_thread_count=4,
-                )
-                rt = AgentRuntime(config=cfg, server_url="http://override/api")
-                assert rt._config.server_url == "http://override/api"
+                cfg = AgentConfig(worker_thread_count=4, auto_start_workers=False)
+                rt = AgentRuntime(settings=cfg)
                 assert rt._config.worker_thread_count == 4
+                assert rt._config.auto_start_workers is False
+
+    def test_configuration_is_single_source_of_server_config(self):
+        """Connection fields on settings are ignored — Configuration wins."""
+        with patch("conductor.client.orkes_clients.OrkesClients"):
+            with patch("conductor.ai.agents.runtime.worker_manager.TaskHandler", create=True):
+                from conductor.client.configuration.configuration import Configuration
+                from conductor.ai.agents.runtime.config import AgentConfig
+                from conductor.ai.agents.runtime.runtime import AgentRuntime
+
+                cfg = AgentConfig(server_url="http://ignored/api", auth_key="ignored")
+                rt = AgentRuntime(
+                    Configuration(server_api_url="http://wins/api"), settings=cfg
+                )
+                assert rt._conductor_config.host == "http://wins/api"
+                assert rt._auth_key == ""
 
 
 class TestAgentConfig:
@@ -368,7 +329,7 @@ class TestCorrelationId:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_run_generates_correlation_id(self, runtime):
         """Verify AgentResult.correlation_id is a valid UUID string."""
@@ -419,17 +380,13 @@ class TestRuntimeRespond:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_respond_calls_server_api(self, runtime):
-        mock_post = _mock_requests_post()
-        with patch("requests.post", mock_post):
-            runtime.respond("wf-123", {"approved": True})
+        runtime._agent_client.respond = MagicMock(return_value=None)
+        runtime.respond("wf-123", {"approved": True})
 
-            mock_post.assert_called_once()
-            call_args = mock_post.call_args
-            assert "/wf-123/respond" in call_args[0][0]
-            assert call_args[1]["json"] == {"approved": True}
+        runtime._agent_client.respond.assert_called_once_with("wf-123", {"approved": True})
 
     def test_approve_delegates_to_respond(self, runtime):
         runtime.respond = MagicMock()
@@ -453,7 +410,7 @@ class TestMediaParameter:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_run_passes_media_to_start_via_server(self, runtime):
         """Verify media URLs are passed to _start_via_server."""
@@ -536,7 +493,7 @@ class TestRuntimeLifecycle:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_shutdown_stops_workers(self, runtime):
         runtime._workers_started = True
@@ -581,7 +538,7 @@ class TestRuntimeLifecycle:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                rt = AgentRuntime(config=config)
+                rt = AgentRuntime(settings=config)
                 rt._workers_started = True
                 rt._worker_manager = MagicMock()
 
@@ -605,7 +562,7 @@ class TestHasWorkerTools:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_no_tools_no_agents(self, runtime):
         agent = Agent(name="simple", model="openai/gpt-4o")
@@ -801,7 +758,7 @@ class TestExtractTokenUsage:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_single_llm_task(self, runtime):
         with patch.object(
@@ -831,16 +788,15 @@ class TestExtractTokenUsage:
         assert usage.total_tokens == 450
 
     def test_no_llm_tasks(self, runtime):
-        task = MagicMock()
-        task.task_type = "SIMPLE"
-        task.output_data = {}
-        wf_run = MockWorkflowRun(tasks=[task])
-
-        assert runtime._extract_token_usage(wf_run) is None
+        # Execution tree has no LLM tasks / no server-computed token usage.
+        runtime._agent_client.get_execution = MagicMock(
+            return_value={"tasks": [{"taskType": "SIMPLE"}]}
+        )
+        assert runtime._extract_token_usage("wf-123") is None
 
     def test_no_tasks(self, runtime):
-        wf_run = MockWorkflowRun(tasks=[])
-        assert runtime._extract_token_usage(wf_run) is None
+        runtime._agent_client.get_execution = MagicMock(return_value={"tasks": []})
+        assert runtime._extract_token_usage("wf-123") is None
 
     def test_computes_total_when_missing(self, runtime):
         with patch.object(
@@ -866,7 +822,7 @@ class TestExtractToolCalls:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_extracts_tool_tasks(self, runtime):
         task = MagicMock()
@@ -906,14 +862,14 @@ class TestGetStatus:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def _mock_status_response(self, runtime, response_json):
-        """Patch requests.get to return a mock status response."""
-        return patch(
-            "requests.get",
-            _mock_requests_get(response_json),
-        )
+        """Drive the agent client's get_status to return a mock status dict."""
+        from contextlib import nullcontext
+
+        runtime._agent_client.get_status = MagicMock(return_value=response_json)
+        return nullcontext()
 
     def test_completed(self, runtime):
         resp = {
@@ -995,7 +951,7 @@ class TestRuntimePlan:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_plan_returns_raw_server_response(self, runtime):
         agent = Agent(name="test", model="openai/gpt-4o")
@@ -1004,10 +960,9 @@ class TestRuntimePlan:
             "requiredWorkers": [],
         }
 
-        # plan() POSTs directly to /agent/compile and returns the raw response
-        mock_post = _mock_requests_post(server_response)
-        with patch("requests.post", mock_post):
-            result = runtime.plan(agent)
+        # plan() calls compile_agent and returns the raw response
+        runtime._agent_client.compile_agent = MagicMock(return_value=server_response)
+        result = runtime.plan(agent)
 
         assert "workflowDef" in result
         assert result["workflowDef"]["name"] == "test_wf"
@@ -1017,12 +972,12 @@ class TestRuntimePlan:
         """_compile_via_server sends agentConfig wrapped in a StartRequest payload."""
         agent = Agent(name="test", model="openai/gpt-4o", instructions="Be helpful.")
 
-        mock_post = _mock_requests_post({"workflowDef": {"name": "test", "tasks": []}})
-        with patch("requests.post", mock_post):
-            runtime._compile_via_server(agent)
+        runtime._agent_client.compile_agent = MagicMock(
+            return_value={"workflowDef": {"name": "test", "tasks": []}}
+        )
+        runtime._compile_via_server(agent)
 
-        call_kwargs = mock_post.call_args
-        payload = call_kwargs[1]["json"]
+        payload = runtime._agent_client.compile_agent.call_args[0][0]
         # The payload must wrap the config in {"agentConfig": ...}
         assert "agentConfig" in payload
         assert payload["agentConfig"]["name"] == "test"
@@ -1043,7 +998,7 @@ class TestRuntimeRunGuardrails:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def _setup_run(self, runtime, output="Hello", status="COMPLETED"):
         runtime._prepare_workers = MagicMock()
@@ -1264,7 +1219,7 @@ class TestExecutionInputValidation:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_run_rejects_blank_input_without_media_or_context(self, runtime):
         agent = Agent(name="test", model="openai/gpt-4o")
@@ -1309,7 +1264,7 @@ class TestRunPopulatesToolCalls:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_run_populates_tool_calls(self, runtime):
         """run() fetches workflow execution and populates tool_calls."""
@@ -1378,6 +1333,9 @@ class TestRunPopulatesToolCalls:
         wf.variables = {}
         runtime._workflow_client.get_workflow = MagicMock(return_value=wf)
 
+        # No LLM tasks in the execution tree -> no token usage.
+        runtime._agent_client.get_execution = MagicMock(return_value={"tasks": []})
+
         result = runtime.run(agent, "Hi")
 
         assert result.tool_calls == []
@@ -1441,7 +1399,7 @@ class TestHasWorkerTools:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                rt = AgentRuntime(config=config)
+                rt = AgentRuntime(settings=config)
                 yield rt
 
     def test_regex_guardrail_only_no_workers(self, runtime):
@@ -1527,7 +1485,7 @@ class TestRuntimeStream:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_stream_yields_done_on_completion(self, runtime):
         agent = Agent(name="test", model="openai/gpt-4o")
@@ -1536,20 +1494,14 @@ class TestRuntimeStream:
         runtime._prepare_workers = MagicMock()
         runtime._start_via_server = MagicMock(return_value=("wf-stream-1", None, []))
 
-        # Mock get_workflow to return completed on first poll
-        completed_wf = MagicMock()
-        completed_wf.status = "COMPLETED"
-        completed_wf.tasks = []
-        completed_wf.output = {"result": "Final answer"}
-        runtime._workflow_client.get_workflow = MagicMock(return_value=completed_wf)
+        runtime._agent_client.stream_sse = MagicMock(
+            return_value=iter([{"event": "done", "data": {"output": "Final answer"}}])
+        )
 
         events = list(runtime.stream(agent, "Hello"))
         done_events = [e for e in events if e.type == EventType.DONE]
         assert len(done_events) == 1
         assert done_events[0].output == "Final answer"
-        runtime._workflow_client.get_workflow.assert_called_once_with(
-            "wf-stream-1", include_tasks=True
-        )
 
     def test_stream_yields_thinking_event(self, runtime):
         agent = Agent(name="test", model="openai/gpt-4o")
@@ -1557,27 +1509,16 @@ class TestRuntimeStream:
         runtime._prepare_workers = MagicMock()
         runtime._start_via_server = MagicMock(return_value=("wf-stream-2", None, []))
 
-        # First poll: LLM task running
-        running_wf = MagicMock()
-        running_wf.status = "RUNNING"
-        llm_task = MagicMock()
-        llm_task.task_id = "t1"
-        llm_task.task_type = "LLM_CHAT_COMPLETE"
-        llm_task.reference_task_name = "test_llm"
-        llm_task.status = "IN_PROGRESS"
-        llm_task.output_data = {}
-        running_wf.tasks = [llm_task]
+        runtime._agent_client.stream_sse = MagicMock(
+            return_value=iter(
+                [
+                    {"event": "thinking", "data": {"content": "let me think"}},
+                    {"event": "done", "data": {"output": "done"}},
+                ]
+            )
+        )
 
-        # Second poll: completed
-        completed_wf = MagicMock()
-        completed_wf.status = "COMPLETED"
-        completed_wf.tasks = [llm_task]
-        completed_wf.output = {"result": "done"}
-
-        runtime._workflow_client.get_workflow = MagicMock(side_effect=[running_wf, completed_wf])
-
-        with patch("time.sleep"):
-            events = list(runtime.stream(agent, "Hello"))
+        events = list(runtime.stream(agent, "Hello"))
 
         thinking = [e for e in events if e.type == EventType.THINKING]
         assert len(thinking) == 1
@@ -1588,11 +1529,9 @@ class TestRuntimeStream:
         runtime._prepare_workers = MagicMock()
         runtime._start_via_server = MagicMock(return_value=("wf-stream-err", None, []))
 
-        failed_wf = MagicMock()
-        failed_wf.status = "FAILED"
-        failed_wf.tasks = []
-        failed_wf.output = None
-        runtime._workflow_client.get_workflow = MagicMock(return_value=failed_wf)
+        runtime._agent_client.stream_sse = MagicMock(
+            return_value=iter([{"event": "error", "data": {"content": "Workflow FAILED"}}])
+        )
 
         events = list(runtime.stream(agent, "Hello"))
         error_events = [e for e in events if e.type == EventType.ERROR]
@@ -1605,21 +1544,16 @@ class TestRuntimeStream:
         runtime._prepare_workers = MagicMock()
         runtime._start_via_server = MagicMock(return_value=("wf-stream-wait", None, []))
 
-        # First poll: paused
-        paused_wf = MagicMock()
-        paused_wf.status = "PAUSED"
-        paused_wf.tasks = []
+        runtime._agent_client.stream_sse = MagicMock(
+            return_value=iter(
+                [
+                    {"event": "waiting", "data": {}},
+                    {"event": "done", "data": {"output": "resumed"}},
+                ]
+            )
+        )
 
-        # Second poll: completed
-        completed_wf = MagicMock()
-        completed_wf.status = "COMPLETED"
-        completed_wf.tasks = []
-        completed_wf.output = {"result": "resumed"}
-
-        runtime._workflow_client.get_workflow = MagicMock(side_effect=[paused_wf, completed_wf])
-
-        with patch("time.sleep"):
-            events = list(runtime.stream(agent, "Hello"))
+        events = list(runtime.stream(agent, "Hello"))
 
         waiting = [e for e in events if e.type == EventType.WAITING]
         assert len(waiting) == 1
@@ -1630,8 +1564,8 @@ class TestRuntimeStream:
         runtime._prepare_workers = MagicMock()
         runtime._start_via_server = MagicMock(return_value=("wf-stream-exc", None, []))
 
-        runtime._workflow_client.get_workflow = MagicMock(
-            side_effect=RuntimeError("connection lost")
+        runtime._agent_client.stream_sse = MagicMock(
+            return_value=iter([{"event": "error", "data": {"content": "connection lost"}}])
         )
 
         events = list(runtime.stream(agent, "Hello"))
@@ -1645,24 +1579,21 @@ class TestRuntimeStream:
         runtime._prepare_workers = MagicMock()
         runtime._start_via_server = MagicMock(return_value=("wf-stream-tool", None, []))
 
-        # Create a dispatch task with function field
-        dispatch_task = MagicMock()
-        dispatch_task.task_id = "t-dispatch"
-        dispatch_task.task_type = "SIMPLE"
-        dispatch_task.reference_task_name = "test_dispatch"
-        dispatch_task.status = "COMPLETED"
-        dispatch_task.output_data = {
-            "function": "get_weather",
-            "parameters": {"city": "NYC"},
-            "result": "72F",
-        }
-
-        completed_wf = MagicMock()
-        completed_wf.status = "COMPLETED"
-        completed_wf.tasks = [dispatch_task]
-        completed_wf.output = {"result": "It's 72F in NYC"}
-
-        runtime._workflow_client.get_workflow = MagicMock(return_value=completed_wf)
+        runtime._agent_client.stream_sse = MagicMock(
+            return_value=iter(
+                [
+                    {
+                        "event": "tool_call",
+                        "data": {"toolName": "get_weather", "args": {"city": "NYC"}},
+                    },
+                    {
+                        "event": "tool_result",
+                        "data": {"toolName": "get_weather", "result": "72F"},
+                    },
+                    {"event": "done", "data": {"output": "It's 72F in NYC"}},
+                ]
+            )
+        )
 
         events = list(runtime.stream(agent, "Hello"))
         tool_calls = [e for e in events if e.type == EventType.TOOL_CALL]
@@ -1677,19 +1608,14 @@ class TestRuntimeStream:
         runtime._prepare_workers = MagicMock()
         runtime._start_via_server = MagicMock(return_value=("wf-stream-handoff", None, []))
 
-        sub_task = MagicMock()
-        sub_task.task_id = "t-sub"
-        sub_task.task_type = "SUB_WORKFLOW"
-        sub_task.reference_task_name = "test_handoff_agent_b"
-        sub_task.status = "IN_PROGRESS"
-        sub_task.output_data = {}
-
-        completed_wf = MagicMock()
-        completed_wf.status = "COMPLETED"
-        completed_wf.tasks = [sub_task]
-        completed_wf.output = {"result": "answer from b"}
-
-        runtime._workflow_client.get_workflow = MagicMock(return_value=completed_wf)
+        runtime._agent_client.stream_sse = MagicMock(
+            return_value=iter(
+                [
+                    {"event": "handoff", "data": {"target": "agent_b"}},
+                    {"event": "done", "data": {"output": "answer from b"}},
+                ]
+            )
+        )
 
         events = list(runtime.stream(agent, "Hello"))
         handoffs = [e for e in events if e.type == EventType.HANDOFF]
@@ -1711,7 +1637,7 @@ class TestExtractStructuredOutput:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_extract_output_with_output_type_from_dict(self, runtime):
         from dataclasses import dataclass
@@ -1782,16 +1708,14 @@ class TestExtractTokenUsageEdgeCases:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_non_dict_token_usage_skipped(self, runtime):
-        """Non-dict tokenUsed value should be skipped."""
-        task = MagicMock()
-        task.task_type = "LLM_CHAT_COMPLETE"
-        task.output_data = {"tokenUsed": "not a dict"}
-        wf_run = MockWorkflowRun(tasks=[task])
-
-        assert runtime._extract_token_usage(wf_run) is None
+        """Missing/empty token usage should yield no TokenUsage."""
+        runtime._agent_client.get_execution = MagicMock(
+            return_value={"tokenUsage": {}, "tasks": []}
+        )
+        assert runtime._extract_token_usage("wf-123") is None
 
 
 # ── get_status edge cases ─────────────────────────────────────────────
@@ -1808,7 +1732,7 @@ class TestGetStatusEdgeCases:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_completed_non_dict_output(self, runtime):
         """Non-dict output in completed workflow is returned as-is."""
@@ -1819,11 +1743,8 @@ class TestGetStatusEdgeCases:
             "isWaiting": False,
             "output": "raw output",
         }
-        with patch(
-            "requests.get",
-            _mock_requests_get(resp),
-        ):
-            status = runtime.get_status("wf-1")
+        runtime._agent_client.get_status = MagicMock(return_value=resp)
+        status = runtime.get_status("wf-1")
         assert status.is_complete is True
         assert status.output == "raw output"
 
@@ -1842,7 +1763,7 @@ class TestHasWorkerToolsEdgeCases:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_with_handoffs(self, runtime):
         from conductor.ai.agents.handoff import OnTextMention
@@ -1877,14 +1798,14 @@ class TestStartViaServer:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080")
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_start_via_server_returns_execution_id(self, runtime):
         """_start_via_server returns (executionId, requiredWorkers) tuple."""
         agent = Agent(name="test", model="openai/gpt-4o")
 
-        with patch("requests.post", _mock_requests_post({"executionId": "wf-server-1"})):
-            exec_id, required_workers, _ = runtime._start_via_server(agent, "hello")
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-server-1"})
+        exec_id, required_workers, _ = runtime._start_via_server(agent, "hello")
 
         assert exec_id == "wf-server-1"
         assert required_workers is None
@@ -1894,8 +1815,8 @@ class TestStartViaServer:
         agent = Agent(name="test", model="openai/gpt-4o")
 
         resp = {"executionId": "wf-server-2", "requiredWorkers": ["agent_termination", "my_tool"]}
-        with patch("requests.post", _mock_requests_post(resp)):
-            exec_id, required_workers, _ = runtime._start_via_server(agent, "hello")
+        runtime._agent_client.start_agent = MagicMock(return_value=resp)
+        exec_id, required_workers, _ = runtime._start_via_server(agent, "hello")
 
         assert exec_id == "wf-server-2"
         assert required_workers == {"agent_termination", "my_tool"}
@@ -1904,60 +1825,50 @@ class TestStartViaServer:
         """_start_via_server includes the prompt in the payload."""
         agent = Agent(name="test", model="openai/gpt-4o")
 
-        mock_post = _mock_requests_post({"executionId": "wf-1"})
-        with patch("requests.post", mock_post):
-            runtime._start_via_server(agent, "test prompt")
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-1"})
+        runtime._start_via_server(agent, "test prompt")
 
-        call_kwargs = mock_post.call_args
-        payload = call_kwargs[1]["json"]
+        payload = runtime._agent_client.start_agent.call_args[0][0]
         assert payload["prompt"] == "test prompt"
 
     def test_start_via_server_passes_media(self, runtime):
         """_start_via_server includes media in the payload."""
         agent = Agent(name="test", model="openai/gpt-4o")
 
-        mock_post = _mock_requests_post({"executionId": "wf-1"})
-        with patch("requests.post", mock_post):
-            runtime._start_via_server(agent, "describe", media=["https://img.png"])
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-1"})
+        runtime._start_via_server(agent, "describe", media=["https://img.png"])
 
-        call_kwargs = mock_post.call_args
-        payload = call_kwargs[1]["json"]
+        payload = runtime._agent_client.start_agent.call_args[0][0]
         assert payload["media"] == ["https://img.png"]
 
     def test_start_via_server_passes_context(self, runtime):
         """_start_via_server includes context in the payload."""
         agent = Agent(name="test", model="openai/gpt-4o")
 
-        mock_post = _mock_requests_post({"executionId": "wf-1"})
-        with patch("requests.post", mock_post):
-            runtime._start_via_server(agent, "describe", context={"repo": "acme"})
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-1"})
+        runtime._start_via_server(agent, "describe", context={"repo": "acme"})
 
-        call_kwargs = mock_post.call_args
-        payload = call_kwargs[1]["json"]
+        payload = runtime._agent_client.start_agent.call_args[0][0]
         assert payload["context"] == {"repo": "acme"}
 
     def test_start_via_server_passes_idempotency_key(self, runtime):
         """Idempotency key is included in the payload when provided."""
         agent = Agent(name="test", model="openai/gpt-4o")
 
-        mock_post = _mock_requests_post({"executionId": "wf-1"})
-        with patch("requests.post", mock_post):
-            runtime._start_via_server(agent, "hi", idempotency_key="idem-123")
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-1"})
+        runtime._start_via_server(agent, "hi", idempotency_key="idem-123")
 
-        call_kwargs = mock_post.call_args
-        payload = call_kwargs[1]["json"]
+        payload = runtime._agent_client.start_agent.call_args[0][0]
         assert payload["idempotencyKey"] == "idem-123"
 
     def test_start_via_server_omits_idempotency_key_when_none(self, runtime):
         """Idempotency key is not in the payload when not provided."""
         agent = Agent(name="test", model="openai/gpt-4o")
 
-        mock_post = _mock_requests_post({"executionId": "wf-1"})
-        with patch("requests.post", mock_post):
-            runtime._start_via_server(agent, "hi")
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-1"})
+        runtime._start_via_server(agent, "hi")
 
-        call_kwargs = mock_post.call_args
-        payload = call_kwargs[1]["json"]
+        payload = runtime._agent_client.start_agent.call_args[0][0]
         assert "idempotencyKey" not in payload
 
 
@@ -1972,34 +1883,32 @@ class TestStartFrameworkViaServer:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080")
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_start_framework_via_server_passes_credentials(self, runtime):
         """Framework start payload includes request-level credentials."""
-        mock_post = _mock_requests_post({"executionId": "wf-fw-1"})
-        with patch("requests.post", mock_post):
-            runtime._start_framework_via_server(
-                framework="openai",
-                raw_config={"name": "fw_agent"},
-                prompt="hello",
-                credentials=["OPENAI_API_KEY"],
-            )
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-fw-1"})
+        runtime._start_framework_via_server(
+            framework="openai",
+            raw_config={"name": "fw_agent"},
+            prompt="hello",
+            credentials=["OPENAI_API_KEY"],
+        )
 
-        payload = mock_post.call_args[1]["json"]
+        payload = runtime._agent_client.start_agent.call_args[0][0]
         assert payload["credentials"] == ["OPENAI_API_KEY"]
 
     def test_start_framework_via_server_passes_context(self, runtime):
         """Framework start payload includes context."""
-        mock_post = _mock_requests_post({"executionId": "wf-fw-1"})
-        with patch("requests.post", mock_post):
-            runtime._start_framework_via_server(
-                framework="openai",
-                raw_config={"name": "fw_agent"},
-                prompt="hello",
-                context={"repo": "acme"},
-            )
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-fw-1"})
+        runtime._start_framework_via_server(
+            framework="openai",
+            raw_config={"name": "fw_agent"},
+            prompt="hello",
+            context={"repo": "acme"},
+        )
 
-        payload = mock_post.call_args[1]["json"]
+        payload = runtime._agent_client.start_agent.call_args[0][0]
         assert payload["context"] == {"repo": "acme"}
 
 
@@ -2014,7 +1923,7 @@ class TestFrameworkCredentials:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080")
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_run_framework_registers_and_clears_workflow_credentials(self, runtime):
         """Framework run() exposes request credentials to extracted tools for the run lifetime."""
@@ -2074,7 +1983,7 @@ class TestPollStatusUntilComplete:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080")
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     @patch("conductor.ai.agents.runtime.runtime.time.sleep", return_value=None)
     def test_returns_on_completed(self, mock_sleep, runtime):
@@ -2199,7 +2108,7 @@ class TestResolvePrompt:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                rt = AgentRuntime(config=config)
+                rt = AgentRuntime(settings=config)
                 return rt, mock_prompt_client
 
     def test_string_passthrough(self, runtime):
@@ -2284,7 +2193,7 @@ class TestAssociateTemplatesWithModels:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                rt = AgentRuntime(config=config)
+                rt = AgentRuntime(settings=config)
                 return rt, mock_prompt_client
 
     def test_associates_template_with_model(self, runtime):
@@ -2397,7 +2306,7 @@ class TestDeriveFinishReason:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_rejected_finish_reason(self, runtime):
         """COMPLETED with finishReason=rejected maps to FinishReason.REJECTED."""
@@ -2432,7 +2341,7 @@ class TestNormalizeOutput:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_rejected_output_preserved(self, runtime):
         """Rejection output with finishReason=rejected is kept as-is."""
@@ -2472,7 +2381,7 @@ class TestExtractSubResults:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_extracts_sub_results_from_server_output(self, runtime):
         output = {"result": "joined text", "subResults": {"a": "X", "b": "Y"}}
@@ -2624,28 +2533,26 @@ class TestTimeoutParameter:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080")
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_timeout_included_in_start_payload(self, runtime):
         """run(timeout=5) sends timeoutSeconds: 5 in the start payload."""
         agent = Agent(name="test", model="openai/gpt-4o")
 
-        mock_post = _mock_requests_post({"executionId": "wf-1"})
-        with patch("requests.post", mock_post):
-            runtime._start_via_server(agent, "hello", timeout=5)
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-1"})
+        runtime._start_via_server(agent, "hello", timeout=5)
 
-        payload = mock_post.call_args[1]["json"]
+        payload = runtime._agent_client.start_agent.call_args[0][0]
         assert payload["timeoutSeconds"] == 5
 
     def test_no_timeout_omits_field(self, runtime):
         """run() with no timeout does not include timeoutSeconds in payload."""
         agent = Agent(name="test", model="openai/gpt-4o")
 
-        mock_post = _mock_requests_post({"executionId": "wf-1"})
-        with patch("requests.post", mock_post):
-            runtime._start_via_server(agent, "hello")
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-1"})
+        runtime._start_via_server(agent, "hello")
 
-        payload = mock_post.call_args[1]["json"]
+        payload = runtime._agent_client.start_agent.call_args[0][0]
         assert "timeoutSeconds" not in payload
 
     @patch("conductor.ai.agents.runtime.runtime.time.sleep", return_value=None)
@@ -2692,7 +2599,7 @@ class TestUnrecognizedKwargs:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080")
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_warns_on_unrecognized_kwargs(self, runtime, caplog):
         """run(agent, prompt, foo=1) logs a warning."""
@@ -2732,56 +2639,35 @@ class TestExceptionWrapping:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_get_status_404_raises_agent_not_found(self, runtime):
-        """get_status with a 404 response raises AgentNotFoundError."""
-        import requests
-
+        """get_status propagates AgentNotFoundError from the agent client (404)."""
         from conductor.ai.agents.exceptions import AgentNotFoundError
 
-        mock_resp = MagicMock()
-        mock_resp.status_code = 404
-        mock_resp.text = "Not Found"
-        mock_resp.raise_for_status.side_effect = requests.exceptions.HTTPError(response=mock_resp)
-
-        with patch("requests.get", return_value=mock_resp):
-            with pytest.raises(AgentNotFoundError) as exc_info:
-                runtime.get_status("nonexistent-id")
-            assert exc_info.value.status_code == 404
+        runtime._agent_client.get_status.side_effect = AgentNotFoundError(404, "Not Found")
+        with pytest.raises(AgentNotFoundError) as exc_info:
+            runtime.get_status("nonexistent-id")
+        assert exc_info.value.status_code == 404
 
     def test_get_status_500_raises_agent_api_error(self, runtime):
-        """get_status with a 500 response raises AgentAPIError (not AgentNotFoundError)."""
-        import requests
-
+        """get_status propagates AgentAPIError (not AgentNotFoundError) on a 500."""
         from conductor.ai.agents.exceptions import AgentAPIError, AgentNotFoundError
 
-        mock_resp = MagicMock()
-        mock_resp.status_code = 500
-        mock_resp.text = "Internal Server Error"
-        mock_resp.raise_for_status.side_effect = requests.exceptions.HTTPError(response=mock_resp)
-
-        with patch("requests.get", return_value=mock_resp):
-            with pytest.raises(AgentAPIError) as exc_info:
-                runtime.get_status("some-id")
-            assert exc_info.value.status_code == 500
-            assert not isinstance(exc_info.value, AgentNotFoundError)
+        runtime._agent_client.get_status.side_effect = AgentAPIError(500, "Internal Server Error")
+        with pytest.raises(AgentAPIError) as exc_info:
+            runtime.get_status("some-id")
+        assert exc_info.value.status_code == 500
+        assert not isinstance(exc_info.value, AgentNotFoundError)
 
     def test_respond_error_wrapped(self, runtime):
-        """respond() wraps HTTPError in AgentAPIError."""
-        import requests
-
+        """respond() propagates AgentAPIError from the agent client."""
         from conductor.ai.agents.exceptions import AgentAPIError
 
-        mock_resp = MagicMock()
-        mock_resp.status_code = 400
-        mock_resp.text = "Bad Request"
-        mock_resp.raise_for_status.side_effect = requests.exceptions.HTTPError(response=mock_resp)
-
-        with patch("requests.post", return_value=mock_resp):
-            with pytest.raises(AgentAPIError) as exc_info:
-                runtime.respond("wf-id", "some output")
-            assert exc_info.value.status_code == 400
+        runtime._agent_client.respond.side_effect = AgentAPIError(400, "Bad Request")
+        with pytest.raises(AgentAPIError) as exc_info:
+            runtime.respond("wf-id", "some output")
+        assert exc_info.value.status_code == 400
 
 
 class TestSSEFallbackWarnsOnce:
@@ -2795,11 +2681,11 @@ class TestSSEFallbackWarnsOnce:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
                 config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
-                return AgentRuntime(config=config)
+                return AgentRuntime(settings=config)
 
     def test_sse_fallback_logs_once(self, runtime, caplog):
         """SSE fallback message should be logged only on the first failure."""
-        from conductor.ai.agents.runtime.http_client import SSEUnavailableError
+        from conductor.client.agent_client import SSEUnavailableError
 
         call_count = 0
 

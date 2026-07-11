@@ -776,6 +776,13 @@ class ApiClient(object):
         return instance
 
     def get_authentication_headers(self):
+        """Public accessor for the current auth header (TTL-aware).
+
+        Returns ``{'header': {'X-Authorization': <token>}}`` or ``None`` when the
+        server is anonymous / no token is available. Used by transports (e.g. SSE
+        streaming) that bypass :meth:`call_api` but must reuse the same token
+        management rather than minting separately.
+        """
         return self.__get_authentication_headers()
 
     def __get_authentication_headers(self):

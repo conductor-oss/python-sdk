@@ -168,7 +168,7 @@ def runtime():
     responsible worker process so the TaskHandler monitor can restart it.
     """
     config = AgentConfig.from_env()
-    with AgentRuntime(config=config) as rt:
+    with AgentRuntime(settings=config) as rt:
         watchdog = _WorkerWatchdog(rt)
         watchdog.start()
         try:
