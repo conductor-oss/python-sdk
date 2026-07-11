@@ -39,6 +39,21 @@ _API = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api").rstri
 _BASE = _API.replace("/api", "")
 
 
+@pytest.fixture()
+def runtime():
+    """Function-scoped runtime (overrides the module-scoped conftest fixture).
+
+    Each test gets a fresh runtime so it re-registers the worker TaskDef (with
+    overwrite) — making TaskDef.runtimeMetadata reflect *this* test's code path
+    rather than a value left by a prior test in the module (the module-scoped
+    runtime caches registered tool names and would otherwise skip re-registration,
+    letting a stale/server-recompiled value mask a regression)."""
+    from conductor.ai.agents import AgentRuntime
+
+    with AgentRuntime() as rt:
+        yield rt
+
+
 # ── Tool: reports whether the declared secret was injected ───────────────
 
 
