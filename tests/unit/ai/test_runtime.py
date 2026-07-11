@@ -286,7 +286,10 @@ class TestAgentRuntimeInit:
                     Configuration(server_api_url="http://wins/api"), settings=cfg
                 )
                 assert rt._conductor_config.host == "http://wins/api"
-                assert rt._auth_key == ""
+                # settings.auth_key ("ignored") must not leak into the client;
+                # rt._auth_key comes solely from the Configuration (env or explicit),
+                # so it is never the settings value. Env-independent assertion.
+                assert rt._auth_key != "ignored"
 
 
 class TestAgentConfig:

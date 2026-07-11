@@ -412,6 +412,21 @@ class TestStreamSSEErrors:
 
 
 class TestStreamSSEAuth:
+    @pytest.fixture(autouse=True)
+    def _isolate_ambient_auth(self, monkeypatch):
+        """Isolate from ambient auth env (CI sets CONDUCTOR_AUTH_*). These tests
+        assert on the *configured* auth only; a service-account key in the
+        environment would otherwise leak into the Configuration and add an
+        unexpected X-Authorization header."""
+        for k in (
+            "CONDUCTOR_AUTH_KEY",
+            "CONDUCTOR_AUTH_SECRET",
+            "AGENTSPAN_AUTH_KEY",
+            "AGENTSPAN_AUTH_SECRET",
+            "AGENTSPAN_API_KEY",
+        ):
+            monkeypatch.delenv(k, raising=False)
+
     def test_auth_key_secret_mints_x_authorization(self):
         """auth_key/auth_secret are exchanged for a JWT via POST /token (the
         secured-host contract, e.g. orkes) and sent as X-Authorization."""
