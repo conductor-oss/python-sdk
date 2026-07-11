@@ -240,6 +240,7 @@ def _assert_run_completed(result, step_name: str):
 class TestSuite3CliTools:
     """CLI tools: credential lifecycle + command whitelist."""
 
+    @pytest.mark.usefixtures("requires_runtime_metadata")
     def test_cli_credential_lifecycle(self, runtime, cli_credentials, model):
         """Full CLI credential lifecycle — sequential steps with cleanup."""
         real_token = os.environ.get("GITHUB_TOKEN")

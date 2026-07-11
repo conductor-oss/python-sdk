@@ -126,6 +126,7 @@ def _get_taskdef(name: str) -> dict | None:
 
 
 @pytest.mark.timeout(300)
+@pytest.mark.usefixtures("requires_runtime_metadata")
 class TestWorkerCredentials:
     def test_credential_injected_via_runtime_metadata(self, runtime, model):
         """The tool receives the server-resolved secret (Task.runtimeMetadata)."""

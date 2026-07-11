@@ -295,6 +295,7 @@ def _get_output_text(result) -> str:
 class TestSuite2ToolCalling:
     """Credential lifecycle: missing -> env ignored -> add -> update."""
 
+    @pytest.mark.usefixtures("requires_runtime_metadata")
     def test_credential_lifecycle(self, runtime, cli_credentials, model):
         """Full credential lifecycle test — sequential steps with cleanup."""
         try:

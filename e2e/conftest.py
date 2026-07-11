@@ -151,3 +151,63 @@ def get_task_by_name(execution_id: str, task_ref_prefix: str) -> list:
         for t in wf.get("tasks", [])
         if task_ref_prefix in t.get("referenceTaskName", "")
     ]
+
+
+# ── Server capability: TaskDef.runtimeMetadata (conductor-oss PR #1255) ──
+#
+# Worker credential delivery relies on the server persisting a worker's declared
+# TaskDef.runtimeMetadata and delivering the resolved values on Task.runtimeMetadata
+# at poll time. Released servers (through v0.4.2) do NOT implement this yet — they
+# drop the field — so the credential-delivery e2e tests would fail there for a
+# reason unrelated to the SDK. Probe the running server once and skip those tests
+# when unsupported.
+#
+# TODO: once agentspan cuts a release that implements runtimeMetadata, bump
+# AGENTSPAN_VERSION in .github/workflows/agent-e2e.yml — this guard then lets the
+# credential tests run automatically (no test change needed).
+
+_RUNTIME_METADATA_SUPPORT = None
+
+
+def _probe_runtime_metadata_support() -> bool:
+    import uuid
+
+    name = f"_rtmd_cap_probe_{uuid.uuid4().hex[:8]}"
+    try:
+        r = requests.post(
+            f"{BASE_URL}/api/metadata/taskdefs",
+            json=[{"name": name, "runtimeMetadata": ["PROBE"],
+                   "retryCount": 0, "timeoutSeconds": 0}],
+            timeout=8,
+        )
+        if r.status_code not in (200, 204):
+            return False
+        g = requests.get(f"{BASE_URL}/api/metadata/taskdefs/{name}", timeout=8)
+        return g.status_code == 200 and g.json().get("runtimeMetadata") == ["PROBE"]
+    except Exception:
+        return False
+    finally:
+        try:
+            requests.delete(f"{BASE_URL}/api/metadata/taskdefs/{name}", timeout=5)
+        except Exception:
+            pass
+
+
+def _server_supports_runtime_metadata() -> bool:
+    global _RUNTIME_METADATA_SUPPORT
+    if _RUNTIME_METADATA_SUPPORT is None:
+        _RUNTIME_METADATA_SUPPORT = _probe_runtime_metadata_support()
+    return _RUNTIME_METADATA_SUPPORT
+
+
+@pytest.fixture
+def requires_runtime_metadata():
+    """Skip a test unless the server implements the TaskDef.runtimeMetadata
+    credential-delivery contract (conductor-oss PR #1255)."""
+    if not _server_supports_runtime_metadata():
+        pytest.skip(
+            "server does not persist/deliver TaskDef.runtimeMetadata "
+            "(conductor-oss PR #1255) — worker credential injection requires it. "
+            "TODO: bump AGENTSPAN_VERSION in .github/workflows/agent-e2e.yml once a "
+            "release ships runtimeMetadata support."
+        )
