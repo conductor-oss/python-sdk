@@ -190,12 +190,7 @@ class TestFullExtractionPathIntegration:
         from conductor.ai.agents.runtime.runtime import AgentRuntime
         from conductor.ai.agents.runtime.config import AgentConfig
 
-        config = AgentConfig(
-            server_url="http://testserver:8080/api",
-            auth_key="k",
-            auth_secret="s",
-            auto_start_workers=False,
-        )
+        config = AgentConfig(auto_start_workers=False)
         runtime = AgentRuntime.__new__(AgentRuntime)
         runtime._config = config
         runtime._worker_start_lock = __import__("threading").Lock()

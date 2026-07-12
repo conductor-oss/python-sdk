@@ -1,17 +1,26 @@
 # Copyright (c) 2025 Agentspan
 # Licensed under the MIT License. See LICENSE file in the project root for details.
 
-"""Tests for AgentConfig environment variable loading.
+"""Tests for AgentConfig environment loading and SDK-wide log-level config.
 
-Verifies that AGENTSPAN_* env vars are loaded correctly via from_env().
+AgentConfig holds only agent-runtime settings (worker pool + liveness).
+Connection, auth, and the log level live on the conductor ``Configuration``.
 """
 
 from __future__ import annotations
 
+import logging
 import os
 from unittest import mock
 
-from conductor.ai.agents.runtime.config import AgentConfig, _env, _env_bool, _env_int
+from conductor.ai.agents.runtime.config import (
+    AgentConfig,
+    _env,
+    _env_bool,
+    _env_float,
+    _env_int,
+)
+from conductor.client.configuration.configuration import Configuration
 
 
 class TestEnvHelper:
@@ -72,34 +81,31 @@ class TestEnvInt:
             assert _env_int("NUM", 7) == 7
 
 
+class TestEnvFloat:
+    """Tests for _env_float() helper."""
+
+    def test_reads_float(self):
+        with mock.patch.dict(os.environ, {"SECS": "12.5"}, clear=True):
+            assert _env_float("SECS") == 12.5
+
+    def test_default(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            assert _env_float("SECS", 30.0) == 30.0
+
+    def test_empty_string_uses_default(self):
+        with mock.patch.dict(os.environ, {"SECS": ""}, clear=True):
+            assert _env_float("SECS", 30.0) == 30.0
+
+
 class TestAgentConfigFromEnv:
-    """Tests for AgentConfig.from_env()."""
+    """Tests for AgentConfig.from_env() — agent-runtime settings only."""
 
-    def test_reads_agentspan_server_url(self):
-        env = {"AGENTSPAN_SERVER_URL": "http://myhost:9090/api"}
-        with mock.patch.dict(os.environ, env, clear=True):
-            config = AgentConfig.from_env()
-            assert config.server_url == "http://myhost:9090/api"
-
-    def test_defaults_to_localhost_when_nothing_set(self):
+    def test_defaults(self):
         with mock.patch.dict(os.environ, {}, clear=True):
             config = AgentConfig.from_env()
-            assert config.server_url == "http://localhost:8080/api"
-
-    def test_reads_agentspan_auth_key(self):
-        env = {"AGENTSPAN_AUTH_KEY": "mykey", "AGENTSPAN_AUTH_SECRET": "mysecret"}
-        with mock.patch.dict(os.environ, env, clear=True):
-            config = AgentConfig.from_env()
-            assert config.auth_key == "mykey"
-            assert config.auth_secret == "mysecret"
-
-    def test_reads_auth_key_via_env(self):
-        env = {"AGENTSPAN_AUTH_KEY": "key2"}
-        with mock.patch.dict(os.environ, env, clear=True):
-            config = AgentConfig.from_env()
-            assert config.auth_key == "key2"
-            # api_key is a separate field populated from AGENTSPAN_API_KEY
-            assert config.api_key is None
+            assert config.worker_poll_interval_ms == 100
+            assert config.worker_thread_count == 1
+            assert config.auto_start_workers is True
 
     def test_boolean_env_vars(self):
         env = {
@@ -115,155 +121,76 @@ class TestAgentConfigFromEnv:
 
     def test_numeric_env_vars(self):
         env = {
-            "AGENTSPAN_LLM_RETRY_COUNT": "5",
+            "AGENTSPAN_WORKER_POLL_INTERVAL": "250",
             "AGENTSPAN_WORKER_THREADS": "4",
         }
         with mock.patch.dict(os.environ, env, clear=True):
             config = AgentConfig.from_env()
-            assert config.llm_retry_count == 5
+            assert config.worker_poll_interval_ms == 250
             assert config.worker_thread_count == 4
 
     def test_direct_construction(self):
-        config = AgentConfig(server_url="http://test:9090/api")
-        assert config.server_url == "http://test:9090/api"
+        config = AgentConfig(worker_thread_count=8)
+        assert config.worker_thread_count == 8
 
 
-class TestServerUrlNormalisation:
-    """Tests for BUG-P2-10: auto-append /api when missing."""
+class TestLivenessConfig:
+    """Liveness monitor settings (used by stateful runs)."""
 
-    def test_appends_api_when_missing(self):
-        config = AgentConfig(server_url="http://localhost:8080")
-        assert config.server_url == "http://localhost:8080/api"
-
-    def test_appends_api_with_trailing_slash(self):
-        config = AgentConfig(server_url="http://localhost:8080/")
-        assert config.server_url == "http://localhost:8080/api"
-
-    def test_leaves_correct_url_unchanged(self):
-        config = AgentConfig(server_url="http://localhost:8080/api")
-        assert config.server_url == "http://localhost:8080/api"
-
-    def test_leaves_correct_url_with_trailing_slash(self):
-        config = AgentConfig(server_url="http://localhost:8080/api/")
-        assert config.server_url == "http://localhost:8080/api"
-
-    def test_remote_url_without_api(self):
-        config = AgentConfig(server_url="https://play.orkes.io")
-        assert config.server_url == "https://play.orkes.io/api"
-
-    def test_from_env_auto_appends(self):
-        with mock.patch.dict(
-            os.environ, {"AGENTSPAN_SERVER_URL": "http://myhost:9090"}, clear=True
-        ):
-            config = AgentConfig.from_env()
-            assert config.server_url == "http://myhost:9090/api"
-
-    def test_default_url_has_api(self):
+    def test_defaults(self):
         with mock.patch.dict(os.environ, {}, clear=True):
             config = AgentConfig.from_env()
-            assert config.server_url == "http://localhost:8080/api"
+            assert config.liveness_enabled is True
+            assert config.liveness_stall_seconds == 30.0
+            assert config.liveness_check_interval_seconds == 10.0
+
+    def test_from_env(self):
+        env = {
+            "AGENTSPAN_LIVENESS_ENABLED": "false",
+            "AGENTSPAN_LIVENESS_STALL_SECONDS": "45",
+            "AGENTSPAN_LIVENESS_CHECK_INTERVAL_SECONDS": "5",
+        }
+        with mock.patch.dict(os.environ, env, clear=True):
+            config = AgentConfig.from_env()
+            assert config.liveness_enabled is False
+            assert config.liveness_stall_seconds == 45.0
+            assert config.liveness_check_interval_seconds == 5.0
 
 
-class TestLogLevelConfig:
-    """Tests for BUG-P3-04: log_level configuration field."""
+class TestConfigurationLogLevel:
+    """The SDK-wide log level lives on Configuration (not AgentConfig)."""
 
-    def test_default_log_level(self):
+    def test_default_is_info(self):
         with mock.patch.dict(os.environ, {}, clear=True):
-            config = AgentConfig.from_env()
-            assert config.log_level == "INFO"
+            assert Configuration().log_level == logging.INFO
 
-    def test_log_level_from_env(self):
-        with mock.patch.dict(os.environ, {"AGENTSPAN_LOG_LEVEL": "WARNING"}, clear=True):
-            config = AgentConfig.from_env()
-            assert config.log_level == "WARNING"
+    def test_debug_flag_sets_debug_level(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            assert Configuration(debug=True).log_level == logging.DEBUG
 
-    def test_log_level_debug(self):
+    def test_explicit_level_name(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            assert Configuration(log_level="WARNING").log_level == logging.WARNING
+
+    def test_explicit_level_int(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            assert Configuration(log_level=logging.ERROR).log_level == logging.ERROR
+
+    def test_conductor_log_level_env(self):
+        with mock.patch.dict(os.environ, {"CONDUCTOR_LOG_LEVEL": "WARNING"}, clear=True):
+            assert Configuration().log_level == logging.WARNING
+
+    def test_agentspan_log_level_env_fallback(self):
         with mock.patch.dict(os.environ, {"AGENTSPAN_LOG_LEVEL": "DEBUG"}, clear=True):
-            config = AgentConfig.from_env()
-            assert config.log_level == "DEBUG"
+            assert Configuration().log_level == logging.DEBUG
 
-    def test_log_level_empty_string_uses_default(self):
-        with mock.patch.dict(os.environ, {"AGENTSPAN_LOG_LEVEL": ""}, clear=True):
-            config = AgentConfig.from_env()
-            assert config.log_level == "INFO"
-
-    def test_log_level_applied_to_logger(self):
-        """AgentRuntime.__init__ applies log_level to the conductor.ai logger."""
-        import logging
-
-        config = AgentConfig(
-            server_url="http://localhost:8080/api",
-            log_level="WARNING",
-        )
+    def test_applied_to_logger_by_runtime(self):
+        """AgentRuntime applies Configuration.log_level to the conductor.ai logger."""
         with mock.patch("conductor.client.orkes_clients.OrkesClients"):
             with mock.patch("conductor.ai.agents.runtime.worker_manager.WorkerManager"):
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                rt = AgentRuntime(settings=config)
+                AgentRuntime(Configuration(log_level="WARNING"))
 
         assert logging.getLogger("conductor.ai").level == logging.WARNING
-        # Reset to avoid affecting other tests
-        logging.getLogger("conductor.ai").setLevel(logging.INFO)
-
-
-class TestAgentConfigCredentialFields:
-    """secret_strict_mode and api_key fields."""
-
-    def test_credential_strict_mode_defaults_false(self):
-        from conductor.ai.agents.runtime.config import AgentConfig
-
-        config = AgentConfig()
-        assert config.secret_strict_mode is False
-
-    def test_credential_strict_mode_can_be_set(self):
-        from conductor.ai.agents.runtime.config import AgentConfig
-
-        config = AgentConfig(secret_strict_mode=True)
-        assert config.secret_strict_mode is True
-
-    def test_credential_strict_mode_from_env_true(self):
-        import os
-        from unittest import mock
-        from conductor.ai.agents.runtime.config import AgentConfig
-
-        with mock.patch.dict(os.environ, {"AGENTSPAN_SECRET_STRICT_MODE": "true"}):
-            config = AgentConfig.from_env()
-        assert config.secret_strict_mode is True
-
-    def test_credential_strict_mode_from_env_false(self):
-        import os
-        from unittest import mock
-        from conductor.ai.agents.runtime.config import AgentConfig
-
-        with mock.patch.dict(os.environ, {"AGENTSPAN_SECRET_STRICT_MODE": "false"}):
-            config = AgentConfig.from_env()
-        assert config.secret_strict_mode is False
-
-    def test_api_key_field_defaults_none(self):
-        from conductor.ai.agents.runtime.config import AgentConfig
-
-        config = AgentConfig()
-        # api_key field (new) takes precedence; auth_key kept for backward compat
-        assert config.api_key is None
-
-    def test_api_key_field_can_be_set(self):
-        from conductor.ai.agents.runtime.config import AgentConfig
-
-        config = AgentConfig(api_key="asp_my_key")
-        assert config.api_key == "asp_my_key"
-
-    def test_api_key_from_env(self):
-        import os
-        from unittest import mock
-        from conductor.ai.agents.runtime.config import AgentConfig
-
-        with mock.patch.dict(os.environ, {"AGENTSPAN_API_KEY": "asp_env_key"}):
-            config = AgentConfig.from_env()
-        assert config.api_key == "asp_env_key"
-
-    def test_auth_key_backward_compat_still_works(self):
-        """auth_key must still be accepted for backward compat."""
-        from conductor.ai.agents.runtime.config import AgentConfig
-
-        config = AgentConfig(auth_key="old_key")
-        assert config.auth_key == "old_key"
+        logging.getLogger("conductor.ai").setLevel(logging.INFO)  # reset

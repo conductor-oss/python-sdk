@@ -169,12 +169,7 @@ def _make_runtime(server_url: str, auth_key: str = None, auth_secret: str = None
     )
     from conductor.client.orkes_clients import OrkesClients
 
-    config = AgentConfig(
-        server_url=server_url,
-        auth_key=auth_key,
-        auth_secret=auth_secret,
-        streaming_enabled=True,
-    )
+    config = AgentConfig(streaming_enabled=True)
     auth = (
         AuthenticationSettings(key_id=auth_key, key_secret=auth_secret or "")
         if auth_key
@@ -183,7 +178,7 @@ def _make_runtime(server_url: str, auth_key: str = None, auth_secret: str = None
     rt = object.__new__(AgentRuntime)
     rt._config = config
     rt._conductor_config = Configuration(
-        server_api_url=config.server_url, authentication_settings=auth
+        server_api_url=server_url, authentication_settings=auth
     )
     rt._clients = OrkesClients(configuration=rt._conductor_config)
     rt._agent_client = rt._clients.get_agent_client()
@@ -430,8 +425,6 @@ class TestStreamSSEAuth:
     def test_auth_key_secret_mints_x_authorization(self):
         """auth_key/auth_secret are exchanged for a JWT via POST /token (the
         secured-host contract, e.g. orkes) and sent as X-Authorization."""
-        from conductor.ai.agents._internal.token_utils import _TOKEN_CACHE
-
         scenario = {
             "events": [
                 {"event": "done", "id": "1", "data": _java_event("done", output="ok")},
@@ -441,7 +434,6 @@ class TestStreamSSEAuth:
         server = MockSSEServer(scenario)
         url = server.start()
         try:
-            _TOKEN_CACHE.clear()
             rt = _make_runtime(url, auth_key="my-key", auth_secret="my-secret")
             events = list(rt._stream_sse("test-wf"))
             assert len(events) == 1
@@ -456,7 +448,6 @@ class TestStreamSSEAuth:
             assert "X-Auth-Secret" not in headers
         finally:
             server.stop()
-            _TOKEN_CACHE.clear()
 
     def test_no_auth_headers_when_not_configured(self):
         scenario = {

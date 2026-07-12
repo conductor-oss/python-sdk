@@ -414,10 +414,8 @@ class AgentRuntime:
         self._integration_api_available: Optional[bool] = None
         self._sse_fallback_warned = False
 
-        # Apply user-configured log level to all conductor.ai loggers
-        logging.getLogger("conductor.ai").setLevel(
-            getattr(logging, self._config.log_level.upper(), logging.INFO)
-        )
+        # Apply the SDK-wide log level (from Configuration) to conductor.ai loggers
+        logging.getLogger("conductor.ai").setLevel(self._conductor_config.log_level)
 
         # Control-plane client for the agent API (start/deploy/compile/status/
         # execution/respond/stop/signal/SSE). Built from the same Conductor

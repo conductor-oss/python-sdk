@@ -79,7 +79,6 @@ class TestEnsureModel:
             from conductor.ai.agents.runtime.runtime import AgentRuntime
 
             config = AgentConfig(
-                server_url="http://localhost:8080/api",
                 auto_register_integrations=auto_register,
             )
             runtime = AgentRuntime(settings=config)
@@ -247,7 +246,6 @@ class TestEnsureModelsForAgent:
             from conductor.ai.agents.runtime.runtime import AgentRuntime
 
             config = AgentConfig(
-                server_url="http://localhost:8080/api",
                 auto_register_integrations=True,
             )
             runtime = AgentRuntime(settings=config)
@@ -329,7 +327,6 @@ class TestAutoRegisterInPrepare:
             from conductor.ai.agents.runtime.runtime import AgentRuntime
 
             config = AgentConfig(
-                server_url="http://localhost:8080/api",
                 auto_register_integrations=True,
             )
             runtime = AgentRuntime(settings=config)
@@ -354,7 +351,6 @@ class TestAutoRegisterInPrepare:
             from conductor.ai.agents.runtime.runtime import AgentRuntime
 
             config = AgentConfig(
-                server_url="http://localhost:8080/api",
                 auto_register_integrations=False,
             )
             runtime = AgentRuntime(settings=config)

@@ -17,10 +17,7 @@ def _make_runtime():
             from conductor.ai.agents.runtime.runtime import AgentRuntime
             from conductor.ai.agents.runtime.config import AgentConfig
 
-            config = AgentConfig(
-                server_url="http://fake:8080",
-                auto_start_workers=False,
-            )
+            config = AgentConfig(auto_start_workers=False)
             return AgentRuntime(settings=config)
 
 

@@ -8,8 +8,8 @@ Constructor kwargs allow direct overrides (useful for tests).
 
 Usage::
 
-    config = AgentConfig.from_env()                          # load from env
-    config = AgentConfig(server_url="http://custom:8080/api")  # explicit
+    config = AgentConfig.from_env()               # load from env
+    config = AgentConfig(worker_thread_count=4)   # explicit override
 """
 
 from __future__ import annotations
@@ -44,77 +44,59 @@ def _env_int(var: str, default: int = 0) -> int:
     return int(val)
 
 
+def _env_float(var: str, default: float = 0.0) -> float:
+    """Read a float environment variable."""
+    val = os.environ.get(var)
+    if val is None or val.strip() == "":
+        return default
+    return float(val)
+
+
 @dataclass
 class AgentConfig:
-    """Configuration for the agents runtime.
+    """Agent-runtime settings.
+
+    Server connection and auth (URL, credentials) and the SDK-wide log level
+    live on the conductor :class:`Configuration`, not here — this holds only
+    agent-runtime concerns (worker pool + liveness monitoring).
 
     Attributes:
-        server_url: Agentspan server API URL.
-        api_key: Bearer token or static API key for the Authorization header.
-            Preferred over auth_key/auth_secret for new deployments.
-        auth_key: Auth key (kept for backward compatibility).
-        auth_secret: Auth secret (kept for backward compatibility).
         worker_poll_interval_ms: Worker polling interval in milliseconds.
         worker_thread_count: Number of threads per worker.
         auto_start_workers: Whether to auto-start worker processes.
         daemon_workers: Whether worker processes are daemon (killed on exit).
         auto_register_integrations: Auto-create LLM integrations on startup.
-        secret_strict_mode: When ``True``, disables env var fallback for
-            credential resolution. Required credentials must come from the
-            credential service.
-        log_level: Logging level for the agentspan logger.
+        streaming_enabled: Whether ``stream()`` uses server-sent events.
+        liveness_enabled: Start a server-liveness monitor for stateful runs so
+            ``result()`` / ``join()`` don't block forever if the worker dies.
+        liveness_stall_seconds: Idle window (no polls) before a run is
+            considered stalled.
+        liveness_check_interval_seconds: How often the monitor polls.
     """
 
-    server_url: str = "http://localhost:8080/api"
-    api_key: Optional[str] = None
-    auth_key: Optional[str] = None
-    auth_secret: Optional[str] = None
-    llm_retry_count: int = 3
     worker_poll_interval_ms: int = 100
     worker_thread_count: int = 1
     auto_start_workers: bool = True
     daemon_workers: bool = True
     auto_register_integrations: bool = False
     streaming_enabled: bool = True
-    secret_strict_mode: bool = False
-    log_level: str = "INFO"
-
-    def __post_init__(self):
-        """Normalise server_url: auto-append /api if missing."""
-        if self.server_url:
-            stripped = self.server_url.rstrip("/")
-            if not stripped.endswith("/api"):
-                logger.info(
-                    "server_url %r does not end with '/api' — appending automatically.",
-                    self.server_url,
-                )
-                self.server_url = stripped + "/api"
-            else:
-                self.server_url = stripped
+    liveness_enabled: bool = True
+    liveness_stall_seconds: float = 30.0
+    liveness_check_interval_seconds: float = 10.0
 
     @classmethod
     def from_env(cls) -> AgentConfig:
         """Create an ``AgentConfig`` by reading ``AGENTSPAN_*`` env vars."""
-        log_level = _env("AGENTSPAN_LOG_LEVEL", "INFO")
-        if isinstance(log_level, str) and log_level.strip() == "":
-            log_level = "INFO"
         return cls(
-            server_url=_env("AGENTSPAN_SERVER_URL", "http://localhost:8080/api"),
-            api_key=_env("AGENTSPAN_API_KEY"),
-            auth_key=_env("AGENTSPAN_AUTH_KEY"),
-            auth_secret=_env("AGENTSPAN_AUTH_SECRET"),
-            llm_retry_count=_env_int("AGENTSPAN_LLM_RETRY_COUNT", 3),
             worker_poll_interval_ms=_env_int("AGENTSPAN_WORKER_POLL_INTERVAL", 100),
             worker_thread_count=_env_int("AGENTSPAN_WORKER_THREADS", 1),
             auto_start_workers=_env_bool("AGENTSPAN_AUTO_START_WORKERS", True),
             daemon_workers=_env_bool("AGENTSPAN_DAEMON_WORKERS", True),
             auto_register_integrations=_env_bool("AGENTSPAN_INTEGRATIONS_AUTO_REGISTER", False),
             streaming_enabled=_env_bool("AGENTSPAN_STREAMING_ENABLED", True),
-            secret_strict_mode=_env_bool("AGENTSPAN_SECRET_STRICT_MODE", False),
-            log_level=log_level,
+            liveness_enabled=_env_bool("AGENTSPAN_LIVENESS_ENABLED", True),
+            liveness_stall_seconds=_env_float("AGENTSPAN_LIVENESS_STALL_SECONDS", 30.0),
+            liveness_check_interval_seconds=_env_float(
+                "AGENTSPAN_LIVENESS_CHECK_INTERVAL_SECONDS", 10.0
+            ),
         )
-
-    @property
-    def api_secret(self) -> Optional[str]:
-        """Alias for :attr:`auth_secret` (industry-standard naming)."""
-        return self.auth_secret

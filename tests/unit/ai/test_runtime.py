@@ -46,7 +46,7 @@ class TestExtractOutput:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_extract_simple_output(self, runtime):
@@ -84,7 +84,7 @@ class TestExtractHandoffResult:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_simple_handoff(self, runtime):
@@ -120,7 +120,7 @@ class TestExtractMessages:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_extracts_from_variables(self, runtime):
@@ -281,15 +281,13 @@ class TestAgentRuntimeInit:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                cfg = AgentConfig(server_url="http://ignored/api", auth_key="ignored")
+                cfg = AgentConfig(auto_start_workers=False)
                 rt = AgentRuntime(
                     Configuration(server_api_url="http://wins/api"), settings=cfg
                 )
+                # Connection/auth come solely from the Configuration; AgentConfig
+                # (settings) carries no server/auth fields to leak into the client.
                 assert rt._conductor_config.host == "http://wins/api"
-                # settings.auth_key ("ignored") must not leak into the client;
-                # rt._auth_key comes solely from the Configuration (env or explicit),
-                # so it is never the settings value. Env-independent assertion.
-                assert rt._auth_key != "ignored"
 
 
 class TestAgentConfig:
@@ -299,9 +297,9 @@ class TestAgentConfig:
         from conductor.ai.agents.runtime.config import AgentConfig
 
         config = AgentConfig()
-        assert config.server_url == "http://localhost:8080/api"
-        assert config.llm_retry_count == 3
         assert config.worker_poll_interval_ms == 100
+        assert config.worker_thread_count == 1
+        assert config.liveness_enabled is True
 
     def test_env_override(self):
         from unittest.mock import patch
@@ -309,16 +307,10 @@ class TestAgentConfig:
         from conductor.ai.agents.runtime.config import AgentConfig
 
         with patch.dict(
-            "os.environ", {"AGENTSPAN_SERVER_URL": "http://custom:9090/api"}, clear=True
+            "os.environ", {"AGENTSPAN_WORKER_THREADS": "4"}, clear=True
         ):
             config = AgentConfig.from_env()
-            assert config.server_url == "http://custom:9090/api"
-
-    def test_custom_retry_count(self):
-        from conductor.ai.agents.runtime.config import AgentConfig
-
-        config = AgentConfig(llm_retry_count=5)
-        assert config.llm_retry_count == 5
+            assert config.worker_thread_count == 4
 
 
 class TestCorrelationId:
@@ -331,7 +323,7 @@ class TestCorrelationId:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_run_generates_correlation_id(self, runtime):
@@ -382,7 +374,7 @@ class TestRuntimeRespond:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_respond_calls_server_api(self, runtime):
@@ -412,7 +404,7 @@ class TestMediaParameter:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_run_passes_media_to_start_via_server(self, runtime):
@@ -495,7 +487,7 @@ class TestRuntimeLifecycle:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_shutdown_stops_workers(self, runtime):
@@ -540,7 +532,7 @@ class TestRuntimeLifecycle:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 rt = AgentRuntime(settings=config)
                 rt._workers_started = True
                 rt._worker_manager = MagicMock()
@@ -564,7 +556,7 @@ class TestHasWorkerTools:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_no_tools_no_agents(self, runtime):
@@ -760,7 +752,7 @@ class TestExtractTokenUsage:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_single_llm_task(self, runtime):
@@ -824,7 +816,7 @@ class TestExtractToolCalls:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_extracts_tool_tasks(self, runtime):
@@ -864,7 +856,7 @@ class TestGetStatus:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def _mock_status_response(self, runtime, response_json):
@@ -953,7 +945,7 @@ class TestRuntimePlan:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_plan_returns_raw_server_response(self, runtime):
@@ -1000,7 +992,7 @@ class TestRuntimeRunGuardrails:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def _setup_run(self, runtime, output="Hello", status="COMPLETED"):
@@ -1221,7 +1213,7 @@ class TestExecutionInputValidation:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_run_rejects_blank_input_without_media_or_context(self, runtime):
@@ -1266,7 +1258,7 @@ class TestRunPopulatesToolCalls:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_run_populates_tool_calls(self, runtime):
@@ -1401,7 +1393,7 @@ class TestHasWorkerTools:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 rt = AgentRuntime(settings=config)
                 yield rt
 
@@ -1487,7 +1479,7 @@ class TestRuntimeStream:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_stream_yields_done_on_completion(self, runtime):
@@ -1639,7 +1631,7 @@ class TestExtractStructuredOutput:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_extract_output_with_output_type_from_dict(self, runtime):
@@ -1710,7 +1702,7 @@ class TestExtractTokenUsageEdgeCases:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_non_dict_token_usage_skipped(self, runtime):
@@ -1734,7 +1726,7 @@ class TestGetStatusEdgeCases:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_completed_non_dict_output(self, runtime):
@@ -1765,7 +1757,7 @@ class TestHasWorkerToolsEdgeCases:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_with_handoffs(self, runtime):
@@ -1800,7 +1792,7 @@ class TestStartViaServer:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080")
+                config = AgentConfig()
                 return AgentRuntime(settings=config)
 
     def test_start_via_server_returns_execution_id(self, runtime):
@@ -1885,7 +1877,7 @@ class TestStartFrameworkViaServer:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080")
+                config = AgentConfig()
                 return AgentRuntime(settings=config)
 
     def test_start_framework_via_server_passes_credentials(self, runtime):
@@ -1925,7 +1917,7 @@ class TestFrameworkCredentials:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080")
+                config = AgentConfig()
                 return AgentRuntime(settings=config)
 
     def test_run_framework_registers_and_clears_workflow_credentials(self, runtime):
@@ -1985,7 +1977,7 @@ class TestPollStatusUntilComplete:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080")
+                config = AgentConfig()
                 return AgentRuntime(settings=config)
 
     @patch("conductor.ai.agents.runtime.runtime.time.sleep", return_value=None)
@@ -2110,7 +2102,7 @@ class TestResolvePrompt:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 rt = AgentRuntime(settings=config)
                 return rt, mock_prompt_client
 
@@ -2195,7 +2187,7 @@ class TestAssociateTemplatesWithModels:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 rt = AgentRuntime(settings=config)
                 return rt, mock_prompt_client
 
@@ -2308,7 +2300,7 @@ class TestDeriveFinishReason:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_rejected_finish_reason(self, runtime):
@@ -2343,7 +2335,7 @@ class TestNormalizeOutput:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_rejected_output_preserved(self, runtime):
@@ -2383,7 +2375,7 @@ class TestExtractSubResults:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_extracts_sub_results_from_server_output(self, runtime):
@@ -2535,7 +2527,7 @@ class TestTimeoutParameter:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080")
+                config = AgentConfig()
                 return AgentRuntime(settings=config)
 
     def test_timeout_included_in_start_payload(self, runtime):
@@ -2601,7 +2593,7 @@ class TestUnrecognizedKwargs:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080")
+                config = AgentConfig()
                 return AgentRuntime(settings=config)
 
     def test_warns_on_unrecognized_kwargs(self, runtime, caplog):
@@ -2641,7 +2633,7 @@ class TestExceptionWrapping:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_get_status_404_raises_agent_not_found(self, runtime):
@@ -2683,7 +2675,7 @@ class TestSSEFallbackWarnsOnce:
                 from conductor.ai.agents.runtime.config import AgentConfig
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                config = AgentConfig(server_url="http://fake:8080", auto_start_workers=False)
+                config = AgentConfig(auto_start_workers=False)
                 return AgentRuntime(settings=config)
 
     def test_sse_fallback_logs_once(self, runtime, caplog):

@@ -90,11 +90,7 @@ class TestBuildPassthroughFunc:
         from conductor.ai.agents.runtime.runtime import AgentRuntime
         from conductor.ai.agents.runtime.config import AgentConfig
 
-        config = AgentConfig(
-            server_url="http://testserver:8080/api",
-            auth_key="my_key",
-            auth_secret="my_secret",
-        )
+        config = AgentConfig()
 
         graph = MagicMock()
         type(graph).__name__ = "CompiledStateGraph"
@@ -108,9 +104,9 @@ class TestBuildPassthroughFunc:
         # New contract: connection comes from the Configuration-derived attrs.
         from conductor.client.configuration.configuration import Configuration
 
-        runtime._conductor_config = Configuration(server_api_url=config.server_url)
-        runtime._auth_key = config.auth_key or ""
-        runtime._auth_secret = config.auth_secret or ""
+        runtime._conductor_config = Configuration(server_api_url="http://testserver:8080/api")
+        runtime._auth_key = "my_key"
+        runtime._auth_secret = "my_secret"
         entry = runtime._build_passthrough_func(graph, "langgraph", "test_graph")
 
         with patch("conductor.ai.agents.frameworks.langgraph.make_langgraph_worker") as mock_worker:
@@ -131,11 +127,7 @@ class TestBuildPassthroughFunc:
         from conductor.ai.agents.runtime.runtime import AgentRuntime
         from conductor.ai.agents.runtime.config import AgentConfig
 
-        config = AgentConfig(
-            server_url="http://testserver:8080/api",
-            auth_key="my_key",
-            auth_secret="my_secret",
-        )
+        config = AgentConfig()
 
         graph = MagicMock()
         type(graph).__name__ = "CompiledStateGraph"
@@ -145,9 +137,9 @@ class TestBuildPassthroughFunc:
         # New contract: connection comes from the Configuration-derived attrs.
         from conductor.client.configuration.configuration import Configuration
 
-        runtime._conductor_config = Configuration(server_api_url=config.server_url)
-        runtime._auth_key = config.auth_key or ""
-        runtime._auth_secret = config.auth_secret or ""
+        runtime._conductor_config = Configuration(server_api_url="http://testserver:8080/api")
+        runtime._auth_key = "my_key"
+        runtime._auth_secret = "my_secret"
         entry = runtime._build_passthrough_func(
             graph,
             "langgraph",
@@ -172,11 +164,7 @@ class TestBuildPassthroughFunc:
         from conductor.ai.agents.runtime.runtime import AgentRuntime
         from conductor.ai.agents.runtime.config import AgentConfig
 
-        config = AgentConfig(
-            server_url="http://testserver:8080/api",
-            auth_key="my_key",
-            auth_secret="my_secret",
-        )
+        config = AgentConfig()
 
         claude_sdk = pytest.importorskip("claude_code_sdk")
         options = claude_sdk.ClaudeCodeOptions(system_prompt="hello", max_turns=4)
@@ -186,9 +174,9 @@ class TestBuildPassthroughFunc:
         # New contract: connection comes from the Configuration-derived attrs.
         from conductor.client.configuration.configuration import Configuration
 
-        runtime._conductor_config = Configuration(server_api_url=config.server_url)
-        runtime._auth_key = config.auth_key or ""
-        runtime._auth_secret = config.auth_secret or ""
+        runtime._conductor_config = Configuration(server_api_url="http://testserver:8080/api")
+        runtime._auth_key = "my_key"
+        runtime._auth_secret = "my_secret"
         # Options travel as a plain-config dict inside a PassthroughWorkerEntry
         # (ClaudeCodeOptions is never picklable as-is — debug_stderr) and are
         # rebuilt in the worker process; invoke the entry to verify the chain.

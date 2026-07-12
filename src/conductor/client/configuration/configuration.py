@@ -31,7 +31,8 @@ class Configuration:
             authentication_settings: AuthenticationSettings = None,
             server_api_url: Optional[str] = None,
             auth_token_ttl_min: int = 45,
-            register_schema: Optional[bool] = None
+            register_schema: Optional[bool] = None,
+            log_level=None
     ):
         if server_api_url is not None:
             self.host = server_api_url
@@ -59,8 +60,23 @@ class Configuration:
                 self.authentication_settings = None
 
 
-        # Debug switch
+        # Debug switch (sets __log_level to DEBUG/INFO)
         self.debug = debug
+        # Explicit SDK-wide log level: a level name ("INFO", "DEBUG", …) or an
+        # int. Overrides the debug-derived default; falls back to the
+        # CONDUCTOR_LOG_LEVEL / AGENTSPAN_LOG_LEVEL env vars. Applies to every
+        # SDK component (clients, workers, agent runtime).
+        resolved_level = (
+            log_level
+            if log_level is not None
+            else (os.getenv("CONDUCTOR_LOG_LEVEL") or os.getenv("AGENTSPAN_LOG_LEVEL"))
+        )
+        if resolved_level is not None and str(resolved_level).strip() != "":
+            self.__log_level = (
+                resolved_level
+                if isinstance(resolved_level, int)
+                else getattr(logging, str(resolved_level).upper(), self.__log_level)
+            )
         # Log format
         self.logger_format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
 
