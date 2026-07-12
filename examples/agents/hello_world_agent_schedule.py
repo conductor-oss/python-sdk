@@ -26,7 +26,11 @@ from conductor.ai.agents import Agent, AgentRuntime
 from conductor.client.configuration.configuration import Configuration
 from conductor.ai.agents.schedule import Schedule
 
-SERVER = "http://localhost:8080/api"
+SERVER = (
+    os.environ.get("CONDUCTOR_SERVER_URL")
+    or os.environ.get("AGENTSPAN_SERVER_URL")
+    or "http://localhost:8080/api"
+)
 MODEL = os.environ.get("AGENTSPAN_MODEL", "anthropic/claude-sonnet-4-6")
 
 

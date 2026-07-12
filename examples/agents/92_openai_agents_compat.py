@@ -42,39 +42,46 @@ Usage:
 
 import argparse
 
+from conductor.ai import function_tool
+
+
+# Module-level tools (spawn-safe: importable by qualified name). Workers are
+# served in spawned processes, so tools must NOT be <locals> functions defined
+# inside run_pattern_*() — those can't be imported by the spawn child.
+@function_tool
+def get_weather(city: str) -> str:
+    """Return the current weather for a city.
+
+    Args:
+        city: Name of the city.
+    """
+    return f"72°F and sunny in {city}"
+
+
+@function_tool
+def get_time(timezone: str) -> str:
+    """Return the current time in a timezone.
+
+    Args:
+        timezone: IANA timezone name (e.g. 'America/New_York').
+    """
+    from datetime import datetime
+    import zoneinfo
+
+    try:
+        tz = zoneinfo.ZoneInfo(timezone)
+        return datetime.now(tz).strftime("%H:%M %Z")
+    except Exception:
+        return f"Unknown timezone: {timezone}"
+
 
 # ── Pattern B — pure Agentspan, no openai-agents dependency ────────────────
 
 def run_pattern_b() -> None:
     """Run using Agentspan's own Agent and function_tool (same result)."""
-    from conductor.ai import Runner, function_tool
+    from conductor.ai import Runner
     from conductor.ai.agents import Agent
     from settings import settings
-
-    @function_tool
-    def get_weather(city: str) -> str:
-        """Return the current weather for a city.
-
-        Args:
-            city: Name of the city.
-        """
-        return f"72°F and sunny in {city}"
-
-    @function_tool
-    def get_time(timezone: str) -> str:
-        """Return the current time in a timezone.
-
-        Args:
-            timezone: IANA timezone name (e.g. 'America/New_York').
-        """
-        from datetime import datetime
-        import zoneinfo
-
-        try:
-            tz = zoneinfo.ZoneInfo(timezone)
-            return datetime.now(tz).strftime("%H:%M %Z")
-        except Exception:
-            return f"Unknown timezone: {timezone}"
 
     agent = Agent(
         name="weather_assistant_b",

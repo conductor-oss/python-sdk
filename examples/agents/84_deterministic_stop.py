@@ -79,26 +79,34 @@ TASKS = [
     "send status summary to team",
 ]
 
-with AgentRuntime() as runtime:
-    handle = runtime.start(agent, "Begin processing tasks.")
-    print(f"Agent started: {handle.execution_id}")
-    print(f"Domain: {handle.run_id}\n")
+def main() -> None:
+    with AgentRuntime() as runtime:
+        handle = runtime.start(agent, "Begin processing tasks.")
+        print(f"Agent started: {handle.execution_id}")
+        print(f"Domain: {handle.run_id}\n")
 
-    # Wait for agent to reach its first wait_for_task call
-    time.sleep(3)
+        # Wait for agent to reach its first wait_for_task call
+        time.sleep(3)
 
-    # Send tasks
-    for task in TASKS:
-        print(f"  → sending: {task!r}")
-        runtime.send_message(handle.execution_id, {"task": task})
-        time.sleep(6)
+        # Send tasks
+        for task in TASKS:
+            print(f"  → sending: {task!r}")
+            runtime.send_message(handle.execution_id, {"task": task})
+            time.sleep(6)
 
-    # Deterministic stop — no instructions, no LLM cooperation needed
-    print("\nSending stop signal (deterministic)...")
-    handle.stop()
+        # Deterministic stop — no instructions, no LLM cooperation needed
+        print("\nSending stop signal (deterministic)...")
+        handle.stop()
 
-    # Wait for the agent to complete gracefully
-    result = handle.join(timeout=30)
-    print(f"\nStatus: {result.status}")   # COMPLETED (not TERMINATED)
-    print(f"Output: {result.output}")
-    print("Done.")
+        # Wait for the agent to complete gracefully
+        result = handle.join(timeout=30)
+        print(f"\nStatus: {result.status}")   # COMPLETED (not TERMINATED)
+        print(f"Output: {result.output}")
+        print("Done.")
+
+
+# Guard the runtime block: spawned tool workers re-import this module, and
+# without the guard they would re-run the orchestration (multiprocessing's
+# "Safe importing of main module" error).
+if __name__ == "__main__":
+    main()

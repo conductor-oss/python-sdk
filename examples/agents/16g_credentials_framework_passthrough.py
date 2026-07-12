@@ -24,23 +24,27 @@ Requirements:
 
 import os
 
+from langchain_core.tools import tool as lc_tool
+
 from conductor.ai.agents import AgentRuntime
 from settings import settings
 
 
+# Module-level tool (spawn-safe: importable by qualified name). A <locals>
+# tool defined inside the factory can't be resolved by a spawned worker.
+@lc_tool
+def check_github_auth() -> str:
+    """Check if GitHub authentication is available."""
+    token = os.environ.get("GITHUB_TOKEN", "")
+    if token:
+        return f"GitHub token is set (starts with {token[:4]}...)"
+    return "GitHub token is NOT set"
+
+
 def create_langgraph_agent():
     """Create a simple LangGraph agent with a tool that uses GITHUB_TOKEN."""
-    from langchain_core.tools import tool as lc_tool
     from langchain_openai import ChatOpenAI
     from langgraph.prebuilt import create_react_agent
-
-    @lc_tool
-    def check_github_auth() -> str:
-        """Check if GitHub authentication is available."""
-        token = os.environ.get("GITHUB_TOKEN", "")
-        if token:
-            return f"GitHub token is set (starts with {token[:4]}...)"
-        return "GitHub token is NOT set"
 
     # Parse provider/model format
     model_str = settings.llm_model

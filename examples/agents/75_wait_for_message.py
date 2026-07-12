@@ -57,18 +57,26 @@ agent = Agent(
     ),
 )
 
-with AgentRuntime() as runtime:
-    handle = runtime.start(agent, "Start listening for messages.")
-    print(f"Agent started: {handle.execution_id}")
-    print("Sending messages...\n")
+def main() -> None:
+    with AgentRuntime() as runtime:
+        handle = runtime.start(agent, "Start listening for messages.")
+        print(f"Agent started: {handle.execution_id}")
+        print("Sending messages...\n")
 
-    for msg in ["summarize quarterly report", "draft release notes", "check system health"]:
-        time.sleep(2)
-        print(f"  -> sending: {msg!r}")
-        runtime.send_message(handle.execution_id, {"task": msg})
+        for msg in ["summarize quarterly report", "draft release notes", "check system health"]:
+            time.sleep(2)
+            print(f"  -> sending: {msg!r}")
+            runtime.send_message(handle.execution_id, {"task": msg})
 
-    # Let the agent process all messages (~5-6s per message)
-    time.sleep(30)
-    handle.stop()
-    handle.join(timeout=30)
-    print("\nDone.")
+        # Let the agent process all messages (~5-6s per message)
+        time.sleep(30)
+        handle.stop()
+        handle.join(timeout=30)
+        print("\nDone.")
+
+
+# Guard the runtime block: spawned tool workers re-import this module, and
+# without the guard they would re-run the orchestration (multiprocessing's
+# "Safe importing of main module" error).
+if __name__ == "__main__":
+    main()
