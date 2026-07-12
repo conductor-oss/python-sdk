@@ -10,7 +10,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional, Tuple
 
-from conductor.ai.agents._internal.token_utils import agent_api_auth_headers
+from conductor.ai.agents._internal.agent_http import agent_post
 from conductor.ai.agents.frameworks.serializer import WorkerInfo
 
 logger = logging.getLogger("conductor.ai.agents.frameworks.langchain")
@@ -245,11 +245,7 @@ def _push_event_nonblocking(
 
     def _do_push():
         try:
-            import requests
-
-            url = f"{server_url}/agent/events/{execution_id}"
-            headers = agent_api_auth_headers(server_url, auth_key=auth_key, auth_secret=auth_secret)
-            requests.post(url, json=event, headers=headers, timeout=5)
+            agent_post(server_url, auth_key, auth_secret, f"/agent/events/{execution_id}", event)
         except Exception as exc:
             logger.debug("Event push failed (execution_id=%s): %s", execution_id, exc)
 
