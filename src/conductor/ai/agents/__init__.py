@@ -127,6 +127,7 @@ from conductor.ai.agents.run import (
 
 # Runtime (for context manager and advanced usage)
 from conductor.ai.agents.runtime.config import AgentConfig
+from conductor.ai.agents.run_settings import RunSettings
 
 # Credential management
 from conductor.ai.agents.runtime.credentials.accessor import get_secret
@@ -245,6 +246,7 @@ __all__ = [
     "AgentRuntime",
     "VALID_RETRY_POLICIES",
     "AgentConfig",
+    "RunSettings",
     # Extended agent types
     "GPTAssistantAgent",
     # Tools

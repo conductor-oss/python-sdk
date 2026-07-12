@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from conductor.client.configuration.configuration import Configuration
 
 from conductor.ai.agents.agent import Agent
+from conductor.ai.agents.run_settings import RunSettings
 from conductor.ai.agents.result import (
     AgentEvent,
     AgentHandle,
@@ -538,6 +539,7 @@ class AgentRuntime:
         context: Optional[Dict[str, Any]] = None,
         run_id: Optional[str] = None,
         static_plan: Optional[Dict[str, Any]] = None,
+        run_settings: Optional[Union[RunSettings, dict]] = None,
     ) -> str:
         """Start an agent via the server's /api/agent/start endpoint.
 
@@ -553,6 +555,13 @@ class AgentRuntime:
 
         serializer = AgentConfigSerializer()
         config_json = serializer.serialize(agent)
+
+        # Per-run LLM overrides (model/temperature/…) mutate the serialized
+        # agentConfig before compile+register+start, so they flow into the
+        # LLM tasks without a new server field.
+        rs = RunSettings.coerce(run_settings)
+        if rs is not None:
+            config_json.update(rs.to_config_overrides())
 
         payload = {
             "agentConfig": config_json,
@@ -603,6 +612,7 @@ class AgentRuntime:
         credentials: Optional[List[str]] = None,
         context: Optional[Dict[str, Any]] = None,
         run_id: Optional[str] = None,
+        run_settings: Optional[Union[RunSettings, dict]] = None,
     ) -> str:
         """Async version of :meth:`_start_via_server`."""
         pre_deployed_skills = self._pre_deploy_nested_skills(agent)
@@ -611,6 +621,11 @@ class AgentRuntime:
 
         serializer = AgentConfigSerializer()
         config_json = serializer.serialize(agent)
+
+        # Per-run LLM overrides (see :meth:`_start_via_server`).
+        rs = RunSettings.coerce(run_settings)
+        if rs is not None:
+            config_json.update(rs.to_config_overrides())
 
         payload = {
             "agentConfig": config_json,
@@ -2243,11 +2258,13 @@ class AgentRuntime:
         packages: Optional[List[str]] = None,
         blocking: bool = True,
     ) -> None:
-        """Register workers and keep them polling until interrupted.
+        """Register the agent(s) on the server, serve their workers, and poll.
 
-        This is a runtime operation: it registers the Python tool functions
-        (tools, custom guardrails, callbacks, handoff checks, etc.) as
-        Conductor workers and starts polling for tasks.
+        This is a runtime operation: for each agent it registers the agent on
+        the server (compile + register the workflow and task defs, like
+        :meth:`deploy`), then registers the local Python tool functions (tools,
+        custom guardrails, callbacks, handoff checks, etc.) as Conductor workers
+        and starts polling for tasks. In short, ``serve`` = ``deploy`` + serve.
 
         Args:
             *agents: Agents whose workers should be served.
@@ -2276,6 +2293,10 @@ class AgentRuntime:
         has_new = False
         for agent in all_agents:
             framework = detect_framework(agent)
+            # Register the agent (workflow + task defs) on the server before
+            # bringing up local workers. Mirrors run()'s deploy-then-register
+            # order; _register_workers' overwrite_task_def keeps it idempotent.
+            self._deploy_via_server(agent, framework=framework)
             if framework is not None:
                 self._serve_framework_workers(agent, framework)
                 has_new = True
@@ -2372,6 +2393,7 @@ class AgentRuntime:
         timeout: Optional[int] = None,
         credentials: Optional[List[str]] = None,
         context: Optional[Dict[str, Any]] = None,
+        run_settings: Optional[Union[RunSettings, dict]] = None,
         **kwargs: Any,
     ) -> AgentResult:
         """Execute an agent synchronously and return the result.
@@ -2493,6 +2515,7 @@ class AgentRuntime:
             context=context,
             run_id=run_id,
             static_plan=static_plan,
+            run_settings=run_settings,
         )
 
         worker_domain = self._resolve_worker_domain(execution_id, run_id)
@@ -3480,6 +3503,7 @@ class AgentRuntime:
         session_id: Optional[str] = None,
         idempotency_key: Optional[str] = None,
         context: Optional[Dict[str, Any]] = None,
+        run_settings: Optional[Union[RunSettings, dict]] = None,
         **kwargs: Any,
     ) -> AgentHandle:
         """Start an agent asynchronously and return a handle.
@@ -3549,6 +3573,7 @@ class AgentRuntime:
             timeout=effective_timeout,
             context=context,
             run_id=run_id,
+            run_settings=run_settings,
         )
 
         worker_domain = self._resolve_worker_domain(execution_id, run_id)
@@ -3852,6 +3877,7 @@ class AgentRuntime:
         timeout: Optional[int] = None,
         credentials: Optional[List[str]] = None,
         context: Optional[Dict[str, Any]] = None,
+        run_settings: Optional[Union[RunSettings, dict]] = None,
         **kwargs: Any,
     ) -> AgentResult:
         """Execute an agent asynchronously (async-first implementation).
@@ -3949,6 +3975,7 @@ class AgentRuntime:
             credentials=credentials,
             context=context,
             run_id=run_id,
+            run_settings=run_settings,
         )
 
         worker_domain = self._resolve_worker_domain(execution_id, run_id)
@@ -4025,6 +4052,7 @@ class AgentRuntime:
         session_id: Optional[str] = None,
         idempotency_key: Optional[str] = None,
         context: Optional[Dict[str, Any]] = None,
+        run_settings: Optional[Union[RunSettings, dict]] = None,
         **kwargs: Any,
     ) -> AgentHandle:
         """Start an agent asynchronously and return a handle (async version).
@@ -4087,6 +4115,7 @@ class AgentRuntime:
             timeout=effective_timeout,
             context=context,
             run_id=run_id,
+            run_settings=run_settings,
         )
 
         worker_domain = self._resolve_worker_domain(execution_id, run_id)

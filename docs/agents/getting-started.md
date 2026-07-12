@@ -11,7 +11,7 @@ pip install 'conductor-python[agents]'
 Or, per framework, install just what you need — e.g. `conductor-python[langchain]`,
 `conductor-python[adk]`, `conductor-python[claude]`.
 
-Point the SDK at a running Agentspan server (defaults to `http://localhost:8080/api`):
+Point the SDK at a running Conductor Agent server (defaults to `http://localhost:8080/api`):
 
 ```bash
 export AGENTSPAN_SERVER_URL=http://localhost:8080/api

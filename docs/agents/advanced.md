@@ -47,8 +47,10 @@ For one-off scripts, top-level functions use a shared singleton runtime:
 
 ```python
 import conductor.ai.agents as ag
+from conductor.client.configuration.configuration import Configuration
 
-ag.configure(server_url="https://prod:8080/api")  # before first run
+# Connection/auth via a Configuration; agent-behaviour knobs via config=AgentConfig(...).
+ag.configure(configuration=Configuration(server_api_url="https://prod:8080/api"))  # before first run
 result = ag.run(agent, "Hello!")
 ag.shutdown()    # explicit cleanup; not required for simple scripts
 ```
@@ -64,13 +66,16 @@ ag.shutdown()    # explicit cleanup; not required for simple scripts
 | `runtime.run(agent, prompt)` | yes | `AgentResult` | Simplest case — run and get the answer |
 | `runtime.start(agent, prompt)` | no | `AgentHandle` | Fire-and-forget; poll/control later |
 | `runtime.stream(agent, prompt)` | iterates | `AgentStream` | Watch events live; drive HITL |
-| `runtime.deploy(*agents)` | yes | `list[DeploymentInfo]` | CI/CD: compile + register, no execution |
-| `runtime.serve(*agents)` | yes (blocks) | — | Long-lived worker process; polls until interrupted |
+| `runtime.deploy(*agents)` | yes | `list[DeploymentInfo]` | CI/CD: compile + register, no workers, no execution |
+| `runtime.serve(*agents)` | yes (blocks) | — | Register agent(s) **and** serve workers; long-lived, polls until interrupted (`serve` = `deploy` + serve) |
 | `runtime.plan(agent)` | yes | `dict` | Compile to a workflow def without running anything |
 
 `run`/`start`/`stream` accept `media=`, `session_id=`, `idempotency_key=`,
 `credentials=`, and extra `**kwargs` as workflow input. `run`/`run_async` also accept
 `on_event=` to stream while running synchronously, `timeout=`, and `context=`.
+`run`/`start` (and their async variants) also accept `run_settings=` — a `RunSettings`
+(or dict) that overrides the agent's `model`/`temperature`/`max_tokens`/… for that one
+call. See [API reference](api-reference.md#per-run-overrides--runsettings).
 
 `plan(agent)` returns `{"workflowDef": ..., "requiredWorkers": ...}` — useful to
 inspect the compiled Conductor workflow:
@@ -91,8 +96,12 @@ runtime.deploy(agent)
 #   agentspan deploy --path ./agents --agents greeter,support
 
 # Long-lived worker process:
-runtime.serve(agent)        # blocks, polling for tool tasks
+runtime.serve(agent)        # registers the agent (idempotent) + blocks, polling for tool tasks
 ```
+
+`serve` also registers the agent on the server, so the explicit `deploy` step above
+is optional — it's still useful to register/upgrade the workflow from CI independently
+of the worker rollout.
 
 `resume(execution_id, agent)` re-attaches to a previously `start`ed execution and
 re-registers its tool workers (e.g. after a process restart):

@@ -29,15 +29,15 @@ Context manager (sync and async: `with` / `async with`).
 
 | Method | Signature | Purpose |
 |---|---|---|
-| `run` | `(agent, prompt=None, *, version=None, media=None, session_id=None, idempotency_key=None, on_event=None, timeout=None, credentials=None, context=None, **kwargs) -> AgentResult` | Run synchronously |
+| `run` | `(agent, prompt=None, *, version=None, media=None, session_id=None, idempotency_key=None, on_event=None, timeout=None, credentials=None, context=None, run_settings=None, **kwargs) -> AgentResult` | Start, wait for completion, return the result (also starts workers) |
 | `run_async` | same as `run` | Async run |
-| `start` | `(agent, prompt=None, *, version=None, media=None, session_id=None, idempotency_key=None, context=None, **kwargs) -> AgentHandle` | Fire-and-forget |
+| `start` | `(agent, prompt=None, *, version=None, media=None, session_id=None, idempotency_key=None, context=None, run_settings=None, **kwargs) -> AgentHandle` | Fire-and-forget; returns a handle (also starts workers) |
 | `start_async` | same as `start` | Async start |
 | `stream` | `(agent=None, prompt=None, *, version=None, handle=None, media=None, session_id=None, **kwargs) -> AgentStream` | Stream events |
 | `stream_async` | same as `stream` | `-> AsyncAgentStream` |
-| `deploy` | `(*agents, packages=None, schedules=_UNSET) -> list[DeploymentInfo]` | Compile + register |
+| `deploy` | `(*agents, packages=None, schedules=_UNSET) -> list[DeploymentInfo]` | Compile + register agent(s) on the server; does **not** start workers |
 | `deploy_async` | same | Async deploy |
-| `serve` | `(*agents, packages=None, blocking=True) -> None` | Register + poll workers |
+| `serve` | `(*agents, packages=None, blocking=True) -> None` | Register agent(s) on the server **and** serve/poll their workers (`serve` = `deploy` + serve) |
 | `plan` | `(agent) -> dict` | Compile to workflow def |
 | `resume` | `(execution_id, agent, *, timeout=None) -> AgentHandle` | Re-attach + re-register workers |
 | `resume_async` | same | Async resume |
@@ -56,6 +56,28 @@ Async variants exist for status/respond/approve/reject/send/stop/shutdown
 (`*_async`). Module-level wrappers using a singleton runtime: `run`, `run_async`,
 `start`, `start_async`, `stream`, `stream_async`, `resume`, `resume_async`, `deploy`,
 `deploy_async`, `serve`, `plan`, `configure`, `shutdown`.
+
+### Per-run overrides — `RunSettings`
+
+`run` / `start` (and their async variants and the module-level wrappers) accept
+`run_settings=` to override an agent's LLM settings for a single invocation
+without rebuilding the `Agent`:
+
+```python
+from conductor.ai.agents import RunSettings
+
+runtime.run(
+    agent,
+    "Summarize this.",
+    run_settings=RunSettings(model="anthropic/claude-sonnet-4-6", temperature=0.0, max_tokens=512),
+)
+```
+
+`RunSettings(model=None, temperature=None, max_tokens=None, reasoning_effort=None,
+thinking_budget_tokens=None)` — only the fields you set override; unset fields keep
+the agent's own values (so `temperature=0.0` is honored). A plain `dict` with the
+same keys is also accepted. Overrides apply to the root agent's config; sub-agents
+keep their own settings.
 
 ## Agent
 

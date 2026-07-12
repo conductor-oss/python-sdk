@@ -2364,7 +2364,223 @@ If you are an AI agent implementing a Conductor worker SDK:
 
 ---
 
-## 25. Appendix: Algorithms
+## 25. Agent SDK Layer (Building Agents on the Worker SDK)
+
+Sections 1–24 specify the **Worker SDK**. This section specifies an **Agent SDK** —
+a higher-level layer built *on top of* the Worker SDK that lets developers author
+LLM agents in plain code and run them as durable Conductor workflows. It reflects
+the reference Python SDK's `conductor.ai.agents` package.
+
+### 25.1 Execution Model
+
+**Principle:** an agent is *authored* in the SDK but *compiled and executed on the
+server*. The SDK does **not** run an agent loop locally — it serializes the agent to
+an `agentConfig`, and the server compiles that into a Conductor **workflow**
+(LLM-completion tasks, tool tasks, routing/switch tasks, and sub-workflows for
+sub-agents). The agent's **tools are ordinary Conductor workers** — everything in
+Sections 1–24 is reused unchanged to serve them.
+
+Two planes:
+
+| Plane | Responsibility | Transport |
+|---|---|---|
+| **Control plane** (`AgentClient`) | compile / deploy / start / status / stream / respond / stop / signal | HTTP to `/agent/*` endpoints via the standard authenticated API client |
+| **Worker plane** (`WorkerManager` → `TaskHandler`/`TaskRunner`, Sections 4–5) | serve the agent's tool functions as Conductor workers | poll / execute / update (Section 5) |
+
+```
+Author Agent (code)
+      │  serialize → agentConfig
+      ▼
+AgentRuntime ──(control plane: AgentClient)──▶ Server: compile agentConfig → workflow, run it
+      │                                              │  schedules LLM tasks + tool tasks
+      └──(worker plane: WorkerManager/TaskHandler)──▶ polls & executes the agent's tool tasks
+```
+
+**Key consequence:** starting an agent is *compile + register + start* in one server
+call; the SDK then starts the tool workers so the scheduled tool tasks get executed.
+
+### 25.2 AgentRuntime (facade)
+
+The single entry point. It composes:
+- a standard **`Configuration`** (host + auth) — the *only* source of connection/auth;
+- an **`AgentConfig`** (agent-runtime behaviour knobs; Section 25.4);
+- an **`AgentClient`** (control plane; Section 25.3), built from the same `Configuration`;
+- a **`WorkerManager`** wrapping the Worker SDK's `TaskHandler` (Sections 4–5).
+
+Constructor: `AgentRuntime(configuration=None, *, settings=None)` — `configuration`
+defaults to an env-resolved `Configuration()`; `settings` is an optional `AgentConfig`.
+Implements the context-manager protocol for lifecycle (sync and async).
+
+**Verb contract (implementations must match exactly):**
+
+| Method | Blocks | Returns | Starts workers? | Registers agent on server? | Runs execution? |
+|---|---|---|---|---|---|
+| `run(agent, prompt, …)` | yes | result object (output + status + ids) | yes | via start | yes |
+| `start(agent, prompt, …)` | no | handle (carries `executionId`) | yes | via start | yes |
+| `deploy(*agents, …)` | yes | list of deployment info | **no** | yes (compile + register) | no |
+| `serve(*agents, …)` | yes (until signal) | — | yes (polls) | **yes** | no |
+| `plan(agent)` | yes | compiled workflow def | no | no | no |
+| `stream(agent, prompt, …)` | iterates | event stream | yes | via start | yes |
+
+- `run` = `start` + wait-for-completion; both `run` and `start` **also start the tool
+  workers** so scheduled tool tasks execute.
+- `start` returns a *handle* (not a bare id); the id is `handle.execution_id`. `run`
+  returns a *result* (not bare output); the output is `result.output`. Return the rich
+  objects — they also carry status, token usage, streaming, and `join()`/`stop()`.
+- `deploy` registers the workflow (+ task defs) on the server and starts **nothing**
+  (CI/CD operation).
+- `serve` = **deploy + serve**: it registers each agent on the server *and* registers +
+  serves the local tool workers, then blocks polling until interrupted. Registration is
+  idempotent with the Worker SDK's `overwrite_task_def`.
+
+Provide async twins (`run_async`, `start_async`, `deploy_async`, `stream_async`,
+`resume_async`) and HITL/lifecycle methods (`respond`/`approve`/`reject`,
+`send_message`, `signal`, `get_status`, `pause`/`cancel`/`stop`, `shutdown`).
+
+**Start flow (shared by `run` and `start`):**
+
+```
+FUNCTION start_internal(agent, prompt, run_settings=null, …):
+    config_json = serialize(agent)                       // agent → agentConfig
+    IF run_settings: apply_overrides(config_json, run_settings)   // Section 25.5
+    payload = { agentConfig: config_json, prompt, sessionId, media, … }
+    data = agent_client.start_agent(payload)             // server: compile + register + start
+    execution_id    = data.executionId
+    required_workers = data.requiredWorkers              // tool task defs this run needs
+    prepare_workers(agent, required_workers)             // WorkerManager.start() — serve tools
+    RETURN execution_id
+```
+
+### 25.3 AgentClient (control-plane interface)
+
+An **interface** (mirroring the Worker SDK's client conventions) with a
+Conductor/Orkes implementation. Methods — each with a sync and an async variant:
+`start_agent`, `deploy_agent`, `compile_agent`, `get_status`, `get_execution`,
+`list_executions`, `respond`, `stop`, `signal`, `stream_sse` (SSE generator), `close`.
+
+**Critical requirement — reuse ONE token authority.** Build the implementation on the
+**standard authenticated API client** (the same client workers use, Sections 5/10), so
+it inherits token mint / cache / TTL-refresh / 401-retry for free. Non-streaming calls
+go through `call_api(resource_path="/agent/…", method, body, …)`. SSE streaming can't
+use `call_api`, so it uses a streaming HTTP transport — but it **borrows the auth
+header from the same client** (a public `get_authentication_headers()` accessor) rather
+than minting separately. Do **not** implement a second token cache anywhere in the
+agent layer (Section 25.6).
+
+Error mapping: the server `ApiException` maps to agent errors (`AgentAPIError`; HTTP
+404 → `AgentNotFoundError`).
+
+### 25.4 AgentConfig (agent-runtime behaviour ONLY)
+
+`AgentConfig` holds **agent-runtime knobs only**. Connection, auth, and the SDK-wide
+log level come from the standard `Configuration` — the single source. **Do not**
+duplicate server URL, credentials, or log level in `AgentConfig`.
+
+| Field | Type | Default | Purpose |
+|---|---|---|---|
+| `worker_poll_interval_ms` | int | 100 | Tool-worker poll interval |
+| `worker_thread_count` | int | 1 | Threads per tool worker |
+| `auto_start_workers` | bool | true | Auto-start tool workers on run/start |
+| `daemon_workers` | bool | true | Worker processes die with the parent (no orphans) |
+| `auto_register_integrations` | bool | false | Auto-create LLM provider integrations on the server at run time |
+| `streaming_enabled` | bool | true | `stream()` uses server-sent events |
+| `liveness_enabled` | bool | true | Start a liveness monitor for stateful runs (Section 25.9) |
+| `liveness_stall_seconds` | float | 30.0 | Idle window before a run is deemed stalled |
+| `liveness_check_interval_seconds` | float | 10.0 | Liveness poll cadence |
+
+`AgentConfig.from_env()` reads the SDK's env prefix (`AGENTSPAN_*`). Connection/auth/log
+resolution lives in `Configuration`: host from `CONDUCTOR_SERVER_URL` →
+`AGENTSPAN_SERVER_URL`; auth from `CONDUCTOR_AUTH_*`; log level from
+`CONDUCTOR_LOG_LEVEL` / `AGENTSPAN_LOG_LEVEL` (or the `debug` flag).
+
+### 25.5 RunSettings (per-run LLM overrides)
+
+`run`/`start` (and their async variants) accept an optional `run_settings` to override
+the agent's LLM settings **for a single invocation** — without rebuilding the agent.
+
+| `RunSettings` field | Overrides `agentConfig` wire key |
+|---|---|
+| `model` | `model` |
+| `temperature` | `temperature` |
+| `max_tokens` | `maxTokens` |
+| `reasoning_effort` | `reasoningEffort` |
+| `thinking_budget_tokens` | `thinkingConfig = {enabled: true, budgetTokens: n}` |
+
+```
+FUNCTION apply_overrides(config_json, run_settings):
+    FOR field, wire_key IN mapping:
+        value = run_settings[field]
+        IF value IS NOT null:      // NOT truthiness — honor temperature=0.0, max_tokens=0
+            config_json[wire_key] = value
+```
+
+**Rules:** SDK-side only — mutate the serialized `agentConfig` *before* `start_agent`
+(no server change). Only set fields override; unset fields keep the agent's own values.
+Overrides apply to the **root** agent config; sub-agents keep their own per-agent
+settings. Accept a typed `RunSettings` or a plain map of the same keys.
+
+### 25.6 Single Token Authority
+
+**Principle:** every HTTP call the agent layer makes — control plane (`/agent/*`) **and**
+worker-side agent posts (event push, tool-task injection, tracking-workflow creation,
+task progress) — must reuse the SDK's *one* authenticated client's token management.
+Never run a parallel `POST /token` mint/cache beside the API client.
+
+Because tool workers run in **spawned child processes** that can't receive a live client
+object, reconstruct a client inside the child from the plain connection strings
+`(server_url, auth_key, auth_secret)` and **cache it per `(server_url, auth_key)`** — the
+client constructor mints a token, so caching avoids a mint on every call. Post through
+that client's `call_api` (which also provides 401-retry).
+
+### 25.7 Framework Adapters
+
+The agent layer can run agents authored in *foreign frameworks* (LangChain, LangGraph,
+OpenAI Agents SDK, Claude Agent SDK) on the durable runtime. The foreign agent is
+wrapped as a **passthrough worker**; its tools run as Conductor workers; lifecycle and
+tool-use events are pushed to the server for observability.
+
+**Spawn-safety (critical).** Workers execute in spawned processes, so every worker/tool
+callable must be **importable by qualified name or picklable by value** — a module-level
+function, or a module-level callable *class instance* holding only plain data. **Never**
+register a `<locals>` closure or a lambda. Entry scripts must guard top-level execution
+with the language's "main module" guard (e.g. `if __name__ == "__main__":`) so a
+re-imported spawn child does not re-run the orchestration. Framework worker factories
+receive plain strings (server URL + credentials), never live client objects.
+
+### 25.8 Agent Credentials (runtimeMetadata contract)
+
+Tool workers receive secrets via a **wire-only delivery** contract, never from the
+ambient environment:
+1. A tool declares required credential **names**; the SDK stamps them on the tool's
+   `TaskDef.runtimeMetadata`.
+2. At poll time the server resolves those names against its credential store and
+   delivers the **values** on the wire-only `Task.runtimeMetadata` (not persisted).
+3. The worker injects the values into the environment **for that call only**; if a
+   declared credential was not delivered, the worker **fails** rather than reading the
+   ambient environment.
+
+### 25.9 Liveness Monitoring (stateful runs)
+
+For a stateful run the client cannot distinguish a slow agent from a dead worker. A
+**liveness monitor** polls the workflow every `liveness_check_interval_seconds`; if a
+task has had no polls (worker died/disconnected) for `liveness_stall_seconds`, it fires
+a stall so `result()`/`join()` raise a worker-stall error instead of blocking forever.
+Toggle via `AgentConfig.liveness_enabled`.
+
+### 25.10 Agent-Layer Implementation Checklist
+
+- [ ] `AgentClient` interface + implementation on the standard authenticated API client (sync + async); SSE reuses the client's auth header.
+- [ ] `AgentRuntime` facade: `run`/`start`/`deploy`/`serve`/`plan`/`stream` (+ async) with the exact verb contract (25.2).
+- [ ] `AgentConfig` = behaviour-only; connection/auth/log level come from `Configuration`.
+- [ ] `RunSettings` per-run overrides applied to the serialized `agentConfig` (25.5).
+- [ ] Single token authority across control plane + worker-side posts (25.6).
+- [ ] Tool workers reuse the Worker SDK (Sections 4–5); credential delivery via `runtimeMetadata` (25.8).
+- [ ] Framework adapters as spawn-safe passthrough workers (25.7).
+- [ ] Liveness monitor for stateful runs (25.9).
+
+---
+
+## 26. Appendix: Algorithms
 
 ### A. Cleanup Completed Tasks
 
@@ -2429,7 +2645,7 @@ FUNCTION merge_context_modifications(
 
 ---
 
-## 26. Glossary
+## 27. Glossary
 
 **AsyncTaskRunner:** Worker execution engine using event loop/coroutines for async workers
 **Batch Polling:** Requesting multiple tasks in single API call
@@ -2453,7 +2669,12 @@ FUNCTION merge_context_modifications(
 
 ---
 
-## 27. Version History
+## 28. Version History
+
+**v1.1:**
+- Added Section 25: **Agent SDK Layer** (AgentRuntime, AgentClient, AgentConfig,
+  RunSettings, framework adapters, single token authority, runtimeMetadata
+  credentials, liveness monitoring) — the agent SDK built on top of the Worker SDK.
 
 **v1.0 (2025-11-30):**
 - Initial release
@@ -2463,7 +2684,7 @@ FUNCTION merge_context_modifications(
 
 ---
 
-## 28. Contributing
+## 29. Contributing
 
 This is a living document. If you implement a worker SDK in another language:
 

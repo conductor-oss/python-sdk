@@ -16,6 +16,7 @@ import pytest
 
 from conductor.ai.agents.agent import Agent
 from conductor.ai.agents.result import AgentStatus, EventType
+from conductor.ai.agents.run_settings import RunSettings
 
 
 class MockWorkflowRun:
@@ -2820,3 +2821,92 @@ class TestHandoffIndexing:
         # Allowed: coder → qa_tester
         result = handoff_check("qa_tester", "2")
         assert result == {"active_agent": "3", "handoff": True}
+
+
+class TestRunSettings:
+    """Per-run run_settings overrides land in the /agent/start payload."""
+
+    @pytest.fixture()
+    def runtime(self):
+        with patch("conductor.client.orkes_clients.OrkesClients"):
+            with patch("conductor.ai.agents.runtime.worker_manager.TaskHandler", create=True):
+                from conductor.ai.agents.runtime.config import AgentConfig
+                from conductor.ai.agents.runtime.runtime import AgentRuntime
+
+                config = AgentConfig(auto_start_workers=False)
+                return AgentRuntime(settings=config)
+
+    def _agent_config(self, runtime):
+        """The agentConfig dict sent in the last start_agent payload."""
+        return runtime._agent_client.start_agent.call_args[0][0]["agentConfig"]
+
+    def test_overrides_land_in_payload(self, runtime):
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-1"})
+        agent = Agent(name="t", model="openai/gpt-4o", temperature=0.2)
+        runtime._start_via_server(
+            agent,
+            "hi",
+            run_settings=RunSettings(
+                model="anthropic/claude-sonnet-4-6",
+                temperature=0.9,
+                max_tokens=100,
+                reasoning_effort="high",
+                thinking_budget_tokens=2048,
+            ),
+        )
+        cfg = self._agent_config(runtime)
+        assert cfg["model"] == "anthropic/claude-sonnet-4-6"
+        assert cfg["temperature"] == 0.9
+        assert cfg["maxTokens"] == 100
+        assert cfg["reasoningEffort"] == "high"
+        assert cfg["thinkingConfig"] == {"enabled": True, "budgetTokens": 2048}
+
+    def test_none_keeps_agent_settings(self, runtime):
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-2"})
+        agent = Agent(name="t", model="openai/gpt-4o", temperature=0.2)
+        runtime._start_via_server(agent, "hi")
+        cfg = self._agent_config(runtime)
+        assert cfg["model"] == "openai/gpt-4o"
+        assert cfg["temperature"] == 0.2
+
+    def test_partial_override_only_changes_given_fields(self, runtime):
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-3"})
+        agent = Agent(name="t", model="openai/gpt-4o", temperature=0.2)
+        runtime._start_via_server(agent, "hi", run_settings=RunSettings(temperature=0.9))
+        cfg = self._agent_config(runtime)
+        assert cfg["temperature"] == 0.9
+        assert cfg["model"] == "openai/gpt-4o"
+        assert "maxTokens" not in cfg
+
+    def test_temperature_zero_applies(self, runtime):
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-4"})
+        agent = Agent(name="t", model="openai/gpt-4o", temperature=0.7)
+        runtime._start_via_server(agent, "hi", run_settings=RunSettings(temperature=0.0))
+        assert self._agent_config(runtime)["temperature"] == 0.0
+
+    def test_accepts_dict(self, runtime):
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-5"})
+        agent = Agent(name="t", model="openai/gpt-4o")
+        runtime._start_via_server(agent, "hi", run_settings={"model": "anthropic/x", "max_tokens": 50})
+        cfg = self._agent_config(runtime)
+        assert cfg["model"] == "anthropic/x"
+        assert cfg["maxTokens"] == 50
+
+    def test_run_forwards_run_settings(self, runtime):
+        rs = RunSettings(temperature=0.5)
+        runtime._prepare_workers = MagicMock()
+        runtime._start_via_server = MagicMock(return_value=("wf-6", None, []))
+        runtime._poll_status_until_complete = MagicMock(
+            return_value=AgentStatus(
+                execution_id="wf-6", is_complete=True, output="ok", status="COMPLETED"
+            )
+        )
+        runtime.run(Agent(name="t", model="openai/gpt-4o"), "hi", run_settings=rs)
+        assert runtime._start_via_server.call_args.kwargs["run_settings"] is rs
+
+    def test_start_forwards_run_settings(self, runtime):
+        rs = RunSettings(model="anthropic/x")
+        runtime._prepare_workers = MagicMock()
+        runtime._start_via_server = MagicMock(return_value=("wf-7", None, []))
+        runtime.start(Agent(name="t", model="openai/gpt-4o"), "hi", run_settings=rs)
+        assert runtime._start_via_server.call_args.kwargs["run_settings"] is rs

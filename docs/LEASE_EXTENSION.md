@@ -128,7 +128,7 @@ If a heartbeat API call fails, the SDK retries up to 3 times with backoff (`1s`,
 
 ## Example
 
-See [examples/lease_extension_example.py](examples/lease_extension_example.py) for a complete runnable example that:
+See [examples/lease_extension_example.py](../examples/lease_extension_example.py) for a complete runnable example that:
 - Defines a long-running worker with `lease_extend_enabled=True`
 - Creates a workflow with a short `responseTimeoutSeconds`
 - Runs the workflow and proves the task completes despite sleeping longer than the timeout

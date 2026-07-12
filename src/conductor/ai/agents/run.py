@@ -261,6 +261,7 @@ def run(
     idempotency_key: Optional[str] = None,
     on_event: Optional[Any] = None,
     credentials: Optional[List[str]] = None,
+    run_settings: Optional[Any] = None,
     runtime: Optional[Any] = None,
     **kwargs: Any,
 ) -> AgentResult:
@@ -304,6 +305,7 @@ def run(
         idempotency_key=idempotency_key,
         on_event=on_event,
         credentials=credentials,
+        run_settings=run_settings,
         **kwargs,
     )
 
@@ -315,6 +317,7 @@ def start(
     media: Optional[List[str]] = None,
     session_id: Optional[str] = None,
     idempotency_key: Optional[str] = None,
+    run_settings: Optional[Any] = None,
     runtime: Optional[Any] = None,
     **kwargs: Any,
 ) -> AgentHandle:
@@ -351,7 +354,13 @@ def start(
     """
     rt = runtime or _get_default_runtime()
     return rt.start(
-        agent, prompt, media=media, session_id=session_id, idempotency_key=idempotency_key, **kwargs
+        agent,
+        prompt,
+        media=media,
+        session_id=session_id,
+        idempotency_key=idempotency_key,
+        run_settings=run_settings,
+        **kwargs,
     )
 
 
@@ -412,6 +421,7 @@ async def run_async(
     idempotency_key: Optional[str] = None,
     on_event: Optional[Any] = None,
     credentials: Optional[List[str]] = None,
+    run_settings: Optional[Any] = None,
     runtime: Optional[Any] = None,
     **kwargs: Any,
 ) -> AgentResult:
@@ -450,6 +460,7 @@ async def run_async(
         idempotency_key=idempotency_key,
         on_event=on_event,
         credentials=credentials,
+        run_settings=run_settings,
         **kwargs,
     )
 
@@ -461,6 +472,7 @@ async def start_async(
     media: Optional[List[str]] = None,
     session_id: Optional[str] = None,
     idempotency_key: Optional[str] = None,
+    run_settings: Optional[Any] = None,
     runtime: Optional[Any] = None,
     **kwargs: Any,
 ) -> AgentHandle:
@@ -490,7 +502,13 @@ async def start_async(
     """
     rt = runtime or _get_default_runtime()
     return await rt.start_async(
-        agent, prompt, media=media, session_id=session_id, idempotency_key=idempotency_key, **kwargs
+        agent,
+        prompt,
+        media=media,
+        session_id=session_id,
+        idempotency_key=idempotency_key,
+        run_settings=run_settings,
+        **kwargs,
     )
 
 

@@ -306,7 +306,7 @@ def train_model(dataset_id: str) -> dict:
     return {'model_id': model.id, 'accuracy': model.accuracy}
 ```
 
-Disabled by default. Enable per-worker via decorator, constructor, or environment variable (`conductor_worker_<task>_lease_extend_enabled=true`). See [LEASE_EXTENSION.md](LEASE_EXTENSION.md) for the full guide.
+Disabled by default. Enable per-worker via decorator, constructor, or environment variable (`conductor_worker_<task>_lease_extend_enabled=true`). See [LEASE_EXTENSION.md](docs/LEASE_EXTENSION.md) for the full guide.
 
 ### Monitoring with Metrics
 
@@ -494,7 +494,7 @@ End-to-end examples covering all APIs for each domain:
 | [Worker Design](docs/design/WORKER_DESIGN.md) | Architecture: AsyncTaskRunner vs TaskRunner, discovery, lifecycle |
 | [Worker Guide](docs/WORKER.md) | All worker patterns (function, class, annotation, async) |
 | [Worker Configuration](WORKER_CONFIGURATION.md) | Hierarchical environment variable configuration |
-| [Lease Extension](LEASE_EXTENSION.md) | Automatic heartbeat for long-running tasks |
+| [Lease Extension](docs/LEASE_EXTENSION.md) | Automatic heartbeat for long-running tasks |
 | [Workflow Management](docs/WORKFLOW.md) | Start, pause, resume, terminate, retry, search |
 | [Workflow Testing](docs/WORKFLOW_TESTING.md) | Unit testing with mock outputs |
 | [Task Management](docs/TASK_MANAGEMENT.md) | Task operations |
