@@ -22,9 +22,11 @@ def _reset_singleton():
     mod = _get_run_module()
     mod._default_runtime = None
     mod._default_config = None
+    mod._default_configuration = None
     yield
     mod._default_runtime = None
     mod._default_config = None
+    mod._default_configuration = None
 
 
 class TestRunFunction:
@@ -171,20 +173,29 @@ class TestConfigure:
         from conductor.ai.agents.run import configure
         from conductor.ai.agents.runtime.config import AgentConfig
 
-        config = AgentConfig(server_url="https://prod:8080/api", auto_start_server=False)
+        config = AgentConfig(worker_thread_count=4)
         configure(config=config)
 
         mod = _get_run_module()
         assert mod._default_config is config
 
+    def test_configure_stores_configuration(self):
+        from conductor.ai.agents.run import configure
+        from conductor.client.configuration.configuration import Configuration
+
+        configuration = Configuration(server_api_url="https://prod:8080/api")
+        configure(configuration=configuration)
+
+        mod = _get_run_module()
+        assert mod._default_configuration is configuration
+
     def test_configure_kwargs_override_env(self):
         from conductor.ai.agents.run import configure
 
-        configure(server_url="https://custom:9090/api", auto_start_server=False)
+        configure(worker_thread_count=7)
 
         mod = _get_run_module()
-        assert mod._default_config.server_url == "https://custom:9090/api"
-        assert mod._default_config.auto_start_server is False
+        assert mod._default_config.worker_thread_count == 7
 
     def test_configure_raises_if_runtime_exists(self):
         mod = _get_run_module()
@@ -193,7 +204,7 @@ class TestConfigure:
         from conductor.ai.agents.run import configure
 
         with pytest.raises(RuntimeError, match="configure.*must be called before"):
-            configure(auto_start_server=False)
+            configure(worker_thread_count=7)
 
     def test_configure_raises_for_unknown_field(self):
         from conductor.ai.agents.run import configure
@@ -204,7 +215,7 @@ class TestConfigure:
     def test_shutdown_preserves_config(self):
         from conductor.ai.agents.run import configure, shutdown
 
-        configure(auto_start_server=False)
+        configure(worker_thread_count=7)
 
         mod = _get_run_module()
         mod._default_runtime = MagicMock()
@@ -212,7 +223,7 @@ class TestConfigure:
 
         assert mod._default_runtime is None
         assert mod._default_config is not None
-        assert mod._default_config.auto_start_server is False
+        assert mod._default_config.worker_thread_count == 7
 
 
 class TestDeployFunction:

@@ -42,7 +42,7 @@ class ToolRegistry:
         ``_tool_type_registry`` for HTTP/MCP tools and ``_tool_approval_flags``
         for tools that require human approval.
         """
-        from conductor.ai.agents.runtime.runtime import _default_task_def
+        from conductor.ai.agents.runtime.runtime import _credential_names, _default_task_def
         from conductor.ai.agents.tool import get_tool_defs
         from conductor.client.worker.worker_task import worker_task
 
@@ -83,6 +83,7 @@ class ToolRegistry:
                         retry_count=td.retry_count,
                         retry_delay_seconds=td.retry_delay_seconds,
                         retry_policy=td.retry_policy,
+                        runtime_metadata=_credential_names(td.credentials),
                     ),
                     register_task_def=True,
                     overwrite_task_def=True,

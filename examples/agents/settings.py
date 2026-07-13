@@ -21,7 +21,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Settings:
-    llm_model: str = "anthropic/claude-sonnet-4-6"
+    llm_model: str = "openai/gpt-4o"
     secondary_llm_model: str = "openai/gpt-4o"
 
     @classmethod

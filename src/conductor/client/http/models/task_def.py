@@ -50,7 +50,8 @@ class TaskDef:
         'output_schema': 'SchemaDef',
         'enforce_schema': 'bool',
         'base_type': 'str',
-        'total_timeout_seconds': 'int'
+        'total_timeout_seconds': 'int',
+        'runtime_metadata': 'list[str]'
     }
 
     attribute_map = {
@@ -82,7 +83,8 @@ class TaskDef:
         'output_schema': 'outputSchema',
         'enforce_schema': 'enforceSchema',
         'base_type': 'baseType',
-        'total_timeout_seconds': 'totalTimeoutSeconds'
+        'total_timeout_seconds': 'totalTimeoutSeconds',
+        'runtime_metadata': 'runtimeMetadata'
     }
 
     # Fields for @dataclass
@@ -115,7 +117,8 @@ class TaskDef:
     _enforce_schema: bool = field(default=False, init=False)
     _base_type: Optional[str] = field(default=None, init=False)
     _total_timeout_seconds: Optional[int] = field(default=None, init=False)
-    
+    _runtime_metadata: Optional[List[str]] = field(default=None, init=False)
+
     # InitVars for constructor parameters
     owner_app: InitVar[Optional[str]] = None
     create_time: InitVar[Optional[int]] = None
@@ -146,7 +149,8 @@ class TaskDef:
     enforce_schema: InitVar[bool] = False
     base_type: InitVar[Optional[str]] = None
     total_timeout_seconds: InitVar[Optional[int]] = None
-    
+    runtime_metadata: InitVar[Optional[List[str]]] = None
+
     discriminator: Optional[str] = field(default=None, init=False)
 
     def __init__(self, owner_app=None, create_time=None, update_time=None, created_by=None, updated_by=None, name=None,
@@ -156,7 +160,7 @@ class TaskDef:
                  rate_limit_frequency_in_seconds=None, isolation_group_id=None, execution_name_space=None,
                  owner_email=None, poll_timeout_seconds=None, backoff_scale_factor=None,
                  input_schema : SchemaDef = None, output_schema : SchemaDef = None, enforce_schema : bool = False,
-                 base_type=None, total_timeout_seconds=None):  # noqa: E501
+                 base_type=None, total_timeout_seconds=None, runtime_metadata=None):  # noqa: E501
         """TaskDef - a model defined in Swagger"""  # noqa: E501
         self._owner_app = None
         self._create_time = None
@@ -184,6 +188,7 @@ class TaskDef:
         self._backoff_scale_factor = None
         self._base_type = None
         self._total_timeout_seconds = None
+        self._runtime_metadata = None
         self.discriminator = None
         if owner_app is not None:
             self.owner_app = owner_app
@@ -238,13 +243,16 @@ class TaskDef:
             self.base_type = base_type
         if total_timeout_seconds is not None:
             self.total_timeout_seconds = total_timeout_seconds
+        if runtime_metadata is not None:
+            self.runtime_metadata = runtime_metadata
 
-    def __post_init__(self, owner_app, create_time, update_time, created_by, updated_by, name, description, 
+    def __post_init__(self, owner_app, create_time, update_time, created_by, updated_by, name, description,
                      retry_count, timeout_seconds, input_keys, output_keys, timeout_policy, retry_logic, 
                      retry_delay_seconds, response_timeout_seconds, concurrent_exec_limit, input_template, 
                      rate_limit_per_frequency, rate_limit_frequency_in_seconds, isolation_group_id, 
                      execution_name_space, owner_email, poll_timeout_seconds, backoff_scale_factor, 
-                     input_schema, output_schema, enforce_schema, base_type, total_timeout_seconds):
+                     input_schema, output_schema, enforce_schema, base_type, total_timeout_seconds,
+                     runtime_metadata=None):
         if owner_app is not None:
             self.owner_app = owner_app
         if create_time is not None:
@@ -303,6 +311,8 @@ class TaskDef:
             self.base_type = base_type
         if total_timeout_seconds is not None:
             self.total_timeout_seconds = total_timeout_seconds
+        if runtime_metadata is not None:
+            self.runtime_metadata = runtime_metadata
 
     @property
     @deprecated
@@ -905,6 +915,29 @@ class TaskDef:
         :type: int
         """
         self._total_timeout_seconds = total_timeout_seconds
+
+    @property
+    def runtime_metadata(self) -> List[str]:
+        """Gets the runtime_metadata of this TaskDef.  # noqa: E501
+
+        Names of secrets/environment variables the task needs resolved. The host resolves these at
+        the worker's poll time and delivers the values on the wire-only ``Task.runtimeMetadata``
+        (conductor-oss PR #1255). This is the credential-delivery contract for workers.
+
+        :return: The runtime_metadata of this TaskDef.  # noqa: E501
+        :rtype: list[str]
+        """
+        return self._runtime_metadata
+
+    @runtime_metadata.setter
+    def runtime_metadata(self, runtime_metadata: List[str]):
+        """Sets the runtime_metadata of this TaskDef.
+
+
+        :param runtime_metadata: The runtime_metadata of this TaskDef.  # noqa: E501
+        :type: list[str]
+        """
+        self._runtime_metadata = runtime_metadata
 
     def to_dict(self):
         """Returns the model properties as a dict"""

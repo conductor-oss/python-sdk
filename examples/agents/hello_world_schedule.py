@@ -19,6 +19,7 @@ Run::
 
 from __future__ import annotations
 
+import os
 import time
 import uuid
 
@@ -28,7 +29,11 @@ from conductor.client.orkes_clients import OrkesClients
 
 from conductor.ai.agents.schedule import Schedule
 
-CONDUCTOR_API = "http://localhost:8080/api"
+CONDUCTOR_API = (
+    os.environ.get("CONDUCTOR_SERVER_URL")
+    or os.environ.get("AGENTSPAN_SERVER_URL")
+    or "http://localhost:8080/api"
+)
 
 
 def register_hello_world_workflow(name: str) -> None:
@@ -109,7 +114,7 @@ def main() -> None:
 
     # 2. Build the scheduler client against the scheduler-enabled
     #    Conductor instance.
-    clients = OrkesClients(configuration=Configuration(base_url="http://localhost:8080"))
+    clients = OrkesClients(configuration=Configuration(server_api_url=CONDUCTOR_API))
     sched_client = clients.get_scheduler_client()
 
     # 3. Declarative deploy: one schedule, fires every 2 seconds.

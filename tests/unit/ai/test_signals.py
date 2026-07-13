@@ -62,39 +62,27 @@ class TestHandleStopAsync:
 class TestRuntimeStop:
     """AgentRuntime.stop() calls the server stop endpoint and sends WMQ unblock."""
 
-    @patch("conductor.ai.agents.runtime.runtime.req_lib", create=True)
-    def test_stop_calls_server_endpoint(self, mock_requests):
+    def test_stop_calls_server_endpoint(self):
         from conductor.ai.agents.runtime.runtime import AgentRuntime
 
         rt = AgentRuntime.__new__(AgentRuntime)
         rt._workflow_client = MagicMock()
-        rt._agent_api_url = MagicMock(return_value="http://localhost/api/agent/wf-1/stop")
-        rt._agent_api_headers = MagicMock(return_value={})
+        rt._agent_client = MagicMock()
 
-        # Mock requests.post
-        import requests as req_lib
-        with patch.object(req_lib, "post") as mock_post:
-            mock_post.return_value = MagicMock(status_code=200)
-            mock_post.return_value.raise_for_status = MagicMock()
-            rt.stop("wf-1")
-            mock_post.assert_called_once()
+        rt.stop("wf-1")
+        rt._agent_client.stop.assert_called_once_with("wf-1")
 
     def test_stop_sends_wmq_unblock(self):
         from conductor.ai.agents.runtime.runtime import AgentRuntime
 
         rt = AgentRuntime.__new__(AgentRuntime)
         rt._workflow_client = MagicMock()
-        rt._agent_api_url = MagicMock(return_value="http://localhost/api/agent/wf-1/stop")
-        rt._agent_api_headers = MagicMock(return_value={})
+        rt._agent_client = MagicMock()
 
-        import requests as req_lib
-        with patch.object(req_lib, "post") as mock_post:
-            mock_post.return_value = MagicMock(status_code=200)
-            mock_post.return_value.raise_for_status = MagicMock()
-            rt.stop("wf-1")
-            rt._workflow_client.send_message.assert_called_once_with(
-                "wf-1", {"_signal": "stop"}
-            )
+        rt.stop("wf-1")
+        rt._workflow_client.send_message.assert_called_once_with(
+            "wf-1", {"_signal": "stop"}
+        )
 
     def test_stop_wmq_failure_is_swallowed(self):
         """If WMQ send fails, stop still succeeds."""
@@ -103,14 +91,9 @@ class TestRuntimeStop:
         rt = AgentRuntime.__new__(AgentRuntime)
         rt._workflow_client = MagicMock()
         rt._workflow_client.send_message.side_effect = Exception("no WMQ")
-        rt._agent_api_url = MagicMock(return_value="http://localhost/api/agent/wf-1/stop")
-        rt._agent_api_headers = MagicMock(return_value={})
+        rt._agent_client = MagicMock()
 
-        import requests as req_lib
-        with patch.object(req_lib, "post") as mock_post:
-            mock_post.return_value = MagicMock(status_code=200)
-            mock_post.return_value.raise_for_status = MagicMock()
-            rt.stop("wf-1")  # should not raise
+        rt.stop("wf-1")  # should not raise
 
 
 # ── AgentRuntime.signal() ──────────────────────────────────────────────
@@ -123,34 +106,19 @@ class TestRuntimeSignal:
         from conductor.ai.agents.runtime.runtime import AgentRuntime
 
         rt = AgentRuntime.__new__(AgentRuntime)
-        rt._agent_api_url = MagicMock(return_value="http://localhost/api/agent/wf-1/signal")
-        rt._agent_api_headers = MagicMock(return_value={})
+        rt._agent_client = MagicMock()
 
-        import requests as req_lib
-        with patch.object(req_lib, "post") as mock_post:
-            mock_post.return_value = MagicMock(status_code=200)
-            mock_post.return_value.raise_for_status = MagicMock()
-            rt.signal("wf-1", "budget cut, wrap up")
-            mock_post.assert_called_once_with(
-                "http://localhost/api/agent/wf-1/signal",
-                json={"message": "budget cut, wrap up"},
-                headers={},
-                timeout=30,
-            )
+        rt.signal("wf-1", "budget cut, wrap up")
+        rt._agent_client.signal.assert_called_once_with("wf-1", "budget cut, wrap up")
 
     def test_signal_clear(self):
         from conductor.ai.agents.runtime.runtime import AgentRuntime
 
         rt = AgentRuntime.__new__(AgentRuntime)
-        rt._agent_api_url = MagicMock(return_value="http://localhost/api/agent/wf-1/signal")
-        rt._agent_api_headers = MagicMock(return_value={})
+        rt._agent_client = MagicMock()
 
-        import requests as req_lib
-        with patch.object(req_lib, "post") as mock_post:
-            mock_post.return_value = MagicMock(status_code=200)
-            mock_post.return_value.raise_for_status = MagicMock()
-            rt.signal("wf-1", "")
-            mock_post.assert_called_once()
+        rt.signal("wf-1", "")
+        rt._agent_client.signal.assert_called_once_with("wf-1", "")
 
 
 # ── wait_for_message_tool blocking parameter ────────────────────────────

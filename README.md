@@ -34,9 +34,20 @@ If you find [Conductor](https://github.com/conductor-oss/conductor) useful, plea
 
 ## Start Conductor Server
 
-If you don't already have a Conductor server running, pick one:
+#### Conductor CLI
+```shell
+# Installs conductor cli
+npm install -g @conductor-oss/conductor-cli
 
-**Docker Compose (recommended, includes UI):**
+# Start the open source conductor server on port 8080
+conductor server start
+# see conductor server --help for all the available commands
+```
+
+
+Alternatively, if you want to use docker
+
+**Docker Compose**
 
 ```shell
 docker run -p 8080:8080 conductoross/conductor:latest
@@ -48,15 +59,6 @@ The UI will be available at `http://localhost:8080` and the API at `http://local
 curl -sSL https://raw.githubusercontent.com/conductor-oss/conductor/main/conductor_server.sh | sh
 ```
 
-**Conductor CLI**
-```shell
-# Installs conductor cli
-npm install -g @conductor-oss/conductor-cli
-
-# Start the open source conductor server
-conductor server start
-# see conductor server --help for all the available commands
-```
 
 ## Install the SDK
 
@@ -306,7 +308,7 @@ def train_model(dataset_id: str) -> dict:
     return {'model_id': model.id, 'accuracy': model.accuracy}
 ```
 
-Disabled by default. Enable per-worker via decorator, constructor, or environment variable (`conductor_worker_<task>_lease_extend_enabled=true`). See [LEASE_EXTENSION.md](LEASE_EXTENSION.md) for the full guide.
+Disabled by default. Enable per-worker via decorator, constructor, or environment variable (`conductor_worker_<task>_lease_extend_enabled=true`). See [LEASE_EXTENSION.md](docs/LEASE_EXTENSION.md) for the full guide.
 
 ### Monitoring with Metrics
 
@@ -494,7 +496,7 @@ End-to-end examples covering all APIs for each domain:
 | [Worker Design](docs/design/WORKER_DESIGN.md) | Architecture: AsyncTaskRunner vs TaskRunner, discovery, lifecycle |
 | [Worker Guide](docs/WORKER.md) | All worker patterns (function, class, annotation, async) |
 | [Worker Configuration](WORKER_CONFIGURATION.md) | Hierarchical environment variable configuration |
-| [Lease Extension](LEASE_EXTENSION.md) | Automatic heartbeat for long-running tasks |
+| [Lease Extension](docs/LEASE_EXTENSION.md) | Automatic heartbeat for long-running tasks |
 | [Workflow Management](docs/WORKFLOW.md) | Start, pause, resume, terminate, retry, search |
 | [Workflow Testing](docs/WORKFLOW_TESTING.md) | Unit testing with mock outputs |
 | [Task Management](docs/TASK_MANAGEMENT.md) | Task operations |

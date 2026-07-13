@@ -17,11 +17,8 @@ def _make_runtime():
             from conductor.ai.agents.runtime.runtime import AgentRuntime
             from conductor.ai.agents.runtime.config import AgentConfig
 
-            config = AgentConfig(
-                server_url="http://fake:8080",
-                auto_start_workers=False,
-            )
-            return AgentRuntime(config=config)
+            config = AgentConfig(auto_start_workers=False)
+            return AgentRuntime(settings=config)
 
 
 # ── Deploy tests ──────────────────────────────────────────────────────
@@ -140,6 +137,45 @@ class TestServe:
                     rt.serve(agent, blocking=False)
         mock_start.assert_called_once()
         assert rt._workers_started
+
+    def test_serve_registers_agent_on_server(self):
+        """serve() also registers the agent on the server (serve = deploy + serve)."""
+        rt = _make_runtime()
+        agent = Agent(name="bot", model="openai/gpt-4o")
+        with patch.object(rt, "_deploy_via_server") as mock_deploy:
+            with patch.object(rt, "_register_workers"):
+                with patch.object(rt, "_collect_worker_names", return_value={"t"}):
+                    with patch.object(rt._worker_manager, "start"):
+                        rt.serve(agent, blocking=False)
+        mock_deploy.assert_called_once()
+        assert mock_deploy.call_args.args[0] is agent
+
+    def test_serve_registers_each_of_multiple_agents(self):
+        rt = _make_runtime()
+        a1 = Agent(name="a1", model="openai/gpt-4o")
+        a2 = Agent(name="a2", model="openai/gpt-4o")
+        with patch.object(rt, "_deploy_via_server") as mock_deploy:
+            with patch.object(rt, "_register_workers"):
+                with patch.object(rt, "_collect_worker_names", return_value=set()):
+                    with patch.object(rt._worker_manager, "start"):
+                        rt.serve(a1, a2, blocking=False)
+        assert mock_deploy.call_count == 2
+
+    def test_serve_registers_before_starting_workers(self):
+        """The agent is registered on the server before workers start polling."""
+        rt = _make_runtime()
+        agent = Agent(name="bot", model="openai/gpt-4o")
+        calls = []
+        with patch.object(
+            rt, "_deploy_via_server", side_effect=lambda *a, **k: calls.append("deploy")
+        ):
+            with patch.object(rt, "_register_workers"):
+                with patch.object(rt, "_collect_worker_names", return_value={"t"}):
+                    with patch.object(
+                        rt._worker_manager, "start", side_effect=lambda *a, **k: calls.append("start")
+                    ):
+                        rt.serve(agent, blocking=False)
+        assert calls == ["deploy", "start"]
 
 
 # ── Run/Start/Stream by name tests ──────────────────────────────────

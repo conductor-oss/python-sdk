@@ -63,38 +63,46 @@ TASKS = [
     "Write a one-line Python function that reverses a string",
 ]
 
-with AgentRuntime() as runtime:
-    handle = runtime.start(agent, "Begin. Wait for your first instruction.")
-    print(f"Agent started: {handle.execution_id}\n")
+def main() -> None:
+    with AgentRuntime() as runtime:
+        handle = runtime.start(agent, "Begin. Wait for your first instruction.")
+        print(f"Agent started: {handle.execution_id}\n")
 
-    # Push messages from a background thread while we stream events on the main thread.
-    # Wait long enough between sends for the agent to finish processing each message.
-    # No sleep after the last send — handle.stream() on the main thread is already the
-    # barrier: it blocks until DONE, which only fires once the workflow reaches a
-    # terminal state (after stop() sets the flag and the current iteration completes).
-    def sender():
-        for task in TASKS:
-            time.sleep(8)
-            print(f"\n  [caller] sending -> {task!r}")
-            runtime.send_message(handle.execution_id, {"task": task})
-        handle.stop()
+        # Push messages from a background thread while we stream events on the main thread.
+        # Wait long enough between sends for the agent to finish processing each message.
+        # No sleep after the last send — handle.stream() on the main thread is already the
+        # barrier: it blocks until DONE, which only fires once the workflow reaches a
+        # terminal state (after stop() sets the flag and the current iteration completes).
+        def sender():
+            for task in TASKS:
+                time.sleep(8)
+                print(f"\n  [caller] sending -> {task!r}")
+                runtime.send_message(handle.execution_id, {"task": task})
+            handle.stop()
 
-    threading.Thread(target=sender, daemon=True).start()
+        threading.Thread(target=sender, daemon=True).start()
 
-    for event in handle.stream():
-        if event.type == EventType.THINKING:
-            print(f"  [thinking] {event.content}")
+        for event in handle.stream():
+            if event.type == EventType.THINKING:
+                print(f"  [thinking] {event.content}")
 
-        elif event.type == EventType.TOOL_CALL and event.tool_name == "respond":
-            args = event.args or {}
-            print(f"  [answer] {args.get('answer', '')}")
+            elif event.type == EventType.TOOL_CALL and event.tool_name == "respond":
+                args = event.args or {}
+                print(f"  [answer] {args.get('answer', '')}")
 
-        elif event.type == EventType.WAITING:
-            print(f"  [waiting] {event.content}")
+            elif event.type == EventType.WAITING:
+                print(f"  [waiting] {event.content}")
 
-        elif event.type == EventType.ERROR:
-            print(f"  [error] {event.content}")
+            elif event.type == EventType.ERROR:
+                print(f"  [error] {event.content}")
 
-        elif event.type == EventType.DONE:
-            print(f"\nAgent finished: {event.output}")
-            break
+            elif event.type == EventType.DONE:
+                print(f"\nAgent finished: {event.output}")
+                break
+
+
+# Guard the runtime block: spawned tool workers re-import this module, and
+# without the guard they would re-run the orchestration (multiprocessing's
+# "Safe importing of main module" error).
+if __name__ == "__main__":
+    main()

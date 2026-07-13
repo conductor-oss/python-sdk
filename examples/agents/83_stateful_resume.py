@@ -76,57 +76,64 @@ agent = Agent(
 
 # ── Phase 1: Start, interact, close runtime ─────────────────────────────
 
-print("=" * 60)
-print("Phase 1: Start agent, send a task, then close runtime")
-print("=" * 60)
+def main() -> None:
+    print("=" * 60)
+    print("Phase 1: Start agent, send a task, then close runtime")
+    print("=" * 60)
 
-with AgentRuntime() as runtime:
-    handle = runtime.start(agent, "Start listening for messages.")
-    execution_id = handle.execution_id
-    print(f"\nAgent started: {execution_id}")
-    print(f"Domain (run_id): {handle.run_id}")
+    with AgentRuntime() as runtime:
+        handle = runtime.start(agent, "Start listening for messages.")
+        execution_id = handle.execution_id
+        print(f"\nAgent started: {execution_id}")
+        print(f"Domain (run_id): {handle.run_id}")
 
-    # Save execution_id for Phase 2
-    with open(SESSION_FILE, "w") as f:
-        f.write(execution_id)
-    print(f"Saved execution_id to {SESSION_FILE}")
+        # Save execution_id for Phase 2
+        with open(SESSION_FILE, "w") as f:
+            f.write(execution_id)
+        print(f"Saved execution_id to {SESSION_FILE}")
 
-    # Send a task and let the agent process it
-    time.sleep(3)
-    print("\nSending task: 'summarize quarterly report'")
-    runtime.send_message(execution_id, {"task": "summarize quarterly report"})
-    time.sleep(8)
+        # Send a task and let the agent process it
+        time.sleep(3)
+        print("\nSending task: 'summarize quarterly report'")
+        runtime.send_message(execution_id, {"task": "summarize quarterly report"})
+        time.sleep(8)
 
-print("\nRuntime closed — workers are dead, workflow persists on server.\n")
+    print("\nRuntime closed — workers are dead, workflow persists on server.\n")
+
+    # ── Phase 2: Resume with a fresh runtime ─────────────────────────────
+
+    print("=" * 60)
+    print("Phase 2: Resume with a fresh runtime")
+    print("=" * 60)
+
+    # Load the execution_id (in a real scenario, this could be from a database,
+    # a file, or passed as a CLI argument)
+    with open(SESSION_FILE) as f:
+        saved_execution_id = f.read().strip()
+
+    print(f"\nResuming execution: {saved_execution_id}")
+
+    with AgentRuntime() as runtime:
+        # resume() fetches the workflow from the server, reads taskToDomain,
+        # and re-registers workers under the original domain.
+        handle = runtime.resume(saved_execution_id, agent)
+        print(f"Resumed! Domain (run_id): {handle.run_id}")
+
+        # Send another task — workers are back and polling under the correct domain
+        time.sleep(3)
+        print("\nSending task: 'check system health'")
+        runtime.send_message(saved_execution_id, {"task": "check system health"})
+        time.sleep(8)
+
+        # Clean shutdown
+        print("\nSending stop signal...")
+        runtime.send_message(saved_execution_id, {"stop": True})
+        handle.join(timeout=30)
+        print("\nDone — same workflow, same domain, seamless resume.")
 
 
-# ── Phase 2: Resume with a fresh runtime ─────────────────────────────────
-
-print("=" * 60)
-print("Phase 2: Resume with a fresh runtime")
-print("=" * 60)
-
-# Load the execution_id (in a real scenario, this could be from a database,
-# a file, or passed as a CLI argument)
-with open(SESSION_FILE) as f:
-    saved_execution_id = f.read().strip()
-
-print(f"\nResuming execution: {saved_execution_id}")
-
-with AgentRuntime() as runtime:
-    # resume() fetches the workflow from the server, reads taskToDomain,
-    # and re-registers workers under the original domain.
-    handle = runtime.resume(saved_execution_id, agent)
-    print(f"Resumed! Domain (run_id): {handle.run_id}")
-
-    # Send another task — workers are back and polling under the correct domain
-    time.sleep(3)
-    print("\nSending task: 'check system health'")
-    runtime.send_message(saved_execution_id, {"task": "check system health"})
-    time.sleep(8)
-
-    # Clean shutdown
-    print("\nSending stop signal...")
-    runtime.send_message(saved_execution_id, {"stop": True})
-    handle.join(timeout=30)
-    print("\nDone — same workflow, same domain, seamless resume.")
+# Guard the runtime block: spawned tool workers re-import this module, and
+# without the guard they would re-run the orchestration (multiprocessing's
+# "Safe importing of main module" error).
+if __name__ == "__main__":
+    main()

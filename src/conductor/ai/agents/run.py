@@ -10,10 +10,11 @@ but give no control over lifecycle or configuration.
 For production use, prefer creating an :class:`AgentRuntime` explicitly::
 
     from conductor.ai.agents import Agent, AgentRuntime
+    from conductor.client.configuration.configuration import Configuration
 
     agent = Agent(name="hello", model="openai/gpt-4o")
 
-    with AgentRuntime(server_url="https://play.orkes.io/api") as runtime:
+    with AgentRuntime(Configuration(server_api_url="https://play.orkes.io/api")) as runtime:
         result = runtime.run(agent, "Hello!")
         print(result.output)
 
@@ -27,7 +28,10 @@ from __future__ import annotations
 import atexit
 import logging
 import threading
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
+
+if TYPE_CHECKING:
+    from conductor.ai.agents.runtime.config import AgentConfig
 
 from conductor.ai.agents.agent import Agent
 from conductor.ai.agents.result import (
@@ -42,12 +46,13 @@ logger = logging.getLogger("conductor.ai.agents.run")
 
 # ── Singleton runtime ────────────────────────────────────────────────────
 
-_default_config: Optional[Any] = None
+_default_config: Optional[AgentConfig] = None
+_default_configuration = None  # conductor Configuration (connection/auth/log level)
 _default_runtime = None
 _runtime_lock = threading.Lock()
 
 
-def configure(config=None, **kwargs):
+def configure(config: Optional[AgentConfig] = None, *, configuration=None, **kwargs):
     """Pre-configure the default singleton runtime.
 
     Must be called **before** the first :func:`run`, :func:`start`, or
@@ -55,12 +60,13 @@ def configure(config=None, **kwargs):
     :func:`shutdown` / recreate cycles.
 
     Args:
-        config: An :class:`AgentConfig` instance.  If provided, *kwargs*
-            are ignored.
-        **kwargs: Individual config fields to override on top of
-            :meth:`AgentConfig.from_env` defaults (e.g.
-            ``server_url="https://prod:8080/api"``,
-            ``auto_start_server=False``).
+        config: An :class:`AgentConfig` (agent-runtime settings). If provided,
+            *kwargs* are ignored.
+        configuration: A conductor :class:`Configuration` carrying the server
+            connection, auth, and log level. Defaults to the env-based
+            ``Configuration()``.
+        **kwargs: Individual :class:`AgentConfig` field overrides on top of
+            :meth:`AgentConfig.from_env` defaults (e.g. ``worker_thread_count=4``).
 
     Raises:
         RuntimeError: If the singleton runtime already exists.  Call
@@ -70,19 +76,22 @@ def configure(config=None, **kwargs):
     Example::
 
         import conductor.ai.agents as ag
+        from conductor.client.configuration.configuration import Configuration
 
-        ag.configure(server_url="https://prod:8080/api", auto_start_server=False)
+        ag.configure(configuration=Configuration(server_api_url="https://prod:8080/api"))
         result = ag.run(agent, "Hello!")
     """
-    global _default_config, _default_runtime
+    global _default_config, _default_configuration, _default_runtime
     if _default_runtime is not None:
         raise RuntimeError(
             "configure() must be called before the first run/start/stream call. "
             "Call shutdown() first to reset the default runtime."
         )
+    if configuration is not None:
+        _default_configuration = configuration
     if config is not None:
         _default_config = config
-    else:
+    elif kwargs:
         from conductor.ai.agents.runtime.config import AgentConfig
 
         base = AgentConfig.from_env()
@@ -101,7 +110,9 @@ def _get_default_runtime():
             if _default_runtime is None:
                 from conductor.ai.agents.runtime.runtime import AgentRuntime
 
-                _default_runtime = AgentRuntime(config=_default_config)
+                _default_runtime = AgentRuntime(
+                    _default_configuration, settings=_default_config
+                )
                 logger.info("Created default AgentRuntime singleton")
     return _default_runtime
 
@@ -250,6 +261,7 @@ def run(
     idempotency_key: Optional[str] = None,
     on_event: Optional[Any] = None,
     credentials: Optional[List[str]] = None,
+    run_settings: Optional[Any] = None,
     runtime: Optional[Any] = None,
     **kwargs: Any,
 ) -> AgentResult:
@@ -293,6 +305,7 @@ def run(
         idempotency_key=idempotency_key,
         on_event=on_event,
         credentials=credentials,
+        run_settings=run_settings,
         **kwargs,
     )
 
@@ -304,6 +317,7 @@ def start(
     media: Optional[List[str]] = None,
     session_id: Optional[str] = None,
     idempotency_key: Optional[str] = None,
+    run_settings: Optional[Any] = None,
     runtime: Optional[Any] = None,
     **kwargs: Any,
 ) -> AgentHandle:
@@ -340,7 +354,13 @@ def start(
     """
     rt = runtime or _get_default_runtime()
     return rt.start(
-        agent, prompt, media=media, session_id=session_id, idempotency_key=idempotency_key, **kwargs
+        agent,
+        prompt,
+        media=media,
+        session_id=session_id,
+        idempotency_key=idempotency_key,
+        run_settings=run_settings,
+        **kwargs,
     )
 
 
@@ -401,6 +421,7 @@ async def run_async(
     idempotency_key: Optional[str] = None,
     on_event: Optional[Any] = None,
     credentials: Optional[List[str]] = None,
+    run_settings: Optional[Any] = None,
     runtime: Optional[Any] = None,
     **kwargs: Any,
 ) -> AgentResult:
@@ -439,6 +460,7 @@ async def run_async(
         idempotency_key=idempotency_key,
         on_event=on_event,
         credentials=credentials,
+        run_settings=run_settings,
         **kwargs,
     )
 
@@ -450,6 +472,7 @@ async def start_async(
     media: Optional[List[str]] = None,
     session_id: Optional[str] = None,
     idempotency_key: Optional[str] = None,
+    run_settings: Optional[Any] = None,
     runtime: Optional[Any] = None,
     **kwargs: Any,
 ) -> AgentHandle:
@@ -479,7 +502,13 @@ async def start_async(
     """
     rt = runtime or _get_default_runtime()
     return await rt.start_async(
-        agent, prompt, media=media, session_id=session_id, idempotency_key=idempotency_key, **kwargs
+        agent,
+        prompt,
+        media=media,
+        session_id=session_id,
+        idempotency_key=idempotency_key,
+        run_settings=run_settings,
+        **kwargs,
     )
 
 

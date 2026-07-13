@@ -12,31 +12,34 @@
 ## Runtime init and config
 
 `AgentRuntime` is the entry point. Use it as a context manager so workers shut down
-cleanly. Config comes from `AgentConfig.from_env()` by default, or pass overrides.
+cleanly. Server connection comes from the standard Conductor `Configuration` —
+the same object every other client uses — which resolves `CONDUCTOR_SERVER_URL`
+(falling back to `AGENTSPAN_SERVER_URL`) and `CONDUCTOR_AUTH_KEY`/`CONDUCTOR_AUTH_SECRET`
+from the environment when not passed explicitly.
 
 ```python
 from conductor.ai.agents import AgentRuntime, AgentConfig
+from conductor.client.configuration.configuration import Configuration
 
-# From env (AGENTSPAN_SERVER_URL etc.)
+# From env (CONDUCTOR_SERVER_URL → AGENTSPAN_SERVER_URL, CONDUCTOR_AUTH_*)
 with AgentRuntime() as runtime:
     runtime.run(agent, "hi")
 
-# Explicit kwargs
-with AgentRuntime(server_url="https://prod:8080/api",
-                  api_key="...") as runtime:
+# Explicit Configuration
+with AgentRuntime(Configuration(server_api_url="https://prod:8080/api")) as runtime:
     ...
 
-# Or an AgentConfig
-config = AgentConfig.from_env()
-config.auto_start_server = False
-with AgentRuntime(config=config) as runtime:
+# Runtime behaviour knobs (workers, streaming, log level) via AgentConfig
+settings = AgentConfig.from_env()
+settings.log_level = "DEBUG"
+with AgentRuntime(settings=settings) as runtime:
     ...
 ```
 
 `AgentConfig` is a dataclass; `from_env()` reads the `AGENTSPAN_*` environment
 variables (full list in [Getting started](getting-started.md#environment-variables)).
-The Conductor `Configuration` object underneath is built from `server_url` and the
-auth fields (`api_key`, or `auth_key`/`auth_secret`).
+It carries runtime *behaviour* settings only — server connection always comes from
+the `Configuration`.
 
 ### Module-level convenience functions
 
@@ -44,8 +47,10 @@ For one-off scripts, top-level functions use a shared singleton runtime:
 
 ```python
 import conductor.ai.agents as ag
+from conductor.client.configuration.configuration import Configuration
 
-ag.configure(server_url="https://prod:8080/api", auto_start_server=False)  # before first run
+# Connection/auth via a Configuration; agent-behaviour knobs via config=AgentConfig(...).
+ag.configure(configuration=Configuration(server_api_url="https://prod:8080/api"))  # before first run
 result = ag.run(agent, "Hello!")
 ag.shutdown()    # explicit cleanup; not required for simple scripts
 ```
@@ -61,13 +66,16 @@ ag.shutdown()    # explicit cleanup; not required for simple scripts
 | `runtime.run(agent, prompt)` | yes | `AgentResult` | Simplest case — run and get the answer |
 | `runtime.start(agent, prompt)` | no | `AgentHandle` | Fire-and-forget; poll/control later |
 | `runtime.stream(agent, prompt)` | iterates | `AgentStream` | Watch events live; drive HITL |
-| `runtime.deploy(*agents)` | yes | `list[DeploymentInfo]` | CI/CD: compile + register, no execution |
-| `runtime.serve(*agents)` | yes (blocks) | — | Long-lived worker process; polls until interrupted |
+| `runtime.deploy(*agents)` | yes | `list[DeploymentInfo]` | CI/CD: compile + register, no workers, no execution |
+| `runtime.serve(*agents)` | yes (blocks) | — | Register agent(s) **and** serve workers; long-lived, polls until interrupted (`serve` = `deploy` + serve) |
 | `runtime.plan(agent)` | yes | `dict` | Compile to a workflow def without running anything |
 
 `run`/`start`/`stream` accept `media=`, `session_id=`, `idempotency_key=`,
 `credentials=`, and extra `**kwargs` as workflow input. `run`/`run_async` also accept
 `on_event=` to stream while running synchronously, `timeout=`, and `context=`.
+`run`/`start` (and their async variants) also accept `run_settings=` — a `RunSettings`
+(or dict) that overrides the agent's `model`/`temperature`/`max_tokens`/… for that one
+call. See [API reference](api-reference.md#per-run-overrides--runsettings).
 
 `plan(agent)` returns `{"workflowDef": ..., "requiredWorkers": ...}` — useful to
 inspect the compiled Conductor workflow:
@@ -88,8 +96,12 @@ runtime.deploy(agent)
 #   agentspan deploy --path ./agents --agents greeter,support
 
 # Long-lived worker process:
-runtime.serve(agent)        # blocks, polling for tool tasks
+runtime.serve(agent)        # registers the agent (idempotent) + blocks, polling for tool tasks
 ```
+
+`serve` also registers the agent on the server, so the explicit `deploy` step above
+is optional — it's still useful to register/upgrade the workflow from CI independently
+of the worker rollout.
 
 `resume(execution_id, agent)` re-attaches to a previously `start`ed execution and
 re-registers its tool workers (e.g. after a process restart):

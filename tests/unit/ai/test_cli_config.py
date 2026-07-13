@@ -288,6 +288,27 @@ class TestMakeCliTool:
             tool_fn.__wrapped__(command="echo", context_key="", context=ctx)
             assert ctx.state == {}
 
+    def test_cli_tool_worker_is_spawn_safe(self):
+        """Regression: the auto-generated run_command worker must be picklable so
+        registration's spawn-safety probe passes. It was a `<locals>` closure
+        (`_make_cli_tool.<locals>.run_command`) that failed to pickle; it is now a
+        module-level `_CliCommandRunner` instance carrying config as data."""
+        import pickle
+
+        from conductor.ai.agents.runtime._dispatch import make_tool_worker
+        from conductor.ai.agents.runtime._worker_entries import probe_spawn_safety
+
+        tool_fn = _make_cli_tool(
+            allowed_commands=["gh", "aws"], timeout=15, agent_name="devops_agent"
+        )
+        td = tool_fn._tool_def
+        # The raw callable that gets registered/pickled must survive pickling.
+        pickle.dumps(td.func)
+        # And the full registration probe (the exact path that used to raise
+        # SpawnSafetyError) must pass.
+        worker = make_tool_worker(td.func, td.name, tool_def=td)
+        probe_spawn_safety(worker, td.name, group="tools")
+
 
 class TestAgentCliIntegration:
     """Test Agent integration with CLI tools."""

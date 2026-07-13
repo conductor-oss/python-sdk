@@ -200,7 +200,7 @@ class TestEventTargetedHITL:
 
     def test_respond_url_matches_server_wire_format(self, runtime):
         """The respond URL is /api/agent/{executionId}/respond (Java parity)."""
-        url = runtime._agent_api_url(f"/{self.SUB_EXEC}/respond")
+        url = runtime.client._agent_url(f"/{self.SUB_EXEC}/respond")
         assert url.endswith(f"/agent/{self.SUB_EXEC}/respond"), (
             f"respond must POST to /api/agent/{{id}}/respond; got {url!r}."
         )

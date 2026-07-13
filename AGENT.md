@@ -14,33 +14,33 @@ This guide provides a complete blueprint for creating or refactoring Conductor S
 
 ```
 ┌─────────────────────────────────────────────────┐
-│              Application Layer                   │
-│         (User's Application Code)                │
+│              Application Layer                  │
+│         (User's Application Code)               │
 └─────────────────────────────────────────────────┘
                        ↓
 ┌─────────────────────────────────────────────────┐
-│            High-Level Clients                    │
-│   (OrkesClients, WorkflowExecutor, Workers)      │
+│            High-Level Clients                   │
+│   (OrkesClients, WorkflowExecutor, Workers)     │
 └─────────────────────────────────────────────────┘
                        ↓
 ┌─────────────────────────────────────────────────┐
-│         Domain-Specific Clients                  │
-│  (TaskClient, WorkflowClient, SecretClient...)   │
+│         Domain-Specific Clients                 │
+│  (TaskClient, WorkflowClient, SecretClient...)  │
 └─────────────────────────────────────────────────┘
                        ↓
 ┌─────────────────────────────────────────────────┐
-│             Orkes Implementations                │
-│     (OrkesTaskClient, OrkesWorkflowClient...)    │
+│             Orkes Implementations               │
+│     (OrkesTaskClient, OrkesWorkflowClient...)   │
 └─────────────────────────────────────────────────┘
                        ↓
 ┌─────────────────────────────────────────────────┐
-│              Resource API Layer                  │
-│    (TaskResourceApi, WorkflowResourceApi...)     │
+│              Resource API Layer                 │
+│    (TaskResourceApi, WorkflowResourceApi...)    │
 └─────────────────────────────────────────────────┘
                        ↓
 ┌─────────────────────────────────────────────────┐
-│              HTTP/API Client                     │
-│         (ApiClient, HTTP Transport)              │
+│              HTTP/API Client                    │
+│         (ApiClient, HTTP Transport)             │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -252,6 +252,84 @@ Abstract Interface (20+ methods):
 - [ ] Document all models
 - [ ] Add error handling guides
 - [ ] Include best practices
+
+---
+
+## 🤖 Agent SDK Layer
+
+An **optional higher-level layer** for building LLM agents on top of the client +
+worker SDK. Agents are authored in code but **compiled and executed on the server**
+as durable Conductor workflows; an agent's tools are ordinary Conductor **workers**
+(reuse the entire Worker Framework, Phase 3). Full language-agnostic spec:
+[`docs/design/WORKER_SDK_IMPLEMENTATION_GUIDE.md` §25](docs/design/WORKER_SDK_IMPLEMENTATION_GUIDE.md#25-agent-sdk-layer-building-agents-on-the-worker-sdk).
+
+### Two Planes
+
+```
+                    ┌───────────────────────────────┐
+                    │          AgentRuntime         │  (facade)
+                    └───────────────────────────────┘
+                     │                             │
+       control plane │                             │ worker plane
+                     ▼                             ▼
+         ┌───────────────────────┐   ┌────────────────────────────┐
+         │      AgentClient      │   │  WorkerManager/TaskHandler  │
+         │  /agent/* over the    │   │  (Phase 3 workers serve     │
+         │  standard ApiClient   │   │   the agent's tools)        │
+         └───────────────────────┘   └────────────────────────────┘
+```
+
+### Core Components
+
+| Component | Role |
+|---|---|
+| `AgentRuntime` | User-facing facade: `run`/`start`/`stream`/`deploy`/`serve`/`plan` (+ async). Composes a `Configuration`, `AgentConfig`, `AgentClient`, and a `WorkerManager`. |
+| `AgentClient` (interface) + `OrkesAgentClient` | Control plane (compile/deploy/start/status/stream/respond/stop/signal). Built on the **standard `ApiClient`** — reuses its token management; no separate token cache. Same interface + Orkes-impl pattern as the domain clients (Phase 2). |
+| `AgentConfig` | Agent-runtime **behaviour** only (worker pool, liveness, streaming, integration auto-register). Connection/auth/log level come from `Configuration`. |
+| `RunSettings` | Per-run LLM overrides (`model`/`temperature`/`max_tokens`/…) for a single `run`/`start`; applied to the serialized agent config before start. |
+| Framework adapters | Run agents authored in LangChain / LangGraph / OpenAI Agents SDK / Claude Agent SDK on the durable runtime as spawn-safe passthrough workers. |
+
+### Verb Contract
+
+| Method | Blocks | Returns | Starts workers | Registers on server |
+|---|---|---|---|---|
+| `run` | yes | result (output + ids) | yes | via start |
+| `start` | no | handle (`execution_id`) | yes | via start |
+| `deploy` | yes | deployment info | no | yes |
+| `serve` | yes (until signal) | — | yes | yes (`serve` = `deploy` + serve) |
+| `plan` | yes | workflow def | no | no |
+
+### Key Principles
+
+- **Single token authority** — control plane *and* worker-side agent posts reuse the one `ApiClient`'s mint/cache/TTL-refresh/401-retry; never a parallel token cache. In spawned workers, rebuild + cache a client per `(server_url, auth_key)`.
+- **Spawn-safety** — tool/worker callables must be module-level (importable/picklable), never `<locals>` closures; entry scripts use a main-module guard.
+- **Credentials** — declared per tool; the server resolves + delivers them on wire-only `Task.runtimeMetadata`; injected into the worker env for the call, never read from ambient env.
+- **Config single-source** — connection/auth/log level live on `Configuration`; `AgentConfig` is behaviour-only.
+
+### Package Additions
+
+```
+src/conductor/
+├── client/
+│   ├── agent_client.{ext}                 # AgentClient interface
+│   └── orkes/orkes_agent_client.{ext}     # OrkesAgentClient (on ApiClient)
+└── ai/agents/                             # agent authoring + runtime
+    ├── agent.{ext}, run_settings.{ext}
+    ├── runtime/ (runtime, config, worker_manager)
+    ├── _internal/agent_http.{ext}         # single token authority for /agent/* posts
+    └── frameworks/ (langchain, langgraph, claude_agent_sdk, …)
+```
+
+### Agent-Layer Checklist
+
+- [ ] `AgentClient` interface + Orkes impl on the standard `ApiClient` (sync + async; SSE reuses the client's auth header)
+- [ ] `AgentRuntime` facade with the exact verb contract above
+- [ ] `AgentConfig` behaviour-only; connection/auth/log level from `Configuration`
+- [ ] `RunSettings` per-run LLM overrides
+- [ ] Single token authority across control plane + worker-side posts
+- [ ] Tool workers reuse the Worker Framework (Phase 3); credentials via `runtimeMetadata`
+- [ ] Framework adapters as spawn-safe passthrough workers
+- [ ] Liveness monitor for stateful runs
 
 ---
 

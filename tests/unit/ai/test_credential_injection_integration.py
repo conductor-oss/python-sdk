@@ -11,7 +11,7 @@ import pytest
 
 pytest.importorskip("langchain_core", reason="langchain_core not installed")
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from conductor.client.http.models import Task, TaskResult
@@ -22,14 +22,16 @@ from conductor.client.http.models import Task, TaskResult
 # ---------------------------------------------------------------------------
 
 
-def _real_conductor_task(workflow_instance_id="wf-integ-001"):
-    """Build a real Conductor Task object (not a mock)."""
+def _real_conductor_task(workflow_instance_id="wf-integ-001", runtime_metadata=None):
+    """Build a real Conductor Task object (not a mock).
+
+    The host delivers resolved secrets on ``Task.runtimeMetadata`` (wire-only).
+    """
     task = Task()
     task.task_id = "task-integ-001"
     task.workflow_instance_id = workflow_instance_id
-    task.input_data = {
-        "__agentspan_ctx__": {"execution_token": "tok-integ-fake"},
-    }
+    task.input_data = {}
+    task.runtime_metadata = runtime_metadata or {}
     return task
 
 
@@ -60,10 +62,6 @@ def _make_lc_tool_and_graph():
     llm = ChatOpenAI(model="gpt-4o")
     graph = create_react_agent(llm, tools=[check_github_token])
     return graph, check_github_token
-
-
-# Patch target: the credential fetcher factory in _dispatch (the only external dep)
-_FETCHER_PATCH = "conductor.ai.agents.runtime._dispatch._get_credential_fetcher"
 
 
 # ---------------------------------------------------------------------------
@@ -109,12 +107,8 @@ class TestFullExtractionPathIntegration:
             credential_names=["GITHUB_TOKEN"],
         )
 
-        fake_fetcher = MagicMock()
-        fake_fetcher.fetch.return_value = {"GITHUB_TOKEN": "ghp_real_token_123"}
-        task = _real_conductor_task()
-
-        with patch(_FETCHER_PATCH, return_value=fake_fetcher):
-            result = worker_fn(task)
+        task = _real_conductor_task(runtime_metadata={"GITHUB_TOKEN": "ghp_real_token_123"})
+        result = worker_fn(task)
 
         # The tool saw the credential during execution
         assert result.status.name == "COMPLETED"
@@ -122,9 +116,6 @@ class TestFullExtractionPathIntegration:
 
         # Credential was cleaned up from env
         assert "GITHUB_TOKEN" not in os.environ
-
-        # Fetcher was called with the correct token and credential names
-        fake_fetcher.fetch.assert_called_once_with("tok-integ-fake", ["GITHUB_TOKEN"])
 
     def test_extracted_tool_without_credentials_sees_empty_env(self):
         """Without credential_names, the tool sees no GITHUB_TOKEN."""
@@ -150,13 +141,10 @@ class TestFullExtractionPathIntegration:
         os.environ.pop("GITHUB_TOKEN", None)
 
         task = _real_conductor_task()
-
-        with patch(_FETCHER_PATCH) as mock_get_fetcher:
-            result = worker_fn(task)
+        result = worker_fn(task)
 
         assert result.status.name == "COMPLETED"
         assert "NOT_FOUND" in str(result.output_data)
-        mock_get_fetcher.assert_not_called()
 
     def test_credential_cleanup_on_tool_exception(self):
         """Credentials are cleaned up even when the tool raises."""
@@ -173,12 +161,8 @@ class TestFullExtractionPathIntegration:
             credential_names=["SECRET_KEY"],
         )
 
-        fake_fetcher = MagicMock()
-        fake_fetcher.fetch.return_value = {"SECRET_KEY": "s3cr3t"}
-        task = _real_conductor_task()
-
-        with patch(_FETCHER_PATCH, return_value=fake_fetcher):
-            result = worker_fn(task)
+        task = _real_conductor_task(runtime_metadata={"SECRET_KEY": "s3cr3t"})
+        result = worker_fn(task)
 
         assert result.status.name == "FAILED"
         assert "SECRET_KEY" not in os.environ
@@ -206,12 +190,7 @@ class TestFullExtractionPathIntegration:
         from conductor.ai.agents.runtime.runtime import AgentRuntime
         from conductor.ai.agents.runtime.config import AgentConfig
 
-        config = AgentConfig(
-            server_url="http://testserver:8080/api",
-            auth_key="k",
-            auth_secret="s",
-            auto_start_workers=False,
-        )
+        config = AgentConfig(auto_start_workers=False)
         runtime = AgentRuntime.__new__(AgentRuntime)
         runtime._config = config
         runtime._worker_start_lock = __import__("threading").Lock()

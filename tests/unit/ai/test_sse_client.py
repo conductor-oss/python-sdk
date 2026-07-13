@@ -163,14 +163,25 @@ def _make_runtime(server_url: str, auth_key: str = None, auth_secret: str = None
     We only need the _stream_sse() method, so we bypass full initialization
     by creating the config and setting it directly.
     """
-    config = AgentConfig(
-        server_url=server_url,
-        auth_key=auth_key,
-        auth_secret=auth_secret,
-        streaming_enabled=True,
+    from conductor.client.configuration.configuration import Configuration
+    from conductor.client.configuration.settings.authentication_settings import (
+        AuthenticationSettings,
+    )
+    from conductor.client.orkes_clients import OrkesClients
+
+    config = AgentConfig(streaming_enabled=True)
+    auth = (
+        AuthenticationSettings(key_id=auth_key, key_secret=auth_secret or "")
+        if auth_key
+        else None
     )
     rt = object.__new__(AgentRuntime)
     rt._config = config
+    rt._conductor_config = Configuration(
+        server_api_url=server_url, authentication_settings=auth
+    )
+    rt._clients = OrkesClients(configuration=rt._conductor_config)
+    rt._agent_client = rt._clients.get_agent_client()
     return rt
 
 
@@ -396,11 +407,24 @@ class TestStreamSSEErrors:
 
 
 class TestStreamSSEAuth:
+    @pytest.fixture(autouse=True)
+    def _isolate_ambient_auth(self, monkeypatch):
+        """Isolate from ambient auth env (CI sets CONDUCTOR_AUTH_*). These tests
+        assert on the *configured* auth only; a service-account key in the
+        environment would otherwise leak into the Configuration and add an
+        unexpected X-Authorization header."""
+        for k in (
+            "CONDUCTOR_AUTH_KEY",
+            "CONDUCTOR_AUTH_SECRET",
+            "AGENTSPAN_AUTH_KEY",
+            "AGENTSPAN_AUTH_SECRET",
+            "AGENTSPAN_API_KEY",
+        ):
+            monkeypatch.delenv(k, raising=False)
+
     def test_auth_key_secret_mints_x_authorization(self):
         """auth_key/auth_secret are exchanged for a JWT via POST /token (the
         secured-host contract, e.g. orkes) and sent as X-Authorization."""
-        from conductor.ai.agents._internal.token_utils import _TOKEN_CACHE
-
         scenario = {
             "events": [
                 {"event": "done", "id": "1", "data": _java_event("done", output="ok")},
@@ -410,7 +434,6 @@ class TestStreamSSEAuth:
         server = MockSSEServer(scenario)
         url = server.start()
         try:
-            _TOKEN_CACHE.clear()
             rt = _make_runtime(url, auth_key="my-key", auth_secret="my-secret")
             events = list(rt._stream_sse("test-wf"))
             assert len(events) == 1
@@ -425,7 +448,6 @@ class TestStreamSSEAuth:
             assert "X-Auth-Secret" not in headers
         finally:
             server.stop()
-            _TOKEN_CACHE.clear()
 
     def test_no_auth_headers_when_not_configured(self):
         scenario = {

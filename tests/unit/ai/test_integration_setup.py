@@ -79,10 +79,9 @@ class TestEnsureModel:
             from conductor.ai.agents.runtime.runtime import AgentRuntime
 
             config = AgentConfig(
-                server_url="http://localhost:8080/api",
                 auto_register_integrations=auto_register,
             )
-            runtime = AgentRuntime(config=config)
+            runtime = AgentRuntime(settings=config)
             return runtime, mock_integration_client
 
     def test_upserts_integration_with_api_key(self):
@@ -247,10 +246,9 @@ class TestEnsureModelsForAgent:
             from conductor.ai.agents.runtime.runtime import AgentRuntime
 
             config = AgentConfig(
-                server_url="http://localhost:8080/api",
                 auto_register_integrations=True,
             )
-            runtime = AgentRuntime(config=config)
+            runtime = AgentRuntime(settings=config)
             return runtime, mock_integration_client
 
     def test_single_agent(self):
@@ -329,10 +327,9 @@ class TestAutoRegisterInPrepare:
             from conductor.ai.agents.runtime.runtime import AgentRuntime
 
             config = AgentConfig(
-                server_url="http://localhost:8080/api",
                 auto_register_integrations=True,
             )
-            runtime = AgentRuntime(config=config)
+            runtime = AgentRuntime(settings=config)
             runtime._ensure_models_for_agent = MagicMock()
             runtime._compile_agent = MagicMock()
 
@@ -354,10 +351,9 @@ class TestAutoRegisterInPrepare:
             from conductor.ai.agents.runtime.runtime import AgentRuntime
 
             config = AgentConfig(
-                server_url="http://localhost:8080/api",
                 auto_register_integrations=False,
             )
-            runtime = AgentRuntime(config=config)
+            runtime = AgentRuntime(settings=config)
             runtime._ensure_models_for_agent = MagicMock()
             runtime._compile_agent = MagicMock()
 

@@ -15,15 +15,12 @@ def test_start_via_server_includes_context_in_payload():
 
     agent = Agent(name="test", model="anthropic/claude-sonnet-4-6")
     rt = AgentRuntime()
-    with patch("requests.post") as mock_post:
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = {"executionId": "test-id", "requiredWorkers": []}
-        mock_resp.raise_for_status.return_value = None
-        mock_post.return_value = mock_resp
-        rt._start_via_server(agent, "hello", context={"repo": "test/repo"})
-        payload = mock_post.call_args.kwargs["json"]
-        assert "context" in payload
-        assert payload["context"] == {"repo": "test/repo"}
+    rt._agent_client = MagicMock()
+    rt._agent_client.start_agent.return_value = {"executionId": "test-id", "requiredWorkers": []}
+    rt._start_via_server(agent, "hello", context={"repo": "test/repo"})
+    payload = rt._agent_client.start_agent.call_args[0][0]
+    assert "context" in payload
+    assert payload["context"] == {"repo": "test/repo"}
 
 
 def test_start_via_server_without_context_omits_key():
@@ -32,14 +29,11 @@ def test_start_via_server_without_context_omits_key():
 
     agent = Agent(name="test", model="anthropic/claude-sonnet-4-6")
     rt = AgentRuntime()
-    with patch("requests.post") as mock_post:
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = {"executionId": "test-id", "requiredWorkers": []}
-        mock_resp.raise_for_status.return_value = None
-        mock_post.return_value = mock_resp
-        rt._start_via_server(agent, "hello")
-        payload = mock_post.call_args.kwargs["json"]
-        assert "context" not in payload
+    rt._agent_client = MagicMock()
+    rt._agent_client.start_agent.return_value = {"executionId": "test-id", "requiredWorkers": []}
+    rt._start_via_server(agent, "hello")
+    payload = rt._agent_client.start_agent.call_args[0][0]
+    assert "context" not in payload
 
 
 def test_context_key_collision_with_state_updates():

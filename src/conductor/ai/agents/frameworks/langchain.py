@@ -10,7 +10,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional, Tuple
 
-from conductor.ai.agents._internal.token_utils import agent_api_auth_headers
+from conductor.ai.agents._internal.agent_http import agent_post
 from conductor.ai.agents.frameworks.serializer import WorkerInfo
 
 logger = logging.getLogger("conductor.ai.agents.frameworks.langchain")
@@ -113,8 +113,7 @@ def make_langchain_worker(
         resolved_secrets = {}
         try:
             from conductor.ai.agents.runtime._dispatch import (
-                _extract_execution_token,
-                _get_credential_fetcher,
+                _resolve_secrets_from_task,
                 _workflow_credentials,
                 _workflow_credentials_lock,
             )
@@ -125,16 +124,8 @@ def make_langchain_worker(
                 with _workflow_credentials_lock:
                     cred_names = list(_workflow_credentials.get(exec_id, []))
             if cred_names:
-                token = _extract_execution_token(task)
-                if token:
-                    fetcher = _get_credential_fetcher()
-                    resolved_secrets = fetcher.fetch(token, cred_names)
-                else:
-                    logger.warning(
-                        "No execution token in task for LangChain worker — "
-                        "credentials %s will not be injected",
-                        cred_names,
-                    )
+                # Values the host resolved and delivered on Task.runtimeMetadata.
+                resolved_secrets = _resolve_secrets_from_task(task, cred_names)
         except Exception as _cred_err:
             logger.warning("Failed to resolve credentials for LangChain: %s", _cred_err)
 
@@ -254,11 +245,7 @@ def _push_event_nonblocking(
 
     def _do_push():
         try:
-            import requests
-
-            url = f"{server_url}/agent/events/{execution_id}"
-            headers = agent_api_auth_headers(server_url, auth_key=auth_key, auth_secret=auth_secret)
-            requests.post(url, json=event, headers=headers, timeout=5)
+            agent_post(server_url, auth_key, auth_secret, f"/agent/events/{execution_id}", event)
         except Exception as exc:
             logger.debug("Event push failed (execution_id=%s): %s", execution_id, exc)
 

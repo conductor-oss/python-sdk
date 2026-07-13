@@ -329,8 +329,81 @@ class TestSystemEntries:
         )
 
         assert asyncio.run(pickle.loads(pickle.dumps(TransferNoopEntry()))()) == {}
+        # Echoes the hand-off message so it is visible in the task output.
+        assert asyncio.run(pickle.loads(pickle.dumps(TransferNoopEntry()))(message="do X")) == {
+            "message": "do X"
+        }
         msg = asyncio.run(pickle.loads(pickle.dumps(TransferUnreachableEntry("a_transfer_to_b")))())
         assert "a_transfer_to_b is not available" in msg
+
+    def test_check_transfer_extracts_message(self):
+        import asyncio
+
+        from conductor.ai.agents.runtime._worker_entries import CheckTransferEntry
+
+        entry = pickle.loads(pickle.dumps(CheckTransferEntry()))
+        out = asyncio.run(
+            entry(
+                tool_calls=[
+                    {
+                        "name": "ceo_transfer_to_engineering_lead",
+                        "inputParameters": {
+                            "method": "ceo_transfer_to_engineering_lead",
+                            "message": "Design the REST API",
+                        },
+                    }
+                ]
+            )
+        )
+        assert out == {
+            "is_transfer": True,
+            "transfer_to": "engineering_lead",
+            "transfer_message": "Design the REST API",
+        }
+
+    def test_check_transfer_no_transfer_and_missing_message(self):
+        import asyncio
+
+        from conductor.ai.agents.runtime._worker_entries import CheckTransferEntry
+
+        entry = CheckTransferEntry()
+        assert asyncio.run(entry(tool_calls=None)) == {
+            "is_transfer": False,
+            "transfer_to": "",
+            "transfer_message": "",
+        }
+        # Transfer without a message arg (older tool schema) → empty message
+        out = asyncio.run(
+            entry(tool_calls=[{"name": "a_transfer_to_b", "inputParameters": {"method": "x"}}])
+        )
+        assert out == {"is_transfer": True, "transfer_to": "b", "transfer_message": ""}
+
+    def test_check_transfer_multiple_calls_first_wins_and_reports_dropped(self):
+        import asyncio
+
+        from conductor.ai.agents.runtime._worker_entries import CheckTransferEntry
+
+        entry = CheckTransferEntry()
+        out = asyncio.run(
+            entry(
+                tool_calls=[
+                    {
+                        "name": "ceo_transfer_to_engineering_lead",
+                        "inputParameters": {"message": "eng task"},
+                    },
+                    {
+                        "name": "ceo_transfer_to_marketing_lead",
+                        "inputParameters": {"message": "mkt task"},
+                    },
+                ]
+            )
+        )
+        assert out["is_transfer"] is True
+        assert out["transfer_to"] == "engineering_lead"
+        assert out["transfer_message"] == "eng task"
+        assert out["dropped_transfers"] == [
+            {"transfer_to": "marketing_lead", "message": "mkt task"}
+        ]
 
 
 # ── Framework worker entries (Group C) ───────────────────────────────────

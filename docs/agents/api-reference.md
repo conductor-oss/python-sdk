@@ -19,21 +19,25 @@ agents](framework-agents.md), and [Advanced](advanced.md).
 
 ## AgentRuntime
 
-`AgentRuntime(*, server_url=None, api_key=None, api_secret=None, config=None)`
+`AgentRuntime(configuration=None, *, settings=None)` — `configuration` is the
+standard Conductor `Configuration` (host + auth; defaults to `Configuration()`,
+which resolves `CONDUCTOR_SERVER_URL` → `AGENTSPAN_SERVER_URL` and
+`CONDUCTOR_AUTH_*` from the environment); `settings` is an optional `AgentConfig`
+with runtime behaviour knobs (its connection fields are ignored).
 
 Context manager (sync and async: `with` / `async with`).
 
 | Method | Signature | Purpose |
 |---|---|---|
-| `run` | `(agent, prompt=None, *, version=None, media=None, session_id=None, idempotency_key=None, on_event=None, timeout=None, credentials=None, context=None, **kwargs) -> AgentResult` | Run synchronously |
+| `run` | `(agent, prompt=None, *, version=None, media=None, session_id=None, idempotency_key=None, on_event=None, timeout=None, credentials=None, context=None, run_settings=None, **kwargs) -> AgentResult` | Start, wait for completion, return the result (also starts workers) |
 | `run_async` | same as `run` | Async run |
-| `start` | `(agent, prompt=None, *, version=None, media=None, session_id=None, idempotency_key=None, context=None, **kwargs) -> AgentHandle` | Fire-and-forget |
+| `start` | `(agent, prompt=None, *, version=None, media=None, session_id=None, idempotency_key=None, context=None, run_settings=None, **kwargs) -> AgentHandle` | Fire-and-forget; returns a handle (also starts workers) |
 | `start_async` | same as `start` | Async start |
 | `stream` | `(agent=None, prompt=None, *, version=None, handle=None, media=None, session_id=None, **kwargs) -> AgentStream` | Stream events |
 | `stream_async` | same as `stream` | `-> AsyncAgentStream` |
-| `deploy` | `(*agents, packages=None, schedules=_UNSET) -> list[DeploymentInfo]` | Compile + register |
+| `deploy` | `(*agents, packages=None, schedules=_UNSET) -> list[DeploymentInfo]` | Compile + register agent(s) on the server; does **not** start workers |
 | `deploy_async` | same | Async deploy |
-| `serve` | `(*agents, packages=None, blocking=True) -> None` | Register + poll workers |
+| `serve` | `(*agents, packages=None, blocking=True) -> None` | Register agent(s) on the server **and** serve/poll their workers (`serve` = `deploy` + serve) |
 | `plan` | `(agent) -> dict` | Compile to workflow def |
 | `resume` | `(execution_id, agent, *, timeout=None) -> AgentHandle` | Re-attach + re-register workers |
 | `resume_async` | same | Async resume |
@@ -52,6 +56,28 @@ Async variants exist for status/respond/approve/reject/send/stop/shutdown
 (`*_async`). Module-level wrappers using a singleton runtime: `run`, `run_async`,
 `start`, `start_async`, `stream`, `stream_async`, `resume`, `resume_async`, `deploy`,
 `deploy_async`, `serve`, `plan`, `configure`, `shutdown`.
+
+### Per-run overrides — `RunSettings`
+
+`run` / `start` (and their async variants and the module-level wrappers) accept
+`run_settings=` to override an agent's LLM settings for a single invocation
+without rebuilding the `Agent`:
+
+```python
+from conductor.ai.agents import RunSettings
+
+runtime.run(
+    agent,
+    "Summarize this.",
+    run_settings=RunSettings(model="anthropic/claude-sonnet-4-6", temperature=0.0, max_tokens=512),
+)
+```
+
+`RunSettings(model=None, temperature=None, max_tokens=None, reasoning_effort=None,
+thinking_budget_tokens=None)` — only the fields you set override; unset fields keep
+the agent's own values (so `temperature=0.0` is honored). A plain `dict` with the
+same keys is also accepted. Overrides apply to the root agent's config; sub-agents
+keep their own settings.
 
 ## Agent
 
@@ -269,43 +295,46 @@ override. Pass instances via `Agent(callbacks=[...])`; they chain in list order.
 
 ## AgentClient
 
-The control-plane client (formerly `AgentHttpClient`, alias kept). Reach it via
-`runtime.client`, or construct standalone:
-`AgentClient(server_url="", api_key="", auth_key="", auth_secret="", *, runtime=None)`.
+The `/agent/*` control-plane client. `AgentClient` is an interface
+(`conductor.client.agent_client`) implemented by `OrkesAgentClient`
+(`conductor.client.orkes.orkes_agent_client`), following the same pattern as
+`WorkflowClient`/`OrkesWorkflowClient` and built on the shared `ApiClient`
+token machinery. Reach it via `runtime.client` or
+`OrkesClients(configuration).get_agent_client()`. Every method has an `*_async`
+counterpart.
 
 | Method | Signature | Purpose |
 |---|---|---|
-| `run` / `run_async` | `(agent, prompt=None, *, media=None, session_id=None, idempotency_key=None, timeout=None, context=None, static_plan=None) -> AgentResult` | Compile + start + poll (no local workers) |
-| `start` / `start_async` | same args | `-> AgentHandle` |
-| `deploy` / `deploy_async` | `(*agents) -> list[DeploymentInfo]` | Compile + register |
-| `schedule` | `(agent, schedules) -> DeploymentInfo` | Deploy + reconcile cron schedules |
-| `get_status` | `(execution_id) -> dict` | |
-| `respond` | `(execution_id, body) -> None` | |
-| `stop` | `(execution_id) -> None` | |
-| `signal` | `(execution_id, message) -> None` | |
-| `stream_sse` | `(execution_id) -> AsyncIterator[dict]` | |
-| `schedules` (property) | `-> SchedulerClient` | |
-| `close` | `() -> None` (async) | |
-
-Lower-level endpoint methods (`start_agent`, `deploy_agent`, `compile_agent`) are also
-available. The raw transport behind them is `conductor.client.ai.AgentApiClient`
-(build one with `OrkesClients.get_agent_client()`); `AgentClient` composes it and
-keeps the agent-level conveniences.
+| `start_agent` | `(payload) -> dict` | POST /agent/start |
+| `deploy_agent` | `(payload) -> dict` | POST /agent/deploy |
+| `compile_agent` | `(payload) -> dict` | POST /agent/compile |
+| `get_status` | `(execution_id) -> dict` | GET /agent/{id}/status |
+| `get_execution` | `(execution_id) -> dict` | GET /agent/execution/{id} |
+| `list_executions` | `(params=None) -> dict` | GET /agent/executions |
+| `respond` | `(execution_id, body) -> None` | POST /agent/{id}/respond |
+| `stop` | `(execution_id) -> None` | POST /agent/{id}/stop |
+| `signal` | `(execution_id, message) -> None` | POST /agent/{id}/signal |
+| `stream_sse` | `(execution_id, last_event_id=None) -> Iterator[dict]` | GET /agent/stream/{id} (SSE) |
+| `schedules` (property) | `-> SchedulerClient` | Cron schedule lifecycle |
+| `close` / `close_async` | `() -> None` | Release transport resources |
 
 ## Config and credentials
 
 `AgentConfig` (dataclass) fields: `server_url="http://localhost:8080/api"`,
 `api_key=None`, `auth_key=None`, `auth_secret=None`, `llm_retry_count=3`,
 `worker_poll_interval_ms=100`, `worker_thread_count=1`, `auto_start_workers=True`,
-`auto_start_server=True`, `daemon_workers=True`, `auto_register_integrations=False`,
+`daemon_workers=True`, `auto_register_integrations=False`,
 `streaming_enabled=True`, `secret_strict_mode=False`, `log_level="INFO"`. Classmethod
 `AgentConfig.from_env()` reads the `AGENTSPAN_*` variables (see [Getting
 started](getting-started.md#environment-variables)). Property `api_secret` aliases
-`auth_secret`.
+`auth_secret`. `AgentRuntime` uses it only for runtime *behaviour* knobs — server
+connection always comes from the Conductor `Configuration`.
 
 `get_secret(name) -> str` — read a credential inside a `@tool(credentials=[...])`
-function. `resolve_credentials(input_data, names) -> dict` — for external workers.
-Errors: `CredentialNotFoundError`, `CredentialAuthError`, `CredentialRateLimitError`,
+function. `resolve_credentials(task, names) -> dict` — for external workers; reads
+the host-resolved values the server delivers on `Task.runtimeMetadata` (declared via
+the tool/agent `credentials`, resolved at poll time). Errors:
+`CredentialNotFoundError`, `CredentialAuthError`, `CredentialRateLimitError`,
 `CredentialServiceError`.
 
 `ClaudeCode(model_name="", permission_mode=PermissionMode.ACCEPT_EDITS)` with

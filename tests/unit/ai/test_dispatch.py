@@ -78,62 +78,45 @@ class TestCheckApprovalWorker:
         assert result["needs_approval"] is False
 
 
-class TestCredentialExtraction:
-    """_dispatch.py extracts __agentspan_ctx__ from task input/variables."""
+class TestCredentialResolution:
+    """_dispatch.py reads host-resolved secrets from Task.runtimeMetadata."""
 
-    def test_extract_token_from_input_data_dict(self):
-        from conductor.ai.agents.runtime._dispatch import _extract_execution_token
-
-        class FakeTask:
-            input_data = {
-                "__agentspan_ctx__": {"execution_token": "token-from-input"},
-                "x": "hello",
-            }
-            workflow_input = {}
-
-        token = _extract_execution_token(FakeTask())
-        assert token == "token-from-input"
-
-    def test_extract_token_from_input_data_string(self):
-        """Backwards compat: plain string is also accepted."""
-        from conductor.ai.agents.runtime._dispatch import _extract_execution_token
+    def test_resolves_declared_names_from_runtime_metadata(self):
+        from conductor.ai.agents.runtime._dispatch import _resolve_secrets_from_task
 
         class FakeTask:
-            input_data = {"__agentspan_ctx__": "token-from-input", "x": "hello"}
-            workflow_input = {}
+            runtime_metadata = {"GH_TOKEN": "ghp_x", "OTHER": "y"}
 
-        token = _extract_execution_token(FakeTask())
-        assert token == "token-from-input"
+        resolved = _resolve_secrets_from_task(FakeTask(), ["GH_TOKEN"])
+        assert resolved == {"GH_TOKEN": "ghp_x"}
 
-    def test_extract_token_returns_none_when_absent(self):
-        from conductor.ai.agents.runtime._dispatch import _extract_execution_token
-
-        class FakeTask:
-            input_data = {"x": "hello"}
-            workflow_input = {}
-
-        token = _extract_execution_token(FakeTask())
-        assert token is None
-
-    def test_extract_token_from_workflow_input_dict(self):
-        from conductor.ai.agents.runtime._dispatch import _extract_execution_token
+    def test_empty_names_returns_empty(self):
+        from conductor.ai.agents.runtime._dispatch import _resolve_secrets_from_task
 
         class FakeTask:
-            input_data = {}
-            workflow_input = {"__agentspan_ctx__": {"execution_token": "token-from-wf"}}
+            runtime_metadata = {"GH_TOKEN": "ghp_x"}
 
-        token = _extract_execution_token(FakeTask())
-        assert token == "token-from-wf"
+        assert _resolve_secrets_from_task(FakeTask(), []) == {}
 
-    def test_extract_token_empty_dict_returns_none(self):
-        from conductor.ai.agents.runtime._dispatch import _extract_execution_token
+    def test_missing_name_raises_credential_not_found(self):
+        from conductor.ai.agents.runtime._dispatch import _resolve_secrets_from_task
+        from conductor.ai.agents.runtime.credentials.types import CredentialNotFoundError
 
         class FakeTask:
-            input_data = {"__agentspan_ctx__": {}}
-            workflow_input = {}
+            runtime_metadata = {"GH_TOKEN": "ghp_x"}
 
-        token = _extract_execution_token(FakeTask())
-        assert token is None
+        with pytest.raises(CredentialNotFoundError, match="MISSING_ONE"):
+            _resolve_secrets_from_task(FakeTask(), ["GH_TOKEN", "MISSING_ONE"])
+
+    def test_absent_runtime_metadata_raises_for_declared_name(self):
+        from conductor.ai.agents.runtime._dispatch import _resolve_secrets_from_task
+        from conductor.ai.agents.runtime.credentials.types import CredentialNotFoundError
+
+        class FakeTask:
+            runtime_metadata = None
+
+        with pytest.raises(CredentialNotFoundError, match="GH_TOKEN"):
+            _resolve_secrets_from_task(FakeTask(), ["GH_TOKEN"])
 
 
 class TestToolDefCredentialsSurvival:

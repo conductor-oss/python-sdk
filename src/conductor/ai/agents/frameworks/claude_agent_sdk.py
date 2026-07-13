@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import is_dataclass, replace
 from typing import Any, Dict, List, Optional, Tuple
 
-from conductor.ai.agents._internal.token_utils import agent_api_auth_headers
+from conductor.ai.agents._internal.agent_http import _agent_api_client, agent_post
 from conductor.ai.agents.frameworks.serializer import WorkerInfo
 
 logger = logging.getLogger("conductor.ai.agents.frameworks.claude_agent_sdk")
@@ -888,15 +888,22 @@ def _push_event_nonblocking(
 
     def _do_push():
         try:
-            import requests
-
-            url = f"{server_url}/agent/events/{execution_id}"
-            headers = agent_api_auth_headers(server_url, auth_key=auth_key, auth_secret=auth_secret)
-            requests.post(url, json=event, headers=headers, timeout=5)
+            agent_post(server_url, auth_key, auth_secret, f"/agent/events/{execution_id}", event)
         except Exception as exc:
             logger.debug("Event push failed (execution_id=%s): %s", execution_id, exc)
 
     _EVENT_PUSH_POOL.submit(_do_push)
+
+
+def _task_client(server_url: str, auth_key: str, auth_secret: str):
+    """Return a ``TaskResourceApi`` backed by the shared cached ``ApiClient``.
+
+    Reuses the single per-(server_url, auth_key) ApiClient from ``agent_http`` so
+    the ``/tasks`` progress update and the ``/agent/*`` posts share one token.
+    """
+    from conductor.client.http.api.task_resource_api import TaskResourceApi
+
+    return TaskResourceApi(_agent_api_client(server_url, auth_key, auth_secret))
 
 
 def _update_task_progress_nonblocking(
@@ -924,20 +931,15 @@ def _update_task_progress_nonblocking(
 
     def _do_update():
         try:
-            import requests
+            from conductor.client.http.models.task_result import TaskResult
 
-            url = f"{server_url}/tasks"
-            headers: Dict[str, str] = {"Content-Type": "application/json"}
-            headers.update(
-                agent_api_auth_headers(server_url, auth_key=auth_key, auth_secret=auth_secret)
+            result = TaskResult(
+                task_id=task_id,
+                workflow_instance_id=execution_id,
+                status="IN_PROGRESS",
+                output_data=progress_data,
             )
-            body = {
-                "taskId": task_id,
-                "workflowInstanceId": execution_id,
-                "status": "IN_PROGRESS",
-                "outputData": progress_data,
-            }
-            requests.post(url, json=body, headers=headers, timeout=5)
+            _task_client(server_url, auth_key, auth_secret).update_task(result)
         except Exception as exc:
             logger.debug(
                 "Task progress update failed (task_id=%s, execution_id=%s): %s",
@@ -968,26 +970,15 @@ def _create_tracking_workflow(
     Returns the execution ID of the new workflow, or None on failure.
     Uses POST /api/agent/execution (Agentspan custom endpoint).
     """
-    try:
-        import requests
-
-        url = f"{server_url}/agent/execution"
-        headers: Dict[str, str] = {"Content-Type": "application/json"}
-        headers.update(
-            agent_api_auth_headers(server_url, auth_key=auth_key, auth_secret=auth_secret)
-        )
-        body: Dict[str, Any] = {"workflowName": workflow_name, "input": input_data}
-        if parent_workflow_id:
-            body["parentWorkflowId"] = parent_workflow_id
-        if parent_workflow_task_id:
-            body["parentWorkflowTaskId"] = parent_workflow_task_id
-        resp = requests.post(url, json=body, headers=headers, timeout=5)
-        if resp.status_code < 400:
-            return resp.json().get("executionId")
-        return None
-    except Exception as exc:
-        logger.debug("Create tracking workflow failed: %s", exc)
-        return None
+    body: Dict[str, Any] = {"workflowName": workflow_name, "input": input_data}
+    if parent_workflow_id:
+        body["parentWorkflowId"] = parent_workflow_id
+    if parent_workflow_task_id:
+        body["parentWorkflowTaskId"] = parent_workflow_task_id
+    resp = agent_post(
+        server_url, auth_key, auth_secret, "/agent/execution", body, read_response=True
+    )
+    return resp.get("executionId") if isinstance(resp, dict) else None
 
 
 def _inject_tool_task(
@@ -1009,32 +1000,23 @@ def _inject_tool_task(
     For SUB_WORKFLOW tasks, pass sub_workflow_param with keys:
       name, version, executionId (the tracking sub-workflow).
     """
-    try:
-        import requests
-
-        url = f"{server_url}/agent/{execution_id}/tasks"
-        headers: Dict[str, str] = {"Content-Type": "application/json"}
-        headers.update(
-            agent_api_auth_headers(server_url, auth_key=auth_key, auth_secret=auth_secret)
-        )
-        body: Dict[str, Any] = {
-            "taskDefName": tool_name,
-            "referenceTaskName": ref_name,
-            "type": task_type,
-            "inputData": input_data,
-        }
-        if sub_workflow_param:
-            body["subWorkflowParam"] = sub_workflow_param
-        resp = requests.post(url, json=body, headers=headers, timeout=5)
-        return resp.status_code < 400
-    except Exception as exc:
-        logger.debug(
-            "Inject tool task failed (execution_id=%s, ref=%s): %s",
-            execution_id,
-            ref_name,
-            exc,
-        )
-        return False
+    body: Dict[str, Any] = {
+        "taskDefName": tool_name,
+        "referenceTaskName": ref_name,
+        "type": task_type,
+        "inputData": input_data,
+    }
+    if sub_workflow_param:
+        body["subWorkflowParam"] = sub_workflow_param
+    resp = agent_post(
+        server_url,
+        auth_key,
+        auth_secret,
+        f"/agent/{execution_id}/tasks",
+        body,
+        read_response=True,
+    )
+    return resp is not None
 
 
 def _complete_tool_task_nonblocking(
@@ -1053,14 +1035,13 @@ def _complete_tool_task_nonblocking(
 
     def _do_complete():
         try:
-            import requests
-
-            url = f"{server_url}/agent/tasks/{execution_id}/{ref_name}/{status}"
-            headers: Dict[str, str] = {"Content-Type": "application/json"}
-            headers.update(
-                agent_api_auth_headers(server_url, auth_key=auth_key, auth_secret=auth_secret)
+            agent_post(
+                server_url,
+                auth_key,
+                auth_secret,
+                f"/agent/tasks/{execution_id}/{ref_name}/{status}",
+                output_data,
             )
-            requests.post(url, json=output_data, headers=headers, timeout=5)
         except Exception as exc:
             logger.debug(
                 "Complete tool task failed (execution_id=%s, ref=%s): %s",
@@ -1086,14 +1067,13 @@ def _complete_workflow_nonblocking(
 
     def _do_complete():
         try:
-            import requests
-
-            url = f"{server_url}/agent/execution/{workflow_execution_id}/complete"
-            headers: Dict[str, str] = {"Content-Type": "application/json"}
-            headers.update(
-                agent_api_auth_headers(server_url, auth_key=auth_key, auth_secret=auth_secret)
+            agent_post(
+                server_url,
+                auth_key,
+                auth_secret,
+                f"/agent/execution/{workflow_execution_id}/complete",
+                output_data or {},
             )
-            requests.post(url, json=output_data or {}, headers=headers, timeout=5)
         except Exception as exc:
             logger.debug(
                 "Complete workflow failed (execution_id=%s): %s",
@@ -1122,8 +1102,7 @@ def _resolve_credentials(
     shared process-wide lock. See ``docs/design/secret-injection-contract.md``.
     """
     from conductor.ai.agents.runtime._dispatch import (
-        _extract_execution_token,
-        _get_credential_fetcher,
+        _resolve_secrets_from_task,
         _workflow_credentials,
         _workflow_credentials_lock,
     )
@@ -1135,13 +1114,5 @@ def _resolve_credentials(
             cred_names = list(_workflow_credentials.get(exec_id, []))
     if not cred_names:
         return {}
-    token = _extract_execution_token(task)
-    if not token:
-        logger.warning(
-            "No execution token in task for Claude Agent SDK worker — "
-            "credentials %s will not be injected",
-            cred_names,
-        )
-        return {}
-    fetcher = _get_credential_fetcher()
-    return fetcher.fetch(token, cred_names)
+    # Values the host resolved and delivered on Task.runtimeMetadata.
+    return _resolve_secrets_from_task(task, cred_names)

@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  AGENTSPAN_VERSION: "0.4.0"   # pinned server/CLI release — bump deliberately
+  AGENTSPAN_VERSION: "0.4.3"   # pinned server/CLI release — bump deliberately
 
 jobs:
   agent-e2e:

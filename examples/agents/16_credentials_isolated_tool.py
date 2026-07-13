@@ -4,7 +4,7 @@
 """Credentials — per-user secrets injected into isolated tool subprocesses.
 
 Demonstrates:
-    - @tool with credentials=["GITHUB_TOKEN"] declares the tool's secret needs
+    - @tool with credentials=["GH_TOKEN"] declares the tool's secret needs
     - Credentials injected into a fresh subprocess — parent env never touched
     - Tool reads credential from os.environ inside the subprocess
     - Fallback to os.environ when no server credential is set (non-strict mode)
@@ -18,12 +18,12 @@ How it works:
 
 Setup (one-time, via CLI):
     agentspan login                                     # authenticate
-    agentspan credentials set GITHUB_TOKEN <your-github-token> # enter token when prompted
+    agentspan credentials set GH_TOKEN <your-github-token> # enter token when prompted
 
 Requirements:
     - Agentspan server running at AGENTSPAN_SERVER_URL
     - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-5.4)
-    - GITHUB_TOKEN stored via `agentspan credentials set` OR set in os.environ
+    - GH_TOKEN stored via `agentspan credentials set` OR set in os.environ
 """
 
 import os
@@ -34,13 +34,13 @@ from settings import settings
 from conductor.ai.agents import Agent, AgentRuntime, tool
 
 
-@tool(credentials=["GITHUB_TOKEN"])
+@tool(credentials=["GH_TOKEN"])
 def list_github_repos(username: str) -> dict:
     """List public repositories for a GitHub user.
 
-    The GITHUB_TOKEN env var is injected into this subprocess automatically.
+    The GH_TOKEN env var is injected into this subprocess automatically.
     """
-    token = os.environ.get("GITHUB_TOKEN", "")
+    token = os.environ.get("GH_TOKEN", "")
     headers = ["Accept: application/vnd.github+json"]
     if token:
         headers.append(f"Authorization: Bearer {token}")
@@ -72,15 +72,15 @@ def list_github_repos(username: str) -> dict:
     }
 
 
-@tool(credentials=["GITHUB_TOKEN"])
+@tool(credentials=["GH_TOKEN"])
 def create_github_issue(repo: str, title: str, body: str) -> dict:
-    """Create a GitHub issue. Requires GITHUB_TOKEN with write access.
+    """Create a GitHub issue. Requires GH_TOKEN with write access.
 
     repo format: "owner/repo-name"
     """
-    token = os.environ.get("GITHUB_TOKEN")
+    token = os.environ.get("GH_TOKEN")
     if not token:
-        return {"error": "GITHUB_TOKEN not available — cannot create issues without auth"}
+        return {"error": "GH_TOKEN not available — cannot create issues without auth"}
 
     import json
 
@@ -117,7 +117,7 @@ agent = Agent(
     model=settings.llm_model,
     tools=[list_github_repos, create_github_issue],
     # Declare credentials at the agent level — SDK auto-fetches for all tools
-    credentials=["GITHUB_TOKEN"],
+    credentials=["GH_TOKEN"],
     instructions=(
         "You are a GitHub assistant. You can list repos and create issues. "
         "Always confirm with the user before creating issues."

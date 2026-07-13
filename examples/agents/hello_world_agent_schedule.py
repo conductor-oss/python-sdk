@@ -23,9 +23,14 @@ import uuid
 import requests
 
 from conductor.ai.agents import Agent, AgentRuntime
+from conductor.client.configuration.configuration import Configuration
 from conductor.ai.agents.schedule import Schedule
 
-SERVER = "http://localhost:8080/api"
+SERVER = (
+    os.environ.get("CONDUCTOR_SERVER_URL")
+    or os.environ.get("AGENTSPAN_SERVER_URL")
+    or "http://localhost:8080/api"
+)
 MODEL = os.environ.get("AGENTSPAN_MODEL", "anthropic/claude-sonnet-4-6")
 
 
@@ -75,7 +80,7 @@ def main() -> None:
 
     # 2. Deploy and attach a 5-second schedule in one call.
     #    (Conductor uses 6-field Quartz cron with optional seconds.)
-    with AgentRuntime(server_url=SERVER) as rt:
+    with AgentRuntime(Configuration(server_api_url=SERVER)) as rt:
         rt.deploy(
             agent,
             schedules=[

@@ -111,23 +111,26 @@ def _validate_cli_command(command: str, allowed_commands: List[str]) -> None:
 # ── Tool factory ───────────────────────────────────────────────────────
 
 
-def _make_cli_tool(
-    allowed_commands: List[str],
-    timeout: int = 30,
-    working_dir: Optional[str] = None,
-    allow_shell: bool = False,
-    agent_name: Optional[str] = None,
-) -> Any:
-    """Create a ``@tool``-decorated ``run_command`` function.
+class _CliCommandRunner:
+    """Run a CLI command."""
 
-    The returned function can be appended to ``Agent.tools`` directly.
-    """
-    from conductor.ai.agents.tool import tool
+    # A module-level callable class (not a closure) so the worker is spawn-safe:
+    # the registration probe pickles the tool by reference, and an instance's
+    # config (all plain data) pickles fine — a ``<locals>`` closure would not.
+    def __init__(
+        self,
+        allowed_commands: List[str],
+        timeout: int = 30,
+        working_dir: Optional[str] = None,
+        allow_shell: bool = False,
+    ) -> None:
+        self.allowed_commands = list(allowed_commands or [])
+        self.timeout = timeout
+        self.working_dir = working_dir
+        self.allow_shell = allow_shell
 
-    task_name = f"{agent_name}_run_command" if agent_name else "run_command"
-
-    @tool(name=task_name)
-    def run_command(
+    def __call__(
+        self,
         command: str,
         args: list = [],
         cwd: str = "",
@@ -164,10 +167,10 @@ def _make_cli_tool(
         executable = tokens[0]
 
         # Validate against whitelist (on the executable)
-        _validate_cli_command(executable, allowed_commands)
+        _validate_cli_command(executable, self.allowed_commands)
 
         # Shell gate
-        if shell and not allow_shell:
+        if shell and not self.allow_shell:
             raise ValueError("Shell mode is disabled for this agent. Do not set shell=True.")
 
         # Normalise args
@@ -180,7 +183,7 @@ def _make_cli_tool(
         argv = tokens[1:] + [str(a) for a in args]
 
         # Resolve working directory
-        effective_cwd = cwd if cwd else working_dir
+        effective_cwd = cwd if cwd else self.working_dir
 
         try:
             if shell:
@@ -191,7 +194,7 @@ def _make_cli_tool(
                     shell=True,
                     capture_output=True,
                     text=True,
-                    timeout=timeout,
+                    timeout=self.timeout,
                     cwd=effective_cwd or None,
                 )
             else:
@@ -199,7 +202,7 @@ def _make_cli_tool(
                     [executable] + argv,
                     capture_output=True,
                     text=True,
-                    timeout=timeout,
+                    timeout=self.timeout,
                     cwd=effective_cwd or None,
                 )
 
@@ -224,11 +227,37 @@ def _make_cli_tool(
                 }
 
         except subprocess.TimeoutExpired:
-            raise TerminalToolError(f"Command timed out after {timeout}s")
+            raise TerminalToolError(f"Command timed out after {self.timeout}s")
         except FileNotFoundError:
             raise TerminalToolError(f"Command not found: {command}")
         except Exception as e:
             raise TerminalToolError(str(e))
+
+
+def _make_cli_tool(
+    allowed_commands: List[str],
+    timeout: int = 30,
+    working_dir: Optional[str] = None,
+    allow_shell: bool = False,
+    agent_name: Optional[str] = None,
+) -> Any:
+    """Create a ``@tool``-decorated ``run_command`` tool.
+
+    The tool is backed by a module-level :class:`_CliCommandRunner` instance
+    (not a closure) so the registered worker is spawn-safe. The returned object
+    can be appended to ``Agent.tools`` directly.
+    """
+    from conductor.ai.agents.tool import tool
+
+    task_name = f"{agent_name}_run_command" if agent_name else "run_command"
+
+    runner = _CliCommandRunner(
+        allowed_commands=allowed_commands,
+        timeout=timeout,
+        working_dir=working_dir,
+        allow_shell=allow_shell,
+    )
+    run_command = tool(name=task_name)(runner)
 
     # Build dynamic description
     desc = f"Run a CLI command directly. Timeout: {timeout}s."

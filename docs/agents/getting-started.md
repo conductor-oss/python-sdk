@@ -11,7 +11,7 @@ pip install 'conductor-python[agents]'
 Or, per framework, install just what you need — e.g. `conductor-python[langchain]`,
 `conductor-python[adk]`, `conductor-python[claude]`.
 
-Point the SDK at a running Agentspan server (defaults to `http://localhost:8080/api`):
+Point the SDK at a running Conductor Agent server (defaults to `http://localhost:8080/api`):
 
 ```bash
 export AGENTSPAN_SERVER_URL=http://localhost:8080/api
@@ -60,7 +60,6 @@ the output if you prefer.
 | `AGENTSPAN_WORKER_POLL_INTERVAL` | `100` | Worker poll interval (ms) |
 | `AGENTSPAN_WORKER_THREADS` | `1` | Worker thread count |
 | `AGENTSPAN_AUTO_START_WORKERS` | `true` | Auto-start local tool workers |
-| `AGENTSPAN_AUTO_START_SERVER` | `true` | Auto-start a local server if none is reachable |
 | `AGENTSPAN_DAEMON_WORKERS` | `true` | Run workers as daemon threads |
 | `AGENTSPAN_INTEGRATIONS_AUTO_REGISTER` | `false` | Auto-register provider integrations |
 | `AGENTSPAN_STREAMING_ENABLED` | `true` | Enable SSE streaming |
