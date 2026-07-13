@@ -14,7 +14,7 @@ Or, per framework, install just what you need — e.g. `conductor-python[langcha
 Point the SDK at a running Conductor Agent server (defaults to `http://localhost:8080/api`):
 
 ```bash
-export AGENTSPAN_SERVER_URL=http://localhost:8080/api
+export CONDUCTOR_SERVER_URL=http://localhost:8080/api
 export OPENAI_API_KEY=<YOUR-KEY>
 export AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini
 ```
@@ -48,23 +48,30 @@ the output if you prefer.
 
 ## Environment variables
 
-`AgentConfig.from_env()` reads these (all optional — defaults shown):
+Connection, auth, and log level come from the standard `Configuration()` — used by
+`AgentRuntime()` with no arguments — not from `AgentConfig`:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `AGENTSPAN_SERVER_URL` | `http://localhost:8080/api` | Server base URL |
-| `AGENTSPAN_API_KEY` | — | API key auth |
-| `AGENTSPAN_AUTH_KEY` | — | Key/secret auth — key |
-| `AGENTSPAN_AUTH_SECRET` | — | Key/secret auth — secret |
-| `AGENTSPAN_LLM_RETRY_COUNT` | `3` | LLM call retries |
+| `CONDUCTOR_SERVER_URL` (falls back to `AGENTSPAN_SERVER_URL`) | `http://localhost:8080/api` | Server base URL |
+| `CONDUCTOR_AUTH_KEY` | — | Key/secret auth — key |
+| `CONDUCTOR_AUTH_SECRET` | — | Key/secret auth — secret |
+| `CONDUCTOR_LOG_LEVEL` (falls back to `AGENTSPAN_LOG_LEVEL`) | `INFO` | Log level |
+
+`AgentConfig.from_env()` reads the agent-runtime *behaviour* knobs (all optional —
+defaults shown):
+
+| Variable | Default | Purpose |
+|---|---|---|
 | `AGENTSPAN_WORKER_POLL_INTERVAL` | `100` | Worker poll interval (ms) |
 | `AGENTSPAN_WORKER_THREADS` | `1` | Worker thread count |
 | `AGENTSPAN_AUTO_START_WORKERS` | `true` | Auto-start local tool workers |
 | `AGENTSPAN_DAEMON_WORKERS` | `true` | Run workers as daemon threads |
 | `AGENTSPAN_INTEGRATIONS_AUTO_REGISTER` | `false` | Auto-register provider integrations |
 | `AGENTSPAN_STREAMING_ENABLED` | `true` | Enable SSE streaming |
-| `AGENTSPAN_SECRET_STRICT_MODE` | `false` | Fail hard on missing secrets |
-| `AGENTSPAN_LOG_LEVEL` | `INFO` | Log level |
+| `AGENTSPAN_LIVENESS_ENABLED` | `true` | Enable the stateful-run liveness monitor |
+| `AGENTSPAN_LIVENESS_STALL_SECONDS` | `30.0` | Idle window before a run is considered stalled |
+| `AGENTSPAN_LIVENESS_CHECK_INTERVAL_SECONDS` | `10.0` | Liveness poll interval |
 
 The model string is `"provider/model"`, e.g. `anthropic/claude-sonnet-4-6`,
 `anthropic/claude-sonnet-4-20250514`, `google_gemini/gemini-2.0-flash`. Set the

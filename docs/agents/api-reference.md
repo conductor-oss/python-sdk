@@ -320,15 +320,15 @@ counterpart.
 
 ## Config and credentials
 
-`AgentConfig` (dataclass) fields: `server_url="http://localhost:8080/api"`,
-`api_key=None`, `auth_key=None`, `auth_secret=None`, `llm_retry_count=3`,
+`AgentConfig` (dataclass) fields — runtime behaviour only, no connection/auth/log:
 `worker_poll_interval_ms=100`, `worker_thread_count=1`, `auto_start_workers=True`,
-`daemon_workers=True`, `auto_register_integrations=False`,
-`streaming_enabled=True`, `secret_strict_mode=False`, `log_level="INFO"`. Classmethod
-`AgentConfig.from_env()` reads the `AGENTSPAN_*` variables (see [Getting
-started](getting-started.md#environment-variables)). Property `api_secret` aliases
-`auth_secret`. `AgentRuntime` uses it only for runtime *behaviour* knobs — server
-connection always comes from the Conductor `Configuration`.
+`daemon_workers=True`, `auto_register_integrations=False`, `streaming_enabled=True`,
+`liveness_enabled=True`, `liveness_stall_seconds=30.0`,
+`liveness_check_interval_seconds=10.0`. Classmethod `AgentConfig.from_env()` reads
+the `AGENTSPAN_*` variables (see [Getting
+started](getting-started.md#environment-variables)). `AgentRuntime` uses it only
+for runtime *behaviour* knobs — server connection, auth, and log level always come
+from the Conductor `Configuration` (`configuration=` on the constructor).
 
 `get_secret(name) -> str` — read a credential inside a `@tool(credentials=[...])`
 function. `resolve_credentials(task, names) -> dict` — for external workers; reads
