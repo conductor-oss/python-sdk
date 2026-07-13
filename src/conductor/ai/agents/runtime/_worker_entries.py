@@ -431,6 +431,56 @@ class GateEntry:
             return {"decision": "continue"}  # safe fallback
 
 
+class FeedbackSinkEntry:
+    """Long-term-memory feedback_sink worker.
+
+    The compiled (server-side) memory path invokes this with the FeedbackEvent
+    fields after saving a conversation memory; it rebuilds the
+    :class:`~conductor.ai.agents.ocg_memory.FeedbackEvent` and hands it to the
+    user's ``feedback_sink`` callable. Best-effort: failures are swallowed so
+    memory delivery never fails the run.
+    """
+
+    def __init__(self, feedback_sink_fn):
+        self.fn_t = wrap_callable(feedback_sink_fn)
+
+    async def __call__(
+        self,
+        memory_key: str = "",
+        summary: str = "",
+        facts: object = None,
+        tags: object = None,
+        good_url: str = None,
+        bad_url: str = None,
+        expires_at: str = None,
+        agent: str = None,
+        user: str = None,
+    ) -> object:
+        from conductor.ai.agents.runtime.runtime import _call_user_fn
+
+        try:
+            from conductor.ai.agents.ocg_memory import FeedbackEvent
+
+            event = FeedbackEvent(
+                memory_key=memory_key,
+                summary=summary,
+                facts=list(facts) if isinstance(facts, (list, tuple)) else [],
+                tags=list(tags) if isinstance(tags, (list, tuple)) else [],
+                good_url=good_url,
+                bad_url=bad_url,
+                expires_at=expires_at,
+                agent=agent,
+                user=user,
+            )
+            await _call_user_fn(unwrap_callable(self.fn_t), event)
+            return {"delivered": True}
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).warning("feedback_sink delivery failed: %s", e)
+            return {"delivered": False}
+
+
 class CallbackEntry:
     """Position callback worker (was ``callback_worker``).
 
