@@ -34,9 +34,20 @@ If you find [Conductor](https://github.com/conductor-oss/conductor) useful, plea
 
 ## Start Conductor Server
 
-If you don't already have a Conductor server running, pick one:
+#### Conductor CLI
+```shell
+# Installs conductor cli
+npm install -g @conductor-oss/conductor-cli
 
-**Docker Compose (recommended, includes UI):**
+# Start the open source conductor server on port 8080
+conductor server start
+# see conductor server --help for all the available commands
+```
+
+
+Alternatively, if you want to use docker
+
+**Docker Compose**
 
 ```shell
 docker run -p 8080:8080 conductoross/conductor:latest
@@ -48,15 +59,6 @@ The UI will be available at `http://localhost:8080` and the API at `http://local
 curl -sSL https://raw.githubusercontent.com/conductor-oss/conductor/main/conductor_server.sh | sh
 ```
 
-**Conductor CLI**
-```shell
-# Installs conductor cli
-npm install -g @conductor-oss/conductor-cli
-
-# Start the open source conductor server
-conductor server start
-# see conductor server --help for all the available commands
-```
 
 ## Install the SDK
 

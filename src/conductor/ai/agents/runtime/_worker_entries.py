@@ -492,22 +492,62 @@ class TerminationEntry:
 
 
 class CheckTransferEntry:
-    """Detect transfer tool calls (was ``check_transfer_worker``; stateless)."""
+    """Detect transfer tool calls (was ``check_transfer_worker``; stateless).
+
+    Selection is first-wins: when the LLM emits multiple transfer calls in one
+    turn only the first is honored (the swarm loop can only hand off to one
+    agent). The others are surfaced as ``dropped_transfers`` so the intent is
+    visible in the task output instead of silently discarded — the transfer
+    tool descriptions instruct the model to call at most one per turn.
+
+    ``transfer_message`` carries the transfer tool's ``message`` argument (the
+    hand-off note for the receiving agent); the server compiler records it in
+    the conversation as ``[agent -> target]: <message>``.
+    """
 
     async def __call__(self, tool_calls: object = None, _unused: str = "") -> object:
+        transfers = []
         for tc in tool_calls or []:
-            name = tc.get("name", "")
-            if "_transfer_to_" in name:
-                return {"is_transfer": True, "transfer_to": name.split("_transfer_to_", 1)[1]}
-        return {"is_transfer": False, "transfer_to": ""}
+            name = tc.get("name", "") or ""
+            if "_transfer_to_" not in name:
+                continue
+            params = tc.get("inputParameters") or {}
+            message = params.get("message")
+            transfers.append(
+                {
+                    "transfer_to": name.split("_transfer_to_", 1)[1],
+                    "message": "" if message is None else str(message),
+                }
+            )
+        if not transfers:
+            return {"is_transfer": False, "transfer_to": "", "transfer_message": ""}
+        first = transfers[0]
+        out = {
+            "is_transfer": True,
+            "transfer_to": first["transfer_to"],
+            "transfer_message": first["message"],
+        }
+        if len(transfers) > 1:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "Multiple transfer calls in one turn; honoring '%s', dropping %s",
+                first["transfer_to"],
+                [t["transfer_to"] for t in transfers[1:]],
+            )
+            out["dropped_transfers"] = transfers[1:]
+        return out
 
 
 class TransferNoopEntry:
     """No-op transfer tool (was the nested ``transfer_worker``; handoff is
-    detected by check_transfer from toolCalls output)."""
+    detected by check_transfer from toolCalls output). Echoes the hand-off
+    ``message`` so it is visible in the task output / UI."""
 
-    async def __call__(self) -> object:
-        return {}
+    async def __call__(self, message: str = "") -> object:
+        if not message:
+            return {}
+        return {"message": message}
 
 
 class TransferUnreachableEntry:

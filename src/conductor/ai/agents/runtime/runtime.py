@@ -1557,7 +1557,7 @@ class AgentRuntime:
         for sub in agent.agents:
             tool_name = f"{agent.name}_transfer_to_{sub.name}"
             transfer_worker = TransferNoopEntry()
-            transfer_worker.__annotations__ = {"return": object}
+            transfer_worker.__annotations__ = {"message": str, "return": object}
             probe_spawn_safety(transfer_worker, tool_name, group="system")
             worker_task(
                 task_definition_name=tool_name,
@@ -1685,7 +1685,7 @@ class AgentRuntime:
                     transfer_worker.__annotations__ = {"return": str}
                 else:
                     transfer_worker = TransferNoopEntry()
-                    transfer_worker.__annotations__ = {"return": object}
+                    transfer_worker.__annotations__ = {"message": str, "return": object}
                 probe_spawn_safety(transfer_worker, tool_name, group="system")
                 worker_task(
                     task_definition_name=tool_name,
