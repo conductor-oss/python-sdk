@@ -16,6 +16,7 @@ from conductor.client.http.models.upsert_group_request import UpsertGroupRequest
 from conductor.client.http.models.upsert_user_request import UpsertUserRequest
 from conductor.client.orkes.models.access_type import AccessType
 from conductor.client.orkes.models.metadata_tag import MetadataTag
+from conductor.client.http.rest import ApiException
 from conductor.client.orkes.orkes_authorization_client import OrkesAuthorizationClient
 
 logger = logging.getLogger(
@@ -50,7 +51,7 @@ class TestOrkesAuthorizationClientIntg(unittest.TestCase):
         cls.test_app_name = f"test_app_{cls.timestamp}"
         cls.test_user_id = f"test_user_{cls.timestamp}@example.com"
         cls.test_group_id = f"test_group_{cls.timestamp}"
-        cls.test_role_name = f"test_role_{cls.timestamp}"
+        cls.test_role_name = f"TEST_ROLE_{cls.timestamp}"
         cls.test_gateway_config_id = None
 
         # Store created resource IDs for cleanup
@@ -343,6 +344,7 @@ class TestOrkesAuthorizationClientIntg(unittest.TestCase):
 
         request = UpsertGroupRequest()
         request.description = "Test Group"
+        request.roles = []
 
         group = self.client.upsert_group(request, self.test_group_id)
 
@@ -585,7 +587,12 @@ class TestOrkesAuthorizationClientIntg(unittest.TestCase):
         """Test: list_gateway_auth_configs"""
         logger.info('TEST: list_gateway_auth_configs')
 
-        configs = self.client.list_gateway_auth_configs()
+        try:
+            configs = self.client.list_gateway_auth_configs()
+        except ApiException as e:
+            if e.status == 404:
+                self.skipTest('API Gateway auth-config endpoint not available on this server')
+            raise
 
         self.assertIsNotNone(configs)
         self.assertIsInstance(configs, list)

@@ -46,21 +46,21 @@ def run_workflow_execution_tests(configuration: Configuration, workflow_executor
     )
     task_handler.start_processes()
     try:
-        test_get_workflow_by_correlation_ids(workflow_executor)
+        scenario_get_workflow_by_correlation_ids(workflow_executor)
         logger.debug('finished workflow correlation ids test')
-        test_workflow_registration(workflow_executor)
+        scenario_workflow_registration(workflow_executor)
         logger.debug('finished workflow registration tests')
-        test_workflow_execution(
+        scenario_workflow_execution(
             workflow_quantity=6,
             workflow_name=WORKFLOW_NAME,
             workflow_executor=workflow_executor,
             workflow_completion_timeout=5.0
         )
-        test_decorated_workers(workflow_executor)
+        scenario_decorated_workers(workflow_executor)
         logger.debug('finished decorated workers tests')
-        test_execute_workflow_async_features(workflow_executor)
+        scenario_execute_workflow_async_features(workflow_executor)
         logger.debug('finished execute_workflow reactive features tests')
-        test_execute_workflow_error_handling(workflow_executor)
+        scenario_execute_workflow_error_handling(workflow_executor)
         logger.debug('finished execute_workflow error handling tests')
         run_signal_tests(configuration, workflow_executor)
         logger.debug('finished signal API tests')
@@ -86,7 +86,7 @@ def generate_tasks_defs():
     return [python_simple_task_from_code]
 
 
-def test_get_workflow_by_correlation_ids(workflow_executor: WorkflowExecutor):
+def scenario_get_workflow_by_correlation_ids(workflow_executor: WorkflowExecutor):
     _run_with_retry_attempt(
         workflow_executor.get_by_correlation_ids,
         {
@@ -98,7 +98,7 @@ def test_get_workflow_by_correlation_ids(workflow_executor: WorkflowExecutor):
     )
 
 
-def test_workflow_registration(workflow_executor: WorkflowExecutor):
+def scenario_workflow_registration(workflow_executor: WorkflowExecutor):
     workflow = generate_workflow(workflow_executor)
     try:
         workflow_executor.metadata_client.unregister_workflow_def_with_http_info(
@@ -113,7 +113,7 @@ def test_workflow_registration(workflow_executor: WorkflowExecutor):
     )
 
 
-def test_decorated_workers(
+def scenario_decorated_workers(
         workflow_executor: WorkflowExecutor,
         workflow_name: str = 'TestPythonDecoratedWorkerWf',
 ) -> None:
@@ -154,7 +154,7 @@ def test_decorated_workers(
     workflow_executor.metadata_client.unregister_workflow_def(wf.name, wf.version)
 
 
-def test_workflow_execution(
+def scenario_workflow_execution(
         workflow_quantity: int,
         workflow_name: str,
         workflow_executor: WorkflowExecutor,
@@ -229,7 +229,7 @@ def _run_with_retry_attempt(f, params, retries=4) -> None:
                 raise e
             sleep(1 << attempt)
 
-def test_execute_workflow_async_features(workflow_executor: WorkflowExecutor):
+def scenario_execute_workflow_async_features(workflow_executor: WorkflowExecutor):
     """Test the execute_workflow method with reactive features (consistency and return_strategy)"""
     logger.debug('Starting execute_workflow reactive features tests')
 
@@ -367,7 +367,7 @@ def test_execute_workflow_async_features(workflow_executor: WorkflowExecutor):
     logger.debug('All execute_workflow reactive features tests passed!')
 
 
-def test_execute_workflow_error_handling(workflow_executor: WorkflowExecutor):
+def scenario_execute_workflow_error_handling(workflow_executor: WorkflowExecutor):
     """Test error handling in execute_workflow with invalid parameters"""
     logger.debug('Starting execute_workflow error handling tests')
 
@@ -433,19 +433,19 @@ def run_signal_tests(configuration: Configuration, workflow_executor: WorkflowEx
         _register_signal_test_workflows(workflow_executor)
 
         # Test sync signal with different return strategies
-        test_signal_target_workflow(workflow_executor)
-        test_signal_blocking_workflow(workflow_executor)
-        test_signal_blocking_task(workflow_executor)
-        test_signal_blocking_task_input(workflow_executor)
+        scenario_signal_target_workflow(workflow_executor)
+        scenario_signal_blocking_workflow(workflow_executor)
+        scenario_signal_blocking_task(workflow_executor)
+        scenario_signal_blocking_task_input(workflow_executor)
 
         # Test default return strategy
-        test_signal_default_strategy(workflow_executor)
+        scenario_signal_default_strategy(workflow_executor)
 
         # Test async signal
-        test_signal_async(workflow_executor)
+        scenario_signal_async(workflow_executor)
 
         # Test to_dict fix
-        test_signal_to_dict_fix(workflow_executor)
+        scenario_signal_to_dict_fix(workflow_executor)
 
         logger.info('All signal tests completed successfully')
 
@@ -569,7 +569,7 @@ def _complete_workflow(workflow_executor: WorkflowExecutor, workflow_id: str):
         raise
 
 
-def test_signal_target_workflow(workflow_executor: WorkflowExecutor):
+def scenario_signal_target_workflow(workflow_executor: WorkflowExecutor):
     """Test signal with TARGET_WORKFLOW return strategy"""
     logger.info('Testing signal with TARGET_WORKFLOW strategy...')
 
@@ -640,7 +640,7 @@ def test_signal_target_workflow(workflow_executor: WorkflowExecutor):
     logger.info('TARGET_WORKFLOW strategy test completed')
 
 
-def test_signal_blocking_workflow(workflow_executor: WorkflowExecutor):
+def scenario_signal_blocking_workflow(workflow_executor: WorkflowExecutor):
     """Test signal with BLOCKING_WORKFLOW return strategy"""
     logger.info('Testing signal with BLOCKING_WORKFLOW strategy...')
 
@@ -669,7 +669,7 @@ def test_signal_blocking_workflow(workflow_executor: WorkflowExecutor):
     logger.info('BLOCKING_WORKFLOW strategy test completed')
 
 
-def test_signal_blocking_task(workflow_executor: WorkflowExecutor):
+def scenario_signal_blocking_task(workflow_executor: WorkflowExecutor):
     """Test signal with BLOCKING_TASK return strategy"""
     logger.info('Testing signal with BLOCKING_TASK strategy...')
 
@@ -699,7 +699,7 @@ def test_signal_blocking_task(workflow_executor: WorkflowExecutor):
     logger.info('BLOCKING_TASK strategy test completed')
 
 
-def test_signal_blocking_task_input(workflow_executor: WorkflowExecutor):
+def scenario_signal_blocking_task_input(workflow_executor: WorkflowExecutor):
     """Test signal with BLOCKING_TASK_INPUT return strategy"""
     logger.info('Testing signal with BLOCKING_TASK_INPUT strategy...')
 
@@ -730,7 +730,7 @@ def test_signal_blocking_task_input(workflow_executor: WorkflowExecutor):
     logger.info('BLOCKING_TASK_INPUT strategy test completed')
 
 
-def test_signal_default_strategy(workflow_executor: WorkflowExecutor):
+def scenario_signal_default_strategy(workflow_executor: WorkflowExecutor):
     """Test signal with default return strategy"""
     logger.info('Testing signal with default strategy...')
 
@@ -754,7 +754,7 @@ def test_signal_default_strategy(workflow_executor: WorkflowExecutor):
     logger.info('Default strategy test completed')
 
 
-def test_signal_async(workflow_executor: WorkflowExecutor):
+def scenario_signal_async(workflow_executor: WorkflowExecutor):
     """Test async signal"""
     logger.info('Testing async signal...')
 
@@ -775,7 +775,7 @@ def test_signal_async(workflow_executor: WorkflowExecutor):
     logger.info('Async signal test completed')
 
 
-def test_signal_to_dict_fix(workflow_executor: WorkflowExecutor):
+def scenario_signal_to_dict_fix(workflow_executor: WorkflowExecutor):
     """Test that to_dict() returns actual values, not property objects"""
     logger.info('Testing to_dict() method fix...')
 

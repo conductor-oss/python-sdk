@@ -15,7 +15,7 @@ class ServiceMethod:
         'input_type': 'str',
         'output_type': 'str',
         'request_params': 'list[RequestParam]',
-        'example_input': 'dict'
+        'example_input': 'object'
     }
 
     attribute_map = {

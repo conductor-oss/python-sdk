@@ -1,6 +1,13 @@
 name: Continuous Integration
 
-on: [pull_request, workflow_dispatch]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -46,9 +53,6 @@ jobs:
         id: unit_tests
         continue-on-error: true
         env:
-          CONDUCTOR_AUTH_KEY: ${{ secrets.CONDUCTOR_AUTH_KEY }}
-          CONDUCTOR_AUTH_SECRET: ${{ secrets.CONDUCTOR_AUTH_SECRET }}
-          CONDUCTOR_SERVER_URL: ${{ secrets.CONDUCTOR_SERVER_URL }}
           COVERAGE_FILE: ${{ env.COVERAGE_DIR }}/.coverage.unit
         run: |
           coverage run -m pytest tests/unit -v
@@ -57,9 +61,6 @@ jobs:
         id: bc_tests
         continue-on-error: true
         env:
-          CONDUCTOR_AUTH_KEY: ${{ secrets.CONDUCTOR_AUTH_KEY }}
-          CONDUCTOR_AUTH_SECRET: ${{ secrets.CONDUCTOR_AUTH_SECRET }}
-          CONDUCTOR_SERVER_URL: ${{ secrets.CONDUCTOR_SERVER_URL }}
           COVERAGE_FILE: ${{ env.COVERAGE_DIR }}/.coverage.bc
         run: |
           coverage run -m pytest tests/backwardcompatibility -v
@@ -68,9 +69,6 @@ jobs:
         id: serdeser_tests
         continue-on-error: true
         env:
-          CONDUCTOR_AUTH_KEY: ${{ secrets.CONDUCTOR_AUTH_KEY }}
-          CONDUCTOR_AUTH_SECRET: ${{ secrets.CONDUCTOR_AUTH_SECRET }}
-          CONDUCTOR_SERVER_URL: ${{ secrets.CONDUCTOR_SERVER_URL }}
           COVERAGE_FILE: ${{ env.COVERAGE_DIR }}/.coverage.serdeser
         run: |
           coverage run -m pytest tests/serdesertest -v
@@ -104,3 +102,29 @@ jobs:
       - name: Check test results
         if: steps.unit_tests.outcome == 'failure' || steps.bc_tests.outcome == 'failure' || steps.serdeser_tests.outcome == 'failure' || steps.agent_base_import.outcome == 'failure'
         run: exit 1
+
+  integration-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CONDUCTOR_SERVER_URL: ${{ vars.SDKDEV_V5_SERVER_URL }}
+      CONDUCTOR_AUTH_KEY: ${{ vars.SDKDEV_V5_AUTH_KEY }}
+      CONDUCTOR_AUTH_SECRET: ${{ secrets.SDKDEV_V5_AUTH_SECRET }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest
+
+      - name: Run integration tests
+        run: bash scripts/run_integration_tests.sh

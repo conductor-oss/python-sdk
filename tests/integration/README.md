@@ -38,7 +38,35 @@ export CONDUCTOR_AUTH_SECRET="your-secret"
 
 ## Running Tests
 
+### Run the CI suite locally (recommended)
+
+Use the helper script to run exactly what CI runs (the `integration-test` job in
+[`.github/workflows/pull_request.yml`](../../.github/workflows/pull_request.yml)).
+It excludes the AI/agentic tests (which need a dedicated AI-enabled server) and
+the slow performance test, so you don't have to remember the `--ignore` flags:
+
+```bash
+export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
+# For Orkes / authenticated servers also set:
+# export CONDUCTOR_AUTH_KEY="your-key"
+# export CONDUCTOR_AUTH_SECRET="your-secret"
+
+./scripts/run_integration_tests.sh
+
+# Also run the performance test (test_update_task_v2_perf.py, ~1000 workflows,
+# several minutes):
+./scripts/run_integration_tests.sh --with-perf
+```
+
+Any extra arguments pass straight through to pytest, which is handy for
+targeting a subset of tests or getting more detail on failures. See additional
+options and examples in the comments at the top of
+[`scripts/run_integration_tests.sh`](../../scripts/run_integration_tests.sh).
+
 ### Run All Integration Tests
+
+This includes the AI/agentic tests, which require an AI-enabled server (see
+[Tests excluded by default](#tests-excluded-by-default) below):
 
 ```bash
 python3 -m pytest tests/integration/ -v -s
@@ -442,46 +470,42 @@ To add more test scenarios:
 
 ---
 
+## Tests excluded by default
+
+`scripts/run_integration_tests.sh` (and CI) skip a few tests by default.
+
+**AI/agentic tests** need a dedicated AI-enabled server:
+
+- `test_ai_task_types.py` and `test_ai_examples.py` hardcode
+  `http://localhost:7001/api`.
+- `test_agentic_workflows.py` needs an `openai` LLM provider (model
+  `gpt-4o-mini`) configured on the server.
+
+Run them only against a suitably configured AI-enabled server, e.g.:
+
+```bash
+python3 -m pytest tests/integration/test_ai_task_types.py -v -s
+```
+
+**Performance test** (`test_update_task_v2_perf.py`) submits ~1000 workflows and
+takes several minutes. Include it with the `--with-perf` flag:
+
+```bash
+./scripts/run_integration_tests.sh --with-perf
+```
+
+---
+
 ## CI/CD Integration
 
-### GitHub Actions Example
+Integration tests run in CI via the `integration-test` job in
+[`.github/workflows/pull_request.yml`](../../.github/workflows/pull_request.yml)
+on pushes to `main`, PRs targeting `main`, and manual dispatch. The job invokes
+`scripts/run_integration_tests.sh` (excluding the AI tests and the performance
+test) and reads the server from the `SDKDEV_V5_*` repository variables/secret.
 
-```yaml
-name: Integration Tests
-
-on: [push, pull_request]
-
-jobs:
-  integration:
-    runs-on: ubuntu-latest
-
-    services:
-      conductor:
-        image: conductoross/conductor-standalone:3.15.0
-        ports:
-          - 8080:8080
-          - 5000:5000
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
-
-      - name: Install dependencies
-        run: pip install -e .
-
-      - name: Wait for Conductor
-        run: |
-          timeout 60 bash -c 'until curl -f http://localhost:8080/api/health; do sleep 2; done'
-
-      - name: Run integration tests
-        env:
-          CONDUCTOR_SERVER_URL: http://localhost:8080/api
-        run: python3 -m pytest tests/integration/ -v -s
-```
+To reproduce the CI run locally, use the script documented in
+[Running Tests](#running-tests) above.
 
 ---
 
