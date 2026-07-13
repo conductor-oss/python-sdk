@@ -328,3 +328,76 @@ class TestLangchainWorkerCredentialInjection:
 
     # Full extraction path tests moved to test_credential_injection_integration.py
     # which uses real LangChain tools, real serialize_agent, real Conductor Tasks.
+
+
+def _make_claude_code_runtime():
+    """Build a bare AgentRuntime with just the attrs _build_passthrough_func needs."""
+    from conductor.ai.agents.runtime.runtime import AgentRuntime
+    from conductor.client.configuration.configuration import Configuration
+
+    rt = AgentRuntime.__new__(AgentRuntime)
+    rt._conductor_config = Configuration(server_api_url="http://testserver:8080/api")
+    rt._auth_key = "my_key"
+    rt._auth_secret = "my_secret"
+    return rt
+
+
+class TestClaudeCodeRegistrationSpawnSafety:
+    """Regression test for idea-12 P11.3.
+
+    Both claude-code registration sites in ``_register_workers`` (top-level
+    agent and sub-agent recursion) used to build their worker function via
+    ``make_claude_agent_sdk_worker(...)``, a ``<locals>`` closure over a live
+    options object. The framework-group spawn-safety probe rejects any such
+    closure under the default ``spawn``/``forkserver`` start method, so a
+    claude-code agent could only ever be registered under ``fork``. The fix
+    routes both sites through ``_build_passthrough_func``, which returns a
+    ``PassthroughWorkerEntry`` carrying a plain-config dict — picklable by
+    value. These tests pin that both call sites produce a picklable worker.
+    """
+
+    def _probe(self, worker):
+        from conductor.ai.agents.runtime._worker_entries import probe_spawn_safety
+
+        with patch("multiprocessing.get_start_method", return_value="spawn"):
+            probe_spawn_safety(worker.func, worker.name, group="framework")
+
+    def test_top_level_claude_code_agent_is_spawn_safe(self):
+        from conductor.ai.agents import Agent
+        from conductor.ai.agents.runtime._worker_entries import PassthroughWorkerEntry
+
+        agent = Agent(name="cc_top", model="claude-code/opus", instructions="test", tools=["Read"])
+        assert agent.is_claude_code
+
+        rt = _make_claude_code_runtime()
+        captured = []
+        rt._register_passthrough_worker = lambda worker: captured.append(worker)
+
+        rt._register_workers(agent, required_workers=None, domain=None)
+
+        assert len(captured) == 1
+        worker = captured[0]
+        assert isinstance(worker.func, PassthroughWorkerEntry)
+        assert "<locals>" not in type(worker.func).__qualname__
+        self._probe(worker)  # must not raise SpawnSafetyError
+
+    def test_claude_code_sub_agent_is_spawn_safe(self):
+        from conductor.ai.agents import Agent
+        from conductor.ai.agents.runtime._worker_entries import PassthroughWorkerEntry
+
+        sub = Agent(name="cc_sub", model="claude-code/opus", instructions="test", tools=["Read"])
+        manager = Agent(name="manager", model="openai/gpt-4o", agents=[sub])
+        assert sub.is_claude_code
+
+        rt = _make_claude_code_runtime()
+        captured = []
+        rt._register_passthrough_worker = lambda worker: captured.append(worker)
+
+        rt._register_workers(manager, required_workers=None, domain=None)
+
+        assert len(captured) == 1
+        worker = captured[0]
+        assert worker.name == "cc_sub"
+        assert isinstance(worker.func, PassthroughWorkerEntry)
+        assert "<locals>" not in type(worker.func).__qualname__
+        self._probe(worker)  # must not raise SpawnSafetyError
