@@ -105,6 +105,9 @@ Notes:
 - `CONDUCTOR_HTTP2_ENABLED` controls whether the SDK uses HTTP/2 for outbound requests to Conductor (default: `true`).
   If you see intermittent `httpcore.RemoteProtocolError: <ConnectionTerminated ...>`, try `CONDUCTOR_HTTP2_ENABLED=false`
   to force HTTP/1.1 (workaround for some proxies/load balancers).
+- `CONDUCTOR_HTTP2_AUTO_FALLBACK` controls whether the SDK automatically falls back to HTTP/1.1 for the rest of the
+  process after an HTTP/2 protocol error (default: `true`). Set `CONDUCTOR_HTTP2_AUTO_FALLBACK=false` to keep retrying
+  on HTTP/2 instead of falling back.
 
 ## Design Principles for Workers
 
