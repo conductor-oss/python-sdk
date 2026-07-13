@@ -292,7 +292,9 @@ class TestUserManagement:
             target_type="WORKFLOW_DEF",
             target_id="test-workflow"
         )
-        assert isinstance(result, bool)
+        # The server returns a per-access permission map
+        # (e.g. {'CREATE': True, 'READ': True, ...}), not a single bool.
+        assert isinstance(result, dict)
 
 
 class TestGroupManagement:

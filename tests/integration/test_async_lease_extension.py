@@ -26,6 +26,8 @@ import sys
 import time
 import unittest
 
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from conductor.client.automator.task_handler import TaskHandler, get_registered_workers
@@ -138,6 +140,7 @@ async def async_lease_fast_no_hb(job_id: str) -> dict:
 
 # -- Test class --------------------------------------------------------------
 
+@pytest.mark.slow_async
 class TestAsyncLeaseExtension(unittest.TestCase):
 
     # Only the workers defined in THIS module. Used to scope the TaskHandler so

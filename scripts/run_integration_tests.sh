@@ -24,6 +24,19 @@
 #   ./scripts/run_integration_tests.sh
 #   ./scripts/run_integration_tests.sh --with-perf   # also run the perf test
 #
+# Buckets (--bucket=<name>): the slowest tests are split into their own buckets
+# so they can run as separate parallel CI jobs and are skipped by default
+# locally. Each slow bucket is path-scoped so it only imports its own module.
+#   core        (default) everything except the slow buckets below
+#   long-sync   sync lease-extension tests   (test_lease_extension.py, ~90s)
+#   long-async  async lease-extension tests  (test_async_lease_extension.py, ~90s)
+#   test-all    aggregate workflow-client test_all (test_workflow_client_intg.py, ~83s)
+#   all         the full suite (no bucket filtering) — for a complete local run
+#
+#   ./scripts/run_integration_tests.sh                  # fast: skips slow buckets
+#   ./scripts/run_integration_tests.sh --bucket=long-sync
+#   ./scripts/run_integration_tests.sh --bucket=all     # run everything
+#
 # Any other arguments are passed straight through to pytest, which is handy for
 # targeting a subset of tests or getting more detail on failures:
 #
@@ -48,22 +61,66 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
+# Slow-test files that get their own buckets / CI jobs (see --bucket above).
+LEASE_SYNC=tests/integration/test_lease_extension.py
+LEASE_ASYNC=tests/integration/test_async_lease_extension.py
+TEST_ALL_FILE=tests/integration/test_workflow_client_intg.py
+
 # The perf test is skipped by default; --with-perf opts back in.
 perf_ignore=(--ignore=tests/integration/test_update_task_v2_perf.py)
+bucket="core"
 pytest_args=()
 for arg in "$@"; do
-  if [[ "$arg" == "--with-perf" ]]; then
-    perf_ignore=()
-  else
-    pytest_args+=("$arg")
-  fi
+  case "$arg" in
+    --with-perf) perf_ignore=() ;;
+    --bucket=*)  bucket="${arg#*=}" ;;
+    *)           pytest_args+=("$arg") ;;
+  esac
 done
+
+# The AI/agentic tests always target a dedicated server (see header) and are
+# never part of these buckets.
+ai_ignore=(
+  --ignore=tests/integration/test_ai_task_types.py
+  --ignore=tests/integration/test_ai_examples.py
+  --ignore=tests/integration/test_agentic_workflows.py
+)
+
+# Build the target paths + selection for the chosen bucket. The slow buckets are
+# path-scoped so each job only imports its own module: this keeps
+# scan_for_annotated_workers from starting unrelated workers and lets the four
+# buckets run in parallel against one server without stealing each other's tasks.
+case "$bucket" in
+  core)
+    targets=(tests/integration)
+    select=("${ai_ignore[@]}" ${perf_ignore[@]+"${perf_ignore[@]}"} \
+      --ignore="$LEASE_SYNC" --ignore="$LEASE_ASYNC" --ignore="$TEST_ALL_FILE")
+    ;;
+  all)
+    targets=(tests/integration)
+    select=("${ai_ignore[@]}" ${perf_ignore[@]+"${perf_ignore[@]}"})
+    ;;
+  long-sync)
+    targets=("$LEASE_SYNC")
+    select=(-m slow_sync)
+    ;;
+  long-async)
+    targets=("$LEASE_ASYNC")
+    select=(-m slow_async)
+    ;;
+  test-all)
+    targets=("$TEST_ALL_FILE")
+    select=(-m slow_test_all)
+    ;;
+  *)
+    echo "Unknown --bucket='$bucket' (expected: core, long-sync, long-async, test-all, all)" >&2
+    exit 2
+    ;;
+esac
 
 # Note: the "${arr[@]+"${arr[@]}"}" form is required so empty arrays don't trip
 # "unbound variable" under `set -u` on bash 3.2 (the default macOS bash).
-exec python3 -m pytest tests/integration -v \
-  --ignore=tests/integration/test_ai_task_types.py \
-  --ignore=tests/integration/test_ai_examples.py \
-  --ignore=tests/integration/test_agentic_workflows.py \
-  ${perf_ignore[@]+"${perf_ignore[@]}"} \
+exec python3 -m pytest -v \
+  "${targets[@]}" \
+  ${select[@]+"${select[@]}"} \
   ${pytest_args[@]+"${pytest_args[@]}"}

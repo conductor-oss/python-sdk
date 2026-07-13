@@ -532,7 +532,9 @@ class TestOrkesAuthorizationClientIntg(unittest.TestCase):
 
         request = CreateOrUpdateRoleRequest()
         request.name = self.test_role_name
-        request.permissions = ["workflow:read"]
+        # Permission strings must be in the server's ACCESS_RESOURCE form
+        # (e.g. READ_WORKFLOW_DEF); "workflow:read" is rejected as invalid.
+        request.permissions = ["READ_WORKFLOW_DEF"]
 
         result = self.client.create_role(request)
 
@@ -553,7 +555,8 @@ class TestOrkesAuthorizationClientIntg(unittest.TestCase):
 
         request = CreateOrUpdateRoleRequest()
         request.name = self.test_role_name
-        request.permissions = ["workflow:read", "workflow:execute"]
+        # Valid ACCESS_RESOURCE permission strings (see test_38_create_role).
+        request.permissions = ["READ_WORKFLOW_DEF", "EXECUTE_WORKFLOW_DEF"]
 
         result = self.client.update_role(self.test_role_name, request)
 

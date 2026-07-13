@@ -24,6 +24,8 @@ import time
 import threading
 import unittest
 
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from conductor.client.automator.task_handler import TaskHandler
@@ -96,6 +98,7 @@ def lease_no_heartbeat_task(job_id: str) -> dict:
 
 # -- Test class --------------------------------------------------------------
 
+@pytest.mark.slow_sync
 class TestLeaseExtension(unittest.TestCase):
 
     @classmethod

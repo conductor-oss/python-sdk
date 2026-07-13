@@ -28,7 +28,6 @@ import logging
 import os
 import sys
 import time
-import threading
 import unittest
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Union
@@ -144,6 +143,7 @@ class TestComprehensiveE2E(unittest.TestCase):
         )
 
         cls.workers_started = False
+        cls.task_handler = None
 
     def test_01_create_workflow(self):
         """Create test workflow."""
@@ -174,22 +174,23 @@ class TestComprehensiveE2E(unittest.TestCase):
     def test_02_start_workers(self):
         """Start workers and verify they initialize."""
         print("\n" + "="*80 + "\nTEST 2: Start Workers\n" + "="*80)
-        
-        def run_workers():
-            with TaskHandler(
-                configuration=self.config,
-                metrics_settings=self.metrics_settings,
-                scan_for_annotated_workers=True,
-                event_listeners=[self.event_collector]
-            ) as handler:
-                handler.start_processes()
-                time.sleep(90)  # Run for test duration
-                handler.stop_processes()
-        
-        thread = threading.Thread(target=run_workers, daemon=True)
-        thread.start()
+
+        # Start the workers and keep the handler on the class so it stays alive
+        # for the remaining tests and is stopped deterministically in
+        # tearDownClass. (A previous version ran the handler in a daemon thread
+        # with a fixed 90s sleep; if the suite finished sooner, the worker
+        # processes were never stopped and the interpreter hung at exit joining
+        # them.)
+        handler = TaskHandler(
+            configuration=self.config,
+            metrics_settings=self.metrics_settings,
+            scan_for_annotated_workers=True,
+            event_listeners=[self.event_collector]
+        )
+        handler.start_processes()
+        self.__class__.task_handler = handler
         time.sleep(5)  # Wait for startup
-        
+
         print("✓ Workers started")
         self.__class__.workers_started = True
         self.assertTrue(self.workers_started)
@@ -422,6 +423,10 @@ class TestComprehensiveE2E(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        handler = getattr(cls, 'task_handler', None)
+        if handler is not None:
+            handler.stop_processes()
+            cls.task_handler = None
         if os.path.exists(cls.metrics_dir):
             import shutil
             shutil.rmtree(cls.metrics_dir)

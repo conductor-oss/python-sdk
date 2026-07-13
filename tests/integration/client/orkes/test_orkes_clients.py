@@ -1,4 +1,5 @@
 import json
+import time
 
 from shortuuid import uuid
 
@@ -36,6 +37,19 @@ USER_ID = 'integrationtest_' + SUFFIX[0:5].lower() + "@orkes.io"
 GROUP_ID = 'integrationtest_group_' + SUFFIX[0:5].lower()
 TEST_WF_JSON = 'tests/integration/resources/test_data/calculate_loan_workflow.json'
 TEST_IP_JSON = 'tests/integration/resources/test_data/loan_workflow_input.json'
+
+
+def _retry_on_404(func, *args, retries=5, **kwargs):
+    # Updating a task by ref name can transiently 404 while the server is still
+    # scheduling the referenced task. Retry with backoff to tolerate that race.
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except ApiException as e:
+            if e.status == 404 and attempt < retries - 1:
+                time.sleep(1 << attempt)
+                continue
+            raise
 
 
 class TestOrkesClients:
@@ -576,7 +590,8 @@ class TestOrkesClients:
 
         polledTask = batchPolledTasks[0]
         # Update first task of second workflow
-        self.task_client.update_task_by_ref_name(
+        _retry_on_404(
+            self.task_client.update_task_by_ref_name,
             workflow_uuid_2,
             polledTask.reference_task_name,
             "COMPLETED",
@@ -584,7 +599,8 @@ class TestOrkesClients:
         )
 
         # Update second task of first workflow
-        self.task_client.update_task_by_ref_name(
+        _retry_on_404(
+            self.task_client.update_task_by_ref_name,
             workflow_uuid_2, "simple_task_ref_2", "COMPLETED", "task 2 op 1st wf"
         )
 
@@ -593,7 +609,8 @@ class TestOrkesClients:
         polledTask = self.task_client.poll_task(TASK_TYPE)
 
         # Update second task of second workflow
-        self.task_client.update_task_sync(
+        _retry_on_404(
+            self.task_client.update_task_sync,
             workflow_uuid, "simple_task_ref_2", "COMPLETED", "task 1 op 2nd wf"
         )
 

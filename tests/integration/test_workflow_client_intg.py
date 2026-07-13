@@ -2,6 +2,8 @@ import logging
 import os
 import unittest
 
+import pytest
+
 from tests.integration.client.orkes.test_orkes_clients import TestOrkesClients
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
@@ -40,6 +42,7 @@ class TestOrkesWorkflowClientIntg(unittest.TestCase):
         cls.workflow_client = OrkesWorkflowClient(cls.config)
         logger.info(f'setting up TestOrkesWorkflowClientIntg with config {cls.config}')
 
+    @pytest.mark.slow_test_all
     def test_all(self):
         logger.info('START: integration tests')
         configuration = self.config

@@ -58,6 +58,25 @@ export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
 ./scripts/run_integration_tests.sh --with-perf
 ```
 
+By default this runs the fast `core` bucket and **skips the slowest tests**
+(a few tests deliberately sleep ~50-90s to exercise lease-extension timeouts and
+one aggregate `test_all`). Those live in their own buckets, each of which runs as
+a separate parallel CI job. Select one with `--bucket=<name>`:
+
+| Bucket | What it runs |
+| --- | --- |
+| `core` (default) | everything except the slow buckets below |
+| `long-sync` | sync lease-extension tests (`test_lease_extension.py`, ~90s) |
+| `long-async` | async lease-extension tests (`test_async_lease_extension.py`, ~90s) |
+| `test-all` | aggregate workflow-client `test_all` (`test_workflow_client_intg.py`, ~83s) |
+| `all` | the full suite (no bucket filtering) — for a complete local run |
+
+```bash
+./scripts/run_integration_tests.sh                  # fast: skips the slow buckets
+./scripts/run_integration_tests.sh --bucket=long-sync
+./scripts/run_integration_tests.sh --bucket=all     # run everything
+```
+
 Any extra arguments pass straight through to pytest, which is handy for
 targeting a subset of tests or getting more detail on failures. See additional
 options and examples in the comments at the top of
