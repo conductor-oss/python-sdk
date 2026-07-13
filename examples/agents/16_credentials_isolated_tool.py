@@ -7,23 +7,27 @@ Demonstrates:
     - @tool with credentials=["GH_TOKEN"] declares the tool's secret needs
     - Credentials injected into a fresh subprocess — parent env never touched
     - Tool reads credential from os.environ inside the subprocess
-    - Fallback to os.environ when no server credential is set (non-strict mode)
+    - Fails closed if a declared credential isn't delivered — no ambient-env fallback
 
 How it works:
-    1. Agent starts → server mints a short-lived execution token
-    2. Before each tool call, the SDK fetches declared credentials from
-       POST /api/credentials/resolve using that token
-    3. The tool function runs in a fresh subprocess with credentials
-       injected as env vars. The parent process's os.environ is unchanged.
+    1. Declaring credentials=["GH_TOKEN"] stamps the name on the tool's
+       TaskDef.runtimeMetadata at registration (conductor-oss PR #1255).
+    2. At poll time the server resolves that name against its credential
+       store and delivers the value wire-only on Task.runtimeMetadata —
+       never persisted, no separate fetch call or execution token.
+    3. The tool function runs in a fresh subprocess with the delivered
+       value injected as an env var. The parent process's os.environ is
+       unchanged. If a declared credential wasn't delivered, the call fails
+       instead of silently reading the ambient environment.
 
 Setup (one-time, via CLI):
     agentspan login                                     # authenticate
     agentspan credentials set GH_TOKEN <your-github-token> # enter token when prompted
 
 Requirements:
-    - Agentspan server running at AGENTSPAN_SERVER_URL
+    - Agentspan server running at AGENTSPAN_SERVER_URL (with runtimeMetadata support)
     - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-5.4)
-    - GH_TOKEN stored via `agentspan credentials set` OR set in os.environ
+    - GH_TOKEN stored via `agentspan credentials set`
 """
 
 import os

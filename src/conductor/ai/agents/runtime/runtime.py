@@ -1075,20 +1075,8 @@ class AgentRuntime:
         # Claude-code top-level agents: register the passthrough worker, skip tool registration
         if getattr(agent, "is_claude_code", False):
             if _server_needs(agent.name):
-                from conductor.ai.agents.frameworks.claude_agent_sdk import (
-                    agent_to_claude_code_options,
-                    make_claude_agent_sdk_worker,
-                )
                 from conductor.ai.agents.frameworks.serializer import WorkerInfo
 
-                cc_opts = agent_to_claude_code_options(agent)
-                worker_fn = make_claude_agent_sdk_worker(
-                    cc_opts,
-                    agent.name,
-                    self._conductor_config.host,
-                    self._auth_key,
-                    self._auth_secret,
-                )
                 worker = WorkerInfo(
                     name=agent.name,
                     description=f"Claude Agent SDK passthrough worker for {agent.name}",
@@ -1099,7 +1087,7 @@ class AgentRuntime:
                             "session_id": {"type": "string"},
                         },
                     },
-                    func=worker_fn,
+                    func=self._build_passthrough_func(agent, "claude_agent_sdk", agent.name),
                     _pre_wrapped=True,
                 )
                 self._register_passthrough_worker(worker)
@@ -1244,20 +1232,8 @@ class AgentRuntime:
             if getattr(sub, "is_claude_code", False):
                 if _server_needs(sub.name):
                     # Register passthrough worker for claude-code sub-agent
-                    from conductor.ai.agents.frameworks.claude_agent_sdk import (
-                        agent_to_claude_code_options,
-                        make_claude_agent_sdk_worker,
-                    )
                     from conductor.ai.agents.frameworks.serializer import WorkerInfo
 
-                    cc_options = agent_to_claude_code_options(sub)
-                    worker_func = make_claude_agent_sdk_worker(
-                        cc_options,
-                        sub.name,
-                        self._conductor_config.host,
-                        self._auth_key,
-                        self._auth_secret,
-                    )
                     worker = WorkerInfo(
                         name=sub.name,
                         description=f"Claude Agent SDK passthrough worker for {sub.name}",
@@ -1268,7 +1244,7 @@ class AgentRuntime:
                                 "session_id": {"type": "string"},
                             },
                         },
-                        func=worker_func,
+                        func=self._build_passthrough_func(sub, "claude_agent_sdk", sub.name),
                         _pre_wrapped=True,
                     )
                     self._register_passthrough_worker(worker)

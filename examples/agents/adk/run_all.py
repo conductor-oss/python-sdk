@@ -48,12 +48,12 @@ from settings import settings
 from google.adk.agents import Agent
 
 from conductor.ai.agents import AgentRuntime
-from conductor.ai.agents.runtime.config import AgentConfig
+from conductor.client.configuration.configuration import Configuration
 
 # ---------------------------------------------------------------------------
-# Server config — loaded from environment variables
+# Server config — loaded from environment variables (CONDUCTOR_* / AGENTSPAN_*)
 # ---------------------------------------------------------------------------
-_cfg = AgentConfig.from_env()
+_config = Configuration()
 
 
 # ---------------------------------------------------------------------------
@@ -94,12 +94,13 @@ def _get_workflow_detail(runtime: AgentRuntime, execution_id: str) -> Dict[str, 
     """Fetch full workflow execution from Conductor API."""
     import requests
 
-    url = _cfg.server_url.replace("/api", "") + f"/api/workflow/{execution_id}"
+    url = _config.host.replace("/api", "") + f"/api/workflow/{execution_id}"
     headers: Dict[str, str] = {}
-    if _cfg.auth_key:
-        headers["X-Auth-Key"] = _cfg.auth_key
-    if _cfg.auth_secret:
-        headers["X-Auth-Secret"] = _cfg.auth_secret
+    auth = _config.authentication_settings
+    if auth and auth.key_id:
+        headers["X-Auth-Key"] = auth.key_id
+    if auth and auth.key_secret:
+        headers["X-Auth-Secret"] = auth.key_secret
     resp = requests.get(url, headers=headers, timeout=30)
     resp.raise_for_status()
     return resp.json()
@@ -2394,7 +2395,7 @@ def main() -> int:
     state_by_fn = {s.fn_name: s for s in states}
     result_map: Dict[str, ExampleResult] = {}
 
-    _console.print(f"\n  Server: [cyan]{_cfg.server_url}[/cyan]")
+    _console.print(f"\n  Server: [cyan]{_config.host}[/cyan]")
 
     with Live(
         _make_display(states, len(EXAMPLES)),

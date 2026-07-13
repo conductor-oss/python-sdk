@@ -172,8 +172,7 @@ def run_as_workers():
         print(f"  Registered worker: {name}")
 
     # Start polling — TaskHandler discovers all @worker_task functions
-    from conductor.ai.agents.runtime.config import AgentConfig
-    config = Configuration(server_api_url=AgentConfig.from_env().server_url)
+    config = Configuration()
     handler = TaskHandler(
         workers=[],
         configuration=config,
