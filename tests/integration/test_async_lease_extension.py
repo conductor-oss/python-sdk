@@ -177,6 +177,20 @@ class TestAsyncLeaseExtension(unittest.TestCase):
         cls._task_handler.start_processes()
         time.sleep(3)  # let workers start (once, not per test)
 
+        # Confirm every worker this module needs was actually started with a
+        # live process. If one silently fails to start, its task sits in
+        # SCHEDULED forever and surfaces later as an opaque "workflow still
+        # RUNNING" assertion; fail loudly here naming the exact worker instead.
+        started = {}
+        for worker, process in zip(cls._task_handler.workers,
+                                   cls._task_handler.task_runner_processes):
+            started[worker.get_task_definition_name()] = process.is_alive()
+        logger.info("Started workers (name -> alive): %s", started)
+        missing = [n for n in cls.WORKER_TASK_NAMES
+                   if not started.get(n, False)]
+        assert not missing, (
+            f"workers not started/alive: {missing}; started={started}")
+
     @classmethod
     def tearDownClass(cls):
         handler = getattr(cls, '_task_handler', None)
@@ -218,6 +232,37 @@ class TestAsyncLeaseExtension(unittest.TestCase):
                 return wf
             time.sleep(1)
         return self.workflow_client.get_workflow(wf_id, include_tasks=True)
+
+    def _dump_workflow_diagnostics(self, wf):
+        """Print task statuses plus server-side poll data / queue size so a
+        non-terminal workflow shows *why* (e.g. a task stuck in SCHEDULED with
+        no poller = the worker isn't consuming it), rather than only a bare
+        status assertion. Poll data is server-side, so it survives regardless
+        of worker child-process log capture.
+        """
+        from conductor.client.orkes.orkes_task_client import OrkesTaskClient
+        task_client = OrkesTaskClient(self.config)
+
+        # Worker processes can die *after* setUpClass; report current liveness
+        # so we can tell "worker crashed mid-suite" apart from "worker alive but
+        # not polling / server not timing out".
+        handler = getattr(self, '_task_handler', None)
+        if handler is not None:
+            alive = {}
+            for worker, process in zip(handler.workers, handler.task_runner_processes):
+                alive[worker.get_task_definition_name()] = process.is_alive()
+            print(f"  [diag] worker liveness: {alive}")
+
+        for task in (getattr(wf, 'tasks', None) or []):
+            print(f"  [diag] task {task.task_def_name}: {task.status}")
+            try:
+                queue_size = task_client.get_queue_size_for_task(task.task_def_name)
+                poll_data = task_client.get_task_poll_data(task.task_def_name) or []
+                pollers = [(p.worker_id, p.domain, p.last_poll_time) for p in poll_data]
+                print(f"  [diag] {task.task_def_name}: "
+                      f"queue_size={queue_size} pollers={pollers}")
+            except Exception as e:  # diagnostics must never mask the real failure
+                print(f"  [diag] {task.task_def_name}: failed to fetch poll data: {e!r}")
 
     # -- Tests ----------------------------------------------------------------
 
@@ -267,6 +312,9 @@ class TestAsyncLeaseExtension(unittest.TestCase):
         print(f"  Final status: {wf.status}")
         for task in (wf.tasks or []):
             print(f"  Task {task.task_def_name}: {task.status}")
+
+        if wf.status not in ('FAILED', 'TIMED_OUT'):
+            self._dump_workflow_diagnostics(wf)
 
         self.assertIn(wf.status, ('FAILED', 'TIMED_OUT'),
                       f"Workflow should FAIL/TIMEOUT without heartbeat, got {wf.status}")
