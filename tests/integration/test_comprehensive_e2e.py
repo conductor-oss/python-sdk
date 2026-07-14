@@ -32,6 +32,7 @@ import unittest
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Union
 from collections import defaultdict
+from uuid import uuid4
 
 from conductor.client.worker.exception import NonRetryableException
 
@@ -70,15 +71,28 @@ class EventCollector(TaskRunnerEventsListener):
     def on_task_update_failure(self, e): self.events['update_failed'].append(e)
 
 
+# Per-run suffix so this suite's task/workflow names don't collide with other
+# runs (or other PRs/developers) on the shared dev server. With fixed names,
+# concurrent runs poll the same queues and steal/strand each other's tasks,
+# producing non-deterministic SCHEDULED failures.
+RUN_ID = uuid4().hex[:8]
+SYNC_BASIC = f'sync_basic_{RUN_ID}'
+ASYNC_BASIC = f'async_basic_{RUN_ID}'
+COMPLEX_SCHEMA = f'complex_schema_{RUN_ID}'
+TASK_IN_PROGRESS = f'task_in_progress_{RUN_ID}'
+FAILING_TASK = f'failing_task_{RUN_ID}'
+WF_NAME = f'e2e_comprehensive_test_{RUN_ID}'
+
+
 # Test workers covering all scenarios
-@worker_task(task_definition_name='sync_basic', thread_count=5, register_task_def=True)
+@worker_task(task_definition_name=SYNC_BASIC, thread_count=5, register_task_def=True)
 def sync_basic(value: str, count: int) -> dict:
     ctx = get_task_context()
     ctx.add_log(f"Processing {value}")
     return {'value': value, 'count': count, 'worker': 'sync'}
 
 
-@worker_task(task_definition_name='async_basic', thread_count=10, register_task_def=True)
+@worker_task(task_definition_name=ASYNC_BASIC, thread_count=10, register_task_def=True)
 async def async_basic(message: str) -> dict:
     await asyncio.sleep(0.1)
     return {'message': message, 'worker': 'async'}
@@ -92,17 +106,17 @@ class OrderData:
 
 
 @worker_task(
-    task_definition_name='complex_schema',
+    task_definition_name=COMPLEX_SCHEMA,
     register_task_def=True,
     strict_schema=True,
-    task_def=TaskDef(name='complex_schema', retry_count=2, timeout_policy='RETRY')
+    task_def=TaskDef(name=COMPLEX_SCHEMA, retry_count=2, timeout_policy='RETRY')
 )
 def complex_schema(data: OrderData, optional: Optional[str]) -> dict:
     assert data.id is not None
     return {'id': data.id, 'amount': data.amount, 'tag_count': len(data.tags)}
 
 
-@worker_task(task_definition_name='task_in_progress')
+@worker_task(task_definition_name=TASK_IN_PROGRESS)
 def task_in_progress(job_id: str) -> Union[dict, TaskInProgress]:
     ctx = get_task_context()
     polls = ctx.get_poll_count()
@@ -111,7 +125,7 @@ def task_in_progress(job_id: str) -> Union[dict, TaskInProgress]:
     return {'job_id': job_id, 'polls': polls}
 
 
-@worker_task(task_definition_name='failing_task')
+@worker_task(task_definition_name=FAILING_TASK)
 def failing_task(should_fail: bool) -> dict:
     if should_fail:
         raise NonRetryableException("Test failure")
@@ -126,11 +140,11 @@ class TestComprehensiveE2E(unittest.TestCase):
     # SCHEDULED forever (which is exactly how a non-starting task_in_progress
     # worker manifested as a "4 != 5 tasks" failure in CI).
     EXPECTED_WORKERS = (
-        'sync_basic',
-        'async_basic',
-        'complex_schema',
-        'task_in_progress',
-        'failing_task',
+        SYNC_BASIC,
+        ASYNC_BASIC,
+        COMPLEX_SCHEMA,
+        TASK_IN_PROGRESS,
+        FAILING_TASK,
     )
 
     @classmethod
@@ -163,18 +177,18 @@ class TestComprehensiveE2E(unittest.TestCase):
         
         metadata_client = OrkesMetadataClient(self.config)
         
-        workflow = WorkflowDef(name='e2e_comprehensive_test', version=1)
+        workflow = WorkflowDef(name=WF_NAME, version=1)
         tasks = [
-            WorkflowTask(name='sync_basic', task_reference_name='sync_1', 
+            WorkflowTask(name=SYNC_BASIC, task_reference_name='sync_1', 
                         input_parameters={'value': 'test', 'count': 1}),
-            WorkflowTask(name='async_basic', task_reference_name='async_1',
+            WorkflowTask(name=ASYNC_BASIC, task_reference_name='async_1',
                         input_parameters={'message': 'hello'}),
-            WorkflowTask(name='complex_schema', task_reference_name='complex_1',
+            WorkflowTask(name=COMPLEX_SCHEMA, task_reference_name='complex_1',
                         input_parameters={'data': {'id': '123', 'amount': 99.99, 'tags': ['a', 'b']}, 
                                         'optional': None}),
-            WorkflowTask(name='task_in_progress', task_reference_name='tip_1',
+            WorkflowTask(name=TASK_IN_PROGRESS, task_reference_name='tip_1',
                         input_parameters={'job_id': 'JOB1'}),
-            WorkflowTask(name='failing_task', task_reference_name='fail_1',
+            WorkflowTask(name=FAILING_TASK, task_reference_name='fail_1',
                         input_parameters={'should_fail': True}),
         ]
         workflow._tasks = tasks
@@ -260,7 +274,7 @@ class TestComprehensiveE2E(unittest.TestCase):
         workflow (which is what produced the flaky "4 != 5 tasks" failure).
         """
         req = StartWorkflowRequest()
-        req.name = 'e2e_comprehensive_test'
+        req.name = WF_NAME
         req.version = 1
         req.input = {}
 
@@ -375,7 +389,7 @@ class TestComprehensiveE2E(unittest.TestCase):
         
         metadata_client = OrkesMetadataClient(self.config)
         
-        tasks_to_check = ['sync_basic', 'async_basic', 'complex_schema']
+        tasks_to_check = [SYNC_BASIC, ASYNC_BASIC, COMPLEX_SCHEMA]
         
         for task_name in tasks_to_check:
             task_def = metadata_client.get_task_def(task_name)
@@ -384,7 +398,7 @@ class TestComprehensiveE2E(unittest.TestCase):
             print(f"✓ Task definition exists: {task_name}")
             
             # Check schemas if they should exist
-            if task_name in ['sync_basic', 'async_basic', 'complex_schema']:
+            if task_name in tasks_to_check:
                 # These have type hints, should have schemas
                 if hasattr(task_def, 'input_schema') and task_def.input_schema:
                     print(f"  ✓ Has input schema")
@@ -392,7 +406,7 @@ class TestComprehensiveE2E(unittest.TestCase):
                     print(f"  ✓ Has output schema")
 
         # Check complex_schema has TaskDef configuration
-        complex_def = metadata_client.get_task_def('complex_schema')
+        complex_def = metadata_client.get_task_def(COMPLEX_SCHEMA)
         self.assertEqual(complex_def.retry_count, 2, "Retry count from task_def should be applied")
         self.assertEqual(complex_def.timeout_policy, 'RETRY', "Timeout policy should be set")
         

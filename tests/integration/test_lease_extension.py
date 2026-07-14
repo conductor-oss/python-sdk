@@ -23,6 +23,7 @@ import sys
 import time
 import threading
 import unittest
+from uuid import uuid4
 
 import pytest
 
@@ -49,16 +50,24 @@ RESPONSE_TIMEOUT_SECONDS = 10
 # ~30s) catches the expired task BEFORE the worker completes.
 TASK_SLEEP_SECONDS = 50
 
+# Per-run suffix so this suite's task/workflow names don't collide with other
+# runs (or other PRs/developers) on the shared dev server. With fixed names,
+# concurrent runs poll the same queues and steal/strand each other's tasks,
+# producing non-deterministic SCHEDULED/RUNNING failures.
+RUN_ID = uuid4().hex[:8]
+HEARTBEAT_TASK = f'lease_heartbeat_task_{RUN_ID}'
+NO_HEARTBEAT_TASK = f'lease_no_heartbeat_task_{RUN_ID}'
+
 
 # -- Workers -----------------------------------------------------------------
 
 # Worker WITH lease extension enabled — heartbeats keep it alive
 @worker_task(
-    task_definition_name='lease_heartbeat_task',
+    task_definition_name=HEARTBEAT_TASK,
     lease_extend_enabled=True,
     register_task_def=True,
     task_def=TaskDef(
-        name='lease_heartbeat_task',
+        name=HEARTBEAT_TASK,
         response_timeout_seconds=RESPONSE_TIMEOUT_SECONDS,
         timeout_seconds=180,
         retry_count=0,
@@ -76,11 +85,11 @@ def lease_heartbeat_task(job_id: str) -> dict:
 
 # Worker WITHOUT lease extension — will time out
 @worker_task(
-    task_definition_name='lease_no_heartbeat_task',
+    task_definition_name=NO_HEARTBEAT_TASK,
     lease_extend_enabled=False,
     register_task_def=True,
     task_def=TaskDef(
-        name='lease_no_heartbeat_task',
+        name=NO_HEARTBEAT_TASK,
         response_timeout_seconds=RESPONSE_TIMEOUT_SECONDS,
         timeout_seconds=120,
         retry_count=0,
@@ -135,15 +144,52 @@ class TestLeaseExtension(unittest.TestCase):
         logger.info("Started workflow %s: %s", wf_name, wf_id)
         return wf_id
 
+    TERMINAL_STATES = ('COMPLETED', 'FAILED', 'TIMED_OUT', 'TERMINATED')
+
     def _wait_for_workflow(self, wf_id, timeout_seconds=60):
-        """Poll until workflow reaches a terminal state."""
+        """Poll until workflow reaches a terminal state. If it doesn't within
+        the budget, dump server-side diagnostics so the ensuing assertion shows
+        *why* (e.g. a task stuck in SCHEDULED with no poller) rather than only a
+        bare status mismatch.
+        """
         for i in range(timeout_seconds):
             wf = self.workflow_client.get_workflow(wf_id, include_tasks=True)
-            if wf.status in ('COMPLETED', 'FAILED', 'TIMED_OUT', 'TERMINATED'):
+            if wf.status in self.TERMINAL_STATES:
                 return wf
             time.sleep(1)
-        # Return whatever state it's in after timeout
-        return self.workflow_client.get_workflow(wf_id, include_tasks=True)
+        wf = self.workflow_client.get_workflow(wf_id, include_tasks=True)
+        if wf.status not in self.TERMINAL_STATES:
+            print(f"  [diag] workflow {wf_id} still {wf.status} "
+                  f"after {timeout_seconds}s")
+            self._dump_workflow_diagnostics(wf)
+        return wf
+
+    def _dump_workflow_diagnostics(self, wf):
+        """Print task statuses plus server-side poll data / queue size so a
+        non-terminal workflow shows *why* (e.g. a task stuck in SCHEDULED with
+        no poller = the worker isn't consuming it). Poll data is server-side,
+        so it survives regardless of worker child-process log capture.
+        """
+        from conductor.client.orkes.orkes_task_client import OrkesTaskClient
+        task_client = OrkesTaskClient(self.config)
+
+        handler = getattr(self, '_active_handler', None)
+        if handler is not None:
+            alive = {}
+            for worker, process in zip(handler.workers, handler.task_runner_processes):
+                alive[worker.get_task_definition_name()] = process.is_alive()
+            print(f"  [diag] worker liveness: {alive}")
+
+        for task in (getattr(wf, 'tasks', None) or []):
+            print(f"  [diag] task {task.task_def_name}: {task.status}")
+            try:
+                queue_size = task_client.get_queue_size_for_task(task.task_def_name)
+                poll_data = task_client.get_task_poll_data(task.task_def_name) or []
+                pollers = [(p.worker_id, p.domain, p.last_poll_time) for p in poll_data]
+                print(f"  [diag] {task.task_def_name}: "
+                      f"queue_size={queue_size} pollers={pollers}")
+            except Exception as e:  # diagnostics must never mask the real failure
+                print(f"  [diag] {task.task_def_name}: failed to fetch poll data: {e!r}")
 
     def _run_workers_in_background(self, duration_seconds=60):
         """Start workers in a background thread, return stop function."""
@@ -152,6 +198,8 @@ class TestLeaseExtension(unittest.TestCase):
             scan_for_annotated_workers=True,
         )
         handler.start_processes()
+        # Expose the handler so _dump_workflow_diagnostics can report liveness.
+        self.__class__._active_handler = handler
 
         def stop():
             handler.stop_processes()
@@ -170,8 +218,8 @@ class TestLeaseExtension(unittest.TestCase):
         print(f"  responseTimeoutSeconds={RESPONSE_TIMEOUT_SECONDS}s, task sleeps {TASK_SLEEP_SECONDS}s")
         print("=" * 80)
 
-        wf_name = 'test_lease_heartbeat'
-        self._register_workflow(wf_name, 'lease_heartbeat_task')
+        wf_name = f'test_lease_heartbeat_{RUN_ID}'
+        self._register_workflow(wf_name, HEARTBEAT_TASK)
 
         stop_workers = self._run_workers_in_background(duration_seconds=90)
         time.sleep(3)  # let workers start
@@ -189,7 +237,7 @@ class TestLeaseExtension(unittest.TestCase):
 
             # Verify task output
             tasks_by_ref = {t.reference_task_name: t for t in wf.tasks}
-            task = tasks_by_ref.get('lease_heartbeat_task_ref')
+            task = tasks_by_ref.get(f'{HEARTBEAT_TASK}_ref')
             self.assertIsNotNone(task)
             self.assertEqual(task.status, 'COMPLETED')
             self.assertEqual(task.output_data.get('job_id'), 'HEARTBEAT-001')
@@ -205,8 +253,8 @@ class TestLeaseExtension(unittest.TestCase):
         print(f"  responseTimeoutSeconds={RESPONSE_TIMEOUT_SECONDS}s, task sleeps {TASK_SLEEP_SECONDS}s")
         print("=" * 80)
 
-        wf_name = 'test_lease_no_heartbeat'
-        self._register_workflow(wf_name, 'lease_no_heartbeat_task')
+        wf_name = f'test_lease_no_heartbeat_{RUN_ID}'
+        self._register_workflow(wf_name, NO_HEARTBEAT_TASK)
 
         stop_workers = self._run_workers_in_background(duration_seconds=90)
         time.sleep(3)  # let workers start
@@ -224,7 +272,7 @@ class TestLeaseExtension(unittest.TestCase):
                           f"Workflow should FAIL/TIMEOUT without heartbeat, got {wf.status}")
 
             tasks_by_ref = {t.reference_task_name: t for t in wf.tasks}
-            task = tasks_by_ref.get('lease_no_heartbeat_task_ref')
+            task = tasks_by_ref.get(f'{NO_HEARTBEAT_TASK}_ref')
             self.assertIsNotNone(task)
             self.assertIn(task.status, ('TIMED_OUT', 'FAILED', 'CANCELED'),
                           f"Task should be TIMED_OUT/FAILED, got {task.status}")

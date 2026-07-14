@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 import unittest
 
 import pytest
@@ -7,6 +8,7 @@ import pytest
 from tests.integration.client.orkes.test_orkes_clients import TestOrkesClients
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
+from conductor.client.http.rest import ApiException
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from tests.integration.metadata.test_workflow_definition import run_workflow_definition_tests
@@ -31,6 +33,31 @@ def get_configuration():
     return configuration
 
 
+def _run_tolerating_transient(label, func, *args, retries=3, **kwargs):
+    """Run a sub-suite, retrying only on a transient (status 0) transport blip
+    against the shared dev server.
+
+    A `(0)` ApiException is a raw connection/protocol hiccup (stale keep-alive,
+    HTTP/2 GOAWAY race, client closed by a fork cleanup, etc.) — not a real
+    assertion or server failure — and was observed flaking the `test-all`
+    bucket. Retrying absorbs that network noise while still surfacing genuine
+    failures immediately (any non-transient error, or a transient one on the
+    final attempt, re-raises).
+    """
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except ApiException as e:
+            transient = getattr(e, 'transient', False) or e.status in (0, None)
+            if transient and attempt < retries - 1:
+                logger.warning(
+                    'transient (%s) API error in %s (attempt %d/%d): %s; retrying',
+                    e.status, label, attempt + 1, retries, e)
+                time.sleep(2 ** attempt)
+                continue
+            raise
+
+
 class TestOrkesWorkflowClientIntg(unittest.TestCase):
 
     @classmethod
@@ -49,7 +76,13 @@ class TestOrkesWorkflowClientIntg(unittest.TestCase):
         workflow_executor = WorkflowExecutor(configuration)
 
         # test_async.test_async_method(api_client)
-        run_workflow_definition_tests(workflow_executor)
-        run_workflow_execution_tests(configuration, workflow_executor)
-        TestOrkesClients(configuration=configuration).run()
+        _run_tolerating_transient(
+            'workflow_definition_tests',
+            run_workflow_definition_tests, workflow_executor)
+        _run_tolerating_transient(
+            'workflow_execution_tests',
+            run_workflow_execution_tests, configuration, workflow_executor)
+        _run_tolerating_transient(
+            'orkes_clients',
+            TestOrkesClients(configuration=configuration).run)
         logger.info('END: integration tests')

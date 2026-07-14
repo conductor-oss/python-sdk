@@ -25,6 +25,7 @@ import os
 import sys
 import time
 import unittest
+from uuid import uuid4
 
 import pytest
 
@@ -57,15 +58,25 @@ FAST_TASK_SLEEP_SECONDS = 2
 # Number of fast tasks for performance comparison
 PERF_TASK_COUNT = 5
 
+# Per-run suffix so this suite's task/workflow names don't collide with other
+# runs (or other PRs/developers) on the shared dev server. With fixed names,
+# concurrent runs poll the same queues and steal/strand each other's tasks,
+# producing non-deterministic SCHEDULED/RUNNING failures.
+RUN_ID = uuid4().hex[:8]
+HEARTBEAT_TASK = f'async_lease_heartbeat_task_{RUN_ID}'
+NO_HEARTBEAT_TASK = f'async_lease_no_heartbeat_task_{RUN_ID}'
+FAST_HB_TASK = f'async_lease_fast_with_hb_{RUN_ID}'
+FAST_NO_HB_TASK = f'async_lease_fast_no_hb_{RUN_ID}'
+
 
 # -- Async Workers -----------------------------------------------------------
 
 @worker_task(
-    task_definition_name='async_lease_heartbeat_task',
+    task_definition_name=HEARTBEAT_TASK,
     lease_extend_enabled=True,
     register_task_def=True,
     task_def=TaskDef(
-        name='async_lease_heartbeat_task',
+        name=HEARTBEAT_TASK,
         response_timeout_seconds=RESPONSE_TIMEOUT_SECONDS,
         timeout_seconds=180,
         retry_count=0,
@@ -82,11 +93,11 @@ async def async_lease_heartbeat_task(job_id: str) -> dict:
 
 
 @worker_task(
-    task_definition_name='async_lease_no_heartbeat_task',
+    task_definition_name=NO_HEARTBEAT_TASK,
     lease_extend_enabled=False,
     register_task_def=True,
     task_def=TaskDef(
-        name='async_lease_no_heartbeat_task',
+        name=NO_HEARTBEAT_TASK,
         response_timeout_seconds=RESPONSE_TIMEOUT_SECONDS,
         timeout_seconds=120,
         retry_count=0,
@@ -103,11 +114,11 @@ async def async_lease_no_heartbeat_task(job_id: str) -> dict:
 
 
 @worker_task(
-    task_definition_name='async_lease_fast_with_hb',
+    task_definition_name=FAST_HB_TASK,
     lease_extend_enabled=True,
     register_task_def=True,
     task_def=TaskDef(
-        name='async_lease_fast_with_hb',
+        name=FAST_HB_TASK,
         response_timeout_seconds=60,
         timeout_seconds=120,
         retry_count=0,
@@ -121,11 +132,11 @@ async def async_lease_fast_with_hb(job_id: str) -> dict:
 
 
 @worker_task(
-    task_definition_name='async_lease_fast_no_hb',
+    task_definition_name=FAST_NO_HB_TASK,
     lease_extend_enabled=False,
     register_task_def=True,
     task_def=TaskDef(
-        name='async_lease_fast_no_hb',
+        name=FAST_NO_HB_TASK,
         response_timeout_seconds=60,
         timeout_seconds=120,
         retry_count=0,
@@ -147,10 +158,10 @@ class TestAsyncLeaseExtension(unittest.TestCase):
     # it doesn't spin up every @worker_task registered across the imported test
     # suite (that was ~24 worker processes started/torn down per test).
     WORKER_TASK_NAMES = {
-        'async_lease_heartbeat_task',
-        'async_lease_no_heartbeat_task',
-        'async_lease_fast_with_hb',
-        'async_lease_fast_no_hb',
+        HEARTBEAT_TASK,
+        NO_HEARTBEAT_TASK,
+        FAST_HB_TASK,
+        FAST_NO_HB_TASK,
     }
 
     @classmethod
@@ -224,14 +235,25 @@ class TestAsyncLeaseExtension(unittest.TestCase):
         logger.info("Started workflow %s: %s", wf_name, wf_id)
         return wf_id
 
+    TERMINAL_STATES = ('COMPLETED', 'FAILED', 'TIMED_OUT', 'TERMINATED')
+
     def _wait_for_workflow(self, wf_id, timeout_seconds=90):
-        """Poll until workflow reaches a terminal state."""
+        """Poll until workflow reaches a terminal state. If it doesn't within
+        the budget, dump server-side diagnostics so the ensuing assertion shows
+        *why* (e.g. a task stuck in SCHEDULED with no poller) rather than only a
+        bare status mismatch.
+        """
         for _ in range(timeout_seconds):
             wf = self.workflow_client.get_workflow(wf_id, include_tasks=True)
-            if wf.status in ('COMPLETED', 'FAILED', 'TIMED_OUT', 'TERMINATED'):
+            if wf.status in self.TERMINAL_STATES:
                 return wf
             time.sleep(1)
-        return self.workflow_client.get_workflow(wf_id, include_tasks=True)
+        wf = self.workflow_client.get_workflow(wf_id, include_tasks=True)
+        if wf.status not in self.TERMINAL_STATES:
+            print(f"  [diag] workflow {wf_id} still {wf.status} "
+                  f"after {timeout_seconds}s")
+            self._dump_workflow_diagnostics(wf)
+        return wf
 
     def _dump_workflow_diagnostics(self, wf):
         """Print task statuses plus server-side poll data / queue size so a
@@ -273,8 +295,8 @@ class TestAsyncLeaseExtension(unittest.TestCase):
         print(f"  responseTimeoutSeconds={RESPONSE_TIMEOUT_SECONDS}s, task sleeps {TASK_SLEEP_SECONDS}s")
         print("=" * 80)
 
-        wf_name = 'test_async_lease_heartbeat'
-        self._register_workflow(wf_name, 'async_lease_heartbeat_task')
+        wf_name = f'test_async_lease_heartbeat_{RUN_ID}'
+        self._register_workflow(wf_name, HEARTBEAT_TASK)
 
         wf_id = self._start_workflow(wf_name, 'ASYNC-HB-001')
         wf = self._wait_for_workflow(wf_id, timeout_seconds=80)
@@ -288,7 +310,7 @@ class TestAsyncLeaseExtension(unittest.TestCase):
                          f"Workflow should COMPLETE with heartbeat, got {wf.status}")
 
         tasks_by_ref = {t.reference_task_name: t for t in wf.tasks}
-        task = tasks_by_ref.get('async_lease_heartbeat_task_ref')
+        task = tasks_by_ref.get(f'{HEARTBEAT_TASK}_ref')
         self.assertIsNotNone(task)
         self.assertEqual(task.status, 'COMPLETED')
         self.assertEqual(task.output_data.get('job_id'), 'ASYNC-HB-001')
@@ -302,8 +324,8 @@ class TestAsyncLeaseExtension(unittest.TestCase):
         print(f"  responseTimeoutSeconds={RESPONSE_TIMEOUT_SECONDS}s, task sleeps {TASK_SLEEP_SECONDS}s")
         print("=" * 80)
 
-        wf_name = 'test_async_lease_no_heartbeat'
-        self._register_workflow(wf_name, 'async_lease_no_heartbeat_task')
+        wf_name = f'test_async_lease_no_heartbeat_{RUN_ID}'
+        self._register_workflow(wf_name, NO_HEARTBEAT_TASK)
 
         wf_id = self._start_workflow(wf_name, 'ASYNC-NOHB-001')
         wf = self._wait_for_workflow(wf_id, timeout_seconds=80)
@@ -313,14 +335,11 @@ class TestAsyncLeaseExtension(unittest.TestCase):
         for task in (wf.tasks or []):
             print(f"  Task {task.task_def_name}: {task.status}")
 
-        if wf.status not in ('FAILED', 'TIMED_OUT'):
-            self._dump_workflow_diagnostics(wf)
-
         self.assertIn(wf.status, ('FAILED', 'TIMED_OUT'),
                       f"Workflow should FAIL/TIMEOUT without heartbeat, got {wf.status}")
 
         tasks_by_ref = {t.reference_task_name: t for t in wf.tasks}
-        task = tasks_by_ref.get('async_lease_no_heartbeat_task_ref')
+        task = tasks_by_ref.get(f'{NO_HEARTBEAT_TASK}_ref')
         self.assertIsNotNone(task)
         self.assertIn(task.status, ('TIMED_OUT', 'FAILED', 'CANCELED'),
                       f"Task should be TIMED_OUT/FAILED, got {task.status}")
@@ -333,10 +352,10 @@ class TestAsyncLeaseExtension(unittest.TestCase):
         print(f"  Running {PERF_TASK_COUNT} tasks each, sleep={FAST_TASK_SLEEP_SECONDS}s")
         print("=" * 80)
 
-        wf_with_hb = 'test_async_perf_with_hb'
-        wf_no_hb = 'test_async_perf_no_hb'
-        self._register_workflow(wf_with_hb, 'async_lease_fast_with_hb')
-        self._register_workflow(wf_no_hb, 'async_lease_fast_no_hb')
+        wf_with_hb = f'test_async_perf_with_hb_{RUN_ID}'
+        wf_no_hb = f'test_async_perf_no_hb_{RUN_ID}'
+        self._register_workflow(wf_with_hb, FAST_HB_TASK)
+        self._register_workflow(wf_no_hb, FAST_NO_HB_TASK)
 
         # Run tasks WITH heartbeat tracking
         hb_workflow_ids = []
