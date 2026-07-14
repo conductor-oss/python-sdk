@@ -110,14 +110,23 @@ class CredentialsCLI:
 
     def set(self, name: str, value: str) -> None:
         result = self._run("credentials", "set", name, value)
-        assert result.returncode == 0, (
-            f"credentials set {name} failed: {result.stderr}"
-        )
+        if result.returncode != 0:
+            # conductor-oss standalone serves secrets from the server process
+            # env — the store is read-only there, so the write-dependent
+            # lifecycle steps cannot run (a server-flavor capability, not an
+            # SDK regression; mirrors the Java/C# ports' assumption-skip).
+            if "read-only" in result.stderr.lower():
+                pytest.skip(
+                    "server secret store is read-only (env-backed) — "
+                    "skipping write-dependent step"
+                )
+            raise AssertionError(f"credentials set {name} failed: {result.stderr}")
 
     def delete(self, name: str) -> None:
         result = self._run("credentials", "delete", name)
-        # Ignore "not found" errors during cleanup
-        if result.returncode != 0 and "not found" not in result.stderr.lower():
+        # Ignore "not found" and "read-only" errors during cleanup — best-effort
+        stderr = result.stderr.lower()
+        if result.returncode != 0 and "not found" not in stderr and "read-only" not in stderr:
             raise AssertionError(
                 f"credentials delete {name} failed: {result.stderr}"
             )
