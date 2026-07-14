@@ -118,6 +118,11 @@ jobs:
       CONDUCTOR_SERVER_URL: ${{ vars.SDKDEV_V5_SERVER_URL }}
       CONDUCTOR_AUTH_KEY: ${{ vars.SDKDEV_V5_AUTH_KEY }}
       CONDUCTOR_AUTH_SECRET: ${{ secrets.SDKDEV_V5_AUTH_SECRET }}
+      # Force HTTP/1.1 for integration tests: long-lived HTTP/2 connections to
+      # the shared dev server (through its proxy/LB) intermittently stall
+      # mid-stream, surfacing as httpcore.ReadTimeout -> ApiException(0). HTTP/1.1
+      # uses one request per pooled connection, avoiding that failure class.
+      CONDUCTOR_HTTP2_ENABLED: "false"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
