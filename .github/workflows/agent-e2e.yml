@@ -26,8 +26,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CONDUCTOR_OSS_VERSION: "3.32.0-rc.8"   # pinned server release — bump deliberately
-  AGENTSPAN_CLI_VERSION: "0.4.3"          # pinned CLI release — independent of the server
+  CONDUCTOR_SERVER_VERSION: "3.32.0-rc.8"   # pinned server release — bump deliberately
+  AGENTSPAN_CLI_VERSION: "0.4.4"          # pinned CLI release — independent of the server (revert to 0.4.3 if this breaks)
 
 jobs:
   agent-e2e:
@@ -59,13 +59,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: conductor-server.jar
-          key: conductor-oss-server-${{ env.CONDUCTOR_OSS_VERSION }}
+          key: conductor-oss-server-${{ env.CONDUCTOR_SERVER_VERSION }}
 
       - name: Download server JAR from Maven Central
         if: steps.jar_cache.outputs.cache-hit != 'true'
         run: |
           curl -fL --retry 3 -o conductor-server.jar \
-            "https://repo1.maven.org/maven2/org/conductoross/conductor-server/${CONDUCTOR_OSS_VERSION}/conductor-server-${CONDUCTOR_OSS_VERSION}-boot.jar"
+            "https://repo1.maven.org/maven2/org/conductoross/conductor-server/${CONDUCTOR_SERVER_VERSION}/conductor-server-${CONDUCTOR_SERVER_VERSION}-boot.jar"
 
       - name: Download CLI binary from release
         env:

@@ -163,7 +163,7 @@ def get_task_by_name(execution_id: str, task_ref_prefix: str) -> list:
 # when unsupported.
 #
 # conductor-oss implements this from 3.32.0-rc.8 onward (see
-# .github/workflows/agent-e2e.yml's CONDUCTOR_OSS_VERSION) — this guard lets the
+# .github/workflows/agent-e2e.yml's CONDUCTOR_SERVER_VERSION) — this guard lets the
 # credential tests run automatically against any server that has it, no test
 # change needed.
 
@@ -209,6 +209,6 @@ def requires_runtime_metadata():
         pytest.skip(
             "server does not persist/deliver TaskDef.runtimeMetadata "
             "(conductor-oss PR #1255) — worker credential injection requires it. "
-            "Needs conductor-oss >= 3.32.0-rc.8 (see CONDUCTOR_OSS_VERSION in "
+            "Needs conductor-oss >= 3.32.0-rc.8 (see CONDUCTOR_SERVER_VERSION in "
             ".github/workflows/agent-e2e.yml)."
         )
