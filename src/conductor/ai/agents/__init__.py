@@ -193,6 +193,12 @@ from conductor.ai.agents.schedule import (
     schedules,
 )
 from conductor.ai.agents.semantic_memory import MemoryEntry, MemoryStore, SemanticMemory
+from conductor.ai.agents.ocg_memory import (
+    FeedbackEvent,
+    MemorySummary,
+    OCGMemoryStore,
+    build_memory_summarizer,
+)
 
 # Termination conditions
 from conductor.ai.agents.termination import (
@@ -326,6 +332,10 @@ __all__ = [
     "SemanticMemory",
     "MemoryStore",
     "MemoryEntry",
+    "OCGMemoryStore",
+    "MemorySummary",
+    "FeedbackEvent",
+    "build_memory_summarizer",
     # Code execution
     "CodeExecutionConfig",
     "CliConfig",
