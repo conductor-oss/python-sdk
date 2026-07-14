@@ -100,6 +100,10 @@ case "$bucket" in
     targets=(tests/integration)
     select=("${ai_ignore[@]}" ${perf_ignore[@]+"${perf_ignore[@]}"})
     ;;
+  # The slow buckets below target a single specific file, so the perf test is
+  # never in scope and perf_ignore is unnecessary here. This also means
+  # --with-perf has no effect on these buckets; the perf test is only reachable
+  # via the core/all buckets.
   long-sync)
     targets=("$LEASE_SYNC")
     select=(-m slow_sync)

@@ -575,7 +575,7 @@ class TestOrkesClients:
         assert self.task_client.get_queue_size_for_task(TASK_TYPE) == 1
 
         taskResult = TaskResult(
-            workflow_instance_id=workflow_uuid,
+            workflow_instance_id=polledTask.workflow_instance_id,
             task_id=polledTask.task_id,
             status=TaskResultStatus.COMPLETED
         )
@@ -585,34 +585,41 @@ class TestOrkesClients:
         task = self.task_client.get_task(polledTask.task_id)
         assert task.status == TaskResultStatus.COMPLETED
 
+        # The second task of the first workflow and both tasks of the second
+        # workflow all share TASK_TYPE and land in the same queue, so a poll can
+        # return a task from either workflow in a non-deterministic order. Drive
+        # every update from the polled task's own workflow id and reference name
+        # instead of assuming which workflow/ref we got back (the previous
+        # hardcoded workflow_uuid_2 / "simple_task_ref_2" pairing produced
+        # spurious 404s whenever the queue handed back the other workflow's
+        # task). We still exercise update_task_by_ref_name and update_task_sync.
+
+        # Three task executions remain (we completed one above); drain them all.
         batchPolledTasks = self.task_client.batch_poll_tasks(TASK_TYPE)
-        assert len(batchPolledTasks) == 1
+        remaining = 3
+        completed = 0
+        for polledTask in batchPolledTasks:
+            _retry_on_404(
+                self.task_client.update_task_by_ref_name,
+                polledTask.workflow_instance_id,
+                polledTask.reference_task_name,
+                "COMPLETED",
+                f"task op {completed + 1} (by ref name)"
+            )
+            completed += 1
 
-        polledTask = batchPolledTasks[0]
-        # Update first task of second workflow
-        _retry_on_404(
-            self.task_client.update_task_by_ref_name,
-            workflow_uuid_2,
-            polledTask.reference_task_name,
-            "COMPLETED",
-            "task 2 op 2nd wf"
-        )
-
-        # Update second task of first workflow
-        _retry_on_404(
-            self.task_client.update_task_by_ref_name,
-            workflow_uuid_2, "simple_task_ref_2", "COMPLETED", "task 2 op 1st wf"
-        )
-
-        # # Second task of second workflow is in the queue
-        # assert self.task_client.getQueueSizeForTask(TASK_TYPE) == 1
-        polledTask = self.task_client.poll_task(TASK_TYPE)
-
-        # Update second task of second workflow
-        _retry_on_404(
-            self.task_client.update_task_sync,
-            workflow_uuid, "simple_task_ref_2", "COMPLETED", "task 1 op 2nd wf"
-        )
+        while completed < remaining:
+            polledTask = self.task_client.poll_task(TASK_TYPE)
+            assert polledTask is not None, \
+                "expected a task to be available to poll while draining the queue"
+            _retry_on_404(
+                self.task_client.update_task_sync,
+                polledTask.workflow_instance_id,
+                polledTask.reference_task_name,
+                "COMPLETED",
+                f"task op {completed + 1} (sync)"
+            )
+            completed += 1
 
         queue_size = self.task_client.get_queue_size_for_task(TASK_TYPE)
         print(f'queue size for {TASK_TYPE} is {queue_size}')
