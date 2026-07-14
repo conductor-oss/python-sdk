@@ -22,6 +22,13 @@ COMPLEX_WF_NAME = 'complex_wf_signal_test'
 SUB_WF_1_NAME = 'complex_wf_signal_test_subworkflow_1'
 SUB_WF_2_NAME = 'complex_wf_signal_test_subworkflow_2'
 
+# Max time to wait for the batch of simple workflows to reach a terminal state.
+# These normally finish in seconds, but on a loaded shared server we've observed
+# them take ~30s+; the old ~12s budget (5s sleep + 1+2+4 retry backoff) produced
+# confirmed false-negative timeouts on workflows that did complete. Poll up to
+# this budget instead.
+WORKFLOW_COMPLETION_MAX_WAIT_SECONDS = 120
+
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(
         __name__
@@ -167,8 +174,14 @@ def scenario_workflow_execution(
     for i in range(workflow_quantity):
         start_workflow_requests[i] = StartWorkflowRequest(name=workflow_name)
     workflow_ids = workflow_executor.start_workflows(*start_workflow_requests)
+    # Brief head start, then poll each workflow until it's terminal. The
+    # workflows were all started together, so we share one wall-clock deadline
+    # across the batch (bounding total wait to ~WORKFLOW_COMPLETION_MAX_WAIT_SECONDS
+    # even on a genuine failure) rather than giving each its own long budget.
     sleep(workflow_completion_timeout)
+    deadline = time.time() + WORKFLOW_COMPLETION_MAX_WAIT_SECONDS
     for workflow_id in workflow_ids:
+        _wait_for_workflow_terminal(workflow_id, workflow_executor, deadline)
         _run_with_retry_attempt(
             validate_workflow_status,
             {
@@ -176,6 +189,39 @@ def scenario_workflow_execution(
                 'workflow_executor': workflow_executor
             }
         )
+
+
+def _wait_for_workflow_terminal(workflow_id, workflow_executor, deadline,
+                                poll_interval=2):
+    """Poll until the workflow reaches a terminal state or the shared deadline
+    passes, logging progress (wf id + elapsed) so a slow-but-eventually-complete
+    run is visible instead of surfacing as a bare timeout. A transient poll error
+    is logged and retried. Returns the last observed status; the caller still
+    runs validate_workflow_status for the actual assertion.
+    """
+    terminal = ('COMPLETED', 'FAILED', 'TIMED_OUT', 'TERMINATED')
+    start = time.time()
+    status = None
+    while True:
+        try:
+            workflow = workflow_executor.get_workflow(
+                workflow_id=workflow_id, include_tasks=False)
+            status = workflow.status
+        except Exception as e:  # transient blip against the shared server
+            logger.warning('error polling workflow %s (%.0fs elapsed): %s',
+                           workflow_id, time.time() - start, e)
+        if status in terminal:
+            logger.info('workflow %s reached %s after %.0fs',
+                        workflow_id, status, time.time() - start)
+            return status
+        if time.time() >= deadline:
+            logger.warning(
+                'workflow %s still %s after %.0fs; giving up wait',
+                workflow_id, status, time.time() - start)
+            return status
+        logger.info('workflow %s still %s after %.0fs; waiting',
+                    workflow_id, status, time.time() - start)
+        sleep(poll_interval)
 
 
 def generate_workflow(workflow_executor: WorkflowExecutor, workflow_name: str = WORKFLOW_NAME,
