@@ -121,6 +121,18 @@ def failing_task(should_fail: bool) -> dict:
 # Main test class
 class TestComprehensiveE2E(unittest.TestCase):
 
+    # Annotated workers this suite relies on. Every one must be discovered by
+    # the scan AND have a live process, otherwise its task silently stays
+    # SCHEDULED forever (which is exactly how a non-starting task_in_progress
+    # worker manifested as a "4 != 5 tasks" failure in CI).
+    EXPECTED_WORKERS = (
+        'sync_basic',
+        'async_basic',
+        'complex_schema',
+        'task_in_progress',
+        'failing_task',
+    )
+
     @classmethod
     def setUpClass(cls):
         from tests.integration.conftest import skip_if_server_unavailable
@@ -191,11 +203,54 @@ class TestComprehensiveE2E(unittest.TestCase):
         self.__class__.task_handler = handler
         time.sleep(5)  # Wait for startup
 
+        # Confirm every expected annotated worker was discovered by the scan AND
+        # its child process is actually alive. Assert each one individually so a
+        # failure names the exact worker that didn't come up, instead of the
+        # failure surfacing later (and opaquely) as a task stuck in SCHEDULED.
+        started = {}
+        for worker, process in zip(handler.workers, handler.task_runner_processes):
+            started[worker.get_task_definition_name()] = process.is_alive()
+        print(f"Discovered {len(started)} annotated worker(s): {sorted(started)}")
+
+        for name in self.EXPECTED_WORKERS:
+            self.assertIn(
+                name, started,
+                f"worker '{name}' was not discovered by the annotated-worker scan; "
+                f"discovered={sorted(started)}")
+            self.assertTrue(
+                started[name],
+                f"worker '{name}' was discovered but its process is not alive")
+
         print("✓ Workers started")
         self.__class__.workers_started = True
         self.assertTrue(self.workers_started)
 
     EXPECTED_TASK_COUNT = 5
+
+    def _dump_stuck_task_diagnostics(self, wf):
+        """When a run fails to complete, print server-side poll data and queue
+        sizes so CI shows *why* a task is stuck (e.g. no worker polling its
+        queue) rather than just a bare task-count assertion. Poll data is
+        server-side, so it survives regardless of worker child-process log
+        capture.
+        """
+        from conductor.client.orkes.orkes_task_client import OrkesTaskClient
+        task_client = OrkesTaskClient(self.config)
+
+        stuck = [t.task_def_name for t in (getattr(wf, 'tasks', None) or [])
+                 if t.status not in ('COMPLETED', 'FAILED', 'FAILED_WITH_TERMINAL_ERROR')]
+        print(f"  [diag] non-terminal tasks: {stuck}")
+
+        # Include the expected workers so we can compare a stuck queue against a
+        # known-good one (e.g. task_in_progress vs sync_basic).
+        for task_type in sorted(set(stuck) | set(self.EXPECTED_WORKERS)):
+            try:
+                queue_size = task_client.get_queue_size_for_task(task_type)
+                poll_data = task_client.get_task_poll_data(task_type) or []
+                pollers = [(p.worker_id, p.domain, p.last_poll_time) for p in poll_data]
+                print(f"  [diag] {task_type}: queue_size={queue_size} pollers={pollers}")
+            except Exception as e:  # diagnostics must never mask the real failure
+                print(f"  [diag] {task_type}: failed to fetch poll data: {e!r}")
 
     def _run_workflow_to_terminal(self, workflow_client, timeout_s=90):
         """Start the e2e workflow and wait until it is genuinely terminal with
@@ -247,6 +302,7 @@ class TestComprehensiveE2E(unittest.TestCase):
             print(f"attempt {attempt + 1}: wf={wf_id} "
                   f"status={getattr(wf, 'status', None)} "
                   f"tasks={len(getattr(wf, 'tasks', []) or [])}; retrying")
+            self._dump_stuck_task_diagnostics(wf)
 
         # Assertions
         self.assertIsNotNone(
