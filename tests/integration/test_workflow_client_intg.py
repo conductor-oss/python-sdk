@@ -33,26 +33,47 @@ def get_configuration():
     return configuration
 
 
+def _first_transient_api_exception(exc):
+    """Walk the exception chain (cause/context) and return the first transient
+    ApiException (status 0 / flagged transient), if any.
+
+    Inner test helpers sometimes catch an ApiException and re-raise it as a bare
+    ``Exception`` (losing the type), so we can't rely on the outermost exception
+    type alone. Implicit chaining still records the original on ``__context__``
+    (or ``__cause__`` when ``raise ... from`` is used), so we follow that chain.
+    """
+    seen = set()
+    cur = exc
+    while cur is not None and id(cur) not in seen:
+        seen.add(id(cur))
+        if isinstance(cur, ApiException) and (
+                getattr(cur, 'transient', False) or cur.status in (0, None)):
+            return cur
+        cur = cur.__cause__ or cur.__context__
+    return None
+
+
 def _run_tolerating_transient(label, func, *args, retries=3, **kwargs):
     """Run a sub-suite, retrying only on a transient (status 0) transport blip
     against the shared dev server.
 
-    A `(0)` ApiException is a raw connection/protocol hiccup (stale keep-alive,
-    HTTP/2 GOAWAY race, client closed by a fork cleanup, etc.) — not a real
-    assertion or server failure — and was observed flaking the `test-all`
-    bucket. Retrying absorbs that network noise while still surfacing genuine
-    failures immediately (any non-transient error, or a transient one on the
-    final attempt, re-raises).
+    A `(0)` ApiException is a raw connection/protocol hiccup (read timeout,
+    stale keep-alive, HTTP/2 GOAWAY race, client closed by a fork cleanup, etc.)
+    — not a real assertion or server failure — and was observed flaking the
+    `test-all` bucket. Retrying absorbs that network noise while still surfacing
+    genuine failures immediately (any non-transient error, or a transient one on
+    the final attempt, re-raises). We inspect the whole exception chain because
+    sub-suites may wrap the ApiException in a generic Exception.
     """
     for attempt in range(retries):
         try:
             return func(*args, **kwargs)
-        except ApiException as e:
-            transient = getattr(e, 'transient', False) or e.status in (0, None)
-            if transient and attempt < retries - 1:
+        except Exception as e:
+            transient = _first_transient_api_exception(e)
+            if transient is not None and attempt < retries - 1:
                 logger.warning(
                     'transient (%s) API error in %s (attempt %d/%d): %s; retrying',
-                    e.status, label, attempt + 1, retries, e)
+                    transient.status, label, attempt + 1, retries, transient)
                 time.sleep(2 ** attempt)
                 continue
             raise

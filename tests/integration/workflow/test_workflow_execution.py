@@ -45,6 +45,12 @@ def run_workflow_execution_tests(configuration: Configuration, workflow_executor
         import_modules=['tests.integration.resources.worker.python.python_worker']
     )
     task_handler.start_processes()
+    # Use try/finally (not try/except+re-raise): the sole purpose here is to
+    # stop the workers on the way out. Re-raising as a bare `Exception` used to
+    # discard the original type and traceback, which hid transient
+    # ApiException(status=0) transport blips from the caller's retry logic
+    # (they'd surface as an opaque generic Exception instead). finally cleans up
+    # on both success and failure while letting the original error propagate.
     try:
         scenario_get_workflow_by_correlation_ids(workflow_executor)
         logger.debug('finished workflow correlation ids test')
@@ -64,11 +70,8 @@ def run_workflow_execution_tests(configuration: Configuration, workflow_executor
         logger.debug('finished execute_workflow error handling tests')
         run_signal_tests(configuration, workflow_executor)
         logger.debug('finished signal API tests')
-
-    except Exception as e:
+    finally:
         task_handler.stop_processes()
-        raise Exception(f'failed integration tests, reason: {e}')
-    task_handler.stop_processes()
 
 
 def generate_tasks_defs():

@@ -36,11 +36,38 @@ from conductor.client.http.models.workflow_def import WorkflowDef
 from conductor.client.http.models.task_def import TaskDef
 from conductor.client.http.models.workflow_task import WorkflowTask
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
+from conductor.client.http.rest import ApiException
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def _is_transient(e):
+    """A transient (status 0) ApiException is a raw transport blip against the
+    shared dev server (read timeout, connection reset, HTTP/2 GOAWAY, stale
+    keep-alive) — not a real failure. status 0 means no HTTP response was
+    received at all."""
+    return isinstance(e, ApiException) and (
+        getattr(e, 'transient', False) or e.status in (0, None))
+
+
+def _retry_on_transient(func, *args, retries=4, base_delay=1, **kwargs):
+    """Retry a workflow/metadata client call on a transient (0) transport blip.
+    These `(0)` errors flake the lease suites on a loaded shared server; retrying
+    absorbs the noise. Non-transient errors (real 4xx/5xx) raise immediately."""
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except ApiException as e:
+            if _is_transient(e) and attempt < retries - 1:
+                logger.warning(
+                    'transient (%s) API error (attempt %d/%d): %s; retrying',
+                    e.status, attempt + 1, retries, e)
+                time.sleep(base_delay * (2 ** attempt))
+                continue
+            raise
 
 # Short response timeout — task must heartbeat to stay alive
 RESPONSE_TIMEOUT_SECONDS = 10
@@ -129,9 +156,11 @@ class TestLeaseExtension(unittest.TestCase):
         )
         workflow._tasks = [task]
         try:
-            self.metadata_client.update_workflow_def(workflow, overwrite=True)
+            _retry_on_transient(self.metadata_client.update_workflow_def,
+                                 workflow, overwrite=True)
         except Exception:
-            self.metadata_client.register_workflow_def(workflow, overwrite=True)
+            _retry_on_transient(self.metadata_client.register_workflow_def,
+                                 workflow, overwrite=True)
         logger.info("Registered workflow: %s", wf_name)
 
     def _start_workflow(self, wf_name, job_id):
@@ -140,7 +169,8 @@ class TestLeaseExtension(unittest.TestCase):
         req.name = wf_name
         req.version = 1
         req.input = {'job_id': job_id}
-        wf_id = self.workflow_client.start_workflow(start_workflow_request=req)
+        wf_id = _retry_on_transient(self.workflow_client.start_workflow,
+                                    start_workflow_request=req)
         logger.info("Started workflow %s: %s", wf_name, wf_id)
         return wf_id
 
@@ -153,11 +183,20 @@ class TestLeaseExtension(unittest.TestCase):
         bare status mismatch.
         """
         for i in range(timeout_seconds):
-            wf = self.workflow_client.get_workflow(wf_id, include_tasks=True)
+            try:
+                wf = self.workflow_client.get_workflow(wf_id, include_tasks=True)
+            except ApiException as e:
+                # A transient blip on a single poll shouldn't abort the wait;
+                # keep polling until the budget is exhausted.
+                if _is_transient(e):
+                    time.sleep(1)
+                    continue
+                raise
             if wf.status in self.TERMINAL_STATES:
                 return wf
             time.sleep(1)
-        wf = self.workflow_client.get_workflow(wf_id, include_tasks=True)
+        wf = _retry_on_transient(self.workflow_client.get_workflow,
+                                 wf_id, include_tasks=True)
         if wf.status not in self.TERMINAL_STATES:
             print(f"  [diag] workflow {wf_id} still {wf.status} "
                   f"after {timeout_seconds}s")
