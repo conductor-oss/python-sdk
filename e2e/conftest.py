@@ -110,14 +110,23 @@ class CredentialsCLI:
 
     def set(self, name: str, value: str) -> None:
         result = self._run("credentials", "set", name, value)
-        assert result.returncode == 0, (
-            f"credentials set {name} failed: {result.stderr}"
-        )
+        if result.returncode != 0:
+            # conductor-oss standalone serves secrets from the server process
+            # env — the store is read-only there, so the write-dependent
+            # lifecycle steps cannot run (a server-flavor capability, not an
+            # SDK regression; mirrors the Java/C# ports' assumption-skip).
+            if "read-only" in result.stderr.lower():
+                pytest.skip(
+                    "server secret store is read-only (env-backed) — "
+                    "skipping write-dependent step"
+                )
+            raise AssertionError(f"credentials set {name} failed: {result.stderr}")
 
     def delete(self, name: str) -> None:
         result = self._run("credentials", "delete", name)
-        # Ignore "not found" errors during cleanup
-        if result.returncode != 0 and "not found" not in result.stderr.lower():
+        # Ignore "not found" and "read-only" errors during cleanup — best-effort
+        stderr = result.stderr.lower()
+        if result.returncode != 0 and "not found" not in stderr and "read-only" not in stderr:
             raise AssertionError(
                 f"credentials delete {name} failed: {result.stderr}"
             )
@@ -162,9 +171,10 @@ def get_task_by_name(execution_id: str, task_ref_prefix: str) -> list:
 # reason unrelated to the SDK. Probe the running server once and skip those tests
 # when unsupported.
 #
-# TODO: once agentspan cuts a release that implements runtimeMetadata, bump
-# AGENTSPAN_VERSION in .github/workflows/agent-e2e.yml — this guard then lets the
-# credential tests run automatically (no test change needed).
+# conductor-oss implements this from 3.32.0-rc.8 onward (see
+# .github/workflows/agent-e2e.yml's CONDUCTOR_SERVER_VERSION) — this guard lets the
+# credential tests run automatically against any server that has it, no test
+# change needed.
 
 _RUNTIME_METADATA_SUPPORT = None
 
@@ -208,6 +218,6 @@ def requires_runtime_metadata():
         pytest.skip(
             "server does not persist/deliver TaskDef.runtimeMetadata "
             "(conductor-oss PR #1255) — worker credential injection requires it. "
-            "TODO: bump AGENTSPAN_VERSION in .github/workflows/agent-e2e.yml once a "
-            "release ships runtimeMetadata support."
+            "Needs conductor-oss >= 3.32.0-rc.8 (see CONDUCTOR_SERVER_VERSION in "
+            ".github/workflows/agent-e2e.yml)."
         )

@@ -457,11 +457,12 @@ class TestSuite5HttpTools:
                 ["mcp-testkit", "--help"],
                 capture_output=True,
                 text=True,
-                timeout=5,
+                timeout=15,
             )
-        except FileNotFoundError:
+        except (FileNotFoundError, subprocess.TimeoutExpired):
             pytest.skip(
-                "mcp-testkit not installed — required for Suite 5 HTTP tools test"
+                "mcp-testkit not installed or unresponsive — required for "
+                "Suite 5 HTTP tools test"
             )
 
         server_proc = None

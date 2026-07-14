@@ -89,7 +89,17 @@ def _put_secret(name: str, value: str) -> None:
         headers={"Content-Type": "text/plain"},
         timeout=10,
     )
-    r.raise_for_status()
+    if not r.ok:
+        # conductor-oss standalone serves secrets from the server process
+        # env — the store is read-only there, so the write-dependent
+        # lifecycle steps cannot run (a server-flavor capability, not an
+        # SDK regression; mirrors the Java/C# ports' assumption-skip).
+        if "read-only" in r.text.lower():
+            pytest.skip(
+                "server secret store is read-only (env-backed) — "
+                "skipping write-dependent step"
+            )
+        r.raise_for_status()
 
 
 def _delete_secret(name: str) -> None:
