@@ -14,6 +14,7 @@ from typing import List, Optional, Any, Dict
 
 from conductor.client.automator.task_runner import TaskRunner
 from conductor.client.automator.async_task_runner import AsyncTaskRunner
+from conductor.client.automator import worker_isolation
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
 from conductor.client.event.task_runner_events import TaskRunnerEvent
@@ -227,6 +228,11 @@ class TaskHandler:
             restart_backoff_max_seconds: float = 60.0,
             restart_max_attempts: int = 0
     ):
+        # Thread isolation must be applied before _setup_logging_queue():
+        # it creates the multiprocessing Queue and starts the logger Process —
+        # the primitives CONDUCTOR_WORKER_ISOLATION=thread replaces.
+        if worker_isolation.isolation_mode() == worker_isolation.ISOLATION_THREAD:
+            worker_isolation.apply_thread_isolation()
         workers = workers or []
         self.logger_process, self.queue = _setup_logging_queue(configuration)
         self._configuration = configuration

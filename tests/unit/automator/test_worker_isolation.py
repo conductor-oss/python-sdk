@@ -10,10 +10,15 @@ import multiprocessing
 import queue
 import signal
 import threading
+from unittest.mock import Mock, patch
 
 import pytest
 
 from conductor.client.automator import task_handler, worker_isolation
+from conductor.client.automator.task_handler import TaskHandler
+from conductor.client.automator.task_runner import TaskRunner
+from conductor.client.configuration.configuration import Configuration
+from tests.unit.resources.workers import ClassWorker
 from conductor.client.automator.worker_isolation import (
     ISOLATION_PROCESS,
     ISOLATION_THREAD,
@@ -158,3 +163,76 @@ def test_shim_passes_args_and_kwargs():
     p.start()
     p.join(timeout=5)
     assert seen == {"a": 1, "b": 2}
+
+
+# ── TaskHandler gate (G2 / G5) ───────────────────────────────────────────────
+
+
+def _stop_logger(th):
+    """End the logger thread via its None sentinel (same as the SDK's atexit)."""
+    th.queue.put(None)
+    th.logger_process.join(timeout=2)
+
+
+def test_task_handler_construction_applies_thread_isolation(monkeypatch, restore_globals):
+    monkeypatch.setenv(WORKER_ISOLATION_ENV, "thread")
+    th = TaskHandler(
+        configuration=Configuration(),
+        workers=[],
+        scan_for_annotated_workers=False,
+        monitor_processes=False,
+    )
+    try:
+        assert task_handler.Process is _ThreadAsProcess
+        assert task_handler.Queue is queue.Queue
+        assert isinstance(th.queue, queue.Queue)
+        assert isinstance(th.logger_process, _ThreadAsProcess)
+    finally:
+        _stop_logger(th)
+
+
+def test_task_handler_default_mode_untouched(monkeypatch, restore_globals):
+    monkeypatch.delenv(WORKER_ISOLATION_ENV, raising=False)
+    th = TaskHandler(
+        configuration=Configuration(),
+        workers=[],
+        scan_for_annotated_workers=False,
+        monitor_processes=False,
+    )
+    try:
+        assert task_handler.Process is multiprocessing.Process
+        assert task_handler.Queue is multiprocessing.Queue
+        assert not getattr(task_handler, "_thread_isolation_applied", False)
+        assert isinstance(th.logger_process, multiprocessing.Process)
+    finally:
+        th.queue.put(None)
+        th.logger_process.join(timeout=5)
+
+
+def test_thread_mode_start_stop_smoke(monkeypatch, restore_globals):
+    """G5: full worker lifecycle in thread mode — no signal ValueError."""
+    monkeypatch.setenv(WORKER_ISOLATION_ENV, "thread")
+    thread_errors = []
+    monkeypatch.setattr(threading, "excepthook", lambda args: thread_errors.append(args))
+
+    with patch.object(TaskRunner, "run", Mock(return_value=None)):
+        th = TaskHandler(
+            configuration=Configuration(),
+            workers=[ClassWorker("task")],
+            scan_for_annotated_workers=False,
+            monitor_processes=False,
+        )
+        try:
+            th.start_processes()
+            assert len(th.task_runner_processes) == 1
+            for p in th.task_runner_processes:
+                assert isinstance(p, _ThreadAsProcess)
+                # run() is mocked to return, so the target must complete —
+                # proving signal.signal + TaskRunner construction worked in
+                # a non-main thread.
+                p.join(timeout=5)
+                assert not p.is_alive()
+            th.stop_processes()
+        finally:
+            _stop_logger(th)
+    assert thread_errors == []
