@@ -93,6 +93,34 @@ def retry_on_transient(func, *args, retries=4, base_delay=1, **kwargs):
             raise
 
 
+def retry_on_status(func, *args, statuses=(404,), retries=5, base_delay=1.0,
+                    max_delay=None, **kwargs):
+    """Retry ``func(*args, **kwargs)`` on an ``ApiException`` whose status is in
+    ``statuses`` (in addition to transient status-0 blips), with capped
+    exponential backoff. Any other error raises immediately.
+
+    Intended for read-after-write races against the shared dev server: a GET
+    issued right after a register/update can briefly 404 until the write
+    propagates. This is *per-request* retry, so use it only for idempotent reads
+    (or writes that are safe to repeat).
+    """
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except ApiException as e:
+            retryable = is_transient(e) or e.status in statuses
+            if retryable and attempt < retries - 1:
+                delay = base_delay * (2 ** attempt)
+                if max_delay is not None:
+                    delay = min(delay, max_delay)
+                logger.warning(
+                    'retryable (%s) API error (attempt %d/%d): %s; retrying in '
+                    '%.1fs', e.status, attempt + 1, retries, e, delay)
+                time.sleep(delay)
+                continue
+            raise
+
+
 def retry_scenario(label, func, *args, deadline=None,
                    base_delay=DEFAULT_BASE_DELAY_SECONDS,
                    max_delay=DEFAULT_MAX_DELAY_SECONDS, **kwargs):

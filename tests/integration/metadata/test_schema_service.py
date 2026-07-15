@@ -5,6 +5,7 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.schema_resource_api import SchemaResourceApi
 from conductor.client.http.models.schema_def import SchemaDef, SchemaType
 from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
+from tests.integration.retry_helpers import retry_on_transient, retry_on_status
 
 SCHEMA_NAME = 'ut_schema'
 SCHEMA_VERSION = 1
@@ -41,33 +42,40 @@ class TestOrkesSchemaClient(unittest.TestCase):
         self.assertIsInstance(self.schema_client.schemaApi, SchemaResourceApi, message)
 
     def test_registerSchema(self):
-        self.schema_client.register_schema(self.schemaDef)
-        response = self.schema_client.schemaApi.get_schema_by_name_and_version(name=SCHEMA_NAME, version=SCHEMA_VERSION)
+        retry_on_transient(self.schema_client.register_schema, self.schemaDef)
+        # A GET right after register can briefly 404 until the write propagates
+        # on the shared dev server; retry the read rather than fail the test.
+        response = retry_on_status(
+            self.schema_client.schemaApi.get_schema_by_name_and_version,
+            name=SCHEMA_NAME, version=SCHEMA_VERSION)
         self.assertEqual(response.name, SCHEMA_NAME)
         self.assertEqual(response.version, SCHEMA_VERSION)
         self.assertEqual(response.type, SchemaType.JSON)
 
     def test_getSchema(self):
-        self.schema_client.register_schema(self.schemaDef)
-        schema = self.schema_client.get_schema(SCHEMA_NAME, SCHEMA_VERSION)
+        retry_on_transient(self.schema_client.register_schema, self.schemaDef)
+        # A GET right after register can briefly 404 until the write propagates
+        # on the shared dev server; retry the read rather than fail the test.
+        schema = retry_on_status(self.schema_client.get_schema,
+                                 SCHEMA_NAME, SCHEMA_VERSION)
         self.assertEqual(schema.name, SCHEMA_NAME)
         self.assertEqual(schema.version, SCHEMA_VERSION)
 
     def test_getAllSchemas(self):
         schemaDef2 = SchemaDef(name='ut_schema_2', version=1, type=SchemaType.JSON, data=schema, external_ref='http://example.com/2')
-        self.schema_client.register_schema(self.schemaDef)
-        self.schema_client.register_schema(schemaDef2)
+        retry_on_transient(self.schema_client.register_schema, self.schemaDef)
+        retry_on_transient(self.schema_client.register_schema, schemaDef2)
         schemas = self.schema_client.get_all_schemas()
         self.assertGreaterEqual(len(schemas), 2)
 
     def test_deleteSchema(self):
-        self.schema_client.register_schema(self.schemaDef)
+        retry_on_transient(self.schema_client.register_schema, self.schemaDef)
         self.schema_client.delete_schema(SCHEMA_NAME, SCHEMA_VERSION)
         with self.assertRaises(Exception):
             self.schema_client.get_schema(SCHEMA_NAME, SCHEMA_VERSION)
 
     def test_deleteSchemaByName(self):
-        self.schema_client.register_schema(self.schemaDef)
+        retry_on_transient(self.schema_client.register_schema, self.schemaDef)
         self.schema_client.delete_schema_by_name(SCHEMA_NAME)
         with self.assertRaises(Exception):
             self.schema_client.get_schema(SCHEMA_NAME, SCHEMA_VERSION)

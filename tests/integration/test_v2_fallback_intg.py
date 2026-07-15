@@ -25,6 +25,7 @@ from conductor.client.http.models.workflow_task import WorkflowTask
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 from conductor.client.worker.worker_task import worker_task
+from tests.integration.retry_helpers import retry_on_transient
 
 logger = logging.getLogger(__name__)
 
@@ -84,10 +85,14 @@ class TestV2FallbackIntegration(unittest.TestCase):
 
         workflow = WorkflowDef(name=WORKFLOW_NAME, version=WORKFLOW_VERSION)
         workflow._tasks = tasks
+        # Retry registration on a transient (status 0) transport blip against the
+        # shared dev server so a dropped connection doesn't fail the suite.
         try:
-            self.metadata_client.update_workflow_def(workflow, overwrite=True)
+            retry_on_transient(self.metadata_client.update_workflow_def,
+                               workflow, overwrite=True)
         except Exception:
-            self.metadata_client.register_workflow_def(workflow, overwrite=True)
+            retry_on_transient(self.metadata_client.register_workflow_def,
+                               workflow, overwrite=True)
         print(f"\n  Registered workflow '{WORKFLOW_NAME}' with {len(tasks)} tasks")
 
     def test_1_workflows_complete_with_v2_or_fallback(self):
@@ -128,7 +133,11 @@ class TestV2FallbackIntegration(unittest.TestCase):
                 req.name = WORKFLOW_NAME
                 req.version = WORKFLOW_VERSION
                 req.input = {"run_index": i}
-                wf_id = self.workflow_client.start_workflow(start_workflow_request=req)
+                # A status-0 blip here means no response arrived, so no id was
+                # returned; retrying gets a fresh attempt (any orphaned run just
+                # completes untracked and doesn't affect the tracked-id count).
+                wf_id = retry_on_transient(self.workflow_client.start_workflow,
+                                           start_workflow_request=req)
                 workflow_ids.append(wf_id)
 
             print(f"\n  Submitted {len(workflow_ids)} workflows")
