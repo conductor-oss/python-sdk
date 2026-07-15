@@ -140,3 +140,83 @@ def retry_scenario(label, func, *args, deadline=None,
                 deadline - now, transient)
             time.sleep(delay)
             attempt += 1
+
+
+def wait_for_workflow_terminal(
+        client, workflow_id, *,
+        timeout_seconds=None, deadline=None, poll_interval=2,
+        include_tasks=False, terminal_states=TERMINAL_WORKFLOW_STATES,
+        is_terminal=None, swallow='transient',
+        log=None, on_poll=None, on_giveup=None):
+    """Poll ``client.get_workflow(workflow_id, include_tasks=...)`` until the
+    workflow reaches a terminal state (or the wall-clock budget is exhausted),
+    returning the last observed ``Workflow`` (or ``None`` if it could never be
+    fetched). This is the single shared "poll a workflow to terminal" primitive
+    for the integration suites — callers wrap it to preserve their own return
+    shape / side effects.
+
+    Args:
+        client: anything exposing ``get_workflow(workflow_id, include_tasks=...)``
+            (both ``OrkesWorkflowClient`` and ``WorkflowExecutor`` qualify).
+        timeout_seconds: relative budget; an internal ``time.monotonic()``
+            deadline is derived from it. Ignored when ``deadline`` is given.
+        deadline: absolute ``time.monotonic()`` value to stop at. When both this
+            and ``timeout_seconds`` are ``None`` the workflow is polled exactly
+            once (no wait).
+        poll_interval: seconds between polls.
+        include_tasks: passed through to ``get_workflow``.
+        terminal_states: statuses considered terminal (default
+            ``TERMINAL_WORKFLOW_STATES``); used by the default predicate.
+        is_terminal: optional ``predicate(workflow) -> bool`` overriding the
+            default "status in terminal_states" check (e.g. to also gate on an
+            expected task count).
+        swallow: error policy for a failing poll — ``'transient'`` swallows only
+            transient blips (status 0/None) and re-raises real errors;
+            ``'all'`` swallows every exception and keeps polling; ``'none'`` lets
+            any exception propagate.
+        log: optional ``callable(str)`` for progress lines (e.g. ``logger.info``
+            or ``print``). Defaults to ``logger.debug``.
+        on_poll: optional ``callable(workflow)`` invoked after each successful
+            poll, before the terminal check (e.g. to print per-task diagnostics).
+        on_giveup: optional ``callable(workflow)`` invoked once when the budget
+            is exhausted without reaching terminal (e.g. to dump diagnostics).
+    """
+    if log is None:
+        log = logger.debug
+    if is_terminal is None:
+        def is_terminal(wf):
+            return getattr(wf, 'status', None) in terminal_states
+    if deadline is None and timeout_seconds is not None:
+        deadline = time.monotonic() + timeout_seconds
+
+    start = time.monotonic()
+    workflow = None
+    while True:
+        try:
+            workflow = client.get_workflow(
+                workflow_id, include_tasks=include_tasks)
+        except Exception as e:
+            if swallow == 'none':
+                raise
+            if swallow == 'transient' and not is_transient(e):
+                raise
+            log('error polling workflow %s (%.0fs elapsed): %s' % (
+                workflow_id, time.monotonic() - start, e))
+        else:
+            if on_poll is not None:
+                on_poll(workflow)
+            if is_terminal(workflow):
+                log('workflow %s reached %s after %.0fs' % (
+                    workflow_id, getattr(workflow, 'status', None),
+                    time.monotonic() - start))
+                return workflow
+        if deadline is None or time.monotonic() >= deadline:
+            log('workflow %s still %s after %.0fs; giving up wait' % (
+                workflow_id, getattr(workflow, 'status', None),
+                time.monotonic() - start))
+            if on_giveup is not None:
+                on_giveup(workflow)
+            return workflow
+        log('workflow %s still %s; waiting' % (
+            workflow_id, getattr(workflow, 'status', None)))
+        time.sleep(poll_interval)

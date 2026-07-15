@@ -38,14 +38,13 @@ from conductor.client.http.models.workflow_def import WorkflowDef
 from conductor.client.http.models.task_def import TaskDef
 from conductor.client.http.models.workflow_task import WorkflowTask
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
-from conductor.client.http.rest import ApiException
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 
 from tests.integration.retry_helpers import (
     TERMINAL_WORKFLOW_STATES,
-    is_transient as _is_transient,
     retry_on_transient as _retry_on_transient,
+    wait_for_workflow_terminal,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -271,22 +270,17 @@ class TestAsyncLeaseExtension(unittest.TestCase):
         """Poll until workflow reaches a terminal state. If it doesn't within
         the budget, dump server-side diagnostics so the ensuing assertion shows
         *why* (e.g. a task stuck in SCHEDULED with no poller) rather than only a
-        bare status mismatch.
+        bare status mismatch. Delegates the polling loop to the shared
+        ``wait_for_workflow_terminal`` (transient blips swallowed, real errors
+        raised), then does a definitive final fetch + diagnostics on give-up.
         """
-        deadline = time.monotonic() + timeout_seconds
-        while time.monotonic() < deadline:
-            try:
-                wf = self.workflow_client.get_workflow(wf_id, include_tasks=True)
-            except ApiException as e:
-                # A transient blip on a single poll shouldn't abort the wait;
-                # keep polling until the budget is exhausted.
-                if _is_transient(e):
-                    time.sleep(poll_interval)
-                    continue
-                raise
-            if wf.status in self.TERMINAL_STATES:
-                return wf
-            time.sleep(poll_interval)
+        wf = wait_for_workflow_terminal(
+            self.workflow_client, wf_id,
+            timeout_seconds=timeout_seconds, poll_interval=poll_interval,
+            include_tasks=True, terminal_states=self.TERMINAL_STATES,
+            swallow='transient', log=lambda _msg: None)
+        if wf is not None and wf.status in self.TERMINAL_STATES:
+            return wf
         wf = _retry_on_transient(self.workflow_client.get_workflow,
                                  wf_id, include_tasks=True)
         if wf.status not in self.TERMINAL_STATES:

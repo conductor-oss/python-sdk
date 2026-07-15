@@ -56,6 +56,7 @@ from conductor.client.event.task_runner_events import (
     TaskExecutionStarted, TaskExecutionCompleted, TaskExecutionFailure,
     TaskUpdateFailure
 )
+from tests.integration.retry_helpers import wait_for_workflow_terminal
 
 # Event collector
 class EventCollector(TaskRunnerEventsListener):
@@ -281,18 +282,24 @@ class TestComprehensiveE2E(unittest.TestCase):
         wf_id = workflow_client.start_workflow(start_workflow_request=req)
         print(f"✓ Started workflow: {wf_id}")
 
-        deadline = time.time() + timeout_s
-        wf = None
-        while time.time() < deadline:
-            wf = workflow_client.get_workflow(wf_id, include_tasks=True)
+        # "Terminal" here is stricter than the usual terminal-status check: we
+        # also require the full expected task set to be present, so the caller
+        # never asserts against a half-scheduled workflow (the flaky "4 != 5
+        # tasks" case). Delegates polling to the shared wait_for_workflow_terminal.
+        def _fully_materialized(wf):
+            return getattr(wf, 'status', None) in ('COMPLETED', 'FAILED') \
+                and len(wf.tasks or []) == self.EXPECTED_TASK_COUNT
+
+        def _show(wf):
             print(f"  Status: {wf.status} - tasks={len(wf.tasks or [])}")
-            if wf.status in ('COMPLETED', 'FAILED') \
-                    and len(wf.tasks or []) == self.EXPECTED_TASK_COUNT:
-                return wf_id, wf
             for task in (wf.tasks or []):
                 print(f'task {task.task_def_name} : {task.status}')
-            time.sleep(1)
 
+        wf = wait_for_workflow_terminal(
+            workflow_client, wf_id,
+            timeout_seconds=timeout_s, poll_interval=1,
+            include_tasks=True, is_terminal=_fully_materialized,
+            swallow='none', log=lambda _msg: None, on_poll=_show)
         return wf_id, wf
 
     def test_03_execute_workflow(self):

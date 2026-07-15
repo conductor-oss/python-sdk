@@ -12,7 +12,7 @@ from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.simple_task import SimpleTask
 from tests.integration.resources.worker.python.python_worker import *
-from tests.integration.retry_helpers import retry_scenario, TERMINAL_WORKFLOW_STATES
+from tests.integration.retry_helpers import retry_scenario, wait_for_workflow_terminal
 
 WORKFLOW_NAME = "sdk_python_integration_test_workflow"
 WORKFLOW_DESCRIPTION = "Python SDK Integration Test"
@@ -207,34 +207,19 @@ def scenario_workflow_execution(
 
 def _wait_for_workflow_terminal(workflow_id, workflow_executor, deadline,
                                 poll_interval=2):
-    """Poll until the workflow reaches a terminal state or the shared deadline
-    passes, logging progress (wf id + elapsed) so a slow-but-eventually-complete
-    run is visible instead of surfacing as a bare timeout. A transient poll error
-    is logged and retried. Returns the last observed status; the caller still
-    runs validate_workflow_status for the actual assertion.
+    """Poll until the workflow reaches a terminal state or the shared ``deadline``
+    (a ``time.time()`` wall-clock value shared across a batch) passes, logging
+    progress so a slow-but-eventually-complete run is visible instead of a bare
+    timeout. A transient poll error is logged and retried. Returns the last
+    observed status; the caller still runs validate_workflow_status for the
+    actual assertion. Thin wrapper over the shared ``wait_for_workflow_terminal``.
     """
-    start = time.time()
-    status = None
-    while True:
-        try:
-            workflow = workflow_executor.get_workflow(
-                workflow_id=workflow_id, include_tasks=False)
-            status = workflow.status
-        except Exception as e:  # transient blip against the shared server
-            logger.warning('error polling workflow %s (%.0fs elapsed): %s',
-                           workflow_id, time.time() - start, e)
-        if status in TERMINAL_WORKFLOW_STATES:
-            logger.info('workflow %s reached %s after %.0fs',
-                        workflow_id, status, time.time() - start)
-            return status
-        if time.time() >= deadline:
-            logger.warning(
-                'workflow %s still %s after %.0fs; giving up wait',
-                workflow_id, status, time.time() - start)
-            return status
-        logger.info('workflow %s still %s after %.0fs; waiting',
-                    workflow_id, status, time.time() - start)
-        sleep(poll_interval)
+    workflow = wait_for_workflow_terminal(
+        workflow_executor, workflow_id,
+        timeout_seconds=max(0.0, deadline - time.time()),
+        poll_interval=poll_interval, include_tasks=False,
+        swallow='all', log=logger.info)
+    return getattr(workflow, 'status', None)
 
 
 def generate_workflow(workflow_executor: WorkflowExecutor, workflow_name: str = WORKFLOW_NAME,
@@ -467,22 +452,13 @@ def scenario_execute_workflow_error_handling(workflow_executor: WorkflowExecutor
 
 
 def _wait_for_workflow_completion(workflow_executor: WorkflowExecutor, workflow_id: str, max_wait_seconds: int = 60):
-    """Helper function to wait for workflow completion"""
-    import time
-    start_time = time.time()
-
-    while time.time() - start_time < max_wait_seconds:
-        workflow = workflow_executor.get_workflow(workflow_id, True)
-
-        if workflow.status in TERMINAL_WORKFLOW_STATES:
-            logger.debug(f'Workflow {workflow_id} finished with status: {workflow.status}')
-            return workflow
-
-        logger.debug(f'Waiting for workflow {workflow_id}... Status: {workflow.status}')
-        time.sleep(2)
-
-    # Return final state even if not completed
-    return workflow_executor.get_workflow(workflow_id, True)
+    """Helper function to wait for workflow completion. Thin wrapper over the
+    shared ``wait_for_workflow_terminal``; returns the last observed Workflow.
+    """
+    return wait_for_workflow_terminal(
+        workflow_executor, workflow_id,
+        timeout_seconds=max_wait_seconds, poll_interval=2,
+        include_tasks=True, swallow='none', log=logger.debug)
 
 # ===== SIGNAL TESTS =====
 

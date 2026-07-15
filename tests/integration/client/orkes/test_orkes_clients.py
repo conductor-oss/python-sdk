@@ -26,7 +26,7 @@ from conductor.client.orkes_clients import OrkesClients
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.simple_task import SimpleTask
-from tests.integration.retry_helpers import retry_scenario, TERMINAL_WORKFLOW_STATES
+from tests.integration.retry_helpers import retry_scenario, wait_for_workflow_terminal
 
 SUFFIX = str(uuid())
 WORKFLOW_NAME = 'IntegrationTestOrkesClientsWf_' + SUFFIX
@@ -471,30 +471,15 @@ class TestOrkesClients:
                                        poll_interval=2):
         """Poll ``workflow_id`` until it reaches a terminal state or the timeout
         passes, returning the last observed Workflow (or None if it could never
-        be fetched). Transient poll errors are logged and retried within the
+        be fetched). Transient poll errors are swallowed and retried within the
         timeout so a slow-but-eventually-complete run isn't reported as a bare
-        failure.
+        failure. Thin wrapper over the shared ``wait_for_workflow_terminal``.
         """
-        deadline = time.monotonic() + timeout_seconds
-        workflow = None
-        while True:
-            try:
-                workflow = self.workflow_client.get_workflow(
-                    workflow_id, include_tasks=True)
-            except Exception as e:  # transient blip against the shared server
-                print(f"[test_workflow] error polling {workflow_id}: {e}")
-            status = getattr(workflow, "status", None)
-            if status in TERMINAL_WORKFLOW_STATES:
-                print(f"[test_workflow] {workflow_id} reached {status}")
-                return workflow
-            if time.monotonic() >= deadline:
-                print(
-                    f"[test_workflow] {workflow_id} still {status} after "
-                    f"{timeout_seconds}s; giving up wait"
-                )
-                return workflow
-            print(f"[test_workflow] {workflow_id} still {status}; waiting")
-            time.sleep(poll_interval)
+        return wait_for_workflow_terminal(
+            self.workflow_client, workflow_id,
+            timeout_seconds=timeout_seconds, poll_interval=poll_interval,
+            include_tasks=True, swallow='all',
+            log=lambda msg: print(f"[test_workflow] {msg}"))
 
     def __test_unregister_workflow_definition(self):
         self.metadata_client.unregister_workflow_def(WORKFLOW_NAME, 1)
