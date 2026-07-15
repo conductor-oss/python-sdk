@@ -24,6 +24,7 @@ Combined Coverage:
 """
 
 import asyncio
+import functools
 import logging
 import os
 import sys
@@ -56,7 +57,11 @@ from conductor.client.event.task_runner_events import (
     TaskExecutionStarted, TaskExecutionCompleted, TaskExecutionFailure,
     TaskUpdateFailure
 )
-from tests.integration.retry_helpers import wait_for_workflow_terminal
+from tests.integration.retry_helpers import (
+    DEFAULT_OVERALL_DEADLINE_SECONDS,
+    retry_scenario,
+    wait_for_workflow_terminal,
+)
 
 # Event collector
 class EventCollector(TaskRunnerEventsListener):
@@ -134,6 +139,29 @@ def failing_task(should_fail: bool) -> dict:
 
 
 # Main test class
+def _retry_on_transient_until_deadline(test_method):
+    """Wrap a ``test_0xx`` method so a transient (status-0) transport blip against
+    the shared dev server re-runs the *whole* test until the class-wide deadline,
+    instead of failing the suite on a one-off dropped connection.
+
+    This is the same model ``test_all`` uses via ``retry_scenario``: only a
+    transient ``ApiException(status=0)`` (no HTTP response arrived) is retried;
+    real failures (assertions, genuine 4xx/5xx) raise immediately, and a blip
+    at/after the deadline re-raises so the suite still fails cleanly rather than
+    hanging past the CI job timeout. Each test here starts from the shared
+    class state (workflow registered in test_01, workers up from test_02), so a
+    retry re-reads/re-executes against that same state safely.
+    """
+    @functools.wraps(test_method)
+    def wrapper(self, *args, **kwargs):
+        deadline = getattr(self.__class__, '_retry_deadline', None)
+        return retry_scenario(
+            test_method.__name__,
+            lambda: test_method(self, *args, **kwargs),
+            deadline=deadline)
+    return wrapper
+
+
 class TestComprehensiveE2E(unittest.TestCase):
 
     # Annotated workers this suite relies on. Every one must be discovered by
@@ -172,6 +200,12 @@ class TestComprehensiveE2E(unittest.TestCase):
         cls.workers_started = False
         cls.task_handler = None
 
+        # One shared wall-clock budget for the whole suite: a test that hits a
+        # transient (status-0) transport blip retries until this deadline passes
+        # (see _retry_on_transient_until_deadline). Real failures raise at once.
+        cls._retry_deadline = time.monotonic() + DEFAULT_OVERALL_DEADLINE_SECONDS
+
+    @_retry_on_transient_until_deadline
     def test_01_create_workflow(self):
         """Create test workflow."""
         print("\n" + "="*80 + "\nTEST 1: Create Workflow\n" + "="*80)
@@ -198,9 +232,18 @@ class TestComprehensiveE2E(unittest.TestCase):
         print("✓ Workflow registered")
         self.assertTrue(True)  # Workflow registration succeeded
 
+    @_retry_on_transient_until_deadline
     def test_02_start_workers(self):
         """Start workers and verify they initialize."""
         print("\n" + "="*80 + "\nTEST 2: Start Workers\n" + "="*80)
+
+        # If a prior attempt started a handler (this test can be retried on a
+        # transient blip), stop it first so a retry doesn't orphan its worker
+        # processes.
+        prior = getattr(self.__class__, 'task_handler', None)
+        if prior is not None:
+            prior.stop_processes()
+            self.__class__.task_handler = None
 
         # Start the workers and keep the handler on the class so it stays alive
         # for the remaining tests and is stopped deterministically in
@@ -302,6 +345,7 @@ class TestComprehensiveE2E(unittest.TestCase):
             swallow='none', log=lambda _msg: None, on_poll=_show)
         return wf_id, wf
 
+    @_retry_on_transient_until_deadline
     def test_03_execute_workflow(self):
         """Execute workflow and verify completion."""
         print("\n" + "="*80 + "\nTEST 3: Execute Workflow\n" + "="*80)
@@ -363,6 +407,7 @@ class TestComprehensiveE2E(unittest.TestCase):
         
         print("✓ All task assertions passed")
 
+    @_retry_on_transient_until_deadline
     def test_04_verify_events(self):
         """Verify event system works (via metrics and task execution)."""
         print("\n" + "="*80 + "\nTEST 4: Event System\n" + "="*80)
@@ -390,6 +435,7 @@ class TestComprehensiveE2E(unittest.TestCase):
         print("✓ Event system architecture verified")
         print("  (Events are process-local - actual event testing done in unit tests)")
 
+    @_retry_on_transient_until_deadline
     def test_05_verify_task_definitions(self):
         """Verify task definitions and schemas were registered."""
         print("\n" + "="*80 + "\nTEST 5: Task Registration & Schemas\n" + "="*80)
@@ -419,6 +465,7 @@ class TestComprehensiveE2E(unittest.TestCase):
         
         print("✓ All task definition assertions passed")
 
+    @_retry_on_transient_until_deadline
     def test_06_verify_metrics(self):
         """Verify metrics were collected."""
         print("\n" + "="*80 + "\nTEST 6: Metrics Collection\n" + "="*80)
@@ -464,6 +511,7 @@ class TestComprehensiveE2E(unittest.TestCase):
 
         print("✓ Metrics system verified and operational")
 
+    @_retry_on_transient_until_deadline
     def test_07_configuration_assertions(self):
         """Verify configuration system works."""
         print("\n" + "="*80 + "\nTEST 7: Configuration System\n" + "="*80)
@@ -485,6 +533,7 @@ class TestComprehensiveE2E(unittest.TestCase):
         
         self.assertTrue(True)
 
+    @_retry_on_transient_until_deadline
     def test_08_summary_assertions(self):
         """Final comprehensive assertions."""
         print("\n" + "="*80 + "\nTEST 8: Summary & Final Assertions\n" + "="*80)
