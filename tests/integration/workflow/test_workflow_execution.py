@@ -12,7 +12,7 @@ from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.simple_task import SimpleTask
 from tests.integration.resources.worker.python.python_worker import *
-from tests.integration.retry_helpers import retry_scenario
+from tests.integration.retry_helpers import retry_scenario, TERMINAL_WORKFLOW_STATES
 
 WORKFLOW_NAME = "sdk_python_integration_test_workflow"
 WORKFLOW_DESCRIPTION = "Python SDK Integration Test"
@@ -213,7 +213,6 @@ def _wait_for_workflow_terminal(workflow_id, workflow_executor, deadline,
     is logged and retried. Returns the last observed status; the caller still
     runs validate_workflow_status for the actual assertion.
     """
-    terminal = ('COMPLETED', 'FAILED', 'TIMED_OUT', 'TERMINATED')
     start = time.time()
     status = None
     while True:
@@ -224,7 +223,7 @@ def _wait_for_workflow_terminal(workflow_id, workflow_executor, deadline,
         except Exception as e:  # transient blip against the shared server
             logger.warning('error polling workflow %s (%.0fs elapsed): %s',
                            workflow_id, time.time() - start, e)
-        if status in terminal:
+        if status in TERMINAL_WORKFLOW_STATES:
             logger.info('workflow %s reached %s after %.0fs',
                         workflow_id, status, time.time() - start)
             return status
@@ -475,7 +474,7 @@ def _wait_for_workflow_completion(workflow_executor: WorkflowExecutor, workflow_
     while time.time() - start_time < max_wait_seconds:
         workflow = workflow_executor.get_workflow(workflow_id, True)
 
-        if workflow.status in ['COMPLETED', 'FAILED', 'TERMINATED', 'TIMED_OUT']:
+        if workflow.status in TERMINAL_WORKFLOW_STATES:
             logger.debug(f'Workflow {workflow_id} finished with status: {workflow.status}')
             return workflow
 
@@ -889,21 +888,3 @@ def scenario_signal_to_dict_fix(workflow_executor: WorkflowExecutor):
     _wait_for_workflow_completion(workflow_executor, workflow_id)
 
     logger.info('to_dict() method test completed')
-
-
-def _wait_for_workflow_completion(workflow_executor: WorkflowExecutor, workflow_id: str, timeout: int = 10):
-    """Wait for workflow to complete with timeout"""
-    max_iterations = timeout * 10  # Check every 0.1 seconds
-
-    for i in range(max_iterations):
-        try:
-            workflow = workflow_executor.get_workflow(workflow_id, include_tasks=False)
-            if workflow.status in ["COMPLETED", "FAILED", "TERMINATED"]:
-                logger.debug(f'Workflow {workflow_id} completed with status: {workflow.status}')
-                return
-        except Exception as e:
-            logger.warning(f'Error checking workflow status: {e}')
-
-        time.sleep(0.1)
-
-    logger.warning(f'Workflow {workflow_id} did not complete within {timeout} seconds')

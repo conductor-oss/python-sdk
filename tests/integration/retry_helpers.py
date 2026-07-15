@@ -1,6 +1,12 @@
-"""Shared transient-retry helper for the aggregate ``test_all`` integration bucket.
+"""Shared transient-retry / flakiness helpers for the integration suites.
 
-The bucket runs against a shared dev server whose transport occasionally blips
+Originally scoped to the aggregate ``test_all`` bucket, this module is now the
+single home for the retry/poll primitives shared across the integration tests:
+``is_transient`` (the one definition of "transient transport blip"),
+``TERMINAL_WORKFLOW_STATES``, the per-request ``retry_on_transient``, and the
+scenario-level ``retry_scenario``.
+
+The suites run against a shared dev server whose transport occasionally blips
 (read timeout, "server disconnected without a response", HTTP/2 GOAWAY, stale
 keep-alive) and surfaces as ``ApiException(status=0)``. Those are not real test
 failures.
@@ -31,6 +37,19 @@ DEFAULT_OVERALL_DEADLINE_SECONDS = 600  # 10 minutes
 DEFAULT_BASE_DELAY_SECONDS = 1.0
 DEFAULT_MAX_DELAY_SECONDS = 30.0
 
+# Canonical set of terminal workflow statuses, shared by the poll-to-terminal
+# helpers across the integration suites so the set can't drift file to file.
+TERMINAL_WORKFLOW_STATES = ('COMPLETED', 'FAILED', 'TIMED_OUT', 'TERMINATED')
+
+
+def is_transient(exc):
+    """True when ``exc`` is a transient transport blip against the shared dev
+    server (read timeout, connection reset, HTTP/2 GOAWAY, stale keep-alive)
+    rather than a real failure. status 0/None means no HTTP response arrived.
+    """
+    return isinstance(exc, ApiException) and (
+        getattr(exc, 'transient', False) or exc.status in (0, None))
+
 
 def first_transient_api_exception(exc):
     """Walk the exception chain (``__cause__`` / ``__context__``) and return the
@@ -46,11 +65,32 @@ def first_transient_api_exception(exc):
     cur = exc
     while cur is not None and id(cur) not in seen:
         seen.add(id(cur))
-        if isinstance(cur, ApiException) and (
-                getattr(cur, 'transient', False) or cur.status in (0, None)):
+        if is_transient(cur):
             return cur
         cur = cur.__cause__ or cur.__context__
     return None
+
+
+def retry_on_transient(func, *args, retries=4, base_delay=1, **kwargs):
+    """Retry ``func(*args, **kwargs)`` on a transient (status 0) transport blip
+    with capped-free exponential backoff. Non-transient errors (real 4xx/5xx,
+    assertion failures) raise immediately.
+
+    This is *per-request* retry, suited to idempotent calls (get/register).
+    For non-idempotent scenarios (start_workflow, signal) use ``retry_scenario``,
+    which re-runs the whole scenario from scratch instead.
+    """
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except ApiException as e:
+            if is_transient(e) and attempt < retries - 1:
+                logger.warning(
+                    'transient (%s) API error (attempt %d/%d): %s; retrying',
+                    e.status, attempt + 1, retries, e)
+                time.sleep(base_delay * (2 ** attempt))
+                continue
+            raise
 
 
 def retry_scenario(label, func, *args, deadline=None,

@@ -40,34 +40,15 @@ from conductor.client.http.rest import ApiException
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 
+from tests.integration.retry_helpers import (
+    TERMINAL_WORKFLOW_STATES,
+    is_transient as _is_transient,
+    retry_on_transient as _retry_on_transient,
+)
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-def _is_transient(e):
-    """A transient (status 0) ApiException is a raw transport blip against the
-    shared dev server (read timeout, connection reset, HTTP/2 GOAWAY, stale
-    keep-alive) — not a real failure. status 0 means no HTTP response was
-    received at all."""
-    return isinstance(e, ApiException) and (
-        getattr(e, 'transient', False) or e.status in (0, None))
-
-
-def _retry_on_transient(func, *args, retries=4, base_delay=1, **kwargs):
-    """Retry a workflow/metadata client call on a transient (0) transport blip.
-    These `(0)` errors flake the lease suites on a loaded shared server; retrying
-    absorbs the noise. Non-transient errors (real 4xx/5xx) raise immediately."""
-    for attempt in range(retries):
-        try:
-            return func(*args, **kwargs)
-        except ApiException as e:
-            if _is_transient(e) and attempt < retries - 1:
-                logger.warning(
-                    'transient (%s) API error (attempt %d/%d): %s; retrying',
-                    e.status, attempt + 1, retries, e)
-                time.sleep(base_delay * (2 ** attempt))
-                continue
-            raise
 
 # Short response timeout — task must heartbeat to stay alive
 RESPONSE_TIMEOUT_SECONDS = 10
@@ -194,7 +175,7 @@ class TestLeaseExtension(unittest.TestCase):
         logger.info("Started workflow %s: %s", wf_name, wf_id)
         return wf_id
 
-    TERMINAL_STATES = ('COMPLETED', 'FAILED', 'TIMED_OUT', 'TERMINATED')
+    TERMINAL_STATES = TERMINAL_WORKFLOW_STATES
 
     def _wait_for_workflow(self, wf_id, timeout_seconds=POLL_TIMEOUT_SECONDS,
                            poll_interval=POLL_INTERVAL_SECONDS):
