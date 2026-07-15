@@ -8,8 +8,9 @@ scenario-level ``retry_scenario``.
 
 The suites run against a shared dev server whose transport occasionally blips
 (read timeout, "server disconnected without a response", HTTP/2 GOAWAY, stale
-keep-alive) and surfaces as ``ApiException(status=0)``. Those are not real test
-failures.
+keep-alive) and surfaces as ``ApiException(status=0)``, or whose proxy/LB
+briefly returns a gateway-class 5xx (502/503/504) while the upstream is
+unreachable or restarting. Those are not real test failures.
 
 Rather than re-running the whole suite on such a blip, ``test_all`` establishes
 a single overall wall-clock deadline once, and each *scenario* is retried on a
@@ -41,14 +42,28 @@ DEFAULT_MAX_DELAY_SECONDS = 30.0
 # helpers across the integration suites so the set can't drift file to file.
 TERMINAL_WORKFLOW_STATES = ('COMPLETED', 'FAILED', 'TIMED_OUT', 'TERMINATED')
 
+# Gateway-class 5xx statuses. On the shared dev server these come from the
+# proxy/LB in front of Conductor (nginx "502 Bad Gateway" / "503 Service
+# Temporarily Unavailable" / "504 Gateway Timeout") when the upstream is briefly
+# unreachable or restarting, not from the Conductor app itself — so they're
+# transient infrastructure blips, not real test failures. 500 is deliberately
+# excluded (more likely a genuine app error) and so is 429 (wants Retry-After
+# handling rather than blind backoff).
+GATEWAY_STATUSES = (502, 503, 504)
+
 
 def is_transient(exc):
-    """True when ``exc`` is a transient transport blip against the shared dev
-    server (read timeout, connection reset, HTTP/2 GOAWAY, stale keep-alive)
-    rather than a real failure. status 0/None means no HTTP response arrived.
+    """True when ``exc`` is a transient blip against the shared dev server
+    rather than a real failure. Covers both transport-level hiccups where no
+    HTTP response arrived (read timeout, connection reset, HTTP/2 GOAWAY, stale
+    keep-alive — surfaced as status 0/None or the ``transient`` flag) and
+    gateway-class 5xx (502/503/504) returned by the proxy/LB in front of the
+    server (see ``GATEWAY_STATUSES``).
     """
     return isinstance(exc, ApiException) and (
-        getattr(exc, 'transient', False) or exc.status in (0, None))
+        getattr(exc, 'transient', False)
+        or exc.status in (0, None)
+        or exc.status in GATEWAY_STATUSES)
 
 
 def first_transient_api_exception(exc):
@@ -72,9 +87,10 @@ def first_transient_api_exception(exc):
 
 
 def retry_on_transient(func, *args, retries=4, base_delay=1, **kwargs):
-    """Retry ``func(*args, **kwargs)`` on a transient (status 0) transport blip
-    with capped-free exponential backoff. Non-transient errors (real 4xx/5xx,
-    assertion failures) raise immediately.
+    """Retry ``func(*args, **kwargs)`` on a transient blip (see ``is_transient``:
+    status 0/None transport hiccups plus gateway-class 502/503/504) with
+    capped-free exponential backoff. Non-transient errors (real 4xx, app-level
+    500, assertion failures) raise immediately.
 
     This is *per-request* retry, suited to idempotent calls (get/register).
     For non-idempotent scenarios (start_workflow, signal) use ``retry_scenario``,
@@ -96,8 +112,8 @@ def retry_on_transient(func, *args, retries=4, base_delay=1, **kwargs):
 def retry_on_status(func, *args, statuses=(404,), retries=5, base_delay=1.0,
                     max_delay=None, **kwargs):
     """Retry ``func(*args, **kwargs)`` on an ``ApiException`` whose status is in
-    ``statuses`` (in addition to transient status-0 blips), with capped
-    exponential backoff. Any other error raises immediately.
+    ``statuses`` (in addition to transient blips — see ``is_transient``), with
+    capped exponential backoff. Any other error raises immediately.
 
     Intended for read-after-write races against the shared dev server: a GET
     issued right after a register/update can briefly 404 until the write
@@ -124,8 +140,9 @@ def retry_on_status(func, *args, statuses=(404,), retries=5, base_delay=1.0,
 def retry_scenario(label, func, *args, deadline=None,
                    base_delay=DEFAULT_BASE_DELAY_SECONDS,
                    max_delay=DEFAULT_MAX_DELAY_SECONDS, **kwargs):
-    """Run ``func(*args, **kwargs)``, retrying only on a transient (status 0)
-    transport blip until the shared ``deadline`` passes.
+    """Run ``func(*args, **kwargs)``, retrying only on a transient blip (see
+    ``is_transient``: status 0/None transport hiccups plus gateway-class
+    502/503/504) until the shared ``deadline`` passes.
 
     Args:
         label: Human-readable scenario name for logs.

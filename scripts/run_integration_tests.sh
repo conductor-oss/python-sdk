@@ -7,7 +7,10 @@
 # dedicated AI-enabled server (test_ai_task_types.py and test_ai_examples.py
 # hardcode http://localhost:7001/api, and test_agentic_workflows.py needs an
 # `openai` LLM provider configured on the server), so they don't run against
-# the standard test server this suite targets.
+# the standard test server this suite targets. The entire tests/integration/ai/
+# suite is excluded for the same reason: it drives the agent runtime (POST
+# /api/agent/start plus an LLM provider), which the standard server doesn't
+# expose (it 404s /api/agent/start).
 #
 # The performance test (test_update_task_v2_perf.py) is also excluded by
 # default: it submits ~1000 workflows and takes several minutes. Pass
@@ -93,11 +96,15 @@ for arg in "$@"; do
 done
 
 # The AI/agentic tests always target a dedicated server (see header) and are
-# never part of these buckets.
+# never part of these buckets. The tests/integration/ai/ suite drives the agent
+# runtime (POST /api/agent/start, an LLM provider, SSE streaming): the standard
+# sdkdev server has no agent API and returns 404 for every one of them, so the
+# whole directory is excluded here rather than file-by-file.
 ai_ignore=(
   --ignore=tests/integration/test_ai_task_types.py
   --ignore=tests/integration/test_ai_examples.py
   --ignore=tests/integration/test_agentic_workflows.py
+  --ignore=tests/integration/ai
 )
 
 # Build the target paths + selection for the chosen bucket. The slow buckets are
