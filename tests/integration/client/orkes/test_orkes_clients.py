@@ -184,7 +184,7 @@ class TestOrkesClients:
 
         schedule = self.scheduler_client.get_schedule(SCHEDULE_NAME)
 
-        assert schedule['name'] == SCHEDULE_NAME
+        assert schedule.name == SCHEDULE_NAME
 
         self.scheduler_client.pause_schedule(SCHEDULE_NAME)
 
@@ -195,7 +195,7 @@ class TestOrkesClients:
 
         self.scheduler_client.resume_schedule(SCHEDULE_NAME)
         schedule = self.scheduler_client.get_schedule(SCHEDULE_NAME)
-        assert not schedule['paused']
+        assert not schedule.paused
 
         times = self.scheduler_client.get_next_few_schedule_execution_times("0 */5 * ? * *", limit=1)
         assert (len(times) == 1)
