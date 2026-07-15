@@ -399,7 +399,6 @@ class TestOrkesClients:
         # COMPLETED result immediately, but if it isn't COMPLETED yet we don't
         # fail: we poll the workflow and wait for it to reach a terminal state.
         if execution.status != "COMPLETED":
-            #need to fix the print statement below to have the wf id and the status
             print(
                 f"[test_workflow] workflow_id={getattr(execution, 'workflow_id', None)} status={execution.status} (was expecting COMPLETED - but will poll for that now)"
             )
