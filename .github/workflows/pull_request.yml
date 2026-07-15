@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-      # Temporary: run CI on this branch's pushes until it's exercised via a
-      # real PR targeting main. Remove once that PR validates the workflow.
-      - integ-test-on-pr
   pull_request:
     branches:
       - main
