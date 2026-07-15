@@ -26,6 +26,7 @@ from conductor.client.orkes_clients import OrkesClients
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.simple_task import SimpleTask
+from tests.integration.retry_helpers import retry_scenario
 
 SUFFIX = str(uuid())
 WORKFLOW_NAME = 'IntegrationTestOrkesClientsWf_' + SUFFIX
@@ -66,7 +67,7 @@ class TestOrkesClients:
         self.authorization_client = orkes_clients.get_authorization_client()
         self.workflow_id = None
 
-    def run(self) -> None:
+    def run(self, deadline=None) -> None:
         workflow = ConductorWorkflow(
             executor=self.workflow_executor,
             name=WORKFLOW_NAME,
@@ -77,13 +78,24 @@ class TestOrkesClients:
         workflow >> SimpleTask("simple_task", "simple_task_ref")
         workflowDef = workflow.to_workflow_def()
 
-        self.test_workflow_lifecycle(workflowDef, workflow)
-        self.test_task_lifecycle()
-        self.test_secret_lifecycle()
-        self.test_scheduler_lifecycle(workflowDef)
-        self.test_application_lifecycle()
-        self.__test_unit_test_workflow()
-        self.test_user_group_permissions_lifecycle(workflowDef)
+        # Each lifecycle is a scenario: on a transient (status 0) blip against
+        # the shared dev server it retries from the top until the shared deadline
+        # passes (see retry_helpers.retry_scenario); real failures raise at once.
+        retry_scenario('test_workflow_lifecycle', self.test_workflow_lifecycle,
+                       workflowDef, workflow, deadline=deadline)
+        retry_scenario('test_task_lifecycle', self.test_task_lifecycle,
+                       deadline=deadline)
+        retry_scenario('test_secret_lifecycle', self.test_secret_lifecycle,
+                       deadline=deadline)
+        retry_scenario('test_scheduler_lifecycle', self.test_scheduler_lifecycle,
+                       workflowDef, deadline=deadline)
+        retry_scenario('test_application_lifecycle', self.test_application_lifecycle,
+                       deadline=deadline)
+        retry_scenario('__test_unit_test_workflow', self.__test_unit_test_workflow,
+                       deadline=deadline)
+        retry_scenario('test_user_group_permissions_lifecycle',
+                       self.test_user_group_permissions_lifecycle, workflowDef,
+                       deadline=deadline)
 
     def test_workflow_lifecycle(self, workflowDef, workflow):
         self.__test_register_workflow_definition(workflowDef)
@@ -382,6 +394,22 @@ class TestOrkesClients:
         execution = self.workflow_client.test_workflow(testRequest)
         assert execution != None
 
+        print(
+            f"[test_workflow] workflow_id={getattr(execution, 'workflow_id', None)} "
+            f"status={execution.status} "
+            f"task_count={len(execution.tasks or [])}"
+        )
+        for t in (execution.tasks or []):
+            print(
+                f"[test_workflow]   task ref={t.reference_task_name} "
+                f"type={t.task_type} status={t.status} "
+                f"retried={getattr(t, 'retry_count', None)}"
+            )
+        if execution.status != "COMPLETED":
+            print(
+                f"[test_workflow] non-terminal output={getattr(execution, 'output', None)}"
+            )
+
         # Ensure workflow is completed successfully
         assert execution.status == "COMPLETED"
 
@@ -569,9 +597,9 @@ class TestOrkesClients:
         self.task_client.add_task_log(polledTask.task_id, "Polled task...")
 
         taskExecLogs = self.task_client.get_task_logs(polledTask.task_id)
-        taskExecLogs[0].log == "Polled task..."
+        assert taskExecLogs[0].log == "Polled task..."
 
-        # First task of second workflow is in the queue
+        # First task of second workflow is still in the queue
         assert self.task_client.get_queue_size_for_task(TASK_TYPE) == 1
 
         taskResult = TaskResult(

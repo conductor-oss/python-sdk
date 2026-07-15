@@ -17,14 +17,17 @@ from conductor.client.workflow.task.simple_task import SimpleTask
 from conductor.client.workflow.task.sub_workflow_task import SubWorkflowTask, InlineSubWorkflowTask
 from conductor.client.workflow.task.switch_task import SwitchTask
 from conductor.client.workflow.task.terminate_task import TerminateTask, WorkflowStatus
+from tests.integration.retry_helpers import retry_scenario
 
 WORKFLOW_NAME = 'python_test_workflow'
 TASK_NAME = 'python_test_simple_task'
 WORKFLOW_OWNER_EMAIL = "test@test"
 
 
-def run_workflow_definition_tests(workflow_executor: WorkflowExecutor) -> None:
-    test_kitchensink_workflow_registration(workflow_executor)
+def run_workflow_definition_tests(workflow_executor: WorkflowExecutor, deadline=None) -> None:
+    retry_scenario('test_kitchensink_workflow_registration',
+                   test_kitchensink_workflow_registration, workflow_executor,
+                   deadline=deadline)
 
 
 def generate_tasks_defs() -> List[TaskDef]:

@@ -414,6 +414,15 @@ class TestAsyncLeaseExtension(unittest.TestCase):
                       f"Task should be TIMED_OUT/FAILED, got {task.status}")
         print("\n  PASS: Async task timed out as expected without heartbeat")
 
+    # NOTE: excluded from the long-* CI buckets (reusing the
+    # server_timeout_unreliable marker). This "overhead" test compares
+    # server-side task durations (end_time - start_time) on the shared sdkdev
+    # server, so it mostly measures queue/scheduling latency rather than the
+    # SDK's LeaseManager.track() bookkeeping (a dict insert). On a loaded server
+    # a fast task can stay non-terminal past the wait budget, so it flakes for
+    # reasons unrelated to the SDK. A deterministic in-process micro-benchmark
+    # would be the right home for the no-overhead claim if we want to keep it.
+    @pytest.mark.server_timeout_unreliable
     def test_03_no_performance_overhead(self):
         """Heartbeat tracking adds no meaningful overhead to fast async tasks."""
         print("\n" + "=" * 80)

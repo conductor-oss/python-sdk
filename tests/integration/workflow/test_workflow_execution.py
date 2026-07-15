@@ -12,6 +12,7 @@ from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.simple_task import SimpleTask
 from tests.integration.resources.worker.python.python_worker import *
+from tests.integration.retry_helpers import retry_scenario
 
 WORKFLOW_NAME = "sdk_python_integration_test_workflow"
 WORKFLOW_DESCRIPTION = "Python SDK Integration Test"
@@ -36,7 +37,8 @@ logger = logging.getLogger(
 )
 
 
-def run_workflow_execution_tests(configuration: Configuration, workflow_executor: WorkflowExecutor):
+def run_workflow_execution_tests(configuration: Configuration, workflow_executor: WorkflowExecutor,
+                                 deadline=None):
     workers = [
         ClassWorker(TASK_NAME),
         ClassWorkerWithDomain(TASK_NAME),
@@ -59,23 +61,35 @@ def run_workflow_execution_tests(configuration: Configuration, workflow_executor
     # (they'd surface as an opaque generic Exception instead). finally cleans up
     # on both success and failure while letting the original error propagate.
     try:
-        scenario_get_workflow_by_correlation_ids(workflow_executor)
+        retry_scenario('scenario_get_workflow_by_correlation_ids',
+                       scenario_get_workflow_by_correlation_ids, workflow_executor,
+                       deadline=deadline)
         logger.debug('finished workflow correlation ids test')
-        scenario_workflow_registration(workflow_executor)
+        retry_scenario('scenario_workflow_registration',
+                       scenario_workflow_registration, workflow_executor,
+                       deadline=deadline)
         logger.debug('finished workflow registration tests')
-        scenario_workflow_execution(
+        retry_scenario(
+            'scenario_workflow_execution', scenario_workflow_execution,
             workflow_quantity=6,
             workflow_name=WORKFLOW_NAME,
             workflow_executor=workflow_executor,
-            workflow_completion_timeout=5.0
+            workflow_completion_timeout=5.0,
+            deadline=deadline,
         )
-        scenario_decorated_workers(workflow_executor)
+        retry_scenario('scenario_decorated_workers',
+                       scenario_decorated_workers, workflow_executor,
+                       deadline=deadline)
         logger.debug('finished decorated workers tests')
-        scenario_execute_workflow_async_features(workflow_executor)
+        retry_scenario('scenario_execute_workflow_async_features',
+                       scenario_execute_workflow_async_features, workflow_executor,
+                       deadline=deadline)
         logger.debug('finished execute_workflow reactive features tests')
-        scenario_execute_workflow_error_handling(workflow_executor)
+        retry_scenario('scenario_execute_workflow_error_handling',
+                       scenario_execute_workflow_error_handling, workflow_executor,
+                       deadline=deadline)
         logger.debug('finished execute_workflow error handling tests')
-        run_signal_tests(configuration, workflow_executor)
+        run_signal_tests(configuration, workflow_executor, deadline=deadline)
         logger.debug('finished signal API tests')
     finally:
         task_handler.stop_processes()
@@ -473,28 +487,44 @@ def _wait_for_workflow_completion(workflow_executor: WorkflowExecutor, workflow_
 
 # ===== SIGNAL TESTS =====
 
-def run_signal_tests(configuration: Configuration, workflow_executor: WorkflowExecutor):
-    """Run all signal API tests using WorkflowExecutor methods"""
+def run_signal_tests(configuration: Configuration, workflow_executor: WorkflowExecutor,
+                     deadline=None):
+    """Run all signal API tests using WorkflowExecutor methods.
+
+    Each scenario is retried at the scenario level on a transient blip (see
+    retry_scenario): a retry starts a fresh workflow and issues a fresh sync
+    signal, so the asserted SignalResponse is always from a signal this attempt
+    actually sent — no double-signalling of a single workflow.
+    """
     logger.info('START: Signal API tests using WorkflowExecutor')
 
     try:
         # Register signal test workflows (same as original test)
-        _register_signal_test_workflows(workflow_executor)
+        retry_scenario('_register_signal_test_workflows',
+                       _register_signal_test_workflows, workflow_executor,
+                       deadline=deadline)
 
         # Test sync signal with different return strategies
-        scenario_signal_target_workflow(workflow_executor)
-        scenario_signal_blocking_workflow(workflow_executor)
-        scenario_signal_blocking_task(workflow_executor)
-        scenario_signal_blocking_task_input(workflow_executor)
+        retry_scenario('scenario_signal_target_workflow',
+                       scenario_signal_target_workflow, workflow_executor, deadline=deadline)
+        retry_scenario('scenario_signal_blocking_workflow',
+                       scenario_signal_blocking_workflow, workflow_executor, deadline=deadline)
+        retry_scenario('scenario_signal_blocking_task',
+                       scenario_signal_blocking_task, workflow_executor, deadline=deadline)
+        retry_scenario('scenario_signal_blocking_task_input',
+                       scenario_signal_blocking_task_input, workflow_executor, deadline=deadline)
 
         # Test default return strategy
-        scenario_signal_default_strategy(workflow_executor)
+        retry_scenario('scenario_signal_default_strategy',
+                       scenario_signal_default_strategy, workflow_executor, deadline=deadline)
 
         # Test async signal
-        scenario_signal_async(workflow_executor)
+        retry_scenario('scenario_signal_async',
+                       scenario_signal_async, workflow_executor, deadline=deadline)
 
         # Test to_dict fix
-        scenario_signal_to_dict_fix(workflow_executor)
+        retry_scenario('scenario_signal_to_dict_fix',
+                       scenario_signal_to_dict_fix, workflow_executor, deadline=deadline)
 
         logger.info('All signal tests completed successfully')
 
