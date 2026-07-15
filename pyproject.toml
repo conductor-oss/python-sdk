@@ -192,17 +192,15 @@ line-ending = "auto"
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 markers = [
-<<<<<<< HEAD
     "integration: requires a live Agentspan-compatible server",
     "e2e: requires a live server and AGENTSPAN_SERVER_URL",
     "sse: requires SSE streaming (AGENTSPAN_STREAMING_ENABLED=true)",
     "agent_correctness: marks tests as agent correctness tests",
     "semantic: marks tests that use an LLM judge for semantic assertions",
-=======
     "slow_sync: long-running sync lease-extension tests (~90s)",
     "slow_async: long-running async lease-extension tests (~90s)",
     "slow_test_all: long-running aggregate workflow-client test_all (~83s)",
->>>>>>> 973c79cf (wip, testing/fixes)
+    "server_timeout_unreliable: depends on server-side task timeout firing in a bounded window; excluded from CI",
 ]
 
 [tool.coverage.run]

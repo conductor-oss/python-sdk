@@ -33,6 +33,11 @@
 #   test-all    aggregate workflow-client test_all (test_workflow_client_intg.py, ~83s)
 #   all         the full suite (no bucket filtering) — for a complete local run
 #
+# The long-* buckets deselect the no-heartbeat test_02 cases (marker
+# server_timeout_unreliable): those assert a server-side task timeout that the
+# sdkdev server doesn't reliably fire on a CI-bounded timeline. Use --bucket=all
+# (or target the test directly) to run them anyway.
+#
 #   ./scripts/run_integration_tests.sh                  # fast: skips slow buckets
 #   ./scripts/run_integration_tests.sh --bucket=long-sync
 #   ./scripts/run_integration_tests.sh --bucket=all     # run everything
@@ -113,13 +118,17 @@ case "$bucket" in
   # never in scope and perf_ignore is unnecessary here. This also means
   # --with-perf has no effect on these buckets; the perf test is only reachable
   # via the core/all buckets.
+  # The no-heartbeat "server should time the task out" cases (test_02) are
+  # deselected here: the sdkdev server does not reliably time a task out on a
+  # CI-bounded timeline, so they flake for reasons unrelated to the SDK. They
+  # carry the server_timeout_unreliable marker and still run under --bucket=all.
   long-sync)
     targets=("$LEASE_SYNC")
-    select=(-m slow_sync)
+    select=(-m "slow_sync and not server_timeout_unreliable")
     ;;
   long-async)
     targets=("$LEASE_ASYNC")
-    select=(-m slow_async)
+    select=(-m "slow_async and not server_timeout_unreliable")
     ;;
   test-all)
     targets=("$TEST_ALL_FILE")

@@ -318,6 +318,15 @@ class TestLeaseExtension(unittest.TestCase):
         finally:
             stop_workers()
 
+    # NOTE: excluded from the long-* CI buckets. This scenario asserts a purely
+    # server-side mechanic — the server timing out the task's expired lease on
+    # its own. The sdkdev server does not seem to consistently/reliably time out
+    # the task by itself on a timeline that works with integration testing, so
+    # gating CI on it produces flakes unrelated to the SDK. The SDK behaviour
+    # (heartbeats keeping a task alive) is still covered by test_01.
+    # Deselected via `-m "... and not server_timeout_unreliable"`; still runs
+    # under --bucket=all or when targeted directly.
+    @pytest.mark.server_timeout_unreliable
     def test_02_without_heartbeat_times_out(self):
         """Task WITHOUT lease_extend_enabled times out when sleep > responseTimeout."""
         print("\n" + "=" * 80)
