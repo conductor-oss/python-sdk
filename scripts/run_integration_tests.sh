@@ -47,6 +47,15 @@
 #   # short tracebacks + a one-line reason for every failure/skip, with live logs
 #   ./scripts/run_integration_tests.sh -ra --tb=short --log-cli-level=INFO
 #
+#   # watch a slow bucket live: -s streams print() and the worker/child-process
+#   # task logs; --log-cli-level=INFO streams the main-process logger.info lines
+#   ./scripts/run_integration_tests.sh --bucket=long-sync -s --log-cli-level=INFO
+#
+#   # same, but with timestamped live logs (what CI uses)
+#   ./scripts/run_integration_tests.sh --bucket=long-sync -s \
+#     --log-cli-level=INFO \
+#     --log-cli-format='%(asctime)s %(levelname)s %(name)s: %(message)s'
+#
 #   # stop at the first failure instead of waiting for the whole suite
 #   ./scripts/run_integration_tests.sh -x --tb=long
 #

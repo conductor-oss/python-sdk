@@ -140,4 +140,7 @@ jobs:
           pip install pytest
 
       - name: Run integration tests
-        run: bash scripts/run_integration_tests.sh --bucket=${{ matrix.bucket }}
+        run: >-
+          bash scripts/run_integration_tests.sh --bucket=${{ matrix.bucket }}
+          -s --log-cli-level=INFO
+          --log-cli-format='%(asctime)s %(levelname)s %(name)s: %(message)s'

@@ -72,10 +72,26 @@ def _retry_on_transient(func, *args, retries=4, base_delay=1, **kwargs):
 # Short response timeout — task must heartbeat to stay alive
 RESPONSE_TIMEOUT_SECONDS = 10
 
-# Task sleeps longer than the response timeout to prove heartbeat works.
-# Must be long enough that the server's workflow sweeper (which runs every
-# ~30s) catches the expired task BEFORE the worker completes.
+# The heartbeat task sleeps longer than the response timeout so that, without
+# heartbeats, its lease would expire mid-execution. Heartbeats keep it alive and
+# it still completes. This only needs to exceed RESPONSE_TIMEOUT_SECONDS.
 TASK_SLEEP_SECONDS = 50
+
+# The no-heartbeat task must NOT report COMPLETED before the server times its
+# expired lease out; otherwise the completion "wins" the race and the task ends
+# up COMPLETED (the historical flake on a loaded shared server, where the
+# sweeper runs late). Holding the task far longer than any server timeout path
+# (responseTimeout + sweeper, and the task's own timeoutSeconds) guarantees the
+# server always times it out first. The test itself doesn't wait this long: it
+# polls for the terminal state and returns as soon as the timeout lands, and
+# teardown force-terminates the still-sleeping worker process.
+NO_HEARTBEAT_HOLD_SECONDS = 600
+
+# Poll budget/interval for waiting on the workflow to reach the expected
+# terminal state. Generous ceiling so slow-server variance is absorbed; the
+# happy path returns in well under a minute.
+POLL_TIMEOUT_SECONDS = 600
+POLL_INTERVAL_SECONDS = 5
 
 # Per-run suffix so this suite's task/workflow names don't collide with other
 # runs (or other PRs/developers) on the shared dev server. With fixed names,
@@ -124,12 +140,16 @@ def lease_heartbeat_task(job_id: str) -> dict:
     overwrite_task_def=True,
 )
 def lease_no_heartbeat_task(job_id: str) -> dict:
-    """Long-running task without heartbeat — should time out."""
-    logger.info("[no_heartbeat_task] Starting job %s, sleeping %ss (timeout=%ss)",
-                job_id, TASK_SLEEP_SECONDS, RESPONSE_TIMEOUT_SECONDS)
-    time.sleep(TASK_SLEEP_SECONDS)
+    """Long-running task without heartbeat — should time out.
+
+    Holds the task well past every server timeout path so the server always
+    times the expired lease out before this ever tries to report completion.
+    """
+    logger.info("[no_heartbeat_task] Starting job %s, holding %ss (timeout=%ss)",
+                job_id, NO_HEARTBEAT_HOLD_SECONDS, RESPONSE_TIMEOUT_SECONDS)
+    time.sleep(NO_HEARTBEAT_HOLD_SECONDS)
     logger.info("[no_heartbeat_task] Completed job %s", job_id)
-    return {'job_id': job_id, 'status': 'completed', 'slept': TASK_SLEEP_SECONDS}
+    return {'job_id': job_id, 'status': 'completed', 'slept': NO_HEARTBEAT_HOLD_SECONDS}
 
 
 # -- Test class --------------------------------------------------------------
@@ -176,25 +196,27 @@ class TestLeaseExtension(unittest.TestCase):
 
     TERMINAL_STATES = ('COMPLETED', 'FAILED', 'TIMED_OUT', 'TERMINATED')
 
-    def _wait_for_workflow(self, wf_id, timeout_seconds=60):
+    def _wait_for_workflow(self, wf_id, timeout_seconds=POLL_TIMEOUT_SECONDS,
+                           poll_interval=POLL_INTERVAL_SECONDS):
         """Poll until workflow reaches a terminal state. If it doesn't within
         the budget, dump server-side diagnostics so the ensuing assertion shows
         *why* (e.g. a task stuck in SCHEDULED with no poller) rather than only a
         bare status mismatch.
         """
-        for i in range(timeout_seconds):
+        deadline = time.monotonic() + timeout_seconds
+        while time.monotonic() < deadline:
             try:
                 wf = self.workflow_client.get_workflow(wf_id, include_tasks=True)
             except ApiException as e:
                 # A transient blip on a single poll shouldn't abort the wait;
                 # keep polling until the budget is exhausted.
                 if _is_transient(e):
-                    time.sleep(1)
+                    time.sleep(poll_interval)
                     continue
                 raise
             if wf.status in self.TERMINAL_STATES:
                 return wf
-            time.sleep(1)
+            time.sleep(poll_interval)
         wf = _retry_on_transient(self.workflow_client.get_workflow,
                                  wf_id, include_tasks=True)
         if wf.status not in self.TERMINAL_STATES:
@@ -230,8 +252,14 @@ class TestLeaseExtension(unittest.TestCase):
             except Exception as e:  # diagnostics must never mask the real failure
                 print(f"  [diag] {task.task_def_name}: failed to fetch poll data: {e!r}")
 
-    def _run_workers_in_background(self, duration_seconds=60):
-        """Start workers in a background thread, return stop function."""
+    def _run_workers_in_background(self, duration_seconds=POLL_TIMEOUT_SECONDS + 60):
+        """Start workers in a background thread, return stop function.
+
+        Workers stay alive across the whole poll window; the test's `finally`
+        calls the returned stop() as soon as it finishes (usually in well under
+        a minute), and the timer is only a backstop. stop() is idempotent so the
+        backstop firing after the test already stopped is harmless.
+        """
         handler = TaskHandler(
             configuration=self.config,
             scan_for_annotated_workers=True,
@@ -240,7 +268,12 @@ class TestLeaseExtension(unittest.TestCase):
         # Expose the handler so _dump_workflow_diagnostics can report liveness.
         self.__class__._active_handler = handler
 
+        stopped = threading.Event()
+
         def stop():
+            if stopped.is_set():
+                return
+            stopped.set()
             handler.stop_processes()
 
         # Auto-stop after duration
@@ -260,12 +293,12 @@ class TestLeaseExtension(unittest.TestCase):
         wf_name = f'test_lease_heartbeat_{RUN_ID}'
         self._register_workflow(wf_name, HEARTBEAT_TASK)
 
-        stop_workers = self._run_workers_in_background(duration_seconds=90)
+        stop_workers = self._run_workers_in_background()
         time.sleep(3)  # let workers start
 
         try:
             wf_id = self._start_workflow(wf_name, 'HEARTBEAT-001')
-            wf = self._wait_for_workflow(wf_id, timeout_seconds=80)
+            wf = self._wait_for_workflow(wf_id)
 
             print(f"\n  Final status: {wf.status}")
             for task in (wf.tasks or []):
@@ -289,18 +322,18 @@ class TestLeaseExtension(unittest.TestCase):
         """Task WITHOUT lease_extend_enabled times out when sleep > responseTimeout."""
         print("\n" + "=" * 80)
         print("TEST: Without heartbeat — task should TIME OUT")
-        print(f"  responseTimeoutSeconds={RESPONSE_TIMEOUT_SECONDS}s, task sleeps {TASK_SLEEP_SECONDS}s")
+        print(f"  responseTimeoutSeconds={RESPONSE_TIMEOUT_SECONDS}s, task holds {NO_HEARTBEAT_HOLD_SECONDS}s")
         print("=" * 80)
 
         wf_name = f'test_lease_no_heartbeat_{RUN_ID}'
         self._register_workflow(wf_name, NO_HEARTBEAT_TASK)
 
-        stop_workers = self._run_workers_in_background(duration_seconds=90)
+        stop_workers = self._run_workers_in_background()
         time.sleep(3)  # let workers start
 
         try:
             wf_id = self._start_workflow(wf_name, 'NO-HEARTBEAT-001')
-            wf = self._wait_for_workflow(wf_id, timeout_seconds=80)
+            wf = self._wait_for_workflow(wf_id)
 
             print(f"\n  Final status: {wf.status}")
             for task in (wf.tasks or []):
