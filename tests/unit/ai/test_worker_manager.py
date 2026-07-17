@@ -356,3 +356,39 @@ class TestSchemaRegistryFilter:
         # Clean up
         for f in schema_filters:
             conductor_logger.removeFilter(f)
+
+
+class TestWindowsThreadIsolation:
+    """On Windows the gate applies thread isolation via worker_isolation directly."""
+
+    def test_windows_gate_applies_thread_isolation(self):
+        config = MagicMock()
+        manager = WorkerManager(configuration=config)
+        with patch(
+            "conductor.ai.agents.runtime.worker_manager.platform.system",
+            return_value="Windows",
+        ), patch(
+            "conductor.ai.agents.runtime.worker_manager.apply_thread_isolation"
+        ) as mock_apply, patch(
+            "conductor.client.automator.task_handler.TaskHandler"
+        ) as mock_th:
+            mock_th.return_value.task_runner_processes = []
+            mock_th.return_value.metrics_provider_process = None
+            manager.start()
+        mock_apply.assert_called_once_with()
+
+    def test_non_windows_gate_does_not_apply(self):
+        config = MagicMock()
+        manager = WorkerManager(configuration=config)
+        with patch(
+            "conductor.ai.agents.runtime.worker_manager.platform.system",
+            return_value="Linux",
+        ), patch(
+            "conductor.ai.agents.runtime.worker_manager.apply_thread_isolation"
+        ) as mock_apply, patch(
+            "conductor.client.automator.task_handler.TaskHandler"
+        ) as mock_th:
+            mock_th.return_value.task_runner_processes = []
+            mock_th.return_value.metrics_provider_process = None
+            manager.start()
+        mock_apply.assert_not_called()
