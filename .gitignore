@@ -170,3 +170,6 @@ codegen/
 .vscode/
 tests/unit/automator/_trial_temp/_trial_marker
 tests/unit/automator/_trial_temp/_trial_marker
+
+# agent e2e bundle staging output (scripts/package-e2e-bundle.sh)
+scripts/e2e-bundle-dist/
