@@ -358,32 +358,37 @@ class TestSchemaRegistryFilter:
             conductor_logger.removeFilter(f)
 
 
-class TestThreadPatchAlias:
-    """The Windows patch entry point now delegates to worker_isolation."""
+class TestWindowsThreadIsolation:
+    """On Windows the gate applies thread isolation via worker_isolation directly."""
 
-    def test_alias_delegates_to_apply_thread_isolation(self):
-        import conductor.ai.agents.runtime.worker_manager as wm
-
-        with patch(
-            "conductor.ai.agents.runtime.worker_manager.apply_thread_isolation"
-        ) as mock_apply:
-            wm._patch_conductor_use_threads_on_windows()
-        mock_apply.assert_called_once_with()
-
-    def test_windows_gate_calls_the_alias(self):
-        import conductor.ai.agents.runtime.worker_manager as wm
-
+    def test_windows_gate_applies_thread_isolation(self):
         config = MagicMock()
         manager = WorkerManager(configuration=config)
         with patch(
             "conductor.ai.agents.runtime.worker_manager.platform.system",
             return_value="Windows",
         ), patch(
-            "conductor.ai.agents.runtime.worker_manager._patch_conductor_use_threads_on_windows"
-        ) as mock_patch, patch(
+            "conductor.ai.agents.runtime.worker_manager.apply_thread_isolation"
+        ) as mock_apply, patch(
             "conductor.client.automator.task_handler.TaskHandler"
         ) as mock_th:
             mock_th.return_value.task_runner_processes = []
             mock_th.return_value.metrics_provider_process = None
             manager.start()
-        mock_patch.assert_called_once_with()
+        mock_apply.assert_called_once_with()
+
+    def test_non_windows_gate_does_not_apply(self):
+        config = MagicMock()
+        manager = WorkerManager(configuration=config)
+        with patch(
+            "conductor.ai.agents.runtime.worker_manager.platform.system",
+            return_value="Linux",
+        ), patch(
+            "conductor.ai.agents.runtime.worker_manager.apply_thread_isolation"
+        ) as mock_apply, patch(
+            "conductor.client.automator.task_handler.TaskHandler"
+        ) as mock_th:
+            mock_th.return_value.task_runner_processes = []
+            mock_th.return_value.metrics_provider_process = None
+            manager.start()
+        mock_apply.assert_not_called()

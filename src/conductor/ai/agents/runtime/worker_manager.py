@@ -21,17 +21,6 @@ from conductor.client.automator.worker_isolation import apply_thread_isolation
 logger = logging.getLogger("conductor.ai.agents.worker_manager")
 
 
-def _patch_conductor_use_threads_on_windows() -> None:
-    """Deprecated alias — kept for existing callers.
-
-    The Process->Thread shim (plus the Queue->queue.Queue half it was
-    missing) now lives in :mod:`conductor.client.automator.worker_isolation`
-    and is also activated by ``CONDUCTOR_WORKER_ISOLATION=thread``, read by
-    :class:`TaskHandler` itself. See :func:`apply_thread_isolation`.
-    """
-    apply_thread_isolation()
-
-
 if TYPE_CHECKING:
     from conductor.client.automator.task_handler import TaskHandler
     from conductor.client.configuration.configuration import Configuration
@@ -89,8 +78,11 @@ class WorkerManager:
         """
         from conductor.client.automator.task_handler import TaskHandler
 
+        # Windows always needs thread isolation (spawn-pickling of worker
+        # closures fails there); other environments opt in via
+        # CONDUCTOR_WORKER_ISOLATION=thread, read by TaskHandler itself.
         if platform.system() == "Windows":
-            _patch_conductor_use_threads_on_windows()
+            apply_thread_isolation()
 
         with self._lock:
             if self._task_handler is None:
