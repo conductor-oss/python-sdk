@@ -35,12 +35,12 @@ logger = logging.getLogger(
 )
 
 _decorated_functions = {}
-_VALID_MP_START_METHODS = {"spawn", "fork", "forkserver"}
-_mp_fork_set = False
-if not _mp_fork_set:
+
+_mp_spawn_set = False
+if not _mp_spawn_set:
     try:
         set_start_method("spawn")
-        _mp_fork_set = True
+        _mp_spawn_set = True
     except Exception as e:
         logger.info("error when setting multiprocessing.set_start_method - maybe the context is set %s", e.args)
 if platform == "darwin":
