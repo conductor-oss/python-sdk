@@ -8,7 +8,7 @@ import time
 
 from conductor.client.context import get_task_context
 from conductor.client.worker.worker_task import worker_task
-from examples.user_example.models import User
+from user_example.models import User
 
 
 @worker_task(

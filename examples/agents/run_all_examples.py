@@ -64,6 +64,12 @@ DAEMON_SKIP = {
 }
 # Require external infra / providers not available in this environment.
 INFRA_SKIP = {
+    "30_skills_dg_review.py": "needs the dg skill cloned to ~/.claude/skills/dg",
+    "32_skills_multi_agent.py": "needs the dg skill cloned to ~/.claude/skills/dg",
+    "75_wait_for_message.py": "needs the workflow messages API (not in conductor-oss 3.32.0-rc.8)",
+    "82_fan_out_fan_in.py": "needs the workflow messages API (not in conductor-oss 3.32.0-rc.8)",
+    "83_stateful_resume.py": "needs the workflow messages API (not in conductor-oss 3.32.0-rc.8)",
+    "84_deterministic_stop.py": "needs the workflow messages API (not in conductor-oss 3.32.0-rc.8)",
     "04_mcp_weather.py": "needs an MCP server",
     "04_http_and_mcp_tools.py": "needs an MCP server",
     "16f_credentials_mcp_tool.py": "needs an MCP server",

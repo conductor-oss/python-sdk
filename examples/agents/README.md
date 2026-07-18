@@ -120,7 +120,33 @@ To install all framework dependencies at once:
 uv pip install langchain langchain-core langchain-openai langgraph openai-agents google-adk
 ```
 
-### 2. Configure your environment
+### 2. Start a Conductor server
+
+The agent examples need a Conductor server with the **agent runtime**, which is on by
+default from **conductor-oss `3.32.0-rc.8`** onward (the same version pinned by this
+repo's agent-e2e CI). Older servers — including the `latest` stable line installed by
+`conductor server start` (3.30.x at the time of writing) — do not expose the
+`/api/agent/*` endpoints, and every example fails with
+`AgentNotFoundError: HTTP 404 ... api/agent/start`.
+
+Start a known-good version with the [Conductor CLI](https://github.com/conductor-oss/conductor-cli):
+
+```bash
+conductor server start --version 3.32.0-rc.8
+```
+
+Or run the boot JAR from Maven Central directly:
+
+```bash
+curl -fL -o conductor-server.jar \
+  "https://repo1.maven.org/maven2/org/conductoross/conductor-server/3.32.0-rc.8/conductor-server-3.32.0-rc.8-boot.jar"
+java -jar conductor-server.jar --server.port=8080
+```
+
+Export your LLM provider API keys (e.g. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`) in the
+shell that starts the server — the server auto-enables the matching providers.
+
+### 3. Configure your environment
 
 Export environment variables:
 
@@ -131,14 +157,14 @@ export AGENTSPAN_SERVER_URL=http://localhost:8080/api
 # export AGENTSPAN_AUTH_SECRET=<secret>
 ```
 
-#### 2.1. Choose a model
+#### 3.1. Choose a model
 
 The `AGENTSPAN_LLM_MODEL` variable uses the `provider/model-name` format. Examples:
 
 | Provider | Model string | API key env var |
 |----------|-------------|-----------------|
-| OpenAI | `anthropic/claude-sonnet-4-6` (default) | `OPENAI_API_KEY` |
-| Anthropic | `anthropic/claude-sonnet-4-20250514` | `ANTHROPIC_API_KEY` |
+| OpenAI | `openai/gpt-4o-mini` | `OPENAI_API_KEY` |
+| Anthropic | `anthropic/claude-sonnet-4-6` (default) | `ANTHROPIC_API_KEY` |
 | Google Gemini | `google_gemini/gemini-2.0-flash` | `GOOGLE_GEMINI_API_KEY` |
 | AWS Bedrock | `aws_bedrock/...` | AWS credentials |
 | Azure OpenAI | `azure_openai/...` | Azure credentials |
@@ -147,7 +173,7 @@ All supported providers: `openai`, `anthropic`, `google_gemini`, `google_vertex_
 `azure_openai`, `aws_bedrock`, `cohere`, `mistral`, `groq`, `perplexity`,
 `hugging_face`, `deepseek`.
 
-### 3. Run an example
+### 4. Run an example
 
 ```bash
 # Core SDK examples

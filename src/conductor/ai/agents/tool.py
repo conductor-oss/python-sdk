@@ -1159,6 +1159,36 @@ def agent_tool(
 # ── Utilities ───────────────────────────────────────────────────────────
 
 
+def _entry_resolves_to(entry_func: Any, original: Callable[..., Any],
+                       func: Callable[..., Any]) -> bool:
+    """True if a ``_decorated_functions`` entry refers to *original*/*func*.
+
+    A plain identity check is not enough: once a ``@worker_task`` function is
+    used as an agent tool, ``ToolRegistry.register_tool_workers`` re-registers
+    the same task name with a spawn-safe ``ToolWorkerEntry`` wrapper, which
+    carries the original either directly (``fn_direct``) or by qualified name
+    (``fn_ref``). Walk the ``__wrapped__`` chain and those carriers.
+    """
+    obj = entry_func
+    for _ in range(8):  # bounded — wrapper chains are shallow
+        if obj is None:
+            return False
+        if obj is original or obj is func:
+            return True
+        fn_direct = getattr(obj, "fn_direct", None)
+        if fn_direct is not None and (fn_direct is original or fn_direct is func):
+            return True
+        fn_ref = getattr(obj, "fn_ref", None)
+        if (
+            fn_ref is not None
+            and getattr(fn_ref, "module", None) == getattr(original, "__module__", None)
+            and getattr(fn_ref, "qualname", None) == getattr(original, "__qualname__", None)
+        ):
+            return True
+        obj = getattr(obj, "__wrapped__", None)
+    return False
+
+
 def _try_worker_task(func: Callable[..., Any]) -> Optional[ToolDef]:
     """Try to build a :class:`ToolDef` from a ``@worker_task``-decorated function.
 
@@ -1174,7 +1204,7 @@ def _try_worker_task(func: Callable[..., Any]) -> Optional[ToolDef]:
     original = getattr(func, "__wrapped__", func)
 
     for (task_name, _domain), entry in _decorated_functions.items():
-        if entry["func"] is original or entry["func"] is func:
+        if _entry_resolves_to(entry["func"], original, func):
             from conductor.ai.agents._internal.schema_utils import schema_from_function
 
             description = inspect.getdoc(original) or ""
