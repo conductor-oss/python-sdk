@@ -5,7 +5,9 @@
 Full verification of the SDK example catalog against a live Conductor server. This
 report tracks the status of each suite so it can be re-checked as the SDK and server
 evolve. **This PR is report + documentation only** — fixes for the bugs found are
-proposed separately as a draft PR, pending a decision on whether to take them.
+proposed separately in draft PR
+[#439](https://github.com/conductor-oss/python-sdk/pull/439), pending a decision on
+whether to take them.
 
 ## Environment
 
@@ -32,7 +34,7 @@ the CLI's floating `latest` at an rc — this resolves itself when 3.32.0 GA shi
 
 ## Results — agents suite (`examples/agents/`, 146 files)
 
-`run_all_examples.py` with the fixes from the companion fixes PR applied:
+`run_all_examples.py` with the fixes from the companion fixes PR (#439) applied:
 
 | Status | Count | Notes |
 |--------|------:|-------|
@@ -69,7 +71,7 @@ Before fixes (same server): 91 PASS / 12 ERROR / 3 HUNG / 40 SKIP.
 Static check: every `.py` under `examples/` compiles (`compileall`). Unit tests:
 `tests/unit/ai` — 1744 passed.
 
-## Bugs found (fixes proposed in the companion draft PR)
+## Bugs found (fixes proposed in the companion draft PR, #439)
 
 Statuses marked "fixed" below and in the tables above reflect runs **with the
 companion PR's fixes applied**; without them, each item reproduces as described.
