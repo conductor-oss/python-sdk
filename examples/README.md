@@ -89,6 +89,12 @@ Durable agent authoring (`Agent`, `AgentRuntime`, tools, guardrails, handoffs, m
 strategies) — a separate, more extensive catalog of 270+ examples, requiring
 `pip install 'conductor-python[agents]'`. See [agents/README.md](agents/README.md).
 
+> **Server version:** the agent examples require a Conductor server with the agent
+> runtime — conductor-oss **`3.32.0-rc.8` or newer**. The stable `latest` installed by
+> `conductor server start` (3.30.x) does not expose `/api/agent/*` and every agent
+> example fails with `AgentNotFoundError: HTTP 404`. Use
+> `conductor server start --version 3.32.0-rc.8`.
+
 ---
 
 ### Monitoring
