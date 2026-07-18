@@ -21,7 +21,7 @@ def greet(name: str) -> str:
     poll_timeout=100,  # Default poll timeout (ms)
     lease_extend_enabled=False  # Fast tasks don't need lease extension
 )
-def greet(name: str) -> str:
+def greet_sync(name: str) -> str:
     """
     Synchronous worker - automatically runs in thread pool to avoid blocking.
     Good for legacy code or simple CPU-bound tasks.

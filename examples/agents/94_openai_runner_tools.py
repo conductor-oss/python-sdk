@@ -49,7 +49,10 @@ class Weather(BaseModel):
     conditions: str = Field(description="The weather conditions")
 
 
-@function_tool
+# Keep the plain function importable at module level and apply
+# @function_tool at Agent construction: worker processes are spawned on
+# macOS/Windows and re-import this module by qualified name, which fails
+# when the decorator has rebound the module global to a FunctionTool.
 def get_weather(city: Annotated[str, "The city to get the weather for"]) -> Weather:
     """Get the current weather information for a specified city."""
     print("[debug] get_weather called")
@@ -59,7 +62,7 @@ def get_weather(city: Annotated[str, "The city to get the weather for"]) -> Weat
 agent = Agent(
     name="weather_agent",
     instructions="You are a helpful agent.",
-    tools=[get_weather],
+    tools=[function_tool(get_weather)],
 )
 
 

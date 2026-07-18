@@ -157,21 +157,18 @@ from conductor.ai.agents import (
 
 
 @agent(name="tech_classifier", model=settings.llm_model)
-def tech_classifier(prompt: str) -> str:
+def tech_classifier() -> str:
     """Classifies tech articles."""
-    pass
 
 
 @agent(name="business_classifier", model=settings.llm_model)
-def business_classifier(prompt: str) -> str:
+def business_classifier() -> str:
     """Classifies business articles."""
-    pass
 
 
 @agent(name="creative_classifier", model=settings.llm_model)
-def creative_classifier(prompt: str) -> str:
+def creative_classifier() -> str:
     """Classifies creative articles."""
-    pass
 
 
 intake_router = Agent(

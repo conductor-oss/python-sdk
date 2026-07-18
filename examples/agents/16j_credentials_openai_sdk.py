@@ -22,22 +22,27 @@ import os
 from conductor.ai.agents import AgentRuntime
 
 
+# Tool callables must live at module level: worker processes are spawned on
+# macOS/Windows and re-import this module, so a tool defined inside a factory
+# function ("<locals>") cannot be resolved by qualified name (SpawnSafetyError).
+# Keep the plain function importable and apply @function_tool at agent
+# construction, so the module global is not rebound to a FunctionTool.
+def check_github_auth() -> str:
+    """Check if GitHub authentication is available."""
+    token = os.environ.get("GITHUB_TOKEN", "")
+    if token:
+        return f"GitHub token is set (starts with {token[:4]}...)"
+    return "GitHub token is NOT set"
+
+
 def create_openai_agent():
     """Create an OpenAI Agent SDK agent with a credential-aware tool."""
     from agents import Agent, function_tool
 
-    @function_tool
-    def check_github_auth() -> str:
-        """Check if GitHub authentication is available."""
-        token = os.environ.get("GITHUB_TOKEN", "")
-        if token:
-            return f"GitHub token is set (starts with {token[:4]}...)"
-        return "GitHub token is NOT set"
-
     agent = Agent(
         name="github_checker",
         instructions="You check GitHub authentication status. Use the tool when asked.",
-        tools=[check_github_auth],
+        tools=[function_tool(check_github_auth)],
     )
     return agent
 
