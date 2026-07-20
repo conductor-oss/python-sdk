@@ -2,7 +2,7 @@ import pprint
 import re  # noqa: F401
 import six
 from dataclasses import dataclass, field, InitVar
-from typing import List, Optional
+from typing import Dict, List, Optional
 from enum import Enum
 
 
@@ -30,41 +30,50 @@ class UpsertUserRequest:
     name: InitVar[Optional[str]] = None
     roles: InitVar[Optional[List[str]]] = None
     groups: InitVar[Optional[List[str]]] = None
+    contact_information: InitVar[Optional[Dict[str, str]]] = None
     
     _name: str = field(default=None, init=False)
     _roles: List[str] = field(default=None, init=False)
     _groups: List[str] = field(default=None, init=False)
+    _contact_information: Dict[str, str] = field(default=None, init=False)
     
     swagger_types = {
         'name': 'str',
         'roles': 'list[str]',
-        'groups': 'list[str]'
+        'groups': 'list[str]',
+        'contact_information': 'dict(str, str)'
     }
 
     attribute_map = {
         'name': 'name',
         'roles': 'roles',
-        'groups': 'groups'
+        'groups': 'groups',
+        'contact_information': 'contactInformation'
     }
 
-    def __init__(self, name=None, roles=None, groups=None):  # noqa: E501
+    def __init__(self, name=None, roles=None, groups=None, contact_information=None):  # noqa: E501
         """UpsertUserRequest - a model defined in Swagger"""  # noqa: E501
         self._name = None
         self._roles = None
         self._groups = None
+        self._contact_information = None
         self.discriminator = None
         self.name = name
         if roles is not None:
             self.roles = roles
         if groups is not None:
             self.groups = groups
+        if contact_information is not None:
+            self.contact_information = contact_information
 
-    def __post_init__(self, name, roles, groups):
+    def __post_init__(self, name, roles, groups, contact_information):
         self.name = name
         if roles is not None:
             self.roles = roles
         if groups is not None:
             self.groups = groups
+        if contact_information is not None:
+            self.contact_information = contact_information
 
     @property
     def name(self):
@@ -138,6 +147,29 @@ class UpsertUserRequest:
         """
 
         self._groups = groups
+
+    @property
+    def contact_information(self):
+        """Gets the contact_information of this UpsertUserRequest.  # noqa: E501
+
+        User's contact information, e.g. {"email": "user@example.com"}  # noqa: E501
+
+        :return: The contact_information of this UpsertUserRequest.  # noqa: E501
+        :rtype: dict(str, str)
+        """
+        return self._contact_information
+
+    @contact_information.setter
+    def contact_information(self, contact_information):
+        """Sets the contact_information of this UpsertUserRequest.
+
+        User's contact information, e.g. {"email": "user@example.com"}  # noqa: E501
+
+        :param contact_information: The contact_information of this UpsertUserRequest.  # noqa: E501
+        :type: dict(str, str)
+        """
+
+        self._contact_information = contact_information
 
     def to_dict(self):
         """Returns the model properties as a dict"""
