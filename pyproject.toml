@@ -82,7 +82,6 @@ jsonschema = ">=4.23"
 
 [tool.poetry.plugins."pytest11"]
 conductor-agents-testing = "conductor.ai.agents.testing.pytest_plugin"
-agentspan-testing = "conductor.ai.agents.testing.pytest_plugin"
 
 [tool.ruff]
 target-version = "py310"
