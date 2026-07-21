@@ -15,14 +15,14 @@ Run:
     python 55_ml_engineering.py
 
 Requirements:
-    - Agentspan server running
-    - OPENAI_API_KEY stored: agentspan credentials set OPENAI_API_KEY <your-openai-api-key>
+    - Conductor server running
+    - OPENAI_API_KEY stored: the Conductor server credential store
 """
 
 import os
 from conductor.ai.agents import Agent, AgentRuntime
 
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "anthropic/claude-sonnet-4-6")
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "anthropic/claude-sonnet-4-6")
 
 # ── Phase 1: Data Analysis ────────────────────────────────────────
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # rt.deploy(ml_pipeline)
         # CLI alternative:
-        # agentspan deploy --package examples.55_ml_engineering
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # rt.serve(ml_pipeline)

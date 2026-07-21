@@ -3,15 +3,15 @@
 
 """Shared settings for all examples.
 
-Set ``AGENTSPAN_LLM_MODEL`` as an environment variable to override the
+Set ``CONDUCTOR_AGENT_LLM_MODEL`` as an environment variable to override the
 default model used by all examples::
 
-    export AGENTSPAN_LLM_MODEL=anthropic/claude-sonnet-4-20250514
-    export AGENTSPAN_LLM_MODEL=google_gemini/gemini-2.0-flash
+    export CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-4-20250514
+    export CONDUCTOR_AGENT_LLM_MODEL=google_gemini/gemini-2.0-flash
 
 If unset, defaults to ``anthropic/claude-sonnet-4-6``.
 
-``AGENTSPAN_SECONDARY_LLM_MODEL`` provides a second model for multi-model examples
+``CONDUCTOR_AGENT_SECONDARY_LLM_MODEL`` provides a second model for multi-model examples
 (e.g., cheap triage vs capable specialist). Defaults to ``openai/gpt-4o``.
 """
 
@@ -27,8 +27,14 @@ class Settings:
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
-            llm_model=os.environ.get("AGENTSPAN_LLM_MODEL", "anthropic/claude-sonnet-4-6"),
-            secondary_llm_model=os.environ.get("AGENTSPAN_SECONDARY_LLM_MODEL", "openai/gpt-4o"),
+            llm_model=(
+                os.environ.get("CONDUCTOR_AGENT_LLM_MODEL")
+                or "openai/gpt-4o"
+            ),
+            secondary_llm_model=(
+                os.environ.get("CONDUCTOR_AGENT_SECONDARY_LLM_MODEL")
+                or "openai/gpt-4o"
+            ),
         )
 
 

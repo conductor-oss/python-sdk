@@ -32,8 +32,8 @@ Scenario:
     aggregates the three answers into a side-by-side comparison report.
 
 Requirements:
-    - AgentSpan server running (CONDUCTOR_SERVER_URL / AGENTSPAN_SERVER_URL)
-    - AGENTSPAN_LLM_MODEL set to a working model
+    - Conductor server running (CONDUCTOR_SERVER_URL / CONDUCTOR_SERVER_URL)
+    - CONDUCTOR_AGENT_LLM_MODEL set to a working model
 """
 
 import json

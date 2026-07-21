@@ -1,4 +1,4 @@
-# sdk/python/src/agentspan/agents/frameworks/langchain.py
+# sdk/python/src/conductor/ai/agents/frameworks/langchain.py
 # Copyright (c) 2025 Agentspan
 # Licensed under the MIT License. See LICENSE file in the project root for details.
 
@@ -171,8 +171,8 @@ def _get_callback_handler_class() -> type:
 
     from langchain_core.callbacks import BaseCallbackHandler
 
-    class AgentspanCallbackHandler(BaseCallbackHandler):
-        """LangChain callback handler that pushes events to Agentspan SSE via HTTP.
+    class ConductorAgentCallbackHandler(BaseCallbackHandler):
+        """LangChain callback handler that pushes events to Conductor-agent SSE via HTTP.
 
         Must inherit from BaseCallbackHandler so LangChain's AgentExecutor
         recognises it as a valid callback. Plain classes are rejected at runtime.
@@ -230,7 +230,7 @@ def _get_callback_handler_class() -> type:
                 self._auth_secret,
             )
 
-    _callback_handler_class = AgentspanCallbackHandler
+    _callback_handler_class = ConductorAgentCallbackHandler
     return _callback_handler_class
 
 

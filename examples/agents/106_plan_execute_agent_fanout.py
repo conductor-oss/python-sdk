@@ -40,7 +40,7 @@ Run:
     python 106_plan_execute_agent_fanout.py
 
 Requires:
-    - Agentspan server running (AGENTSPAN_SERVER_URL)
+    - Conductor server running (CONDUCTOR_SERVER_URL)
     - OPENAI_API_KEY (planner LLM gets called even when ``plan=`` is injected
       — its output is discarded but the call has to land somewhere)
 """

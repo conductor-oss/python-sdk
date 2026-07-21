@@ -20,10 +20,10 @@ Flow:
     8. Specialist calls post_to_discord() — notifies the right channel
 
 Setup:
-    pip install agentspan requests
-    agentspan server start
+    pip install Conductor requests
+    Conductor server start
 
-    # Store credentials in the AgentSpan UI (localhost:8080 → Credentials):
+    # Store credentials in the Conductor UI (localhost:8080 → Credentials):
     #   GITHUB_TOKEN  = GitHub personal access token (needs repo scope)
     #   DISCORD_TOKEN = Discord bot token
 

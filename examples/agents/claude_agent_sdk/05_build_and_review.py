@@ -99,7 +99,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(build_review_swarm)
         # CLI alternative:
-        # agentspan deploy --package examples.claude_agent_sdk.05_build_and_review
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(build_review_swarm)

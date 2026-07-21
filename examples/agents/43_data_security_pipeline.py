@@ -17,8 +17,8 @@ user-facing responses, ensuring PII never reaches the final output.
 
 Requirements:
     - Conductor server with LLM support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 
 import json
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(pipeline)
         # CLI alternative:
-        # agentspan deploy --package examples.43_data_security_pipeline
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(pipeline)

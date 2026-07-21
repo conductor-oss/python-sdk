@@ -9,7 +9,7 @@ with exactly ONE line changed.
 Before (runs directly against OpenAI):
     from agents import Runner
 
-After (runs on Agentspan — durable, observable, scalable):
+After (runs on Conductor — durable, observable, scalable):
     from conductor.ai import Runner
 
 The diff:
@@ -20,8 +20,8 @@ Everything else — Agent definition, Runner.run(), result.final_output — unch
 
 Requirements:
     - uv add openai-agents
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o (or any supported model)
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o (or any supported model)
 
 Usage:
     python 93_openai_runner_hello_world.py
@@ -33,7 +33,7 @@ from agents import Agent
 
 # ── Only this line changes ──────────────────────────────────────────────────
 # from agents import Runner          # ← original (runs directly on OpenAI)
-from conductor.ai import Runner         # ← agentspan (runs on Agentspan)
+from conductor.ai import Runner         # ← Conductor (runs on Conductor)
 # ───────────────────────────────────────────────────────────────────────────
 
 

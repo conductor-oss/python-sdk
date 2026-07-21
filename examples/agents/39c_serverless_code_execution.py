@@ -18,7 +18,7 @@ then runs an agent that executes code through it.
 
 Requirements:
     - Conductor server with LLM support
-    - export AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - export CONDUCTOR_SERVER_URL=http://localhost:8080/api
 """
 
 import json
@@ -99,7 +99,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(serverless_coder)
         # CLI alternative:
-        # agentspan deploy --package examples.39c_serverless_code_execution
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(serverless_coder)

@@ -16,8 +16,8 @@ Supported vector databases:
 Requirements:
     - Conductor server with RAG system tasks enabled (--spring.profiles.active=rag)
     - A configured vector database (e.g., pgvector)
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini in .env or environment
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, search_tool, index_tool
@@ -214,7 +214,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(rag_agent)
         # CLI alternative:
-        # agentspan deploy --package examples.56_rag_agent
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(rag_agent)

@@ -9,14 +9,14 @@ with exactly ONE line changed.
 Before (runs directly against OpenAI):
     from agents import Runner
 
-After (runs on Agentspan — durable, observable, scalable):
+After (runs on Conductor — durable, observable, scalable):
     from conductor.ai import Runner
 
 The diff:
     -from agents import Runner
     +from conductor.ai import Runner
 
-Agentspan's streaming model differs from openai-agents in that it streams
+Conductor's streaming model differs from openai-agents in that it streams
 *execution events* (LLM calls, tool calls, results) rather than tokens.
 The final response arrives in the "done" event's output field.
 
@@ -30,8 +30,8 @@ Event types:
 
 Requirements:
     - uv add openai-agents
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o
 
 Usage:
     python 96_openai_runner_streaming.py
@@ -43,7 +43,7 @@ from agents import Agent
 
 # ── Only this line changes ──────────────────────────────────────────────────
 # from agents import Runner          # ← original (runs directly on OpenAI)
-from conductor.ai import Runner         # ← agentspan (runs on Agentspan)
+from conductor.ai import Runner         # ← Conductor (runs on Conductor)
 # ───────────────────────────────────────────────────────────────────────────
 
 
@@ -55,8 +55,8 @@ async def main():
 
     stream = await Runner.run_streamed(agent, input="Please tell me 5 jokes.")
 
-    # Iterate Agentspan AgentEvent objects as they arrive from the server.
-    # Agentspan streams execution events — the final answer is in the "done" event.
+    # Iterate Conductor AgentEvent objects as they arrive from the server.
+    # Conductor streams execution events — the final answer is in the "done" event.
     async for event in stream:
         if event.type == "thinking" and event.content:
             # Show which task is running (LLM or tool name)

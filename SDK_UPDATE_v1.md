@@ -192,7 +192,7 @@ The exact semantics of the runtime verbs. Implementations must match this table:
 
 ### `run` — start, wait, return the result
 `run(agent, prompt, *, version?, media?, session_id?, idempotency_key?, on_event?, timeout?, credentials?, context?, run_settings?) -> AgentResult`
-Serializes the agent (+ `run_settings` overrides), calls `start_agent`, starts the required tool workers, then polls status to a terminal state. Returns the rich result — the output is `result.output`, **not** a bare value. `credentials=[names]` asks the server to resolve those secrets for this run.
+Serializes the agent (+ `run_settings` overrides), calls `start_agent`, starts the required tool workers, then polls status to a terminal state. Returns the rich result — the output is `result.output`, **not** a bare value. Credential names configure worker `TaskDef.runtimeMetadata` locally and are not sent as workflow input.
 
 ### `start` — fire-and-forget
 `start(agent, prompt, *, version?, media?, session_id?, idempotency_key?, context?, run_settings?) -> AgentHandle`
@@ -212,7 +212,7 @@ Per agent: (1) **deploy it to the server** (same helper `deploy` uses — new on
 config_json = serialize(agent)
 if run_settings: config_json.update(run_settings.to_config_overrides())
 payload = {agentConfig: config_json, prompt, sessionId: session_id ?? "", media: media ?? []}
-+ optional keys only when set: context, idempotencyKey, timeoutSeconds, credentials, runId, static_plan
++ optional keys only when set: context, idempotencyKey, timeoutSeconds, runId, static_plan
 data = agent_client.start_agent(payload)
 execution_id, required_workers = data.executionId, data.requiredWorkers?
 prepare_workers(agent, required_workers)     # WorkerManager start — serve the tools

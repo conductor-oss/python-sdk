@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Agentspan
 # Licensed under the MIT License. See LICENSE file in the project root for details.
 
-"""Authenticated HTTP to Agentspan ``/agent/*`` endpoints via the SDK ``ApiClient``.
+"""Authenticated HTTP to Conductor-agent ``/agent/*`` endpoints via the SDK ``ApiClient``.
 
 Framework workers (claude_agent_sdk, langchain, langgraph) run in spawned worker
 processes and receive ``(server_url, auth_key, auth_secret)`` as plain strings — a
@@ -72,7 +72,7 @@ def agent_post(
     *,
     read_response: bool = False,
 ) -> Optional[Any]:
-    """POST to an Agentspan ``/agent/*`` endpoint through the SDK ``ApiClient``.
+    """POST to a Conductor-agent ``/agent/*`` endpoint through the SDK ``ApiClient``.
 
     ``path`` is relative to the server host (which already ends in ``/api``), so it
     must start with ``/`` and omit ``/api`` — e.g. ``/agent/events/{id}``.

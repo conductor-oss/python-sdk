@@ -9,11 +9,11 @@ Demonstrates:
       and injected into os.environ before the agent runs
 
 Setup (one-time):
-    agentspan credentials set GITHUB_TOKEN <your-github-token>
+    the Conductor server credential store
 Requirements:
-    - Agentspan server running at AGENTSPAN_SERVER_URL
-    - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-5.4)
-    - GITHUB_TOKEN stored via `agentspan credentials set`
+    - Conductor server running at CONDUCTOR_SERVER_URL
+    - CONDUCTOR_AGENT_LLM_MODEL set (or defaults to openai/gpt-5.4)
+    - GITHUB_TOKEN stored via `the Conductor server credential store`
     - langchain installed: pip install langchain langchain-openai
 """
 
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.16i_credentials_langchain
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

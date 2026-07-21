@@ -3,7 +3,7 @@
 
 """User-facing create_agent wrapper for LangChain/LangGraph agents.
 
-Import from here instead of langchain.agents so that Agentspan can
+Import from here instead of langchain.agents so that Conductor can
 extract the LLM model, tools, and instructions for proper server-side
 orchestration (AI_MODEL + SIMPLE tasks — same as OpenAI/ADK).
 
@@ -39,10 +39,10 @@ def create_agent(
     system_prompt: Optional[Union[str, Any]] = None,
     **kwargs: Any,
 ) -> Any:
-    """Agentspan wrapper around ``langchain.agents.create_agent``.
+    """Conductor wrapper around ``langchain.agents.create_agent``.
 
     Captures the LLM, tools, and instructions *before* compilation so that
-    Agentspan can translate the agent into a proper server-side workflow
+    Conductor can translate the agent into a proper server-side workflow
     (AI_MODEL task for the LLM + SIMPLE tasks for each tool), matching the
     OpenAI/ADK integration pattern.
 
@@ -56,7 +56,7 @@ def create_agent(
 
     Returns:
         A ``CompiledStateGraph`` with ``._agentspan_meta`` attached for
-        proper Agentspan serialization.
+        proper Conductor serialization.
     """
     from langchain.agents import create_agent as _lc_create_agent  # type: ignore[import]
 

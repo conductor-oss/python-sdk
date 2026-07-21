@@ -24,8 +24,8 @@ Run:
     python 61a_github_coding_agent_claude_code.py
 
 Requirements:
-    - Agentspan server running
-    - GITHUB_TOKEN stored: agentspan credentials set GITHUB_TOKEN <your-github-token>
+    - Conductor server running
+    - GITHUB_TOKEN stored: the Conductor server credential store
     - gh CLI installed
     - Claude Code SDK installed (pip install claude-code-sdk)
 """
@@ -34,7 +34,7 @@ from conductor.ai.agents import Agent, AgentRuntime, ClaudeCode
 from conductor.ai.agents.cli_config import CliConfig
 from conductor.ai.agents.gate import TextGate
 
-REPO = "agentspan-ai/codingexamples"
+REPO = "Conductor-ai/codingexamples"
 MODEL = "anthropic/claude-sonnet-4-6"
 
 
@@ -185,7 +185,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # rt.deploy(pipeline)
         # CLI alternative:
-        # agentspan deploy --package examples.61a_github_coding_agent_claude_code
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # rt.serve(pipeline)

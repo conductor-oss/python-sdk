@@ -7,7 +7,7 @@ Testing Multi-Agent Correctness
 ================================
 
 This file demonstrates how to write correctness tests for every multi-agent
-strategy in Agentspan.  Each section shows:
+strategy in Conductor.  Each section shows:
 
   1. How the agent is defined
   2. What "correct behavior" means for that strategy
@@ -17,7 +17,7 @@ strategy in Agentspan.  Each section shows:
 Run the mock tests with:
     pytest examples/testing_multi_agent_correctness.py -v
 
-The live tests require a running Agentspan server and are marked with
+The live tests require a running Conductor server and are marked with
 @pytest.mark.integration.
 """
 
@@ -1032,7 +1032,7 @@ class TestGuardrailsInMultiAgent:
 # 10. LIVE TESTS (require running server)
 # ═══════════════════════════════════════════════════════════════════════
 #
-# These tests run against a real Agentspan server with real LLM calls.
+# These tests run against a real Conductor server with real LLM calls.
 # The assertions are more tolerant — checking behavior patterns rather
 # than exact strings.
 # ═══════════════════════════════════════════════════════════════════════
@@ -1408,7 +1408,7 @@ class TestEvalRunnerLive:
     @pytest.fixture
     def runtime(self):
         """Skip if no server available."""
-        pytest.skip("Requires running Agentspan server")
+        pytest.skip("Requires running Conductor server")
 
     def test_handoff_eval(self, runtime):
         """Run eval suite for handoff correctness."""
@@ -1475,7 +1475,7 @@ class TestLiveMultiAgent:
     @pytest.fixture
     def runtime(self):
         """Skip if no server available."""
-        pytest.skip("Requires running Agentspan server")
+        pytest.skip("Requires running Conductor server")
         # from conductor.ai.agents import AgentRuntime
         # rt = AgentRuntime()
         # yield rt

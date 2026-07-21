@@ -40,9 +40,9 @@ Usage:
     python 85_plan_execute_harness.py "Climate change mitigation strategies for 2030"
 
 Requirements:
-    - Agentspan server with PLAN_EXECUTE strategy support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-4o-mini)
+    - Conductor server with PLAN_EXECUTE strategy support
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL set (or defaults to openai/gpt-4o-mini)
 """
 
 import json

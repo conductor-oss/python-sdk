@@ -14,9 +14,9 @@ tool's execution context; get_secret(name) reads them inside the worker. Nothing
 is read from process environment variables.
 
 Requirements:
-    - Agentspan server running at AGENTSPAN_SERVER_URL
-    - AGENTSPAN_LLM_MODEL set (or defaults via settings)
-    - STRIPE_SECRET_KEY stored: agentspan credentials set STRIPE_SECRET_KEY <your-stripe-secret-key>
+    - Conductor server running at CONDUCTOR_SERVER_URL
+    - CONDUCTOR_AGENT_LLM_MODEL set (or defaults via settings)
+    - STRIPE_SECRET_KEY stored: the Conductor server credential store
 """
 
 from settings import settings
@@ -40,7 +40,7 @@ def get_customer_balance(customer_id: str) -> dict:
         api_key = get_secret("STRIPE_SECRET_KEY")
     except CredentialNotFoundError:
         return {
-            "error": "STRIPE_SECRET_KEY not configured — run: agentspan credentials set STRIPE_SECRET_KEY <your-value>"
+            "error": "STRIPE_SECRET_KEY is not configured in the Conductor server credential store."
         }
 
     import base64
@@ -122,5 +122,5 @@ if __name__ == "__main__":
         # Production pattern:
         # 1. Deploy once during CI/CD:
         #    runtime.deploy(agent)
-        #    CLI alternative: agentspan deploy --package examples.16b_credentials_non_isolated
+        #    CLI alternative: runtime.deploy(agent) from a release script
         # 2. In a separate long-lived worker process: runtime.serve(agent)

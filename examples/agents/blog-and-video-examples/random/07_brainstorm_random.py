@@ -5,8 +5,8 @@ to brainstorm ideas. The randomness creates variety — you never know
 which perspective comes next.
 
 Setup:
-    pip install agentspan
-    agentspan server start
+    pip install Conductor
+    Conductor server start
 
     python 07_brainstorm_random.py
 """

@@ -12,7 +12,7 @@ Demonstrates:
 
 Requirements:
     - Conductor server with LLM support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
     - /dg skill installed (https://github.com/v1r3n/dinesh-gilfoyle)
 
 Install /dg:

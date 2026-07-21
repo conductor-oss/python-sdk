@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2025 Agentspan
 # Licensed under the MIT License. See LICENSE file in the project root for details.
-"""Run every agent example against a live Agentspan server and report status.
+"""Run every agent example against a live Conductor server and report status.
 
 "Works fine" means:
   * PASS  — process exits 0 within the timeout (no compile/import/runtime error,
@@ -24,8 +24,8 @@ Usage:
         [--only PATTERN] [--out report.html]
 
 Env (with sensible defaults for the local dev server on :6767):
-    CONDUCTOR_SERVER_URL / AGENTSPAN_SERVER_URL  server API base
-    AGENTSPAN_LLM_MODEL                          model steered to a working provider
+    CONDUCTOR_SERVER_URL / CONDUCTOR_SERVER_URL  server API base
+    CONDUCTOR_AGENT_LLM_MODEL                          model steered to a working provider
 """
 from __future__ import annotations
 
@@ -255,13 +255,13 @@ def main() -> int:
     ap.add_argument("--out", default=str(HERE / "run_report.html"))
     args = ap.parse_args()
 
-    server = os.environ.get("CONDUCTOR_SERVER_URL") or os.environ.get("AGENTSPAN_SERVER_URL") or DEFAULT_SERVER
-    model = os.environ.get("AGENTSPAN_LLM_MODEL", DEFAULT_MODEL)
+    server = os.environ.get("CONDUCTOR_SERVER_URL") or os.environ.get("CONDUCTOR_SERVER_URL") or DEFAULT_SERVER
+    model = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", DEFAULT_MODEL)
 
     env = dict(os.environ)
     env["CONDUCTOR_SERVER_URL"] = server
-    env["AGENTSPAN_SERVER_URL"] = server
-    env["AGENTSPAN_LLM_MODEL"] = model
+    env["CONDUCTOR_SERVER_URL"] = server
+    env["CONDUCTOR_AGENT_LLM_MODEL"] = model
     env["PYTHONPATH"] = os.pathsep.join([str(REPO / "src"), str(HERE), env.get("PYTHONPATH", "")])
     env["PYTHONUNBUFFERED"] = "1"
 

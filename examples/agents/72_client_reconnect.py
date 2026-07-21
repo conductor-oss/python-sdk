@@ -11,12 +11,12 @@ Demonstrates:
     - Reconnecting later by execution_id and continuing the same workflow
 
 This proves client-process durability. The local Python process can die, but
-the workflow state remains stored on the Agentspan/Conductor server.
+the workflow state remains stored on the Conductor/Conductor server.
 
 Requirements:
-    - Agentspan server running
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in environment
-    - AGENTSPAN_LLM_MODEL set (default: openai/gpt-4o-mini via settings.py)
+    - Conductor server running
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in environment
+    - CONDUCTOR_AGENT_LLM_MODEL set (default: openai/gpt-4o-mini via settings.py)
     - Provider API key configured on the server (for example OPENAI_API_KEY)
 """
 
@@ -33,8 +33,8 @@ from pathlib import Path
 from conductor.ai.agents import Agent, AgentRuntime, tool
 from settings import settings
 
-DEFAULT_WORKFLOW_FILE = Path("/tmp/agentspan_client_reconnect.execution_id")
-DEFAULT_CLIENT_INFO_FILE = Path("/tmp/agentspan_client_reconnect.client.json")
+DEFAULT_WORKFLOW_FILE = Path("/tmp/Conductor_client_reconnect.execution_id")
+DEFAULT_CLIENT_INFO_FILE = Path("/tmp/Conductor_client_reconnect.client.json")
 
 
 @tool(approval_required=True)
@@ -89,7 +89,7 @@ def run_once(prompt: str) -> None:
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.72_client_reconnect
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

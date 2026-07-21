@@ -11,8 +11,8 @@ Change one import line::
     # After
     from conductor.ai import Runner
 
-Your agents now run on Agentspan instead of directly against OpenAI.
-Agentspan adds durability, observability, human-in-the-loop, and horizontal
+Your agents now run on Conductor instead of directly against OpenAI.
+Conductor adds durability, observability, human-in-the-loop, and horizontal
 scaling — no other code changes needed.
 
 Compatible with openai-agents-python ``Agent``, ``@function_tool``, and
@@ -76,7 +76,7 @@ class RunResult:
 
     @property
     def execution_id(self) -> str:
-        """The Agentspan execution ID for debugging."""
+        """The Conductor execution ID for debugging."""
         return self._agent_result.execution_id
 
     def __repr__(self) -> str:
@@ -92,7 +92,7 @@ def _model_to_agentspan(model: Any) -> str:
     ``"gpt-4o"``         → ``"openai/gpt-4o"``
     ``"claude-opus-4-6"``→ ``"anthropic/claude-opus-4-6"``
     ``"openai/gpt-4o"``  → ``"openai/gpt-4o"``  (already qualified)
-    ``None``             → ``""`` (Agentspan uses AGENTSPAN_LLM_MODEL env var)
+    ``None``             → ``""`` (the default model comes from configuration)
     """
     if not model:
         return ""
@@ -136,7 +136,7 @@ class _CtxStub:
 
     openai-agents' FunctionTool.on_invoke_tool(ctx, json_str) accesses
     ctx attributes for tracing/span creation.  When executing inside an
-    Agentspan worker (outside of an openai-agents Runner loop) there is
+    Conductor worker (outside of an openai-agents Runner loop) there is
     no real RunContextWrapper, so we supply a stub that silently returns
     None for any attribute access rather than raising AttributeError.
     """
@@ -149,14 +149,14 @@ _CTX_STUB = _CtxStub()
 
 
 def _convert_function_tool(ft: Any) -> Any:
-    """Convert an openai-agents ``FunctionTool`` to an Agentspan ``ToolDef``.
+    """Convert an openai-agents ``FunctionTool`` to a Conductor ``ToolDef``.
 
     Args:
         ft: Object with ``.name``, ``.description``, ``.params_json_schema``,
             and ``.on_invoke_tool(ctx, input_json_str)`` attributes.
 
     Returns:
-        An Agentspan :class:`~conductor.ai.agents.tool.ToolDef`.
+        A Conductor :class:`~conductor.ai.agents.tool.ToolDef`.
     """
     from conductor.ai.agents.tool import ToolDef
 
@@ -185,9 +185,9 @@ def _convert_function_tool(ft: Any) -> Any:
 
 
 def _to_agentspan_agent(agent: Any) -> Any:
-    """Convert an openai-agents ``Agent`` to an Agentspan ``Agent``.
+    """Convert an openai-agents ``Agent`` to a Conductor ``Agent``.
 
-    If *agent* is already an Agentspan ``Agent`` it is returned unchanged.
+    If *agent* is already a Conductor ``Agent`` it is returned unchanged.
     Duck-typed: any object with ``name``, ``instructions``, ``model``,
     and ``tools`` attributes is accepted.
     """
@@ -212,7 +212,11 @@ def _to_agentspan_agent(agent: Any) -> Any:
     model: str = (
         _model_to_agentspan(_raw_model)
         if _raw_model
-        else (os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o"))
+        else (
+            os.environ.get("CONDUCTOR_AGENT_LLM_MODEL")
+            or os.environ.get("AGENTSPAN_LLM_MODEL")
+            or "openai/gpt-4o"
+        )
     )
 
     raw_tools: list = getattr(agent, "tools", []) or []
@@ -225,7 +229,7 @@ def _to_agentspan_agent(agent: Any) -> Any:
         else:
             logger.warning(
                 "Skipping unrecognised tool type '%s' — "
-                "wrap it with Agentspan's @tool decorator to include it.",
+                "wrap it with Conductor's @tool decorator to include it.",
                 type(t).__name__,
             )
 
@@ -241,18 +245,18 @@ def _to_agentspan_agent(agent: Any) -> Any:
 
 
 def _run_agent(starting_agent: Any, max_turns: int) -> Any:
-    """Resolve the agent to pass to the Agentspan runtime.
+    """Resolve the agent to pass to the Conductor runtime.
 
     Foreign framework agents (openai-agents, google-adk, …) are passed
     through unchanged — the runtime's :func:`detect_framework` handles
-    serialisation and tool registration.  Native Agentspan Agents are also
+    serialization and tool registration. Native Conductor Agents are also
     passed through unchanged (with optional ``max_turns`` override).  Only
     truly unknown objects fall back to :func:`_to_agentspan_agent`.
     """
-    from conductor.ai.agents.agent import Agent as AgentspanAgent
+    from conductor.ai.agents.agent import Agent as ConductorAgent
     from conductor.ai.agents.frameworks.serializer import detect_framework
 
-    if isinstance(starting_agent, AgentspanAgent):
+    if isinstance(starting_agent, ConductorAgent):
         if max_turns != 10:
             starting_agent.max_turns = max_turns
         return starting_agent
@@ -290,7 +294,7 @@ class Runner:
     ``await Runner.run(agent, input)``
         Async execution.  Returns a :class:`RunResult`.
     ``Runner.run_streamed(agent, input)``
-        Streaming execution.  Returns an Agentspan :class:`AsyncAgentStream`.
+        Streaming execution. Returns a Conductor :class:`AsyncAgentStream`.
     """
 
     @classmethod
@@ -308,7 +312,7 @@ class Runner:
         Drop-in for ``Runner.run_sync(agent, input)``.
 
         Args:
-            starting_agent: An openai-agents ``Agent`` or Agentspan ``Agent``.
+            starting_agent: An openai-agents ``Agent`` or Conductor ``Agent``.
             input: The user's input message.
             context: Ignored — present only for openai-agents API compatibility.
             max_turns: Maximum agent loop iterations.
@@ -338,7 +342,7 @@ class Runner:
         Drop-in for ``await Runner.run(agent, input)``.
 
         Args:
-            starting_agent: An openai-agents ``Agent`` or Agentspan ``Agent``.
+            starting_agent: An openai-agents ``Agent`` or Conductor ``Agent``.
             input: The user's input message.
             context: Ignored — present only for openai-agents API compatibility.
             max_turns: Maximum agent loop iterations.
@@ -367,15 +371,15 @@ class Runner:
 
         Drop-in for ``Runner.run_streamed(agent, input)``.
 
-        Returns an Agentspan :class:`~conductor.ai.agents.result.AsyncAgentStream`
+        Returns a Conductor :class:`~conductor.ai.agents.result.AsyncAgentStream`
         which supports ``async for event in stream`` iteration.
 
-        Note: Agentspan event types (``"tool_call"``, ``"done"``, etc.) differ
+        Note: Conductor event types (``"tool_call"``, ``"done"``, etc.) differ
         from openai-agents ``StreamEvent`` types.  For full streaming event
         compatibility, iterate and map events as needed.
 
         Args:
-            starting_agent: An openai-agents ``Agent`` or Agentspan ``Agent``.
+            starting_agent: An openai-agents ``Agent`` or Conductor ``Agent``.
             input: The user's input message.
             context: Ignored — present only for openai-agents API compatibility.
             max_turns: Maximum agent loop iterations.

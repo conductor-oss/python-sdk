@@ -27,10 +27,10 @@ Setup — required for condensation to trigger
 ---------------------------------------------
 Add to ``server/src/main/resources/application.properties`` and restart::
 
-    agentspan.default-context-window=10000
+    Conductor.default-context-window=10000
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY
 """
 
@@ -358,7 +358,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(graph)
         # CLI alternative:
-        # agentspan deploy --package examples.langgraph.44_context_condensation
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(graph)

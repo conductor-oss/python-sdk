@@ -23,7 +23,7 @@ This module provides the building blocks for spawn-safe workers:
 - :func:`probe_spawn_safety` — a registration-time pickle probe, enabled per
   worker group as each group's workers become spawn-safe.
 
-Design: idea-5 ``design.md`` in the combine-agentspan analysis workspace.
+Design: idea-5 ``design.md`` in the agent-runtime analysis workspace.
 
 NOTE: deliberately NO ``from __future__ import annotations`` here — the task
 runners read parameter types from ``inspect.signature(execute_function)``

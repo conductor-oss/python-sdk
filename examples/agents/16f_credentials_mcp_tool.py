@@ -14,14 +14,14 @@ MCP Test Server Setup (mcp-testkit):
     # Start with auth (to demonstrate credential resolution):
     mcp-testkit --transport http --auth <secret>
 
-    # Store credentials via CLI or Agentspan UI:
-    agentspan credentials set MCP_API_KEY <secret>
+    # Store credentials via CLI or Conductor UI:
+    the Conductor server credential store
 
 Requirements:
-    - Agentspan server running at AGENTSPAN_SERVER_URL
-    - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-4o-mini)
+    - Conductor server running at CONDUCTOR_SERVER_URL
+    - CONDUCTOR_AGENT_LLM_MODEL set (or defaults to openai/gpt-4o-mini)
     - mcp-testkit running on http://localhost:3001 (see setup above)
-    - MCP_API_KEY stored via CLI or Agentspan UI
+    - MCP_API_KEY stored via CLI or Conductor UI
 """
 
 from conductor.ai.agents import Agent, AgentRuntime
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.16f_credentials_mcp_tool
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

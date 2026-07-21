@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Agentspan
 # Licensed under the MIT License. See LICENSE file in the project root for details.
 
-"""Coding Agent REPL — a filesystem-aware coding assistant backed by AgentSpan runtime.
+"""Coding Agent REPL — a filesystem-aware coding assistant backed by Conductor runtime.
 
 This example is a Claude Code-style assistant you can actually use in a working session.
 It runs as a durable Conductor workflow, giving you things a local agent cannot:
@@ -18,9 +18,9 @@ Usage:
     python 82_coding_agent.py --resume             # resume last session
 
 Requirements:
-    - AgentSpan server running at http://localhost:8080
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
-    - AGENTSPAN_LLM_MODEL=anthropic/claude-sonnet-4-20250514
+    - Conductor server running at http://localhost:8080
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-4-20250514
 """
 
 import argparse
@@ -31,7 +31,7 @@ import subprocess
 import threading
 from pathlib import Path
 
-os.environ.setdefault("AGENTSPAN_LOG_LEVEL", "WARNING")
+os.environ.setdefault("CONDUCTOR_AGENT_LOG_LEVEL", "WARNING")
 
 from conductor.ai.agents import Agent, AgentRuntime, EventType, tool, wait_for_message_tool
 from settings import settings
@@ -40,7 +40,7 @@ from settings import settings
 # Constants
 # ---------------------------------------------------------------------------
 
-SESSION_FILE = Path("/tmp/agentspan_coding_agent.session")
+SESSION_FILE = Path("/tmp/Conductor_coding_agent.session")
 _DEFAULT_SHELL_TIMEOUT = 30   # seconds per shell command
 _MAX_FILE_BYTES = 200_000     # 200 KB — refuse larger files in read_file
 _MAX_SHELL_OUTPUT = 8_000     # truncate shell output shown to the LLM

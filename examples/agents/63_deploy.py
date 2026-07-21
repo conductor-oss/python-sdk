@@ -18,8 +18,8 @@ deploy/serve as the production pattern.
 
 Requirements:
     - Conductor server running
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini in .env or environment
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, tool
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         # for info in results:
         #     print(f"Deployed: {info.agent_name} -> {info.registered_name}")
         # CLI alternative:
-        # agentspan deploy --package examples.63_deploy
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(doc_assistant, ops_bot)

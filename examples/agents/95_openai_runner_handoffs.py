@@ -9,7 +9,7 @@ with exactly ONE line changed.
 Before (runs directly against OpenAI):
     from agents import Runner
 
-After (runs on Agentspan — durable, observable, scalable):
+After (runs on Conductor — durable, observable, scalable):
     from conductor.ai import Runner
 
 The diff:
@@ -17,13 +17,13 @@ The diff:
     +from conductor.ai import Runner
 
 Agent definitions, handoffs list, and the Runner.run() call are unchanged.
-Agentspan records every handoff decision in the execution history — you can
-replay the full agent-to-agent routing in the Agentspan UI.
+Conductor records every handoff decision in the execution history — you can
+replay the full agent-to-agent routing in the Conductor UI.
 
 Requirements:
     - uv add openai-agents
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o
 
 Usage:
     python 95_openai_runner_handoffs.py
@@ -35,7 +35,7 @@ from agents import Agent
 
 # ── Only this line changes ──────────────────────────────────────────────────
 # from agents import Runner          # ← original (runs directly on OpenAI)
-from conductor.ai import Runner         # ← agentspan (runs on Agentspan)
+from conductor.ai import Runner         # ← Conductor (runs on Conductor)
 # ───────────────────────────────────────────────────────────────────────────
 
 french_agent = Agent(

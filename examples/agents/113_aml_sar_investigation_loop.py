@@ -28,8 +28,8 @@ What you'll see:
     ``finalize_disposition``.
 
 Requirements:
-  - AGENTSPAN_SERVER_URL=http://localhost:8080/api (default)
-  - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini (default)
+  - CONDUCTOR_SERVER_URL=http://localhost:8080/api (default)
+  - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini (default)
   - LLM key for the chosen model.
 """
 
@@ -43,10 +43,10 @@ import requests
 
 from conductor.ai.agents import AgentRuntime, plan_execute, tool
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 BASE = SERVER_URL.rstrip("/").replace("/api", "")
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "anthropic/claude-sonnet-4-6")
-MAX_ITER = int(os.environ.get("AGENTSPAN_AML_MAX_ITER", "10"))
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "anthropic/claude-sonnet-4-6")
+MAX_ITER = int(os.environ.get("CONDUCTOR_AGENT_AML_MAX_ITER", "10"))
 WORKFLOW_NAME = "aml_sar_investigation_loop"
 WORKFLOW_VERSION = 5
 
@@ -316,7 +316,7 @@ TO_JS_OBJ_JS = (
 
 
 # Pull the JSON action out of the LLM's response. Two shapes possible:
-# (a) Agentspan's LLM_CHAT_COMPLETE auto-parses a JSON-mode response, so
+# (a) Conductor's LLM_CHAT_COMPLETE auto-parses a JSON-mode response, so
 #     ``$.llm_out`` is already a Java Map. Walk it to a JS object.
 # (b) Plaintext path: ``$.llm_out`` is a string; regex out the JSON block.
 EXTRACT_ACTION_JS = TO_JS_OBJ_JS + (
@@ -727,7 +727,7 @@ def main(argv: list[str]) -> None:
     print(f"        customer={ALERT['customer_id']}, ${ALERT['total_amount']:,} over 5 days")
     print(f"budget: {MAX_ITER} iterations\n")
 
-    # Register the workers via Agentspan runtime.
+    # Register the workers via Conductor runtime.
     print("setting up evidence-source workers via AgentRuntime...")
     harness = plan_execute(
         name="aml_tools_harness",

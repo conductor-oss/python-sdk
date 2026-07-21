@@ -6,10 +6,10 @@
 Demonstrates:
     - create_react_agent with ChatAnthropic (Claude) instead of OpenAI
     - Model is auto-detected from the LLM instance and forwarded to Conductor
-    - Same code, different model — no Agentspan-specific changes needed
+    - Same code, different model — no Conductor-specific changes needed
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - ANTHROPIC_API_KEY for ChatAnthropic
 """
 
@@ -56,7 +56,7 @@ def day_of_week(date_str: str) -> str:
 
 llm = ChatAnthropic(model="claude-haiku-4-5-20251001", temperature=0)
 
-# Agentspan auto-detects ChatAnthropic and routes LLM calls through
+# Conductor auto-detects ChatAnthropic and routes LLM calls through
 # the anthropic/ provider on the Conductor server.
 graph = create_react_agent(llm, tools=[get_today, days_between, day_of_week], name="date_calculator_agent")
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(graph)
         # CLI alternative:
-        # agentspan deploy --package examples.langgraph.43_react_agent_multi_model
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(graph)

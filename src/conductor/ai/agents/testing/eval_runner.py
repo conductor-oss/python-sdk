@@ -187,7 +187,7 @@ class EvalSuiteResult:
 
 
 class CorrectnessEval:
-    """Runs eval cases against a live Agentspan runtime.
+    """Runs eval cases against a live Conductor-agent runtime.
 
     Args:
         runtime: An :class:`AgentRuntime` instance (or any object with a

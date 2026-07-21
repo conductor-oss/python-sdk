@@ -3,13 +3,13 @@
 
 """OpenAI Agents SDK compatibility — drop-in Runner replacement.
 
-Shows how to migrate an openai-agents script to Agentspan by changing
+Shows how to migrate an openai-agents script to Conductor by changing
 one import line.  Everything else stays identical.
 
 Before (runs directly against OpenAI):
     from agents import Runner
 
-After (runs on Agentspan — durable, observable, scalable):
+After (runs on Conductor — durable, observable, scalable):
     from conductor.ai import Runner
 
 The rest of the code — Agent definition, @function_tool decorators,
@@ -22,20 +22,20 @@ Pattern A — keep openai-agents for Agent/function_tool, swap only Runner::
     from conductor.ai import Runner           # ← change this one line
     from agents import Agent, function_tool  # ← unchanged
 
-Pattern B — use Agentspan for everything (no openai-agents dependency)::
+Pattern B — use Conductor for everything (no openai-agents dependency)::
 
     from conductor.ai import Runner, function_tool
     from conductor.ai.agents import Agent
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o (or anthropic/claude-opus-4-6)
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o (or anthropic/claude-opus-4-6)
 
 Usage:
     # Pattern A (requires openai-agents installed: uv add openai-agents)
     python 92_openai_agents_compat.py --pattern a
 
-    # Pattern B (Agentspan only, no openai-agents needed)
+    # Pattern B (Conductor only, no openai-agents needed)
     python 92_openai_agents_compat.py --pattern b
     python 92_openai_agents_compat.py           # default: pattern b
 """
@@ -75,10 +75,10 @@ def get_time(timezone: str) -> str:
         return f"Unknown timezone: {timezone}"
 
 
-# ── Pattern B — pure Agentspan, no openai-agents dependency ────────────────
+# ── Pattern B — pure Conductor, no openai-agents dependency ────────────────
 
 def run_pattern_b() -> None:
-    """Run using Agentspan's own Agent and function_tool (same result)."""
+    """Run using Conductor's own Agent and function_tool (same result)."""
     from conductor.ai import Runner
     from conductor.ai.agents import Agent
     from settings import settings
@@ -100,7 +100,7 @@ def run_pattern_b() -> None:
 # ── Pattern A — keep openai-agents Agent/function_tool, swap only Runner ───
 
 def run_pattern_a() -> None:
-    """Run with openai-agents Agent but Agentspan's Runner.
+    """Run with openai-agents Agent but Conductor's Runner.
 
     Requires: uv add openai-agents
     """
@@ -114,7 +114,7 @@ def run_pattern_a() -> None:
 
     # ── The ONE line you change ────────────────────────────────────────────
     # from agents import Runner     # ← original openai-agents import
-    from conductor.ai import Runner    # ← drop-in Agentspan replacement
+    from conductor.ai import Runner    # ← drop-in Conductor replacement
 
     @function_tool
     def get_weather(city: str) -> str:
@@ -161,7 +161,7 @@ if __name__ == "__main__":
         "--pattern",
         choices=["a", "b"],
         default="b",
-        help="a = openai-agents Agent + Agentspan Runner; b = pure Agentspan (default)",
+        help="a = openai-agents Agent + Conductor Runner; b = pure Conductor (default)",
     )
     args = parser.parse_args()
 

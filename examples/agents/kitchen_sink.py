@@ -3,7 +3,7 @@
 
 """Kitchen Sink — Content Publishing Platform.
 
-A single mega-workflow that exercises every Agentspan SDK feature (89 features).
+A single mega-workflow that exercises every Conductor SDK feature (89 features).
 See design/sdk-design/kitchen-sink.md for the full scenario specification.
 
 Demonstrates:
@@ -28,13 +28,13 @@ MCP Test Server Setup (mcp-testkit):
     # Or start with auth (requires storing the secret as a credential):
     mcp-testkit --transport http --auth <secret>
 
-    # Store credentials via CLI or Agentspan UI:
-    agentspan credentials set MCP_AUTH_TOKEN <secret>
-    agentspan credentials set SEARCH_API_KEY <key>
+    # Store credentials via CLI or Conductor UI:
+    the Conductor server credential store
+    the Conductor server credential store
 
 Requirements:
     - Conductor server with LLM support
-    - AGENTSPAN_SERVER_URL, AGENTSPAN_LLM_MODEL env vars
+    - CONDUCTOR_SERVER_URL, CONDUCTOR_AGENT_LLM_MODEL env vars
     - mcp-testkit running on http://localhost:3001 (for MCP/HTTP tools)
     - For full execution: Docker, credential store configured
 """
@@ -776,7 +776,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(full_pipeline)
         # CLI alternative:
-        # agentspan deploy --package examples.kitchen_sink
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(full_pipeline)

@@ -10,13 +10,13 @@ Demonstrates:
     - Multi-credential tools (aws needs multiple env vars)
 
 Setup (one-time, via CLI):
-    agentspan login
-    agentspan credentials set GH_TOKEN <your-github-token>
-    agentspan credentials set AWS_ACCESS_KEY_ID <your-aws-access-key-id>
-    agentspan credentials set AWS_SECRET_ACCESS_KEY <your-aws-secret-access-key>
+    Conductor login
+    the Conductor server credential store
+    the Conductor server credential store
+    the Conductor server credential store
 Requirements:
-    - Agentspan server running at AGENTSPAN_SERVER_URL
-    - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-5.4)
+    - Conductor server running at CONDUCTOR_SERVER_URL
+    - CONDUCTOR_AGENT_LLM_MODEL set (or defaults to openai/gpt-5.4)
     - gh and aws CLIs installed
 """
 
@@ -131,7 +131,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(github_aws_agent)
         # CLI alternative:
-        # agentspan deploy --package examples.16c_credentials_cli_tools
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(github_aws_agent)

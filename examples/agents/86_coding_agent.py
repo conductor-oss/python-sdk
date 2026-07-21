@@ -74,9 +74,9 @@ Usage:
     python 86_coding_agent.py "Fix the failing test in tests/test_math.py"
 
 Requirements:
-    - Agentspan server with PLAN_EXECUTE strategy support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
-    - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-4o-mini)
+    - Conductor server with PLAN_EXECUTE strategy support
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_AGENT_LLM_MODEL set (or defaults to openai/gpt-4o-mini)
 """
 
 import os
@@ -234,7 +234,7 @@ def write_coder_plan(content: str) -> str:
 
 # ── Executor tools — declared on the harness, called by the compiled plan ────
 # The planner does NOT have these.  They are declared on the ``coder`` harness
-# via ``tools=`` so Agentspan registers their Conductor task definitions.
+# via ``tools=`` so Conductor registers their Conductor task definitions.
 # The compiled plan calls them by name as SIMPLE tasks.
 
 
@@ -381,7 +381,7 @@ coder_planner = Agent(
 )
 
 # The harness: PLAN_EXECUTE with planner only (no fallback).
-# tools= declares the executor tools so Agentspan registers their task
+# tools= declares the executor tools so Conductor registers their task
 # definitions; the compiled plan calls them as SIMPLE Conductor tasks.
 coder = Agent(
     name="coder",

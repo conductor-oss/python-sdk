@@ -5,12 +5,12 @@
 
 Demonstrates:
     - Passing a system prompt via the prompt parameter (LangGraph 1.x API)
-    - Agentspan extracts the system prompt and forwards it to the server
+    - Conductor extracts the system prompt and forwards it to the server
       as the agent's instructions — no information is lost
     - Custom persona carried through the full Conductor execution
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY for ChatOpenAI
 """
 
@@ -65,7 +65,7 @@ SYSTEM_PROMPT = (
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 # prompt sets the system prompt (LangGraph 1.x API, replaces state_modifier).
-# Agentspan extracts the prompt from the graph's closure and forwards it
+# Conductor extracts the prompt from the graph's closure and forwards it
 # to the server as the agent's instructions.
 graph = create_react_agent(
     llm,
@@ -88,7 +88,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(graph)
         # CLI alternative:
-        # agentspan deploy --package examples.langgraph.42_react_agent_system_prompt
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(graph)

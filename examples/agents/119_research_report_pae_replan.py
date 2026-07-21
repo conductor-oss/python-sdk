@@ -33,7 +33,7 @@ What you will see in the UI:
   → Quality improvements iteration by iteration.
 
 Requirements:
-  - agentspan server start
+  - Conductor server start
   - export OPENAI_API_KEY=sk-...  (or ANTHROPIC_API_KEY)
   - uv run python3 119_research_report_pae_replan.py "AI agents in production"
 """
@@ -52,9 +52,9 @@ import requests
 
 from conductor.ai.agents import AgentRuntime, plan_execute, tool
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 BASE = SERVER_URL.rstrip("/").replace("/api", "")
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
 MAX_ITER = int(os.environ.get("REPORT_MAX_ITER", "5"))
 WORKFLOW_NAME = "research_report_pae_replan"
 WORKFLOW_VERSION = 3

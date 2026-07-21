@@ -229,7 +229,7 @@ FUNCTION startInternal(agent, prompt, runSettings?, media?, sessionId?,
     payload = { agentConfig: configJson, prompt: prompt,
                 sessionId: sessionId ?? "", media: media ?? [] }
     // optional keys, only when set:
-    //   context, idempotencyKey, timeoutSeconds, credentials, runId
+    //   context, idempotencyKey, timeoutSeconds, runId
     data = agentClient.startAgent(payload)             // server: compile+register+start
     executionId     = data["executionId"]
     requiredWorkers = data["requiredWorkers"]          // optional set of task names
@@ -620,11 +620,13 @@ open (auth-disabled) server — treat as anonymous.
   "context":        { },            // optional
   "idempotencyKey": "…",            // optional
   "timeoutSeconds": 120,            // optional
-  "credentials":   ["GH_TOKEN"],    // optional — names to resolve for this run
   "runId":         "…",             // optional — stateful worker-domain routing
   "static_plan":   { }              // optional — PLAN_EXECUTE fixed plan
 }
 ```
+
+Credential names are local worker configuration. They populate task-definition runtime metadata
+and are not part of the agent start request or workflow input.
 
 ### 3.4 `agentConfig` LLM wire keys (subset relevant to RunSettings)
 

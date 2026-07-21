@@ -7,18 +7,23 @@ Provides a consistent exception hierarchy so users don't need to catch
 library-specific HTTP errors from ``requests`` or ``httpx``.
 
 This module is the canonical home of the hierarchy formerly defined in
-``conductor.ai.agents.exceptions`` (which now re-exports these same objects,
-so ``except AgentspanError`` catches errors raised by either layer).
+``conductor.ai.agents.exceptions``. ``AgentspanError`` remains an alias for
+backward compatibility; new code should catch ``ConductorAgentError``.
 """
 
 from __future__ import annotations
 
 
-class AgentspanError(Exception):
+class ConductorAgentError(Exception):
     """Base exception for all agent SDK errors."""
 
 
-class AgentAPIError(AgentspanError):
+# Kept as the identical class object so existing ``except`` clauses and
+# ``isinstance`` checks continue to work during the naming migration.
+AgentspanError = ConductorAgentError
+
+
+class AgentAPIError(ConductorAgentError):
     """An HTTP error from the agent runtime API."""
 
     def __init__(self, status_code: int, message: str, url: str = ""):

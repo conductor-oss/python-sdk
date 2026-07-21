@@ -38,9 +38,9 @@ How this differs from 79_agent_message_bus:
     content pipeline.
 
 Requirements:
-    - AgentSpan server running at http://localhost:8080
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=anthropic/claude-sonnet-4-20250514 as environment variable
+    - Conductor server running at http://localhost:8080
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-4-20250514 as environment variable
 """
 
 import json
@@ -52,7 +52,7 @@ import tempfile
 import time
 from pathlib import Path
 
-os.environ.setdefault("AGENTSPAN_LOG_LEVEL", "WARNING")
+os.environ.setdefault("CONDUCTOR_AGENT_LOG_LEVEL", "WARNING")
 
 from settings import settings
 

@@ -10,8 +10,8 @@ complex examples.
 Requirements:
     - pip install google-adk
     - GOOGLE_API_KEY or GEMINI_API_KEY environment variable
-    - AGENTSPAN_LLM_MODEL=google_gemini/gemini-2.0-flash (for AgentSpan runs)
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api (for AgentSpan runs)
+    - CONDUCTOR_AGENT_LLM_MODEL=google_gemini/gemini-2.0-flash (for Conductor runs)
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api (for Conductor runs)
 """
 
 from google.adk.agents import Agent
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.00_hello_world
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

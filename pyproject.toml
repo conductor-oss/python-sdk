@@ -78,8 +78,10 @@ pytest-asyncio = ">=0.21"
 pytest-xdist = ">=3.0"
 pytest-rerunfailures = ">=14.0"
 mypy = ">=1.10"
+jsonschema = ">=4.23"
 
 [tool.poetry.plugins."pytest11"]
+conductor-agents-testing = "conductor.ai.agents.testing.pytest_plugin"
 agentspan-testing = "conductor.ai.agents.testing.pytest_plugin"
 
 [tool.ruff]

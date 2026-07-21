@@ -39,13 +39,13 @@ Roles:
   the LLM converges instead of repeating the same mistakes.
 
 Constraints for this demo:
-    1. The sentence starts with the word "Agentspan".
+    1. The sentence starts with the word "Conductor".
     2. It contains all three keywords: "deterministic", "loop", "feedback".
     3. It has exactly EXPECTED_WORD_COUNT words (default 20).
 
 Requirements:
-  - AGENTSPAN_SERVER_URL=http://localhost:8080/api (default)
-  - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini (default)
+  - CONDUCTOR_SERVER_URL=http://localhost:8080/api (default)
+  - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini (default)
   - LLM key for the chosen model.
 """
 
@@ -63,7 +63,7 @@ WORK_DIR = os.path.join(tempfile.gettempdir(), "plan-execute-solve")
 CANDIDATES_PER_ITERATION = 2
 MAX_ITERATIONS = 6
 
-EXPECTED_FIRST_WORD = "Agentspan"
+EXPECTED_FIRST_WORD = "Conductor"
 EXPECTED_KEYWORDS = (
     "deterministic",
     "loop",
@@ -356,7 +356,7 @@ def main(argv: list[str]) -> None:
         name="sentence_solver",
         tools=[write_candidate, verify_candidates],
         planner_instructions="(planner unused; plans supplied directly each iteration)",
-        model=os.environ.get("AGENTSPAN_LLM_MODEL", "anthropic/claude-sonnet-4-6"),
+        model=os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "anthropic/claude-sonnet-4-6"),
     )
 
     with AgentRuntime() as runtime:

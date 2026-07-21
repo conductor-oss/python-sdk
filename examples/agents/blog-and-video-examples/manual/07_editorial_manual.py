@@ -5,8 +5,8 @@ writer, fact checker, and copy editor. The human decides the order
 based on what the draft needs at each stage.
 
 Setup:
-    pip install agentspan
-    agentspan server start
+    pip install Conductor
+    Conductor server start
 
     python 08_editorial_manual.py
 """

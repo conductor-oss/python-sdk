@@ -25,7 +25,7 @@ This example uses two guardrails:
 
 Requirements:
     - Conductor server with LLM support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
 """
 
 from settings import settings
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(ops_agent)
         # CLI alternative:
-        # agentspan deploy --package examples.62_cli_tool_guardrails
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(ops_agent)

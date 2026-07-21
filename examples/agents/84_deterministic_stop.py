@@ -31,15 +31,15 @@ The old pattern (still works, but non-deterministic):
     The LLM could ignore this.  handle.stop() makes this unnecessary.
 
 Requirements:
-    - Agentspan server (with _stop_requested support in compiler)
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - Conductor server (with _stop_requested support in compiler)
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 
 import os
 import time
 
-os.environ.setdefault("AGENTSPAN_LOG_LEVEL", "WARNING")
+os.environ.setdefault("CONDUCTOR_AGENT_LOG_LEVEL", "WARNING")
 
 from conductor.ai.agents import Agent, AgentRuntime, tool, wait_for_message_tool
 from settings import settings

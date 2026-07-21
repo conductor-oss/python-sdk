@@ -19,7 +19,7 @@ The LLM drives the retry loop; validation is purely deterministic.
 Every tool call (each attempt + verdict) is logged under one execution
 ID and visible in the UI at http://localhost:8080.
 
-This is the correct Agentspan adaptive loop pattern — not Python
+This is the correct Conductor adaptive loop pattern — not Python
 coordinating multiple runtime.run() calls, but the agent itself
 iterating within a single durable server-side execution.
 
@@ -32,7 +32,7 @@ Constraints verified by the tool (pure Python — no LLM judge):
   6. Evening must be the most expensive slot each day.
 
 Usage:
-    agentspan server start
+    Conductor server start
     export OPENAI_API_KEY=sk-...
     uv run python3 118_adaptive_loop_showcase.py "Tokyo"
     uv run python3 118_adaptive_loop_showcase.py "Paris" --budget 60
@@ -55,7 +55,7 @@ FREE_THRESHOLD: int = 5    # cost ≤ this counts as "free/cheap"
 MIN_PAID_COST: int = 15    # at least one activity per day must cost ≥ this
 MIN_DAILY_SPEND: int = 20  # each day must spend at least this much
 NUM_DAYS: int = 3
-MODEL: str = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
+MODEL: str = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
 
 
 # ── Validation tool (deterministic — no LLM) ─────────────────────────────────

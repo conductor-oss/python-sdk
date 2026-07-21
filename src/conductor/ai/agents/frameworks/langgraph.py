@@ -1,4 +1,4 @@
-# sdk/python/src/agentspan/agents/frameworks/langgraph.py
+# sdk/python/src/conductor/ai/agents/frameworks/langgraph.py
 # Copyright (c) 2025 Agentspan
 # Licensed under the MIT License. See LICENSE file in the project root for details.
 
@@ -1666,7 +1666,7 @@ def _process_updates_chunk(
     auth_key: str,
     auth_secret: str,
 ) -> None:
-    """Map a LangGraph 'updates' chunk to Agentspan SSE events and push non-blocking."""
+    """Map a LangGraph 'updates' chunk to Conductor-agent SSE events non-blockingly."""
     for node_name, state_updates in chunk.items():
         # Always emit a thinking event for each node execution
         _push_event_nonblocking(

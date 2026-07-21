@@ -26,7 +26,7 @@ Setup — required for condensation to trigger
 ---------------------------------------------
 Add to ``server/src/main/resources/application.properties`` and restart::
 
-    agentspan.default-context-window=10000
+    Conductor.default-context-window=10000
 
 Why: gpt-4o-mini has a 128 K context window; 25 × 800-token responses (~20 K
 tokens) would not overflow it naturally.  Setting the window to 10 K forces
@@ -35,9 +35,9 @@ across 25 calls — a realistic simulation of what happens with smaller models o
 agents that accumulate very large tool outputs.
 
 Requirements:
-    - Conductor server with LLM support + ``agentspan.default-context-window=10000``
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - Conductor server with LLM support + ``Conductor.default-context-window=10000``
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, agent_tool, tool
@@ -382,7 +382,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(orchestrator)
         # CLI alternative:
-        # agentspan deploy --package examples.68_context_condensation
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(orchestrator)

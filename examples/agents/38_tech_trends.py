@@ -28,9 +28,9 @@ Architecture:
 
 Run:
     Export as environment variables:
-        AGENTSPAN_SERVER_URL=https://developer.orkescloud.com/api
-        AGENTSPAN_AUTH_KEY=<key>
-        AGENTSPAN_AUTH_SECRET=<secret>
+        CONDUCTOR_SERVER_URL=https://developer.orkescloud.com/api
+        CONDUCTOR_AUTH_KEY=<key>
+        CONDUCTOR_AUTH_SECRET=<secret>
     python 38_tech_trends.py
 """
 
@@ -323,7 +323,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(pipeline)
         # CLI alternative:
-        # agentspan deploy --package examples.38_tech_trends
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(pipeline)
