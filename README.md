@@ -177,6 +177,9 @@ python quickstart.py
 >
 > # Optional — set to false to force HTTP/1.1 if your network environment has unstable long-lived HTTP/2 connections (default: true)
 > # export CONDUCTOR_HTTP2_ENABLED=false
+>
+> # Optional — set to false to keep retrying on HTTP/2 instead of automatically falling back to HTTP/1.1 after an HTTP/2 protocol error (default: true)
+> # export CONDUCTOR_HTTP2_AUTO_FALLBACK=false
 > ```
 > See [Configuration](#configuration) for details.
 
