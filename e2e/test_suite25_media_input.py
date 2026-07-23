@@ -213,6 +213,12 @@ class TestSuite25MediaInput:
 
         result = runtime.run(agent, READ_PROMPT, timeout=TIMEOUT)
 
+        if (
+            result.error
+            and "reached your specified api usage limits" in result.error.lower()
+        ):
+            pytest.skip("Anthropic API usage budget is exhausted")
+
         assert result.status == "COMPLETED", (
             f"no-media run did not complete: status={result.status} "
             f"execution_id={result.execution_id}"
