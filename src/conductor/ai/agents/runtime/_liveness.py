@@ -155,7 +155,7 @@ class LocalLivenessCheck:
                 "The worker subprocess(es) are not running. This usually means "
                 "fork() failed or an exception was swallowed during "
                 "WorkerManager.start(). Check process logs and retry start(). "
-                "Set AGENTSPAN_LIVENESS_ENABLED=false to disable this check."
+                "Set CONDUCTOR_AGENT_LIVENESS_ENABLED=false to disable this check."
             ),
         )
 
@@ -267,7 +267,7 @@ class ServerLivenessMonitor:
                     "No worker is polling for these tasks. If the original "
                     "process died, re-run with the same idempotency_key (or "
                     "call runtime.resume(execution_id, agent)) to re-attach "
-                    "workers. Set AGENTSPAN_LIVENESS_ENABLED=false to disable."
+                    "workers. Set CONDUCTOR_AGENT_LIVENESS_ENABLED=false to disable."
                 ),
             )
             try:

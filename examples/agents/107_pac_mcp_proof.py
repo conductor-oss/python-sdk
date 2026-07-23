@@ -25,8 +25,8 @@ Setup:
     # 1. Start mcp-testkit:
     uv run mcp-testkit --transport http --port 3001
 
-    # 2. (Re)start agentspan server with the new PAC build:
-    kill <pid-of-running-agentspan>
+    # 2. (Re)start Conductor server with the new PAC build:
+    kill <pid-of-running-Conductor>
     cd server && ./gradlew bootRun
 
     # 3. Run this script:
@@ -48,11 +48,11 @@ from conductor.ai.agents.tool import ToolDef, agent_tool
 
 # ── Endpoints ─────────────────────────────────────────────────────────
 
-AGENTSPAN_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
-# Conductor REST runs alongside agentspan; we'll read the compiled
+CONDUCTOR_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
+# The agent runtime uses Conductor REST; read the compiled
 # WorkflowDef directly off Conductor to *prove* PAC emitted the right
 # task types (not just trust the SDK's view of execution.status).
-CONDUCTOR_BASE = AGENTSPAN_URL.replace("/api", "")
+CONDUCTOR_BASE = CONDUCTOR_URL.replace("/api", "")
 MCP_URL = "http://localhost:3001/mcp"
 
 
@@ -215,7 +215,7 @@ def find_compiled_workflow_def(parent_id: str) -> tuple[str, dict]:
                 if wd:
                     # Read the WorkflowDef out of PAC's task output directly.
                     # The /metadata/workflow/{name} endpoint returns only the
-                    # placeholder agentspan registered up-front; PAC compiles
+                    # placeholder Conductor registered up-front; PAC compiles
                     # a fresh def per execution and emits it here.
                     return out.get("workflowName", "<unknown>"), wd
             sub = t.get("subWorkflowId")
@@ -248,7 +248,7 @@ def main() -> int:
     print("=" * 70)
     print("  PAC end-to-end proof — PLAN_EXECUTE with toolType routing")
     print("=" * 70)
-    print(f"  agentspan: {AGENTSPAN_URL}")
+    print(f"  Conductor: {CONDUCTOR_URL}")
     print(f"  conductor: {CONDUCTOR_BASE}")
     print(f"  mcp:       {MCP_URL}")
     print()

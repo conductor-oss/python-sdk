@@ -5,12 +5,12 @@
 
 Demonstrates:
     - Using langgraph.prebuilt.create_react_agent directly with AgentRuntime
-    - No Agentspan wrapper needed — pass the graph straight to runtime.run()
-    - Agentspan detects the ReAct structure and runs LLM + tools on Conductor
+    - No Conductor wrapper needed — pass the graph straight to runtime.run()
+    - Conductor detects the ReAct structure and runs LLM + tools on Conductor
       (AI_MODEL task for the LLM, SIMPLE tasks per tool)
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY for ChatOpenAI
 """
 
@@ -51,7 +51,7 @@ def reverse_string(text: str) -> str:
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-# create_react_agent from langgraph.prebuilt — no Agentspan wrapper needed.
+# create_react_agent from langgraph.prebuilt — no Conductor wrapper needed.
 # AgentRuntime automatically detects the "agent" + "tools" node structure,
 # extracts the LLM and tools, and runs them on Conductor as separate tasks.
 graph = create_react_agent(llm, tools=[calculate, count_words, reverse_string], name="math_and_text_agent")
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         graph,
         "What is sqrt(256) + 2**10? "
         "Also count the words in 'the quick brown fox jumps over the lazy dog'. "
-        "And what is 'Agentspan' reversed?",
+        "And what is 'Conductor' reversed?",
         )
         print(f"Status: {result.status}")
         result.print_result()
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(graph)
         # CLI alternative:
-        # agentspan deploy --package examples.langgraph.41_react_agent_basic
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(graph)

@@ -13,6 +13,7 @@ from __future__ import annotations
 from conductor.client.ai.agent_errors import (  # noqa: F401
     AgentAPIError,
     AgentNotFoundError,
+    ConductorAgentError,
     AgentspanError,
     _raise_api_error,
 )

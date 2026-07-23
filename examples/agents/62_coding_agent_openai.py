@@ -1,12 +1,12 @@
 # Copyright (c) 2025 Agentspan
 # Licensed under the MIT License. See LICENSE file in the project root for details.
 
-"""Coding Agent (OpenAI fallback) — a Claude Code alternative via Agentspan.
+"""Coding Agent (OpenAI fallback) — a Claude Code alternative via Conductor.
 
 Use this when Claude Code is unavailable (outages, rate limits, etc.). It
 provides the same core workflow — read/edit files, run shell commands, execute
 code, review changes — but runs on OpenAI GPT-4o (or any provider you set via
-AGENTSPAN_LLM_MODEL).
+CONDUCTOR_AGENT_LLM_MODEL).
 
 Architecture:
     coder  ↔  qa_reviewer  (SWARM — LLM-driven handoffs)
@@ -31,15 +31,15 @@ Usage:
     python 62_coding_agent_openai.py
 
 Environment variables:
-    AGENTSPAN_SERVER_URL   — Agentspan server (default: http://localhost:8080/api)
-    AGENTSPAN_LLM_MODEL    — override model (default: openai/gpt-4o)
+    CONDUCTOR_SERVER_URL   — Conductor server (default: http://localhost:8080/api)
+    CONDUCTOR_AGENT_LLM_MODEL    — override model (default: openai/gpt-4o)
     OPENAI_API_KEY         — required for default OpenAI model
     CODING_AGENT_CWD       — working directory for file ops (default: current dir)
 
 Requirements:
-    - Agentspan server running (agentspan server start)
-    - AGENTSPAN_SERVER_URL set
-    - OPENAI_API_KEY set (or AGENTSPAN_LLM_MODEL pointing to another provider)
+    - Conductor server running (Conductor server start)
+    - CONDUCTOR_SERVER_URL set
+    - OPENAI_API_KEY set (or CONDUCTOR_AGENT_LLM_MODEL pointing to another provider)
 """
 
 from __future__ import annotations
@@ -56,7 +56,7 @@ from conductor.ai.agents.tool import tool
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o")
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o")
 # Root directory that file tools operate within; agents see paths relative to it.
 WORKDIR = os.environ.get("CODING_AGENT_CWD", os.getcwd())
 
@@ -340,7 +340,7 @@ Rules:
 def _banner() -> None:
     provider = MODEL.split("/")[0] if "/" in MODEL else MODEL
     print("=" * 60)
-    print("  Coding Agent (Agentspan fallback for Claude Code outages)")
+    print("  Coding Agent (Conductor fallback for Claude Code outages)")
     print(f"  Model  : {MODEL}")
     print(f"  Workdir: {WORKDIR}")
     print("=" * 60)
@@ -375,4 +375,4 @@ if __name__ == "__main__":
         # Production deployment pattern:
         # 1. Deploy once:    runtime.deploy(coder)
         # 2. Serve workers:  runtime.serve(coder)
-        # CLI:  agentspan deploy --package examples.62_coding_agent_openai
+        # CLI:  runtime.deploy(agent) from a release script

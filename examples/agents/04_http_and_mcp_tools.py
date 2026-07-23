@@ -19,15 +19,15 @@ MCP Test Server Setup (mcp-testkit):
     # Or start with auth (requires storing the secret as a credential):
     mcp-testkit --transport http --auth <secret>
 
-    # Store credentials via CLI or Agentspan UI:
-    agentspan credentials set HTTP_TEST_API_KEY <secret>
-    agentspan credentials set MCP_TEST_API_KEY <secret>
+    # Store credentials via CLI or Conductor UI:
+    the Conductor server credential store
+    the Conductor server credential store
 
 Requirements:
     - Conductor server with LLM support
     - mcp-testkit running on http://localhost:3001 (see setup above)
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, tool, http_tool, mcp_tool
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.04_http_and_mcp_tools
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

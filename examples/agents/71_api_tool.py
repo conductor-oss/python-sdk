@@ -23,15 +23,15 @@ MCP Test Server Setup (mcp-testkit) — required for examples 1-3:
     # Or start with auth (requires storing the secret as a credential):
     mcp-testkit --transport http --auth <secret>
 
-    # Store credentials via CLI or Agentspan UI:
-    agentspan credentials set HTTP_TEST_API_KEY <secret>
+    # Store credentials via CLI or Conductor UI:
+    the Conductor server credential store
 
 Requirements:
     - Conductor server with LLM support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
     - mcp-testkit running on http://localhost:3001 (for examples 1-3, see setup above)
-    - For GitHub example: agentspan credentials set GITHUB_TOKEN ghp_xxx
+    - For GitHub example: the Conductor server credential store
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, api_tool, tool
@@ -129,7 +129,7 @@ multi_tool_agent = Agent(
 # it needs.
 #
 # Before running:
-#   agentspan credentials set GITHUB_TOKEN ghp_xxxxxxxxxxxx
+#   the Conductor server credential store
 
 github = api_tool(
     url="https://api.github.com",
@@ -171,7 +171,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(math_agent)
         # CLI alternative:
-        # agentspan deploy --package examples.71_api_tool
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(math_agent)

@@ -9,7 +9,7 @@ with exactly ONE line changed.
 Before (runs directly against OpenAI):
     from agents import Runner
 
-After (runs on Agentspan — durable, observable, scalable):
+After (runs on Conductor — durable, observable, scalable):
     from conductor.ai import Runner
 
 The diff:
@@ -17,21 +17,21 @@ The diff:
     +from conductor.ai import Runner
 
 Sandbox agents run code in an isolated Docker environment. The model can
-inspect a workspace (files, directories) using a shell tool. With AgentspanRunner:
-  - Every shell command the model executes is recorded in Agentspan
-  - The full sandbox session is visible in the Agentspan UI
-  - If the process crashes, the Agentspan execution history is preserved
+inspect a workspace (files, directories) using a shell tool. With ConductorRunner:
+  - Every shell command the model executes is recorded in Conductor
+  - The full sandbox session is visible in the Conductor UI
+  - If the process crashes, the Conductor execution history is preserved
 
 Architecture:
     SandboxAgent — openai-agents sandbox agent (file inspection via shell)
     Docker        — isolated container with the workspace files
-    AgentspanRunner — routes execution through Agentspan instead of OpenAI directly
+    ConductorRunner — routes execution through Conductor instead of OpenAI directly
 
 Requirements:
     - uv add openai-agents
     - Docker running locally (docker ps should work)
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o
 
 Usage:
     python 97_openai_runner_sandbox.py
@@ -68,7 +68,7 @@ except ImportError:
 
 # ── Only this line changes ──────────────────────────────────────────────────
 # from agents import Runner          # ← original (runs directly on OpenAI)
-from conductor.ai import Runner         # ← agentspan (runs on Agentspan)
+from conductor.ai import Runner         # ← Conductor (runs on Conductor)
 # ───────────────────────────────────────────────────────────────────────────
 
 DEFAULT_QUESTION = "Summarize this project in 2 sentences."
@@ -82,7 +82,7 @@ def _build_manifest() -> Manifest:
             "README.md": File(
                 content=(
                     b"# Demo Project\n\n"
-                    b"A tiny demo project for the Agentspan sandbox runner example.\n"
+                    b"A tiny demo project for the Conductor sandbox runner example.\n"
                     b"The model can inspect files through the shell tool.\n"
                 )
             ),
@@ -146,13 +146,13 @@ async def main(model: str, question: str) -> None:
 
     try:
         async with sandbox:
-            # Run the agent — AgentspanRunner.run_streamed() is a drop-in for Runner.run_streamed()
+            # Run the agent — ConductorRunner.run_streamed() is a drop-in for Runner.run_streamed()
             stream = await Runner.run_streamed(
                 agent,
                 question,
                 run_config=RunConfig(
                     sandbox=SandboxRunConfig(session=sandbox),
-                    workflow_name="Agentspan Docker sandbox example",
+                    workflow_name="Conductor Docker sandbox example",
                 ),
             )
 
@@ -171,13 +171,13 @@ async def main(model: str, question: str) -> None:
 
             result = await stream.get_result()
             print(f"\n\nExecution ID: {result.execution_id}")
-            print("(View full run in the Agentspan UI)")
+            print("(View full run in the Conductor UI)")
     finally:
         await docker_client.delete(sandbox)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Agentspan sandbox agent (Docker)")
+    parser = argparse.ArgumentParser(description="Conductor sandbox agent (Docker)")
     parser.add_argument("--model", default=DEFAULT_MODEL, help="LLM model to use")
     parser.add_argument("--question", default=DEFAULT_QUESTION, help="Question to ask")
     args = parser.parse_args()

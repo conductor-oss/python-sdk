@@ -23,8 +23,8 @@ Usage:
     python 100_issue_fixer_agent.py 42
 
 Requirements:
-    - Agentspan server running
-    - GH_TOKEN: agentspan credentials set GH_TOKEN <your-token>
+    - Conductor server running
+    - GH_TOKEN: the Conductor server credential store
     - gh CLI installed and authenticated
     - DG skill: git clone https://github.com/v1r3n/dinesh-gilfoyle ~/.claude/skills/dg
     - Full build toolchain (Go, Java 21, Python 3.10+, Node.js, pnpm, uv)
@@ -52,7 +52,7 @@ from _issue_fixer_tools import (
 )
 
 # ── Project-Specific Configuration ────────────────────────────
-REPO = "agentspan-ai/agentspan"
+REPO = "Conductor-ai/Conductor"
 REPO_URL = f"https://github.com/{REPO}"
 BRANCH_PREFIX = "fix/issue-"
 
@@ -461,7 +461,7 @@ def main():
     pr_number = args.pr
 
     # Create a temp working directory with a random suffix.
-    work_dir = os.path.join(tempfile.gettempdir(), f"agentspan-fix-{uuid.uuid4().hex[:12]}")
+    work_dir = os.path.join(tempfile.gettempdir(), f"Conductor-fix-{uuid.uuid4().hex[:12]}")
     set_working_dir(work_dir)
     print(f"Working directory: {work_dir}")
 

@@ -19,11 +19,11 @@ The external worker typically runs in a separate process. Here we
 simulate both in one file for demonstration.
 
 Setup (one-time):
-    agentspan credentials set GITHUB_TOKEN <your-github-token>
+    the Conductor server credential store
 Requirements:
-    - Agentspan server running at AGENTSPAN_SERVER_URL
-    - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-5.4)
-    - GITHUB_TOKEN stored via `agentspan credentials set`
+    - Conductor server running at CONDUCTOR_SERVER_URL
+    - CONDUCTOR_AGENT_LLM_MODEL set (or defaults to openai/gpt-5.4)
+    - GITHUB_TOKEN stored via `the Conductor server credential store`
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, tool, resolve_credentials

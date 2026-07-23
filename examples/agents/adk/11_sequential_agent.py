@@ -63,7 +63,7 @@ def main():
         # 1. Deploy once during CI/CD:
         # runtime.deploy(pipeline)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.11_sequential_agent
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(pipeline)

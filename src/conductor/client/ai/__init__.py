@@ -19,6 +19,7 @@ from conductor.client.agent_client import AgentClient, SSEUnavailableError
 from conductor.client.ai.agent_errors import (
     AgentAPIError,
     AgentNotFoundError,
+    ConductorAgentError,
     AgentspanError,
 )
 from conductor.client.ai.schedule import Schedule, ScheduleInfo
@@ -33,6 +34,7 @@ __all__ = [
     "AgentClient",
     "AgentAPIError",
     "AgentNotFoundError",
+    "ConductorAgentError",
     "AgentspanError",
     "InvalidCronExpression",
     "Schedule",

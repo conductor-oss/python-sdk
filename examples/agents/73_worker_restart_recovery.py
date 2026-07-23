@@ -10,13 +10,13 @@ Demonstrates:
     - Watching the same workflow complete after the worker service returns
 
 This proves worker-service durability. The workflow remains stored on the
-Agentspan/Conductor server while Python tool workers are unavailable, and it
+Conductor/Conductor server while Python tool workers are unavailable, and it
 continues when a worker service comes back online.
 
 Requirements:
-    - Agentspan server running
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in environment
-    - AGENTSPAN_LLM_MODEL set (default: openai/gpt-4o-mini via settings.py)
+    - Conductor server running
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in environment
+    - CONDUCTOR_AGENT_LLM_MODEL set (default: openai/gpt-4o-mini via settings.py)
     - Provider API key configured on the server (for example OPENAI_API_KEY)
 """
 
@@ -32,9 +32,9 @@ from pathlib import Path
 from conductor.ai.agents import Agent, AgentRuntime, tool
 from settings import settings
 
-DEFAULT_WORKFLOW_FILE = Path("/tmp/agentspan_worker_restart.execution_id")
-DEFAULT_WORKER_INFO_FILE = Path("/tmp/agentspan_worker_restart.worker.json")
-DEFAULT_ATTEMPT_FILE = Path("/tmp/agentspan_worker_restart.attempts.json")
+DEFAULT_WORKFLOW_FILE = Path("/tmp/Conductor_worker_restart.execution_id")
+DEFAULT_WORKER_INFO_FILE = Path("/tmp/Conductor_worker_restart.worker.json")
+DEFAULT_ATTEMPT_FILE = Path("/tmp/Conductor_worker_restart.attempts.json")
 
 
 def now_iso() -> str:
@@ -129,7 +129,7 @@ def run_once() -> None:
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.73_worker_restart_recovery
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

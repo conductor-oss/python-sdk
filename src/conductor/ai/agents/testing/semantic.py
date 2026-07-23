@@ -5,7 +5,7 @@
 
 Requires ``litellm`` (optional dependency).  Install with::
 
-    pip install agentspan[testing]
+    pip install conductor-python[agents]
 
 Usage::
 
@@ -52,7 +52,7 @@ def assert_output_satisfies(
     except ImportError:
         raise ImportError(
             "litellm is required for semantic assertions.\n"
-            "Install it with: pip install agentspan[testing]"
+            "Install it with: pip install conductor-python[agents]"
         )
 
     output = str(result.output) if result.output is not None else ""

@@ -63,7 +63,7 @@ def main():
         # 1. Deploy once during CI/CD:
         # runtime.deploy(parallel_analysis)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.12_parallel_agent
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(parallel_analysis)

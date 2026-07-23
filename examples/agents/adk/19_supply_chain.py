@@ -136,7 +136,7 @@ def main():
         # 1. Deploy once during CI/CD:
         # runtime.deploy(coordinator)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.19_supply_chain
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(coordinator)

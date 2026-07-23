@@ -11,7 +11,7 @@ step by step.
 Requirements:
     - Conductor server with LLM support
     - pip install jupyter_client ipykernel
-    - export AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - export CONDUCTOR_SERVER_URL=http://localhost:8080/api
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, CodeExecutionConfig
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(jupyter_coder)
         # CLI alternative:
-        # agentspan deploy --package examples.39b_jupyter_code_execution
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(jupyter_coder)

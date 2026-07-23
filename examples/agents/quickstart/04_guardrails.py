@@ -28,7 +28,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # rt.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.quickstart.04_guardrails
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # rt.serve(agent)

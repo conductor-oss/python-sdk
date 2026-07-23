@@ -80,6 +80,10 @@ class TestEnvInt:
         with mock.patch.dict(os.environ, {"NUM": ""}, clear=True):
             assert _env_int("NUM", 7) == 7
 
+    def test_invalid_value_uses_default(self):
+        with mock.patch.dict(os.environ, {"NUM": "not-a-number"}, clear=True):
+            assert _env_int("NUM", 7) == 7
+
 
 class TestEnvFloat:
     """Tests for _env_float() helper."""
@@ -96,6 +100,10 @@ class TestEnvFloat:
         with mock.patch.dict(os.environ, {"SECS": ""}, clear=True):
             assert _env_float("SECS", 30.0) == 30.0
 
+    def test_invalid_value_uses_default(self):
+        with mock.patch.dict(os.environ, {"SECS": "not-a-number"}, clear=True):
+            assert _env_float("SECS", 30.0) == 30.0
+
 
 class TestAgentConfigFromEnv:
     """Tests for AgentConfig.from_env() — agent-runtime settings only."""
@@ -109,9 +117,9 @@ class TestAgentConfigFromEnv:
 
     def test_boolean_env_vars(self):
         env = {
-            "AGENTSPAN_DAEMON_WORKERS": "false",
-            "AGENTSPAN_INTEGRATIONS_AUTO_REGISTER": "true",
-            "AGENTSPAN_STREAMING_ENABLED": "no",
+            "CONDUCTOR_AGENT_DAEMON_WORKERS": "false",
+            "CONDUCTOR_AGENT_INTEGRATIONS_AUTO_REGISTER": "true",
+            "CONDUCTOR_AGENT_STREAMING_ENABLED": "no",
         }
         with mock.patch.dict(os.environ, env, clear=True):
             config = AgentConfig.from_env()
@@ -121,8 +129,8 @@ class TestAgentConfigFromEnv:
 
     def test_numeric_env_vars(self):
         env = {
-            "AGENTSPAN_WORKER_POLL_INTERVAL": "250",
-            "AGENTSPAN_WORKER_THREADS": "4",
+            "CONDUCTOR_AGENT_WORKER_POLL_INTERVAL": "250",
+            "CONDUCTOR_AGENT_WORKER_THREADS": "4",
         }
         with mock.patch.dict(os.environ, env, clear=True):
             config = AgentConfig.from_env()
@@ -132,6 +140,23 @@ class TestAgentConfigFromEnv:
     def test_direct_construction(self):
         config = AgentConfig(worker_thread_count=8)
         assert config.worker_thread_count == 8
+
+    def test_legacy_values_remain_supported(self):
+        with mock.patch.dict(
+            os.environ, {"AGENTSPAN_WORKER_THREADS": "4"}, clear=True
+        ):
+            assert AgentConfig.from_env().worker_thread_count == 4
+
+    def test_canonical_value_wins_over_legacy(self):
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CONDUCTOR_AGENT_WORKER_THREADS": "8",
+                "AGENTSPAN_WORKER_THREADS": "4",
+            },
+            clear=True,
+        ):
+            assert AgentConfig.from_env().worker_thread_count == 8
 
 
 class TestLivenessConfig:
@@ -146,9 +171,9 @@ class TestLivenessConfig:
 
     def test_from_env(self):
         env = {
-            "AGENTSPAN_LIVENESS_ENABLED": "false",
-            "AGENTSPAN_LIVENESS_STALL_SECONDS": "45",
-            "AGENTSPAN_LIVENESS_CHECK_INTERVAL_SECONDS": "5",
+            "CONDUCTOR_AGENT_LIVENESS_ENABLED": "false",
+            "CONDUCTOR_AGENT_LIVENESS_STALL_SECONDS": "45",
+            "CONDUCTOR_AGENT_LIVENESS_CHECK_INTERVAL_SECONDS": "5",
         }
         with mock.patch.dict(os.environ, env, clear=True):
             config = AgentConfig.from_env()

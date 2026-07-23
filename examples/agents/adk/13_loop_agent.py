@@ -62,7 +62,7 @@ def main():
         # 1. Deploy once during CI/CD:
         # runtime.deploy(refinement_loop)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.13_loop_agent
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(refinement_loop)

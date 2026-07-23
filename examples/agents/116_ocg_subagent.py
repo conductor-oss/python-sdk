@@ -33,7 +33,7 @@ Run (from ``sdk/python``)::
     uv run python examples/116_ocg_subagent.py
 
     # against an embedded server (e.g. orkes on 8080), add:
-    #   AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    #   CONDUCTOR_SERVER_URL=http://localhost:8080/api
 """
 
 import os
@@ -41,7 +41,7 @@ import os
 from conductor.ai.agents import Agent, AgentRuntime, agent_tool
 from conductor.ai.agents.ocg import ocg_agent
 
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "anthropic/claude-sonnet-4-6")
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "anthropic/claude-sonnet-4-6")
 
 # Per-tool instance binding — required: every OCG tool binds the instance
 # it talks to; there is no server-side default.

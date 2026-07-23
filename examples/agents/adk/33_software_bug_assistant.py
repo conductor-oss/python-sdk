@@ -21,8 +21,8 @@ Architecture:
 
 Requirements:
     - Conductor server with AgentTool + MCP support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
-    - AGENTSPAN_LLM_MODEL=google_gemini/gemini-2.0-flash in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_AGENT_LLM_MODEL=google_gemini/gemini-2.0-flash in .env or environment
     - GH_TOKEN in .env or environment
 """
 
@@ -281,7 +281,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(software_assistant)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.33_software_bug_assistant
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(software_assistant)

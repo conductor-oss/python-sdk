@@ -159,7 +159,7 @@ def _coerce_value(value, annotation):
 def _resolve_secrets_from_task(task, names: list) -> dict:
     """Resolve declared secret *names* from the values the host delivered on the task.
 
-    Secured hosts (e.g. orkes/agentspan) resolve a worker's declared
+    Secured Conductor hosts resolve a worker's declared
     ``TaskDef.runtimeMetadata`` secret names at poll time and deliver the values on
     the wire-only ``Task.runtimeMetadata`` map (conductor-oss PR #1255) — never
     persisted to task input. The worker just reads them here; there is no separate
@@ -179,7 +179,7 @@ def _resolve_secrets_from_task(task, names: list) -> dict:
         raise CredentialNotFoundError(
             missing,
             "Not delivered by the server on this task. Ensure each secret is stored "
-            "(agentspan credentials set --name <NAME>) and declared on the tool/agent "
+            "in the Conductor credential store and declared on the tool/agent "
             "so the server resolves it at poll time.",
         )
     return resolved

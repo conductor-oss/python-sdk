@@ -10,10 +10,10 @@ Same parallel review as 02_code_review_parallel.py, but fetches a real
 PR diff from GitHub and posts the review as a PR comment.
 
 Setup:
-    pip install agentspan requests
-    agentspan server start
+    pip install Conductor requests
+    Conductor server start
 
-    # Store credentials in the AgentSpan UI (localhost:8080 → Credentials):
+    # Store credentials in the Conductor UI (localhost:8080 → Credentials):
     #   GITHUB_TOKEN = your GitHub personal access token (needs repo scope)
 
     python 02_code_review_parallel_github.py
@@ -157,7 +157,7 @@ pipeline = fetcher >> review >> summarizer
 # ── Run ───────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    REPO = "deeptireddy-lab/agentspan-metrics"
+    REPO = "deeptireddy-lab/Conductor-metrics"
     PR_NUMBER = 1
 
     with AgentRuntime() as runtime:

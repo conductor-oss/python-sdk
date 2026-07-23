@@ -20,13 +20,13 @@ Two scenarios are exercised:
      deterministic plan, and the harness's ``fallback`` agent recovers.
 
 Run:
-    AGENTSPAN_SERVER_URL=http://localhost:8080/api \\
+    CONDUCTOR_SERVER_URL=http://localhost:8080/api \\
     OPENAI_API_KEY=... \\
     python 104_plan_execute_guardrails.py [topic]
 
 Requirements:
-  - Agentspan server running with PLAN_AND_COMPILE
-  - OPENAI_API_KEY (or matching provider for AGENTSPAN_LLM_MODEL)
+  - Conductor server running with PLAN_AND_COMPILE
+  - OPENAI_API_KEY (or matching provider for CONDUCTOR_AGENT_LLM_MODEL)
 """
 
 import os
@@ -46,7 +46,7 @@ from conductor.ai.agents import (
 from settings import settings
 
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 CONDUCTOR_BASE = SERVER_URL.rstrip("/").replace("/api", "")
 
 

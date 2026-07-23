@@ -22,7 +22,7 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.ai.agents.schedule import Schedule
 
 SERVER = "http://localhost:8080/api"
-MODEL = os.environ.get("AGENTSPAN_MODEL", "anthropic/claude-sonnet-4-6")
+MODEL = os.environ.get("CONDUCTOR_AGENT_MODEL", "anthropic/claude-sonnet-4-6")
 
 
 def fetch_executions(agent_name: str, limit: int = 30) -> list[dict]:

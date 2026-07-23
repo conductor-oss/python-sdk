@@ -15,7 +15,7 @@ class CredentialNotFoundError(AgentspanError):
 
     Raised when a declared credential is not found in the credential store.
     There is no env var fallback for declared credentials — store them with
-    ``agentspan credentials set --name <NAME>``.
+    Configure the credential in the Conductor server's secret provider.
     """
 
     def __init__(self, missing_names: List[str], detail: str = "") -> None:

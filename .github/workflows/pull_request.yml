@@ -32,7 +32,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .
-          pip install pytest pytest-cov coverage
+          pip install pytest pytest-cov coverage jsonschema
 
       - name: Verify agents import without extras installed
         id: agent_base_import

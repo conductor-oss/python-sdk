@@ -5,8 +5,8 @@ Each round, every reviewer sees what the others said and builds on it.
 After the debate, a summarizer produces the final verdict.
 
 Setup:
-    pip install agentspan
-    agentspan server start
+    pip install Conductor
+    Conductor server start
 
     python 06_code_review_debate.py
 """

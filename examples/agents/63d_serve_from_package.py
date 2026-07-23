@@ -16,7 +16,7 @@ explicitly list every agent when serving a large codebase.
 
 Requirements:
     - Conductor server running
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
     - A Python package with Agent instances at module level
 """
 
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(monitoring_agent, *discover_agents(["myapp.agents"]))
         # CLI alternative:
-        # agentspan deploy --package examples.63d_serve_from_package
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(monitoring_agent, packages=["myapp.agents"])

@@ -19,9 +19,9 @@ Usage:
     python 82b_coding_agent_tui.py --cwd /path/to/repo
 
 Requirements:
-    - AgentSpan server running at http://localhost:8080
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o
+    - Conductor server running at http://localhost:8080
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o
 """
 
 import argparse
@@ -34,7 +34,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-os.environ.setdefault("AGENTSPAN_LOG_LEVEL", "WARNING")
+os.environ.setdefault("CONDUCTOR_AGENT_LOG_LEVEL", "WARNING")
 
 from prompt_toolkit import Application
 from prompt_toolkit.buffer import Buffer
@@ -49,7 +49,7 @@ from settings import settings
 # Constants
 # ---------------------------------------------------------------------------
 
-SESSION_FILE = Path("/tmp/agentspan_coding_agent_tui.session")
+SESSION_FILE = Path("/tmp/Conductor_coding_agent_tui.session")
 _DEFAULT_SHELL_TIMEOUT = 30
 _MAX_FILE_BYTES = 200_000
 _MAX_SHELL_OUTPUT = 8_000

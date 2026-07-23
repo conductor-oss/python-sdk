@@ -30,7 +30,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # rt.deploy(pipeline)
         # CLI alternative:
-        # agentspan deploy --package examples.quickstart.03_multi_agent
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # rt.serve(pipeline)

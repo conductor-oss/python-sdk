@@ -9,7 +9,7 @@ Demonstrates:
     - Printing the result
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY for ChatOpenAI
 """
 
@@ -19,7 +19,7 @@ from conductor.ai.agents import AgentRuntime
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-# create_agent with no tools — pure LLM chat, detected as langgraph by Agentspan
+# create_agent with no tools — pure LLM chat, detected as langgraph by Conductor
 graph = create_agent(llm, tools=[], name="hello_world_agent")
 
 if __name__ == "__main__":
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(graph)
         # CLI alternative:
-        # agentspan deploy --package examples.langgraph.01_hello_world
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(graph)

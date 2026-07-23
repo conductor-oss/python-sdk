@@ -17,13 +17,13 @@ How it works:
        injected as env vars. The parent process's os.environ is unchanged.
 
 Setup (one-time, via CLI):
-    agentspan login                                     # authenticate
-    agentspan credentials set GH_TOKEN <your-github-token> # enter token when prompted
+    Conductor login                                     # authenticate
+    the Conductor server credential store
 
 Requirements:
-    - Agentspan server running at AGENTSPAN_SERVER_URL
-    - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-5.4)
-    - GH_TOKEN stored via `agentspan credentials set` OR set in os.environ
+    - Conductor server running at CONDUCTOR_SERVER_URL
+    - CONDUCTOR_AGENT_LLM_MODEL set (or defaults to openai/gpt-5.4)
+    - GH_TOKEN stored via `the Conductor server credential store` OR set in os.environ
 """
 
 import os
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     with AgentRuntime() as runtime:
         result = runtime.run(
             agent,
-            "List the 5 most recently updated repos for the 'agentspan-ai' GitHub org.",
+            "List the 5 most recently updated repos for the 'Conductor-ai' GitHub org.",
         )
         result.print_result()
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.16_credentials_isolated_tool
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

@@ -5,8 +5,8 @@ to specialists. Specialists can transfer to each other — not just
 back to the front-line. Peer-to-peer, not top-down.
 
 Setup:
-    pip install agentspan
-    agentspan server start
+    pip install Conductor
+    Conductor server start
 
     python 05_support_swarm.py
 """

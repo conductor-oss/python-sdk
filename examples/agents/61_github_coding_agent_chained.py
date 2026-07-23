@@ -11,11 +11,11 @@ Deploys and serves a three-stage pipeline:
 
 Run:
     python github_coding_agent.py          # Deploy + serve
-    agentspan run github_pipeline "..."    # Trigger (from another terminal)
+    Conductor run github_pipeline "..."    # Trigger (from another terminal)
 
 Requirements:
-    - Agentspan server running
-    - GITHUB_TOKEN stored: agentspan credentials set GITHUB_TOKEN <your-github-token>
+    - Conductor server running
+    - GITHUB_TOKEN stored: the Conductor server credential store
     - gh CLI installed
 """
 
@@ -24,7 +24,7 @@ from conductor.ai.agents.cli_config import CliConfig
 from conductor.ai.agents.gate import TextGate
 from conductor.ai.agents.handoff import OnTextMention
 
-REPO = "agentspan-ai/codingexamples"
+REPO = "Conductor-ai/codingexamples"
 MODEL = "anthropic/claude-sonnet-4-6"
 
 
@@ -184,7 +184,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # rt.deploy(pipeline)
         # CLI alternative:
-        # agentspan deploy --package examples.61_github_coding_agent_chained
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # rt.serve(pipeline)

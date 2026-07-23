@@ -35,10 +35,10 @@ but the *iteration count is enforced by the problem itself*. You will
 see a loop running. Many times. As intended.
 
 Requirements:
-  - AGENTSPAN_SERVER_URL=http://localhost:8080/api (default)
-  - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini (default)
+  - CONDUCTOR_SERVER_URL=http://localhost:8080/api (default)
+  - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini (default)
   - LLM key for the chosen model.
-  - AGENTSPAN_BINSEARCH_SECRET (optional override; default 642)
+  - CONDUCTOR_AGENT_BINSEARCH_SECRET (optional override; default 642)
 """
 
 import json
@@ -60,7 +60,7 @@ def _pick_secret() -> int:
     """Default secret is deliberately off the obvious binary-search
     midpoints so the LLM can't hit it on iter 0 by guessing 500.
     Override via env var to test convergence on other targets."""
-    env = os.environ.get("AGENTSPAN_BINSEARCH_SECRET")
+    env = os.environ.get("CONDUCTOR_AGENT_BINSEARCH_SECRET")
     if env:
         return int(env)
     return 642
@@ -270,7 +270,7 @@ def main(argv: list[str]) -> None:
         name="binsearch",
         tools=[write_guess, check_guess],
         planner_instructions="(planner unused; plans supplied directly each iteration)",
-        model=os.environ.get("AGENTSPAN_LLM_MODEL", "anthropic/claude-sonnet-4-6"),
+        model=os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "anthropic/claude-sonnet-4-6"),
     )
 
     with AgentRuntime() as runtime:

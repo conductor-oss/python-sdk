@@ -4,7 +4,7 @@ This demo proves that an agent execution survives a hard kill of the local SDK p
 
 ## Prerequisites
 
-Start the Agentspan server with Docker Compose from the deployment branch or worktree:
+Start a Conductor server with Docker Compose or the Conductor CLI:
 
 ```bash
 cd deployment/docker-compose
@@ -26,8 +26,8 @@ pip install conductor-agent-sdk
 Set the server URL and model:
 
 ```bash
-export AGENTSPAN_SERVER_URL=http://localhost:8080/api
-export AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini
+export CONDUCTOR_SERVER_URL=http://localhost:8080/api
+export CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini
 ```
 
 ## Terminal 1: Start the agent
@@ -41,7 +41,7 @@ Wait for:
 ```text
 Agent is durably paused on the server.
 Now hard-kill this client from another terminal with:
-  python 72_client_reconnect.py kill-client --client-info-file /tmp/agentspan_client_reconnect.client.json
+  python 72_client_reconnect.py kill-client --client-info-file /tmp/conductor_agent_client_reconnect.client.json
 ```
 
 ## Terminal 2: Hard-kill the client

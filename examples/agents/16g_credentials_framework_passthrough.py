@@ -10,15 +10,15 @@ Demonstrates:
     - Works the same for LangChain, OpenAI Agent SDK, and Google ADK
 
 This pattern is used when you run a foreign framework agent (LangGraph,
-LangChain, OpenAI, ADK) through Agentspan and need tools inside the
+LangChain, OpenAI, ADK) through Conductor and need tools inside the
 graph to access credentials from the credential store.
 
 Setup (one-time):
-    agentspan credentials set GITHUB_TOKEN <your-github-token>
+    the Conductor server credential store
 Requirements:
-    - Agentspan server running at AGENTSPAN_SERVER_URL
-    - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-5.4)
-    - GITHUB_TOKEN stored via `agentspan credentials set`
+    - Conductor server running at CONDUCTOR_SERVER_URL
+    - CONDUCTOR_AGENT_LLM_MODEL set (or defaults to openai/gpt-5.4)
+    - GITHUB_TOKEN stored via `the Conductor server credential store`
     - langgraph installed: pip install langgraph langchain-openai
 """
 
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(graph)
         # CLI alternative:
-        # agentspan deploy --package examples.16g_credentials_framework_passthrough
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(graph)

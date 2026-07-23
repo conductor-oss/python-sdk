@@ -1867,6 +1867,16 @@ class TestStartViaServer:
         payload = runtime._agent_client.start_agent.call_args[0][0]
         assert "idempotencyKey" not in payload
 
+    def test_start_via_server_keeps_credentials_out_of_payload(self, runtime):
+        """Credential names configure workers locally and are not workflow input."""
+        agent = Agent(name="test", model="openai/gpt-4o")
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-1"})
+
+        runtime._start_via_server(agent, "hi", credentials=["OPENAI_API_KEY"])
+
+        payload = runtime._agent_client.start_agent.call_args[0][0]
+        assert "credentials" not in payload
+
 
 class TestStartFrameworkViaServer:
     """Test _start_framework_via_server() sends correct framework payloads."""
@@ -1881,8 +1891,8 @@ class TestStartFrameworkViaServer:
                 config = AgentConfig()
                 return AgentRuntime(settings=config)
 
-    def test_start_framework_via_server_passes_credentials(self, runtime):
-        """Framework start payload includes request-level credentials."""
+    def test_start_framework_via_server_keeps_credentials_out_of_payload(self, runtime):
+        """Credential names configure workers locally and are not workflow input."""
         runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-fw-1"})
         runtime._start_framework_via_server(
             framework="openai",
@@ -1892,7 +1902,7 @@ class TestStartFrameworkViaServer:
         )
 
         payload = runtime._agent_client.start_agent.call_args[0][0]
-        assert payload["credentials"] == ["OPENAI_API_KEY"]
+        assert "credentials" not in payload
 
     def test_start_framework_via_server_passes_context(self, runtime):
         """Framework start payload includes context."""
