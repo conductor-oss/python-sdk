@@ -360,13 +360,18 @@ def _judge_call_anthropic(model: str, system: str, user: str) -> str:
         )
 
     client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
-    response = client.messages.create(
-        model=model,
-        max_tokens=1024,
-        system=system,
-        messages=[{"role": "user", "content": user}],
-        temperature=0,
-    )
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=1024,
+            system=system,
+            messages=[{"role": "user", "content": user}],
+            temperature=0,
+        )
+    except anthropic.BadRequestError as exc:
+        if "reached your specified api usage limits" in str(exc).lower():
+            pytest.skip("Anthropic API usage budget is exhausted")
+        raise
     return response.content[0].text.strip()
 
 
