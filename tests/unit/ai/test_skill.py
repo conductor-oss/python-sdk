@@ -250,7 +250,7 @@ class TestWorkerRegistration:
         workers = create_skill_workers(agent)
         script_worker = next(w for w in workers if "hello" in w.name)
         result = script_worker.func(command="Conductor Agents")
-        assert "Hello, ConductorAgent!" in result
+        assert "Hello, Conductor Agents!" in result
 
     def test_no_workers_for_instruction_only_skill(self):
         from conductor.ai.agents.skill import create_skill_workers, skill
