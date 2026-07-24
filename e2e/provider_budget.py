@@ -7,30 +7,17 @@ import pytest
 
 OUT_OF_BUDGET_ENV = "LLM_PROVIDERS_OUT_OF_BUDGET"
 
-_PROVIDER_ALIASES = {
-    "azureopenai": "azure_openai",
-    "gemini": "google_gemini",
-    "vertex_ai": "google_vertex_ai",
-    "bedrock": "aws_bedrock",
-    "huggingface": "hugging_face",
-    "xai": "grok",
-}
-
 
 def provider_from_model(model_or_provider: str) -> str:
     """Return the provider name from either ``provider/model`` or a model name."""
     value = model_or_provider.strip().lower()
     if "/" in value:
-        value = value.split("/", 1)[0]
+        return value.split("/", 1)[0]
     if value.startswith("claude"):
         return "anthropic"
     if value.startswith(("gpt-", "o1", "o3", "o4")):
         return "openai"
-    if value.startswith("gemini-"):
-        return "google_gemini"
-    if value.startswith("grok-"):
-        return "grok"
-    return _PROVIDER_ALIASES.get(value, value)
+    return value
 
 
 def out_of_budget_providers(raw_value: str | None = None) -> set[str]:
