@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Guardrail E2E Test Suite — full 3×3×3 matrix.
 
 Tests every combination of Position × Type × OnFail:

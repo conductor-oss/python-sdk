@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Coding Agent (OpenAI fallback) — a Claude Code alternative via Conductor.
 
 Use this when Claude Code is unavailable (outages, rate limits, etc.). It

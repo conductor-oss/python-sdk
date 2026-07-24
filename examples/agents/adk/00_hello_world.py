@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Minimal Google ADK greeting agent — for debugging the native runner.
 
 The simplest possible ADK agent: no tools, no structured output, one turn.

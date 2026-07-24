@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """119 — Research report: Plan-Execute-Review-Replan loop as one Conductor execution.
 
 A research report is generated iteratively inside a single Conductor workflow.

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Conductor Agent Python SDK — durable, scalable, observable AI agents.
 
 This is the public API surface.  Import everything you need from here::
@@ -59,7 +56,6 @@ from conductor.ai.agents.exceptions import (
     AgentAPIError,
     AgentNotFoundError,
     ConductorAgentError,
-    AgentspanError,
 )
 
 # Extended agent types
@@ -350,7 +346,6 @@ __all__ = [
     "OnCondition",
     # Exceptions
     "ConductorAgentError",
-    "AgentspanError",
     "AgentAPIError",
     "AgentNotFoundError",
     # Agent discovery

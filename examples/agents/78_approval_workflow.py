@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Approval Workflow — agent dynamically decides which tasks need human sign-off.
 
 Demonstrates:
@@ -46,7 +43,7 @@ import tempfile
 import time
 from pathlib import Path
 
-os.environ.setdefault("CONDUCTOR_AGENT_LOG_LEVEL", "WARNING")
+os.environ.setdefault("CONDUCTOR_LOG_LEVEL", "WARNING")
 
 from conductor.ai.agents import Agent, AgentRuntime, tool, wait_for_message_tool
 from settings import settings

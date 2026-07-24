@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Google ADK Shared State — tools sharing state via ToolContext.
 
 Tools can read and write ``context.state``, a dictionary that persists

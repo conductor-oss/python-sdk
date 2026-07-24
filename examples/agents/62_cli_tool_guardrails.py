@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """CLI tool with guardrails — safe command execution.
 
 Demonstrates tool-level guardrails on CLI commands. The agent can run

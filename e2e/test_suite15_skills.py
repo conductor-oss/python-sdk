@@ -25,7 +25,7 @@ from conductor.ai.agents.tool import get_tool_def
 
 pytestmark = pytest.mark.e2e
 
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
 
 DG_SKILL_PATH = Path("~/.claude/skills/dg").expanduser()
 

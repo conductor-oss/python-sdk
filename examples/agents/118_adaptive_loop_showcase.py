@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """118 — Adaptive loop: travel planner that iterates inside a single agent execution.
 
 ONE runtime.run() call. ONE execution ID. The agent loops inside that

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Slack Auto-Fix Agent — monitors a Slack channel and auto-creates PRs for bug reports.
 
 Monitors a Slack channel for bug reports. When a message describes something

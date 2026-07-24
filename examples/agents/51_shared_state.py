@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Shared State — tools sharing state across calls via ToolContext.
 
 Tools can read and write to ``context.state``, a dictionary that persists

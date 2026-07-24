@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Wait for Message — continuously receive messages via Workflow Message Queue.
 
 Demonstrates:
@@ -21,7 +18,7 @@ Requirements:
 import os
 import time
 
-os.environ.setdefault("CONDUCTOR_AGENT_LOG_LEVEL", "WARNING")
+os.environ.setdefault("CONDUCTOR_LOG_LEVEL", "WARNING")
 
 from conductor.ai.agents import Agent, AgentRuntime, wait_for_message_tool, tool
 from settings import settings

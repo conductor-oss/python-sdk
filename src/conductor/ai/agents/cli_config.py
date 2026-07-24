@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """First-class CLI command execution configuration for agents.
 
 Provides :class:`CliConfig` for declarative CLI tool attachment on

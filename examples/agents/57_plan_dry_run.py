@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Plan (Dry Run) — compile an agent without executing it.
 
 Demonstrates:

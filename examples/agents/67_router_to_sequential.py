@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Router to Sequential — route to a pipeline sub-agent.
 
 Demonstrates a router that selects between a single agent (for quick

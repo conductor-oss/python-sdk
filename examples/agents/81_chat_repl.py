@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Chat REPL — interactive conversation with a long-running agent via WMQ.
 
 This example turns a running agent into a conversational REPL.  Every message
@@ -57,8 +54,8 @@ import tempfile
 import time
 from pathlib import Path
 
-# Keep conductor worker startup logs silent by default; set CONDUCTOR_AGENT_LOG_LEVEL=INFO to see them.
-os.environ.setdefault("CONDUCTOR_AGENT_LOG_LEVEL", "WARNING")
+# Keep conductor worker startup logs silent by default; set CONDUCTOR_LOG_LEVEL=INFO to see them.
+os.environ.setdefault("CONDUCTOR_LOG_LEVEL", "WARNING")
 
 from settings import settings
 

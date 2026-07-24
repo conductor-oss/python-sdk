@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Tool Categories — organizing tools into categories with metadata.
 
 Demonstrates:

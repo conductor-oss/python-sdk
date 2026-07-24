@@ -2488,10 +2488,10 @@ duplicate server URL, credentials, or log level in `AgentConfig`.
 | `liveness_stall_seconds` | float | 30.0 | Idle window before a run is deemed stalled |
 | `liveness_check_interval_seconds` | float | 10.0 | Liveness poll cadence |
 
-`AgentConfig.from_env()` reads the SDK's env prefix (`AGENTSPAN_*`). Connection/auth/log
+`AgentConfig.from_env()` reads the SDK's env prefix (`CONDUCTOR_AGENT_*`). Connection/auth/log
 resolution lives in `Configuration`: host from `CONDUCTOR_SERVER_URL` →
-`AGENTSPAN_SERVER_URL`; auth from `CONDUCTOR_AUTH_*`; log level from
-`CONDUCTOR_LOG_LEVEL` / `AGENTSPAN_LOG_LEVEL` (or the `debug` flag).
+`CONDUCTOR_SERVER_URL`; auth from `CONDUCTOR_AUTH_*`; log level from
+`CONDUCTOR_LOG_LEVEL` / `CONDUCTOR_LOG_LEVEL` (or the `debug` flag).
 
 ### 25.5 RunSettings (per-run LLM overrides)
 

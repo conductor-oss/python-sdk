@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Handoff to Parallel — delegate to a multi-agent group.
 
 Demonstrates a parent agent that can hand off to either a single agent

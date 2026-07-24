@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Error Recovery — StateGraph with try/except in nodes for graceful degradation.
 
 Demonstrates:

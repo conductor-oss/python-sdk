@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """PLAN_EXECUTE with agent fan-out — Conductor-native, fully declarative.
 
 Demonstrates the fix that makes ``Strategy.PLAN_EXECUTE`` route plan ops by

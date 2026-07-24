@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Nested Strategies — parallel agents inside a sequential pipeline.
 
 Demonstrates composing strategies: a ParallelAgent phase runs multiple

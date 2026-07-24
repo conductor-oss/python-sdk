@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Code executors — sandboxed environments for running LLM-generated code.
 
 Provides pre-built tools that let agents write and execute code safely.

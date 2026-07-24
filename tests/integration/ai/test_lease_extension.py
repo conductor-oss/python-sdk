@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """E2E test for Conductor lease extension (heartbeat) behavior.
 
 The Python SDK registers all worker tasks with ``response_timeout_seconds=10``
@@ -13,7 +10,7 @@ If it is broken, the task times out (TIMED_OUT / FAILED).
 
 Requirements:
     - Running Conductor server with conductor-python >= 1.3.11
-    - export AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - export CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - LLM provider configured
 """
 
@@ -38,7 +35,7 @@ DEFAULT_MODEL = "anthropic/claude-sonnet-4-6"
 
 
 def _model() -> str:
-    return os.environ.get("AGENTSPAN_LLM_MODEL", DEFAULT_MODEL)
+    return os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", DEFAULT_MODEL)
 
 
 def _unique_name(prefix: str) -> str:

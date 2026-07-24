@@ -1,7 +1,4 @@
 # sdk/python/src/conductor/ai/agents/frameworks/langgraph.py
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """LangGraph worker support — full extraction, graph-structure, and passthrough.
 
 Provides:
@@ -58,8 +55,8 @@ def human_task(func=None, *, prompt=""):
     """
 
     def decorator(f):
-        f._agentspan_human_task = True
-        f._agentspan_human_prompt = prompt
+        f._conductor_agent_human_task = True
+        f._conductor_agent_human_prompt = prompt
         return f
 
     if func is not None:
@@ -72,7 +69,7 @@ def serialize_langgraph(graph: Any) -> Tuple[Dict[str, Any], List[WorkerInfo]]:
 
     Tries three paths in order:
     1. Full extraction (model + ToolNode tools) → AI_MODEL + SIMPLE per tool
-       Also used for create_agent graphs (detected via _agentspan_meta)
+       Also used for create_agent graphs (detected via _conductor_agent_meta)
     2. Graph-structure (model found, custom StateGraph) → node/edge workflow
     3. Passthrough (fallback) → single SIMPLE task
     """
@@ -227,8 +224,8 @@ def _serialize_graph_structure(
         worker_name = f"{name}_{node_name}"
 
         # Human node: no worker needed, compiled as Conductor HUMAN task
-        if getattr(func, "_agentspan_human_task", False):
-            human_prompt = getattr(func, "_agentspan_human_prompt", "")
+        if getattr(func, "_conductor_agent_human_task", False):
+            human_prompt = getattr(func, "_conductor_agent_human_prompt", "")
             logger.info("Human node '%s': will compile as Conductor HUMAN task", node_name)
             graph_nodes.append(
                 {

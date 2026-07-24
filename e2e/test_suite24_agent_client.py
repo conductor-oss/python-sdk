@@ -17,7 +17,7 @@ Verifies:
 The scheduled "agent" target is a bare no-op Conductor workflow so no LLM is
 invoked for the schedule tests.
 
-Targets the live Agentspan server (``AGENTSPAN_SERVER_URL``). The schedule
+Targets the live Conductor Agents server (``CONDUCTOR_SERVER_URL``). The schedule
 tests are skipped automatically if the server's Conductor lacks the scheduler
 module.
 """
@@ -36,8 +36,8 @@ from conductor.ai.agents.schedule import Schedule
 
 pytestmark = [pytest.mark.e2e]
 
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
-_API = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api").rstrip("/")
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
+_API = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api").rstrip("/")
 
 
 def _scheduler_available() -> bool:
@@ -100,7 +100,7 @@ class TestSchedule:
             "name": name,
             "version": 1,
             "description": "AgentClient schedule e2e no-op workflow",
-            "ownerEmail": "e2e@agentspan.test",
+            "ownerEmail": "e2e@conductor_agent.test",
             "schemaVersion": 2,
             "timeoutSeconds": 60,
             "timeoutPolicy": "TIME_OUT_WF",

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Tool execution workers for native function calling.
 
 This file deliberately does NOT use ``from __future__ import annotations``
@@ -40,7 +37,7 @@ def _validate_serializable(tool_name, result):
 
 
 def _is_framework_callable(tool_func) -> bool:
-    return bool(getattr(tool_func, "_agentspan_framework_callable", False))
+    return bool(getattr(tool_func, "_conductor_agent_framework_callable", False))
 
 
 def _to_namespace(value):
@@ -319,7 +316,7 @@ def run_tool_task(task, *, tool_name, tool_func, guardrails=None, credential_nam
         # Re-apply the parent-side marker: a spawn child's re-imported
         # function copy does not carry attributes set in the parent.
         try:
-            tool_func._agentspan_framework_callable = True
+            tool_func._conductor_agent_framework_callable = True
         except Exception:
             pass
     _closure_cred_names = list(credential_names) if credential_names else []

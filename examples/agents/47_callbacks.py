@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Callbacks — lifecycle hooks before and after LLM calls.
 
 Demonstrates using ``before_model_callback`` and ``after_model_callback``

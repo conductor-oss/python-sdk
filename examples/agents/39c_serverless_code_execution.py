@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Serverless code execution — run code via a remote HTTP API.
 
 The ``ServerlessCodeExecutor`` sends code to an HTTP endpoint and returns

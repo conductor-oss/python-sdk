@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Human Tool — LLM-initiated human interaction.
 
 Unlike approval_required tools (09_human_in_the_loop.py) where humans gate

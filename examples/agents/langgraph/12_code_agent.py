@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Code Agent — create_agent with write_code, explain_code, and fix_bug tools.
 
 Demonstrates:

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Research Agent — create_agent with search, summarize, and cite_source tools.
 
 Demonstrates:

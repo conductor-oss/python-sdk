@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """User-facing create_agent wrapper for LangChain/LangGraph agents.
 
 Import from here instead of langchain.agents so that Conductor can
@@ -55,7 +52,7 @@ def create_agent(
         **kwargs: Forwarded to ``langchain.agents.create_agent``.
 
     Returns:
-        A ``CompiledStateGraph`` with ``._agentspan_meta`` attached for
+        A ``CompiledStateGraph`` with ``._conductor_agent_meta`` attached for
         proper Conductor serialization.
     """
     from langchain.agents import create_agent as _lc_create_agent  # type: ignore[import]
@@ -80,7 +77,7 @@ def create_agent(
         except AttributeError:
             pass
 
-    graph._agentspan_meta = {
+    graph._conductor_agent_meta = {
         "llm": model,
         "tools": resolved_tools,
         "instructions": instructions,

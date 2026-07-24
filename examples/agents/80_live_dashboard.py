@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Live Dashboard — a Feeder agent streams metrics into a Monitor agent in real time.
 
 This example shows how WMQ can be used as a live data channel between two
@@ -52,7 +49,7 @@ import tempfile
 import time
 from pathlib import Path
 
-os.environ.setdefault("CONDUCTOR_AGENT_LOG_LEVEL", "WARNING")
+os.environ.setdefault("CONDUCTOR_LOG_LEVEL", "WARNING")
 
 from settings import settings
 

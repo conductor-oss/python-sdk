@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """110 — Plan-Execute-Replan goal-seeking loop.
 
 Example 109 demonstrated the *shape* of an outer replan loop (one
@@ -39,7 +36,7 @@ Roles:
   the LLM converges instead of repeating the same mistakes.
 
 Constraints for this demo:
-    1. The sentence starts with the word "Conductor".
+    1. The sentence starts with the word "Agentspan".
     2. It contains all three keywords: "deterministic", "loop", "feedback".
     3. It has exactly EXPECTED_WORD_COUNT words (default 20).
 
@@ -63,7 +60,7 @@ WORK_DIR = os.path.join(tempfile.gettempdir(), "plan-execute-solve")
 CANDIDATES_PER_ITERATION = 2
 MAX_ITERATIONS = 6
 
-EXPECTED_FIRST_WORD = "Conductor"
+EXPECTED_FIRST_WORD = "Agentspan"
 EXPECTED_KEYWORDS = (
     "deterministic",
     "loop",

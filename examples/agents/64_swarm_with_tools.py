@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Swarm with Tools — sub-agents have their own domain tools.
 
 Extends the basic swarm pattern (example 17) by giving each specialist

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Fan-out / Fan-in — orchestrator broadcasts tasks to multiple worker agents,
 then collects and aggregates all results.
 

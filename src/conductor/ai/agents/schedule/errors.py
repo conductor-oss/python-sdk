@@ -1,6 +1,3 @@
-# Copyright (c) 2026 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Backward-compat shim — schedule exceptions moved to ``conductor.client.ai``.
 
 Import from :mod:`conductor.client.ai.schedule_errors` (or ``conductor.client.ai``)

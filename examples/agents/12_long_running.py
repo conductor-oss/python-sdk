@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Long-Running Agent — fire-and-forget with status checking.
 
 Demonstrates starting an agent asynchronously and checking its status

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Security Testing Pipeline — red-team evaluation of AI safety.
 
 Demonstrates a sequential pipeline for automated red-team security testing.

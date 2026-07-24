@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Parallel Agents with Tools — each branch has its own tools.
 
 Extends the basic parallel pattern (example 07) by giving each parallel

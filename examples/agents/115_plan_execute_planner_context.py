@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License.
-
 """115 — Plan-Execute with ``planner_context``: customer onboarding plan.
 
 The PAE planner's static ``instructions`` string is fine for *how* to

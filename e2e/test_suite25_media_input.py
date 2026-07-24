@@ -16,9 +16,9 @@ dependency on any external image host. The server reads media itself and
 rejects data URIs, so the test writes those bytes to a file and passes its path. The server only reads files
 under its allowed media directory, which defaults to ``~/worker-payload/`` (the
 directory used when ``conductor.file-storage.parentDir`` is unset — the default
-``agentspan server start`` config). This assumes the server runs on the same
+``Conductor Agents server start`` config). This assumes the server runs on the same
 host as the test — the standard local / bundle e2e setup. Set
-``AGENTSPAN_MEDIA_DIR`` to override the directory for deployments that
+``CONDUCTOR_AGENT_MEDIA_DIR`` to override the directory for deployments that
 configure a custom allowed media dir.
 
 Parametrized across providers. The Anthropic positive case is ``skip``ped: in
@@ -130,9 +130,9 @@ def _require_key(key_env: str):
 # defaults to ``~/worker-payload/`` on the server's host (see DocumentAccessPolicy;
 # used when ``conductor.file-storage.parentDir`` is unset). Deployments that
 # configure a different allowed dir (e.g. a custom ``file-storage.parentDir``)
-# can point the test at it via ``AGENTSPAN_MEDIA_DIR``.
+# can point the test at it via ``CONDUCTOR_AGENT_MEDIA_DIR``.
 _ALLOWED_MEDIA_DIR = Path(
-    os.environ.get("AGENTSPAN_MEDIA_DIR") or (Path(os.path.expanduser("~")) / "worker-payload")
+    os.environ.get("CONDUCTOR_AGENT_MEDIA_DIR") or (Path(os.path.expanduser("~")) / "worker-payload")
 )
 
 

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Human-in-the-Loop — real human approval gate within a LangGraph workflow.
 
 Demonstrates:

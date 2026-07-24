@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Spawn-safe worker entry infrastructure.
 
 Under the multiprocessing ``spawn`` start method (the SDK default on every
@@ -205,7 +202,7 @@ class ToolWorkerEntry:
         self.fn_direct = fn_direct
         self.guardrails = guardrails
         self.credential_names = list(credential_names) if credential_names else []
-        # Carried explicitly: the parent sets _agentspan_framework_callable on
+        # Carried explicitly: the parent sets _conductor_agent_framework_callable on
         # the function object, which a spawn child's re-imported copy lacks.
         self.framework_callable = framework_callable
 
@@ -217,7 +214,7 @@ class ToolWorkerEntry:
         bound methods of picklable objects); unpicklable closures are caught
         by the registration probe with an actionable error.
         """
-        framework = bool(getattr(fn, "_agentspan_framework_callable", False))
+        framework = bool(getattr(fn, "_conductor_agent_framework_callable", False))
         try:
             ref = FunctionRef.of(fn)
         except SpawnSafetyError:

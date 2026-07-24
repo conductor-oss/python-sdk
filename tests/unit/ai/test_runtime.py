@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Unit tests for the AgentRuntime.
 
 Tests runtime helper methods (extract_output, extract_handoff_result, etc.)
@@ -218,13 +215,12 @@ class TestAgentRuntimeInit:
     AgentConfig settings for runtime behaviour only."""
 
     def test_no_args_falls_back_to_env(self):
-        """AgentRuntime() resolves the server via Configuration's env fallback
-        (CONDUCTOR_SERVER_URL → AGENTSPAN_SERVER_URL)."""
+        """AgentRuntime() resolves the server from ``CONDUCTOR_SERVER_URL``."""
         import os
 
-        keys = ["CONDUCTOR_SERVER_URL", "AGENTSPAN_SERVER_URL"]
+        keys = ["CONDUCTOR_SERVER_URL"]
         env_backup = {k: os.environ.pop(k, None) for k in keys}
-        os.environ["AGENTSPAN_SERVER_URL"] = "http://env-server/api"
+        os.environ["CONDUCTOR_SERVER_URL"] = "http://env-server/api"
 
         try:
             with patch("conductor.client.orkes_clients.OrkesClients"):
@@ -308,7 +304,7 @@ class TestAgentConfig:
         from conductor.ai.agents.runtime.config import AgentConfig
 
         with patch.dict(
-            "os.environ", {"AGENTSPAN_WORKER_THREADS": "4"}, clear=True
+            "os.environ", {"CONDUCTOR_AGENT_WORKER_THREADS": "4"}, clear=True
         ):
             config = AgentConfig.from_env()
             assert config.worker_thread_count == 4

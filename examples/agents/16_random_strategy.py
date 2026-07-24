@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Random Strategy — random agent selection each turn.
 
 Demonstrates the ``strategy="random"`` pattern where a random sub-agent

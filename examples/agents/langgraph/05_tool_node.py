@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """ToolNode — StateGraph with ToolNode + tools_condition for ReAct loop.
 
 Demonstrates:

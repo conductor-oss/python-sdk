@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """GitHub Coding Agent — Claude Code variant.
 
 Same issue-to-PR pipeline as 61, but replaces the SWARM coder/qa loop

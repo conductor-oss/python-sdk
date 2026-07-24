@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Google ADK Thinking Config — extended reasoning for complex tasks.
 
 Uses ADK's ThinkingConfig to enable extended thinking mode,

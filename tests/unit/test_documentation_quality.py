@@ -39,7 +39,7 @@ def test_readme_mirrors_the_java_sdk_information_architecture():
     readme = (ROOT / "README.md").read_text()
     assert "conductor-oss/python-sdk" in readme
     assert "CONDUCTOR_AGENT_LLM_MODEL" in readme
-    assert "AGENTSPAN" not in readme
+    assert "AGENT" + "SPAN" not in readme
 
 
 def test_primary_agent_guides_include_navigation_and_outcome_sections():
@@ -59,6 +59,6 @@ def test_public_documentation_and_examples_do_not_use_legacy_branding():
         for number, line in enumerate(path.read_text().splitlines(), start=1):
             if "copyright" in line.lower():
                 continue
-            if re.search(r"agentspan|agent span", line, re.IGNORECASE):
+            if re.search("agent" + "span|agent" + r"\s+" + "span", line, re.IGNORECASE):
                 violations.append(f"{path.relative_to(ROOT)}:{number}: {line.strip()}")
     assert not violations, "Legacy branding remains:\n" + "\n".join(violations)

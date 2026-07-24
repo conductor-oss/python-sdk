@@ -1,12 +1,9 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Shared fixtures for integration tests.
 
 Provides a module-scoped AgentRuntime and a configurable LLM model.
 
 SSE streaming is enabled by default. Disable explicitly with
-``AGENTSPAN_STREAMING_ENABLED=false`` if the server does not support SSE.
+``CONDUCTOR_AGENT_STREAMING_ENABLED=false`` if the server does not support SSE.
 """
 
 import os
@@ -20,8 +17,8 @@ import requests
 from conductor.ai.agents import AgentRuntime
 from conductor.ai.agents.runtime.config import AgentConfig
 
-DEFAULT_MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
-_SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+DEFAULT_MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
+_SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 
 
 def _conductor_base() -> str:
@@ -146,7 +143,7 @@ class _WorkerWatchdog:
                 try:
                     os.kill(pid, signal.SIGKILL)
                     import logging
-                    logging.getLogger("agentspan.test.watchdog").warning(
+                    logging.getLogger("conductor_agent.test.watchdog").warning(
                         "Killed stuck worker pid=%s for task_type=%s "
                         "(queue_depth=%s, stuck=%.0fs)",
                         pid, task_type, depth, now - first_seen,
@@ -179,5 +176,5 @@ def runtime():
 
 @pytest.fixture
 def model():
-    """LLM model string, overridable via AGENTSPAN_LLM_MODEL env var."""
+    """LLM model string, overridable via CONDUCTOR_AGENT_LLM_MODEL env var."""
     return DEFAULT_MODEL

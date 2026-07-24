@@ -1,11 +1,8 @@
-"""Public compatibility tests for the Conductor-agent error rename."""
+"""Public export tests for the Conductor Agents error hierarchy."""
 
-from conductor.ai.agents import AgentspanError, ConductorAgentError
-from conductor.client.ai import AgentspanError as ClientLegacyError
+from conductor.ai.agents import ConductorAgentError
 from conductor.client.ai import ConductorAgentError as ClientError
 
 
-def test_legacy_error_is_the_canonical_error_class():
-    assert ConductorAgentError is AgentspanError
-    assert ClientError is ClientLegacyError
+def test_conductor_agent_error_is_the_canonical_error_class():
     assert ClientError is ConductorAgentError

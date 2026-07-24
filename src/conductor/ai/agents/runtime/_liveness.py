@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Worker liveness verification + stall detection.
 
 Two complementary mechanisms protect against the "pollCount=0" failure

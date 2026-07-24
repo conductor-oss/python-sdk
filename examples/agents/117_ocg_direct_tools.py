@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License.
-
 """117 — OCG retrieval via a direct tool call (no sub-agent).
 
 The main agent holds the OCG query tool *itself*: ``ocg_tools()``

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Human-in-the-loop guardrail — ``on_fail="human"``.
 
 Demonstrates a guardrail that pauses the workflow for human review when

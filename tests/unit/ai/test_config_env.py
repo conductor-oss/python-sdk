@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Tests for AgentConfig environment loading and SDK-wide log-level config.
 
 AgentConfig holds only agent-runtime settings (worker pool + liveness).
@@ -27,16 +24,16 @@ class TestEnvHelper:
     """Tests for the _env() helper function."""
 
     def test_reads_var(self):
-        with mock.patch.dict(os.environ, {"AGENTSPAN_FOO": "bar"}, clear=False):
-            assert _env("AGENTSPAN_FOO") == "bar"
+        with mock.patch.dict(os.environ, {"CONDUCTOR_AGENT_FOO": "bar"}, clear=False):
+            assert _env("CONDUCTOR_AGENT_FOO") == "bar"
 
     def test_returns_default_when_not_set(self):
         with mock.patch.dict(os.environ, {}, clear=True):
-            assert _env("AGENTSPAN_FOO", "default") == "default"
+            assert _env("CONDUCTOR_AGENT_FOO", "default") == "default"
 
     def test_returns_none_when_no_default(self):
         with mock.patch.dict(os.environ, {}, clear=True):
-            assert _env("AGENTSPAN_FOO") is None
+            assert _env("CONDUCTOR_AGENT_FOO") is None
 
 
 class TestEnvBool:
@@ -141,24 +138,6 @@ class TestAgentConfigFromEnv:
         config = AgentConfig(worker_thread_count=8)
         assert config.worker_thread_count == 8
 
-    def test_legacy_values_remain_supported(self):
-        with mock.patch.dict(
-            os.environ, {"AGENTSPAN_WORKER_THREADS": "4"}, clear=True
-        ):
-            assert AgentConfig.from_env().worker_thread_count == 4
-
-    def test_canonical_value_wins_over_legacy(self):
-        with mock.patch.dict(
-            os.environ,
-            {
-                "CONDUCTOR_AGENT_WORKER_THREADS": "8",
-                "AGENTSPAN_WORKER_THREADS": "4",
-            },
-            clear=True,
-        ):
-            assert AgentConfig.from_env().worker_thread_count == 8
-
-
 class TestLivenessConfig:
     """Liveness monitor settings (used by stateful runs)."""
 
@@ -205,8 +184,8 @@ class TestConfigurationLogLevel:
         with mock.patch.dict(os.environ, {"CONDUCTOR_LOG_LEVEL": "WARNING"}, clear=True):
             assert Configuration().log_level == logging.WARNING
 
-    def test_agentspan_log_level_env_fallback(self):
-        with mock.patch.dict(os.environ, {"AGENTSPAN_LOG_LEVEL": "DEBUG"}, clear=True):
+    def test_conductor_log_level_env(self):
+        with mock.patch.dict(os.environ, {"CONDUCTOR_LOG_LEVEL": "DEBUG"}, clear=True):
             assert Configuration().log_level == logging.DEBUG
 
     def test_applied_to_logger_by_runtime(self):

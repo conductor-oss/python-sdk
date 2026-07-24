@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """LLM Guardrails — AI-powered content safety evaluation.
 
 Demonstrates ``LLMGuardrail`` which uses a separate (typically smaller/faster)

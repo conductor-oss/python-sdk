@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Simple Tool Calling — two tools, the LLM picks the right one.
 
 The agent has two tools: one for weather, one for stock prices.

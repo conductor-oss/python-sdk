@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Loop Agent — LoopAgent repeats sub-agents for iterative refinement.
 
 Mirrors the pattern from Google ADK samples (story_teller, image-scoring).

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Coding Agent REPL — a filesystem-aware coding assistant backed by Conductor runtime.
 
 This example is a Claude Code-style assistant you can actually use in a working session.
@@ -31,7 +28,7 @@ import subprocess
 import threading
 from pathlib import Path
 
-os.environ.setdefault("CONDUCTOR_AGENT_LOG_LEVEL", "WARNING")
+os.environ.setdefault("CONDUCTOR_LOG_LEVEL", "WARNING")
 
 from conductor.ai.agents import Agent, AgentRuntime, EventType, tool, wait_for_message_tool
 from settings import settings

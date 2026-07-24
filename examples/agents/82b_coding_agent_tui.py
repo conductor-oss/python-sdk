@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Coding Agent TUI — a filesystem-aware coding assistant with a split-pane terminal UI.
 
 Like 82_coding_agent.py, but with two improvements:
@@ -34,7 +31,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-os.environ.setdefault("CONDUCTOR_AGENT_LOG_LEVEL", "WARNING")
+os.environ.setdefault("CONDUCTOR_LOG_LEVEL", "WARNING")
 
 from prompt_toolkit import Application
 from prompt_toolkit.buffer import Buffer

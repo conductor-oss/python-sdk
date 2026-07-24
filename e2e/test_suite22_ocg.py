@@ -10,7 +10,7 @@ recorded HTTP traffic on the stubs — never LLM-judged output quality.
   3. Negative: agent with no OCG tools → no traffic on either stub
 
 Manages two stub OCG instances on dedicated ports.
-No mocks of agentspan itself. Real server, real LLM, stub OCG backends.
+No mocks of Conductor Agents itself. Real server, real LLM, stub OCG backends.
 """
 
 import json
@@ -34,9 +34,9 @@ US_PORT = 3061
 CA_PORT = 3062
 TIMEOUT = 120
 
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
 
-# The agentspan server resolves the per-tool OCG URL server-side, so the
+# The Conductor Agents server resolves the per-tool OCG URL server-side, so the
 # stubs must be reachable from the server process — localhost works for the
 # local e2e topology (server and tests on the same host).
 US_URL = f"http://localhost:{US_PORT}"

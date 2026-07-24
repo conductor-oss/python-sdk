@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Eval runner — LLM-backed correctness testing for agent behavior.
 
 Runs real prompts through agents and evaluates whether the agent's behavior

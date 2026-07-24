@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """GitHub Coding Agent (simplified) — pick an issue, code the fix, create a PR.
 
 Uses built-in code execution (local_code_execution=True) so the LLM

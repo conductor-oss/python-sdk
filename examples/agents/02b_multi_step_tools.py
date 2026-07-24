@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Multi-Step Tool Calling — chained lookups and calculations.
 
 The agent has four tools. The prompt requires it to:

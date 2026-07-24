@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Agent-facing models and exceptions for the Conductor SDK.
 
 Home of the agent schedule models (:class:`Schedule`/:class:`ScheduleInfo`) and
@@ -20,7 +17,6 @@ from conductor.client.ai.agent_errors import (
     AgentAPIError,
     AgentNotFoundError,
     ConductorAgentError,
-    AgentspanError,
 )
 from conductor.client.ai.schedule import Schedule, ScheduleInfo
 from conductor.client.ai.schedule_errors import (
@@ -35,7 +31,6 @@ __all__ = [
     "AgentAPIError",
     "AgentNotFoundError",
     "ConductorAgentError",
-    "AgentspanError",
     "InvalidCronExpression",
     "Schedule",
     "ScheduleError",

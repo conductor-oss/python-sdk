@@ -39,7 +39,7 @@ class Configuration:
         elif base_url is not None:
             self.host = base_url + "/api"
         else:
-            self.host = os.getenv("CONDUCTOR_SERVER_URL") or os.getenv("AGENTSPAN_SERVER_URL")
+            self.host = os.getenv("CONDUCTOR_SERVER_URL") or os.getenv("CONDUCTOR_SERVER_URL")
 
         if self.host is None or self.host == "":
             self.host = "http://localhost:8080/api"
@@ -64,12 +64,12 @@ class Configuration:
         self.debug = debug
         # Explicit SDK-wide log level: a level name ("INFO", "DEBUG", …) or an
         # int. Overrides the debug-derived default; falls back to the
-        # CONDUCTOR_LOG_LEVEL / AGENTSPAN_LOG_LEVEL env vars. Applies to every
+        # CONDUCTOR_LOG_LEVEL / CONDUCTOR_LOG_LEVEL env vars. Applies to every
         # SDK component (clients, workers, agent runtime).
         resolved_level = (
             log_level
             if log_level is not None
-            else (os.getenv("CONDUCTOR_LOG_LEVEL") or os.getenv("AGENTSPAN_LOG_LEVEL"))
+            else (os.getenv("CONDUCTOR_LOG_LEVEL") or os.getenv("CONDUCTOR_LOG_LEVEL"))
         )
         if resolved_level is not None and str(resolved_level).strip() != "":
             self.__log_level = (

@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """PLAN_AND_COMPILE — server-side plan compiler in action.
 
 A planner agent produces a JSON DAG; the server's ``PLAN_AND_COMPILE`` Java

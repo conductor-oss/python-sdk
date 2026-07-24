@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Context Condensation Stress Test — orchestrator + sub-agent, history condenses 3+ times.
 
 An orchestrator agent calls a ``deep_analyst`` sub-agent once per technology domain.

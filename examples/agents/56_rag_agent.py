@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """RAG Agent — vector search + document indexing.
 
 Native SDK version of ADK example 35. Demonstrates:

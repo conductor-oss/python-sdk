@@ -1,14 +1,10 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """SDK-level exceptions for the agent API clients.
 
 Provides a consistent exception hierarchy so users don't need to catch
 library-specific HTTP errors from ``requests`` or ``httpx``.
 
-This module is the canonical home of the hierarchy formerly defined in
-``conductor.ai.agents.exceptions``. ``AgentspanError`` remains an alias for
-backward compatibility; new code should catch ``ConductorAgentError``.
+This module is the canonical home of the hierarchy also re-exported from
+``conductor.ai.agents.exceptions``.
 """
 
 from __future__ import annotations
@@ -16,11 +12,6 @@ from __future__ import annotations
 
 class ConductorAgentError(Exception):
     """Base exception for all agent SDK errors."""
-
-
-# Kept as the identical class object so existing ``except`` clauses and
-# ``isinstance`` checks continue to work during the naming migration.
-AgentspanError = ConductorAgentError
 
 
 class AgentAPIError(ConductorAgentError):

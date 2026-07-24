@@ -8,7 +8,7 @@
 #   ./scripts/run_examples.sh 01 02 10     # run only matching examples (prefix match)
 #
 # Requires:
-#   export AGENTSPAN_SERVER_URL=http://localhost:8080/api
+#   export CONDUCTOR_SERVER_URL=http://localhost:8080/api
 #
 # Exit code: 0 if all passed, 1 if any failed.
 
@@ -213,7 +213,7 @@ if [[ ${#FAILED[@]} -gt 0 ]]; then
             fi
 
             # Query Conductor for workflow status if we have an ID and server URL
-            if [[ -n "$WF_ID" && -n "${AGENTSPAN_SERVER_URL:-}" ]]; then
+            if [[ -n "$WF_ID" && -n "${CONDUCTOR_SERVER_URL:-}" ]]; then
                 echo "  Workflow: $WF_ID"
                 # Use the SDK's own client so auth (key/secret → token) is handled
                 WF_INFO=$($PYTHON -c "
@@ -262,7 +262,7 @@ except Exception as e:
                 fi
             elif [[ -n "$WF_ID" ]]; then
                 echo "  Workflow: $WF_ID"
-                echo "  (set AGENTSPAN_SERVER_URL to query workflow status)"
+                echo "  (set CONDUCTOR_SERVER_URL to query workflow status)"
             fi
         fi
     done

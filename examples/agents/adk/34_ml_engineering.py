@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Google ADK ML Engineering Pipeline — multi-agent ML workflow.
 
 Mirrors the pattern from google/adk-samples/machine-learning-engineering (MLE-STAR).

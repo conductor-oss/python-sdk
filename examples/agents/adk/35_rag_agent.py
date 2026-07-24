@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Google ADK RAG Agent — vector search + document indexing.
 
 Mirrors the pattern from google/adk-samples/RAG but uses Conductor's native

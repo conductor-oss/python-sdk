@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Typed plan builders for ``Strategy.PLAN_EXECUTE``.
 
 These dataclasses produce the JSON shape PAC (the server's PLAN_AND_COMPILE

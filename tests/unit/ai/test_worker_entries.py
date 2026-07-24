@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """FunctionRef / SpawnSafetyError / probe / async-detection tests (idea-5 Stage 1).
 
 Cross-process cases use the real 'spawn' context regardless of platform

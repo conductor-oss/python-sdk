@@ -174,7 +174,7 @@ class TestMakeClaudeAgentSdkWorker:
         assert result.status == "COMPLETED"
 
 
-class TestAgentspanHooks:
+class TestConductorAgentHooks:
     def _make_metadata(self):
         return {
             "tool_call_count": 0,
@@ -191,10 +191,10 @@ class TestAgentspanHooks:
         }
 
     def test_build_hooks_returns_dict_with_expected_keys(self):
-        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_agentspan_hooks
+        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_conductor_agent_hooks
 
         metadata = self._make_metadata()
-        hooks = _build_agentspan_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
+        hooks = _build_conductor_agent_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
 
         assert "PreToolUse" in hooks
         assert "PostToolUse" in hooks
@@ -205,7 +205,7 @@ class TestAgentspanHooks:
         assert "Stop" in hooks
 
     def test_pre_tool_use_hook_increments_metadata(self):
-        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_agentspan_hooks
+        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_conductor_agent_hooks
 
         metadata = self._make_metadata()
 
@@ -213,7 +213,7 @@ class TestAgentspanHooks:
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._push_event_nonblocking"),
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._inject_tool_task", return_value=True),
         ):
-            hooks = _build_agentspan_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
+            hooks = _build_conductor_agent_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
             pre_hook = hooks["PreToolUse"][0].hooks[0]
             result = asyncio.run(
                 pre_hook(
@@ -229,7 +229,7 @@ class TestAgentspanHooks:
         assert result == {}
 
     def test_hooks_push_events(self):
-        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_agentspan_hooks
+        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_conductor_agent_hooks
 
         pushed = []
         metadata = self._make_metadata()
@@ -244,7 +244,7 @@ class TestAgentspanHooks:
             ),
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._inject_tool_task", return_value=True),
         ):
-            hooks = _build_agentspan_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
+            hooks = _build_conductor_agent_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
             pre_hook = hooks["PreToolUse"][0].hooks[0]
             asyncio.run(
                 pre_hook(
@@ -260,7 +260,7 @@ class TestAgentspanHooks:
         assert pushed[0]["toolUseId"] == "tu-3"
 
     def test_post_tool_use_hook_pushes_event(self):
-        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_agentspan_hooks
+        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_conductor_agent_hooks
 
         pushed = []
         metadata = self._make_metadata()
@@ -276,7 +276,7 @@ class TestAgentspanHooks:
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._update_task_progress_nonblocking"),
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._complete_tool_task_nonblocking"),
         ):
-            hooks = _build_agentspan_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
+            hooks = _build_conductor_agent_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
             post_hook = hooks["PostToolUse"][0].hooks[0]
             asyncio.run(
                 post_hook(
@@ -292,7 +292,7 @@ class TestAgentspanHooks:
         assert pushed[0]["toolUseId"] == "tu-5"
 
     def test_post_tool_use_hook_tracks_last_output(self):
-        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_agentspan_hooks
+        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_conductor_agent_hooks
 
         metadata = self._make_metadata()
 
@@ -301,7 +301,7 @@ class TestAgentspanHooks:
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._update_task_progress_nonblocking"),
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._complete_tool_task_nonblocking"),
         ):
-            hooks = _build_agentspan_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
+            hooks = _build_conductor_agent_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
             pre_hook = hooks["PreToolUse"][0].hooks[0]
             post_hook = hooks["PostToolUse"][0].hooks[0]
             # Pre creates the entry
@@ -329,7 +329,7 @@ class TestAgentspanHooks:
     def test_post_tool_use_hook_throttles_progress_updates(self):
         import time as time_mod
 
-        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_agentspan_hooks
+        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_conductor_agent_hooks
 
         metadata = self._make_metadata()
         # Pretend the last progress update was just now
@@ -340,7 +340,7 @@ class TestAgentspanHooks:
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._update_task_progress_nonblocking") as mock_progress,
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._complete_tool_task_nonblocking"),
         ):
-            hooks = _build_agentspan_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
+            hooks = _build_conductor_agent_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
             post_hook = hooks["PostToolUse"][0].hooks[0]
             # Two rapid calls — should NOT trigger progress update (throttled)
             asyncio.run(post_hook({"tool_name": "Read", "hook_event_name": "PostToolUse"}, "tu-7", None))
@@ -349,7 +349,7 @@ class TestAgentspanHooks:
         assert mock_progress.call_count == 0
 
     def test_post_tool_use_hook_sends_progress_after_interval(self):
-        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_agentspan_hooks
+        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_conductor_agent_hooks
 
         metadata = self._make_metadata()
         # Pretend the last progress update was long ago
@@ -360,7 +360,7 @@ class TestAgentspanHooks:
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._update_task_progress_nonblocking") as mock_progress,
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._complete_tool_task_nonblocking"),
         ):
-            hooks = _build_agentspan_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
+            hooks = _build_conductor_agent_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
             post_hook = hooks["PostToolUse"][0].hooks[0]
             asyncio.run(post_hook({"tool_name": "Bash", "hook_event_name": "PostToolUse"}, "tu-9", None))
 
@@ -369,7 +369,7 @@ class TestAgentspanHooks:
         assert mock_progress.call_args[0][1] == "wf-1"  # execution_id
 
     def test_post_tool_use_failure_hook_tracks_errors(self):
-        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_agentspan_hooks
+        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_conductor_agent_hooks
 
         metadata = self._make_metadata()
 
@@ -378,7 +378,7 @@ class TestAgentspanHooks:
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._update_task_progress_nonblocking"),
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._complete_tool_task_nonblocking"),
         ):
-            hooks = _build_agentspan_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
+            hooks = _build_conductor_agent_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
             pre_hook = hooks["PreToolUse"][0].hooks[0]
             failure_hook = hooks["PostToolUseFailure"][0].hooks[0]
             # Pre creates the entry
@@ -404,7 +404,7 @@ class TestAgentspanHooks:
 
     def test_agent_tool_deferred_to_subagent_start(self):
         """PreToolUse(Agent) does NOT inject a SIMPLE task — it defers to SubagentStart."""
-        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_agentspan_hooks
+        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_conductor_agent_hooks
 
         metadata = self._make_metadata()
         inject_calls = []
@@ -418,7 +418,7 @@ class TestAgentspanHooks:
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._create_tracking_workflow", return_value="sub-exec-42"),
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._inject_tool_task", side_effect=capture_inject),
         ):
-            hooks = _build_agentspan_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
+            hooks = _build_conductor_agent_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
             pre_hook = hooks["PreToolUse"][0].hooks[0]
             start_hook = hooks["SubagentStart"][0].hooks[0]
 
@@ -440,7 +440,7 @@ class TestAgentspanHooks:
 
     def test_full_subagent_lifecycle(self):
         """Full lifecycle: PreToolUse(Agent) → SubagentStart → SubagentStop → PostToolUse(Agent)."""
-        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_agentspan_hooks
+        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_conductor_agent_hooks
 
         metadata = self._make_metadata()
 
@@ -452,7 +452,7 @@ class TestAgentspanHooks:
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._complete_workflow_nonblocking") as mock_complete_wf,
             patch("conductor.ai.agents.frameworks.claude_agent_sdk._update_task_progress_nonblocking"),
         ):
-            hooks = _build_agentspan_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
+            hooks = _build_conductor_agent_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
             pre_hook = hooks["PreToolUse"][0].hooks[0]
             start_hook = hooks["SubagentStart"][0].hooks[0]
             stop_hook = hooks["SubagentStop"][0].hooks[0]
@@ -478,7 +478,7 @@ class TestAgentspanHooks:
         assert mock_complete_wf.call_args[0][0] == "sub-exec-42"
 
     def test_stop_hook_pushes_agent_stop_event(self):
-        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_agentspan_hooks
+        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_conductor_agent_hooks
 
         pushed = []
         metadata = self._make_metadata()
@@ -490,7 +490,7 @@ class TestAgentspanHooks:
             "conductor.ai.agents.frameworks.claude_agent_sdk._push_event_nonblocking",
             side_effect=capture_push,
         ):
-            hooks = _build_agentspan_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
+            hooks = _build_conductor_agent_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
             stop_hook = hooks["Stop"][0].hooks[0]
             asyncio.run(stop_hook({}, None, None))
 
@@ -498,7 +498,7 @@ class TestAgentspanHooks:
         assert pushed[0]["type"] == "agent_stop"
 
     def test_hooks_are_defensive(self):
-        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_agentspan_hooks
+        from conductor.ai.agents.frameworks.claude_agent_sdk import _build_conductor_agent_hooks
 
         metadata = self._make_metadata()
 
@@ -506,7 +506,7 @@ class TestAgentspanHooks:
             "conductor.ai.agents.frameworks.claude_agent_sdk._push_event_nonblocking",
             side_effect=RuntimeError("network down"),
         ):
-            hooks = _build_agentspan_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
+            hooks = _build_conductor_agent_hooks("t-1", "wf-1", "http://localhost", "k", "s", metadata)
             pre_hook = hooks["PreToolUse"][0].hooks[0]
             result = asyncio.run(
                 pre_hook(
@@ -528,8 +528,8 @@ class TestMergeHooks:
         options = _make_options()
         options.hooks = None
 
-        agentspan_hooks = {"PreToolUse": [SdkHookMatcher(hooks=[lambda d, t, c: {}])]}
-        merged = _merge_hooks(options, agentspan_hooks)
+        conductor_agent_hooks = {"PreToolUse": [SdkHookMatcher(hooks=[lambda d, t, c: {}])]}
+        merged = _merge_hooks(options, conductor_agent_hooks)
 
         result_hooks = merged.hooks if hasattr(merged, "hooks") else merged.get("hooks", {})
         assert len(result_hooks["PreToolUse"]) == 1
@@ -542,15 +542,15 @@ class TestMergeHooks:
         user_matcher = SdkHookMatcher(matcher="Bash", hooks=[lambda d, t, c: {}])
         options.hooks = {"PreToolUse": [user_matcher]}
 
-        agentspan_matcher = SdkHookMatcher(hooks=[lambda d, t, c: {}])
-        agentspan_hooks = {"PreToolUse": [agentspan_matcher]}
+        conductor_agent_matcher = SdkHookMatcher(hooks=[lambda d, t, c: {}])
+        conductor_agent_hooks = {"PreToolUse": [conductor_agent_matcher]}
 
-        merged = _merge_hooks(options, agentspan_hooks)
+        merged = _merge_hooks(options, conductor_agent_hooks)
         result_hooks = merged.hooks if hasattr(merged, "hooks") else merged.get("hooks", {})
 
         assert len(result_hooks["PreToolUse"]) == 2
         assert result_hooks["PreToolUse"][0] is user_matcher
-        assert result_hooks["PreToolUse"][1] is agentspan_matcher
+        assert result_hooks["PreToolUse"][1] is conductor_agent_matcher
 
     def test_merge_combines_different_events(self):
         from conductor.ai.agents.frameworks.claude_agent_sdk import _merge_hooks
@@ -560,9 +560,9 @@ class TestMergeHooks:
         user_matcher = SdkHookMatcher(hooks=[lambda d, t, c: {}])
         options.hooks = {"Stop": [user_matcher]}
 
-        agentspan_hooks = {"PreToolUse": [SdkHookMatcher(hooks=[lambda d, t, c: {}])]}
+        conductor_agent_hooks = {"PreToolUse": [SdkHookMatcher(hooks=[lambda d, t, c: {}])]}
 
-        merged = _merge_hooks(options, agentspan_hooks)
+        merged = _merge_hooks(options, conductor_agent_hooks)
         result_hooks = merged.hooks if hasattr(merged, "hooks") else merged.get("hooks", {})
 
         assert "Stop" in result_hooks

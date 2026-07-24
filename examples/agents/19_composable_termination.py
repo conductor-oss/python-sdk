@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Composable Termination Conditions — AND/OR rules for stopping agents.
 
 Demonstrates composable termination conditions using ``&`` (AND) and

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Data Pipeline — StateGraph with load → clean → analyze → report nodes.
 
 Demonstrates:

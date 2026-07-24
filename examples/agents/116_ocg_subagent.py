@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License.
-
 """116 — OCG retrieval via the prebuilt sub-agent.
 
 The main agent delegates retrieval to an OCG (Open Context Graph)

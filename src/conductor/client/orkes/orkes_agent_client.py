@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Orkes implementation of :class:`AgentClient` for the ``/agent/*`` control plane.
 
 All wire calls go through the shared :class:`ApiClient` (sync) /

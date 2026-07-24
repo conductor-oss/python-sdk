@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """OpenAI Agents SDK compatibility — drop-in Runner replacement.
 
 Change one import line::
@@ -86,7 +83,7 @@ class RunResult:
 # ── Helpers ────────────────────────────────────────────────────────────────
 
 
-def _model_to_agentspan(model: Any) -> str:
+def _model_to_conductor_agent(model: Any) -> str:
     """Add a provider prefix when the model name lacks one.
 
     ``"gpt-4o"``         → ``"openai/gpt-4o"``
@@ -184,7 +181,7 @@ def _convert_function_tool(ft: Any) -> Any:
     )
 
 
-def _to_agentspan_agent(agent: Any) -> Any:
+def _to_conductor_agent_agent(agent: Any) -> Any:
     """Convert an openai-agents ``Agent`` to a Conductor ``Agent``.
 
     If *agent* is already a Conductor ``Agent`` it is returned unchanged.
@@ -210,22 +207,22 @@ def _to_agentspan_agent(agent: Any) -> Any:
 
     _raw_model = getattr(agent, "model", None)
     model: str = (
-        _model_to_agentspan(_raw_model)
+        _model_to_conductor_agent(_raw_model)
         if _raw_model
         else (
             os.environ.get("CONDUCTOR_AGENT_LLM_MODEL")
-            or os.environ.get("AGENTSPAN_LLM_MODEL")
+            or os.environ.get("CONDUCTOR_AGENT_LLM_MODEL")
             or "openai/gpt-4o"
         )
     )
 
     raw_tools: list = getattr(agent, "tools", []) or []
-    agentspan_tools = []
+    conductor_agent_tools = []
     for t in raw_tools:
         if hasattr(t, "on_invoke_tool"):
-            agentspan_tools.append(_convert_function_tool(t))
+            conductor_agent_tools.append(_convert_function_tool(t))
         elif hasattr(t, "_tool_def"):
-            agentspan_tools.append(t)
+            conductor_agent_tools.append(t)
         else:
             logger.warning(
                 "Skipping unrecognised tool type '%s' — "
@@ -237,7 +234,7 @@ def _to_agentspan_agent(agent: Any) -> Any:
         name=name,
         instructions=instructions,
         model=model,
-        tools=agentspan_tools,
+        tools=conductor_agent_tools,
     )
 
 
@@ -251,7 +248,7 @@ def _run_agent(starting_agent: Any, max_turns: int) -> Any:
     through unchanged — the runtime's :func:`detect_framework` handles
     serialization and tool registration. Native Conductor Agents are also
     passed through unchanged (with optional ``max_turns`` override).  Only
-    truly unknown objects fall back to :func:`_to_agentspan_agent`.
+    truly unknown objects fall back to :func:`_to_conductor_agent_agent`.
     """
     from conductor.ai.agents.agent import Agent as ConductorAgent
     from conductor.ai.agents.frameworks.serializer import detect_framework
@@ -269,7 +266,7 @@ def _run_agent(starting_agent: Any, max_turns: int) -> Any:
         return starting_agent
 
     # Unknown type — attempt duck-type conversion
-    agent = _to_agentspan_agent(starting_agent)
+    agent = _to_conductor_agent_agent(starting_agent)
     if max_turns != 10:
         agent.max_turns = max_turns
     return agent
@@ -321,10 +318,10 @@ class Runner:
         Returns:
             A :class:`RunResult` with a ``final_output`` attribute.
         """
-        from conductor.ai.agents.run import run as agentspan_run
+        from conductor.ai.agents.run import run as conductor_agent_run
 
         agent = _run_agent(starting_agent, max_turns)
-        result = agentspan_run(agent, input)
+        result = conductor_agent_run(agent, input)
         return RunResult(result)
 
     @classmethod

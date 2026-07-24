@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Behavioral correctness tests — deeper multi-agent verification with real LLMs.
 
 Unlike test_correctness_live.py which checks "did the right agent run?", these
@@ -14,7 +11,7 @@ tests verify "did the agents do the right thing TOGETHER?"  For each strategy:
   - SWARM:     Multiple agents participate in a single request when context demands it
 
 Requires:
-  - Agentspan server running (AGENTSPAN_SERVER_URL)
+  - Conductor Agents server running (CONDUCTOR_SERVER_URL)
   - OPENAI_API_KEY set
 
 Run with:

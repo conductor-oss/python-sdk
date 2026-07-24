@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Agent Tool — wrap an agent as a callable tool.
 
 Unlike sub-agents (which use handoff delegation), an agent_tool is invoked

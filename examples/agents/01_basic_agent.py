@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Basic Agent — 5-line hello world.
 
 Demonstrates the simplest possible agent: define an agent, call

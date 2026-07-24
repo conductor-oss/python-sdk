@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Agent → AgentConfig JSON serializer for server-side compilation.
 
 Converts a Python :class:`Agent` tree into a JSON-serializable dict

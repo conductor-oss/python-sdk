@@ -1,6 +1,3 @@
-# Copyright (c) 2026 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Unit tests for the schedule-lifecycle surface.
 
 The six domain methods (pause/resume/delete/run_now/preview_next/reconcile)

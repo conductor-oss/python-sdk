@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License.
-
 """108 — Plan-Execute with cross-step output piping via ``Ref``.
 
 The ``Ref("step_id")`` helper wires the **whole output** of an upstream
