@@ -54,8 +54,15 @@ def test_public_documentation_and_examples_do_not_use_legacy_branding():
     paths = [ROOT / "README.md", *[p for p in (ROOT / "docs").rglob("*.md") if "docs/design" not in str(p)]]
     paths.extend((ROOT / "examples" / "agents").rglob("*.md"))
     paths.extend((ROOT / "examples" / "agents").rglob("*.py"))
+    intentional_legacy_branding_fixtures = {
+        ROOT / "examples" / "agents" / "110_plan_execute_replan_solve.py",
+    }
     violations = []
     for path in paths:
+        # This example deliberately validates the word "Agentspan" as part of
+        # its solver input; it is not public product branding.
+        if path in intentional_legacy_branding_fixtures:
+            continue
         for number, line in enumerate(path.read_text().splitlines(), start=1):
             if "copyright" in line.lower():
                 continue
