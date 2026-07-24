@@ -21,7 +21,11 @@ def provider_from_model(model_or_provider: str) -> str:
 
 
 def out_of_budget_providers(raw_value: str | None = None) -> set[str]:
-    """Parse the comma-separated provider circuit breaker."""
+    """Parse the comma-separated provider circuit breaker.
+
+    Provider names unknown to this SDK are preserved so one shared variable can
+    safely contain providers used by other repositories.
+    """
     value = os.environ.get(OUT_OF_BUDGET_ENV, "") if raw_value is None else raw_value
     return {
         provider_from_model(provider)
