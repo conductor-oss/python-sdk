@@ -36,7 +36,6 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      LLM_PROVIDERS_OUT_OF_BUDGET: ${{ vars.LLM_PROVIDERS_OUT_OF_BUDGET }}
       AGENTSPAN_SERVER_URL: http://localhost:8080/api
       AGENTSPAN_CLI_PATH: ${{ github.workspace }}/agentspan
     steps:

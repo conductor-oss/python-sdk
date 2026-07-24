@@ -6,8 +6,6 @@ import subprocess
 import pytest
 import requests
 
-from provider_budget import require_llm_provider
-
 # ── Configuration from env (set by orchestrator) ────────────────────────
 
 SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
@@ -80,7 +78,6 @@ def runtime():
 
 @pytest.fixture(scope="session")
 def model():
-    require_llm_provider(MODEL)
     return MODEL
 
 

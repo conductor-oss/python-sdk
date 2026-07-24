@@ -35,8 +35,6 @@ from pathlib import Path
 
 import pytest
 
-from provider_budget import require_llm_provider
-
 from conductor.ai.agents import Agent
 
 pytestmark = [
@@ -124,7 +122,6 @@ def _agent_slug(key_env: str) -> str:
 
 def _require_key(key_env: str):
     """Skip unless the provider key is set."""
-    require_llm_provider(_agent_slug(key_env))
     if not os.environ.get(key_env):
         pytest.skip(f"{key_env} not set — provider unavailable")
 
