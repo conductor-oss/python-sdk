@@ -10,6 +10,8 @@ import os
 
 import pytest
 
+from provider_budget import require_llm_provider
+
 from conductor.ai.agents import (
     Agent,
     Guardrail,
@@ -351,6 +353,7 @@ KITCHEN_SINK_SPEC_STRUCTURED = {
 
 def _judge_call_anthropic(model: str, system: str, user: str) -> str:
     """Call Anthropic API. Returns raw text response."""
+    require_llm_provider("anthropic")
     try:
         import anthropic
     except ImportError:
@@ -377,6 +380,7 @@ def _judge_call_anthropic(model: str, system: str, user: str) -> str:
 
 def _judge_call_openai(model: str, system: str, user: str) -> str:
     """Call OpenAI API. Returns raw text response."""
+    require_llm_provider("openai")
     try:
         import openai
     except ImportError:
