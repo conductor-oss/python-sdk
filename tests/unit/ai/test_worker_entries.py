@@ -18,6 +18,7 @@ from conductor.ai.agents.runtime._worker_entries import (
     FunctionRef,
     SpawnSafetyError,
     ToolWorkerEntry,
+    _find_embedded_function,
     probe_spawn_safety,
 )
 from conductor.ai.agents.tool import get_tool_def
@@ -158,6 +159,72 @@ class TestFunctionRefContainerHop:
         p.start()
         try:
             assert q.get(timeout=30) == 15  # container_sample(4) == 4 + 11
+        finally:
+            p.join(timeout=30)
+        assert p.exitcode == 0
+
+
+# ── Deep-extract (real openai-agents @function_tool → FunctionTool) ────────
+
+
+class TestFunctionRefDeepExtract:
+    """openai-agents' real ``@function_tool`` → ``FunctionTool`` with no
+    ``.func``/``.coroutine``/``__wrapped__``; original fn only reachable via
+    nested attrs + closure."""
+
+    def test_sync_function_tool_deep_extract(self):
+        pytest.importorskip("agents")
+        from tests.unit.resources import openai_agents_entry_helpers as oa
+
+        raw = _find_embedded_function(oa.oa_get_weather)
+        assert raw is not None
+        ref = FunctionRef.of(raw)
+        assert ref == FunctionRef(oa.__name__, "oa_get_weather", 0, "", deep_extract=True)
+        assert ref.resolve() is raw
+
+    def test_async_function_tool_deep_extract(self):
+        pytest.importorskip("agents")
+        from tests.unit.resources import openai_agents_entry_helpers as oa
+
+        raw = _find_embedded_function(oa.oa_get_weather_async)
+        assert raw is not None
+        ref = FunctionRef.of(raw)
+        assert ref.deep_extract is True
+        assert ref.attr_hop == ""
+        assert ref.resolve() is raw
+
+    def test_ref_pickles(self):
+        pytest.importorskip("agents")
+        from tests.unit.resources import openai_agents_entry_helpers as oa
+
+        raw = _find_embedded_function(oa.oa_get_weather)
+        ref = pickle.loads(pickle.dumps(FunctionRef.of(raw)))
+        assert ref.resolve() is raw
+
+    def test_entry_transports_function_tool_fn_by_ref(self):
+        # Pre-fix this fell to fn_direct, whose reference pickling then found
+        # the FunctionTool at the global name: "it's not the same object as …".
+        pytest.importorskip("agents")
+        from tests.unit.resources import openai_agents_entry_helpers as oa
+
+        raw = _find_embedded_function(oa.oa_get_weather)
+        entry = ToolWorkerEntry.for_callable(raw, "oa_get_weather")
+        assert entry.fn_ref is not None
+        clone = pickle.loads(pickle.dumps(entry))
+        assert clone._target() is raw
+
+    def test_cross_process_spawn_roundtrip(self):
+        pytest.importorskip("agents")
+        from tests.unit.resources import openai_agents_entry_helpers as oa
+
+        raw = _find_embedded_function(oa.oa_get_weather)
+        ctx = multiprocessing.get_context("spawn")
+        q = ctx.Queue()
+        ref_bytes = pickle.dumps(FunctionRef.of(raw))
+        p = ctx.Process(target=helpers.resolve_and_call_child, args=(ref_bytes, "Boston", q))
+        p.start()
+        try:
+            assert q.get(timeout=30) == "sunny in Boston"
         finally:
             p.join(timeout=30)
         assert p.exitcode == 0

@@ -18,7 +18,7 @@ from dataclasses import dataclass, is_dataclass
 from dataclasses import fields as dc_fields
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
-from conductor.ai.agents.runtime._worker_entries import _extract_from_closure
+from conductor.ai.agents.runtime._worker_entries import _find_embedded_function
 
 logger = logging.getLogger("conductor.ai.agents.frameworks")
 
@@ -343,39 +343,6 @@ def _try_extract_tool_object(obj: Any) -> Optional[WorkerInfo]:
         input_schema=schema,
         func=original_func,
     )
-
-
-def _find_embedded_function(obj: Any, max_depth: int = 2) -> Optional[Any]:
-    """Walk an object's attributes to find an embedded plain function.
-
-    Searches closures and nested attribute objects for the original
-    user-defined function. Returns ``None`` if not found.
-    """
-    if max_depth <= 0:
-        return None
-
-    # Check direct attributes for callables that look like user functions
-    for attr_name in vars(obj) if hasattr(obj, "__dict__") else []:
-        val = getattr(obj, attr_name, None)
-        if val is None:
-            continue
-
-        # Plain function with a clean signature
-        if inspect.isfunction(val):
-            # Check if it has a closure containing the original function
-            func = _extract_from_closure(val)
-            if func is not None:
-                return func
-            # The function itself might be usable
-            return val
-
-        # Nested object — recurse one level
-        if hasattr(val, "__dict__") and not isinstance(val, type):
-            result = _find_embedded_function(val, max_depth - 1)
-            if result is not None:
-                return result
-
-    return None
 
 
 def _extract_callable(func: Any) -> WorkerInfo:
