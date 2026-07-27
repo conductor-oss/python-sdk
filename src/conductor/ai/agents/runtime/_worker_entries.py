@@ -71,6 +71,40 @@ def _walk_qualname(module_obj, qualname: str):
 _CONTAINER_ATTRS = ("func", "coroutine")
 
 
+def _extract_from_closure(func: Callable) -> Optional[Callable]:
+    """Extract the original user function from a closure's cell variables.
+
+    Shared by :mod:`conductor.ai.agents.frameworks.serializer` (discovery,
+    with no target to match) and :class:`FunctionRef` (verification in the
+    parent, blind reconstruction in the spawn child) — one implementation so
+    the two can't drift apart. Needed for containers that hold the original
+    function only as a closure free-variable of a wrapper callable — e.g.
+    openai-agents' ``FunctionTool.on_invoke_tool`` — rather than as a plain
+    attribute (``_CONTAINER_ATTRS`` above).
+    """
+    closure = getattr(func, "__closure__", None)
+    if not closure:
+        return None
+
+    for cell in closure:
+        try:
+            val = cell.cell_contents
+        except ValueError:
+            continue
+        if inspect.isfunction(val):
+            # Skip internal wrappers that take (ctx, input) or (context, ...)
+            try:
+                sig = inspect.signature(val)
+                param_names = list(sig.parameters.keys())
+                # Internal wrappers typically start with ctx/context as first param
+                if param_names and param_names[0] in ("ctx", "context"):
+                    continue
+                return val
+            except (ValueError, TypeError):
+                continue
+    return None
+
+
 def _wrapped_depth_to(obj, fn) -> Optional[int]:
     """Number of ``__wrapped__`` hops from *obj* down to *fn*, or ``None``."""
     depth, current = 0, obj
