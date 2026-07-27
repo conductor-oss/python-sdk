@@ -1,84 +1,42 @@
-# Getting started
+# Run your first durable Conductor agent
 
-## Under 30 seconds
+**Prerequisites:** Python 3.10+, a reachable Conductor server, and an LLM provider
+credential configured on that server.
 
-The agents API ships as an extra of `conductor-python` (see `pyproject.toml`).
+## 1. Configure the client
 
-```bash
+```shell
 pip install 'conductor-python[agents]'
+export CONDUCTOR_SERVER_URL=http://localhost:8080/api
+export CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini
 ```
 
-Or, per framework, install just what you need — e.g. `conductor-python[langchain]`,
-`conductor-python[adk]`, `conductor-python[claude]`.
+For authenticated servers, also set `CONDUCTOR_AUTH_KEY` and
+`CONDUCTOR_AUTH_SECRET`. Do not export provider secrets into application source;
+configure the provider integration on the server.
 
-Point the SDK at a running Conductor Agent server (defaults to `http://localhost:8080/api`):
+## 2. Run the maintained example
 
-```bash
-export AGENTSPAN_SERVER_URL=http://localhost:8080/api
-export OPENAI_API_KEY=<YOUR-KEY>
-export AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini
+```shell
+cd examples/agents
+python 01_basic_agent.py
 ```
 
-Write `hello.py`:
+Expected result: an `AgentResult` with the model response. If the request cannot
+reach the server, check [server setup](../server-setup.md). If the agent cannot
+call a model, check the server-side provider integration.
+
+## 3. Create the same agent
 
 ```python
 from conductor.ai.agents import Agent, AgentRuntime
 
-agent = Agent(
-    name="greeter",
-    model="anthropic/claude-sonnet-4-6",
-    instructions="You are a friendly assistant. Keep responses brief.",
-)
-
+agent = Agent(name="greeter", model="openai/gpt-4o-mini",
+              instructions="You are a friendly assistant.")
 with AgentRuntime() as runtime:
-    result = runtime.run(agent, "Say hello and tell me a fun fact about Python.")
+    result = runtime.run(agent, "Say hello.")
     print(result.output)
 ```
 
-Run it:
-
-```bash
-uv run python hello.py
-```
-
-That is the whole loop: define an `Agent`, open an `AgentRuntime`, call `run`. The
-runtime compiles the agent to a workflow, starts it, and blocks until it returns an
-[`AgentResult`](api-reference.md#agentresult). `result.print_result()` pretty-prints
-the output if you prefer.
-
-## Environment variables
-
-`AgentConfig.from_env()` reads these (all optional — defaults shown):
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `AGENTSPAN_SERVER_URL` | `http://localhost:8080/api` | Server base URL |
-| `AGENTSPAN_API_KEY` | — | API key auth |
-| `AGENTSPAN_AUTH_KEY` | — | Key/secret auth — key |
-| `AGENTSPAN_AUTH_SECRET` | — | Key/secret auth — secret |
-| `AGENTSPAN_LLM_RETRY_COUNT` | `3` | LLM call retries |
-| `AGENTSPAN_WORKER_POLL_INTERVAL` | `100` | Worker poll interval (ms) |
-| `AGENTSPAN_WORKER_THREADS` | `1` | Worker thread count |
-| `AGENTSPAN_AUTO_START_WORKERS` | `true` | Auto-start local tool workers |
-| `AGENTSPAN_DAEMON_WORKERS` | `true` | Run workers as daemon threads |
-| `AGENTSPAN_INTEGRATIONS_AUTO_REGISTER` | `false` | Auto-register provider integrations |
-| `AGENTSPAN_STREAMING_ENABLED` | `true` | Enable SSE streaming |
-| `AGENTSPAN_SECRET_STRICT_MODE` | `false` | Fail hard on missing secrets |
-| `AGENTSPAN_LOG_LEVEL` | `INFO` | Log level |
-
-The model string is `"provider/model"`, e.g. `anthropic/claude-sonnet-4-6`,
-`anthropic/claude-sonnet-4-20250514`, `google_gemini/gemini-2.0-flash`. Set the
-matching provider API key in the environment of whoever runs the agent's workers.
-
-## What `model` looks like
-
-```python
-Agent(name="a", model="openai/gpt-4o")              # OpenAI
-Agent(name="b", model="anthropic/claude-sonnet-4-20250514")
-Agent(name="c", model="google_gemini/gemini-2.0-flash")
-```
-
-## Next
-
-- Add tools, sub-agents, and human-in-the-loop: [Writing agents](writing-agents.md).
-- Deploy once and serve workers separately for production: [Advanced](advanced.md).
+Next: [tools](concepts/tools.md), [runtime modes](concepts/deploy-serve-run.md),
+or [framework bridges](README.md#framework-bridges).

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Configuration — load settings from environment variables.
 
 Uses ``dataclasses`` with a ``from_env()`` classmethod for env var loading.
@@ -17,39 +14,50 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from typing import Optional
-
-
 def _env(var: str, default=None):
-    """Read an environment variable, returning *default* if unset."""
-    return os.environ.get(var, default)
+    """Read an environment variable, treating blank values as unset."""
+    value = os.environ.get(var)
+    if value is not None and value.strip() != "":
+        return value
+    return default
 
 
 logger = logging.getLogger("conductor.ai.agents.config")
 
 
 def _env_bool(var: str, default: bool = False) -> bool:
-    """Read a boolean environment variable (true/1/yes → True)."""
-    val = os.environ.get(var)
-    if val is None or val.strip() == "":
+    """Read a boolean environment variable; malformed values use *default*."""
+    val = _env(var)
+    if val is None:
         return default
-    return val.lower() in ("true", "1", "yes")
+    normalized = val.lower()
+    if normalized in ("true", "1", "yes", "on"):
+        return True
+    if normalized in ("false", "0", "no", "off"):
+        return False
+    return default
 
 
 def _env_int(var: str, default: int = 0) -> int:
-    """Read an integer environment variable."""
-    val = os.environ.get(var)
-    if val is None or val.strip() == "":
+    """Read an integer environment variable; malformed values use *default*."""
+    val = _env(var)
+    if val is None:
         return default
-    return int(val)
+    try:
+        return int(val)
+    except ValueError:
+        return default
 
 
 def _env_float(var: str, default: float = 0.0) -> float:
-    """Read a float environment variable."""
-    val = os.environ.get(var)
-    if val is None or val.strip() == "":
+    """Read a float environment variable; malformed values use *default*."""
+    val = _env(var)
+    if val is None:
         return default
-    return float(val)
+    try:
+        return float(val)
+    except ValueError:
+        return default
 
 
 @dataclass
@@ -86,17 +94,18 @@ class AgentConfig:
 
     @classmethod
     def from_env(cls) -> AgentConfig:
-        """Create an ``AgentConfig`` by reading ``AGENTSPAN_*`` env vars."""
+        """Create an ``AgentConfig`` from canonical environment variables.
+
+        Only ``CONDUCTOR_AGENT_*`` settings are supported.
+        """
         return cls(
-            worker_poll_interval_ms=_env_int("AGENTSPAN_WORKER_POLL_INTERVAL", 100),
-            worker_thread_count=_env_int("AGENTSPAN_WORKER_THREADS", 1),
-            auto_start_workers=_env_bool("AGENTSPAN_AUTO_START_WORKERS", True),
-            daemon_workers=_env_bool("AGENTSPAN_DAEMON_WORKERS", True),
-            auto_register_integrations=_env_bool("AGENTSPAN_INTEGRATIONS_AUTO_REGISTER", False),
-            streaming_enabled=_env_bool("AGENTSPAN_STREAMING_ENABLED", True),
-            liveness_enabled=_env_bool("AGENTSPAN_LIVENESS_ENABLED", True),
-            liveness_stall_seconds=_env_float("AGENTSPAN_LIVENESS_STALL_SECONDS", 30.0),
-            liveness_check_interval_seconds=_env_float(
-                "AGENTSPAN_LIVENESS_CHECK_INTERVAL_SECONDS", 10.0
-            ),
+            worker_poll_interval_ms=_env_int("CONDUCTOR_AGENT_WORKER_POLL_INTERVAL", 100),
+            worker_thread_count=_env_int("CONDUCTOR_AGENT_WORKER_THREADS", 1),
+            auto_start_workers=_env_bool("CONDUCTOR_AGENT_AUTO_START_WORKERS", True),
+            daemon_workers=_env_bool("CONDUCTOR_AGENT_DAEMON_WORKERS", True),
+            auto_register_integrations=_env_bool("CONDUCTOR_AGENT_INTEGRATIONS_AUTO_REGISTER", False),
+            streaming_enabled=_env_bool("CONDUCTOR_AGENT_STREAMING_ENABLED", True),
+            liveness_enabled=_env_bool("CONDUCTOR_AGENT_LIVENESS_ENABLED", True),
+            liveness_stall_seconds=_env_float("CONDUCTOR_AGENT_LIVENESS_STALL_SECONDS", 30.0),
+            liveness_check_interval_seconds=_env_float("CONDUCTOR_AGENT_LIVENESS_CHECK_INTERVAL_SECONDS", 10.0),
         )

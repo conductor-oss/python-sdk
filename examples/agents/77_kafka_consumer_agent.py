@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Kafka → Workflow Message Queue bridge — forward Kafka records to a running agent.
 
 Demonstrates:
@@ -16,9 +13,9 @@ The agent loops forever:
 
 Requirements:
     - Kafka broker on localhost:9092 with topic le_random_topic
-    - AgentSpan server running at http://localhost:8080
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - Conductor server running at http://localhost:8080
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
     - confluent-kafka  (uv pip install confluent-kafka)
 """
 
@@ -29,7 +26,7 @@ from settings import settings
 
 KAFKA_BOOTSTRAP = "localhost:9092"
 KAFKA_TOPIC = "le_random_topic"
-KAFKA_GROUP = "agentspan-echo-group"
+KAFKA_GROUP = "Conductor-echo-group"
 
 
 @tool

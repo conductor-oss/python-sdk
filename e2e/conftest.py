@@ -1,18 +1,16 @@
-"""E2E test infrastructure. No mocks. Real server, real CLI, real services."""
+"""E2E test infrastructure. No mocks. Real server and real services."""
 
 import os
-import subprocess
 
 import pytest
 import requests
 
 # ── Configuration from env (set by orchestrator) ────────────────────────
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 BASE_URL = SERVER_URL.rstrip("/").replace("/api", "")
-CLI_PATH = os.environ.get("AGENTSPAN_CLI_PATH", "agentspan")
 MCP_TESTKIT_URL = os.environ.get("MCP_TESTKIT_URL", "http://localhost:3001")
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
 
 
 # ── Markers ─────────────────────────────────────────────────────────────
@@ -84,62 +82,6 @@ def model():
 @pytest.fixture(scope="session")
 def mcp_url():
     return MCP_TESTKIT_URL
-
-
-# ── CLI credential helper ──────────────────────────────────────────────
-
-
-class CredentialsCLI:
-    """Wraps the agentspan CLI for credential operations.
-
-    The CLI expects AGENTSPAN_SERVER_URL without the /api suffix
-    (e.g., http://localhost:8080). It appends /api internally.
-    """
-
-    def __init__(self, cli_path: str, server_url: str):
-        self._cli = cli_path
-        # CLI expects base URL without /api — strip it if present
-        self._server_url = server_url.rstrip("/").removesuffix("/api")
-
-    def _run(self, *args: str) -> subprocess.CompletedProcess:
-        cmd = [self._cli] + list(args)
-        env = {**os.environ, "AGENTSPAN_SERVER_URL": self._server_url}
-        return subprocess.run(
-            cmd, capture_output=True, text=True, timeout=15, env=env
-        )
-
-    def set(self, name: str, value: str) -> None:
-        result = self._run("credentials", "set", name, value)
-        if result.returncode != 0:
-            # conductor-oss standalone serves secrets from the server process
-            # env — the store is read-only there, so the write-dependent
-            # lifecycle steps cannot run (a server-flavor capability, not an
-            # SDK regression; mirrors the Java/C# ports' assumption-skip).
-            if "read-only" in result.stderr.lower():
-                pytest.skip(
-                    "server secret store is read-only (env-backed) — "
-                    "skipping write-dependent step"
-                )
-            raise AssertionError(f"credentials set {name} failed: {result.stderr}")
-
-    def delete(self, name: str) -> None:
-        result = self._run("credentials", "delete", name)
-        # Ignore "not found" and "read-only" errors during cleanup — best-effort
-        stderr = result.stderr.lower()
-        if result.returncode != 0 and "not found" not in stderr and "read-only" not in stderr:
-            raise AssertionError(
-                f"credentials delete {name} failed: {result.stderr}"
-            )
-
-    def list(self) -> str:
-        result = self._run("credentials", "list")
-        assert result.returncode == 0, f"credentials list failed: {result.stderr}"
-        return result.stdout
-
-
-@pytest.fixture(scope="session")
-def cli_credentials():
-    return CredentialsCLI(CLI_PATH, SERVER_URL)
 
 
 # ── Server API helpers ──────────────────────────────────────────────────

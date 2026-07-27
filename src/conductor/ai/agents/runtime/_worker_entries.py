@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Spawn-safe worker entry infrastructure.
 
 Under the multiprocessing ``spawn`` start method (the SDK default on every
@@ -23,7 +20,7 @@ This module provides the building blocks for spawn-safe workers:
 - :func:`probe_spawn_safety` — a registration-time pickle probe, enabled per
   worker group as each group's workers become spawn-safe.
 
-Design: idea-5 ``design.md`` in the combine-agentspan analysis workspace.
+Design: idea-5 ``design.md`` in the agent-runtime analysis workspace.
 
 NOTE: deliberately NO ``from __future__ import annotations`` here — the task
 runners read parameter types from ``inspect.signature(execute_function)``
@@ -205,7 +202,7 @@ class ToolWorkerEntry:
         self.fn_direct = fn_direct
         self.guardrails = guardrails
         self.credential_names = list(credential_names) if credential_names else []
-        # Carried explicitly: the parent sets _agentspan_framework_callable on
+        # Carried explicitly: the parent sets _conductor_agent_framework_callable on
         # the function object, which a spawn child's re-imported copy lacks.
         self.framework_callable = framework_callable
 
@@ -217,7 +214,7 @@ class ToolWorkerEntry:
         bound methods of picklable objects); unpicklable closures are caught
         by the registration probe with an actionable error.
         """
-        framework = bool(getattr(fn, "_agentspan_framework_callable", False))
+        framework = bool(getattr(fn, "_conductor_agent_framework_callable", False))
         try:
             ref = FunctionRef.of(fn)
         except SpawnSafetyError:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Basic agent — the simplest possible agentspan example."""
+"""Basic agent — the simplest possible Conductor example."""
 
 from conductor.ai.agents import Agent, AgentRuntime
 
@@ -20,7 +20,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # rt.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.quickstart.01_basic_agent
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # rt.serve(agent)

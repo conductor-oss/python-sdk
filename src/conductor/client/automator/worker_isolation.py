@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Worker isolation mode — ``process`` (default) or ``thread``.
 
 ``CONDUCTOR_WORKER_ISOLATION=thread`` replaces :class:`TaskHandler`'s

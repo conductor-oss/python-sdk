@@ -11,8 +11,8 @@ specialist agent based on what the issue is about. The LLM decides
 the routing at runtime — not a fixed pipeline, not keyword matching.
 
 Setup:
-    pip install agentspan
-    agentspan server start
+    pip install Conductor
+    Conductor server start
 
     python 03_issue_triage_handoff.py
 """

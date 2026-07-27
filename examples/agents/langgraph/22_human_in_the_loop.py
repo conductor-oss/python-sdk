@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Human-in-the-Loop — real human approval gate within a LangGraph workflow.
 
 Demonstrates:
@@ -12,11 +9,11 @@ Demonstrates:
     - Interactive streaming with schema-driven console prompts
 
 The workflow pauses at the review step and waits for a human to approve or
-reject the draft via the AgentSpan UI or API. This is true human-in-the-loop,
+reject the draft via the Conductor UI or API. This is true human-in-the-loop,
 not an LLM simulating a reviewer.
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY for ChatOpenAI
 """
 

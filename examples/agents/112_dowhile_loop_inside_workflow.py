@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """112 — Plan-Execute-Replan loop INSIDE a single Conductor workflow.
 
 Examples 109/110/111 keep the replan loop in Python user code: each
@@ -39,15 +36,15 @@ Loop condition: keep going while ``done != true`` AND iteration count
 is under the budget.
 
 This is the shape of a *first-class* ``Strategy.PLAN_EXECUTE_REPLAN``
-that doesn't exist in Agentspan today (dg-review finding F1,
+that doesn't exist in Conductor today (dg-review finding F1,
 recommendation #2). The example builds it by hand to show the full
 plan→compile→execute→replan structure end-to-end inside one workflow.
 
 Requirements:
-  - AGENTSPAN_SERVER_URL=http://localhost:8080/api (default)
-  - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini (default)
+  - CONDUCTOR_SERVER_URL=http://localhost:8080/api (default)
+  - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini (default)
   - LLM key for the chosen model.
-  - AGENTSPAN_BINSEARCH_SECRET (optional override; default 642)
+  - CONDUCTOR_AGENT_BINSEARCH_SECRET (optional override; default 642)
 """
 
 import json
@@ -60,11 +57,11 @@ import requests
 
 from conductor.ai.agents import AgentRuntime, plan_execute, tool
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 BASE = SERVER_URL.rstrip("/").replace("/api", "")
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "anthropic/claude-sonnet-4-6")
-SECRET = int(os.environ.get("AGENTSPAN_BINSEARCH_SECRET", "642"))
-MAX_ITER = int(os.environ.get("AGENTSPAN_DOWHILE_MAX_ITER", "12"))
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "anthropic/claude-sonnet-4-6")
+SECRET = int(os.environ.get("CONDUCTOR_AGENT_BINSEARCH_SECRET", "642"))
+MAX_ITER = int(os.environ.get("CONDUCTOR_AGENT_DOWHILE_MAX_ITER", "12"))
 WORKFLOW_NAME = "pae_replan_dowhile_demo"
 WORKFLOW_VERSION = 5
 

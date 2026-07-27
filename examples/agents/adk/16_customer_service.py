@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Customer Service — Real-world multi-tool agent pattern from ADK samples.
 
 Mirrors the customer-service ADK sample. A single agent with multiple
@@ -103,7 +100,7 @@ def main():
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.16_customer_service
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

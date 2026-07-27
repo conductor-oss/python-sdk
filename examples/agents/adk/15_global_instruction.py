@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Global Instruction — global_instruction for system-wide context.
 
 Mirrors the pattern from Google ADK samples (data-science, customer-service).
@@ -81,7 +78,7 @@ def main():
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.15_global_instruction
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

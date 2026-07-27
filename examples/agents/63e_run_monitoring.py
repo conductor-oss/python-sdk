@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Run Monitoring Agent — trigger the monitoring agent deployed by 63d.
 
 Demonstrates:
@@ -10,7 +7,7 @@ Demonstrates:
 Requirements:
     - Conductor server running
     - 63d_serve_from_package.py running in another terminal
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
 """
 
 from conductor.ai.agents import AgentRuntime
@@ -25,7 +22,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(...)
         # CLI alternative:
-        # agentspan deploy --package examples.63e_run_monitoring
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(...)

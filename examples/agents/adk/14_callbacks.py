@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Callbacks — before_tool_callback and after_tool_callback for tool interception.
 
 Mirrors the pattern from Google ADK samples (customer-service).
@@ -79,7 +76,7 @@ def main():
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.14_callbacks
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

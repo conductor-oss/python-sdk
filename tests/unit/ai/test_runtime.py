@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Unit tests for the AgentRuntime.
 
 Tests runtime helper methods (extract_output, extract_handoff_result, etc.)
@@ -218,13 +215,12 @@ class TestAgentRuntimeInit:
     AgentConfig settings for runtime behaviour only."""
 
     def test_no_args_falls_back_to_env(self):
-        """AgentRuntime() resolves the server via Configuration's env fallback
-        (CONDUCTOR_SERVER_URL → AGENTSPAN_SERVER_URL)."""
+        """AgentRuntime() resolves the server from ``CONDUCTOR_SERVER_URL``."""
         import os
 
-        keys = ["CONDUCTOR_SERVER_URL", "AGENTSPAN_SERVER_URL"]
+        keys = ["CONDUCTOR_SERVER_URL"]
         env_backup = {k: os.environ.pop(k, None) for k in keys}
-        os.environ["AGENTSPAN_SERVER_URL"] = "http://env-server/api"
+        os.environ["CONDUCTOR_SERVER_URL"] = "http://env-server/api"
 
         try:
             with patch("conductor.client.orkes_clients.OrkesClients"):
@@ -308,7 +304,7 @@ class TestAgentConfig:
         from conductor.ai.agents.runtime.config import AgentConfig
 
         with patch.dict(
-            "os.environ", {"AGENTSPAN_WORKER_THREADS": "4"}, clear=True
+            "os.environ", {"CONDUCTOR_AGENT_WORKER_THREADS": "4"}, clear=True
         ):
             config = AgentConfig.from_env()
             assert config.worker_thread_count == 4
@@ -1867,6 +1863,16 @@ class TestStartViaServer:
         payload = runtime._agent_client.start_agent.call_args[0][0]
         assert "idempotencyKey" not in payload
 
+    def test_start_via_server_keeps_credentials_out_of_payload(self, runtime):
+        """Credential names configure workers locally and are not workflow input."""
+        agent = Agent(name="test", model="openai/gpt-4o")
+        runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-1"})
+
+        runtime._start_via_server(agent, "hi", credentials=["OPENAI_API_KEY"])
+
+        payload = runtime._agent_client.start_agent.call_args[0][0]
+        assert "credentials" not in payload
+
 
 class TestStartFrameworkViaServer:
     """Test _start_framework_via_server() sends correct framework payloads."""
@@ -1881,8 +1887,8 @@ class TestStartFrameworkViaServer:
                 config = AgentConfig()
                 return AgentRuntime(settings=config)
 
-    def test_start_framework_via_server_passes_credentials(self, runtime):
-        """Framework start payload includes request-level credentials."""
+    def test_start_framework_via_server_keeps_credentials_out_of_payload(self, runtime):
+        """Credential names configure workers locally and are not workflow input."""
         runtime._agent_client.start_agent = MagicMock(return_value={"executionId": "wf-fw-1"})
         runtime._start_framework_via_server(
             framework="openai",
@@ -1892,7 +1898,7 @@ class TestStartFrameworkViaServer:
         )
 
         payload = runtime._agent_client.start_agent.call_args[0][0]
-        assert payload["credentials"] == ["OPENAI_API_KEY"]
+        assert "credentials" not in payload
 
     def test_start_framework_via_server_passes_context(self, runtime):
         """Framework start payload includes context."""

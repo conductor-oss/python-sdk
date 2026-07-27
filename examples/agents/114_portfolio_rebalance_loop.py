@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """114 — Wealth-management portfolio rebalancing loop with real PAC + SUB_WORKFLOW.
 
 An RIA portfolio is off target. Each iteration the planner LLM proposes a
@@ -30,8 +27,8 @@ What you'll see:
   * Termination on the iteration where submit_trades is called.
 
 Requirements:
-  - AGENTSPAN_SERVER_URL=http://localhost:8080/api (default)
-  - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini (default)
+  - CONDUCTOR_SERVER_URL=http://localhost:8080/api (default)
+  - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini (default)
   - LLM key for the chosen model.
 """
 
@@ -45,10 +42,10 @@ import requests
 
 from conductor.ai.agents import AgentRuntime, plan_execute, tool
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 BASE = SERVER_URL.rstrip("/").replace("/api", "")
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "anthropic/claude-sonnet-4-6")
-MAX_ITER = int(os.environ.get("AGENTSPAN_REBAL_MAX_ITER", "8"))
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "anthropic/claude-sonnet-4-6")
+MAX_ITER = int(os.environ.get("CONDUCTOR_AGENT_REBAL_MAX_ITER", "8"))
 WORKFLOW_NAME = "portfolio_rebalance_loop"
 WORKFLOW_VERSION = 6
 

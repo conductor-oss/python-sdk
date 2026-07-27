@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Skills — Load /dg skill as a durable agent.
 
 Demonstrates:
@@ -12,7 +9,7 @@ Demonstrates:
 
 Requirements:
     - Conductor server with LLM support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
     - /dg skill installed (https://github.com/v1r3n/dinesh-gilfoyle)
 
 Install /dg:

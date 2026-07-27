@@ -16,7 +16,7 @@ Secrets are stored via the server's REST ``/api/secrets`` endpoint directly (no
 CLI dependency). Tool outputs are asserted from the workflow task's ``outputData``
 (not LLM phrasing) for determinism.
 
-Targets the live Agentspan server (``AGENTSPAN_SERVER_URL``).
+Targets the live Conductor Agents server (``CONDUCTOR_SERVER_URL``).
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ TIMEOUT = 120
 CRED_NAME = "E2E_WORKER_SECRET"
 CRED_VALUE = f"s3cr3t-{uuid.uuid4().hex[:12]}"
 
-_API = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api").rstrip("/")
+_API = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api").rstrip("/")
 _BASE = _API.replace("/api", "")
 
 

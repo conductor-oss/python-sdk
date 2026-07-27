@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Guardrail E2E Test Suite — full 3×3×3 matrix.
 
 Tests every combination of Position × Type × OnFail:
@@ -51,8 +48,8 @@ Usage:
 
 Requirements:
     - Conductor server running
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
-    - AGENTSPAN_LLM_MODEL in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_AGENT_LLM_MODEL in .env or environment
 """
 
 import sys

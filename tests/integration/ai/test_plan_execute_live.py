@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Plan-Execute strategy e2e tests — runs real agents with real LLM calls.
 
 Tests the PLAN_EXECUTE strategy end-to-end:
@@ -12,7 +9,7 @@ Tests the PLAN_EXECUTE strategy end-to-end:
   - Files are actually created on disk
 
 Requires:
-  - Agentspan server running (AGENTSPAN_SERVER_URL)
+  - Conductor Agents server running (CONDUCTOR_SERVER_URL)
   - OPENAI_API_KEY set
 
 Run with:
@@ -35,7 +32,7 @@ from conductor.ai.agents import (
     tool,
 )
 
-_SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+_SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 
 pytestmark = pytest.mark.integration
 

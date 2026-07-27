@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Human Tool — LLM-initiated human interaction.
 
 Unlike approval_required tools (09_human_in_the_loop.py) where humans gate
@@ -19,8 +16,8 @@ Demonstrates:
     - The LLM using human input to make decisions
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
-    - AGENTSPAN_LLM_MODEL (default: openai/gpt-4o-mini)
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_AGENT_LLM_MODEL (default: openai/gpt-4o-mini)
 """
 
 from settings import settings

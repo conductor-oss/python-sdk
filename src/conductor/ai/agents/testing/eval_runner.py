@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Eval runner — LLM-backed correctness testing for agent behavior.
 
 Runs real prompts through agents and evaluates whether the agent's behavior
@@ -187,7 +184,7 @@ class EvalSuiteResult:
 
 
 class CorrectnessEval:
-    """Runs eval cases against a live Agentspan runtime.
+    """Runs eval cases against a live Conductor-agent runtime.
 
     Args:
         runtime: An :class:`AgentRuntime` instance (or any object with a

@@ -1,7 +1,4 @@
-# sdk/python/src/agentspan/agents/frameworks/claude_agent_sdk.py
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
+# sdk/python/src/conductor/ai/agents/frameworks/claude_agent_sdk.py
 """Claude Agent SDK passthrough worker support.
 
 Provides:
@@ -285,10 +282,10 @@ def make_claude_agent_sdk_worker(
         from conductor.ai.agents.runtime.secret_injection import inject_via_env
 
         def _invoke():
-            agentspan_hooks = _build_agentspan_hooks(
+            conductor_agent_hooks = _build_conductor_agent_hooks(
                 task_id, execution_id, server_url, auth_key, auth_secret, metadata
             )
-            merged_options = _merge_hooks(options, agentspan_hooks)
+            merged_options = _merge_hooks(options, conductor_agent_hooks)
             if cwd:
                 if is_dataclass(merged_options) and not isinstance(merged_options, type):
                     merged_options = replace(merged_options, cwd=cwd)
@@ -376,11 +373,11 @@ async def _run_query(prompt: str, options: Any) -> Tuple[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Agentspan hooks
+# Conductor-agent hooks
 # ---------------------------------------------------------------------------
 
 
-def _build_agentspan_hooks(
+def _build_conductor_agent_hooks(
     task_id: str,
     execution_id: str,
     server_url: str,
@@ -388,7 +385,7 @@ def _build_agentspan_hooks(
     auth_secret: str,
     metadata: Dict[str, Any],
 ) -> Dict[str, list]:
-    """Build agentspan instrumentation hooks for the Claude Agent SDK.
+    """Build Conductor-agent instrumentation hooks for the Claude Agent SDK.
 
     Returns a dict mapping event names to lists of HookMatcher dataclasses.
     All hook callbacks are defensive (try/except, return {}).
@@ -850,17 +847,17 @@ def _build_agentspan_hooks(
 # ---------------------------------------------------------------------------
 
 
-def _merge_hooks(options: Any, agentspan_hooks: Dict[str, list]) -> Any:
-    """Merge user hooks and agentspan hooks, preserving user hooks first.
+def _merge_hooks(options: Any, conductor_agent_hooks: Dict[str, list]) -> Any:
+    """Merge user hooks and Conductor-agent hooks, preserving user hooks first.
 
     Returns a new options object with the merged hooks dict.
     """
     user_hooks = getattr(options, "hooks", None) or {}
     merged: Dict[str, list] = {}
-    all_events = set(list(user_hooks.keys()) + list(agentspan_hooks.keys()))
+    all_events = set(list(user_hooks.keys()) + list(conductor_agent_hooks.keys()))
     for event_name in all_events:
         user_matchers = user_hooks.get(event_name, [])
-        as_matchers = agentspan_hooks.get(event_name, [])
+        as_matchers = conductor_agent_hooks.get(event_name, [])
         merged[event_name] = list(user_matchers) + as_matchers
 
     # ClaudeCodeOptions is a dataclass -- use replace()
@@ -968,7 +965,7 @@ def _create_tracking_workflow(
     """Create a bare tracking workflow for a subagent.
 
     Returns the execution ID of the new workflow, or None on failure.
-    Uses POST /api/agent/execution (Agentspan custom endpoint).
+    Uses POST /api/agent/execution (Conductor agent endpoint).
     """
     body: Dict[str, Any] = {"workflowName": workflow_name, "input": input_data}
     if parent_workflow_id:
@@ -995,7 +992,7 @@ def _inject_tool_task(
     """Inject a display-only task into the running workflow execution.
 
     Called synchronously from PreToolUse so the task exists before the tool runs.
-    Uses POST /api/agent/{executionId}/tasks (Agentspan custom endpoint).
+    Uses POST /api/agent/{executionId}/tasks (Conductor agent endpoint).
 
     For SUB_WORKFLOW tasks, pass sub_workflow_param with keys:
       name, version, executionId (the tracking sub-workflow).

@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Financial Advisor — Multi-agent with specialized tool-using sub-agents.
 
 Mirrors the financial-advisor ADK sample. A coordinator agent delegates
@@ -141,7 +138,7 @@ def main():
         # 1. Deploy once during CI/CD:
         # runtime.deploy(coordinator)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.17_financial_advisor
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(coordinator)

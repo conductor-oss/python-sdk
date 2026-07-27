@@ -1,6 +1,6 @@
 """Hello-world scheduling demo.
 
-Schedules a "Hello, world!" workflow every 2 seconds via the agentspan SDK,
+Schedules a "Hello, world!" workflow every 2 seconds via the Conductor SDK,
 waits, then prints the execution history.
 
 The "agent" here is a Conductor workflow with a single INLINE task that
@@ -8,7 +8,7 @@ emits ``{"greeting": "Hello, world!", "timestamp": ...}``. Using a workflow
 instead of a real LLM Agent keeps the demo deterministic and free — the
 scheduling pipeline is identical either way.
 
-NOTE: Targets OSS Conductor at port 8089. The agentspan-runtime on port
+NOTE: Targets OSS Conductor at port 8089. The Conductor-runtime on port
 8080 doesn't (yet) include the scheduler module — see
 ``docs/design/plans/2026-05-27-agent-scheduling.md`` open dependency #1.
 
@@ -31,7 +31,7 @@ from conductor.ai.agents.schedule import Schedule
 
 CONDUCTOR_API = (
     os.environ.get("CONDUCTOR_SERVER_URL")
-    or os.environ.get("AGENTSPAN_SERVER_URL")
+    or os.environ.get("CONDUCTOR_SERVER_URL")
     or "http://localhost:8080/api"
 )
 
@@ -42,7 +42,7 @@ def register_hello_world_workflow(name: str) -> None:
         "name": name,
         "version": 1,
         "description": "Hello-world demo for agent scheduling",
-        "ownerEmail": "demo@agentspan.test",
+        "ownerEmail": "demo@Conductor.test",
         "schemaVersion": 2,
         "timeoutSeconds": 30,
         "timeoutPolicy": "TIME_OUT_WF",

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Tests for AgentConfig environment loading and SDK-wide log-level config.
 
 AgentConfig holds only agent-runtime settings (worker pool + liveness).
@@ -27,16 +24,16 @@ class TestEnvHelper:
     """Tests for the _env() helper function."""
 
     def test_reads_var(self):
-        with mock.patch.dict(os.environ, {"AGENTSPAN_FOO": "bar"}, clear=False):
-            assert _env("AGENTSPAN_FOO") == "bar"
+        with mock.patch.dict(os.environ, {"CONDUCTOR_AGENT_FOO": "bar"}, clear=False):
+            assert _env("CONDUCTOR_AGENT_FOO") == "bar"
 
     def test_returns_default_when_not_set(self):
         with mock.patch.dict(os.environ, {}, clear=True):
-            assert _env("AGENTSPAN_FOO", "default") == "default"
+            assert _env("CONDUCTOR_AGENT_FOO", "default") == "default"
 
     def test_returns_none_when_no_default(self):
         with mock.patch.dict(os.environ, {}, clear=True):
-            assert _env("AGENTSPAN_FOO") is None
+            assert _env("CONDUCTOR_AGENT_FOO") is None
 
 
 class TestEnvBool:
@@ -80,6 +77,10 @@ class TestEnvInt:
         with mock.patch.dict(os.environ, {"NUM": ""}, clear=True):
             assert _env_int("NUM", 7) == 7
 
+    def test_invalid_value_uses_default(self):
+        with mock.patch.dict(os.environ, {"NUM": "not-a-number"}, clear=True):
+            assert _env_int("NUM", 7) == 7
+
 
 class TestEnvFloat:
     """Tests for _env_float() helper."""
@@ -96,6 +97,10 @@ class TestEnvFloat:
         with mock.patch.dict(os.environ, {"SECS": ""}, clear=True):
             assert _env_float("SECS", 30.0) == 30.0
 
+    def test_invalid_value_uses_default(self):
+        with mock.patch.dict(os.environ, {"SECS": "not-a-number"}, clear=True):
+            assert _env_float("SECS", 30.0) == 30.0
+
 
 class TestAgentConfigFromEnv:
     """Tests for AgentConfig.from_env() — agent-runtime settings only."""
@@ -109,9 +114,9 @@ class TestAgentConfigFromEnv:
 
     def test_boolean_env_vars(self):
         env = {
-            "AGENTSPAN_DAEMON_WORKERS": "false",
-            "AGENTSPAN_INTEGRATIONS_AUTO_REGISTER": "true",
-            "AGENTSPAN_STREAMING_ENABLED": "no",
+            "CONDUCTOR_AGENT_DAEMON_WORKERS": "false",
+            "CONDUCTOR_AGENT_INTEGRATIONS_AUTO_REGISTER": "true",
+            "CONDUCTOR_AGENT_STREAMING_ENABLED": "no",
         }
         with mock.patch.dict(os.environ, env, clear=True):
             config = AgentConfig.from_env()
@@ -121,8 +126,8 @@ class TestAgentConfigFromEnv:
 
     def test_numeric_env_vars(self):
         env = {
-            "AGENTSPAN_WORKER_POLL_INTERVAL": "250",
-            "AGENTSPAN_WORKER_THREADS": "4",
+            "CONDUCTOR_AGENT_WORKER_POLL_INTERVAL": "250",
+            "CONDUCTOR_AGENT_WORKER_THREADS": "4",
         }
         with mock.patch.dict(os.environ, env, clear=True):
             config = AgentConfig.from_env()
@@ -132,7 +137,6 @@ class TestAgentConfigFromEnv:
     def test_direct_construction(self):
         config = AgentConfig(worker_thread_count=8)
         assert config.worker_thread_count == 8
-
 
 class TestLivenessConfig:
     """Liveness monitor settings (used by stateful runs)."""
@@ -146,9 +150,9 @@ class TestLivenessConfig:
 
     def test_from_env(self):
         env = {
-            "AGENTSPAN_LIVENESS_ENABLED": "false",
-            "AGENTSPAN_LIVENESS_STALL_SECONDS": "45",
-            "AGENTSPAN_LIVENESS_CHECK_INTERVAL_SECONDS": "5",
+            "CONDUCTOR_AGENT_LIVENESS_ENABLED": "false",
+            "CONDUCTOR_AGENT_LIVENESS_STALL_SECONDS": "45",
+            "CONDUCTOR_AGENT_LIVENESS_CHECK_INTERVAL_SECONDS": "5",
         }
         with mock.patch.dict(os.environ, env, clear=True):
             config = AgentConfig.from_env()
@@ -180,8 +184,8 @@ class TestConfigurationLogLevel:
         with mock.patch.dict(os.environ, {"CONDUCTOR_LOG_LEVEL": "WARNING"}, clear=True):
             assert Configuration().log_level == logging.WARNING
 
-    def test_agentspan_log_level_env_fallback(self):
-        with mock.patch.dict(os.environ, {"AGENTSPAN_LOG_LEVEL": "DEBUG"}, clear=True):
+    def test_conductor_log_level_env(self):
+        with mock.patch.dict(os.environ, {"CONDUCTOR_LOG_LEVEL": "DEBUG"}, clear=True):
             assert Configuration().log_level == logging.DEBUG
 
     def test_applied_to_logger_by_runtime(self):

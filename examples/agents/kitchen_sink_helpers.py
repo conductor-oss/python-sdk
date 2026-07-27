@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Kitchen Sink helpers — mock services, data fixtures, external worker stubs.
 
 These simulate external dependencies so the kitchen sink can run standalone

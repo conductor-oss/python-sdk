@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Agent Lifecycle Callbacks — composable handler classes.
 
 Demonstrates using ``CallbackHandler`` subclasses to hook into agent
@@ -9,8 +6,8 @@ list order — each one does a single concern (timing, logging, etc.).
 
 Requirements:
     - Conductor server with callback support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini in .env or environment
 """
 
 import time
@@ -87,7 +84,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.53_agent_lifecycle_callbacks
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

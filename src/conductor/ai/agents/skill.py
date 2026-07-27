@@ -145,7 +145,7 @@ def skill(
     search_path: Optional[List[str]] = None,
     params: Optional[Dict[str, Any]] = None,
 ) -> Agent:
-    """Load an Agent Skills directory as an Agentspan Agent.
+    """Load an Agent Skills directory as a Conductor agent.
 
     Args:
         path: Path to skill directory containing SKILL.md.

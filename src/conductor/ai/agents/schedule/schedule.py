@@ -1,6 +1,3 @@
-# Copyright (c) 2026 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Backward-compat shim — ``Schedule``/``ScheduleInfo`` moved to ``conductor.client.ai``.
 
 Import from :mod:`conductor.client.ai` going forward. This module re-exports the

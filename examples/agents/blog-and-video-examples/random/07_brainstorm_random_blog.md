@@ -2,7 +2,7 @@
 
 *By Deepti Reddy | May 2026*
 
-*This is Part 6 of an 8-part series covering every multi-agent strategy in Agentspan. Today: the random strategy — a random agent is selected each turn. No rotation, no decision — pure randomness.*
+*This is Part 6 of an 8-part series covering Conductor-agent multi-agent strategies. Today: the random strategy — a random agent is selected each turn. No rotation, no decision — pure randomness.*
 
 ---
 
@@ -12,12 +12,12 @@ But what if predictability is the problem? In brainstorming, you do not want a f
 
 That is the random strategy. Each turn, a random agent is selected. No pattern. No schedule. The same agent might go twice in a row, or not at all for three turns. The randomness creates variety in perspective that a fixed rotation cannot.
 
-## What is Agentspan
+## What are Conductor agents
 
-Agentspan is an orchestration layer for building, bringing, and observing AI agents as durable workflows.
+Conductor agents are an orchestration layer for building, bringing, and observing AI agents as durable workflows.
 
-- **Build**: define agents with the Agentspan SDK using Agent, @tool, and 8 multi-agent strategies. Compiles to server-side workflows that survive crashes.
-- **Bring**: already using an agent framework such as LangGraph, OpenAI Agents SDK, or Google ADK? Pass your agents directly to run(). Agentspan adds durability and orchestration on top.
+- **Build**: define agents with the Conductor Python SDK using Agent, @tool, and multi-agent strategies. Compiles to server-side workflows that survive crashes.
+- **Bring**: already using an agent framework such as LangGraph, OpenAI Agents SDK, or Google ADK? Pass your agents directly to run(). Conductor adds durability and orchestration on top.
 - **Observe**: every execution is inspectable in the dashboard. See agent flows, inputs/outputs, tool calls, and token usage. Debug failures, replay runs.
 
 ## Setup
@@ -26,10 +26,10 @@ Two commands:
 
 ```bash
 pip install conductor-agent-sdk
-agentspan server start
+conductor server start
 ```
 
-This gives you a local Agentspan server with a visual dashboard at localhost:8080.
+This gives you a local Conductor server with a visual dashboard at localhost:8080.
 
 ## What we are building
 
@@ -221,13 +221,13 @@ Random generates ideas. Round robin reviews them. The summarizer produces the fi
 
 ```bash
 pip install conductor-agent-sdk
-agentspan server start
+conductor server start
 python 07_brainstorm_random.py
 ```
 
-- **GitHub**: [github.com/agentspan-ai/agentspan](https://github.com/agentspan-ai/agentspan)
-- **Blog examples**: [github.com/agentspan-ai/agentspan/tree/main/sdk/python/examples/blog_and_videos/random](https://github.com/agentspan-ai/agentspan/tree/main/sdk/python/examples/blog_and_videos/random)
-- **Docs**: [agentspan.ai/docs](https://agentspan.ai/docs)
+- **GitHub**: [conductor-oss/conductor](https://github.com/conductor-oss/conductor)
+- **Blog examples**: [Python SDK examples](https://github.com/conductoross/sdk/tree/main/python-sdk/examples/agents)
+- **Docs**: [Python SDK documentation](../../../README.md)
 - **Discord**: [https://discord.com/invite/ajcA66JcKq](https://discord.com/invite/ajcA66JcKq)
 
 ## What's next

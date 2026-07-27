@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Standalone guardrails — use as plain callables or as Conductor workers.
 
 The ``@guardrail`` decorator produces a plain callable.  You can:
@@ -15,8 +12,8 @@ Same functions, two execution modes.
 Requirements:
     Part 1 (standalone): none — no server, no LLM, no workers.
     Part 2 (as workers): Conductor server
-        - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+        - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 
 import re

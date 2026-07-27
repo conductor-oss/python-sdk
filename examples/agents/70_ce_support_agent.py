@@ -3,7 +3,7 @@
 Takes a Zendesk ticket number and investigates across Zendesk, JIRA, HubSpot,
 Notion (runbooks), and GitHub to produce a solution with a priority rating.
 
-Required credentials (set via `agentspan credentials set <NAME>`): <your-<name>`):>
+Required credentials (set via `the Conductor server credential store`): <your-<name>`):>
     ZENDESK_SUBDOMAIN    – e.g. "mycompany"
     ZENDESK_EMAIL        – admin email for API auth
     ZENDESK_API_TOKEN    – Zendesk API token
@@ -18,7 +18,7 @@ Required credentials (set via `agentspan credentials set <NAME>`): <your-<name>`
     NOTION_RUNBOOK_DB_ID – Database ID of the runbooks database in Notion
 
     GITHUB_TOKEN         – GitHub personal access token
-    GITHUB_ORG           – GitHub organization name (e.g. "agentspan-dev")
+    GITHUB_ORG           – GitHub organization name (e.g. "Conductor-dev")
 
 Usage:
 

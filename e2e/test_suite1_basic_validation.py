@@ -206,7 +206,7 @@ def _assert_tool_in_agent_def(
 # ── LLM Judge ──────────────────────────────────────────────────────────
 
 
-JUDGE_MODEL = os.environ.get("AGENTSPAN_JUDGE_MODEL", "claude-sonnet-4-6")
+JUDGE_MODEL = os.environ.get("CONDUCTOR_AGENT_JUDGE_MODEL", "claude-sonnet-4-6")
 
 JUDGE_SYSTEM_PROMPT = """\
 You are a strict validation judge for a workflow compilation system.
@@ -396,7 +396,7 @@ def _judge_compiled_workflow(comparison_text: str) -> dict:
     """Call LLM to judge whether compiled workflow matches agent spec.
 
     Uses Anthropic (claude-*) or OpenAI (gpt-*) based on model name.
-    Defaults to Claude Sonnet. Configure via AGENTSPAN_JUDGE_MODEL env var.
+    Defaults to Claude Sonnet. Configure via CONDUCTOR_AGENT_JUDGE_MODEL env var.
 
     Returns dict with keys: pass (bool), missing (list), explanation (str).
     """
@@ -409,7 +409,7 @@ def _judge_compiled_workflow(comparison_text: str) -> dict:
     else:
         pytest.fail(
             f"Unknown judge model '{model}'. "
-            f"Set AGENTSPAN_JUDGE_MODEL to a claude-* or gpt-* model."
+            f"Set CONDUCTOR_AGENT_JUDGE_MODEL to a claude-* or gpt-* model."
         )
 
     # Strip markdown code fences if present

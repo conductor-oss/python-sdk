@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Nested Strategies — parallel agents inside a sequential pipeline.
 
 Demonstrates composing strategies: a ParallelAgent phase runs multiple
@@ -10,8 +7,8 @@ research agents concurrently, followed by a sequential summarizer.
 
 Requirements:
     - Conductor server
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 
 from conductor.ai.agents import Agent, AgentRuntime
@@ -69,7 +66,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(pipeline)
         # CLI alternative:
-        # agentspan deploy --package examples.52_nested_strategies
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(pipeline)

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Kitchen Sink test suite — structural + behavioral assertions.
 
 Tests the kitchen sink structure using direct imports (no server required)

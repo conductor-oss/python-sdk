@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Parse ``"provider/model"`` strings into (provider, model) tuples.
 
 Conductor's :class:`LlmChatComplete` requires separate ``llm_provider`` and

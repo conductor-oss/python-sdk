@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Plan-Execute Harness — deterministic execution of LLM-generated plans.
 
 Demonstrates Strategy.PLAN_EXECUTE: a planner agent produces a structured plan
@@ -40,9 +37,9 @@ Usage:
     python 85_plan_execute_harness.py "Climate change mitigation strategies for 2030"
 
 Requirements:
-    - Agentspan server with PLAN_EXECUTE strategy support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-4o-mini)
+    - Conductor server with PLAN_EXECUTE strategy support
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL set (or defaults to openai/gpt-4o-mini)
 """
 
 import json

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Tool definitions — @tool decorator and server-side tool constructors.
 
 Tools are **server-first**: ``@tool`` functions become Conductor task definitions
