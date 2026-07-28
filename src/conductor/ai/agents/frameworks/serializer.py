@@ -15,6 +15,8 @@ from dataclasses import dataclass, is_dataclass
 from dataclasses import fields as dc_fields
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
+from conductor.ai.agents.runtime._worker_entries import _find_embedded_function
+
 logger = logging.getLogger("conductor.ai.agents.frameworks")
 
 
@@ -338,64 +340,6 @@ def _try_extract_tool_object(obj: Any) -> Optional[WorkerInfo]:
         input_schema=schema,
         func=original_func,
     )
-
-
-def _find_embedded_function(obj: Any, max_depth: int = 2) -> Optional[Any]:
-    """Walk an object's attributes to find an embedded plain function.
-
-    Searches closures and nested attribute objects for the original
-    user-defined function. Returns ``None`` if not found.
-    """
-    if max_depth <= 0:
-        return None
-
-    # Check direct attributes for callables that look like user functions
-    for attr_name in vars(obj) if hasattr(obj, "__dict__") else []:
-        val = getattr(obj, attr_name, None)
-        if val is None:
-            continue
-
-        # Plain function with a clean signature
-        if inspect.isfunction(val):
-            # Check if it has a closure containing the original function
-            func = _extract_from_closure(val)
-            if func is not None:
-                return func
-            # The function itself might be usable
-            return val
-
-        # Nested object — recurse one level
-        if hasattr(val, "__dict__") and not isinstance(val, type):
-            result = _find_embedded_function(val, max_depth - 1)
-            if result is not None:
-                return result
-
-    return None
-
-
-def _extract_from_closure(func: Any) -> Optional[Any]:
-    """Extract the original user function from a closure's cell variables."""
-    closure = getattr(func, "__closure__", None)
-    if not closure:
-        return None
-
-    for cell in closure:
-        try:
-            val = cell.cell_contents
-        except ValueError:
-            continue
-        if inspect.isfunction(val):
-            # Skip internal wrappers that take (ctx, input) or (context, ...)
-            try:
-                sig = inspect.signature(val)
-                param_names = list(sig.parameters.keys())
-                # Internal wrappers typically start with ctx/context as first param
-                if param_names and param_names[0] in ("ctx", "context"):
-                    continue
-                return val
-            except (ValueError, TypeError):
-                continue
-    return None
 
 
 def _extract_callable(func: Any) -> WorkerInfo:

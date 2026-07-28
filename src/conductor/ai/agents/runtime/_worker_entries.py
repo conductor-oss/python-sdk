@@ -35,7 +35,7 @@ import multiprocessing
 import pickle
 import sys
 from dataclasses import dataclass
-from typing import Callable, Dict, FrozenSet, Optional
+from typing import Any, Callable, Dict, FrozenSet, Optional
 
 # Mirrors conductor.client.worker.worker._MAX_UNWRAP_DEPTH.
 _MAX_UNWRAP_DEPTH = 32
@@ -67,6 +67,79 @@ def _walk_qualname(module_obj, qualname: str):
 # .coroutine; our Guardrail / ToolDef → .func.
 _CONTAINER_ATTRS = ("func", "coroutine")
 
+def _extract_from_closure(func: Callable) -> Optional[Callable]:
+    """Extract the original user function from a closure's cell variables.
+
+    - Shared by :func:`_find_embedded_function` below.
+    - In turn shared by :mod:`conductor.ai.agents.frameworks.serializer`'s
+      discovery and :class:`FunctionRef`'s parent-verification /
+      child-reconstruction — one implementation, can't drift apart.
+    """
+    closure = getattr(func, "__closure__", None)
+    if not closure:
+        return None
+
+    for cell in closure:
+        try:
+            val = cell.cell_contents
+        except ValueError:
+            continue
+        if inspect.isfunction(val):
+            # Skip internal wrappers that take (ctx, input) or (context, ...)
+            try:
+                sig = inspect.signature(val)
+                param_names = list(sig.parameters.keys())
+                # Internal wrappers typically start with ctx/context as first param
+                if param_names and param_names[0] in ("ctx", "context"):
+                    continue
+                return val
+            except (ValueError, TypeError):
+                continue
+    return None
+
+
+# How many attribute-nesting levels _find_embedded_function will descend.
+# openai-agents' FunctionTool -> on_invoke_tool (invoker instance) ->
+# _invoke_tool_impl (closure fn) is 2 levels deep; matches serializer.py's
+# own default so parent discovery and child reconstruction stay in lockstep.
+_DEEP_EXTRACT_MAX_DEPTH = 2
+
+
+def _find_embedded_function(obj: Any, max_depth: int = _DEEP_EXTRACT_MAX_DEPTH) -> Optional[Callable]:
+    """Walk an object's attributes to find an embedded plain function.
+
+    - Generic, framework-agnostic: no hardcoded attribute names.
+    - For containers that expose the original function only behind further
+      nested attributes and/or closures, not a single named attribute — e.g.
+      openai-agents' ``FunctionTool.on_invoke_tool`` is itself a callable
+      *instance*, not a function; the real closure lives one level deeper,
+      on that instance's own ``_invoke_tool_impl`` attribute.
+    - Deliberately avoids hardcoding that private attribute name: a
+      shape-based walk degrades to "not found" (the pre-existing, actionable
+      ``SpawnSafetyError``) instead of breaking outright if openai-agents
+      restructures its internals.
+    """
+    if max_depth <= 0:
+        return None
+
+    for attr_name in vars(obj) if hasattr(obj, "__dict__") else []:
+        val = getattr(obj, attr_name, None)
+        if val is None:
+            continue
+
+        if inspect.isfunction(val):
+            func = _extract_from_closure(val)
+            if func is not None:
+                return func
+            return val
+
+        if hasattr(val, "__dict__") and not isinstance(val, type):
+            result = _find_embedded_function(val, max_depth - 1)
+            if result is not None:
+                return result
+
+    return None
+
 
 def _wrapped_depth_to(obj, fn) -> Optional[int]:
     """Number of ``__wrapped__`` hops from *obj* down to *fn*, or ``None``."""
@@ -97,12 +170,25 @@ class FunctionRef:
     object rather than a wraps-wrapper — e.g. langchain's ``@tool`` rebinds
     it to a ``StructuredTool`` holding the original in ``.func`` (sync) or
     ``.coroutine`` (async). The hop is taken before the ``__wrapped__`` walk.
+
+    ``deep_extract`` handles containers that don't expose the original
+    function via any single named attribute:
+
+    - e.g. openai-agents' ``FunctionTool``, whose ``on_invoke_tool`` is
+      itself a callable instance, not a function — the real function is
+      nested further behind that instance's own attributes and a closure.
+    - Uses the generic :func:`_find_embedded_function` walk instead of a
+      fixed ``attr_hop``, so it isn't tied to a specific (private,
+      renameable) attribute path.
+    - Tried last, after ``attr_hop``/``_CONTAINER_ATTRS``, before the
+      ``__wrapped__`` walk.
     """
 
     module: str
     qualname: str
     unwrap_depth: int = 0
     attr_hop: str = ""
+    deep_extract: bool = False
 
     @classmethod
     def of(cls, fn: Callable) -> "FunctionRef":
@@ -158,10 +244,22 @@ class FunctionRef:
             depth = _wrapped_depth_to(inner, fn)
             if depth is not None:
                 return cls(module, qualname, depth, attr)
+        # Still no match — container may hold the original behind further
+        # nested attributes and/or a closure, not a single named attribute.
+        # e.g. openai-agents' FunctionTool.on_invoke_tool: callable instance,
+        # not a function; real closure is one level deeper.
+        # Generic walk, no hardcoded attribute names (_find_embedded_function).
+        # No __wrapped__ fallback needed here (unlike _CONTAINER_ATTRS): fn
+        # always arrives as _find_embedded_function's own prior return value
+        # (how serializer.py derives WorkerInfo.func) — identical walk always
+        # matches by identity.
+        if _find_embedded_function(obj) is fn:
+            return cls(module, qualname, 0, "", deep_extract=True)
         raise SpawnSafetyError(
             f"'{module}.{qualname}' does not resolve back to {fn!r} (rebound "
-            f"without a __wrapped__ chain or a func/coroutine container "
-            f"attribute). {_REMEDIES}"
+            f"without a __wrapped__ chain, a func/coroutine container "
+            f"attribute, or a discoverable nested/closure-held function). "
+            f"{_REMEDIES}"
         )
 
     def resolve(self) -> Callable:
@@ -173,6 +271,13 @@ class FunctionRef:
         obj = _walk_qualname(module_obj, self.qualname)
         if self.attr_hop:
             obj = getattr(obj, self.attr_hop)
+        if self.deep_extract:
+            obj = _find_embedded_function(obj)
+            if obj is None:
+                raise SpawnSafetyError(
+                    f"'{self.module}.{self.qualname}' no longer yields a "
+                    f"discoverable nested function (definition changed?)."
+                )
         for _ in range(self.unwrap_depth):
             obj = obj.__wrapped__
         _RESOLVE_CACHE[self] = obj
