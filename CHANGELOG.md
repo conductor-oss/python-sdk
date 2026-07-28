@@ -28,3 +28,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `TaskHandler.start_processes()` no longer hangs the interpreter when a worker fails to start (e.g., unpicklable state under `spawn`); it now cleans up already-started subprocesses and raises with actionable guidance
 - Worker processes killed by a signal now log a diagnostic hint (signal number, `PYTHONFAULTHANDLER=1` guidance) instead of restarting silently
 - Per-schedule pause/resume now work on both Conductor server families: the client sends `PUT` (the OSS Conductor dialect — the spec-generated `GET` failed there) and transparently falls back to `GET` on a 405 for Orkes servers
+- `Agent(model="claude-code/...")` registration no longer crashes with `SpawnSafetyError`/`PicklingError` under the `spawn` start method (top-level or nested as a sub-agent); the tool worker is now built through the same picklable passthrough path already used by other frameworks
