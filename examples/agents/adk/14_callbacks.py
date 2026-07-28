@@ -21,39 +21,41 @@ from conductor.ai.agents import AgentRuntime
 from settings import settings
 
 
+def lookup_customer(customer_id: str) -> dict:
+    """Look up customer information by ID."""
+    customers = {
+        "C001": {"name": "Alice Smith", "tier": "gold", "balance": 1500.00},
+        "C002": {"name": "Bob Jones", "tier": "silver", "balance": 320.50},
+        "C003": {"name": "Carol White", "tier": "bronze", "balance": 50.00},
+    }
+    customer = customers.get(customer_id.upper())
+    if customer:
+        return {"found": True, "customer_id": customer_id, **customer}
+    return {"found": False, "error": f"Customer {customer_id} not found"}
+
+
+def apply_discount(customer_id: str, discount_percent: float) -> dict:
+    """Apply a discount to a customer's account."""
+    if discount_percent > 50:
+        return {"error": "Discount cannot exceed 50%"}
+    return {
+        "status": "success",
+        "customer_id": customer_id,
+        "discount_applied": f"{discount_percent}%",
+        "message": f"Applied {discount_percent}% discount to {customer_id}",
+    }
+
+
+def check_order_status(order_id: str) -> dict:
+    """Check the status of an order."""
+    orders = {
+        "ORD-1001": {"status": "shipped", "tracking": "TRK-98765", "eta": "2025-04-20"},
+        "ORD-1002": {"status": "processing", "tracking": None, "eta": "2025-04-25"},
+    }
+    return orders.get(order_id.upper(), {"error": f"Order {order_id} not found"})
+
+
 def main():
-    # Tools
-    def lookup_customer(customer_id: str) -> dict:
-        """Look up customer information by ID."""
-        customers = {
-            "C001": {"name": "Alice Smith", "tier": "gold", "balance": 1500.00},
-            "C002": {"name": "Bob Jones", "tier": "silver", "balance": 320.50},
-            "C003": {"name": "Carol White", "tier": "bronze", "balance": 50.00},
-        }
-        customer = customers.get(customer_id.upper())
-        if customer:
-            return {"found": True, "customer_id": customer_id, **customer}
-        return {"found": False, "error": f"Customer {customer_id} not found"}
-
-    def apply_discount(customer_id: str, discount_percent: float) -> dict:
-        """Apply a discount to a customer's account."""
-        if discount_percent > 50:
-            return {"error": "Discount cannot exceed 50%"}
-        return {
-            "status": "success",
-            "customer_id": customer_id,
-            "discount_applied": f"{discount_percent}%",
-            "message": f"Applied {discount_percent}% discount to {customer_id}",
-        }
-
-    def check_order_status(order_id: str) -> dict:
-        """Check the status of an order."""
-        orders = {
-            "ORD-1001": {"status": "shipped", "tracking": "TRK-98765", "eta": "2025-04-20"},
-            "ORD-1002": {"status": "processing", "tracking": None, "eta": "2025-04-25"},
-        }
-        return orders.get(order_id.upper(), {"error": f"Order {order_id} not found"})
-
     agent = Agent(
         name="customer_service_agent",
         model=settings.llm_model,
