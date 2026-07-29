@@ -56,13 +56,18 @@ cat > "$STAGE/requirements.txt" <<'EOF'
 conductor-python[agents]==@VERSION@
 
 # Test runner + e2e support deps (mirrors .github/workflows/agent-e2e.yml).
-pytest
-pytest-asyncio
-pytest-xdist
-pytest-rerunfailures
+# Bounded, not bare: these were unpinned, so `pip install -r requirements.txt` inside
+# run.sh resolved to whatever was newest on the day a downstream lane happened to run.
+# A pytest or plugin major could then redden a consumer's gating CI with no change to
+# this bundle — and look like a server regression to whoever triaged it. Floors are the
+# versions this bundle was cut against; ceilings are next-major.
+pytest>=8,<10
+pytest-asyncio>=1,<2
+pytest-xdist>=3,<4
+pytest-rerunfailures>=16,<17
 
 # Live MCP server used by the MCP tool suites.
-mcp-testkit
+mcp-testkit>=1,<2
 EOF
 
 cat > "$STAGE/run.sh" <<'EOF'
