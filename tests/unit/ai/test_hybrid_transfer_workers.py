@@ -175,3 +175,93 @@ class TestRegisterHybridTransferWorkers:
                 )
 
         assert mgr in called_with, "_register_hybrid_transfer_workers was not called for hybrid agent"
+
+    def test_skips_worker_when_not_server_needed(self):
+        """conductor-oss #1363: transfer tools are compiler-owned control signals (never
+        dispatched as real tasks) -- don't PUT a taskdef for one the server didn't ask for."""
+
+        @tool
+        def lookup(k: str) -> str:
+            """Look up."""
+            return k
+
+        mgr = Agent(name="manager", model="openai/gpt-4o", tools=[lookup])
+        mgr.agents = [
+            Agent(name="researcher", model="openai/gpt-4o"),
+            Agent(name="writer", model="openai/gpt-4o"),
+        ]
+
+        from conductor.ai.agents.runtime.runtime import AgentRuntime
+
+        rt = AgentRuntime.__new__(AgentRuntime)
+
+        registered = []
+
+        def fake_worker_task(**kwargs):
+            registered.append(kwargs["task_definition_name"])
+            return lambda fn: fn
+
+        with patch("conductor.client.worker.worker_task.worker_task", side_effect=fake_worker_task):
+            rt._register_hybrid_transfer_workers(
+                mgr, domain=None, server_needs=lambda name: False
+            )
+
+        assert registered == []
+
+    def test_registers_only_server_needed_workers(self):
+        """Per-name gating: one transfer name needed, the other isn't."""
+
+        @tool
+        def lookup(k: str) -> str:
+            """Look up."""
+            return k
+
+        mgr = Agent(name="manager", model="openai/gpt-4o", tools=[lookup])
+        mgr.agents = [
+            Agent(name="researcher", model="openai/gpt-4o"),
+            Agent(name="writer", model="openai/gpt-4o"),
+        ]
+
+        from conductor.ai.agents.runtime.runtime import AgentRuntime
+
+        rt = AgentRuntime.__new__(AgentRuntime)
+
+        registered = []
+
+        def fake_worker_task(**kwargs):
+            registered.append(kwargs["task_definition_name"])
+            return lambda fn: fn
+
+        needed = {"manager_transfer_to_researcher"}
+        with patch("conductor.client.worker.worker_task.worker_task", side_effect=fake_worker_task):
+            rt._register_hybrid_transfer_workers(
+                mgr, domain=None, server_needs=lambda name: name in needed
+            )
+
+        assert registered == ["manager_transfer_to_researcher"]
+
+    def test_registers_all_when_server_needs_is_none(self):
+        """server_needs=None (older server / fallback) must preserve prior unconditional behavior."""
+
+        @tool
+        def lookup(k: str) -> str:
+            """Look up."""
+            return k
+
+        mgr = Agent(name="manager", model="openai/gpt-4o", tools=[lookup])
+        mgr.agents = [Agent(name="researcher", model="openai/gpt-4o")]
+
+        from conductor.ai.agents.runtime.runtime import AgentRuntime
+
+        rt = AgentRuntime.__new__(AgentRuntime)
+
+        registered = []
+
+        def fake_worker_task(**kwargs):
+            registered.append(kwargs["task_definition_name"])
+            return lambda fn: fn
+
+        with patch("conductor.client.worker.worker_task.worker_task", side_effect=fake_worker_task):
+            rt._register_hybrid_transfer_workers(mgr, domain=None, server_needs=None)
+
+        assert registered == ["manager_transfer_to_researcher"]

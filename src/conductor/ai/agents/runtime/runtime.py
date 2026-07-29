@@ -17,7 +17,17 @@ import re
 import threading
 import time
 import uuid
-from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Union,
+)
 
 if TYPE_CHECKING:
     from conductor.ai.agents.runtime.config import AgentConfig
@@ -1177,9 +1187,12 @@ class AgentRuntime:
             task_name = f"{agent.name}_check_transfer"
             if _server_needs(task_name):
                 self._register_check_transfer_worker(agent.name, domain=domain)
-            # Always register transfer tool workers — same reasoning as swarm:
-            # collectSimpleTaskNames may not recurse into nested sub-workflows.
-            self._register_hybrid_transfer_workers(agent, domain=domain)
+            # Transfer tools are compiler-owned control signals (toolType="handoff",
+            # never dispatched as real tasks) — only register the ones the server
+            # actually lists as required.
+            self._register_hybrid_transfer_workers(
+                agent, domain=domain, server_needs=_server_needs
+            )
 
         # 6. Function-based router
         if (
@@ -1201,11 +1214,12 @@ class AgentRuntime:
 
         # 7b. Swarm transfer tools and check_transfer workers
         if agent.strategy == "swarm" and agent.agents:
-            # Always register transfer workers for swarm agents — the server's
-            # requiredWorkers may not include them when the swarm is a nested
-            # registered sub-workflow (collectSimpleTaskNames doesn't recurse
-            # into separately-stored sub-workflow definitions).
-            self._register_swarm_transfer_workers(agent, domain=domain)
+            # Transfer tools are compiler-owned control signals (toolType="handoff",
+            # never dispatched as real tasks) — only register the ones the server
+            # actually lists as required.
+            self._register_swarm_transfer_workers(
+                agent, domain=domain, server_needs=_server_needs
+            )
             if _server_needs(f"{agent.name}_check_transfer"):
                 self._register_check_transfer_worker(agent.name, domain=domain)  # parent
             for sub in agent.agents:
@@ -1507,12 +1521,21 @@ class AgentRuntime:
         )(check_transfer_worker)
 
     def _register_hybrid_transfer_workers(
-        self, agent: Agent, domain: "Optional[str]" = None
+        self,
+        agent: Agent,
+        domain: "Optional[str]" = None,
+        server_needs: "Optional[Callable[[str], bool]]" = None,
     ) -> None:
         """Register transfer_to_<name> no-op workers for hybrid agents (tools + sub-agents).
 
         The transfer tools are no-ops — the actual handoff is detected by
         check_transfer which inspects toolCalls output from the LLM task.
+
+        These are compiler-owned control-signal tools (toolType="handoff"),
+        never dispatched as real tasks — only register the ones *server_needs*
+        (the server's requiredWorkers gate) actually lists. When
+        *server_needs* is None, register everything (fallback for older
+        servers), matching every other call site's convention.
         """
         from conductor.client.worker.worker_task import worker_task
 
@@ -1523,6 +1546,8 @@ class AgentRuntime:
 
         for sub in agent.agents:
             tool_name = f"{agent.name}_transfer_to_{sub.name}"
+            if server_needs is not None and not server_needs(tool_name):
+                continue
             transfer_worker = TransferNoopEntry()
             transfer_worker.__annotations__ = {"message": str, "return": object}
             probe_spawn_safety(transfer_worker, tool_name, group="system")
@@ -1603,7 +1628,10 @@ class AgentRuntime:
         )(handoff_check_worker)
 
     def _register_swarm_transfer_workers(
-        self, agent: Agent, domain: "Optional[str]" = None
+        self,
+        agent: Agent,
+        domain: "Optional[str]" = None,
+        server_needs: "Optional[Callable[[str], bool]]" = None,
     ) -> None:
         """Register transfer_to_<name> workers for swarm agents.
 
@@ -1614,6 +1642,12 @@ class AgentRuntime:
         When allowed_transitions is set, transfers to targets that no
         agent is allowed to reach return an error message so the LLM
         knows to try a different tool.
+
+        These are compiler-owned control-signal tools (toolType="handoff"),
+        never dispatched as real tasks — only register the ones
+        *server_needs* (the server's requiredWorkers gate) actually lists.
+        When *server_needs* is None, register everything (fallback for older
+        servers), matching every other call site's convention.
         """
         from conductor.client.worker.worker_task import worker_task
 
@@ -1636,6 +1670,8 @@ class AgentRuntime:
                 if tool_name in registered:
                     continue
                 registered.add(tool_name)
+                if server_needs is not None and not server_needs(tool_name):
+                    continue
 
                 # If this target is never reachable via allowed_transitions,
                 # return an error message so the LLM knows to stop trying.

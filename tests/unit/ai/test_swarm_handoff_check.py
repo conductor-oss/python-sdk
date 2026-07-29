@@ -686,3 +686,81 @@ class TestHandoffCheckRegistrationPath:
              patch.object(rt2, "_register_check_transfer_worker"):
             rt2._register_workers(swarm, required_workers=required_without, domain=None)
         mock_handoff2.assert_not_called()
+
+
+class TestRegisterSwarmTransferWorkers:
+    """conductor-oss #1363: transfer tools are compiler-owned control signals
+    (toolType="handoff", never dispatched as real tasks) -- only register the
+    ones the server's requiredWorkers gate actually lists."""
+
+    def test_skips_worker_when_not_server_needed(self):
+        a = Agent(name="agent_a", model="openai/gpt-4o")
+        b = Agent(name="agent_b", model="openai/gpt-4o")
+        swarm = Agent(
+            name="swarm_parent",
+            model="openai/gpt-4o",
+            agents=[a, b],
+            strategy=Strategy.SWARM,
+        )
+
+        rt = AgentRuntime.__new__(AgentRuntime)
+        registered = []
+
+        def fake_worker_task(**kwargs):
+            registered.append(kwargs["task_definition_name"])
+            return lambda fn: fn
+
+        with patch("conductor.client.worker.worker_task.worker_task", side_effect=fake_worker_task):
+            rt._register_swarm_transfer_workers(swarm, domain=None, server_needs=lambda name: False)
+
+        assert registered == []
+
+    def test_registers_only_server_needed_workers(self):
+        a = Agent(name="agent_a", model="openai/gpt-4o")
+        b = Agent(name="agent_b", model="openai/gpt-4o")
+        swarm = Agent(
+            name="swarm_parent",
+            model="openai/gpt-4o",
+            agents=[a, b],
+            strategy=Strategy.SWARM,
+        )
+
+        rt = AgentRuntime.__new__(AgentRuntime)
+        registered = []
+
+        def fake_worker_task(**kwargs):
+            registered.append(kwargs["task_definition_name"])
+            return lambda fn: fn
+
+        needed = {"agent_a_transfer_to_agent_b"}
+        with patch("conductor.client.worker.worker_task.worker_task", side_effect=fake_worker_task):
+            rt._register_swarm_transfer_workers(
+                swarm, domain=None, server_needs=lambda name: name in needed
+            )
+
+        assert registered == ["agent_a_transfer_to_agent_b"]
+
+    def test_registers_all_when_server_needs_is_none(self):
+        """server_needs=None (older server / fallback) must preserve prior unconditional behavior."""
+        a = Agent(name="agent_a", model="openai/gpt-4o")
+        swarm = Agent(
+            name="swarm_parent",
+            model="openai/gpt-4o",
+            agents=[a],
+            strategy=Strategy.SWARM,
+        )
+
+        rt = AgentRuntime.__new__(AgentRuntime)
+        registered = []
+
+        def fake_worker_task(**kwargs):
+            registered.append(kwargs["task_definition_name"])
+            return lambda fn: fn
+
+        with patch("conductor.client.worker.worker_task.worker_task", side_effect=fake_worker_task):
+            rt._register_swarm_transfer_workers(swarm, domain=None, server_needs=None)
+
+        assert set(registered) == {
+            "swarm_parent_transfer_to_agent_a",
+            "agent_a_transfer_to_swarm_parent",
+        }
