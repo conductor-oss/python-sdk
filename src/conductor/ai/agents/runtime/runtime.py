@@ -1032,7 +1032,12 @@ class AgentRuntime:
         return names
 
     def _register_workers(
-        self, agent: Agent, *, required_workers: Optional[set] = None, domain: Optional[str] = None
+        self,
+        agent: Agent,
+        *,
+        required_workers: Optional[set] = None,
+        domain: Optional[str] = None,
+        inherited_stateful: bool = False,
     ) -> None:
         """Register all workers needed for SDK-side execution.
 
@@ -1084,6 +1089,14 @@ class AgentRuntime:
                 self._register_passthrough_worker(worker)
             return
 
+        # Statefulness is a property of the composite, not just the agent that declares it.
+        # A member of a stateful swarm/team shares the parent's session, so the server
+        # domain-routes ITS tool tasks too. Reading only `agent.stateful` here left member
+        # tool workers polling the default queue while their tasks sat in the domain queue:
+        # pollCount stayed 0, the fork's JOIN never satisfied, and the workflow timed out.
+        # Inherit downward so worker registration matches how the server routes.
+        effective_stateful = bool(getattr(agent, "stateful", False)) or inherited_stateful
+
         # 1. Tools (and tool-level guardrails) — always registered
         if agent.tools:
             tc = ToolRegistry()
@@ -1091,7 +1104,7 @@ class AgentRuntime:
                 agent.tools,
                 agent.name,
                 domain=domain,
-                agent_stateful=getattr(agent, "stateful", False),
+                agent_stateful=effective_stateful,
             )
             for t in agent.tools:
                 from conductor.ai.agents.tool import get_tool_def
@@ -1101,7 +1114,11 @@ class AgentRuntime:
                 if td.tool_type == "agent_tool" and td.config and "agent" in td.config:
                     nested_agent = td.config["agent"]
                     if not getattr(nested_agent, "external", False):
-                        self._register_workers(nested_agent, required_workers=required_workers)
+                        self._register_workers(
+                            nested_agent,
+                            required_workers=required_workers,
+                            inherited_stateful=effective_stateful,
+                        )
                 # Register tool-level guardrail workers
                 tool_guardrails = [
                     g
@@ -1240,7 +1257,12 @@ class AgentRuntime:
                     )
                     self._register_passthrough_worker(worker)
             elif not sub.external:
-                self._register_workers(sub, required_workers=required_workers, domain=domain)
+                self._register_workers(
+                    sub,
+                    required_workers=required_workers,
+                    domain=domain,
+                    inherited_stateful=effective_stateful,
+                )
 
     # ── Worker registration helpers ────────────────────────────────
 

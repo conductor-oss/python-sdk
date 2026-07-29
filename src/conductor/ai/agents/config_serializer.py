@@ -35,7 +35,7 @@ class AgentConfigSerializer:
         """
         return self._serialize_agent(agent)
 
-    def _serialize_agent(self, agent: "Agent") -> dict:
+    def _serialize_agent(self, agent: "Agent", *, inherited_stateful: bool = False) -> dict:
         from conductor.ai.agents.agent import PromptTemplate
 
         # Skill agents — emit the raw skill config so the server's
@@ -106,14 +106,22 @@ class AgentConfigSerializer:
 
         # Tools
         if agent.tools:
-            agent_stateful = getattr(agent, "stateful", False)
+            # Statefulness belongs to the composite, not only the agent that declares it:
+            # a member of a stateful swarm/team shares the parent's session, so its tools
+            # are stateful too. Reading only `agent.stateful` left member tools unmarked,
+            # which disagreed with how the server routes their tasks. Mirrors the same
+            # inheritance in AgentRuntime._register_workers.
+            agent_stateful = bool(getattr(agent, "stateful", False)) or inherited_stateful
             config["tools"] = [
                 self._serialize_tool(t, agent_stateful=agent_stateful) for t in agent.tools
             ]
 
         # Sub-agents (recursive)
         if agent.agents:
-            config["agents"] = [self._serialize_agent(a) for a in agent.agents]
+            _stateful = bool(getattr(agent, "stateful", False)) or inherited_stateful
+            config["agents"] = [
+                self._serialize_agent(a, inherited_stateful=_stateful) for a in agent.agents
+            ]
 
         # Router
         if agent.router is not None:

@@ -133,8 +133,20 @@ def _get_task_to_domain(execution_id):
 
 
 def _find_tasks_by_type(tasks, task_def_name):
-    """Find tasks matching a taskDefName (or containing it)."""
-    return [t for t in tasks if task_def_name in t.get("taskDefName", "")]
+    """Find tasks matching a taskDefName or referenceTaskName (or containing it).
+
+    referenceTaskName is checked too because compiler-generated system tasks carry
+    their identity there, not in taskDefName: handoff_check is emitted as an INLINE
+    task, so its taskDefName is literally "INLINE" and only the reference name says
+    what it is. Matching taskDefName alone made assertions on those tasks fail even
+    when the tasks existed and had COMPLETED.
+    """
+    return [
+        t
+        for t in tasks
+        if task_def_name in t.get("taskDefName", "")
+        or task_def_name in t.get("referenceTaskName", "")
+    ]
 
 
 def _find_scheduled_tasks(tasks):
