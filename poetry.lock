@@ -170,14 +170,14 @@ typing-extensions = {version = ">=4", markers = "python_version < \"3.11\""}
 name = "attrs"
 version = "26.1.0"
 description = "Classes Without Boilerplate"
-optional = true
+optional = false
 python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"adk\""
+groups = ["main", "dev"]
 files = [
     {file = "attrs-26.1.0-py3-none-any.whl", hash = "sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309"},
     {file = "attrs-26.1.0.tar.gz", hash = "sha256:d03ceb89cb322a8fd706d4fb91940737b6642aa36998fe130a9bc96c985eff32"},
 ]
+markers = {main = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"adk\""}
 
 [[package]]
 name = "authlib"
@@ -1316,14 +1316,14 @@ files = [
 name = "jsonschema"
 version = "4.26.0"
 description = "An implementation of JSON Schema validation for Python"
-optional = true
+optional = false
 python-versions = ">=3.10"
-groups = ["main"]
-markers = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"adk\""
+groups = ["main", "dev"]
 files = [
     {file = "jsonschema-4.26.0-py3-none-any.whl", hash = "sha256:d489f15263b8d200f8387e64b4c3a75f06629559fb73deb8fdfb525f2dab50ce"},
     {file = "jsonschema-4.26.0.tar.gz", hash = "sha256:0c26707e2efad8aa1bfc5b7ce170f3fccc2e4918ff85989ba9ffa9facb2be326"},
 ]
+markers = {main = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"adk\""}
 
 [package.dependencies]
 attrs = ">=22.2.0"
@@ -1339,14 +1339,14 @@ format-nongpl = ["fqdn", "idna", "isoduration", "jsonpointer (>1.13)", "rfc3339-
 name = "jsonschema-specifications"
 version = "2025.9.1"
 description = "The JSON Schema meta-schemas and vocabularies, exposed as a Registry"
-optional = true
+optional = false
 python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"adk\""
+groups = ["main", "dev"]
 files = [
     {file = "jsonschema_specifications-2025.9.1-py3-none-any.whl", hash = "sha256:98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe"},
     {file = "jsonschema_specifications-2025.9.1.tar.gz", hash = "sha256:b540987f239e745613c7a9176f3edb72b832a4ac465cf02712288397832b5e8d"},
 ]
+markers = {main = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"adk\""}
 
 [package.dependencies]
 referencing = ">=0.31.0"
@@ -2743,14 +2743,14 @@ markers = {main = "extra == \"langchain\" or extra == \"agents\" or extra == \"l
 name = "referencing"
 version = "0.37.0"
 description = "JSON Referencing + Python"
-optional = true
+optional = false
 python-versions = ">=3.10"
-groups = ["main"]
-markers = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"adk\""
+groups = ["main", "dev"]
 files = [
     {file = "referencing-0.37.0-py3-none-any.whl", hash = "sha256:381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231"},
     {file = "referencing-0.37.0.tar.gz", hash = "sha256:44aefc3142c5b842538163acb373e24cce6632bd54bdb01b21ad5863489f50d8"},
 ]
+markers = {main = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"adk\""}
 
 [package.dependencies]
 attrs = ">=22.2.0"
@@ -2924,10 +2924,9 @@ requests = ">=2.0.1,<3.0.0"
 name = "rpds-py"
 version = "0.30.0"
 description = "Python bindings to Rust's persistent data structures (rpds)"
-optional = true
+optional = false
 python-versions = ">=3.10"
-groups = ["main"]
-markers = "python_version == \"3.10\" and (extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"adk\")"
+groups = ["main", "dev"]
 files = [
     {file = "rpds_py-0.30.0-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:679ae98e00c0e8d68a7fda324e16b90fd5260945b45d3b824c892cec9eea3288"},
     {file = "rpds_py-0.30.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:4cc2206b76b4f576934f0ed374b10d7ca5f457858b157ca52064bdfc26b9fc00"},
@@ -3045,15 +3044,15 @@ files = [
     {file = "rpds_py-0.30.0-pp311-pypy311_pp73-musllinux_1_2_x86_64.whl", hash = "sha256:ac37f9f516c51e5753f27dfdef11a88330f04de2d564be3991384b2f3535d02e"},
     {file = "rpds_py-0.30.0.tar.gz", hash = "sha256:dd8ff7cf90014af0c0f787eea34794ebf6415242ee1d6fa91eaba725cc441e84"},
 ]
+markers = {main = "python_version == \"3.10\" and (extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"adk\")", dev = "python_version == \"3.10\""}
 
 [[package]]
 name = "rpds-py"
 version = "2026.6.3"
 description = "Python bindings to Rust's persistent data structures (rpds)"
-optional = true
+optional = false
 python-versions = ">=3.11"
-groups = ["main"]
-markers = "python_version >= \"3.11\" and (extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"adk\")"
+groups = ["main", "dev"]
 files = [
     {file = "rpds_py-2026.6.3-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:7b689145a1485c335569bd056464f3243a29af7ed3871c7be31ad624ba239bc7"},
     {file = "rpds_py-2026.6.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:db08f45aecde626498fb3df07bcf6d2ec040af42e859a4f5040d79c200342911"},
@@ -3172,6 +3171,7 @@ files = [
     {file = "rpds_py-2026.6.3-pp311-pypy311_pp73-musllinux_1_2_x86_64.whl", hash = "sha256:8e65860d238379ed982fd9ba690579b5e95af2f4840f99c772816dbe573cb826"},
     {file = "rpds_py-2026.6.3.tar.gz", hash = "sha256:1cebd1337c242e4ec2293e541f712b2da849b29f48f0c293684b71c0632625d4"},
 ]
+markers = {main = "python_version >= \"3.11\" and (extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"adk\")", dev = "python_version >= \"3.11\""}
 
 [[package]]
 name = "ruff"
@@ -4231,4 +4231,4 @@ openai-agents = ["openai-agents"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "f3c1edfc904b86e922b8b71304108fab1ceeb61420f830884f788e7af602a5c0"
+content-hash = "c9fd605d1f56bc517db3abd078ea0a56e411d01371115ba6ef4229d508b9f939"
