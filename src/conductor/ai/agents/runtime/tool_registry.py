@@ -30,7 +30,6 @@ class ToolRegistry:
         tools: List[Any],
         agent_name: str,
         domain: Optional[str] = None,
-        agent_stateful: bool = False,
     ) -> None:
         """Register tool functions as Conductor workers and populate global registries.
 
@@ -84,7 +83,15 @@ class ToolRegistry:
                     ),
                     register_task_def=True,
                     overwrite_task_def=True,
-                    domain=domain if (agent_stateful or td.stateful) else None,
+                    # *domain* is already None unless this execution is stateful
+                    # (resolved once, tree-wide, by
+                    # AgentRuntime._resolve_worker_domain / _has_stateful_tools) —
+                    # re-deriving "is this stateful" from the *current* agent's own
+                    # .stateful flag broke nested sub-agents (e.g. SWARM members)
+                    # whose own .stateful is False even though the top-level
+                    # orchestrator's is True and the whole compiled graph — this
+                    # tool's TaskDef included — is domain-routed either way.
+                    domain=domain,
                     lease_extend_enabled=True,
                 )(wrapper)
                 _tool_task_names[td.name] = td.name

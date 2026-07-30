@@ -1101,7 +1101,6 @@ class AgentRuntime:
                 agent.tools,
                 agent.name,
                 domain=domain,
-                agent_stateful=getattr(agent, "stateful", False),
             )
             for t in agent.tools:
                 from conductor.ai.agents.tool import get_tool_def
