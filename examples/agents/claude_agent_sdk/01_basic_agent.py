@@ -6,7 +6,7 @@ Prerequisites:
     export ANTHROPIC_API_KEY=sk-...
 
 Usage:
-    # Start the agentspan server first, then:
+    # Start the Conductor server first, then:
     uv run python examples/claude_agent_sdk/01_basic_agent.py
 """
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(reviewer)
         # CLI alternative:
-        # agentspan deploy --package examples.claude_agent_sdk.01_basic_agent
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(reviewer)

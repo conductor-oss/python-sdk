@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Wait for Message (Streaming) — send messages to a running agent and stream its responses.
 
 Demonstrates:
@@ -13,16 +10,16 @@ receives (by calling wait_for_message again), then waits again.  The caller
 drives the conversation by sending messages and reading streamed events.
 
 Requirements:
-    - AgentSpan server running at http://localhost:8080
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - Conductor server running at http://localhost:8080
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 
 import os
 import threading
 import time
 
-os.environ.setdefault("AGENTSPAN_LOG_LEVEL", "WARNING")
+os.environ.setdefault("CONDUCTOR_LOG_LEVEL", "WARNING")
 
 from conductor.ai.agents import Agent, AgentRuntime, EventType, wait_for_message_tool, tool
 from settings import settings

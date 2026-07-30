@@ -1,11 +1,11 @@
 """Real-agent scheduling demo.
 
-A genuine ``Agent(...)`` — LLM-backed — deployed via the agentspan SDK and
-attached to a cron schedule in one call. Watches the agentspan-runtime fire
+A genuine ``Agent(...)`` — LLM-backed — deployed via the Conductor SDK and
+attached to a cron schedule in one call. Watches the Conductor-runtime fire
 the agent on a cadence and shows execution history with the LLM output.
 
 Requires:
-  - agentspan-runtime running on port 8080 with the scheduler module
+  - Conductor-runtime running on port 8080 with the scheduler module
     (see docs/design/plans/2026-05-27-agent-scheduling.md task 6)
   - An OPENAI_API_KEY (or change the model)
 
@@ -28,10 +28,10 @@ from conductor.ai.agents.schedule import Schedule
 
 SERVER = (
     os.environ.get("CONDUCTOR_SERVER_URL")
-    or os.environ.get("AGENTSPAN_SERVER_URL")
+    or os.environ.get("CONDUCTOR_SERVER_URL")
     or "http://localhost:8080/api"
 )
-MODEL = os.environ.get("AGENTSPAN_MODEL", "anthropic/claude-sonnet-4-6")
+MODEL = os.environ.get("CONDUCTOR_AGENT_MODEL", "anthropic/claude-sonnet-4-6")
 
 
 def fetch_executions(agent_name: str, limit: int = 20) -> list[dict]:

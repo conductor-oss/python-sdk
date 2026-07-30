@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License.
-
 """117 — OCG retrieval via a direct tool call (no sub-agent).
 
 The main agent holds the OCG query tool *itself*: ``ocg_tools()``
@@ -33,7 +30,7 @@ Run (from ``sdk/python``)::
     uv run python examples/117_ocg_direct_tools.py
 
     # against an embedded server (e.g. orkes on 8080), add:
-    #   AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    #   CONDUCTOR_SERVER_URL=http://localhost:8080/api
 """
 
 import os
@@ -41,7 +38,7 @@ import os
 from conductor.ai.agents import Agent, AgentRuntime
 from conductor.ai.agents.ocg import ocg_tools
 
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "anthropic/claude-sonnet-4-6")
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "anthropic/claude-sonnet-4-6")
 
 OCG_INSTANCE_URL = os.environ.get("OCG_INSTANCE_URL") or ""
 OCG_CREDENTIAL = os.environ.get("OCG_CREDENTIAL")  # credential-store name, never the key

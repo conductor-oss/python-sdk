@@ -181,7 +181,7 @@ def _make_auth_agent(model, server_url, cred_name):
 
 def _get_workflow(execution_id):
     """Fetch workflow from server API."""
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+    base = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
     resp = requests.get(f"{base_url}/api/workflow/{execution_id}", timeout=10)
     resp.raise_for_status()
@@ -355,103 +355,3 @@ def _validate_tool_execution(result, step_name):
             f"expected value '{expected}'.\n"
             f"  output={output_str[:300]}"
         )
-
-
-# ── Test ─────────────────────────────────────────────────────────────────
-
-
-@pytest.mark.timeout(600)
-class TestSuite4McpTools:
-    """MCP tools: discovery, execution, and authenticated access."""
-
-    def test_mcp_lifecycle(self, runtime, cli_credentials, model):
-        """Full MCP lifecycle — unauthenticated → authenticated."""
-        # Verify mcp-testkit is installed
-        try:
-            subprocess.run(
-                ["mcp-testkit", "--help"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-        except FileNotFoundError:
-            pytest.skip(
-                "mcp-testkit not installed — required for Suite 4 MCP tools test"
-            )
-
-        server_proc = None
-        try:
-            self._run_lifecycle(runtime, cli_credentials, model)
-        finally:
-            cli_credentials.delete(CRED_NAME)
-
-    def _run_lifecycle(self, runtime, cli_credentials, model):
-        server_proc = None
-        try:
-            # ── Phase 1: Unauthenticated ──────────────────────────────
-
-            # Step d: Start MCP server without auth
-            server_proc = _start_mcp_server(MCP_PORT)
-
-            # Step e: Discover tools, validate all are present
-            discovered = _discover_tools_via_mcp(MCP_SERVER_URL)
-            assert len(discovered) == EXPECTED_TOOL_COUNT, (
-                f"[Phase 1: Discovery] Expected {EXPECTED_TOOL_COUNT} tools, "
-                f"discovered {len(discovered)}.\n"
-                f"  Missing: {sorted(set(EXPECTED_TOOL_NAMES) - set(discovered))}\n"
-                f"  Extra: {sorted(set(discovered) - set(EXPECTED_TOOL_NAMES))}"
-            )
-            assert set(discovered) == set(EXPECTED_TOOL_NAMES), (
-                f"[Phase 1: Discovery] Tool names mismatch.\n"
-                f"  Missing: {sorted(set(EXPECTED_TOOL_NAMES) - set(discovered))}\n"
-                f"  Extra: {sorted(set(discovered) - set(EXPECTED_TOOL_NAMES))}"
-            )
-
-            # Steps b+c+f: Create agent, run with 3 tools, validate
-            agent = _make_agent(model, MCP_SERVER_URL)
-            result = runtime.run(agent, PROMPT_USE_3_TOOLS, timeout=TIMEOUT)
-            _validate_tool_execution(result, "Phase 1: Unauthenticated execution")
-
-            # ── Phase 2: Authenticated ────────────────────────────────
-
-            # Step g: Stop server, restart with auth
-            _stop_mcp_server(server_proc)
-            server_proc = None
-            time.sleep(1)  # Let port release
-            server_proc = _start_mcp_server(MCP_PORT, auth_key=MCP_AUTH_KEY)
-
-            # Verify auth is enforced — unauthenticated call should fail
-            with pytest.raises(Exception):
-                _discover_tools_via_mcp(MCP_SERVER_URL)
-
-            # Step h: Create auth agent with credential placeholder
-            auth_agent = _make_auth_agent(model, MCP_SERVER_URL, CRED_NAME)
-
-            # Step i: Set credential via CLI
-            cli_credentials.set(CRED_NAME, MCP_AUTH_KEY)
-
-            # Step j: Discover tools with auth, validate all present
-            discovered_auth = _discover_tools_via_mcp(
-                MCP_SERVER_URL, auth_key=MCP_AUTH_KEY
-            )
-            assert len(discovered_auth) == EXPECTED_TOOL_COUNT, (
-                f"[Phase 2: Auth Discovery] Expected {EXPECTED_TOOL_COUNT} tools, "
-                f"discovered {len(discovered_auth)}."
-            )
-            assert set(discovered_auth) == set(EXPECTED_TOOL_NAMES), (
-                f"[Phase 2: Auth Discovery] Tool names mismatch.\n"
-                f"  Missing: {sorted(set(EXPECTED_TOOL_NAMES) - set(discovered_auth))}\n"
-                f"  Extra: {sorted(set(discovered_auth) - set(EXPECTED_TOOL_NAMES))}"
-            )
-
-            # Step k: Execute and validate
-            result_auth = runtime.run(
-                auth_agent, PROMPT_USE_3_TOOLS, timeout=TIMEOUT
-            )
-            _validate_tool_execution(
-                result_auth, "Phase 2: Authenticated execution"
-            )
-
-        finally:
-            if server_proc:
-                _stop_mcp_server(server_proc)

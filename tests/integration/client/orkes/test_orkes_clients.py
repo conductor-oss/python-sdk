@@ -1,4 +1,5 @@
 import json
+import time
 
 from shortuuid import uuid
 
@@ -25,6 +26,7 @@ from conductor.client.orkes_clients import OrkesClients
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.simple_task import SimpleTask
+from tests.integration.retry_helpers import retry_scenario, wait_for_workflow_terminal
 
 SUFFIX = str(uuid())
 WORKFLOW_NAME = 'IntegrationTestOrkesClientsWf_' + SUFFIX
@@ -36,6 +38,19 @@ USER_ID = 'integrationtest_' + SUFFIX[0:5].lower() + "@orkes.io"
 GROUP_ID = 'integrationtest_group_' + SUFFIX[0:5].lower()
 TEST_WF_JSON = 'tests/integration/resources/test_data/calculate_loan_workflow.json'
 TEST_IP_JSON = 'tests/integration/resources/test_data/loan_workflow_input.json'
+
+
+def _retry_on_404(func, *args, retries=5, **kwargs):
+    # Updating a task by ref name can transiently 404 while the server is still
+    # scheduling the referenced task. Retry with backoff to tolerate that race.
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except ApiException as e:
+            if e.status == 404 and attempt < retries - 1:
+                time.sleep(1 << attempt)
+                continue
+            raise
 
 
 class TestOrkesClients:
@@ -52,7 +67,7 @@ class TestOrkesClients:
         self.authorization_client = orkes_clients.get_authorization_client()
         self.workflow_id = None
 
-    def run(self) -> None:
+    def run(self, deadline=None) -> None:
         workflow = ConductorWorkflow(
             executor=self.workflow_executor,
             name=WORKFLOW_NAME,
@@ -63,13 +78,24 @@ class TestOrkesClients:
         workflow >> SimpleTask("simple_task", "simple_task_ref")
         workflowDef = workflow.to_workflow_def()
 
-        self.test_workflow_lifecycle(workflowDef, workflow)
-        self.test_task_lifecycle()
-        self.test_secret_lifecycle()
-        self.test_scheduler_lifecycle(workflowDef)
-        self.test_application_lifecycle()
-        self.__test_unit_test_workflow()
-        self.test_user_group_permissions_lifecycle(workflowDef)
+        # Each lifecycle is a scenario: on a transient (status 0) blip against
+        # the shared dev server it retries from the top until the shared deadline
+        # passes (see retry_helpers.retry_scenario); real failures raise at once.
+        retry_scenario('test_workflow_lifecycle', self.test_workflow_lifecycle,
+                       workflowDef, workflow, deadline=deadline)
+        retry_scenario('test_task_lifecycle', self.test_task_lifecycle,
+                       deadline=deadline)
+        retry_scenario('test_secret_lifecycle', self.test_secret_lifecycle,
+                       deadline=deadline)
+        retry_scenario('test_scheduler_lifecycle', self.test_scheduler_lifecycle,
+                       workflowDef, deadline=deadline)
+        retry_scenario('test_application_lifecycle', self.test_application_lifecycle,
+                       deadline=deadline)
+        retry_scenario('__test_unit_test_workflow', self.__test_unit_test_workflow,
+                       deadline=deadline)
+        retry_scenario('test_user_group_permissions_lifecycle',
+                       self.test_user_group_permissions_lifecycle, workflowDef,
+                       deadline=deadline)
 
     def test_workflow_lifecycle(self, workflowDef, workflow):
         self.__test_register_workflow_definition(workflowDef)
@@ -158,7 +184,7 @@ class TestOrkesClients:
 
         schedule = self.scheduler_client.get_schedule(SCHEDULE_NAME)
 
-        assert schedule['name'] == SCHEDULE_NAME
+        assert schedule.name == SCHEDULE_NAME
 
         self.scheduler_client.pause_schedule(SCHEDULE_NAME)
 
@@ -169,7 +195,7 @@ class TestOrkesClients:
 
         self.scheduler_client.resume_schedule(SCHEDULE_NAME)
         schedule = self.scheduler_client.get_schedule(SCHEDULE_NAME)
-        assert not schedule['paused']
+        assert not schedule.paused
 
         times = self.scheduler_client.get_next_few_schedule_execution_times("0 */5 * ? * *", limit=1)
         assert (len(times) == 1)
@@ -368,8 +394,27 @@ class TestOrkesClients:
         execution = self.workflow_client.test_workflow(testRequest)
         assert execution != None
 
+        # There appears to be no guarantee about it actually coming back
+        # complete, because it happens (often) that it does not. So we accept a
+        # COMPLETED result immediately, but if it isn't COMPLETED yet we don't
+        # fail: we poll the workflow and wait for it to reach a terminal state.
+        if execution.status != "COMPLETED":
+            print(
+                f"[test_workflow] workflow_id={getattr(execution, 'workflow_id', None)} status={execution.status} (was expecting COMPLETED - but will poll for that now)"
+            )
+            workflow_id = getattr(execution, "workflow_id", None)
+            polled = (
+                self.__poll_workflow_until_complete(workflow_id)
+                if workflow_id else None
+            )
+            if polled is not None:
+                execution = polled
+
         # Ensure workflow is completed successfully
-        assert execution.status == "COMPLETED"
+        assert execution.status == "COMPLETED", (
+            f"workflow expected to be COMPLETED, but received {execution.status}, "
+            f"workflow_id: {getattr(execution, 'workflow_id', None)}"
+        )
 
         # Ensure the inputs were captured correctly
         assert execution.input["loanAmount"] == testRequest.input["loanAmount"]
@@ -420,6 +465,20 @@ class TestOrkesClients:
 
         # Workflow output takes the latest iteration output of a loopOver task.
         assert execution.output["phoneNumberValid"]
+
+    def __poll_workflow_until_complete(self, workflow_id, timeout_seconds=60,
+                                       poll_interval=2):
+        """Poll ``workflow_id`` until it reaches a terminal state or the timeout
+        passes, returning the last observed Workflow (or None if it could never
+        be fetched). Transient poll errors are swallowed and retried within the
+        timeout so a slow-but-eventually-complete run isn't reported as a bare
+        failure. Thin wrapper over the shared ``wait_for_workflow_terminal``.
+        """
+        return wait_for_workflow_terminal(
+            self.workflow_client, workflow_id,
+            timeout_seconds=timeout_seconds, poll_interval=poll_interval,
+            include_tasks=True, swallow='all',
+            log=lambda msg: print(f"[test_workflow] {msg}"))
 
     def __test_unregister_workflow_definition(self):
         self.metadata_client.unregister_workflow_def(WORKFLOW_NAME, 1)
@@ -555,13 +614,13 @@ class TestOrkesClients:
         self.task_client.add_task_log(polledTask.task_id, "Polled task...")
 
         taskExecLogs = self.task_client.get_task_logs(polledTask.task_id)
-        taskExecLogs[0].log == "Polled task..."
+        assert taskExecLogs[0].log == "Polled task..."
 
-        # First task of second workflow is in the queue
+        # First task of second workflow is still in the queue
         assert self.task_client.get_queue_size_for_task(TASK_TYPE) == 1
 
         taskResult = TaskResult(
-            workflow_instance_id=workflow_uuid,
+            workflow_instance_id=polledTask.workflow_instance_id,
             task_id=polledTask.task_id,
             status=TaskResultStatus.COMPLETED
         )
@@ -571,31 +630,41 @@ class TestOrkesClients:
         task = self.task_client.get_task(polledTask.task_id)
         assert task.status == TaskResultStatus.COMPLETED
 
+        # The second task of the first workflow and both tasks of the second
+        # workflow all share TASK_TYPE and land in the same queue, so a poll can
+        # return a task from either workflow in a non-deterministic order. Drive
+        # every update from the polled task's own workflow id and reference name
+        # instead of assuming which workflow/ref we got back (the previous
+        # hardcoded workflow_uuid_2 / "simple_task_ref_2" pairing produced
+        # spurious 404s whenever the queue handed back the other workflow's
+        # task). We still exercise update_task_by_ref_name and update_task_sync.
+
+        # Three task executions remain (we completed one above); drain them all.
         batchPolledTasks = self.task_client.batch_poll_tasks(TASK_TYPE)
-        assert len(batchPolledTasks) == 1
+        remaining = 3
+        completed = 0
+        for polledTask in batchPolledTasks:
+            _retry_on_404(
+                self.task_client.update_task_by_ref_name,
+                polledTask.workflow_instance_id,
+                polledTask.reference_task_name,
+                "COMPLETED",
+                f"task op {completed + 1} (by ref name)"
+            )
+            completed += 1
 
-        polledTask = batchPolledTasks[0]
-        # Update first task of second workflow
-        self.task_client.update_task_by_ref_name(
-            workflow_uuid_2,
-            polledTask.reference_task_name,
-            "COMPLETED",
-            "task 2 op 2nd wf"
-        )
-
-        # Update second task of first workflow
-        self.task_client.update_task_by_ref_name(
-            workflow_uuid_2, "simple_task_ref_2", "COMPLETED", "task 2 op 1st wf"
-        )
-
-        # # Second task of second workflow is in the queue
-        # assert self.task_client.getQueueSizeForTask(TASK_TYPE) == 1
-        polledTask = self.task_client.poll_task(TASK_TYPE)
-
-        # Update second task of second workflow
-        self.task_client.update_task_sync(
-            workflow_uuid, "simple_task_ref_2", "COMPLETED", "task 1 op 2nd wf"
-        )
+        while completed < remaining:
+            polledTask = self.task_client.poll_task(TASK_TYPE)
+            assert polledTask is not None, \
+                "expected a task to be available to poll while draining the queue"
+            _retry_on_404(
+                self.task_client.update_task_sync,
+                polledTask.workflow_instance_id,
+                polledTask.reference_task_name,
+                "COMPLETED",
+                f"task op {completed + 1} (sync)"
+            )
+            completed += 1
 
         queue_size = self.task_client.get_queue_size_for_task(TASK_TYPE)
         print(f'queue size for {TASK_TYPE} is {queue_size}')

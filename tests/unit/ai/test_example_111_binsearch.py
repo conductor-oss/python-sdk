@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Unit tests for the binary-search plan-execute-replan loop in example 111.
 
 Pins the pure-function invariants — guess parsing, bounds derivation

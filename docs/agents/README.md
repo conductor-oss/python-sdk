@@ -1,39 +1,46 @@
 # Conductor Agent Python SDK
 
-> Ships as part of [`conductor-python`](https://pypi.org/project/conductor-python/) — install with the `agents` extra
-> (`pip install 'conductor-python[agents]'`) — you're in the right place.
+Build durable Python AI agents on Conductor. Agents can use local Python tools,
+wait for people, execute dynamic plans, and recover after process restarts because
+Conductor persists execution state.
 
-Long-running, dynamic plan-execute, and event-driven AI agents in Python. You write plain Python; Conductor Agent compiles your agent into a Conductor workflow that runs on a server — with automatic retries, durable state, human-in-the-loop pauses, streaming, scheduling, dynamic plan-execute, and full execution history.
+## Install
 
-```python
-from conductor.ai.agents import Agent, AgentRuntime
-
-agent = Agent(name="greeter", model="anthropic/claude-sonnet-4-6",
-              instructions="You are a friendly assistant.")
-
-with AgentRuntime() as runtime:
-    result = runtime.run(agent, "Say hello.")
-    print(result.output)
+```shell
+pip install 'conductor-python[agents]'
 ```
 
-## Docs
+Requirements: Python 3.10+ and a Conductor server with an LLM provider configured
+server-side. Replace example model names with a model enabled on that server.
 
-- [Getting started](getting-started.md) — install, env vars, and a running agent in under 30 seconds.
-- [Writing agents](writing-agents.md) — the `Agent` class and `@agent`, tools, multi-agent strategies, handoffs, guardrails, termination, callbacks, streaming + HITL, schedules, stateful and instance agents.
-- [Framework agents](framework-agents.md) — run agents authored in the OpenAI Agents SDK, LangChain, LangGraph, or the Claude Agent SDK.
-- [Advanced](advanced.md) — runtime config, the control-plane `AgentClient`, deploy vs serve vs run vs plan, structured output, credentials, plans (`PLAN_EXECUTE`), skills.
-- [API reference](api-reference.md) — the public API surface in one place.
+## Start here
 
-## Import surface
+- [Getting started](getting-started.md) — configure a server and run a basic agent.
+- [Deploy · Serve · Run · Plan](concepts/deploy-serve-run.md) — choose a runtime mode.
+- [Scheduling](concepts/scheduling.md) — manage deployed-agent schedules.
 
-Everything public is importable from `conductor.ai.agents`:
+## Build agents
 
-```python
-from conductor.ai.agents import Agent, AgentRuntime, tool, agent
-```
+- [Agents](concepts/agents.md), [tools](concepts/tools.md), and [multi-agent](concepts/multi-agent.md)
+- [Guardrails](concepts/guardrails.md), [termination](concepts/termination.md), [callbacks](concepts/callbacks.md)
+- [Stateful agents](concepts/stateful.md), [streaming and HITL](concepts/streaming-hitl.md), and [structured output](concepts/structured-output.md)
 
-A small OpenAI-Agents-compatible shim is also exposed at the top level:
+## Framework bridges
 
-```python
-from conductor.ai import Runner, function_tool   # drop-in for `agents.Runner`
-```
+- [Google ADK](frameworks/google-adk.md), [LangChain](frameworks/langchain.md), and [LangGraph](frameworks/langgraph.md)
+- [OpenAI Agents SDK](frameworks/openai.md) and [Claude Agent SDK](frameworks/claude-agent-sdk.md)
+
+## Operate and inspect
+
+- [Runtime reference](reference/runtime.md), [control-plane reference](reference/client.md), and [API map](reference/api.md)
+- [Agent-definition fields](reference/agent-definition.md) and [configuration contract](reference/agent-schema.md)
+
+## What Conductor adds
+
+| Capability | Conductor agent runtime |
+|---|---|
+| Process recovery | Durable workflow state resumes from completed work. |
+| Python tools | Tools run as independently scalable Conductor worker tasks. |
+| Long-running work | Human approval, schedules, and events do not occupy application threads. |
+| Dynamic execution | Plans become durable, inspectable sub-workflows. |
+| Observability | Inputs, outputs, tool calls, retries, and status share one execution record. |

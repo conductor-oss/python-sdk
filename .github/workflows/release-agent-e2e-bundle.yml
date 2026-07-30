@@ -1,0 +1,73 @@
+name: Release Agent E2E Bundle
+
+# Packages the agent e2e suite (e2e/) into a version-stamped, self-contained
+# tarball and attaches it to the GitHub release, so downstream repos (e.g.
+# orkes-io/orkes-conductor) can pin the e2e suite to the exact python-sdk
+# release they run against. The bundle resolves conductor-python[agents] at
+# the same version from PyPI.
+#
+# Runs on the same release event as release.yml (PyPI publish). Packaging is
+# purely static (no install), so it does not race the PyPI publish — the
+# bundle just references the package version.
+#
+# Mirrors conductor-oss/java-sdk and conductor-oss/javascript-sdk. Note:
+# python-sdk release tags carry no `v` prefix (e.g. 2.0.0-rc2), and pip's
+# PEP 440 normalization makes ==2.0.0-rc2 resolve the PyPI artifact 2.0.0rc2.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to package for and attach to (e.g. 2.0.0-rc2) — must already exist"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  package-e2e-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.event.release.tag_name }}"
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Packaging agent e2e bundle for tag ${TAG} (version ${VERSION})"
+
+      - name: Package bundle
+        run: |
+          ./scripts/package-e2e-bundle.sh --version "${{ steps.version.outputs.version }}"
+
+      - name: Validate bundle
+        run: |
+          ./scripts/test-package-e2e-bundle.sh
+
+      - name: Generate SHA256 checksums
+        working-directory: scripts/e2e-bundle-dist
+        run: |
+          for f in *.tar.gz; do
+            sha256sum "$f" | awk '{print $1}' > "${f}.sha256"
+            echo "  $(cat "${f}.sha256")  ${f}"
+          done
+
+      - name: Upload bundle to GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ steps.version.outputs.tag }}" \
+            scripts/e2e-bundle-dist/*.tar.gz \
+            scripts/e2e-bundle-dist/*.sha256 \
+            --repo "${{ github.repository }}" \
+            --clobber

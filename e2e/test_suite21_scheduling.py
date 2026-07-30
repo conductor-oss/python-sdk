@@ -11,7 +11,7 @@ Covers the Python SDK's schedule lifecycle against a live Conductor:
 
 Targets the scheduler-capable Conductor at ``SCHEDULER_CONDUCTOR_URL``
 (default ``http://localhost:8089/api``). Skipped automatically if the
-scheduler endpoint isn't available — this is the agentspan-runtime case
+scheduler endpoint isn't available — this is the Conductor Agents runtime case
 where the embedded Conductor lacks the scheduler module.
 
 No LLM calls — the scheduled "agent" is a bare no-op Conductor workflow.
@@ -85,7 +85,7 @@ def agent_name(conductor_clients) -> Iterator[str]:
         "name": name,
         "version": 1,
         "description": "Scheduling e2e no-op workflow",
-        "ownerEmail": "e2e@agentspan.test",
+        "ownerEmail": "e2e@conductor_agent.test",
         "schemaVersion": 2,
         "timeoutSeconds": 60,
         "timeoutPolicy": "TIME_OUT_WF",

@@ -1,14 +1,11 @@
-# Copyright (c) 2026 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Schedule-specific exceptions."""
 
 from __future__ import annotations
 
-from conductor.client.ai.agent_errors import AgentspanError
+from conductor.client.ai.agent_errors import ConductorAgentError
 
 
-class ScheduleError(AgentspanError):
+class ScheduleError(ConductorAgentError):
     """Base class for schedule errors."""
 
 

@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """PLAN_EXECUTE with agent fan-out — Conductor-native, fully declarative.
 
 Demonstrates the fix that makes ``Strategy.PLAN_EXECUTE`` route plan ops by
@@ -40,7 +37,7 @@ Run:
     python 106_plan_execute_agent_fanout.py
 
 Requires:
-    - Agentspan server running (AGENTSPAN_SERVER_URL)
+    - Conductor server running (CONDUCTOR_SERVER_URL)
     - OPENAI_API_KEY (planner LLM gets called even when ``plan=`` is injected
       — its output is discarded but the call has to land somewhere)
 """

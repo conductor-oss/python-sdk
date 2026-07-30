@@ -7,8 +7,8 @@ final output contains the stderr text produced by the failed command.
 
 Requirements:
   - Conductor server with LLM support
-  - AGENTSPAN_SERVER_URL  (e.g. http://localhost:8080/api)
-  - AGENTSPAN_LLM_MODEL   (e.g. openai/gpt-4o-mini)
+  - CONDUCTOR_SERVER_URL  (e.g. http://localhost:8080/api)
+  - CONDUCTOR_AGENT_LLM_MODEL   (e.g. openai/gpt-4o-mini)
 """
 
 from conductor.ai.agents import Agent, AgentRuntime
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # rt.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.74_cli_error_output
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # rt.serve(agent)

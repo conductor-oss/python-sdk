@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """OpenAI Agents SDK migration — function tools.
 
 This is examples/basic/tools.py from the openai-agents SDK
@@ -9,7 +6,7 @@ with exactly ONE line changed.
 Before (runs directly against OpenAI):
     from agents import Runner
 
-After (runs on Agentspan — durable, observable, scalable):
+After (runs on Conductor — durable, observable, scalable):
     from conductor.ai import Runner
 
 The diff:
@@ -17,14 +14,14 @@ The diff:
     +from conductor.ai import Runner
 
 @function_tool decorators, Agent definition, and result.final_output
-are completely unchanged. Agentspan executes each tool call as a durable
+are completely unchanged. Conductor executes each tool call as a durable
 worker task — if the process crashes mid-run, execution resumes from the
 last successful tool call.
 
 Requirements:
     - uv add openai-agents
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o
 
 Usage:
     python 94_openai_runner_tools.py
@@ -39,7 +36,7 @@ from agents import Agent, function_tool
 
 # ── Only this line changes ──────────────────────────────────────────────────
 # from agents import Runner          # ← original (runs directly on OpenAI)
-from conductor.ai import Runner         # ← agentspan (runs on Agentspan)
+from conductor.ai import Runner         # ← Conductor (runs on Conductor)
 # ───────────────────────────────────────────────────────────────────────────
 
 
@@ -49,7 +46,10 @@ class Weather(BaseModel):
     conditions: str = Field(description="The weather conditions")
 
 
-@function_tool
+# Keep the plain function importable at module level and apply
+# @function_tool at Agent construction: worker processes are spawned on
+# macOS/Windows and re-import this module by qualified name, which fails
+# when the decorator has rebound the module global to a FunctionTool.
 def get_weather(city: Annotated[str, "The city to get the weather for"]) -> Weather:
     """Get the current weather information for a specified city."""
     print("[debug] get_weather called")
@@ -59,7 +59,7 @@ def get_weather(city: Annotated[str, "The city to get the weather for"]) -> Weat
 agent = Agent(
     name="weather_agent",
     instructions="You are a helpful agent.",
-    tools=[get_weather],
+    tools=[function_tool(get_weather)],
 )
 
 

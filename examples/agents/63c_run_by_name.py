@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Run by Name — execute a pre-deployed agent via ``runtime.run()``.
 
 Demonstrates:
@@ -12,7 +9,7 @@ Requirements:
     - Conductor server running
     - Agent deployed (run 63_deploy.py first)
     - Workers running (run 63b_serve.py in another terminal)
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
 """
 
 from conductor.ai.agents import AgentRuntime
@@ -27,7 +24,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(...)
         # CLI alternative:
-        # agentspan deploy --package examples.63c_run_by_name
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(...)

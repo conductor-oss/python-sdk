@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Tests for CLI command execution configuration and tool."""
 import subprocess
 from unittest.mock import MagicMock, patch
@@ -138,11 +135,11 @@ class TestMakeCliTool:
         with patch("conductor.ai.agents.cli_config.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout="[]\n", stderr="")
             result = tool_fn.__wrapped__(
-                command="gh repo list agentspan --limit 5 --json name,updatedAt"
+                command="gh repo list conductor_agent --limit 5 --json name,updatedAt"
             )
             assert result["status"] == "success"
             mock_run.assert_called_once_with(
-                ["gh", "repo", "list", "agentspan", "--limit", "5", "--json", "name,updatedAt"],
+                ["gh", "repo", "list", "conductor_agent", "--limit", "5", "--json", "name,updatedAt"],
                 capture_output=True,
                 text=True,
                 timeout=30,

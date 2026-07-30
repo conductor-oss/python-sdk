@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Tests for LangGraph/LangChain framework auto-detection in serializer.py."""
 import pytest
 from unittest.mock import MagicMock
@@ -41,7 +38,7 @@ def test_openai_agent_still_detected():
 
 def test_native_agent_returns_none():
     from conductor.ai.agents.frameworks.serializer import detect_framework
-    # A plain MagicMock with agentspan module but not an isinstance(obj, Agent)
+    # A plain MagicMock with conductor_agent module but not an isinstance(obj, Agent)
     # The module prefix "conductor.ai.agents.agent" doesn't match any _FRAMEWORK_DETECTION prefix
     obj = MagicMock()
     type(obj).__name__ = "Agent"

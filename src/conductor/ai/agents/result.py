@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Result types — AgentResult, AgentHandle, AgentEvent, AgentStatus, AgentStream, AsyncAgentStream.
 
 These classes provide the interface between the user and a running or

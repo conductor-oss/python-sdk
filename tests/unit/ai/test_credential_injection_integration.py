@@ -100,7 +100,7 @@ class TestFullExtractionPathIntegration:
 
         # This is what _register_framework_workers does:
         tool_func = workers[0].func
-        tool_func._agentspan_framework_callable = True
+        tool_func._conductor_agent_framework_callable = True
         worker_fn = make_tool_worker(
             tool_func,
             workers[0].name,
@@ -130,7 +130,7 @@ class TestFullExtractionPathIntegration:
         _, workers = serialize_agent(graph)
 
         tool_func = workers[0].func
-        tool_func._agentspan_framework_callable = True
+        tool_func._conductor_agent_framework_callable = True
 
         # No credential_names, no _workflow_credentials entry
         with _workflow_credentials_lock:

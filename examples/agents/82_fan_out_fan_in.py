@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Fan-out / Fan-in — orchestrator broadcasts tasks to multiple worker agents,
 then collects and aggregates all results.
 
@@ -32,8 +29,8 @@ Scenario:
     aggregates the three answers into a side-by-side comparison report.
 
 Requirements:
-    - AgentSpan server running (CONDUCTOR_SERVER_URL / AGENTSPAN_SERVER_URL)
-    - AGENTSPAN_LLM_MODEL set to a working model
+    - Conductor server running (CONDUCTOR_SERVER_URL / CONDUCTOR_SERVER_URL)
+    - CONDUCTOR_AGENT_LLM_MODEL set to a working model
 """
 
 import json

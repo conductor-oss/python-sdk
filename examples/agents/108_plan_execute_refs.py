@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License.
-
 """108 — Plan-Execute with cross-step output piping via ``Ref``.
 
 The ``Ref("step_id")`` helper wires the **whole output** of an upstream
@@ -31,8 +28,8 @@ What to look for in the output:
     independently (two Refs in the same args map).
 
 Requirements:
-  - AGENTSPAN_SERVER_URL=http://localhost:8080/api (default)
-  - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini (default)
+  - CONDUCTOR_SERVER_URL=http://localhost:8080/api (default)
+  - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini (default)
 """
 
 from __future__ import annotations
@@ -81,7 +78,7 @@ def main() -> None:
         name="ref_demo",
         tools=[produce, enrich, report],
         planner_instructions="(planner unused; static plan supplied)",
-        model=os.environ.get("AGENTSPAN_LLM_MODEL", "anthropic/claude-sonnet-4-6"),
+        model=os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "anthropic/claude-sonnet-4-6"),
     )
 
     plan = Plan(
@@ -124,7 +121,7 @@ def _show_pipeline_outputs(execution_id: str) -> None:
 
     import requests
 
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+    base = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
 
     parent = requests.get(

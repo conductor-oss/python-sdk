@@ -1,9 +1,9 @@
 name: Agent E2E
 
-# Runs the agent e2e suites (e2e/) against the released Agentspan
-# server JAR — a full Conductor server with the agent runtime baked in.
-# tests/integration/ai stays manual-only (same as upstream Agentspan,
-# which never ran its tests/integration in CI): run it locally against
+# Runs the agent e2e suites (e2e/) against the Conductor OSS server boot
+# JAR (Maven Central) — the server this SDK ships against, with the agent
+# runtime on by default from 3.32.0-rc.8 onward.
+# tests/integration/ai stays manual-only: run it locally against
 # a live server with `pytest tests/integration/ai`.
 #
 # These tests call real LLMs via the OPENAI_API_KEY / ANTHROPIC_API_KEY
@@ -12,12 +12,15 @@ name: Agent E2E
 
 on: [pull_request, workflow_dispatch]
 
+permissions:
+  contents: read
+
 concurrency:
   group: agent-e2e-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  AGENTSPAN_VERSION: "0.4.3"   # pinned server/CLI release — bump deliberately
+  CONDUCTOR_SERVER_VERSION: "3.32.0-rc18"   # pinned server release — bump deliberately
 
 jobs:
   agent-e2e:
@@ -26,8 +29,7 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      AGENTSPAN_SERVER_URL: http://localhost:8080/api
-      AGENTSPAN_CLI_PATH: ${{ github.workspace }}/agentspan
+      CONDUCTOR_SERVER_URL: http://localhost:8080/api
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,24 +50,14 @@ jobs:
         id: jar_cache
         uses: actions/cache@v4
         with:
-          path: agentspan-server.jar
-          key: agentspan-server-${{ env.AGENTSPAN_VERSION }}
+          path: conductor-server.jar
+          key: conductor-oss-server-${{ env.CONDUCTOR_SERVER_VERSION }}
 
-      - name: Download server JAR from release
+      - name: Download server JAR from Maven Central
         if: steps.jar_cache.outputs.cache-hit != 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download "v${AGENTSPAN_VERSION}" --repo agentspan-ai/agentspan \
-            --pattern "agentspan-server-${AGENTSPAN_VERSION}.jar" --output agentspan-server.jar
-
-      - name: Download CLI binary from release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release download "v${AGENTSPAN_VERSION}" --repo agentspan-ai/agentspan \
-            --pattern "agentspan_linux_amd64" --output agentspan
-          chmod +x agentspan
+          curl -fL --retry 3 -o conductor-server.jar \
+            "https://repo1.maven.org/maven2/org/conductoross/conductor-server/${CONDUCTOR_SERVER_VERSION}/conductor-server-${CONDUCTOR_SERVER_VERSION}-boot.jar"
 
       - name: Install SDK + test deps
         run: |
@@ -80,7 +72,7 @@ jobs:
 
       - name: Start server
         run: |
-          java -jar agentspan-server.jar --server.port=8080 > server.log 2>&1 &
+          java -jar conductor-server.jar --server.port=8080 > server.log 2>&1 &
 
       - name: Wait for server health
         run: |

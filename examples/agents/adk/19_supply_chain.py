@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Supply Chain — Multi-agent supply chain management.
 
 Mirrors the supply-chain ADK sample. A coordinator delegates to
@@ -16,76 +13,81 @@ from conductor.ai.agents import AgentRuntime
 from settings import settings
 
 
+# ── Inventory tools ───────────────────────────────────────────
+
+def get_inventory_levels(warehouse: str) -> dict:
+    """Get current inventory levels at a warehouse."""
+    warehouses = {
+        "west": {
+            "warehouse": "West Coast",
+            "items": [
+                {"sku": "WIDGET-A", "quantity": 5000, "reorder_point": 2000},
+                {"sku": "WIDGET-B", "quantity": 1200, "reorder_point": 1500},
+                {"sku": "GADGET-X", "quantity": 800, "reorder_point": 500},
+            ],
+        },
+        "east": {
+            "warehouse": "East Coast",
+            "items": [
+                {"sku": "WIDGET-A", "quantity": 3200, "reorder_point": 2000},
+                {"sku": "WIDGET-B", "quantity": 4500, "reorder_point": 1500},
+                {"sku": "GADGET-X", "quantity": 200, "reorder_point": 500},
+            ],
+        },
+    }
+    return warehouses.get(warehouse.lower(), {"error": f"Warehouse '{warehouse}' not found"})
+
+
+def check_supplier_status(sku: str) -> dict:
+    """Check supplier availability and lead times."""
+    suppliers = {
+        "WIDGET-A": {"supplier": "WidgetCorp", "lead_time_days": 14, "min_order": 1000, "unit_cost": 2.50},
+        "WIDGET-B": {"supplier": "WidgetCorp", "lead_time_days": 21, "min_order": 500, "unit_cost": 4.75},
+        "GADGET-X": {"supplier": "GadgetWorks", "lead_time_days": 30, "min_order": 200, "unit_cost": 12.00},
+    }
+    return suppliers.get(sku.upper(), {"error": f"No supplier for SKU {sku}"})
+
+
+# ── Logistics tools ───────────────────────────────────────────
+
+def get_shipping_routes(origin: str, destination: str) -> dict:
+    """Get available shipping routes between warehouses."""
+    return {
+        "origin": origin,
+        "destination": destination,
+        "routes": [
+            {"method": "Ground", "transit_days": 5, "cost_per_unit": 0.50},
+            {"method": "Rail", "transit_days": 3, "cost_per_unit": 0.75},
+            {"method": "Air", "transit_days": 1, "cost_per_unit": 2.00},
+        ],
+    }
+
+
+def get_pending_shipments() -> dict:
+    """Get all pending shipments in the system."""
+    return {
+        "shipments": [
+            {"id": "SHP-001", "sku": "WIDGET-A", "qty": 2000, "status": "in_transit", "eta": "2025-04-18"},
+            {"id": "SHP-002", "sku": "GADGET-X", "qty": 500, "status": "processing", "eta": "2025-05-01"},
+        ],
+    }
+
+
+# ── Demand tools ──────────────────────────────────────────────
+
+def get_demand_forecast(sku: str, weeks_ahead: int = 4) -> dict:
+    """Get demand forecast for a SKU."""
+    forecasts = {
+        "WIDGET-A": {"weekly_demand": 800, "trend": "increasing", "confidence": 0.85},
+        "WIDGET-B": {"weekly_demand": 300, "trend": "stable", "confidence": 0.90},
+        "GADGET-X": {"weekly_demand": 150, "trend": "decreasing", "confidence": 0.75},
+    }
+    data = forecasts.get(sku.upper(), {"weekly_demand": 0, "trend": "unknown"})
+    data["total_forecast"] = data.get("weekly_demand", 0) * weeks_ahead
+    return {"sku": sku, "weeks_ahead": weeks_ahead, **data}
+
+
 def main():
-    # ── Inventory tools ───────────────────────────────────────────
-
-    def get_inventory_levels(warehouse: str) -> dict:
-        """Get current inventory levels at a warehouse."""
-        warehouses = {
-            "west": {
-                "warehouse": "West Coast",
-                "items": [
-                    {"sku": "WIDGET-A", "quantity": 5000, "reorder_point": 2000},
-                    {"sku": "WIDGET-B", "quantity": 1200, "reorder_point": 1500},
-                    {"sku": "GADGET-X", "quantity": 800, "reorder_point": 500},
-                ],
-            },
-            "east": {
-                "warehouse": "East Coast",
-                "items": [
-                    {"sku": "WIDGET-A", "quantity": 3200, "reorder_point": 2000},
-                    {"sku": "WIDGET-B", "quantity": 4500, "reorder_point": 1500},
-                    {"sku": "GADGET-X", "quantity": 200, "reorder_point": 500},
-                ],
-            },
-        }
-        return warehouses.get(warehouse.lower(), {"error": f"Warehouse '{warehouse}' not found"})
-
-    def check_supplier_status(sku: str) -> dict:
-        """Check supplier availability and lead times."""
-        suppliers = {
-            "WIDGET-A": {"supplier": "WidgetCorp", "lead_time_days": 14, "min_order": 1000, "unit_cost": 2.50},
-            "WIDGET-B": {"supplier": "WidgetCorp", "lead_time_days": 21, "min_order": 500, "unit_cost": 4.75},
-            "GADGET-X": {"supplier": "GadgetWorks", "lead_time_days": 30, "min_order": 200, "unit_cost": 12.00},
-        }
-        return suppliers.get(sku.upper(), {"error": f"No supplier for SKU {sku}"})
-
-    # ── Logistics tools ───────────────────────────────────────────
-
-    def get_shipping_routes(origin: str, destination: str) -> dict:
-        """Get available shipping routes between warehouses."""
-        return {
-            "origin": origin,
-            "destination": destination,
-            "routes": [
-                {"method": "Ground", "transit_days": 5, "cost_per_unit": 0.50},
-                {"method": "Rail", "transit_days": 3, "cost_per_unit": 0.75},
-                {"method": "Air", "transit_days": 1, "cost_per_unit": 2.00},
-            ],
-        }
-
-    def get_pending_shipments() -> dict:
-        """Get all pending shipments in the system."""
-        return {
-            "shipments": [
-                {"id": "SHP-001", "sku": "WIDGET-A", "qty": 2000, "status": "in_transit", "eta": "2025-04-18"},
-                {"id": "SHP-002", "sku": "GADGET-X", "qty": 500, "status": "processing", "eta": "2025-05-01"},
-            ],
-        }
-
-    # ── Demand tools ──────────────────────────────────────────────
-
-    def get_demand_forecast(sku: str, weeks_ahead: int = 4) -> dict:
-        """Get demand forecast for a SKU."""
-        forecasts = {
-            "WIDGET-A": {"weekly_demand": 800, "trend": "increasing", "confidence": 0.85},
-            "WIDGET-B": {"weekly_demand": 300, "trend": "stable", "confidence": 0.90},
-            "GADGET-X": {"weekly_demand": 150, "trend": "decreasing", "confidence": 0.75},
-        }
-        data = forecasts.get(sku.upper(), {"weekly_demand": 0, "trend": "unknown"})
-        data["total_forecast"] = data.get("weekly_demand", 0) * weeks_ahead
-        return {"sku": sku, "weeks_ahead": weeks_ahead, **data}
-
     # ── Sub-agents ────────────────────────────────────────────────
 
     inventory_agent = Agent(
@@ -136,7 +138,7 @@ def main():
         # 1. Deploy once during CI/CD:
         # runtime.deploy(coordinator)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.19_supply_chain
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(coordinator)

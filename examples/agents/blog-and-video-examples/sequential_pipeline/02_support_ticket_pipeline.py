@@ -15,8 +15,8 @@ Demonstrates:
     - Three specialist agents chained together
 
 Setup:
-    pip install agentspan
-    agentspan server start
+    pip install Conductor
+    Conductor server start
     python 02_support_ticket_pipeline.py
 """
 

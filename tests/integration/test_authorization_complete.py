@@ -27,7 +27,7 @@ from conductor.client.http.models.create_or_update_role_request import CreateOrU
 from conductor.client.http.models.authentication_config import AuthenticationConfig
 from conductor.client.orkes.models.access_type import AccessType
 from conductor.client.orkes.models.metadata_tag import MetadataTag
-from conductor.client.http.rest import RestException
+from conductor.client.http.rest import ApiException, RestException
 
 
 @pytest.fixture(scope="module")
@@ -239,7 +239,7 @@ class TestAccessKeyManagement:
 
         # Get app by access key (Method 6)
         found_app = auth_client.get_app_by_access_key_id(created_key.id)
-        assert found_app == app.id
+        assert found_app['id'] == app.id
 
         # Delete access key (Method 15) - handled in cleanup
 
@@ -292,7 +292,9 @@ class TestUserManagement:
             target_type="WORKFLOW_DEF",
             target_id="test-workflow"
         )
-        assert isinstance(result, bool)
+        # The server returns a per-access permission map
+        # (e.g. {'CREATE': True, 'READ': True, ...}), not a single bool.
+        assert isinstance(result, dict)
 
 
 class TestGroupManagement:
@@ -469,7 +471,12 @@ class TestAPIGateway:
         auth_config.api_keys = ["test-key"]
         auth_config.fallback_to_default_auth = False
 
-        created = auth_client.create_gateway_auth_config(auth_config)
+        try:
+            created = auth_client.create_gateway_auth_config(auth_config)
+        except ApiException as e:
+            if e.status == 404:
+                pytest.skip('API Gateway auth-config endpoint not available on this server')
+            raise
         cleanup_tracker['auth_configs'].append(config_id)
 
         assert created.get('id') == config_id

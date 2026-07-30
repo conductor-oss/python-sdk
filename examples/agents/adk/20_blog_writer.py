@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Blog Writer — Sequential pipeline for content creation.
 
 Mirrors the blog-writer ADK sample. Sub-agents with output_key collaborate
@@ -16,44 +13,46 @@ from conductor.ai.agents import AgentRuntime
 from settings import settings
 
 
+def search_topic(topic: str) -> dict:
+    """Search for information about a topic."""
+    topics = {
+        "ai": {
+            "key_points": [
+                "AI adoption grew 72% in enterprises in 2024",
+                "Generative AI is transforming content creation and coding",
+                "AI safety and regulation are top policy priorities",
+            ],
+            "sources": ["TechReview", "AI Journal", "Industry Report 2024"],
+        },
+        "sustainability": {
+            "key_points": [
+                "Renewable energy hit 30% of global electricity in 2024",
+                "Carbon capture technology is scaling rapidly",
+                "Green bonds market exceeded $500B",
+            ],
+            "sources": ["GreenTech Weekly", "Climate Report", "Energy Journal"],
+        },
+    }
+    for key, data in topics.items():
+        if key in topic.lower():
+            return {"found": True, **data}
+    return {
+        "found": True,
+        "key_points": [f"Key insight about {topic}"],
+        "sources": ["General Research"],
+    }
+
+
+def check_seo_keywords(topic: str) -> dict:
+    """Get SEO keyword suggestions for a topic."""
+    return {
+        "primary_keyword": topic.lower().replace(" ", "-"),
+        "related_keywords": [f"{topic} trends", f"{topic} 2025", f"best {topic} practices"],
+        "search_volume": "high",
+    }
+
+
 def main():
-    def search_topic(topic: str) -> dict:
-        """Search for information about a topic."""
-        topics = {
-            "ai": {
-                "key_points": [
-                    "AI adoption grew 72% in enterprises in 2024",
-                    "Generative AI is transforming content creation and coding",
-                    "AI safety and regulation are top policy priorities",
-                ],
-                "sources": ["TechReview", "AI Journal", "Industry Report 2024"],
-            },
-            "sustainability": {
-                "key_points": [
-                    "Renewable energy hit 30% of global electricity in 2024",
-                    "Carbon capture technology is scaling rapidly",
-                    "Green bonds market exceeded $500B",
-                ],
-                "sources": ["GreenTech Weekly", "Climate Report", "Energy Journal"],
-            },
-        }
-        for key, data in topics.items():
-            if key in topic.lower():
-                return {"found": True, **data}
-        return {
-            "found": True,
-            "key_points": [f"Key insight about {topic}"],
-            "sources": ["General Research"],
-        }
-
-    def check_seo_keywords(topic: str) -> dict:
-        """Get SEO keyword suggestions for a topic."""
-        return {
-            "primary_keyword": topic.lower().replace(" ", "-"),
-            "related_keywords": [f"{topic} trends", f"{topic} 2025", f"best {topic} practices"],
-            "search_volume": "high",
-        }
-
     # Research agent gathers information
     researcher = Agent(
         name="blog_researcher",
@@ -117,7 +116,7 @@ def main():
         # 1. Deploy once during CI/CD:
         # runtime.deploy(coordinator)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.20_blog_writer
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(coordinator)

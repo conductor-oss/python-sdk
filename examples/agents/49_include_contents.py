@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Include Contents — control context passed to sub-agents.
 
 When ``include_contents="none"``, a sub-agent starts with a clean slate
@@ -10,8 +7,8 @@ by prior messages.
 
 Requirements:
     - Conductor server with include_contents support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, tool
@@ -74,7 +71,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(coordinator)
         # CLI alternative:
-        # agentspan deploy --package examples.49_include_contents
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(coordinator)

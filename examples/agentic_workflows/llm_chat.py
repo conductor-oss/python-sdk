@@ -87,8 +87,14 @@ def create_chat_workflow(executor) -> ConductorWorkflow:
         messages=[
             ChatMessage(
                 role="system",
-                message="You are an expert in science. Think of a random scientific "
-                        "discovery and create a short, interesting question about it.",
+                message="You are an expert in science.",
+            ),
+            # The server requires a non-empty user message — a system-only
+            # conversation fails validation before the first task runs.
+            ChatMessage(
+                role="user",
+                message="Think of a random scientific discovery and create a "
+                        "short, interesting question about it.",
             ),
         ],
         temperature=0.7,
@@ -121,9 +127,16 @@ def create_chat_workflow(executor) -> ConductorWorkflow:
             ChatMessage(
                 role="system",
                 message=(
-                    "You are an expert in science. Given the context below, "
+                    "You are an expert in science. Given the context provided, "
                     "generate a follow-up question to dive deeper into the topic. "
-                    "Do not repeat previous questions.\n\n"
+                    "Do not repeat previous questions."
+                ),
+            ),
+            # The server requires a non-empty user message — a system-only
+            # conversation fails validation before the task runs.
+            ChatMessage(
+                role="user",
+                message=(
                     "Context:\n${chat_complete_ref.output.result}\n\n"
                     "Previous questions:\n"
                     "${collect_history_ref.input.history}"
@@ -197,6 +210,16 @@ def main():
                         print()
                         printed_tasks.add(ref)
             time.sleep(2)
+
+        # is_completed() is true for any terminal state — verify the workflow
+        # actually COMPLETED rather than FAILED/TERMINATED/TIMED_OUT.
+        result = workflow_client.get_workflow(workflow_id=workflow_id, include_tasks=False)
+        if result.status != "COMPLETED":
+            print("=" * 70)
+            print(f"Workflow ended {result.status}: {result.reason_for_incompletion}")
+            print(f"Full execution: {api_config.ui_host}/execution/{workflow_id}")
+            print("=" * 70)
+            raise SystemExit(1)
 
         print("=" * 70)
         print("Conversation complete.")

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Unit tests for the @tool decorator and tool utilities."""
 
 from unittest import mock
@@ -359,6 +356,75 @@ class TestWorkerTaskDetection:
         with mock.patch.object(tool_module, "_try_worker_task", return_value=None):
             with pytest.raises(TypeError):
                 get_tool_def(some_func)
+
+    def test_worker_task_detected_after_tool_registry_reregistration(self):
+        """Detection must survive ToolRegistry re-registering the task name.
+
+        When a @worker_task function is used as an agent tool,
+        register_tool_workers() overwrites the _decorated_functions entry
+        with a spawn-safe ToolWorkerEntry wrapper (wrapped again by
+        @worker_task). get_tool_def() on the original function must still
+        resolve — a second runtime.run() with the same agent hits this path.
+        """
+        import functools
+
+        registry = {}
+        wrapper, original = self._make_worker_task_func(registry)
+
+        class FakeToolWorkerEntry:
+            """Stands in for ToolWorkerEntry: carries the original via fn_direct."""
+
+            def __init__(self, fn):
+                self.fn_direct = fn
+                self.fn_ref = None
+
+            def __call__(self, *args, **kwargs):
+                return self.fn_direct(*args, **kwargs)
+
+        entry = FakeToolWorkerEntry(original)
+
+        @functools.wraps(original)
+        def reregistered(*args, **kwargs):
+            return entry(*args, **kwargs)
+
+        reregistered.__wrapped__ = entry  # @worker_task's wraps() points at the entry
+        registry[("get_customer_data", None)] = {"func": reregistered}
+
+        with mock.patch(
+            "conductor.client.automator.task_handler._decorated_functions",
+            registry,
+        ):
+            td = get_tool_def(wrapper)
+
+        assert td.name == "get_customer_data"
+        assert td.tool_type == "worker"
+        assert td.func is original
+
+    def test_worker_task_detected_via_fn_ref_qualname(self):
+        """Detection falls back to fn_ref module+qualname when identity is lost."""
+        registry = {}
+        wrapper, original = self._make_worker_task_func(registry)
+
+        class FakeRef:
+            def __init__(self, fn):
+                self.module = fn.__module__
+                self.qualname = fn.__qualname__
+
+        class FakeToolWorkerEntry:
+            def __init__(self, fn):
+                self.fn_direct = None
+                self.fn_ref = FakeRef(fn)
+
+        registry[("get_customer_data", None)] = {"func": FakeToolWorkerEntry(original)}
+
+        with mock.patch(
+            "conductor.client.automator.task_handler._decorated_functions",
+            registry,
+        ):
+            td = get_tool_def(wrapper)
+
+        assert td.name == "get_customer_data"
+        assert td.func is original
 
 
 class TestExternalTool:

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Unit tests for advanced dispatch features — circuit breaker,
 make_tool_worker, and ToolContext injection.
 """
@@ -254,7 +251,7 @@ class TestFrameworkCallableCompatibility:
         def dynamic_instructions(ctx, agent) -> str:
             return f"{agent.metadata.role}:{ctx.metadata.user.name}:{ctx.prompt}"
 
-        dynamic_instructions._agentspan_framework_callable = True
+        dynamic_instructions._conductor_agent_framework_callable = True
 
         wrapper = make_tool_worker(dynamic_instructions, "dynamic_instructions")
         task = _make_task(
@@ -286,7 +283,7 @@ class TestFrameworkCallableCompatibility:
         def check_output_safety(output):
             return GuardrailOutput()
 
-        check_output_safety._agentspan_framework_callable = True
+        check_output_safety._conductor_agent_framework_callable = True
 
         wrapper = make_tool_worker(check_output_safety, "check_output_safety")
         result = wrapper(_make_task(input_data={"output": "bad"}))

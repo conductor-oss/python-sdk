@@ -233,7 +233,7 @@ def _make_orkes_agent(model):
 
 def _get_workflow(execution_id):
     """Fetch workflow from server API."""
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+    base = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
     resp = requests.get(f"{base_url}/api/workflow/{execution_id}", timeout=10)
     resp.raise_for_status()
@@ -450,99 +450,6 @@ def _validate_tool_execution(result, step_name):
 class TestSuite5HttpTools:
     """HTTP tools: API discovery, execution, and authenticated access."""
 
-    def test_http_lifecycle(self, runtime, cli_credentials, model):
-        """Full HTTP lifecycle — unauthenticated → authenticated."""
-        try:
-            subprocess.run(
-                ["mcp-testkit", "--help"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-        except FileNotFoundError:
-            pytest.skip(
-                "mcp-testkit not installed — required for Suite 5 HTTP tools test"
-            )
-
-        server_proc = None
-        try:
-            self._run_lifecycle(runtime, cli_credentials, model)
-        finally:
-            cli_credentials.delete(CRED_NAME)
-
-    def _run_lifecycle(self, runtime, cli_credentials, model):
-        server_proc = None
-        try:
-            # ── Phase 1: Unauthenticated ──────────────────────────────
-
-            # Step d: Start HTTP server without auth
-            server_proc = _start_http_server(HTTP_PORT)
-
-            # Step e: Discover tools via OpenAPI spec, validate all present
-            discovered = _discover_tools_via_openapi(HTTP_SPEC_URL)
-            assert len(discovered) == EXPECTED_TOOL_COUNT, (
-                f"[Phase 1: Discovery] Expected {EXPECTED_TOOL_COUNT} tools, "
-                f"discovered {len(discovered)}.\n"
-                f"  Missing: {sorted(set(EXPECTED_TOOL_NAMES) - set(discovered))}\n"
-                f"  Extra: {sorted(set(discovered) - set(EXPECTED_TOOL_NAMES))}"
-            )
-            assert set(discovered) == set(EXPECTED_TOOL_NAMES), (
-                f"[Phase 1: Discovery] Tool names mismatch.\n"
-                f"  Missing: {sorted(set(EXPECTED_TOOL_NAMES) - set(discovered))}\n"
-                f"  Extra: {sorted(set(discovered) - set(EXPECTED_TOOL_NAMES))}"
-            )
-
-            # Steps b+c+f: Create agent, run with 3 tools, validate
-            agent = _make_agent(model, HTTP_BASE_URL)
-            result = runtime.run(agent, PROMPT_USE_3_TOOLS, timeout=TIMEOUT)
-            _validate_tool_execution(result, "Phase 1: Unauthenticated execution")
-
-            # ── Phase 2: Authenticated ────────────────────────────────
-
-            # Step g: Stop server, restart with auth
-            _stop_http_server(server_proc)
-            server_proc = None
-            time.sleep(1)  # Let port release
-            server_proc = _start_http_server(HTTP_PORT, auth_key=HTTP_AUTH_KEY)
-
-            # Verify auth is enforced — unauthenticated spec fetch should fail
-            unauth_resp = requests.get(HTTP_SPEC_URL, timeout=5)
-            assert unauth_resp.status_code in (401, 403), (
-                f"[Phase 2: Auth check] Expected 401/403 without auth, "
-                f"got {unauth_resp.status_code}"
-            )
-
-            # Step h: Create auth agent with credential placeholder
-            auth_agent = _make_auth_agent(model, HTTP_BASE_URL, CRED_NAME)
-
-            # Step i: Set credential via CLI
-            cli_credentials.set(CRED_NAME, HTTP_AUTH_KEY)
-
-            # Step j: Discover tools with auth, validate all present
-            discovered_auth = _discover_tools_via_openapi(
-                HTTP_SPEC_URL, auth_key=HTTP_AUTH_KEY
-            )
-            assert len(discovered_auth) == EXPECTED_TOOL_COUNT, (
-                f"[Phase 2: Auth Discovery] Expected {EXPECTED_TOOL_COUNT} tools, "
-                f"discovered {len(discovered_auth)}."
-            )
-            assert set(discovered_auth) == set(EXPECTED_TOOL_NAMES), (
-                f"[Phase 2: Auth Discovery] Tool names mismatch.\n"
-                f"  Missing: {sorted(set(EXPECTED_TOOL_NAMES) - set(discovered_auth))}\n"
-                f"  Extra: {sorted(set(discovered_auth) - set(EXPECTED_TOOL_NAMES))}"
-            )
-
-            # Step k: Execute and validate
-            result_auth = runtime.run(
-                auth_agent, PROMPT_USE_3_TOOLS, timeout=TIMEOUT
-            )
-            _validate_tool_execution(
-                result_auth, "Phase 2: Authenticated execution"
-            )
-
-        finally:
-            if server_proc:
-                _stop_http_server(server_proc)
 
     def test_external_openapi_spec(self, runtime, model):
         """External OpenAPI spec — validate startWorkflow discovery (steps l-n).

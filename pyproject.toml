@@ -40,7 +40,7 @@ urllib3 = ">=2.6.3"
 cloudpickle = ">=2.0"
 
 # Agent framework integrations — optional, activated via [tool.poetry.extras] below.
-# Floors raised to the versions Agentspan's own uv.lock proved mutually compatible
+# Floors raised to the versions ConductorAgent's own uv.lock proved mutually compatible
 # (langchain's 0.3.x-floor collided with today's published 1.x line during resolution).
 langchain = { version = ">=1.2.13", optional = true }
 langchain-core = { version = ">=1.2.20", optional = true }
@@ -78,9 +78,10 @@ pytest-asyncio = ">=0.21"
 pytest-xdist = ">=3.0"
 pytest-rerunfailures = ">=14.0"
 mypy = ">=1.10"
+jsonschema = ">=4.23"
 
 [tool.poetry.plugins."pytest11"]
-agentspan-testing = "conductor.ai.agents.testing.pytest_plugin"
+conductor-agents-testing = "conductor.ai.agents.testing.pytest_plugin"
 
 [tool.ruff]
 target-version = "py310"
@@ -192,11 +193,15 @@ line-ending = "auto"
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 markers = [
-    "integration: requires a live Agentspan-compatible server",
-    "e2e: requires a live server and AGENTSPAN_SERVER_URL",
-    "sse: requires SSE streaming (AGENTSPAN_STREAMING_ENABLED=true)",
+    "integration: requires a live Conductor Agents-compatible server",
+    "e2e: requires a live server and CONDUCTOR_SERVER_URL",
+    "sse: requires SSE streaming (CONDUCTOR_AGENT_STREAMING_ENABLED=true)",
     "agent_correctness: marks tests as agent correctness tests",
     "semantic: marks tests that use an LLM judge for semantic assertions",
+    "slow_sync: long-running sync lease-extension tests (~90s)",
+    "slow_async: long-running async lease-extension tests (~90s)",
+    "slow_test_all: long-running aggregate workflow-client test_all (~83s)",
+    "server_timeout_unreliable: depends on server-side task timeout firing in a bounded window; excluded from CI",
 ]
 
 [tool.coverage.run]

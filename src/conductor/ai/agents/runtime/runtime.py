@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """AgentRuntime — the execution engine for running agents on Conductor.
 
 This is the core orchestrator that:
@@ -215,7 +212,7 @@ def _resolve_loop_iteration(iteration: object) -> int:
     The compiler wires a worker's ``iteration`` input from the loop counter
     reference ``${<agent>_loop.iteration}``. Conductor cores disagree on whether
     that loop-output reference resolves for tasks executing *inside* the loop
-    body: the OSS core agentspan compiles against resolves it to the live integer,
+    body: the OSS core agent compiler resolves it to the live integer,
     but some embedding hosts' cores (e.g. orkes-conductor) leave it unresolved and
     deliver ``None`` — which then crashes ``iteration >= max_retries`` comparisons.
 
@@ -380,7 +377,7 @@ class AgentRuntime:
 
     Like every other client, server connection comes from the standard
     :class:`~conductor.client.configuration.configuration.Configuration`
-    (``CONDUCTOR_SERVER_URL`` → ``AGENTSPAN_SERVER_URL``, ``CONDUCTOR_AUTH_KEY``/
+    (``CONDUCTOR_SERVER_URL`` → ``CONDUCTOR_SERVER_URL``, ``CONDUCTOR_AUTH_KEY``/
     ``CONDUCTOR_AUTH_SECRET`` when not passed explicitly)::
 
         from conductor.client.configuration.configuration import Configuration
@@ -607,8 +604,6 @@ class AgentRuntime:
             payload["idempotencyKey"] = idempotency_key
         if timeout is not None:
             payload["timeoutSeconds"] = timeout
-        if credentials:
-            payload["credentials"] = credentials
         if run_id:
             payload["runId"] = run_id
         if static_plan is not None:
@@ -671,8 +666,6 @@ class AgentRuntime:
             payload["idempotencyKey"] = idempotency_key
         if timeout is not None:
             payload["timeoutSeconds"] = timeout
-        if credentials:
-            payload["credentials"] = credentials
         if run_id:
             payload["runId"] = run_id
 
@@ -714,8 +707,6 @@ class AgentRuntime:
         }
         if idempotency_key:
             payload["idempotencyKey"] = idempotency_key
-        if credentials:
-            payload["credentials"] = credentials
 
         data = await self._agent_client.start_agent_async(payload)
         execution_id = data.get("executionId", "")
@@ -1114,20 +1105,8 @@ class AgentRuntime:
         # Claude-code top-level agents: register the passthrough worker, skip tool registration
         if getattr(agent, "is_claude_code", False):
             if _server_needs(agent.name):
-                from conductor.ai.agents.frameworks.claude_agent_sdk import (
-                    agent_to_claude_code_options,
-                    make_claude_agent_sdk_worker,
-                )
                 from conductor.ai.agents.frameworks.serializer import WorkerInfo
 
-                cc_opts = agent_to_claude_code_options(agent)
-                worker_fn = make_claude_agent_sdk_worker(
-                    cc_opts,
-                    agent.name,
-                    self._conductor_config.host,
-                    self._auth_key,
-                    self._auth_secret,
-                )
                 worker = WorkerInfo(
                     name=agent.name,
                     description=f"Claude Agent SDK passthrough worker for {agent.name}",
@@ -1138,7 +1117,7 @@ class AgentRuntime:
                             "session_id": {"type": "string"},
                         },
                     },
-                    func=worker_fn,
+                    func=self._build_passthrough_func(agent, "claude_agent_sdk", agent.name),
                     _pre_wrapped=True,
                 )
                 self._register_passthrough_worker(worker)
@@ -1293,20 +1272,8 @@ class AgentRuntime:
             if getattr(sub, "is_claude_code", False):
                 if _server_needs(sub.name):
                     # Register passthrough worker for claude-code sub-agent
-                    from conductor.ai.agents.frameworks.claude_agent_sdk import (
-                        agent_to_claude_code_options,
-                        make_claude_agent_sdk_worker,
-                    )
                     from conductor.ai.agents.frameworks.serializer import WorkerInfo
 
-                    cc_options = agent_to_claude_code_options(sub)
-                    worker_func = make_claude_agent_sdk_worker(
-                        cc_options,
-                        sub.name,
-                        self._conductor_config.host,
-                        self._auth_key,
-                        self._auth_secret,
-                    )
                     worker = WorkerInfo(
                         name=sub.name,
                         description=f"Claude Agent SDK passthrough worker for {sub.name}",
@@ -1317,7 +1284,7 @@ class AgentRuntime:
                                 "session_id": {"type": "string"},
                             },
                         },
-                        func=worker_func,
+                        func=self._build_passthrough_func(sub, "claude_agent_sdk", sub.name),
                         _pre_wrapped=True,
                     )
                     self._register_passthrough_worker(worker)
@@ -3197,8 +3164,6 @@ class AgentRuntime:
         }
         if idempotency_key:
             payload["idempotencyKey"] = idempotency_key
-        if credentials:
-            payload["credentials"] = credentials
 
         data = self._agent_client.start_agent(payload)
         execution_id = data.get("executionId", "")
@@ -3222,7 +3187,7 @@ class AgentRuntime:
 
         for w in workers:
             try:
-                setattr(w.func, "_agentspan_framework_callable", True)
+                setattr(w.func, "_conductor_agent_framework_callable", True)
             except Exception:
                 pass
             wrapper = make_tool_worker(w.func, w.name, credential_names=credentials)
@@ -3948,7 +3913,7 @@ class AgentRuntime:
                             fn_name = task_type.lower()
                             raw_args = getattr(task, "input_data", None) or {}
                             clean_args = {
-                                k: v for k, v in raw_args.items() if k != "__agentspan_ctx__"
+                                k: v for k, v in raw_args.items() if k != "__conductor_agent_ctx__"
                             }
                             yield AgentEvent(
                                 type=EventType.TOOL_CALL,
@@ -4477,7 +4442,7 @@ class AgentRuntime:
                             fn_name = task_type.lower()
                             raw_args = getattr(task, "input_data", None) or {}
                             clean_args = {
-                                k: v for k, v in raw_args.items() if k != "__agentspan_ctx__"
+                                k: v for k, v in raw_args.items() if k != "__conductor_agent_ctx__"
                             }
                             yield AgentEvent(
                                 type=EventType.TOOL_CALL,

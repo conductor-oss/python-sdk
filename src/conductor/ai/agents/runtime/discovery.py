@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Agent discovery -- scan Python packages for Agent instances."""
 
 from __future__ import annotations

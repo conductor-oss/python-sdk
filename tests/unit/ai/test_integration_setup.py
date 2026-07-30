@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Tests for LLM integration auto-registration."""
 
 from __future__ import annotations
@@ -375,7 +372,7 @@ class TestAgentConfigAutoRegister:
     def test_env_reads_flag(self):
         from conductor.ai.agents.runtime.config import AgentConfig
 
-        with patch.dict("os.environ", {"AGENTSPAN_INTEGRATIONS_AUTO_REGISTER": "true"}):
+        with patch.dict("os.environ", {"CONDUCTOR_AGENT_INTEGRATIONS_AUTO_REGISTER": "true"}):
             config = AgentConfig.from_env()
             assert config.auto_register_integrations is True
 
@@ -390,6 +387,6 @@ class TestAgentConfigAutoRegister:
         from conductor.ai.agents.runtime.config import AgentConfig
 
         for val in ("true", "True", "TRUE", "1", "yes"):
-            with patch.dict("os.environ", {"AGENTSPAN_INTEGRATIONS_AUTO_REGISTER": val}):
+            with patch.dict("os.environ", {"CONDUCTOR_AGENT_INTEGRATIONS_AUTO_REGISTER": val}):
                 config = AgentConfig.from_env()
                 assert config.auto_register_integrations is True, f"Failed for {val!r}"

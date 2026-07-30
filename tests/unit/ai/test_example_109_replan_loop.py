@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Unit tests for the plan-execute-replan loop scaffolding in example 109.
 
 These pin the pure-function invariants of the loop (initial plan shape,

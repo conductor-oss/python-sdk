@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Chat REPL — interactive conversation with a long-running agent via WMQ.
 
 This example turns a running agent into a conversational REPL.  Every message
@@ -44,9 +41,9 @@ Ephemeral tools via /tool <name>:
         bullet_split — split input into one bullet point per sentence
 
 Requirements:
-    - AgentSpan server running at http://localhost:8080
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=anthropic/claude-sonnet-4-20250514 as environment variable
+    - Conductor server running at http://localhost:8080
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-4-20250514 as environment variable
 """
 
 import argparse
@@ -57,8 +54,8 @@ import tempfile
 import time
 from pathlib import Path
 
-# Keep conductor worker startup logs silent by default; set AGENTSPAN_LOG_LEVEL=INFO to see them.
-os.environ.setdefault("AGENTSPAN_LOG_LEVEL", "WARNING")
+# Keep conductor worker startup logs silent by default; set CONDUCTOR_LOG_LEVEL=INFO to see them.
+os.environ.setdefault("CONDUCTOR_LOG_LEVEL", "WARNING")
 
 from settings import settings
 
@@ -94,7 +91,7 @@ _TASK_IMPLEMENTATIONS: dict = {
                      )),
 }
 
-SESSION_FILE = Path("/tmp/agentspan_chat_repl.session")
+SESSION_FILE = Path("/tmp/Conductor_chat_repl.session")
 
 # ---------------------------------------------------------------------------
 # Filesystem IPC setup

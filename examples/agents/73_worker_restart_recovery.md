@@ -4,7 +4,7 @@ This demo proves that an agent execution survives worker-service outage and cont
 
 ## Prerequisites
 
-Start the Agentspan server with Docker Compose from the deployment branch or worktree:
+Start a Conductor server with Docker Compose or the Conductor CLI:
 
 ```bash
 cd deployment/docker-compose
@@ -26,8 +26,8 @@ pip install conductor-agent-sdk
 Set the server URL and model:
 
 ```bash
-export AGENTSPAN_SERVER_URL=http://localhost:8080/api
-export AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini
+export CONDUCTOR_SERVER_URL=http://localhost:8080/api
+export CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini
 ```
 
 ## Terminal 1: Deploy the agent definition
@@ -42,7 +42,7 @@ python 73_worker_restart_recovery.py deploy
 python 73_worker_restart_recovery.py serve
 ```
 
-This writes the worker PID and process group to `/tmp/agentspan_worker_restart.worker.json`.
+This writes the worker PID and process group to `/tmp/conductor_agent_worker_restart.worker.json`.
 
 ## Terminal 3: Kill the worker service
 
@@ -72,7 +72,7 @@ python 73_worker_restart_recovery.py serve
 python 73_worker_restart_recovery.py status
 ```
 
-The attempt history file at `/tmp/agentspan_worker_restart.attempts.json` should eventually show:
+The attempt history file at `/tmp/conductor_agent_worker_restart.attempts.json` should eventually show:
 
 - no attempts while the worker service is down
 - attempt 1 starts and completes after the worker service comes back

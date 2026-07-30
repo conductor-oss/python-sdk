@@ -1,18 +1,16 @@
-"""E2E test infrastructure. No mocks. Real server, real CLI, real services."""
+"""E2E test infrastructure. No mocks. Real server and real services."""
 
 import os
-import subprocess
 
 import pytest
 import requests
 
 # ── Configuration from env (set by orchestrator) ────────────────────────
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 BASE_URL = SERVER_URL.rstrip("/").replace("/api", "")
-CLI_PATH = os.environ.get("AGENTSPAN_CLI_PATH", "agentspan")
 MCP_TESTKIT_URL = os.environ.get("MCP_TESTKIT_URL", "http://localhost:3001")
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
 
 
 # ── Markers ─────────────────────────────────────────────────────────────
@@ -86,53 +84,6 @@ def mcp_url():
     return MCP_TESTKIT_URL
 
 
-# ── CLI credential helper ──────────────────────────────────────────────
-
-
-class CredentialsCLI:
-    """Wraps the agentspan CLI for credential operations.
-
-    The CLI expects AGENTSPAN_SERVER_URL without the /api suffix
-    (e.g., http://localhost:8080). It appends /api internally.
-    """
-
-    def __init__(self, cli_path: str, server_url: str):
-        self._cli = cli_path
-        # CLI expects base URL without /api — strip it if present
-        self._server_url = server_url.rstrip("/").removesuffix("/api")
-
-    def _run(self, *args: str) -> subprocess.CompletedProcess:
-        cmd = [self._cli] + list(args)
-        env = {**os.environ, "AGENTSPAN_SERVER_URL": self._server_url}
-        return subprocess.run(
-            cmd, capture_output=True, text=True, timeout=15, env=env
-        )
-
-    def set(self, name: str, value: str) -> None:
-        result = self._run("credentials", "set", name, value)
-        assert result.returncode == 0, (
-            f"credentials set {name} failed: {result.stderr}"
-        )
-
-    def delete(self, name: str) -> None:
-        result = self._run("credentials", "delete", name)
-        # Ignore "not found" errors during cleanup
-        if result.returncode != 0 and "not found" not in result.stderr.lower():
-            raise AssertionError(
-                f"credentials delete {name} failed: {result.stderr}"
-            )
-
-    def list(self) -> str:
-        result = self._run("credentials", "list")
-        assert result.returncode == 0, f"credentials list failed: {result.stderr}"
-        return result.stdout
-
-
-@pytest.fixture(scope="session")
-def cli_credentials():
-    return CredentialsCLI(CLI_PATH, SERVER_URL)
-
-
 # ── Server API helpers ──────────────────────────────────────────────────
 
 
@@ -162,9 +113,10 @@ def get_task_by_name(execution_id: str, task_ref_prefix: str) -> list:
 # reason unrelated to the SDK. Probe the running server once and skip those tests
 # when unsupported.
 #
-# TODO: once agentspan cuts a release that implements runtimeMetadata, bump
-# AGENTSPAN_VERSION in .github/workflows/agent-e2e.yml — this guard then lets the
-# credential tests run automatically (no test change needed).
+# conductor-oss implements this from 3.32.0-rc.8 onward (see
+# .github/workflows/agent-e2e.yml's CONDUCTOR_SERVER_VERSION) — this guard lets the
+# credential tests run automatically against any server that has it, no test
+# change needed.
 
 _RUNTIME_METADATA_SUPPORT = None
 
@@ -208,6 +160,6 @@ def requires_runtime_metadata():
         pytest.skip(
             "server does not persist/deliver TaskDef.runtimeMetadata "
             "(conductor-oss PR #1255) — worker credential injection requires it. "
-            "TODO: bump AGENTSPAN_VERSION in .github/workflows/agent-e2e.yml once a "
-            "release ships runtimeMetadata support."
+            "Needs conductor-oss >= 3.32.0-rc.8 (see CONDUCTOR_SERVER_VERSION in "
+            ".github/workflows/agent-e2e.yml)."
         )

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Worker isolation mode: `CONDUCTOR_WORKER_ISOLATION=thread` runs every worker as a thread instead of a `multiprocessing.Process` (default `process` is unchanged — `spawn` remains the start method). For environments where multiprocessing's fork+exec bootstraps (spawn children, `resource_tracker`) fail, e.g. Firecracker microVM guests. Thread-mode tradeoffs: no per-worker force-kill (shutdown is cooperative), CPU-bound workers share the GIL, and `signal.signal` becomes a no-op off the main thread. Implementation: the Windows-only Process→Thread shim moved to `conductor.client.automator.worker_isolation` (the private `worker_manager._patch_conductor_use_threads_on_windows` helper is removed — the Windows gate calls `apply_thread_isolation()` directly) and now also swaps the logging-relay `Queue` for a plain `queue.Queue`
+
 - Canonical metrics mode: opt-in harmonized metric surface via `WORKER_CANONICAL_METRICS=true` -- [details](METRICS.md#detailed-technical-notes--unreleased)
 - `MetricsSettings` gains `clean_directory` and `clean_dead_pids` for opt-in stale `.db` file cleanup (both default to `False`)
 - `SchedulerClient` now carries the schedule lifecycle operations itself: `pause(reason=)`, `resume`, `delete`, `run_now`, `preview_next`, `reconcile` (declarative tri-state sync) — with typed errors (`ScheduleNotFound`, `InvalidCronExpression`, ...). `pause_schedule` gains an optional `reason=` (stored by OSS Conductor servers; ignored by Orkes servers)
@@ -26,3 +28,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `TaskHandler.start_processes()` no longer hangs the interpreter when a worker fails to start (e.g., unpicklable state under `spawn`); it now cleans up already-started subprocesses and raises with actionable guidance
 - Worker processes killed by a signal now log a diagnostic hint (signal number, `PYTHONFAULTHANDLER=1` guidance) instead of restarting silently
 - Per-schedule pause/resume now work on both Conductor server families: the client sends `PUT` (the OSS Conductor dialect — the spec-generated `GET` failed there) and transparently falls back to `GET` on a 405 for Orkes servers
+- `Agent(model="claude-code/...")` registration no longer crashes with `SpawnSafetyError`/`PicklingError` under the `spawn` start method (top-level or nested as a sub-agent); the tool worker is now built through the same picklable passthrough path already used by other frameworks
