@@ -8,6 +8,7 @@ from pathlib import Path
 import jsonschema
 import pytest
 
+from conductor.ai.agents import OcgConfig
 from conductor.ai.agents.agent import Agent
 from conductor.ai.agents.config_serializer import AgentConfigSerializer
 from conductor.ai.agents.guardrail import RegexGuardrail
@@ -37,6 +38,7 @@ def test_agent_schema_is_valid_and_accepts_representative_serializer_output():
         strategy="handoff",
         guardrails=[RegexGuardrail(name="safe", patterns=[".*"])],
         termination=TextMentionTermination(text="DONE"),
+        ocg=OcgConfig(url="https://ocg.example.com"),
         metadata={"owner": "docs"},
         max_tokens=100,
         temperature=0.1,

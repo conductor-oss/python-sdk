@@ -19,6 +19,17 @@
       "properties": { "taskName": { "type": "string", "minLength": 1 } },
       "additionalProperties": false
     },
+    "longTermMemory": {
+      "type": "object",
+      "required": ["ocgUrl", "credential", "agent"],
+      "properties": {
+        "ocgUrl": { "type": "string", "minLength": 1 },
+        "credential": { "type": "string", "minLength": 1 },
+        "agent": { "type": "string", "minLength": 1 },
+        "user": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
     "tool": {
       "type": "object",
       "required": ["name"],
@@ -52,6 +63,7 @@
         "outputType": { "type": "object" },
         "guardrails": { "type": "array", "items": { "type": "object" } },
         "memory": { "type": "object" },
+        "longTermMemory": { "$ref": "#/$defs/longTermMemory" },
         "maxTokens": { "type": "integer", "minimum": 0 },
         "contextWindowBudget": { "type": "integer", "minimum": 0 },
         "temperature": { "type": "number" },

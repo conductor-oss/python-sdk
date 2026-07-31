@@ -15,6 +15,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from conductor.ai.agents.claude_code import ClaudeCode
+from conductor.ai.agents.ocg_config import OcgConfig
 
 _VALID_NAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_-]*$")
 
@@ -501,6 +502,7 @@ class Agent:
         output_type: A Pydantic model or dataclass for structured output.
         guardrails: List of :class:`Guardrail` instances for input/output validation.
         memory: Optional :class:`ConversationMemory` for session management.
+        ocg: Optional :class:`OcgConfig` for Conductor-managed OCG integration.
         dependencies: Optional dict of dependencies to inject into tool context.
         max_turns: Maximum agent loop iterations (default 25).
         max_tokens: Maximum tokens for LLM generation.
@@ -559,6 +561,7 @@ class Agent:
         output_type: Optional[type] = None,
         guardrails: Optional[List[Any]] = None,
         memory: Optional[Any] = None,
+        ocg: Optional[OcgConfig] = None,
         dependencies: Optional[Dict[str, Any]] = None,
         max_turns: int = 25,
         max_tokens: Optional[int] = None,
@@ -721,6 +724,7 @@ class Agent:
         self.output_type = output_type
         self.guardrails: List[Any] = list(guardrails) if guardrails else []
         self.memory = memory
+        self.ocg = ocg
         self.dependencies: Dict[str, Any] = dict(dependencies) if dependencies else {}
         self.max_turns = max_turns
         self.max_tokens = max_tokens

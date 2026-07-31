@@ -131,6 +131,18 @@ class AgentConfigSerializer:
         if hasattr(agent, "memory") and agent.memory:
             config["memory"] = self._serialize_memory(agent.memory)
 
+        # OCG behavior is server-managed. The SDK only supplies configuration
+        # metadata and never performs local retrieval or post-run processing.
+        if agent.ocg is not None:
+            long_term_memory: Dict[str, Any] = {
+                "ocgUrl": agent.ocg.url,
+                "credential": agent.ocg.credential,
+                "agent": f"conductor-agent:{agent.name}",
+            }
+            if agent.ocg.user is not None:
+                long_term_memory["user"] = agent.ocg.user
+            config["longTermMemory"] = long_term_memory
+
         # Max tokens
         if agent.max_tokens is not None:
             config["maxTokens"] = agent.max_tokens
