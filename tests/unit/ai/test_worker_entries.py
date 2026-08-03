@@ -161,13 +161,11 @@ class TestFunctionRefContainerHop:
         assert p.exitcode == 0
 
 
-# ── Deep-extract (real openai-agents @function_tool → FunctionTool) ────────
+# ── FunctionTool resolution (real openai-agents @function_tool) ────────────
 
 
 class TestFunctionRefDeepExtract:
-    """openai-agents' real ``@function_tool`` → ``FunctionTool`` with no
-    ``.func``/``.coroutine``/``__wrapped__``; original fn only reachable via
-    nested attrs + closure."""
+    """OpenAI Agents SDK 0.19+ exposes FunctionTool functions via wrappers."""
 
     def test_sync_function_tool_deep_extract(self):
         pytest.importorskip("agents")
@@ -176,7 +174,7 @@ class TestFunctionRefDeepExtract:
         raw = _find_embedded_function(oa.oa_get_weather)
         assert raw is not None
         ref = FunctionRef.of(raw)
-        assert ref == FunctionRef(oa.__name__, "oa_get_weather", 0, "", deep_extract=True)
+        assert ref == FunctionRef(oa.__name__, "oa_get_weather", unwrap_depth=1)
         assert ref.resolve() is raw
 
     def test_async_function_tool_deep_extract(self):
@@ -186,8 +184,8 @@ class TestFunctionRefDeepExtract:
         raw = _find_embedded_function(oa.oa_get_weather_async)
         assert raw is not None
         ref = FunctionRef.of(raw)
-        assert ref.deep_extract is True
-        assert ref.attr_hop == ""
+        assert ref.unwrap_depth == 1
+        assert ref.deep_extract is False
         assert ref.resolve() is raw
 
     def test_ref_pickles(self):
