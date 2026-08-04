@@ -313,6 +313,7 @@ class TestSuite14StatefulDomain:
         agent_a = Agent(
             name="swarm_agent_a",
             model=model,
+            stateful=True,
             max_turns=3,
             instructions=(
                 "You are agent A. Call swarm_tool with task='from_a'. "
@@ -323,6 +324,7 @@ class TestSuite14StatefulDomain:
         agent_b = Agent(
             name="swarm_agent_b",
             model=model,
+            stateful=True,
             max_turns=3,
             instructions=(
                 "You are agent B. Call swarm_tool with task='from_b'. "
