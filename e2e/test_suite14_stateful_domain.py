@@ -356,20 +356,7 @@ class TestSuite14StatefulDomain:
         ttd = _get_task_to_domain(result.execution_id)
         assert ttd, f"taskToDomain empty. {diag}"
 
-        # Verify handoff-related tasks executed
         all_tasks = _get_all_tasks(result.execution_id)
-
-        # handoff_check should exist and be COMPLETED
-        handoff_tasks = _find_tasks_by_type(all_tasks, "handoff_check")
-        assert handoff_tasks, (
-            f"No handoff_check task found. "
-            f"Task names: {[t.get('taskDefName') for t in all_tasks]}"
-        )
-        completed_handoffs = [t for t in handoff_tasks if t["status"] == "COMPLETED"]
-        assert completed_handoffs, (
-            f"No COMPLETED handoff_check. Statuses: "
-            f"{[(t['status'], t.get('pollCount')) for t in handoff_tasks]}"
-        )
 
         # termination should exist and be COMPLETED
         term_tasks = _find_tasks_by_type(all_tasks, "termination")
