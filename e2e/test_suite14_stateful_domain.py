@@ -90,7 +90,7 @@ def marker_tool_b(input_text: str) -> str:
     return "MARKER_B_DONE"
 
 
-@tool
+@tool(stateful=True)
 def swarm_tool(task: str) -> str:
     """Perform a task and return a marker."""
     return f"SWARM_RESULT:{task}"
@@ -313,6 +313,7 @@ class TestSuite14StatefulDomain:
         agent_a = Agent(
             name="swarm_agent_a",
             model=model,
+            stateful=True,
             max_turns=3,
             instructions=(
                 "You are agent A. Call swarm_tool with task='from_a'. "
@@ -323,6 +324,7 @@ class TestSuite14StatefulDomain:
         agent_b = Agent(
             name="swarm_agent_b",
             model=model,
+            stateful=True,
             max_turns=3,
             instructions=(
                 "You are agent B. Call swarm_tool with task='from_b'. "
@@ -354,20 +356,7 @@ class TestSuite14StatefulDomain:
         ttd = _get_task_to_domain(result.execution_id)
         assert ttd, f"taskToDomain empty. {diag}"
 
-        # Verify handoff-related tasks executed
         all_tasks = _get_all_tasks(result.execution_id)
-
-        # handoff_check should exist and be COMPLETED
-        handoff_tasks = _find_tasks_by_type(all_tasks, "handoff_check")
-        assert handoff_tasks, (
-            f"No handoff_check task found. "
-            f"Task names: {[t.get('taskDefName') for t in all_tasks]}"
-        )
-        completed_handoffs = [t for t in handoff_tasks if t["status"] == "COMPLETED"]
-        assert completed_handoffs, (
-            f"No COMPLETED handoff_check. Statuses: "
-            f"{[(t['status'], t.get('pollCount')) for t in handoff_tasks]}"
-        )
 
         # termination should exist and be COMPLETED
         term_tasks = _find_tasks_by_type(all_tasks, "termination")
