@@ -90,7 +90,7 @@ def marker_tool_b(input_text: str) -> str:
     return "MARKER_B_DONE"
 
 
-@tool
+@tool(stateful=True)
 def swarm_tool(task: str) -> str:
     """Perform a task and return a marker."""
     return f"SWARM_RESULT:{task}"
