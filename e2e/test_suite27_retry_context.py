@@ -17,10 +17,9 @@ WorkflowExecutorUtils.taskToBeRescheduled, so this suite is meaningful against e
 Assertions are algorithmic — no LLM output parsing. The check is on the retried task's
 inputData.messages, read from the Conductor workflow API.
 
-Skipped by default: the LLM-retry assertion fails against current servers, which is the
-point of the suite. Opt in to check whether the server-side fix has landed:
-
-    SUITE27_RUN=1 pytest e2e/test_suite27_retry_context.py -v
+The LLM-retry test is xfail, not skipped: it fails against current servers, which is the
+point of the suite, but it must keep RUNNING so that an XPASS reports the server-side fix.
+A skip would report nothing, in this repo's CI or in downstream's.
 
 No mocks. Real server, real LLM.
 """
@@ -35,23 +34,19 @@ from conductor.ai.agents import Agent, tool
 
 from conftest import BASE_URL, get_workflow
 
-# Gated off in CI: test_retried_llm_turn_keeps_conversation_history asserts the FIXED
-# behaviour and therefore fails until the server changes. The control test shares the same
-# gate so the suite is enabled or disabled as one unit — running the control alone proves
-# nothing about the bug.
-_RUN = os.environ.get("SUITE27_RUN", "").strip().lower() in ("1", "true", "yes")
+pytestmark = [pytest.mark.e2e]
 
-pytestmark = [
-    pytest.mark.e2e,
-    pytest.mark.skipif(
-        not _RUN,
-        reason=(
-            "Suite 27 reproduces an open server bug (orkes-io/orkes-conductor#3876): a "
-            "retried LLM_CHAT_COMPLETE task is dispatched without its conversation history. "
-            "Set SUITE27_RUN=1 to run it."
-        ),
+# Non-strict so the expected failure is green today and an XPASS — the server fix landing —
+# is also green, just visible in the summary. Strict would invert the problem: the suite
+# would go red the moment the bug is fixed.
+KNOWN_BROKEN = pytest.mark.xfail(
+    reason=(
+        "orkes-io/orkes-conductor#3876: a retried LLM_CHAT_COMPLETE task is dispatched "
+        "without its conversation history. XPASS means the server fix has landed — drop "
+        "this marker."
     ),
-]
+    strict=False,
+)
 
 MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
 
@@ -191,6 +186,7 @@ def context_agent():
     )
 
 
+@KNOWN_BROKEN
 def test_retried_llm_turn_keeps_conversation_history(runtime, context_agent):
     """A retried LLM turn must receive the same reconstructed history as a fresh dispatch."""
     handle = runtime.start(
