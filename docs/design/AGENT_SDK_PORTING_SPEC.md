@@ -437,13 +437,24 @@ The runtime verbs MUST behave exactly as follows:
 be **reconstructible in the executor context** that runs it.
 
 - If your worker executors are **spawned processes** (Python-style): callables
-  must be importable by qualified name or serializable by value — module-level
-  functions, or module-level classes instantiated with plain-data fields. Local
-  closures, lambdas capturing live objects, and functions defined inside other
-  functions MUST be rejected at registration time with an actionable error
-  ("define the callable at module level"). Entry-point scripts must guard
-  top-level orchestration with the language's main-module idiom so a re-import in
-  the child does not re-run it.
+  must be importable by qualified name, deterministically reconstructible from
+  an importable decorator container, or serializable by value. Module-level
+  decorator functions remain valid when the decorator rebinds the public name:
+  support `__wrapped__`, stable container attributes such as `func` and
+  `coroutine`, and deterministic bounded nested/closure traversal for containers
+  such as OpenAI Agents SDK `FunctionTool`. Parent-side discovery and child-side
+  reconstruction MUST share the traversal implementation. Discovery retains all
+  importable plain-function candidates and selects only by the exact tool-name /
+  sole-candidate contract; it MUST NOT inspect signatures or exclude valid
+  `ctx`/`context` first parameters. Stable `FunctionKey` code identity is used
+  only to prove reconstruction of that already-selected function in the child.
+  Plain functions never silently fall back
+  to direct-object pickling; local functions, lambdas, and bound methods fail at
+  registration. Direct callable objects require a standard-pickle round trip.
+  Entry-point scripts must guard top-level orchestration with the language's
+  main-module idiom so a re-import in the child does not re-run it. The exact
+  Python types, traversal order, failure semantics, and version-pinned tests are
+  authoritative in [`architecture.md`](architecture.md).
 - If your executors are **threads in-process** (Java/Go/C#/TS typical): the
   invariant reduces to "no capture of per-run mutable runtime state"; document it,
   and keep factory boundaries clean regardless (next point).
@@ -458,8 +469,25 @@ be **reconstructible in the executor context** that runs it.
 **Acceptance criteria**
 - [ ] Registering a closure/lambda as a tool fails fast with an actionable error
       (process-spawn runtimes) or is impossible by API design (typed runtimes).
-- [ ] A registration-time round-trip test: serialize/reconstruct each registered
-      callable the way the executor would, and invoke it.
+- [ ] A module-level OpenAI Agents SDK `@function_tool` registers under `spawn`
+      even though the module global resolves to a `FunctionTool` container;
+      Python regression coverage uses the repository-local
+      `tests/requirements/openai_agents_0_18_2.txt` constraint, verifies the
+      installed version, and accepts either the deterministic `unwrap_depth` or
+      deep-extraction strategy.
+- [ ] Valid decorated tools whose first parameter is named `context` and `ctx`
+      each traverse the production registration path and execute the intended
+      named callable in a real spawned child; parameter names never filter or
+      rank embedded-function candidates.
+- [ ] A rebound global with no supported reconstruction path reports the rebound
+      container mismatch instead of incorrectly telling the user to move an
+      already module-level function to module scope.
+- [ ] A registration-time round-trip test serializes through the framework
+      serializer into `WorkerInfo` records, passes those records to
+      `_register_framework_workers`, captures the registered worker through
+      `get_registered_workers()`, then reconstructs and invokes it in a real
+      spawned child. Exact fixtures and commands are defined in
+      [`architecture.md`](architecture.md).
 
 ---
 
