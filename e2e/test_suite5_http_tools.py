@@ -21,6 +21,11 @@ import requests
 
 from conductor.ai.agents import Agent, api_tool, http_tool
 
+pytest.importorskip(
+    "mcp_test_server",
+    reason="mcp-testkit Python package is required for Suite 5 HTTP tools test",
+)
+
 pytestmark = [
     pytest.mark.e2e,
     pytest.mark.xdist_group("credentials"),
