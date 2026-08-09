@@ -326,9 +326,8 @@ def _try_extract_tool_object(obj: Any) -> Optional[WorkerInfo]:
 
     description = getattr(obj, "description", None) or ""
 
-    # Find the original callable by searching the object's attribute tree
-    # (up to 2 levels deep) for a plain function
-    original_func = _find_embedded_function(obj, max_depth=2)
+    # Use the same traversal and depth policy as spawned-child reconstruction.
+    original_func = _find_embedded_function(obj)
     if original_func is None:
         # No callable found — still emit as a tool but without a local worker
         logger.debug("Tool-like object '%s' has no extractable callable", name)
