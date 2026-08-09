@@ -167,59 +167,82 @@ class TestFunctionRefContainerHop:
 class TestFunctionRefDeepExtract:
     """OpenAI Agents SDK 0.19+ exposes FunctionTool functions via wrappers."""
 
-    def test_sync_function_tool_deep_extract(self):
+    @staticmethod
+    def _openai_tools():
         pytest.importorskip("agents")
         from tests.unit.resources import openai_agents_entry_helpers as oa
 
-        raw = _find_embedded_function(oa.oa_get_weather)
+        return oa, _find_embedded_function(oa.oa_get_weather), _find_embedded_function(
+            oa.oa_get_weather_async
+        )
+
+    def test_sync_function_tool_deep_extract(self):
+        oa, raw, _ = self._openai_tools()
         assert raw is not None
         ref = FunctionRef.of(raw)
         assert ref == FunctionRef(oa.__name__, "oa_get_weather", unwrap_depth=1)
         assert ref.resolve() is raw
 
     def test_async_function_tool_deep_extract(self):
-        pytest.importorskip("agents")
-        from tests.unit.resources import openai_agents_entry_helpers as oa
-
-        raw = _find_embedded_function(oa.oa_get_weather_async)
+        _, _, raw = self._openai_tools()
         assert raw is not None
         ref = FunctionRef.of(raw)
         assert ref.unwrap_depth == 1
         assert ref.deep_extract is False
         assert ref.resolve() is raw
 
-    def test_ref_pickles(self):
-        pytest.importorskip("agents")
-        from tests.unit.resources import openai_agents_entry_helpers as oa
-
-        raw = _find_embedded_function(oa.oa_get_weather)
+    @pytest.mark.parametrize("is_async", [False, True])
+    def test_function_ref_pickles(self, is_async):
+        _, sync_raw, async_raw = self._openai_tools()
+        raw = async_raw if is_async else sync_raw
+        assert raw is not None
         ref = pickle.loads(pickle.dumps(FunctionRef.of(raw)))
         assert ref.resolve() is raw
 
-    def test_entry_transports_function_tool_fn_by_ref(self):
+    @pytest.mark.parametrize("is_async", [False, True])
+    def test_entry_transports_function_tool_fn_by_ref(self, is_async):
         # Pre-fix this fell to fn_direct, whose reference pickling then found
         # the FunctionTool at the global name: "it's not the same object as …".
-        pytest.importorskip("agents")
-        from tests.unit.resources import openai_agents_entry_helpers as oa
-
-        raw = _find_embedded_function(oa.oa_get_weather)
-        entry = ToolWorkerEntry.for_callable(raw, "oa_get_weather")
+        _, sync_raw, async_raw = self._openai_tools()
+        raw = async_raw if is_async else sync_raw
+        assert raw is not None
+        entry = ToolWorkerEntry.for_callable(
+            raw, "oa_get_weather_async" if is_async else "oa_get_weather"
+        )
         assert entry.fn_ref is not None
         clone = pickle.loads(pickle.dumps(entry))
         assert clone._target() is raw
 
-    def test_cross_process_spawn_roundtrip(self):
-        pytest.importorskip("agents")
-        from tests.unit.resources import openai_agents_entry_helpers as oa
+    def test_sync_function_tool_entry_executes_in_spawn_child(self):
+        _, raw, _ = self._openai_tools()
+        assert raw is not None
+        entry_bytes = pickle.dumps(ToolWorkerEntry.for_callable(raw, "oa_get_weather"))
 
-        raw = _find_embedded_function(oa.oa_get_weather)
+        ctx = multiprocessing.get_context("spawn")
+        q = ctx.Queue()
+        p = ctx.Process(
+            target=oa.run_weather_entry_child,
+            args=(entry_bytes, "Boston", q),
+        )
+        p.start()
+        try:
+            status, output = q.get(timeout=30)
+        finally:
+            p.join(timeout=30)
+        assert p.exitcode == 0
+        assert "COMPLETED" in status
+        assert output == {"result": "sunny in Boston"}
+
+    def test_async_function_tool_ref_executes_in_spawn_child(self):
+        _, _, raw = self._openai_tools()
+        assert raw is not None
         ctx = multiprocessing.get_context("spawn")
         q = ctx.Queue()
         ref_bytes = pickle.dumps(FunctionRef.of(raw))
-        p = ctx.Process(target=helpers.resolve_and_call_child, args=(ref_bytes, "Boston", q))
+        p = ctx.Process(target=oa.resolve_and_await_child, args=(ref_bytes, "Boston", q))
         p.start()
         try:
-            assert q.get(timeout=30) == "sunny in Boston"
+            assert q.get(timeout=30) == "async sunny in Boston"
         finally:
             p.join(timeout=30)
         assert p.exitcode == 0
