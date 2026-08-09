@@ -29,11 +29,14 @@ runners read parameter types from ``inspect.signature(execute_function)``
 (``TypeError: isinstance() arg 2 must be a type``).
 """
 
+import hashlib
 import importlib
 import inspect
+import marshal
 import multiprocessing
 import pickle
 import sys
+from collections import deque
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, FrozenSet, Optional
 
@@ -67,78 +70,118 @@ def _walk_qualname(module_obj, qualname: str):
 # .coroutine; our Guardrail / ToolDef → .func.
 _CONTAINER_ATTRS = ("func", "coroutine")
 
-def _extract_from_closure(func: Callable) -> Optional[Callable]:
-    """Extract the original user function from a closure's cell variables.
-
-    - Shared by :func:`_find_embedded_function` below.
-    - In turn shared by :mod:`conductor.ai.agents.frameworks.serializer`'s
-      discovery and :class:`FunctionRef`'s parent-verification /
-      child-reconstruction — one implementation, can't drift apart.
-    """
-    closure = getattr(func, "__closure__", None)
-    if not closure:
-        return None
-
-    for cell in closure:
-        try:
-            val = cell.cell_contents
-        except ValueError:
-            continue
-        if inspect.isfunction(val):
-            # Skip internal wrappers that take (ctx, input) or (context, ...)
-            try:
-                sig = inspect.signature(val)
-                param_names = list(sig.parameters.keys())
-                # Internal wrappers typically start with ctx/context as first param
-                if param_names and param_names[0] in ("ctx", "context"):
-                    continue
-                return val
-            except (ValueError, TypeError):
-                continue
-    return None
-
-
-# How many attribute-nesting levels _find_embedded_function will descend.
+# How many attribute-nesting levels embedded-function discovery descends.
 # openai-agents' FunctionTool -> on_invoke_tool (invoker instance) ->
-# _invoke_tool_impl (closure fn) is 2 levels deep; matches serializer.py's
-# own default so parent discovery and child reconstruction stay in lockstep.
+# closure wrapper is two object edges deep.
 _DEEP_EXTRACT_MAX_DEPTH = 2
 
 
-def _find_embedded_function(obj: Any, max_depth: int = _DEEP_EXTRACT_MAX_DEPTH) -> Optional[Callable]:
-    """Walk an object's attributes to find an embedded plain function.
+def _is_embedded_function_candidate(value: Any) -> bool:
+    """Whether *value* is safely reconstructible as a function reference."""
+    if not inspect.isfunction(value):
+        return False
+    module = getattr(value, "__module__", None)
+    qualname = getattr(value, "__qualname__", None)
+    return bool(
+        isinstance(module, str)
+        and isinstance(qualname, str)
+        and "<locals>" not in qualname
+        and "<lambda>" not in qualname
+    )
 
-    - Generic, framework-agnostic: no hardcoded attribute names.
-    - For containers that expose the original function only behind further
-      nested attributes and/or closures, not a single named attribute — e.g.
-      openai-agents' ``FunctionTool.on_invoke_tool`` is itself a callable
-      *instance*, not a function; the real closure lives one level deeper,
-      on that instance's own ``_invoke_tool_impl`` attribute.
-    - Deliberately avoids hardcoding that private attribute name: a
-      shape-based walk degrades to "not found" (the pre-existing, actionable
-      ``SpawnSafetyError``) instead of breaking outright if openai-agents
-      restructures its internals.
+
+def _is_embedded_leaf(value: Any) -> bool:
+    """Return whether *value* cannot contain a useful embedded callable."""
+    return (
+        value is None
+        or isinstance(value, (bool, int, float, complex, str, bytes, bytearray))
+        or inspect.ismodule(value)
+        or isinstance(value, type)
+    )
+
+
+def _iter_embedded_functions(
+    root: Any, max_depth: int = _DEEP_EXTRACT_MAX_DEPTH
+):
+    """Yield embedded plain functions in deterministic breadth-first order.
+
+    Container-held callables are common in framework decorators.  This walk is
+    deliberately shape-based: it reads only instance dictionaries, never
+    invokes descriptors, and examines closure cells in their stored order.
+    ``serializer.py`` imports the compatibility helper below, so parent-side
+    discovery and child-side resolution share this exact traversal.
     """
-    if max_depth <= 0:
-        return None
+    queue = deque([(root, 0)])
+    visited_object_ids = set()
+    yielded_function_ids = set()
 
-    for attr_name in vars(obj) if hasattr(obj, "__dict__") else []:
-        val = getattr(obj, attr_name, None)
-        if val is None:
+    while queue:
+        obj, attribute_depth = queue.popleft()
+        object_id = id(obj)
+        if object_id in visited_object_ids:
+            continue
+        visited_object_ids.add(object_id)
+
+        if inspect.isfunction(obj):
+            closure = getattr(obj, "__closure__", None)
+            if closure:
+                for cell in closure:
+                    try:
+                        value = cell.cell_contents
+                    except ValueError:
+                        continue
+                    if _is_embedded_function_candidate(value):
+                        value_id = id(value)
+                        if value_id not in yielded_function_ids:
+                            yielded_function_ids.add(value_id)
+                            yield value
+            if _is_embedded_function_candidate(obj):
+                if object_id not in yielded_function_ids:
+                    yielded_function_ids.add(object_id)
+                    yield obj
             continue
 
-        if inspect.isfunction(val):
-            func = _extract_from_closure(val)
-            if func is not None:
-                return func
-            return val
+        if attribute_depth >= max_depth or _is_embedded_leaf(obj):
+            continue
+        try:
+            attributes = vars(obj)
+        except Exception:
+            continue
+        for name in sorted(attributes):
+            value = attributes[name]
+            if not _is_embedded_leaf(value):
+                queue.append((value, attribute_depth + 1))
 
-        if hasattr(val, "__dict__") and not isinstance(val, type):
-            result = _find_embedded_function(val, max_depth - 1)
-            if result is not None:
-                return result
 
-    return None
+def _find_embedded_function(
+    obj: Any, max_depth: int = _DEEP_EXTRACT_MAX_DEPTH
+) -> Optional[Callable]:
+    """Return the first deterministic embedded-function candidate, if any.
+
+    Kept as the serializer-facing compatibility API.  FunctionRef itself never
+    relies on this convenience selection: it records a key for the exact
+    parent candidate and proves the child resolves that same candidate.
+    """
+    return next(_iter_embedded_functions(obj, max_depth), None)
+
+
+@dataclass(frozen=True)
+class FunctionKey:
+    """Stable identity for a function across parent and spawn-child imports."""
+
+    module: str
+    qualname: str
+    code_sha256: str
+
+    @classmethod
+    def of(cls, fn: Callable) -> "FunctionKey":
+        if not inspect.isfunction(fn):
+            raise SpawnSafetyError(f"{fn!r} is not a plain function")
+        return cls(
+            fn.__module__,
+            fn.__qualname__,
+            hashlib.sha256(marshal.dumps(fn.__code__)).hexdigest(),
+        )
 
 
 def _wrapped_depth_to(obj, fn) -> Optional[int]:
@@ -189,6 +232,16 @@ class FunctionRef:
     unwrap_depth: int = 0
     attr_hop: str = ""
     deep_extract: bool = False
+    expected_key: Optional[FunctionKey] = None
+
+    def __post_init__(self):
+        if self.deep_extract:
+            if self.attr_hop or self.unwrap_depth or self.expected_key is None:
+                raise ValueError(
+                    "deep extraction requires expected_key with no attr_hop or unwrap_depth"
+                )
+        elif self.expected_key is not None:
+            raise ValueError("expected_key is only valid for deep extraction")
 
     @classmethod
     def of(cls, fn: Callable) -> "FunctionRef":
@@ -253,13 +306,18 @@ class FunctionRef:
         # always arrives as _find_embedded_function's own prior return value
         # (how serializer.py derives WorkerInfo.func) — identical walk always
         # matches by identity.
-        if _find_embedded_function(obj) is fn:
-            return cls(module, qualname, 0, "", deep_extract=True)
+        if any(candidate is fn for candidate in _iter_embedded_functions(obj)):
+            return cls(
+                module,
+                qualname,
+                deep_extract=True,
+                expected_key=FunctionKey.of(fn),
+            )
         raise SpawnSafetyError(
-            f"'{module}.{qualname}' does not resolve back to {fn!r} (rebound "
-            f"without a __wrapped__ chain, a func/coroutine container "
-            f"attribute, or a discoverable nested/closure-held function). "
-            f"{_REMEDIES}"
+            f"'{module}.{qualname}' does not resolve back to the requested "
+            f"container-held callable {fn!r}: the rebound container has no "
+            f"__wrapped__ chain, func/coroutine attribute, or deterministic "
+            f"nested/closure discovery. {_REMEDIES}"
         )
 
     def resolve(self) -> Callable:
@@ -267,19 +325,46 @@ class FunctionRef:
         cached = _RESOLVE_CACHE.get(self)
         if cached is not None:
             return cached
-        module_obj = importlib.import_module(self.module)
-        obj = _walk_qualname(module_obj, self.qualname)
-        if self.attr_hop:
-            obj = getattr(obj, self.attr_hop)
+        try:
+            module_obj = importlib.import_module(self.module)
+            obj = _walk_qualname(module_obj, self.qualname)
+            if self.attr_hop:
+                obj = getattr(obj, self.attr_hop)
+        except (AttributeError, ImportError) as exc:
+            raise SpawnSafetyError(
+                f"cannot resolve '{self.module}.{self.qualname}' using its "
+                f"recorded {'container attribute' if self.attr_hop else 'public name'} "
+                f"strategy: {exc}"
+            ) from None
         if self.deep_extract:
-            obj = _find_embedded_function(obj)
-            if obj is None:
+            matches = []
+            seen_match_ids = set()
+            for candidate in _iter_embedded_functions(obj):
+                if FunctionKey.of(candidate) == self.expected_key:
+                    candidate_id = id(candidate)
+                    if candidate_id not in seen_match_ids:
+                        seen_match_ids.add(candidate_id)
+                        matches.append(candidate)
+            if len(matches) != 1:
+                outcome = "no matching callable" if not matches else "multiple matching callables"
                 raise SpawnSafetyError(
-                    f"'{self.module}.{self.qualname}' no longer yields a "
-                    f"discoverable nested function (definition changed?)."
+                    f"'{self.module}.{self.qualname}' deep extraction found "
+                    f"{outcome} for {self.expected_key}; the container-held "
+                    f"callable is inaccessible or ambiguous after import."
                 )
-        for _ in range(self.unwrap_depth):
-            obj = obj.__wrapped__
+            obj = matches[0]
+        try:
+            for _ in range(self.unwrap_depth):
+                obj = obj.__wrapped__
+        except AttributeError as exc:
+            raise SpawnSafetyError(
+                f"'{self.module}.{self.qualname}' cannot follow its recorded "
+                f"__wrapped__ strategy: {exc}"
+            ) from None
+        if not inspect.isfunction(obj):
+            raise SpawnSafetyError(
+                f"'{self.module}.{self.qualname}' resolved to {obj!r}, not a plain function."
+            )
         _RESOLVE_CACHE[self] = obj
         return obj
 
@@ -315,18 +400,17 @@ class ToolWorkerEntry:
     def for_callable(cls, fn, tool_name, guardrails=None, credential_names=None):
         """Build an entry for *fn*, preferring by-reference transport.
 
-        Falls back to direct transport for picklable callables (instances,
-        bound methods of picklable objects); unpicklable closures are caught
-        by the registration probe with an actionable error.
+        Plain functions must resolve by reference so a decorator-container
+        mismatch is reported during registration. Other callable objects keep
+        the legacy direct transport and are validated by the spawn probe.
         """
         framework = bool(getattr(fn, "_conductor_agent_framework_callable", False))
-        try:
+        if inspect.isfunction(fn):
             ref = FunctionRef.of(fn)
-        except SpawnSafetyError:
-            entry = cls(tool_name, fn_direct=fn, guardrails=guardrails,
+            entry = cls(tool_name, fn_ref=ref, guardrails=guardrails,
                         credential_names=credential_names, framework_callable=framework)
         else:
-            entry = cls(tool_name, fn_ref=ref, guardrails=guardrails,
+            entry = cls(tool_name, fn_direct=fn, guardrails=guardrails,
                         credential_names=credential_names, framework_callable=framework)
         # Introspection compatibility (logging etc.). Plain string INSTANCE
         # attrs — unlike the old wrapper's reassigned function identity, these
