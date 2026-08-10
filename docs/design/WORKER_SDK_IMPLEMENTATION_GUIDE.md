@@ -2540,12 +2540,27 @@ wrapped as a **passthrough worker**; its tools run as Conductor workers; lifecyc
 tool-use events are pushed to the server for observability.
 
 **Spawn-safety (critical).** Workers execute in spawned processes, so every worker/tool
-callable must be **importable by qualified name or picklable by value** — a module-level
-function, or a module-level callable *class instance* holding only plain data. **Never**
-register a `<locals>` closure or a lambda. Entry scripts must guard top-level execution
-with the language's "main module" guard (e.g. `if __name__ == "__main__":`) so a
-re-imported spawn child does not re-run the orchestration. Framework worker factories
-receive plain strings (server URL + credentials), never live client objects.
+callable must be **importable by qualified name, deterministically reconstructible from
+an importable decorator container, or picklable by value**. Decorators that rebind a
+module global do not make the original module-level function unsafe: reconstruction
+must support `__wrapped__`, stable `func`/`coroutine` container attributes, and a
+deterministic bounded nested/closure traversal for containers such as OpenAI Agents
+SDK `FunctionTool`. Discovery and reconstruction must share one implementation and
+retain every importable plain-function candidate. Parent-side selection uses only the
+exact tool-name / sole-candidate contract; it must not inspect signatures or exclude
+valid first parameters named `ctx` or `context`. Stable `FunctionKey` code identity is
+used only to prove reconstruction of the already-selected function in the child.
+Plain functions must never fall
+back to direct-object pickling; direct callable objects require a standard-pickle
+round trip. **Never** register a true `<locals>` closure, lambda, or bound method.
+Entry scripts must guard top-level execution with the language's "main module" guard (e.g.
+`if __name__ == "__main__":`) so a re-imported spawn child does not re-run the
+orchestration. Framework worker factories receive plain strings (server URL +
+credentials), never live client objects. The exact Python types, resolution order,
+traversal algorithm, failure semantics, repository-local
+`openai-agents==0.18.2` constraint, and production-path `WorkerInfo` registration test
+including the required `context` and `ctx` spawn regressions are defined in
+[`architecture.md`](architecture.md).
 
 ### 25.8 Agent Credentials (runtimeMetadata contract)
 

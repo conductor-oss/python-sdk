@@ -6,6 +6,7 @@ from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.models import StartWorkflowRequest
 from conductor.client.http.models import TaskDef
+from conductor.client.http.rest import ApiException
 from conductor.client.worker.worker import ExecuteTaskFunction
 from conductor.client.worker.worker import Worker
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
@@ -462,14 +463,51 @@ def _wait_for_workflow_completion(workflow_executor: WorkflowExecutor, workflow_
 
 # ===== SIGNAL TESTS =====
 
+SIGNAL_RETRY_STATUSES = {423}
+
+
+def test_retry_scenario_retries_explicit_statuses_only():
+    attempts = []
+
+    def raise_locked():
+        attempts.append('attempt')
+        raise ApiException(status=423, reason='Locked')
+
+    try:
+        retry_scenario(
+            'locked_without_opt_in', raise_locked,
+            deadline=time.monotonic() + 1, base_delay=0, max_delay=0)
+        assert False, 'HTTP 423 should not retry without an explicit opt-in'
+    except ApiException as exc:
+        assert exc.status == 423
+
+    assert attempts == ['attempt']
+
+    attempts.clear()
+
+    def complete_on_second_attempt():
+        attempts.append('attempt')
+        if len(attempts) == 1:
+            raise ApiException(status=423, reason='Locked')
+        return 'fresh-workflow'
+
+    result = retry_scenario(
+        'locked_with_opt_in', complete_on_second_attempt,
+        deadline=time.monotonic() + 1, base_delay=0, max_delay=0,
+        retry_statuses={423})
+
+    assert result == 'fresh-workflow'
+    assert attempts == ['attempt', 'attempt']
+
+
 def run_signal_tests(configuration: Configuration, workflow_executor: WorkflowExecutor,
                      deadline=None):
     """Run all signal API tests using WorkflowExecutor methods.
 
-    Each scenario is retried at the scenario level on a transient blip (see
-    retry_scenario): a retry starts a fresh workflow and issues a fresh sync
-    signal, so the asserted SignalResponse is always from a signal this attempt
-    actually sent — no double-signalling of a single workflow.
+    Each scenario is retried at the scenario level on a transient blip or HTTP
+    423 (see retry_scenario): a retry starts a fresh workflow and issues a fresh
+    sync signal, so the asserted SignalResponse is always from a signal this
+    attempt actually sent — no double-signalling of a single workflow.
     """
     logger.info('START: Signal API tests using WorkflowExecutor')
 
@@ -481,25 +519,32 @@ def run_signal_tests(configuration: Configuration, workflow_executor: WorkflowEx
 
         # Test sync signal with different return strategies
         retry_scenario('scenario_signal_target_workflow',
-                       scenario_signal_target_workflow, workflow_executor, deadline=deadline)
+                       scenario_signal_target_workflow, workflow_executor,
+                       deadline=deadline, retry_statuses=SIGNAL_RETRY_STATUSES)
         retry_scenario('scenario_signal_blocking_workflow',
-                       scenario_signal_blocking_workflow, workflow_executor, deadline=deadline)
+                       scenario_signal_blocking_workflow, workflow_executor,
+                       deadline=deadline, retry_statuses=SIGNAL_RETRY_STATUSES)
         retry_scenario('scenario_signal_blocking_task',
-                       scenario_signal_blocking_task, workflow_executor, deadline=deadline)
+                       scenario_signal_blocking_task, workflow_executor,
+                       deadline=deadline, retry_statuses=SIGNAL_RETRY_STATUSES)
         retry_scenario('scenario_signal_blocking_task_input',
-                       scenario_signal_blocking_task_input, workflow_executor, deadline=deadline)
+                       scenario_signal_blocking_task_input, workflow_executor,
+                       deadline=deadline, retry_statuses=SIGNAL_RETRY_STATUSES)
 
         # Test default return strategy
         retry_scenario('scenario_signal_default_strategy',
-                       scenario_signal_default_strategy, workflow_executor, deadline=deadline)
+                       scenario_signal_default_strategy, workflow_executor,
+                       deadline=deadline, retry_statuses=SIGNAL_RETRY_STATUSES)
 
         # Test async signal
         retry_scenario('scenario_signal_async',
-                       scenario_signal_async, workflow_executor, deadline=deadline)
+                       scenario_signal_async, workflow_executor,
+                       deadline=deadline, retry_statuses=SIGNAL_RETRY_STATUSES)
 
         # Test to_dict fix
         retry_scenario('scenario_signal_to_dict_fix',
-                       scenario_signal_to_dict_fix, workflow_executor, deadline=deadline)
+                       scenario_signal_to_dict_fix, workflow_executor,
+                       deadline=deadline, retry_statuses=SIGNAL_RETRY_STATUSES)
 
         logger.info('All signal tests completed successfully')
 
