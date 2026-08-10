@@ -66,10 +66,11 @@ def is_transient(exc):
         or exc.status in GATEWAY_STATUSES)
 
 
-def first_transient_api_exception(exc):
+def first_transient_api_exception(exc, retry_statuses=()):
     """Walk the exception chain (``__cause__`` / ``__context__``) and return the
     first transient ``ApiException`` (flagged transient, or status 0/None), or
-    ``None`` if there isn't one.
+    one whose status is explicitly listed in ``retry_statuses``. Return ``None``
+    when there isn't one.
 
     Inner test helpers sometimes catch an ApiException and re-raise it as a bare
     ``Exception`` (losing the type), so we can't rely on the outermost exception
@@ -80,7 +81,8 @@ def first_transient_api_exception(exc):
     cur = exc
     while cur is not None and id(cur) not in seen:
         seen.add(id(cur))
-        if is_transient(cur):
+        if is_transient(cur) or (
+                isinstance(cur, ApiException) and cur.status in retry_statuses):
             return cur
         cur = cur.__cause__ or cur.__context__
     return None
@@ -139,10 +141,12 @@ def retry_on_status(func, *args, statuses=(404,), retries=5, base_delay=1.0,
 
 def retry_scenario(label, func, *args, deadline=None,
                    base_delay=DEFAULT_BASE_DELAY_SECONDS,
-                   max_delay=DEFAULT_MAX_DELAY_SECONDS, **kwargs):
+                   max_delay=DEFAULT_MAX_DELAY_SECONDS, retry_statuses=(),
+                   **kwargs):
     """Run ``func(*args, **kwargs)``, retrying only on a transient blip (see
     ``is_transient``: status 0/None transport hiccups plus gateway-class
-    502/503/504) until the shared ``deadline`` passes.
+    502/503/504), plus statuses explicitly listed in ``retry_statuses``, until
+    the shared ``deadline`` passes.
 
     Args:
         label: Human-readable scenario name for logs.
@@ -151,6 +155,8 @@ def retry_scenario(label, func, *args, deadline=None,
             ``None`` (e.g. the standalone ``main.py`` runner), the scenario runs
             exactly once with no transient retry — preserving prior behaviour.
         base_delay / max_delay: capped exponential backoff bounds (seconds).
+        retry_statuses: additional HTTP statuses that this scenario explicitly
+            opts into retrying. Defaults to no additional statuses.
 
     Non-transient errors (assertion failures, genuine 4xx/5xx) raise
     immediately. A transient blip at/after the deadline re-raises so the suite
@@ -166,23 +172,23 @@ def retry_scenario(label, func, *args, deadline=None,
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            transient = first_transient_api_exception(e)
-            if transient is None:
+            retryable = first_transient_api_exception(e, retry_statuses)
+            if retryable is None:
                 raise
             now = time.monotonic()
             if now >= deadline:
                 logger.error(
-                    'transient (%s) in %s but overall deadline exceeded by '
+                    'retryable (%s) in %s but overall deadline exceeded by '
                     '%.0fs; giving up: %s',
-                    transient.status, label, now - deadline, transient)
+                    retryable.status, label, now - deadline, retryable)
                 raise
             delay = min(base_delay * (2 ** attempt), max_delay)
             delay = min(delay, max(0.0, deadline - now))
             logger.warning(
-                'transient (%s) in %s (attempt %d); retrying in %.1fs '
+                'retryable (%s) in %s (attempt %d); retrying in %.1fs '
                 '(%.0fs left in overall budget): %s',
-                transient.status, label, attempt + 1, delay,
-                deadline - now, transient)
+                retryable.status, label, attempt + 1, delay,
+                deadline - now, retryable)
             time.sleep(delay)
             attempt += 1
 
