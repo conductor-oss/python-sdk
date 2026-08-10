@@ -214,7 +214,7 @@ class TestFunctionRefDeepExtract:
         assert clone._target() is raw
 
     def test_sync_function_tool_entry_executes_in_spawn_child(self):
-        _, raw, _ = self._openai_tools()
+        oa, raw, _ = self._openai_tools()
         assert raw is not None
         entry_bytes = pickle.dumps(ToolWorkerEntry.for_callable(raw, "oa_get_weather"))
 
@@ -234,7 +234,7 @@ class TestFunctionRefDeepExtract:
         assert output == {"result": "sunny in Boston"}
 
     def test_async_function_tool_ref_executes_in_spawn_child(self):
-        _, _, raw = self._openai_tools()
+        oa, _, raw = self._openai_tools()
         assert raw is not None
         ctx = multiprocessing.get_context("spawn")
         q = ctx.Queue()
