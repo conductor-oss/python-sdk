@@ -151,10 +151,11 @@ def example_pipeline():
         print(f"Execution ID: {result.execution_id}")
         print(f"Status:      {result.status}")
         print(f"Tokens:      {result.token_usage}")
+        # sub_results is a dict keyed by agent name — see AgentResult.sub_results.
         if result.sub_results:
-            print("\nSub-agent executions:")
-            for sub in result.sub_results:
-                print(f"  - {getattr(sub, "execution_id", "?")}: {sub.status}")
+            print("\nSub-agent outputs:")
+            for agent_name, agent_output in result.sub_results.items():
+                print(f"  - {agent_name}: {str(agent_output)[:120]}")
         result.print_result()
 
 
@@ -213,10 +214,11 @@ def example_parallel():
         print(f"Execution ID: {result.execution_id}")
         print(f"Status:      {result.status}")
         print(f"Tokens:      {result.token_usage}")
+        # sub_results is a dict keyed by agent name — see AgentResult.sub_results.
         if result.sub_results:
-            print("\nParallel sub-agent executions:")
-            for sub in result.sub_results:
-                print(f"  - {getattr(sub, "execution_id", "?")}: {sub.status}")
+            print("\nParallel sub-agent outputs:")
+            for agent_name, agent_output in result.sub_results.items():
+                print(f"  - {agent_name}: {str(agent_output)[:120]}")
         result.print_result()
 
 
