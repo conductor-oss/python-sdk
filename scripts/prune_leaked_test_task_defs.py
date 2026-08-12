@@ -9,11 +9,14 @@ registration answers::
 
     402 System has reached the maximum allowed Task Definitions limit of 1000.
 
-and the integration jobs fail on unrelated branches. This prunes the
-leftovers so the cap has room again.
+and the integration jobs fail on unrelated branches.
 
-Dry run by default — it prints what it would delete and exits. Pass --delete
-to actually remove them. Reads the usual CONDUCTOR_SERVER_URL /
+The suites now prune stale leftovers themselves at session start (see
+tests/integration/leaked_task_defs.py), so this script is for pruning by hand
+— including the defs too recent for the automatic pass to touch.
+
+Dry run by default: it prints what it would delete and exits. Pass --delete to
+actually remove them. Reads the usual CONDUCTOR_SERVER_URL /
 CONDUCTOR_AUTH_KEY / CONDUCTOR_AUTH_SECRET environment.
 
     python scripts/prune_leaked_test_task_defs.py             # list matches
@@ -21,43 +24,15 @@ CONDUCTOR_AUTH_KEY / CONDUCTOR_AUTH_SECRET environment.
 """
 
 import argparse
-import re
 import sys
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
-
-# Prefixes owned by the integration suites, each followed by a per-run id.
-# Only names matching one of these AND ending in a run id are touched, so a
-# hand-registered or production task def is never a candidate.
-TEST_PREFIXES = (
-    # tests/integration/test_comprehensive_e2e.py
-    "sync_basic_",
-    "async_basic_",
-    "complex_schema_",
-    "task_in_progress_",
-    "failing_task_",
-    # tests/integration/test_lease_extension.py
-    "lease_heartbeat_task_",
-    "lease_no_heartbeat_task_",
-    # tests/integration/test_async_lease_extension.py
-    "async_lease_heartbeat_task_",
-    "async_lease_no_heartbeat_task_",
-    "async_lease_fast_with_hb_",
-    "async_lease_fast_no_hb_",
-    # tests/integration/client/orkes/test_orkes_clients.py (shortuuid suffix)
-    "IntegrationTestOrkesClientsTask_",
+from tests.integration.leaked_task_defs import (
+    STALE_AFTER_SECONDS,
+    is_leaked_task_def,
+    stale_leaked_task_defs,
 )
-
-# uuid4().hex[:8] for most suites; shortuuid for test_orkes_clients.
-RUN_ID = re.compile(r"^(?:[0-9a-f]{8}|[0-9A-Za-z]{20,25})$")
-
-
-def is_leaked(name):
-    for prefix in TEST_PREFIXES:
-        if name.startswith(prefix) and RUN_ID.match(name[len(prefix):]):
-            return True
-    return False
 
 
 def main():
@@ -67,13 +42,25 @@ def main():
         action="store_true",
         help="actually unregister the matches (default: dry run)",
     )
+    parser.add_argument(
+        "--include-recent",
+        action="store_true",
+        help=(
+            "also prune defs newer than "
+            f"{STALE_AFTER_SECONDS // 3600}h — only safe when no integration "
+            "run is in flight, since a concurrent run's defs are fair game"
+        ),
+    )
     args = parser.parse_args()
 
     config = Configuration()
     client = OrkesMetadataClient(config)
 
     all_defs = client.get_all_task_defs()
-    leaked = sorted(d.name for d in all_defs if is_leaked(d.name))
+    if args.include_recent:
+        leaked = sorted(d.name for d in all_defs if is_leaked_task_def(d.name))
+    else:
+        leaked = stale_leaked_task_defs(all_defs)
 
     print(f"server:          {config.host}")
     print(f"task defs total: {len(all_defs)}")
