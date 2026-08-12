@@ -146,6 +146,18 @@ class TestLeaseExtension(unittest.TestCase):
         cls.metadata_client = OrkesMetadataClient(cls.config)
         cls.workflow_client = OrkesWorkflowClient(cls.config)
 
+    @classmethod
+    def tearDownClass(cls):
+        from tests.integration.conftest import cleanup_metadata
+        cleanup_metadata(
+            cls.config,
+            task_defs=(HEARTBEAT_TASK, NO_HEARTBEAT_TASK),
+            workflow_defs=(
+                f'test_lease_heartbeat_{RUN_ID}',
+                f'test_lease_no_heartbeat_{RUN_ID}',
+            ),
+        )
+
     def _register_workflow(self, wf_name, task_name):
         """Register a single-task workflow."""
         workflow = WorkflowDef(name=wf_name, version=1)

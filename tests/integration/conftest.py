@@ -71,6 +71,44 @@ def skip_if_server_unavailable():
 
 
 # ---------------------------------------------------------------------------
+# Metadata cleanup
+# ---------------------------------------------------------------------------
+
+def cleanup_metadata(config, task_defs=(), workflow_defs=()):
+    """Best-effort delete of metadata a test class registered.
+
+    Suites that register per-run task defs (``worker_task(...,
+    register_task_def=True)`` with a RUN_ID-suffixed name) used to leave every
+    one behind, so each CI run added a handful to the shared server until it
+    hit its Task Definitions cap and answered 402 to all further
+    registrations. Call this from tearDownClass.
+
+    Failures are logged and swallowed: cleanup must never turn a passing suite
+    red, and a def that was never registered is nothing to report.
+
+    ``workflow_defs`` items are names (version 1 assumed) or (name, version).
+    """
+    from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
+
+    client = OrkesMetadataClient(config)
+
+    for name in task_defs:
+        try:
+            client.unregister_task_def(name)
+        except Exception as e:
+            logger.warning("cleanup: could not unregister task def %s: %s", name, e)
+
+    for entry in workflow_defs:
+        name, version = entry if isinstance(entry, tuple) else (entry, 1)
+        try:
+            client.unregister_workflow_def(name, version)
+        except Exception as e:
+            logger.warning(
+                "cleanup: could not unregister workflow def %s v%s: %s", name, version, e
+            )
+
+
+# ---------------------------------------------------------------------------
 # Pytest session-scoped fixtures
 # ---------------------------------------------------------------------------
 

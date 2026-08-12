@@ -232,6 +232,17 @@ class TestAsyncLeaseExtension(unittest.TestCase):
         handler = getattr(cls, '_task_handler', None)
         if handler is not None:
             handler.stop_processes()
+        from tests.integration.conftest import cleanup_metadata
+        cleanup_metadata(
+            cls.config,
+            task_defs=(HEARTBEAT_TASK, NO_HEARTBEAT_TASK, FAST_HB_TASK, FAST_NO_HB_TASK),
+            workflow_defs=(
+                f'test_async_lease_heartbeat_{RUN_ID}',
+                f'test_async_lease_no_heartbeat_{RUN_ID}',
+                f'test_async_perf_with_hb_{RUN_ID}',
+                f'test_async_perf_no_hb_{RUN_ID}',
+            ),
+        )
 
     def _register_workflow(self, wf_name, task_names):
         """Register a workflow with one or more tasks in sequence."""
