@@ -17,6 +17,19 @@ Requirements:
 import os
 
 from conductor.ai.agents import AgentRuntime
+from settings import settings
+
+
+# Tools must be defined at module level, not nested inside the factory below.
+# Workers are dispatched to processes started with the default "spawn" method, which
+# re-imports the callable by qualified name — a closure cannot be pickled that way and
+# registration fails before the workflow starts.
+def check_github_auth() -> str:
+    """Check if GitHub authentication is available."""
+    token = os.environ.get("GITHUB_TOKEN", "")
+    if token:
+        return f"GitHub token is set (starts with {token[:4]}...)"
+    return "GitHub token is NOT set"
 
 
 def create_adk_agent():
@@ -24,16 +37,11 @@ def create_adk_agent():
     from google.adk import Agent
     from google.adk.tools import FunctionTool
 
-    def check_github_auth() -> str:
-        """Check if GitHub authentication is available."""
-        token = os.environ.get("GITHUB_TOKEN", "")
-        if token:
-            return f"GitHub token is set (starts with {token[:4]}...)"
-        return "GitHub token is NOT set"
-
     agent = Agent(
         name="github_checker",
-        model="gemini-2.5-flash",
+        # The Conductor server runs the LLM call, so this takes the same
+        # "provider/model" string as every other example.
+        model=settings.llm_model,
         instruction="You check GitHub authentication status.",
         tools=[FunctionTool(check_github_auth)],
     )
