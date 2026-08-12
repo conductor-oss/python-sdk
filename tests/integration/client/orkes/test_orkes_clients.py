@@ -579,7 +579,10 @@ class TestOrkesClients:
             workflow = self.workflow_client.get_workflow(workflow_uuid, False)
         except ApiException as e:
             assert e.code == 404
-            assert str(e.message).lower() == "workflow with id: {} not found.".format(workflow_uuid)
+            # The server's wording for this 404 changes across releases
+            # ("Workflow with Id: X not found." -> "No execution found for id: X"),
+            # so assert on the durable part: it is a 404 naming this execution.
+            assert workflow_uuid in str(e.message)
 
     def __test_task_execution_lifecycle(self):
 
