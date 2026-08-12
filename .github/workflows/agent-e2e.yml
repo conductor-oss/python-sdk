@@ -63,12 +63,26 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e '.[agents]'
-          pip install pytest pytest-asyncio pytest-xdist pytest-rerunfailures mcp-testkit
+          # mcp 2.0 dropped mcp.server.fastmcp, which mcp-testkit's server and
+          # tool modules still import — hold the resolver on the 1.x line until
+          # the testkit ships a 2.x-compatible release.
+          pip install pytest pytest-asyncio pytest-xdist pytest-rerunfailures mcp-testkit 'mcp<2'
 
       - name: Start mcp-testkit
         run: |
           mcp-testkit --transport http --port 3001 &
-          sleep 2
+          # Probe the port instead of a blind sleep — a testkit that dies on
+          # import used to leave this step green and surface only as downstream
+          # skips. curl exits non-zero while the port is refusing connections
+          # (a bare GET on a live /mcp answers 406, which counts as up).
+          for i in $(seq 1 15); do
+            if curl -s -o /dev/null http://localhost:3001/mcp; then
+              echo "mcp-testkit ready after ~${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::mcp-testkit failed to start on port 3001"
+          exit 1
 
       - name: Start server
         run: |
