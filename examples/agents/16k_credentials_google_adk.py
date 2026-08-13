@@ -19,21 +19,22 @@ import os
 from conductor.ai.agents import AgentRuntime
 
 
+def check_github_auth() -> str:
+    """Check if GitHub authentication is available."""
+    token = os.environ.get("GITHUB_TOKEN", "")
+    if token:
+        return f"GitHub token is set (starts with {token[:4]}...)"
+    return "GitHub token is NOT set"
+
+
 def create_adk_agent():
     """Create a Google ADK agent with a credential-aware tool."""
     from google.adk import Agent
     from google.adk.tools import FunctionTool
 
-    def check_github_auth() -> str:
-        """Check if GitHub authentication is available."""
-        token = os.environ.get("GITHUB_TOKEN", "")
-        if token:
-            return f"GitHub token is set (starts with {token[:4]}...)"
-        return "GitHub token is NOT set"
-
     agent = Agent(
         name="github_checker",
-        model="gemini-2.5-flash",
+        model="gemini-3.6-flash",
         instruction="You check GitHub authentication status.",
         tools=[FunctionTool(check_github_auth)],
     )

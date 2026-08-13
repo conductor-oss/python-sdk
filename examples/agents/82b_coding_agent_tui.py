@@ -23,12 +23,15 @@ Requirements:
 
 import argparse
 import enum
+import json
 import os
 import queue
+import shutil
+import signal
 import subprocess
+import tempfile
 import threading
 import time
-from dataclasses import dataclass, field
 from pathlib import Path
 
 os.environ.setdefault("CONDUCTOR_LOG_LEVEL", "WARNING")
@@ -51,10 +54,21 @@ _DEFAULT_SHELL_TIMEOUT = 30
 _MAX_FILE_BYTES = 200_000
 _MAX_SHELL_OUTPUT = 8_000
 _MAX_SHELL_DISPLAY = 2_000
-_MAX_BG_BUFFER = 8_000
 
 _SEPARATOR = "─" * 62
 _THIN_SEP = "┄" * 62
+
+_WORKING_DIR_ENV = "CODING_AGENT_TUI_WORKING_DIR"
+_SHELL_TIMEOUT_ENV = "CODING_AGENT_TUI_SHELL_TIMEOUT"
+_BG_STATE_DIR_ENV = "CODING_AGENT_TUI_BG_DIR"
+
+
+def _working_dir() -> str:
+    return os.environ[_WORKING_DIR_ENV]
+
+
+def _shell_timeout() -> int:
+    return int(os.environ.get(_SHELL_TIMEOUT_ENV, str(_DEFAULT_SHELL_TIMEOUT)))
 
 
 _HELP_TEXT = """\
@@ -90,123 +104,174 @@ class AgentState(enum.Enum):
 # Background process registry
 # ---------------------------------------------------------------------------
 
-@dataclass
-class BgProcess:
-    id: int
-    command: str
-    proc: subprocess.Popen
-    buffer: list = field(default_factory=list)
-    lock: threading.Lock = field(default_factory=threading.Lock)
-    started_at: float = field(default_factory=time.time)
-    _read_pos: int = field(default=0, repr=False)
+def _bg_state_dir() -> Path:
+    d = Path(os.environ[_BG_STATE_DIR_ENV])
+    d.mkdir(parents=True, exist_ok=True)
+    return d
 
 
-def _start_reader_thread(bg: BgProcess) -> None:
-    """Daemon thread that reads stdout/stderr into the buffer."""
-    def _read():
+def _bg_registry_file() -> Path:
+    return _bg_state_dir() / "registry.json"
+
+
+def _bg_log_file(bg_id: int) -> Path:
+    return _bg_state_dir() / f"{bg_id}.log"
+
+
+def _bg_offset_file(bg_id: int) -> Path:
+    return _bg_state_dir() / f"{bg_id}.offset"
+
+
+def _bg_exitcode_file(bg_id: int) -> Path:
+    return _bg_state_dir() / f"{bg_id}.exitcode"
+
+
+def _read_bg_registry() -> dict:
+    f = _bg_registry_file()
+    if not f.exists():
+        return {}
+    try:
+        return json.loads(f.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _write_bg_registry(registry: dict) -> None:
+    _bg_registry_file().write_text(json.dumps(registry))
+
+
+def _bg_status(bg_id: int, pid: int) -> str:
+    """Running/exited status for a background process, probed from any process."""
+    exitcode_file = _bg_exitcode_file(bg_id)
+    if exitcode_file.exists():
+        return f"exited (code {exitcode_file.read_text().strip()})"
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return "exited (unknown code)"
+    except PermissionError:
+        pass
+    return "running"
+
+
+def _watch_bg_process(bg_id: int, proc: subprocess.Popen) -> None:
+    """Daemon thread that records the exit code once the child exits."""
+    def _wait():
+        proc.wait()
         try:
-            for line in bg.proc.stdout:
-                with bg.lock:
-                    bg.buffer.append(line)
-                    total = sum(len(ln) for ln in bg.buffer)
-                    while total > _MAX_BG_BUFFER and len(bg.buffer) > 1:
-                        total -= len(bg.buffer.pop(0))
-                        bg._read_pos = max(0, bg._read_pos - 1)
-        except Exception:
+            _bg_exitcode_file(bg_id).write_text(str(proc.returncode))
+        except OSError:
             pass
-    threading.Thread(target=_read, daemon=True).start()
+    threading.Thread(target=_wait, daemon=True).start()
 
 
-def _make_bg_tools(working_dir: str):
-    """Create background process tools that close over a shared registry."""
-    _bg_processes: dict[int, BgProcess] = {}
-    _next_id = [0]
+@tool
+def run_background(command: str) -> str:
+    """Start a long-running process in the background. Returns immediately with a process ID.
+    Use for servers, file watchers, builds — anything that won't exit quickly."""
+    registry = _read_bg_registry()
+    bg_id = max((int(k) for k in registry), default=0) + 1
+    log_file = _bg_log_file(bg_id)
+    try:
+        proc = subprocess.Popen(
+            command,
+            shell=True,
+            cwd=_working_dir(),
+            stdout=open(log_file, "w"),
+            stderr=subprocess.STDOUT,
+        )
+    except Exception as exc:
+        return f"Error starting background process: {exc}"
+    registry[str(bg_id)] = {"command": command, "pid": proc.pid, "log_file": str(log_file)}
+    _write_bg_registry(registry)
+    _bg_offset_file(bg_id).write_text("0")
+    _watch_bg_process(bg_id, proc)
+    return f"[bg:{bg_id}] Started: {command} (PID {proc.pid})"
 
-    @tool
-    def run_background(command: str) -> str:
-        """Start a long-running process in the background. Returns immediately with a process ID.
-        Use for servers, file watchers, builds — anything that won't exit quickly."""
-        _next_id[0] += 1
-        bg_id = _next_id[0]
+
+@tool
+def check_process(id: int) -> str:
+    """Get new output from a background process since the last check. Also reports if it is still running."""
+    entry = _read_bg_registry().get(str(id))
+    if entry is None:
+        return f"Error: no background process with id {id}."
+    log_file = Path(entry["log_file"])
+    offset_file = _bg_offset_file(id)
+    offset = int(offset_file.read_text()) if offset_file.exists() else 0
+    new_output = ""
+    if log_file.exists():
+        with open(log_file, "r", errors="replace") as f:
+            f.seek(offset)
+            new_output = f.read()
+            offset_file.write_text(str(f.tell()))
+    status = _bg_status(id, entry["pid"])
+    if new_output.strip():
+        return f"[bg:{id}] {status}\n{new_output}"
+    return f"[bg:{id}] {status} (no new output)"
+
+
+@tool
+def stop_process(id: int) -> str:
+    """Terminate a background process. Sends SIGTERM, then SIGKILL after 5 seconds."""
+    entry = _read_bg_registry().get(str(id))
+    if entry is None:
+        return f"Error: no background process with id {id}."
+    pid = entry["pid"]
+    status = _bg_status(id, pid)
+    if status.startswith("exited"):
+        return f"[bg:{id}] already {status}"
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return f"[bg:{id}] already exited (unknown code)"
+    deadline = time.time() + 5
+    while time.time() < deadline:
+        if _bg_status(id, pid) != "running":
+            break
+        time.sleep(0.2)
+    else:
         try:
-            proc = subprocess.Popen(
-                command,
-                shell=True,
-                cwd=working_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
-        except Exception as exc:
-            return f"Error starting background process: {exc}"
-        bg = BgProcess(id=bg_id, command=command, proc=proc)
-        _bg_processes[bg_id] = bg
-        _start_reader_thread(bg)
-        return f"[bg:{bg_id}] Started: {command} (PID {proc.pid})"
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    return f"[bg:{id}] stopped — {_bg_status(id, pid)}"
 
-    @tool
-    def check_process(id: int) -> str:
-        """Get new output from a background process since the last check. Also reports if it is still running."""
-        bg = _bg_processes.get(id)
-        if bg is None:
-            return f"Error: no background process with id {id}."
-        with bg.lock:
-            new_lines = bg.buffer[bg._read_pos:]
-            bg._read_pos = len(bg.buffer)
-            new_output = "".join(new_lines)
-        status = "running" if bg.proc.poll() is None else f"exited (code {bg.proc.returncode})"
-        if new_output.strip():
-            return f"[bg:{id}] {status}\n{new_output}"
-        return f"[bg:{id}] {status} (no new output)"
 
-    @tool
-    def stop_process(id: int) -> str:
-        """Terminate a background process. Sends SIGTERM, then SIGKILL after 5 seconds."""
-        bg = _bg_processes.get(id)
-        if bg is None:
-            return f"Error: no background process with id {id}."
-        if bg.proc.poll() is not None:
-            return f"[bg:{id}] already exited (code {bg.proc.returncode})"
-        bg.proc.terminate()
-        try:
-            bg.proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            bg.proc.kill()
-            bg.proc.wait(timeout=2)
-        with bg.lock:
-            final = "".join(bg.buffer[bg._read_pos:])
-            bg._read_pos = len(bg.buffer)
-        status = f"exited (code {bg.proc.returncode})"
-        if final.strip():
-            return f"[bg:{id}] stopped — {status}\n{final}"
-        return f"[bg:{id}] stopped — {status}"
+@tool
+def list_processes() -> str:
+    """List all background processes with their status."""
+    registry = _read_bg_registry()
+    if not registry:
+        return "No background processes."
+    lines = []
+    for bg_id_str, entry in sorted(registry.items(), key=lambda kv: int(kv[0])):
+        bg_id = int(bg_id_str)
+        status = _bg_status(bg_id, entry["pid"])
+        cmd_short = entry["command"][:60] + ("..." if len(entry["command"]) > 60 else "")
+        lines.append(f"  [bg:{bg_id}] PID {entry['pid']}  {status}  {cmd_short}")
+    return "\n".join(lines)
 
-    @tool
-    def list_processes() -> str:
-        """List all background processes with their status."""
-        if not _bg_processes:
-            return "No background processes."
-        lines = []
-        for bg in _bg_processes.values():
-            status = "running" if bg.proc.poll() is None else f"exited ({bg.proc.returncode})"
-            cmd_short = bg.command[:60] + ("..." if len(bg.command) > 60 else "")
-            lines.append(f"  [bg:{bg.id}] PID {bg.proc.pid}  {status}  {cmd_short}")
-        return "\n".join(lines)
 
-    def cleanup_all():
-        """Kill all background processes. Called on exit."""
-        for bg in _bg_processes.values():
-            if bg.proc.poll() is None:
-                bg.proc.terminate()
-        deadline = time.time() + 5
-        for bg in _bg_processes.values():
-            remaining = max(0, deadline - time.time())
+def _cleanup_all_bg() -> None:
+    """Kill all still-running background processes. Called on exit from the main process."""
+    registry = _read_bg_registry()
+    entries = [(int(k), v["pid"]) for k, v in registry.items()]
+    for bg_id, pid in entries:
+        if _bg_status(bg_id, pid) == "running":
             try:
-                bg.proc.wait(timeout=remaining)
-            except subprocess.TimeoutExpired:
-                bg.proc.kill()
-
-    return run_background, check_process, stop_process, list_processes, cleanup_all
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+    deadline = time.time() + 5
+    while time.time() < deadline and any(_bg_status(i, p) == "running" for i, p in entries):
+        time.sleep(0.2)
+    for bg_id, pid in entries:
+        if _bg_status(bg_id, pid) == "running":
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+    shutil.rmtree(_bg_state_dir(), ignore_errors=True)
 
 
 # ---------------------------------------------------------------------------
@@ -499,157 +564,169 @@ def _run_tui_repl(
 # Agent builder
 # ---------------------------------------------------------------------------
 
+@tool
+def read_file(path: str) -> str:
+    """Read a file and return its text contents. Paths may be absolute or relative to the working directory."""
+    working_dir = _working_dir()
+    target = Path(path) if os.path.isabs(path) else Path(working_dir) / path
+    if not target.exists():
+        return f"Error: {path!r} does not exist."
+    if target.is_dir():
+        return f"Error: {path!r} is a directory. Use list_dir to browse it."
+    size = target.stat().st_size
+    if size > _MAX_FILE_BYTES:
+        return (
+            f"Error: {path!r} is {size:,} bytes (limit {_MAX_FILE_BYTES:,}). "
+            "Use search_in_files to find specific content instead."
+        )
+    try:
+        return target.read_text(encoding="utf-8", errors="replace")
+    except Exception as exc:
+        return f"Error reading {path!r}: {exc}"
+
+
+@tool
+def write_file(path: str, content: str) -> str:
+    """Write content to a file, creating parent directories as needed. Overwrites existing files."""
+    working_dir = _working_dir()
+    target = Path(path) if os.path.isabs(path) else Path(working_dir) / path
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        return f"Wrote {len(content):,} bytes to {str(target)!r}."
+    except Exception as exc:
+        return f"Error writing {path!r}: {exc}"
+
+
+@tool
+def list_dir(path: str = ".") -> str:
+    """List directory contents with file sizes. Paths may be absolute or relative to the working directory."""
+    working_dir = _working_dir()
+    target = Path(path) if os.path.isabs(path) else Path(working_dir) / path
+    if not target.exists():
+        return f"Error: {path!r} does not exist."
+    if not target.is_dir():
+        return f"Error: {path!r} is not a directory."
+    try:
+        entries = sorted(target.iterdir(), key=lambda p: (p.is_file(), p.name))
+        lines = []
+        for entry in entries:
+            if entry.is_dir():
+                lines.append(f"  {entry.name}/")
+            else:
+                lines.append(f"  {entry.name}  ({entry.stat().st_size:,} bytes)")
+        header = str(target) + "/"
+        return header + "\n" + "\n".join(lines) if lines else header + " (empty)"
+    except Exception as exc:
+        return f"Error listing {path!r}: {exc}"
+
+
+@tool
+def find_files(pattern: str, path: str = ".") -> str:
+    """Find files matching a glob pattern (e.g. '**/*.py'). Path relative to working directory."""
+    working_dir = _working_dir()
+    base = Path(path) if os.path.isabs(path) else Path(working_dir) / path
+    if not base.exists():
+        return f"Error: {path!r} does not exist."
+    if not base.is_dir():
+        return f"Error: {path!r} is not a directory."
+    try:
+        matches = sorted(m for m in base.glob(pattern) if m.is_file())
+        if not matches:
+            return f"No files matching {pattern!r} under {str(base)!r}."
+        lines = []
+        for m in matches[:200]:
+            try:
+                rel = m.relative_to(working_dir)
+            except ValueError:
+                rel = m
+            lines.append(str(rel))
+        suffix = f"\n... ({len(matches) - 200} more)" if len(matches) > 200 else ""
+        return "\n".join(lines) + suffix
+    except Exception as exc:
+        return f"Error finding files: {exc}"
+
+
+@tool
+def search_in_files(regex: str, path: str = ".", file_glob: str = "**/*") -> str:
+    """Search for a regex pattern in file contents. Returns file:line: matching_line entries."""
+    import re as _re
+    working_dir = _working_dir()
+    base = Path(path) if os.path.isabs(path) else Path(working_dir) / path
+    try:
+        compiled = _re.compile(regex)
+    except _re.error as exc:
+        return f"Invalid regex {regex!r}: {exc}"
+    results = []
+    for filepath in sorted(base.glob(file_glob)):
+        if not filepath.is_file() or filepath.stat().st_size > _MAX_FILE_BYTES:
+            continue
+        try:
+            for lineno, line in enumerate(
+                filepath.read_text(encoding="utf-8", errors="replace").splitlines(), 1
+            ):
+                if compiled.search(line):
+                    try:
+                        label = str(filepath.relative_to(working_dir))
+                    except ValueError:
+                        label = str(filepath)
+                    results.append(f"{label}:{lineno}: {line.rstrip()}")
+                    if len(results) >= 100:
+                        break
+        except Exception:
+            continue
+        if len(results) >= 100:
+            break
+    if not results:
+        return f"No matches for {regex!r} in {str(base)!r} ({file_glob})."
+    suffix = "\n... (truncated at 100 matches)" if len(results) >= 100 else ""
+    return "\n".join(results) + suffix
+
+
+@tool
+def run_shell(command: str) -> str:
+    """Run a shell command in the working directory. Returns stdout + stderr with exit code.
+    For long-running commands (servers, watchers), use run_background instead."""
+    working_dir = _working_dir()
+    shell_timeout = _shell_timeout()
+    try:
+        proc = subprocess.run(
+            command,
+            shell=True,
+            cwd=working_dir,
+            capture_output=True,
+            text=True,
+            timeout=shell_timeout,
+        )
+        combined = (proc.stdout + proc.stderr).strip()
+        if len(combined) > _MAX_SHELL_OUTPUT:
+            combined = combined[:_MAX_SHELL_OUTPUT] + f"\n... (truncated, {len(combined):,} chars total)"
+        return f"[exit {proc.returncode}]\n{combined}" if combined else f"[exit {proc.returncode}] (no output)"
+    except subprocess.TimeoutExpired:
+        return f"Error: command timed out after {shell_timeout}s. Use run_background for long-running commands."
+    except Exception as exc:
+        return f"Error: {exc}"
+
+
+@tool
+def reply_to_user(message: str) -> str:
+    """Send your response to the user. Call this when the task is complete."""
+    return "ok"
+
+
 def build_agent(working_dir: str, shell_timeout: int = _DEFAULT_SHELL_TIMEOUT):
     """Build the coding agent and return (agent, cleanup_fn).
 
     Returns a tuple so the caller can clean up background processes on exit.
     """
+    os.environ[_WORKING_DIR_ENV] = working_dir
+    os.environ[_SHELL_TIMEOUT_ENV] = str(shell_timeout)
+    os.environ[_BG_STATE_DIR_ENV] = tempfile.mkdtemp(prefix="coding_agent_tui_bg_")
 
     receive_message = wait_for_message_tool(
         name="wait_for_message",
         description="Wait for the next user message. Payload has a 'text' field.",
     )
-
-    # Background process tools (shared registry via closure)
-    run_background, check_process, stop_process, list_processes, cleanup_bg = (
-        _make_bg_tools(working_dir)
-    )
-
-    @tool
-    def read_file(path: str) -> str:
-        """Read a file and return its text contents. Paths may be absolute or relative to the working directory."""
-        target = Path(path) if os.path.isabs(path) else Path(working_dir) / path
-        if not target.exists():
-            return f"Error: {path!r} does not exist."
-        if target.is_dir():
-            return f"Error: {path!r} is a directory. Use list_dir to browse it."
-        size = target.stat().st_size
-        if size > _MAX_FILE_BYTES:
-            return (
-                f"Error: {path!r} is {size:,} bytes (limit {_MAX_FILE_BYTES:,}). "
-                "Use search_in_files to find specific content instead."
-            )
-        try:
-            return target.read_text(encoding="utf-8", errors="replace")
-        except Exception as exc:
-            return f"Error reading {path!r}: {exc}"
-
-    @tool
-    def write_file(path: str, content: str) -> str:
-        """Write content to a file, creating parent directories as needed. Overwrites existing files."""
-        target = Path(path) if os.path.isabs(path) else Path(working_dir) / path
-        try:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(content, encoding="utf-8")
-            return f"Wrote {len(content):,} bytes to {str(target)!r}."
-        except Exception as exc:
-            return f"Error writing {path!r}: {exc}"
-
-    @tool
-    def list_dir(path: str = ".") -> str:
-        """List directory contents with file sizes. Paths may be absolute or relative to the working directory."""
-        target = Path(path) if os.path.isabs(path) else Path(working_dir) / path
-        if not target.exists():
-            return f"Error: {path!r} does not exist."
-        if not target.is_dir():
-            return f"Error: {path!r} is not a directory."
-        try:
-            entries = sorted(target.iterdir(), key=lambda p: (p.is_file(), p.name))
-            lines = []
-            for entry in entries:
-                if entry.is_dir():
-                    lines.append(f"  {entry.name}/")
-                else:
-                    lines.append(f"  {entry.name}  ({entry.stat().st_size:,} bytes)")
-            header = str(target) + "/"
-            return header + "\n" + "\n".join(lines) if lines else header + " (empty)"
-        except Exception as exc:
-            return f"Error listing {path!r}: {exc}"
-
-    @tool
-    def find_files(pattern: str, path: str = ".") -> str:
-        """Find files matching a glob pattern (e.g. '**/*.py'). Path relative to working directory."""
-        base = Path(path) if os.path.isabs(path) else Path(working_dir) / path
-        if not base.exists():
-            return f"Error: {path!r} does not exist."
-        if not base.is_dir():
-            return f"Error: {path!r} is not a directory."
-        try:
-            matches = sorted(m for m in base.glob(pattern) if m.is_file())
-            if not matches:
-                return f"No files matching {pattern!r} under {str(base)!r}."
-            lines = []
-            for m in matches[:200]:
-                try:
-                    rel = m.relative_to(working_dir)
-                except ValueError:
-                    rel = m
-                lines.append(str(rel))
-            suffix = f"\n... ({len(matches) - 200} more)" if len(matches) > 200 else ""
-            return "\n".join(lines) + suffix
-        except Exception as exc:
-            return f"Error finding files: {exc}"
-
-    @tool
-    def search_in_files(regex: str, path: str = ".", file_glob: str = "**/*") -> str:
-        """Search for a regex pattern in file contents. Returns file:line: matching_line entries."""
-        import re as _re
-        base = Path(path) if os.path.isabs(path) else Path(working_dir) / path
-        try:
-            compiled = _re.compile(regex)
-        except _re.error as exc:
-            return f"Invalid regex {regex!r}: {exc}"
-        results = []
-        for filepath in sorted(base.glob(file_glob)):
-            if not filepath.is_file() or filepath.stat().st_size > _MAX_FILE_BYTES:
-                continue
-            try:
-                for lineno, line in enumerate(
-                    filepath.read_text(encoding="utf-8", errors="replace").splitlines(), 1
-                ):
-                    if compiled.search(line):
-                        try:
-                            label = str(filepath.relative_to(working_dir))
-                        except ValueError:
-                            label = str(filepath)
-                        results.append(f"{label}:{lineno}: {line.rstrip()}")
-                        if len(results) >= 100:
-                            break
-            except Exception:
-                continue
-            if len(results) >= 100:
-                break
-        if not results:
-            return f"No matches for {regex!r} in {str(base)!r} ({file_glob})."
-        suffix = "\n... (truncated at 100 matches)" if len(results) >= 100 else ""
-        return "\n".join(results) + suffix
-
-    @tool
-    def run_shell(command: str) -> str:
-        """Run a shell command in the working directory. Returns stdout + stderr with exit code.
-        For long-running commands (servers, watchers), use run_background instead."""
-        try:
-            proc = subprocess.run(
-                command,
-                shell=True,
-                cwd=working_dir,
-                capture_output=True,
-                text=True,
-                timeout=shell_timeout,
-            )
-            combined = (proc.stdout + proc.stderr).strip()
-            if len(combined) > _MAX_SHELL_OUTPUT:
-                combined = combined[:_MAX_SHELL_OUTPUT] + f"\n... (truncated, {len(combined):,} chars total)"
-            return f"[exit {proc.returncode}]\n{combined}" if combined else f"[exit {proc.returncode}] (no output)"
-        except subprocess.TimeoutExpired:
-            return f"Error: command timed out after {shell_timeout}s. Use run_background for long-running commands."
-        except Exception as exc:
-            return f"Error: {exc}"
-
-    @tool
-    def reply_to_user(message: str) -> str:
-        """Send your response to the user. Call this when the task is complete."""
-        return "ok"
 
     agent = Agent(
         name="coding_agent_tui",
@@ -704,7 +781,7 @@ Repeat indefinitely:
 """,
     )
 
-    return agent, cleanup_bg
+    return agent, _cleanup_all_bg
 
 
 # ---------------------------------------------------------------------------
