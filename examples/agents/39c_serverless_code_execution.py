@@ -64,8 +64,6 @@ def _start_mock_server(port: int = 9753) -> HTTPServer:
 
 # ── Agent setup ───────────────────────────────────────────────────────
 
-mock_server = _start_mock_server(port=9753)
-
 serverless_coder = Agent(
     name="serverless_coder",
     model=settings.llm_model,
@@ -84,6 +82,12 @@ serverless_coder = Agent(
 
 
 if __name__ == "__main__":
+    # Started here rather than at module level: worker processes are launched with
+    # the default "spawn" start method, which re-imports this module in a fresh
+    # interpreter. A module-level start would try to bind 127.0.0.1:9753 a second
+    # time in every worker and fail with "Address already in use".
+    mock_server = _start_mock_server(port=9753)
+
     with AgentRuntime() as runtime:
         print("--- Serverless Code Execution ---")
         result = runtime.run(
