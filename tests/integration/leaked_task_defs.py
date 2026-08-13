@@ -9,8 +9,7 @@ shared server they accumulated until the account hit its cap::
 
 At that point registration fails for every branch, so unrelated PRs go red.
 Cleanup on teardown stops the leak; this module reclaims what earlier runs
-already leaked, and is also what ``scripts/prune_leaked_test_task_defs.py``
-matches on.
+already leaked.
 """
 
 import logging
