@@ -575,11 +575,17 @@ class TestOrkesClients:
         assert workflow.status == "RUNNING"
 
         self.workflow_client.delete_workflow(workflow_uuid)
+        # Assert on the 404 status, not the server's prose. The message wording is
+        # not part of the API contract and has changed server-side before, which
+        # turned CI red without any SDK change.
         try:
-            workflow = self.workflow_client.get_workflow(workflow_uuid, False)
+            self.workflow_client.get_workflow(workflow_uuid, False)
+            raise AssertionError(
+                "expected a 404 for deleted workflow {}".format(workflow_uuid)
+            )
         except ApiException as e:
             assert e.code == 404
-            assert str(e.message).lower() == "workflow with id: {} not found.".format(workflow_uuid)
+            assert workflow_uuid in str(e.message)
 
     def __test_task_execution_lifecycle(self):
 
