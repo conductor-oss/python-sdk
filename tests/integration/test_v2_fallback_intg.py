@@ -171,6 +171,31 @@ class TestV2FallbackIntegration(unittest.TestCase):
 
             print(f"  Results: {completed} completed, {failed} failed, {len(pending)} pending")
 
+            # On failure the workflow status alone ("still RUNNING") says nothing
+            # about why. Dump the tasks so the next red run distinguishes:
+            #   SCHEDULED    -> queued but never polled (wrong queue/domain, or
+            #                   no live worker for that task type)
+            #   IN_PROGRESS  -> polled and leased, never updated (worker stuck)
+            #   no tasks     -> the workflow was never decided (server side)
+            if pending:
+                print(f"  DIAGNOSTIC: {len(pending)} workflow(s) did not complete")
+                for wf_id in sorted(pending):
+                    try:
+                        wf = self.workflow_client.get_workflow(wf_id, include_tasks=True)
+                        tasks = wf.tasks or []
+                        print(f"    {wf_id} status={wf.status} tasks={len(tasks)}")
+                        for t in tasks:
+                            print(
+                                f"      task={getattr(t, 'task_def_name', '?')} "
+                                f"ref={getattr(t, 'reference_task_name', '?')} "
+                                f"status={getattr(t, 'status', '?')} "
+                                f"domain={getattr(t, 'domain', None)} "
+                                f"pollCount={getattr(t, 'poll_count', None)} "
+                                f"workerId={getattr(t, 'worker_id', None)}"
+                            )
+                    except Exception as e:
+                        print(f"    {wf_id}: could not fetch tasks: {e}")
+
             self.assertEqual(len(pending), 0, f"{len(pending)} workflows did not complete in time")
             self.assertEqual(completed, workflow_count, f"Expected {workflow_count} completed, got {completed}")
 

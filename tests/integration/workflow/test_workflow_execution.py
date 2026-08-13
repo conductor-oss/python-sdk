@@ -239,6 +239,33 @@ def generate_workflow(workflow_executor: WorkflowExecutor, workflow_name: str = 
     )
 
 
+def _describe_tasks(workflow_id: str, workflow_executor: WorkflowExecutor) -> str:
+    """Task-level detail for a workflow that did not reach COMPLETED.
+
+    "still RUNNING" on its own says nothing about why. The task states separate
+    the possibilities: SCHEDULED means queued but never polled (wrong
+    queue/domain, or no live worker for that task type), IN_PROGRESS means
+    polled and leased but never updated, and no tasks at all means the workflow
+    was never decided server-side.
+    """
+    try:
+        wf = workflow_executor.get_workflow(workflow_id=workflow_id, include_tasks=True)
+        tasks = wf.tasks or []
+        if not tasks:
+            return 'no tasks on the workflow'
+        return '; '.join(
+            f"{getattr(t, 'task_def_name', '?')}"
+            f"[ref={getattr(t, 'reference_task_name', '?')}"
+            f" status={getattr(t, 'status', '?')}"
+            f" domain={getattr(t, 'domain', None)}"
+            f" pollCount={getattr(t, 'poll_count', None)}"
+            f" workerId={getattr(t, 'worker_id', None)}]"
+            for t in tasks
+        )
+    except Exception as e:
+        return f'could not fetch tasks: {e}'
+
+
 def validate_workflow_status(workflow_id: str, workflow_executor: WorkflowExecutor) -> None:
     workflow = workflow_executor.get_workflow(
         workflow_id=workflow_id,
@@ -246,7 +273,9 @@ def validate_workflow_status(workflow_id: str, workflow_executor: WorkflowExecut
     )
     if workflow.status != 'COMPLETED':
         raise Exception(
-            f'workflow expected to be COMPLETED, but received {workflow.status}, workflow_id: {workflow_id}'
+            f'workflow expected to be COMPLETED, but received {workflow.status}, '
+            f'workflow_id: {workflow_id}, tasks: '
+            f'{_describe_tasks(workflow_id, workflow_executor)}'
         )
     workflow_status = workflow_executor.get_workflow_status(
         workflow_id=workflow_id,
