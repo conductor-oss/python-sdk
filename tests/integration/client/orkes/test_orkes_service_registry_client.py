@@ -12,6 +12,10 @@ from conductor.client.http.models.service_method import ServiceMethod
 from conductor.client.http.models.proto_registry_entry import ProtoRegistryEntry
 from conductor.client.orkes.orkes_service_registry_client import OrkesServiceRegistryClient
 from conductor.client.http.rest import ApiException
+from tests.integration.retry_helpers import (
+    DEFAULT_OVERALL_DEADLINE_SECONDS,
+    retry_scenario,
+)
 
 SUFFIX = str(uuid())
 HTTP_SERVICE_NAME = 'IntegrationTestServiceRegistryHttp_' + SUFFIX
@@ -38,11 +42,20 @@ class TestOrkesServiceRegistryClient:
         self.client = OrkesServiceRegistryClient(configuration)
         logger.info(f'Setting up TestOrkesServiceRegistryClient with config {configuration}')
 
-    def run(self) -> None:
-        """Run all service registry tests"""
-        self.test_http_service_registry()
-        self.test_grpc_service()
-        self.test_proto_operations()
+    def run(self, deadline=None) -> None:
+        """Run all service registry tests.
+
+        Each is a scenario: on a transient blip against the shared dev server
+        (gateway 5xx, 423 contention, status-0 transport hiccup) it retries from
+        the top until the shared deadline passes. Real failures raise at once.
+        This suite used to call them bare, so a single 502 from the proxy failed
+        the whole run.
+        """
+        retry_scenario('test_http_service_registry', self.test_http_service_registry,
+                       deadline=deadline)
+        retry_scenario('test_grpc_service', self.test_grpc_service, deadline=deadline)
+        retry_scenario('test_proto_operations', self.test_proto_operations,
+                       deadline=deadline)
 
     def setUp(self):
         """Clean up services before each test"""
@@ -276,8 +289,12 @@ class TestOrkesServiceRegistryClientIntg(unittest.TestCase):
         logger.info('START: service registry integration tests')
         configuration = self.config
 
+        # One shared wall-clock budget for the whole suite, as in
+        # test_workflow_client_intg.test_all.
+        deadline = time.monotonic() + DEFAULT_OVERALL_DEADLINE_SECONDS
+
         # Run service registry tests
-        TestOrkesServiceRegistryClient(configuration=configuration).run()
+        TestOrkesServiceRegistryClient(configuration=configuration).run(deadline=deadline)
 
         logger.info('END: service registry integration tests')
 

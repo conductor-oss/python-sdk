@@ -52,6 +52,36 @@ def _check_server_connectivity():
     return _server_available, _skip_reason
 
 
+_reclaimed = False
+
+
+def _reclaim_once():
+    """Reclaim task-def quota leaked by earlier runs, before any test registers.
+
+    Without this a filled-up account stays filled: registration answers 402 for
+    every branch, so no run gets far enough to clean up after itself.
+
+    Called from both entry points below — pytest_sessionstart covers the CI
+    invocations (tests/integration/conftest.py is an initial conftest for every
+    bucket), skip_if_server_unavailable covers a session that reaches the
+    unittest suites some other way. The flag makes the second call a no-op.
+    """
+    global _reclaimed
+    if _reclaimed:
+        return
+    _reclaimed = True
+
+    available, _ = _check_server_connectivity()
+    if not available:
+        return
+    from tests.integration.leaked_task_defs import reclaim_task_def_quota
+    reclaim_task_def_quota(Configuration())
+
+
+def pytest_sessionstart(session):
+    _reclaim_once()
+
+
 def skip_if_server_unavailable():
     """
     Call from unittest.TestCase.setUpClass to skip the entire test class
@@ -68,6 +98,61 @@ def skip_if_server_unavailable():
     available, reason = _check_server_connectivity()
     if not available:
         raise unittest.SkipTest(reason)
+
+
+# ---------------------------------------------------------------------------
+# Metadata cleanup
+# ---------------------------------------------------------------------------
+
+def cleanup_metadata(config, task_defs=(), workflow_defs=()):
+    """Best-effort delete of metadata a test class registered.
+
+    Suites that register per-run task defs (``worker_task(...,
+    register_task_def=True)`` with a RUN_ID-suffixed name) used to leave every
+    one behind, so each CI run added a handful to the shared server until it
+    hit its Task Definitions cap and answered 402 to all further
+    registrations. Call this from tearDownClass.
+
+    Failures are logged and swallowed: cleanup must never turn a passing suite
+    red, and a def that was never registered is nothing to report.
+
+    ``workflow_defs`` items are names (version 1 assumed) or (name, version).
+    """
+    from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
+
+    client = OrkesMetadataClient(config)
+
+    def _log(what, e):
+        # "no such definition" is the normal case for anything a deselected or
+        # skipped test never registered, so it logs at debug — only a cleanup
+        # that failed for some other reason is worth a warning.
+        level = logging.DEBUG if _is_missing(e) else logging.WARNING
+        logger.log(level, "cleanup: could not unregister %s: %s", what, e)
+
+    for name in task_defs:
+        try:
+            client.unregister_task_def(name)
+        except Exception as e:
+            _log(f"task def {name}", e)
+
+    for entry in workflow_defs:
+        name, version = entry if isinstance(entry, tuple) else (entry, 1)
+        try:
+            client.unregister_workflow_def(name, version)
+        except Exception as e:
+            _log(f"workflow def {name} v{version}", e)
+
+
+def _is_missing(exc):
+    """True when a delete failed only because the definition was not there.
+
+    The server reports this inconsistently — 404, or a 500 whose body reads
+    "No such task definition" / "No such workflow definition" — so match on
+    both the status and the text.
+    """
+    if getattr(exc, "code", None) == 404:
+        return True
+    return "no such" in str(getattr(exc, "body", "") or exc).lower()
 
 
 # ---------------------------------------------------------------------------

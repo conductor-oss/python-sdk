@@ -51,6 +51,18 @@ TERMINAL_WORKFLOW_STATES = ('COMPLETED', 'FAILED', 'TIMED_OUT', 'TERMINATED')
 # handling rather than blind backoff).
 GATEWAY_STATUSES = (502, 503, 504)
 
+# 423 Locked: "Workflow is currently being updated, please retry". The server
+# takes a short-lived lock while applying a write and answers this when a
+# concurrent request touches the same workflow. It fires on the shared dev
+# server whenever several runs exercise the same workflow at once.
+#
+# Deliberately NOT part of is_transient: retry_on_transient retries a single
+# request, and replaying a non-idempotent call (start_workflow, signal) on a 423
+# risks double-executing a write that actually landed and only contended on the
+# read-back. Only retry_scenario honours it, because a scenario re-runs from the
+# top and rebuilds its own state.
+LOCKED_STATUS = 423
+
 
 def is_transient(exc):
     """True when ``exc`` is a transient blip against the shared dev server
@@ -59,6 +71,9 @@ def is_transient(exc):
     keep-alive — surfaced as status 0/None or the ``transient`` flag) and
     gateway-class 5xx (502/503/504) returned by the proxy/LB in front of the
     server (see ``GATEWAY_STATUSES``).
+
+    423 is excluded here on purpose — see ``LOCKED_STATUS`` and
+    ``is_scenario_retryable``.
     """
     return isinstance(exc, ApiException) and (
         getattr(exc, 'transient', False)
@@ -66,10 +81,20 @@ def is_transient(exc):
         or exc.status in GATEWAY_STATUSES)
 
 
-def first_transient_api_exception(exc):
+def is_scenario_retryable(exc):
+    """True when ``exc`` is worth re-running a whole scenario for.
+
+    Everything ``is_transient`` covers, plus 423 write contention: safe here
+    because a scenario re-runs from the top and rebuilds its own state, whereas
+    replaying one non-idempotent request is not (see ``LOCKED_STATUS``).
+    """
+    return is_transient(exc) or (
+        isinstance(exc, ApiException) and exc.status == LOCKED_STATUS)
+
+
+def _first_matching_api_exception(exc, predicate):
     """Walk the exception chain (``__cause__`` / ``__context__``) and return the
-    first transient ``ApiException`` (flagged transient, or status 0/None), or
-    ``None`` if there isn't one.
+    first ``ApiException`` satisfying ``predicate``, or ``None``.
 
     Inner test helpers sometimes catch an ApiException and re-raise it as a bare
     ``Exception`` (losing the type), so we can't rely on the outermost exception
@@ -80,10 +105,20 @@ def first_transient_api_exception(exc):
     cur = exc
     while cur is not None and id(cur) not in seen:
         seen.add(id(cur))
-        if is_transient(cur):
+        if predicate(cur):
             return cur
         cur = cur.__cause__ or cur.__context__
     return None
+
+
+def first_transient_api_exception(exc):
+    """First transient ``ApiException`` in the chain, or ``None``."""
+    return _first_matching_api_exception(exc, is_transient)
+
+
+def first_scenario_retryable_api_exception(exc):
+    """First scenario-retryable ``ApiException`` in the chain, or ``None``."""
+    return _first_matching_api_exception(exc, is_scenario_retryable)
 
 
 def retry_on_transient(func, *args, retries=4, base_delay=1, **kwargs):
@@ -141,8 +176,8 @@ def retry_scenario(label, func, *args, deadline=None,
                    base_delay=DEFAULT_BASE_DELAY_SECONDS,
                    max_delay=DEFAULT_MAX_DELAY_SECONDS, **kwargs):
     """Run ``func(*args, **kwargs)``, retrying only on a transient blip (see
-    ``is_transient``: status 0/None transport hiccups plus gateway-class
-    502/503/504) until the shared ``deadline`` passes.
+    ``is_scenario_retryable``: status 0/None transport hiccups, gateway-class
+    502/503/504, and 423 write contention) until the shared ``deadline`` passes.
 
     Args:
         label: Human-readable scenario name for logs.
@@ -166,7 +201,7 @@ def retry_scenario(label, func, *args, deadline=None,
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            transient = first_transient_api_exception(e)
+            transient = first_scenario_retryable_api_exception(e)
             if transient is None:
                 raise
             now = time.monotonic()
