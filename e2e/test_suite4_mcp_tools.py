@@ -6,7 +6,7 @@ Tests MCP tool integration end-to-end:
 
 Manages its own mcp-testkit instance on a dedicated port.
 Single sequential test with try/finally cleanup.
-No mocks. Real server, real CLI, real LLM.
+No mocks. Real server, real LLM.
 """
 
 import asyncio
@@ -35,6 +35,51 @@ MCP_AUTH_KEY = "e2e-test-secret-key-12345"
 CRED_NAME = "MCP_AUTH_KEY"
 TIMEOUT = 120
 
+API = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api").rstrip("/")
+
+
+# ── Credential store (server API — no CLI) ───────────────────────────────
+
+
+def _ensure_credential(name: str, preferred: str) -> tuple[str, bool]:
+    """Make a credential available to the server. Returns (auth_key, created_by_us).
+
+    Provisioning differs by server flavor, but *consuming* a credential is core
+    behaviour on both, so the auth phase should run on either:
+
+      - Orkes: the store is writable, so store ``preferred``.
+      - conductor-oss: the store is env-backed and read-only (writes return 501),
+        so adopt whatever ``CONDUCTOR_SECRET_<name>`` already holds rather than
+        insisting on our own value.
+
+    Skips only when neither is possible.
+    """
+    r = requests.put(
+        f"{API}/secrets/{name}",
+        data=preferred,
+        headers={"Content-Type": "text/plain"},
+        timeout=10,
+    )
+    if r.ok:
+        return preferred, True
+
+    existing = requests.get(f"{API}/secrets/{name}", timeout=10)
+    if existing.ok and existing.text.strip():
+        return existing.text.strip(), False
+
+    pytest.skip(
+        f"no credential available for {name}: the store rejected the write "
+        f"(HTTP {r.status_code}) and the name is not provisioned. Set "
+        f"CONDUCTOR_SECRET_{name} in the server environment to run this phase."
+    )
+
+
+def _delete_secret(name: str) -> None:
+    try:
+        requests.delete(f"{API}/secrets/{name}", timeout=10)
+    except Exception:
+        pass  # best-effort cleanup
+
 # ── Expected tools (from mcp-testkit source) ─────────────────────────────
 
 def _expected_tools_from_source():
@@ -60,6 +105,12 @@ TEST_TOOL_EXPECTED = {
     "string_reverse": "olleh",  # reverse("hello")
     "encoding_base64_encode": "dGVzdA==",  # base64("test")
 }
+
+# mcp-testkit's get_weather returns these fixed values for any city. Unlike the
+# tools above — whose results an LLM can work out unaided — these are arbitrary,
+# so an answer containing them proves the tool's result reached the model.
+WEATHER_PROMPT = "What is the weather in San Francisco right now?"
+WEATHER_EXPECTED = ["77", "45"]  # temperature_f, humidity_pct
 
 
 # ── MCP Server Management ───────────────────────────────────────────────
@@ -155,6 +206,24 @@ def _make_agent(model, server_url):
         name="e2e_mcp_unauth",
         model=model,
         instructions=AGENT_INSTRUCTIONS,
+        tools=[mt],
+    )
+
+
+def _make_weather_agent(model, server_url):
+    """Agent asked an open question, so it must rely on what the tool returned."""
+    mt = mcp_tool(
+        server_url=server_url,
+        name="weather_mcp",
+        description="Weather tools via MCP — current conditions for a city",
+    )
+    return Agent(
+        name="e2e_mcp_weather",
+        model=model,
+        instructions=(
+            "You are a weather assistant. Use the available MCP tools to answer "
+            "questions about weather conditions."
+        ),
         tools=[mt],
     )
 
@@ -355,3 +424,150 @@ def _validate_tool_execution(result, step_name):
             f"expected value '{expected}'.\n"
             f"  output={output_str[:300]}"
         )
+
+
+
+# ── Test ─────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.timeout(600)
+class TestSuite4McpTools:
+    """MCP tools: discovery, execution, and authenticated access."""
+
+    def test_mcp_result_reaches_the_answer(self, runtime, model):
+        """The tool's result must be present in the agent's answer.
+
+        Asserts only on what a caller sees. The values are arbitrary fixtures the
+        model cannot work out on its own, so an answer carrying them proves the
+        tool's output travelled back into the conversation.
+        """
+        # Verify mcp-testkit is installed
+        try:
+            subprocess.run(
+                ["mcp-testkit", "--help"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+        except FileNotFoundError:
+            pytest.skip(
+                "mcp-testkit not installed — required for Suite 4 MCP tools test"
+            )
+
+        server_proc = None
+        try:
+            server_proc = _start_mcp_server(MCP_PORT)
+            agent = _make_weather_agent(model, MCP_SERVER_URL)
+            result = runtime.run(agent, WEATHER_PROMPT, timeout=TIMEOUT)
+            _assert_run_completed(result, "Tool result in answer")
+
+            answer = str(result.output)
+            missing = [v for v in WEATHER_EXPECTED if v not in answer]
+            assert not missing, (
+                f"[Tool result in answer] answer omits {missing} from "
+                f"get_weather's result — the tool ran but its output never "
+                f"reached the model.\n  answer={answer[:400]}"
+            )
+        finally:
+            if server_proc:
+                _stop_mcp_server(server_proc)
+
+    def test_mcp_lifecycle(self, runtime, model):
+        """Full MCP lifecycle — unauthenticated → authenticated."""
+        # Verify mcp-testkit is installed
+        try:
+            subprocess.run(
+                ["mcp-testkit", "--help"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+        except FileNotFoundError:
+            pytest.skip(
+                "mcp-testkit not installed — required for Suite 4 MCP tools test"
+            )
+
+        server_proc = None
+        created = False
+        try:
+            created = self._run_lifecycle(runtime, model)
+        finally:
+            # Only remove what we stored; a pre-provisioned credential belongs
+            # to the environment.
+            if created:
+                _delete_secret(CRED_NAME)
+
+    def _run_lifecycle(self, runtime, model) -> bool:
+        server_proc = None
+        created = False
+        try:
+            # ── Phase 1: Unauthenticated ──────────────────────────────
+
+            # Step d: Start MCP server without auth
+            server_proc = _start_mcp_server(MCP_PORT)
+
+            # Step e: Discover tools, validate all are present
+            discovered = _discover_tools_via_mcp(MCP_SERVER_URL)
+            assert len(discovered) == EXPECTED_TOOL_COUNT, (
+                f"[Phase 1: Discovery] Expected {EXPECTED_TOOL_COUNT} tools, "
+                f"discovered {len(discovered)}.\n"
+                f"  Missing: {sorted(set(EXPECTED_TOOL_NAMES) - set(discovered))}\n"
+                f"  Extra: {sorted(set(discovered) - set(EXPECTED_TOOL_NAMES))}"
+            )
+            assert set(discovered) == set(EXPECTED_TOOL_NAMES), (
+                f"[Phase 1: Discovery] Tool names mismatch.\n"
+                f"  Missing: {sorted(set(EXPECTED_TOOL_NAMES) - set(discovered))}\n"
+                f"  Extra: {sorted(set(discovered) - set(EXPECTED_TOOL_NAMES))}"
+            )
+
+            # Steps b+c+f: Create agent, run with 3 tools, validate
+            agent = _make_agent(model, MCP_SERVER_URL)
+            result = runtime.run(agent, PROMPT_USE_3_TOOLS, timeout=TIMEOUT)
+            _validate_tool_execution(result, "Phase 1: Unauthenticated execution")
+
+            # ── Phase 2: Authenticated ────────────────────────────────
+
+            # Resolve the credential before restarting: mcp-testkit's --auth key
+            # has to match whatever the server will inject, and on a read-only
+            # store that value is the environment's, not ours.
+            auth_key, created = _ensure_credential(CRED_NAME, MCP_AUTH_KEY)
+
+            # Step g: Stop server, restart with auth
+            _stop_mcp_server(server_proc)
+            server_proc = None
+            time.sleep(1)  # Let port release
+            server_proc = _start_mcp_server(MCP_PORT, auth_key=auth_key)
+
+            # Verify auth is enforced — unauthenticated call should fail
+            with pytest.raises(Exception):
+                _discover_tools_via_mcp(MCP_SERVER_URL)
+
+            # Step h: Create auth agent with credential placeholder
+            auth_agent = _make_auth_agent(model, MCP_SERVER_URL, CRED_NAME)
+
+            # Step j: Discover tools with auth, validate all present
+            discovered_auth = _discover_tools_via_mcp(
+                MCP_SERVER_URL, auth_key=auth_key
+            )
+            assert len(discovered_auth) == EXPECTED_TOOL_COUNT, (
+                f"[Phase 2: Auth Discovery] Expected {EXPECTED_TOOL_COUNT} tools, "
+                f"discovered {len(discovered_auth)}."
+            )
+            assert set(discovered_auth) == set(EXPECTED_TOOL_NAMES), (
+                f"[Phase 2: Auth Discovery] Tool names mismatch.\n"
+                f"  Missing: {sorted(set(EXPECTED_TOOL_NAMES) - set(discovered_auth))}\n"
+                f"  Extra: {sorted(set(discovered_auth) - set(EXPECTED_TOOL_NAMES))}"
+            )
+
+            # Step k: Execute and validate
+            result_auth = runtime.run(
+                auth_agent, PROMPT_USE_3_TOOLS, timeout=TIMEOUT
+            )
+            _validate_tool_execution(
+                result_auth, "Phase 2: Authenticated execution"
+            )
+            return created
+
+        finally:
+            if server_proc:
+                _stop_mcp_server(server_proc)
