@@ -70,6 +70,21 @@ def _assert_not_found(fetch, *identifiers):
     raise AssertionError("expected a 404, but the resource is still readable")
 
 
+def _clear_tags(get_tags, delete_tag, target):
+    # Best-effort: leave the target with no tags so a scenario that asserts on
+    # exact tag counts can be re-run. Failures are ignored -- a tag that is
+    # already gone is nothing to report, and cleanup must not fail the test.
+    try:
+        existing = get_tags(target) or []
+    except Exception:
+        return
+    for tag in existing:
+        try:
+            delete_tag(MetadataTag(tag.key, tag.value), target)
+        except Exception:
+            pass
+
+
 def _await_value(fetch, expected, timeout=15, interval=1):
     # Queue size is eventually consistent -- the server enqueues and indexes
     # asynchronously, so reading straight after starting or draining work
@@ -503,6 +518,14 @@ class TestOrkesClients:
             MetadataTag("tag3", "val3")
         ]
 
+        # retry_scenario re-runs this whole scenario from the top on a transient
+        # blip, but tags survive the failed attempt -- so the "add one tag, now
+        # there is exactly one" assertion below saw the leftovers and failed with
+        # `assert 2 == 1`. Start from a known-empty set so the scenario is
+        # re-runnable.
+        _clear_tags(self.metadata_client.getTaskTags,
+                    self.metadata_client.deleteTaskTag, TASK_TYPE)
+
         self.metadata_client.addTaskTag(tags[0], TASK_TYPE)
         fetchedTags = self.metadata_client.getTaskTags(TASK_TYPE)
         assert len(fetchedTags) == 1
@@ -518,6 +541,10 @@ class TestOrkesClients:
 
     def __test_workflow_tags(self):
         singleTag = MetadataTag("wftag", "val")
+
+        # Same re-runnability problem as __test_task_tags.
+        _clear_tags(self.metadata_client.get_workflow_tags,
+                    self.metadata_client.delete_workflow_tag, WORKFLOW_NAME)
 
         self.metadata_client.add_workflow_tag(singleTag, WORKFLOW_NAME)
         fetchedTags = self.metadata_client.get_workflow_tags(WORKFLOW_NAME)
