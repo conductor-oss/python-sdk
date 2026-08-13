@@ -632,6 +632,39 @@ def _start_complex_workflow(workflow_executor: WorkflowExecutor) -> str:
         raise
 
 
+def _wait_for_blocking_task(workflow_executor: WorkflowExecutor, workflow_id: str,
+                            timeout: float = 30.0, interval: float = 0.5):
+    """Wait until the workflow is actually parked on a task, before signalling.
+
+    Every signal return strategy (BLOCKING_TASK, BLOCKING_WORKFLOW, ...)
+    describes the task the workflow is currently blocked on. A freshly started
+    workflow needs a moment to run its first task and schedule that one, and the
+    fixed sleep(0.5) this replaces was not enough on a loaded shared server: the
+    signal came back with no responseType at all, surfacing as the intermittent
+    "Expected BLOCKING_TASK, got None".
+
+    Returns the tasks last seen so callers can report them if the wait times out.
+    """
+    deadline = time.time() + timeout
+    tasks = []
+    while time.time() < deadline:
+        workflow = workflow_executor.get_workflow(workflow_id=workflow_id,
+                                                  include_tasks=True)
+        tasks = workflow.tasks or []
+        if any(getattr(t, 'status', None) in ('SCHEDULED', 'IN_PROGRESS')
+               for t in tasks):
+            return tasks
+        if getattr(workflow, 'status', None) not in ('RUNNING', 'PAUSED'):
+            # Already terminal: nothing is going to block, so stop waiting and
+            # let the caller's assertion report the real state.
+            break
+        time.sleep(interval)
+    logger.warning(
+        'no blocking task on %s after %.0fs; tasks=%s', workflow_id, timeout,
+        [(getattr(t, 'task_def_name', '?'), getattr(t, 'status', '?')) for t in tasks])
+    return tasks
+
+
 def _complete_workflow(workflow_executor: WorkflowExecutor, workflow_id: str):
     """Complete workflow by sending required signals"""
     try:
@@ -659,8 +692,8 @@ def scenario_signal_target_workflow(workflow_executor: WorkflowExecutor):
     # Start workflow
     workflow_id = _start_complex_workflow(workflow_executor)
 
-    # Wait and check workflow status
-    time.sleep(1.0)
+    # Wait until it is actually parked on a task, rather than a fixed sleep.
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     # Debug: Check workflow status before signaling
     try:
@@ -728,7 +761,7 @@ def scenario_signal_blocking_workflow(workflow_executor: WorkflowExecutor):
     logger.info('Testing signal with BLOCKING_WORKFLOW strategy...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     response = workflow_executor.signal(
         workflow_id=workflow_id,
@@ -757,7 +790,7 @@ def scenario_signal_blocking_task(workflow_executor: WorkflowExecutor):
     logger.info('Testing signal with BLOCKING_TASK strategy...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     response = workflow_executor.signal(
         workflow_id=workflow_id,
@@ -787,7 +820,7 @@ def scenario_signal_blocking_task_input(workflow_executor: WorkflowExecutor):
     logger.info('Testing signal with BLOCKING_TASK_INPUT strategy...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     response = workflow_executor.signal(
         workflow_id=workflow_id,
@@ -818,7 +851,7 @@ def scenario_signal_default_strategy(workflow_executor: WorkflowExecutor):
     logger.info('Testing signal with default strategy...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     # Don't specify return_strategy - should default to TARGET_WORKFLOW
     response = workflow_executor.signal(
@@ -842,7 +875,7 @@ def scenario_signal_async(workflow_executor: WorkflowExecutor):
     logger.info('Testing async signal...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     # Send async signal (should not return response)
     result = workflow_executor.signal_async(
@@ -863,7 +896,7 @@ def scenario_signal_to_dict_fix(workflow_executor: WorkflowExecutor):
     logger.info('Testing to_dict() method fix...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     response = workflow_executor.signal(
         workflow_id=workflow_id,
