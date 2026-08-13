@@ -156,8 +156,20 @@ def scenario_decorated_workers(
     start_wf_req = StartWorkflowRequest(name=workflow_name, task_to_domain=td_map)
     workflow_id_2 = workflow_executor.start_workflow(start_wf_req)
 
-    logger.debug(f'started TestPythonDecoratedWorkerWf with domain:cool and id: {workflow_id_2}')
-    sleep(15)
+    logger.info('started TestPythonDecoratedWorkerWf %s (no domain) and %s (domain:cool)',
+                workflow_id, workflow_id_2)
+
+    # Poll to terminal instead of sleeping a fixed 15s. Both of these run a
+    # single decorated-worker task, and on a loaded shared server the task can
+    # sit SCHEDULED well past 15s before the server hands it to a poller --
+    # observed as status=SCHEDULED pollCount=0 while the worker was demonstrably
+    # alive and polling every 100ms. Same false-negative the batch-completion
+    # budget above was raised to fix; use that budget here too.
+    for wf_id in (workflow_id, workflow_id_2):
+        wait_for_workflow_terminal(
+            workflow_executor, wf_id,
+            timeout_seconds=WORKFLOW_COMPLETION_MAX_WAIT_SECONDS,
+        )
 
     _run_with_retry_attempt(
         validate_workflow_status,

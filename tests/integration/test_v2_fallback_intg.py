@@ -142,8 +142,13 @@ class TestV2FallbackIntegration(unittest.TestCase):
 
             print(f"\n  Submitted {len(workflow_ids)} workflows")
 
-            # Wait for completion
-            deadline = time.time() + 60  # 60s timeout
+            # Wait for completion. 60s was marginal: a red run showed 4 of a
+            # workflow's 5 tasks COMPLETED and the last one still IN_PROGRESS on
+            # a live worker, i.e. the run was progressing when the budget ran
+            # out. Give the shared server the same headroom the other suites
+            # use. A task still IN_PROGRESS after this is a genuine stuck
+            # update, and the diagnostic below prints it.
+            deadline = time.time() + 120
             pending = set(workflow_ids)
             completed = 0
             failed = 0
