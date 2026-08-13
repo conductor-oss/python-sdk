@@ -3,11 +3,17 @@
 Demonstrates:
     - wait_for_message_tool: dequeues messages from the WMQ (Conductor PULL_WORKFLOW_MESSAGES task)
     - Mixing a server-side message tool with a local Python action tool
-    - Looping agent that keeps processing messages indefinitely
+    - Open-ended looping agent: it never decides to stop on its own
     - Pushing messages from outside the workflow with runtime.send_message()
+    - handle.stop() ending the loop deterministically
 
-The agent loops forever: each iteration waits for a message, reads the
-"task" field, executes it, and goes back to listening.
+Each iteration waits for a message, reads the "task" field, executes it, and
+goes back to listening.  The agent's instructions tell it to never stop, so the
+loop only ends when the caller calls handle.stop(): that sets the
+``_stop_requested`` workflow variable checked by the DoWhile condition and
+pushes a ``{"_signal": "stop"}`` message to unblock the pending
+PULL_WORKFLOW_MESSAGES.  The workflow ends COMPLETED, not TERMINATED — see
+84_deterministic_stop.py.
 
 Requirements:
     - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
@@ -67,6 +73,7 @@ def main() -> None:
 
         # Let the agent process all messages (~5-6s per message)
         time.sleep(30)
+        # The agent will never stop on its own — end the loop from here.
         handle.stop()
         handle.join(timeout=30)
         print("\nDone.")
