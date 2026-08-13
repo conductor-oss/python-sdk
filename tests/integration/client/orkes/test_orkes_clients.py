@@ -53,6 +53,36 @@ def _retry_on_404(func, *args, retries=5, **kwargs):
             raise
 
 
+def _assert_not_found(fetch, *identifiers):
+    # Assert the 404 status, not the server's prose. The wording is not part of
+    # the API contract: a server release changed "Workflow with id: X not found."
+    # to "No execution found for id: X" and turned CI red with no SDK change.
+    # Also fail loudly when the resource is still readable -- the bare
+    # try/except this replaces passed silently in exactly that case.
+    try:
+        fetch()
+    except ApiException as e:
+        assert e.code == 404, f"expected a 404, got {e.code}: {e.message}"
+        for identifier in identifiers:
+            assert str(identifier) in str(e.message), \
+                f"expected {identifier!r} in the 404 message, got: {e.message}"
+        return
+    raise AssertionError("expected a 404, but the resource is still readable")
+
+
+def _await_value(fetch, expected, timeout=15, interval=1):
+    # Queue size is eventually consistent -- the server enqueues and indexes
+    # asynchronously, so reading straight after starting or draining work
+    # intermittently returns a stale count. Poll until it settles, then let the
+    # caller assert on the last value seen so failures still show the mismatch.
+    deadline = time.time() + timeout
+    value = fetch()
+    while value != expected and time.time() < deadline:
+        time.sleep(interval)
+        value = fetch()
+    return value
+
+
 class TestOrkesClients:
     def __init__(self, configuration: Configuration):
         self.api_client = ApiClient(configuration)
@@ -129,11 +159,7 @@ class TestOrkesClients:
         self.__test_task_execution_lifecycle()
 
         self.metadata_client.unregister_task_def(TASK_TYPE)
-        try:
-            self.metadata_client.get_task_def(TASK_TYPE)
-        except ApiException as e:
-            assert e.code == 404
-            assert e.message == "Task {0} not found".format(TASK_TYPE)
+        _assert_not_found(lambda: self.metadata_client.get_task_def(TASK_TYPE), TASK_TYPE)
 
     def test_secret_lifecycle(self):
         self.secret_client.put_secret(SECRET_NAME, "secret_value")
@@ -164,11 +190,7 @@ class TestOrkesClients:
         assert self.secret_client.secret_exists(SECRET_NAME) == False
 
         self.secret_client.delete_secret(SECRET_NAME + "_2")
-
-        try:
-            self.secret_client.get_secret(SECRET_NAME + "_2")
-        except ApiException as e:
-            assert e.code == 404
+        _assert_not_found(lambda: self.secret_client.get_secret(SECRET_NAME + "_2"))
 
     def test_scheduler_lifecycle(self, workflowDef):
         startWorkflowRequest = StartWorkflowRequest(
@@ -212,12 +234,9 @@ class TestOrkesClients:
         assert len(fetched_tags) == 0
 
         self.scheduler_client.delete_schedule(SCHEDULE_NAME)
-
-        try:
-            schedule = self.scheduler_client.get_schedule(SCHEDULE_NAME)
-        except ApiException as e:
-            assert e.code == 404
-            assert e.message == "Schedule '{0}' not found".format(SCHEDULE_NAME)
+        _assert_not_found(
+            lambda: self.scheduler_client.get_schedule(SCHEDULE_NAME), SCHEDULE_NAME
+        )
 
     def test_application_lifecycle(self):
         req = CreateOrUpdateApplicationRequest(APPLICATION_NAME)
@@ -263,11 +282,10 @@ class TestOrkesClients:
         self.authorization_client.delete_access_key(created_app.id, created_access_key.id)
 
         self.authorization_client.delete_application(created_app.id)
-        try:
-            application = self.authorization_client.get_application(created_app.id)
-        except ApiException as e:
-            assert e.code == 404
-            assert e.message == "Application '{0}' not found".format(created_app.id)
+        _assert_not_found(
+            lambda: self.authorization_client.get_application(created_app.id),
+            created_app.id
+        )
 
     def test_user_group_permissions_lifecycle(self, workflowDef):
         req = UpsertUserRequest("Integration User", ["USER"])
@@ -340,18 +358,10 @@ class TestOrkesClients:
         self.authorization_client.remove_user_from_group(GROUP_ID, USER_ID)
 
         self.authorization_client.delete_user(USER_ID)
-        try:
-            self.authorization_client.get_user(USER_ID)
-        except ApiException as e:
-            assert e.code == 404
-            assert e.message == "User '{0}' not found".format(USER_ID)
+        _assert_not_found(lambda: self.authorization_client.get_user(USER_ID), USER_ID)
 
         self.authorization_client.delete_group(GROUP_ID)
-        try:
-            self.authorization_client.get_group(GROUP_ID)
-        except ApiException as e:
-            assert e.code == 404
-            assert e.message == "Group '{0}' not found".format(GROUP_ID)
+        _assert_not_found(lambda: self.authorization_client.get_group(GROUP_ID), GROUP_ID)
 
     def __test_register_workflow_definition(self, workflowDef: WorkflowDef):
         self.__create_workflow_definition(workflowDef)
@@ -482,12 +492,9 @@ class TestOrkesClients:
 
     def __test_unregister_workflow_definition(self):
         self.metadata_client.unregister_workflow_def(WORKFLOW_NAME, 1)
-
-        try:
-            self.metadata_client.get_workflow_def(WORKFLOW_NAME, 1)
-        except ApiException as e:
-            assert e.code == 404
-            assert e.message == 'No such workflow found by name: {0}, version: 1'.format(WORKFLOW_NAME)
+        _assert_not_found(
+            lambda: self.metadata_client.get_workflow_def(WORKFLOW_NAME, 1), WORKFLOW_NAME
+        )
 
     def __test_task_tags(self):
         tags = [
@@ -575,17 +582,9 @@ class TestOrkesClients:
         assert workflow.status == "RUNNING"
 
         self.workflow_client.delete_workflow(workflow_uuid)
-        # Assert on the 404 status, not the server's prose. The message wording is
-        # not part of the API contract and has changed server-side before, which
-        # turned CI red without any SDK change.
-        try:
-            self.workflow_client.get_workflow(workflow_uuid, False)
-            raise AssertionError(
-                "expected a 404 for deleted workflow {}".format(workflow_uuid)
-            )
-        except ApiException as e:
-            assert e.code == 404
-            assert workflow_uuid in str(e.message)
+        _assert_not_found(
+            lambda: self.workflow_client.get_workflow(workflow_uuid, False), workflow_uuid
+        )
 
     def __test_task_execution_lifecycle(self):
 
@@ -612,7 +611,9 @@ class TestOrkesClients:
         workflow_uuid_2 = self.workflow_client.start_workflow(startWorkflowRequest)
 
         # First task of each workflow is in the queue
-        assert self.task_client.get_queue_size_for_task(TASK_TYPE) == 2
+        assert _await_value(
+            lambda: self.task_client.get_queue_size_for_task(TASK_TYPE), 2
+        ) == 2
 
         polledTask = self.task_client.poll_task(TASK_TYPE)
         assert polledTask.status == TaskResultStatus.IN_PROGRESS
@@ -623,7 +624,9 @@ class TestOrkesClients:
         assert taskExecLogs[0].log == "Polled task..."
 
         # First task of second workflow is still in the queue
-        assert self.task_client.get_queue_size_for_task(TASK_TYPE) == 1
+        assert _await_value(
+            lambda: self.task_client.get_queue_size_for_task(TASK_TYPE), 1
+        ) == 1
 
         taskResult = TaskResult(
             workflow_instance_id=polledTask.workflow_instance_id,
@@ -672,7 +675,9 @@ class TestOrkesClients:
             )
             completed += 1
 
-        queue_size = self.task_client.get_queue_size_for_task(TASK_TYPE)
+        queue_size = _await_value(
+            lambda: self.task_client.get_queue_size_for_task(TASK_TYPE), 0
+        )
         print(f'queue size for {TASK_TYPE} is {queue_size}')
         assert queue_size == 0
 
