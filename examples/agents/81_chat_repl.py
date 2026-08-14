@@ -15,8 +15,10 @@ Key WMQ concept — bidirectional conversation loop:
     communicated via the shared filesystem rather than an in-process queue.
 
 Resume support:
-    The REPL saves the execution_id to a session file on start.  On subsequent
-    runs, pass ``--resume`` to reconnect to the same workflow.  ``resume()``
+    The REPL saves the execution_id to a session file on start.  Leave with
+    ``/disconnect`` to exit the console without stopping the agent (``quit`` /
+    ``exit`` stop it), then pass ``--resume`` on a later run to reconnect to the
+    same workflow.  ``resume()``
     fetches the workflow from the server, extracts the worker domain from
     ``taskToDomain``, and re-registers tools under that domain — so stateful
     agents resume correctly.  Conversation history is not restored in the
@@ -30,7 +32,7 @@ Ephemeral tools via /tool <name>:
     activate predefined text-processing tasks at runtime.  The agent is notified
     via a WMQ message and can start using the new capability immediately.
 
-    Built-in tasks (activate with /tool <name>):
+    Built-in tasks (activate with /tool <name>, list the active ones with /tools):
         word_count   — count words in input
         char_count   — count characters in input
         reverse      — reverse the input string
@@ -41,7 +43,7 @@ Ephemeral tools via /tool <name>:
         bullet_split — split input into one bullet point per sentence
 
 Requirements:
-    - Conductor server running at http://localhost:8080
+    - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
     - CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-4-20250514 as environment variable
 """
