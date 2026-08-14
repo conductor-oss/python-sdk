@@ -15,7 +15,7 @@ Usage:
     python 82_coding_agent.py --resume             # resume last session
 
 Requirements:
-    - Conductor server running at http://localhost:8080
+    - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-5
 """

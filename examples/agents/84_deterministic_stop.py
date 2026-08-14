@@ -8,8 +8,8 @@ Demonstrates:
 
 How it works:
     The server compiles every agent's DoWhile loop with a ``_stop_requested``
-    workflow variable in its condition.  When ``handle.stop()`` is called, the
-    SDK sets this variable to ``true`` via Conductor's ``updateVariables`` API.
+    workflow variable in its condition.  ``handle.stop()`` POSTs to
+    ``/agent/{execution_id}/stop`` and the server sets that variable to ``true``.
     The loop condition evaluates to ``false`` on the next check, and the loop
     exits.  The LLM cannot override this — it's checked by Conductor, not the
     LLM.
@@ -28,7 +28,8 @@ The old pattern (still works, but non-deterministic):
     The LLM could ignore this.  handle.stop() makes this unnecessary.
 
 Requirements:
-    - Conductor server (with _stop_requested support in compiler)
+    - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
+      and _stop_requested support in the compiler
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
     - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
