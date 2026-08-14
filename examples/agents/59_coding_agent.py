@@ -26,7 +26,7 @@ from conductor.ai.agents import Agent, AgentRuntime, Strategy
 
 qa_tester = Agent(
     name="qa_tester",
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-5",
     instructions=(
         "You are a meticulous QA engineer. Review the code written by the "
         "coder for correctness, edge cases, and bugs. Write and execute test "
@@ -45,7 +45,7 @@ qa_tester = Agent(
 
 coder = Agent(
     name="coder",
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-5",
     instructions=(
         "You are an expert Python developer. Write clean, well-structured "
         "Python code to solve the given problem. Always execute your code to "

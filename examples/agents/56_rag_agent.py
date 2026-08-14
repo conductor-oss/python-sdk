@@ -65,7 +65,7 @@ DOCUMENTS = [
         "text": (
             "Agent Configuration. Agents are defined with a name, model, instructions, "
             "and tools. The model field uses the format 'provider/model_name', e.g. "
-            "'openai/gpt-4o' or 'anthropic/claude-sonnet-4-20250514'. Instructions can be "
+            "'openai/gpt-4o' or 'anthropic/claude-sonnet-5'. Instructions can be "
             "a string or a PromptTemplate referencing a stored prompt. Tools can be "
             "@tool-decorated Python functions, http_tool for REST APIs, mcp_tool for "
             "MCP servers, or agent_tool to wrap another agent as a callable tool. "

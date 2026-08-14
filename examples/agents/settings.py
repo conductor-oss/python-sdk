@@ -3,10 +3,10 @@
 Set ``CONDUCTOR_AGENT_LLM_MODEL`` as an environment variable to override the
 default model used by all examples::
 
-    export CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-4-20250514
+    export CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-5
     export CONDUCTOR_AGENT_LLM_MODEL=google_gemini/gemini-2.0-flash
 
-If unset, defaults to ``anthropic/claude-sonnet-4-6``.
+If unset, defaults to ``openai/gpt-4o``.
 
 ``CONDUCTOR_AGENT_SECONDARY_LLM_MODEL`` provides a second model for multi-model examples
 (e.g., cheap triage vs capable specialist). Defaults to ``openai/gpt-4o``.

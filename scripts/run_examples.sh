@@ -15,7 +15,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-EXAMPLES_DIR="$(cd "$SCRIPT_DIR/../examples" && pwd)"
+EXAMPLES_DIR="$(cd "$SCRIPT_DIR/../examples/agents" && pwd)"
 TIMEOUT="${EXAMPLE_TIMEOUT:-300}"
 
 # Cross-platform python: honour PYTHON env var, then try python3, then python.
@@ -25,7 +25,8 @@ PYTHON="${PYTHON:-$(command -v python3 2>/dev/null || command -v python 2>/dev/n
 TMP_BASE="${TMPDIR:-${TEMP:-/tmp}}"
 
 # Examples that require external services not typically available in a
-# standard test environment.
+# standard test environment.  Run them with --all once the services and
+# credentials they need are in place.
 SKIP_BY_DEFAULT=(
     "04_http_and_mcp_tools"    # needs MCP server running
     "04_mcp_weather"           # needs MCP server running
@@ -33,6 +34,27 @@ SKIP_BY_DEFAULT=(
     "25_semantic_memory"       # needs vector store / extra deps
     "26_opentelemetry_tracing" # needs OTel collector
     "28_gpt_assistant_agent"   # needs OpenAI Assistants API key
+
+    # Act on real third-party accounts: these clone, branch, push, open pull
+    # requests or post messages, so a default run must not reach them.
+    "16c_credentials_cli_tools"          # needs AWS credentials; can open PRs
+    "16d_credentials_gh_cli"             # needs an authenticated gh CLI
+    "60_github_coding_agent"             # pushes branches, opens PRs
+    "60a_github_coding_agent_simple"     # clones and pushes to a real repo
+    "61_github_coding_agent_chained"     # needs GITHUB_TOKEN; pushes branches
+    "61a_github_coding_agent_claude_code" # needs GITHUB_TOKEN; pushes branches
+    "91_slack_autofix_agent"             # pushes, opens PRs, posts to Slack
+
+    # Block on stdin with no canned response in HITL_STDIN below, so they would
+    # sit until the per-example timeout.
+    "09d_human_tool"
+    "18_manual_selection"
+    "32_human_guardrail"
+    "62_coding_agent_openai"
+    "78_approval_workflow"
+    "81_chat_repl"
+    "82_coding_agent"
+    "82b_coding_agent_tui"
 )
 
 # HITL examples that call input() — we pipe automated responses via stdin.

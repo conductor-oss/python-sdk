@@ -37,7 +37,7 @@ description = "Reusable constraint types to use with typing.Annotated"
 optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"langchain\" or extra == \"langgraph\" or extra == \"openai\" or extra == \"adk\" or extra == \"anthropic\""
+markers = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"langchain\" or extra == \"langgraph\" or extra == \"anthropic\" or extra == \"openai\" or extra == \"adk\""
 files = [
     {file = "annotated_types-0.7.0-py3-none-any.whl", hash = "sha256:1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53"},
     {file = "annotated_types-0.7.0.tar.gz", hash = "sha256:aff07c09a53a08bc8cfccb9c85b05f1aa9a2a6f23728d790723543408344ce89"},
@@ -45,15 +45,15 @@ files = [
 
 [[package]]
 name = "anthropic"
-version = "0.116.0"
+version = "0.122.0"
 description = "The official Python library for the anthropic API"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"anthropic\" or extra == \"agents\""
+markers = "extra == \"langchain\" or extra == \"agents\" or extra == \"anthropic\""
 files = [
-    {file = "anthropic-0.116.0-py3-none-any.whl", hash = "sha256:6c0a7698e8d652455da3499978279bb2588c7264d0a35be3666009a4258c8256"},
-    {file = "anthropic-0.116.0.tar.gz", hash = "sha256:5fc248fbb9fe03ef686f8a774f81586bca31a043260aab88b387ea3660f4a396"},
+    {file = "anthropic-0.122.0-py3-none-any.whl", hash = "sha256:45ec906452ffae6b5f7f0c53d01f50bfb7e4ce878d7ae8e4309d13171e557e67"},
+    {file = "anthropic-0.122.0.tar.gz", hash = "sha256:ffec56ae96657c8d19fa575ec96f140f380c353a07ab7d61b92eb18ee6536601"},
 ]
 
 [package.dependencies]
@@ -63,14 +63,15 @@ docstring-parser = ">=0.15,<1"
 httpx = ">=0.25.0,<1"
 jiter = ">=0.4.0,<1"
 pydantic = ">=1.9.0,<3"
-sniffio = "*"
+sniffio = ">=1,<2"
 typing-extensions = ">=4.14,<5"
 
 [package.extras]
-aiohttp = ["aiohttp", "httpx-aiohttp (>=0.1.9)"]
-aws = ["boto3 (>=1.28.57)", "botocore (>=1.31.57)"]
-bedrock = ["boto3 (>=1.28.57)", "botocore (>=1.31.57)"]
-mcp = ["mcp (>=1.0) ; python_version >= \"3.10\""]
+aiohttp = ["aiohttp (>=3,<4)", "httpx-aiohttp (>=0.1.9,<1)"]
+aws = ["boto3 (>=1.28.57,<2)", "botocore (>=1.31.57,<2)"]
+bedrock = ["boto3 (>=1.28.57,<2)", "botocore (>=1.31.57,<2)"]
+google-cloud = ["google-auth[requests] (>=2,<3)"]
+mcp = ["mcp (>=1.0,<3) ; python_version >= \"3.10\""]
 vertex = ["google-auth[requests] (>=2,<3)"]
 webhooks = ["standardwebhooks (>=1.0.1,<2)"]
 
@@ -726,7 +727,7 @@ description = "Distro - an OS platform information API"
 optional = true
 python-versions = ">=3.6"
 groups = ["main"]
-markers = "extra == \"langchain\" or extra == \"agents\" or extra == \"langgraph\" or extra == \"openai\" or extra == \"openai-agents\" or extra == \"adk\" or extra == \"anthropic\""
+markers = "extra == \"langchain\" or extra == \"agents\" or extra == \"langgraph\" or extra == \"anthropic\" or extra == \"openai\" or extra == \"openai-agents\" or extra == \"adk\""
 files = [
     {file = "distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2"},
     {file = "distro-1.9.0.tar.gz", hash = "sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed"},
@@ -739,7 +740,7 @@ description = "Parse Python docstrings in reST, Google and Numpydoc format"
 optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "extra == \"anthropic\" or extra == \"agents\""
+markers = "extra == \"langchain\" or extra == \"agents\" or extra == \"anthropic\""
 files = [
     {file = "docstring_parser-0.18.0-py3-none-any.whl", hash = "sha256:b3fcbed555c47d8479be0796ef7e19c2670d428d72e96da63f3a40122860374b"},
     {file = "docstring_parser-0.18.0.tar.gz", hash = "sha256:292510982205c12b1248696f44959db3cdd1740237a968ea1e2e7a900eeb2015"},
@@ -1155,7 +1156,7 @@ description = "Fast iterable JSON parser."
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"langchain\" or extra == \"agents\" or extra == \"openai\" or extra == \"openai-agents\" or extra == \"anthropic\""
+markers = "extra == \"langchain\" or extra == \"agents\" or extra == \"anthropic\" or extra == \"openai\" or extra == \"openai-agents\""
 files = [
     {file = "jiter-0.16.0-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:c5fc4f8def331036a7b8e981b4347ebe409981edbc8308a5ea842b8c3614fa6c"},
     {file = "jiter-0.16.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:5a71d0d2014c3275043e1170bf3d4e771493cb0dcf07be54c567155f4d8ee64b"},
@@ -1389,19 +1390,38 @@ together = ["langchain-together"]
 xai = ["langchain-xai"]
 
 [[package]]
+name = "langchain-anthropic"
+version = "1.5.6"
+description = "Integration package connecting Claude (Anthropic) APIs and LangChain"
+optional = true
+python-versions = "<4.0.0,>=3.10.0"
+groups = ["main"]
+markers = "extra == \"langchain\" or extra == \"agents\""
+files = [
+    {file = "langchain_anthropic-1.5.6-py3-none-any.whl", hash = "sha256:c358ed2ca90ef75254bb73a96b0a8a8ef0efc1deabe529ea06db6ff403001a27"},
+    {file = "langchain_anthropic-1.5.6.tar.gz", hash = "sha256:648fdab25573fc9d29543c4b4af1d682b7b6e548d452bb46e67ebc586e195629"},
+]
+
+[package.dependencies]
+anthropic = ">=0.120.0,<1.0.0"
+langchain-core = ">=1.5.4,<2.0.0"
+pydantic = ">=2.7.4,<3.0.0"
+
+[[package]]
 name = "langchain-core"
-version = "1.4.8"
+version = "1.5.5"
 description = "Building applications with LLMs through composability"
 optional = true
 python-versions = "<4.0.0,>=3.10.0"
 groups = ["main"]
 markers = "extra == \"langchain\" or extra == \"agents\" or extra == \"langgraph\""
 files = [
-    {file = "langchain_core-1.4.8-py3-none-any.whl", hash = "sha256:d84c28b05e3ba8d4271d0827aad5b592ccdaaf986e76768c23503f0a2045e8aa"},
-    {file = "langchain_core-1.4.8.tar.gz", hash = "sha256:5bf1f8411077c904182ad8f975943d36adcbf579c4e017b3a118b719229ebf9a"},
+    {file = "langchain_core-1.5.5-py3-none-any.whl", hash = "sha256:537037fd44ead7c1ffb9621011029ad2e347e051519d17f112d7bf7be12f4365"},
+    {file = "langchain_core-1.5.5.tar.gz", hash = "sha256:c08d78176113867e9a76acc1007d641cd68fa5682e9e0018980d062b4ae0777e"},
 ]
 
 [package.dependencies]
+httpx = ">=0.23.0,<1.0.0"
 jsonpatch = ">=1.33.0,<2.0.0"
 langchain-protocol = ">=0.0.17"
 langsmith = ">=0.3.45,<1.0.0"
@@ -2237,7 +2257,7 @@ description = "Data validation using Python type hints"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"langchain\" or extra == \"langgraph\" or extra == \"openai\" or extra == \"adk\" or extra == \"anthropic\""
+markers = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"langchain\" or extra == \"langgraph\" or extra == \"anthropic\" or extra == \"openai\" or extra == \"adk\""
 files = [
     {file = "pydantic-2.13.4-py3-none-any.whl", hash = "sha256:45a282cde31d808236fd7ea9d919b128653c8b38b393d1c4ab335c62924d9aba"},
     {file = "pydantic-2.13.4.tar.gz", hash = "sha256:c40756b57adaa8b1efeeced5c196f3f3b7c435f90e84ea7f443901bec8099ef6"},
@@ -2260,7 +2280,7 @@ description = "Core functionality for Pydantic validation and serialization"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"langchain\" or extra == \"langgraph\" or extra == \"openai\" or extra == \"adk\" or extra == \"anthropic\""
+markers = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"langchain\" or extra == \"langgraph\" or extra == \"anthropic\" or extra == \"openai\" or extra == \"adk\""
 files = [
     {file = "pydantic_core-2.46.4-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:a396dcc17e5a0b164dbe026896245a4fa9ff402edca1dff0be3d53a517f74de4"},
     {file = "pydantic_core-2.46.4-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:da4b951fe36dc7c3a1ccb4e3cd1747c3542b8c9ceede8fc86cae054e764485f5"},
@@ -3490,7 +3510,7 @@ description = "Runtime typing introspection tools"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"langchain\" or extra == \"langgraph\" or extra == \"openai\" or extra == \"adk\" or extra == \"anthropic\""
+markers = "extra == \"openai-agents\" or extra == \"agents\" or extra == \"claude\" or extra == \"langchain\" or extra == \"langgraph\" or extra == \"anthropic\" or extra == \"openai\" or extra == \"adk\""
 files = [
     {file = "typing_inspection-0.4.2-py3-none-any.whl", hash = "sha256:4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7"},
     {file = "typing_inspection-0.4.2.tar.gz", hash = "sha256:ba561c48a67c5958007083d386c3295464928b01faa735ab8547c5692e87f464"},
@@ -4220,10 +4240,10 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 
 [extras]
 adk = ["google-adk"]
-agents = ["anthropic", "claude-code-sdk", "google-adk", "langchain", "langchain-core", "langchain-openai", "langgraph", "openai", "openai-agents"]
+agents = ["anthropic", "claude-code-sdk", "google-adk", "langchain", "langchain-anthropic", "langchain-core", "langchain-openai", "langgraph", "openai", "openai-agents"]
 anthropic = ["anthropic"]
 claude = ["claude-code-sdk"]
-langchain = ["langchain", "langchain-core", "langchain-openai"]
+langchain = ["langchain", "langchain-anthropic", "langchain-core", "langchain-openai"]
 langgraph = ["langchain-core", "langgraph"]
 openai = ["openai"]
 openai-agents = ["openai-agents"]
@@ -4231,4 +4251,4 @@ openai-agents = ["openai-agents"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "c9fd605d1f56bc517db3abd078ea0a56e411d01371115ba6ef4229d508b9f939"
+content-hash = "e94e8ff50d9b09bfcb2cfe853dfb6f04514d3c45f92f89d3a1cb2c0e798235a7"
