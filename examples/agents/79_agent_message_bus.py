@@ -3,10 +3,16 @@
 Demonstrates:
     - Agent-to-agent messaging: one running agent sending messages directly
       into another running agent's WMQ via runtime.send_message()
-    - A tool that closes over an execution_id to forward results downstream
+    - Module-level tools that pick up runtime values from the environment:
+      forward_to_writer reads the Writer's execution id from
+      MESSAGE_BUS_WRITER_EXECUTION_ID, since a tool that closed over it could not
+      be pickled to its spawned worker process
     - Parallel agent pipelines: researcher → writer running concurrently
-    - Filesystem-based IPC: forward_to_writer writes sentinel files so the main
-      thread knows when all topics have been forwarded
+    - Filesystem-based IPC between the main process and worker processes:
+      forward_to_writer and publish each write sentinel files, so the main process
+      can tell forwarding from publishing.  The barrier waits on publish — the
+      Researcher forwards the last topic while the Writer is still mid-turn on it,
+      so stopping at "all forwarded" would cut the final paragraph.
     - Deterministic stop: handle.stop() exits each agent's loop gracefully
 
 How this differs from 06_sequential_pipeline:
@@ -26,7 +32,7 @@ Scenario:
     Researcher autonomously drives the Writer.
 
 Requirements:
-    - Conductor server running at http://localhost:8080
+    - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
     - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
