@@ -586,6 +586,12 @@ class TestComprehensiveE2E(unittest.TestCase):
         if os.path.exists(cls.metrics_dir):
             import shutil
             shutil.rmtree(cls.metrics_dir)
+        from tests.integration.conftest import cleanup_metadata
+        cleanup_metadata(
+            cls.config,
+            task_defs=cls.EXPECTED_WORKERS,
+            workflow_defs=(WF_NAME,),
+        )
         print("\n✓ Cleanup complete")
 
 

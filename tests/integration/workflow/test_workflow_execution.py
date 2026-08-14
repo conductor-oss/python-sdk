@@ -156,8 +156,20 @@ def scenario_decorated_workers(
     start_wf_req = StartWorkflowRequest(name=workflow_name, task_to_domain=td_map)
     workflow_id_2 = workflow_executor.start_workflow(start_wf_req)
 
-    logger.debug(f'started TestPythonDecoratedWorkerWf with domain:cool and id: {workflow_id_2}')
-    sleep(15)
+    logger.info('started TestPythonDecoratedWorkerWf %s (no domain) and %s (domain:cool)',
+                workflow_id, workflow_id_2)
+
+    # Poll to terminal instead of sleeping a fixed 15s. Both of these run a
+    # single decorated-worker task, and on a loaded shared server the task can
+    # sit SCHEDULED well past 15s before the server hands it to a poller --
+    # observed as status=SCHEDULED pollCount=0 while the worker was demonstrably
+    # alive and polling every 100ms. Same false-negative the batch-completion
+    # budget above was raised to fix; use that budget here too.
+    for wf_id in (workflow_id, workflow_id_2):
+        wait_for_workflow_terminal(
+            workflow_executor, wf_id,
+            timeout_seconds=WORKFLOW_COMPLETION_MAX_WAIT_SECONDS,
+        )
 
     _run_with_retry_attempt(
         validate_workflow_status,
@@ -239,6 +251,33 @@ def generate_workflow(workflow_executor: WorkflowExecutor, workflow_name: str = 
     )
 
 
+def _describe_tasks(workflow_id: str, workflow_executor: WorkflowExecutor) -> str:
+    """Task-level detail for a workflow that did not reach COMPLETED.
+
+    "still RUNNING" on its own says nothing about why. The task states separate
+    the possibilities: SCHEDULED means queued but never polled (wrong
+    queue/domain, or no live worker for that task type), IN_PROGRESS means
+    polled and leased but never updated, and no tasks at all means the workflow
+    was never decided server-side.
+    """
+    try:
+        wf = workflow_executor.get_workflow(workflow_id=workflow_id, include_tasks=True)
+        tasks = wf.tasks or []
+        if not tasks:
+            return 'no tasks on the workflow'
+        return '; '.join(
+            f"{getattr(t, 'task_def_name', '?')}"
+            f"[ref={getattr(t, 'reference_task_name', '?')}"
+            f" status={getattr(t, 'status', '?')}"
+            f" domain={getattr(t, 'domain', None)}"
+            f" pollCount={getattr(t, 'poll_count', None)}"
+            f" workerId={getattr(t, 'worker_id', None)}]"
+            for t in tasks
+        )
+    except Exception as e:
+        return f'could not fetch tasks: {e}'
+
+
 def validate_workflow_status(workflow_id: str, workflow_executor: WorkflowExecutor) -> None:
     workflow = workflow_executor.get_workflow(
         workflow_id=workflow_id,
@@ -246,7 +285,9 @@ def validate_workflow_status(workflow_id: str, workflow_executor: WorkflowExecut
     )
     if workflow.status != 'COMPLETED':
         raise Exception(
-            f'workflow expected to be COMPLETED, but received {workflow.status}, workflow_id: {workflow_id}'
+            f'workflow expected to be COMPLETED, but received {workflow.status}, '
+            f'workflow_id: {workflow_id}, tasks: '
+            f'{_describe_tasks(workflow_id, workflow_executor)}'
         )
     workflow_status = workflow_executor.get_workflow_status(
         workflow_id=workflow_id,
@@ -603,6 +644,39 @@ def _start_complex_workflow(workflow_executor: WorkflowExecutor) -> str:
         raise
 
 
+def _wait_for_blocking_task(workflow_executor: WorkflowExecutor, workflow_id: str,
+                            timeout: float = 30.0, interval: float = 0.5):
+    """Wait until the workflow is actually parked on a task, before signalling.
+
+    Every signal return strategy (BLOCKING_TASK, BLOCKING_WORKFLOW, ...)
+    describes the task the workflow is currently blocked on. A freshly started
+    workflow needs a moment to run its first task and schedule that one, and the
+    fixed sleep(0.5) this replaces was not enough on a loaded shared server: the
+    signal came back with no responseType at all, surfacing as the intermittent
+    "Expected BLOCKING_TASK, got None".
+
+    Returns the tasks last seen so callers can report them if the wait times out.
+    """
+    deadline = time.time() + timeout
+    tasks = []
+    while time.time() < deadline:
+        workflow = workflow_executor.get_workflow(workflow_id=workflow_id,
+                                                  include_tasks=True)
+        tasks = workflow.tasks or []
+        if any(getattr(t, 'status', None) in ('SCHEDULED', 'IN_PROGRESS')
+               for t in tasks):
+            return tasks
+        if getattr(workflow, 'status', None) not in ('RUNNING', 'PAUSED'):
+            # Already terminal: nothing is going to block, so stop waiting and
+            # let the caller's assertion report the real state.
+            break
+        time.sleep(interval)
+    logger.warning(
+        'no blocking task on %s after %.0fs; tasks=%s', workflow_id, timeout,
+        [(getattr(t, 'task_def_name', '?'), getattr(t, 'status', '?')) for t in tasks])
+    return tasks
+
+
 def _complete_workflow(workflow_executor: WorkflowExecutor, workflow_id: str):
     """Complete workflow by sending required signals"""
     try:
@@ -630,8 +704,8 @@ def scenario_signal_target_workflow(workflow_executor: WorkflowExecutor):
     # Start workflow
     workflow_id = _start_complex_workflow(workflow_executor)
 
-    # Wait and check workflow status
-    time.sleep(1.0)
+    # Wait until it is actually parked on a task, rather than a fixed sleep.
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     # Debug: Check workflow status before signaling
     try:
@@ -699,7 +773,7 @@ def scenario_signal_blocking_workflow(workflow_executor: WorkflowExecutor):
     logger.info('Testing signal with BLOCKING_WORKFLOW strategy...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     response = workflow_executor.signal(
         workflow_id=workflow_id,
@@ -728,7 +802,7 @@ def scenario_signal_blocking_task(workflow_executor: WorkflowExecutor):
     logger.info('Testing signal with BLOCKING_TASK strategy...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     response = workflow_executor.signal(
         workflow_id=workflow_id,
@@ -758,7 +832,7 @@ def scenario_signal_blocking_task_input(workflow_executor: WorkflowExecutor):
     logger.info('Testing signal with BLOCKING_TASK_INPUT strategy...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     response = workflow_executor.signal(
         workflow_id=workflow_id,
@@ -789,7 +863,7 @@ def scenario_signal_default_strategy(workflow_executor: WorkflowExecutor):
     logger.info('Testing signal with default strategy...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     # Don't specify return_strategy - should default to TARGET_WORKFLOW
     response = workflow_executor.signal(
@@ -813,7 +887,7 @@ def scenario_signal_async(workflow_executor: WorkflowExecutor):
     logger.info('Testing async signal...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     # Send async signal (should not return response)
     result = workflow_executor.signal_async(
@@ -834,7 +908,7 @@ def scenario_signal_to_dict_fix(workflow_executor: WorkflowExecutor):
     logger.info('Testing to_dict() method fix...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     response = workflow_executor.signal(
         workflow_id=workflow_id,
