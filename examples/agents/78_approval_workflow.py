@@ -49,12 +49,19 @@ from conductor.ai.agents import Agent, AgentRuntime, tool, wait_for_message_tool
 from settings import settings
 
 # Shared directory for IPC between main process and worker processes.
-# Workers run as separate OS processes (different PIDs, same filesystem).
-_ipc_dir = Path(tempfile.mkdtemp(prefix="approval_workflow_"))
+# Workers run as separate OS processes (different PIDs, same filesystem) that
+# re-import this module, so the directory is passed down via an env var — a
+# per-import mkdtemp() would give every worker its own dir and break the IPC.
+_IPC_DIR_ENV = "APPROVAL_WORKFLOW_IPC_DIR"
+if _IPC_DIR_ENV in os.environ:
+    _ipc_dir = Path(os.environ[_IPC_DIR_ENV])
+else:
+    _ipc_dir = Path(tempfile.mkdtemp(prefix="approval_workflow_"))
+    os.environ[_IPC_DIR_ENV] = str(_ipc_dir)
 _APPROVAL_DIR = _ipc_dir / "approvals"
 _DONE_DIR = _ipc_dir / "done"
-_APPROVAL_DIR.mkdir()
-_DONE_DIR.mkdir()
+_APPROVAL_DIR.mkdir(exist_ok=True)
+_DONE_DIR.mkdir(exist_ok=True)
 
 
 @tool
@@ -127,35 +134,43 @@ TASKS = [
     "Grant admin access to user@example.com",
 ]
 
-try:
-    with AgentRuntime() as runtime:
-        handle = runtime.start(agent, "Start processing the task queue.")
-        execution_id = handle.execution_id
-        time.sleep(4)
-        print(f"Agent started: {execution_id}\n")
+def main() -> None:
+    try:
+        with AgentRuntime() as runtime:
+            handle = runtime.start(agent, "Start processing the task queue.")
+            execution_id = handle.execution_id
+            time.sleep(4)
+            print(f"Agent started: {execution_id}\n")
 
-        print("Dispatching all tasks...\n")
-        for task in TASKS:
-            print(f"  → {task!r}")
-            runtime.send_message(execution_id, {"task": task})
+            print("Dispatching all tasks...\n")
+            for task in TASKS:
+                print(f"  → {task!r}")
+                runtime.send_message(execution_id, {"task": task})
 
-        # Poll for approval requests; write decision files to unblock the tool.
-        # Poll for completions to know when to send the stop signal.
-        while len(list(_DONE_DIR.iterdir())) < len(TASKS):
-            for req in sorted(_APPROVAL_DIR.glob("*.json")):
-                data = json.loads(req.read_text())
-                req.unlink()
-                print(f"\n  ⚠ APPROVAL REQUIRED")
-                print(f"    Task:   {data['task']}")
-                print(f"    Reason: {data['reason']}\n")
-                answer = input("  Approve? [Y/N]: ").strip().upper()
-                decision = "approve" if answer == "Y" else "reject"
-                req.with_suffix(".decision").write_text(decision)
-            time.sleep(0.1)
+            # Poll for approval requests; write decision files to unblock the tool.
+            # Poll for completions to know when to send the stop signal.
+            while len(list(_DONE_DIR.iterdir())) < len(TASKS):
+                for req in sorted(_APPROVAL_DIR.glob("*.json")):
+                    data = json.loads(req.read_text())
+                    req.unlink()
+                    print("\n  ⚠ APPROVAL REQUIRED")
+                    print(f"    Task:   {data['task']}")
+                    print(f"    Reason: {data['reason']}\n")
+                    answer = input("  Approve? [Y/N]: ").strip().upper()
+                    decision = "approve" if answer == "Y" else "reject"
+                    req.with_suffix(".decision").write_text(decision)
+                time.sleep(0.1)
 
-        # Deterministic stop — no stop-handling instructions needed.
-        handle.stop()
-        handle.join(timeout=30)
-        print("\nDone.")
-finally:
-    shutil.rmtree(_ipc_dir, ignore_errors=True)
+            # Deterministic stop — no stop-handling instructions needed.
+            handle.stop()
+            handle.join(timeout=30)
+            print("\nDone.")
+    finally:
+        shutil.rmtree(_ipc_dir, ignore_errors=True)
+
+
+# Guard the runtime block: spawned tool workers re-import this module, and
+# without the guard they would re-run the orchestration (multiprocessing's
+# "Safe importing of main module" error).
+if __name__ == "__main__":
+    main()
