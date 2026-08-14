@@ -55,18 +55,34 @@ from settings import settings
 
 from conductor.ai.agents import Agent, AgentRuntime, tool, wait_for_message_tool
 
-# Filesystem IPC between main process and worker processes (separate OS PIDs).
-_ipc_dir = Path(tempfile.mkdtemp(prefix="live_dashboard_"))
+_IPC_DIR_ENV = "LIVE_DASHBOARD_IPC_DIR"
+if _IPC_DIR_ENV in os.environ:
+    _ipc_dir = Path(os.environ[_IPC_DIR_ENV])
+else:
+    _ipc_dir = Path(tempfile.mkdtemp(prefix="live_dashboard_"))
+    os.environ[_IPC_DIR_ENV] = str(_ipc_dir)
 _BATCH_DIR = _ipc_dir / "batches"    # one file per batch dispatched by Feeder
 _DISPLAY_DIR = _ipc_dir / "displays" # one file per display_dashboard call by Monitor
-_BATCH_DIR.mkdir()
-_DISPLAY_DIR.mkdir()
+_BATCH_DIR.mkdir(exist_ok=True)
+_DISPLAY_DIR.mkdir(exist_ok=True)
 _MONITOR_ID_FILE = _ipc_dir / "monitor_id.txt"  # written by main, read by Feeder tool
 
 
 # ---------------------------------------------------------------------------
 # Monitor agent
 # ---------------------------------------------------------------------------
+
+@tool
+def display_dashboard(summary: str) -> str:
+    """Publish an aggregated dashboard line for this batch.
+
+    Writes the summary to a file in _DISPLAY_DIR so the main process can
+    read and print it.  The file name encodes arrival order via time_ns.
+    """
+    ts = time.time_ns()
+    (_DISPLAY_DIR / f"{ts}.txt").write_text(summary)
+    return "displayed"
+
 
 def build_monitor() -> Agent:
     """Monitor: pulls up to 10 metrics per call and prints aggregated stats."""
@@ -79,17 +95,6 @@ def build_monitor() -> Agent:
         ),
         batch_size=10,
     )
-
-    @tool
-    def display_dashboard(summary: str) -> str:
-        """Publish an aggregated dashboard line for this batch.
-
-        Writes the summary to a file in _DISPLAY_DIR so the main process can
-        read and print it.  The file name encodes arrival order via time_ns.
-        """
-        ts = time.time_ns()
-        (_DISPLAY_DIR / f"{ts}.txt").write_text(summary)
-        return "displayed"
 
     return Agent(
         name="monitor_agent",
@@ -114,41 +119,43 @@ def build_monitor() -> Agent:
 # Feeder agent
 # ---------------------------------------------------------------------------
 
-def build_feeder(runtime: AgentRuntime) -> Agent:
-    """Feeder: generates metric samples and pushes them into the Monitor's queue."""
+@tool
+def push_metrics_batch(batch_number: int) -> str:
+    """Generate and push one batch of metric samples to the Monitor agent.
 
-    receive_signal = wait_for_message_tool(
-        name="receive_signal",
-        description="Wait for a control signal from the orchestrator ({batches: N}).",
-    )
-
-    @tool
-    def push_metrics_batch(batch_number: int) -> str:
-        """Generate and push one batch of metric samples to the Monitor agent.
-
-        Reads the Monitor's execution ID from a shared file and sends 5 metric
-        samples directly into its WMQ.  Writes a sentinel file so the main
-        process knows the batch was dispatched.
-        """
-        monitor_id = _MONITOR_ID_FILE.read_text().strip()
-        metrics = [
-            "cpu_pct",
-            "mem_mb",
-            "req_rate",
-            "latency_ms",
-            "error_rate",
-        ]
-        samples = []
+    Reads the Monitor's execution ID from a shared file and sends 5 metric
+    samples directly into its WMQ.  Writes a sentinel file so the main
+    process knows the batch was dispatched.
+    """
+    monitor_id = _MONITOR_ID_FILE.read_text().strip()
+    metrics = [
+        "cpu_pct",
+        "mem_mb",
+        "req_rate",
+        "latency_ms",
+        "error_rate",
+    ]
+    samples = []
+    with AgentRuntime() as rt:
         for _ in range(5):
             metric = random.choice(metrics)
             host = random.choice(["web-01", "web-02", "db-01"])
             value = round(random.uniform(0, 100), 2)
             sample = {"metric": metric, "host": host, "value": value}
             samples.append(sample)
-            runtime.send_message(monitor_id, sample)
+            rt.send_message(monitor_id, sample)
 
-        (_BATCH_DIR / f"batch_{batch_number}_{time.time_ns()}.done").touch()
-        return f"Pushed {len(samples)} samples in batch {batch_number}: {json.dumps(samples)}"
+    (_BATCH_DIR / f"batch_{batch_number}_{time.time_ns()}.done").touch()
+    return f"Pushed {len(samples)} samples in batch {batch_number}: {json.dumps(samples)}"
+
+
+def build_feeder() -> Agent:
+    """Feeder: generates metric samples and pushes them into the Monitor's queue."""
+
+    receive_signal = wait_for_message_tool(
+        name="receive_signal",
+        description="Wait for a control signal from the orchestrator ({batches: N}).",
+    )
 
     return Agent(
         name="feeder_agent",
@@ -176,54 +183,59 @@ MONITOR_BATCH_SIZE = 10 # wait_for_message_tool batch_size for Monitor
 # How many display_dashboard calls to expect before sending stop:
 EXPECTED_DISPLAYS = math.ceil(TOTAL_BATCHES * SAMPLES_PER_BATCH / MONITOR_BATCH_SIZE)
 
-try:
-    with AgentRuntime() as runtime:
-        # Start Monitor first so its execution_id exists before Feeder needs it.
-        monitor_handle = runtime.start(build_monitor(), "Begin. Wait for metric batches.")
-        monitor_id = monitor_handle.execution_id
-        _MONITOR_ID_FILE.write_text(monitor_id)
-        print(f"Monitor  started: {monitor_id}")
+def main() -> None:
+    try:
+        with AgentRuntime() as runtime:
+            # Start Monitor first so its execution_id exists before Feeder needs it.
+            monitor_handle = runtime.start(build_monitor(), "Begin. Wait for metric batches.")
+            monitor_id = monitor_handle.execution_id
+            _MONITOR_ID_FILE.write_text(monitor_id)
+            print(f"Monitor  started: {monitor_id}")
 
-        feeder_handle = runtime.start(build_feeder(runtime), "Begin. Wait for orchestrator signals.")
-        feeder_id = feeder_handle.execution_id
-        print(f"Feeder   started: {feeder_id}\n")
+            feeder_handle = runtime.start(build_feeder(), "Begin. Wait for orchestrator signals.")
+            feeder_id = feeder_handle.execution_id
+            print(f"Feeder   started: {feeder_id}\n")
 
-        # Give agents time to reach their first wait_for_message call.
-        time.sleep(4)
+            # Give agents time to reach their first wait_for_message call.
+            time.sleep(4)
 
-        print(f"Sending {TOTAL_BATCHES} batch signals to Feeder (5 metrics each = "
-              f"{TOTAL_BATCHES * 5} total samples, Monitor reads ≤10 per call)...\n")
+            print(f"Sending {TOTAL_BATCHES} batch signals to Feeder (5 metrics each = "
+                  f"{TOTAL_BATCHES * 5} total samples, Monitor reads ≤10 per call)...\n")
 
-        # Send batch signals two at a time to let the Feeder bundle them.
-        runtime.send_message(feeder_id, {"batches": TOTAL_BATCHES // 2})
-        runtime.send_message(feeder_id, {"batches": TOTAL_BATCHES - TOTAL_BATCHES // 2})
+            # Send batch signals two at a time to let the Feeder bundle them.
+            runtime.send_message(feeder_id, {"batches": TOTAL_BATCHES // 2})
+            runtime.send_message(feeder_id, {"batches": TOTAL_BATCHES - TOTAL_BATCHES // 2})
 
-        # Wait until all batches have been dispatched via push_metrics_batch.
-        print("Waiting for all batches to be dispatched...")
-        while len(list(_BATCH_DIR.iterdir())) < TOTAL_BATCHES:
-            time.sleep(0.1)
-        print(f"  All {TOTAL_BATCHES} batches dispatched ({TOTAL_BATCHES * SAMPLES_PER_BATCH} samples in Monitor's queue).\n")
+            # Wait until all batches have been dispatched via push_metrics_batch.
+            print("Waiting for all batches to be dispatched...")
+            while len(list(_BATCH_DIR.iterdir())) < TOTAL_BATCHES:
+                time.sleep(0.1)
+            print(f"  All {TOTAL_BATCHES} batches dispatched ({TOTAL_BATCHES * SAMPLES_PER_BATCH} samples in Monitor's queue).\n")
 
-        # Tail _DISPLAY_DIR: print summaries as they arrive, wait until all done.
-        # Without this barrier, AgentRuntime.__exit__ kills the display_dashboard
-        # worker while Monitor's LLM is still pulling batches from the queue.
-        print(f"Live dashboard (Monitor processes ≤{MONITOR_BATCH_SIZE} samples per batch):\n")
-        seen: set[str] = set()
-        batch_index = 0
-        while len(seen) < EXPECTED_DISPLAYS:
-            for p in sorted(_DISPLAY_DIR.iterdir()):
-                if p.name not in seen and p.suffix == ".txt":
-                    batch_index += 1
-                    print(f"  [dashboard batch {batch_index}] {p.read_text()}")
-                    seen.add(p.name)
-            time.sleep(0.05)
+            # Tail _DISPLAY_DIR: print summaries as they arrive, wait until all done.
+            # Without this barrier, AgentRuntime.__exit__ kills the display_dashboard
+            # worker while Monitor's LLM is still pulling batches from the queue.
+            print(f"Live dashboard (Monitor processes ≤{MONITOR_BATCH_SIZE} samples per batch):\n")
+            seen: set[str] = set()
+            batch_index = 0
+            while len(seen) < EXPECTED_DISPLAYS:
+                for p in sorted(_DISPLAY_DIR.iterdir()):
+                    if p.name not in seen and p.suffix == ".txt":
+                        batch_index += 1
+                        print(f"  [dashboard batch {batch_index}] {p.read_text()}")
+                        seen.add(p.name)
+                time.sleep(0.05)
 
-        print(f"\nAll {EXPECTED_DISPLAYS} batch reports received. Stopping...\n")
-        feeder_handle.stop()
-        monitor_handle.stop()
-        feeder_handle.join(timeout=30)
-        monitor_handle.join(timeout=30)
+            print(f"\nAll {EXPECTED_DISPLAYS} batch reports received. Stopping...\n")
+            feeder_handle.stop()
+            monitor_handle.stop()
+            feeder_handle.join(timeout=30)
+            monitor_handle.join(timeout=30)
 
-        print("Done.")
-finally:
-    shutil.rmtree(_ipc_dir, ignore_errors=True)
+            print("Done.")
+    finally:
+        shutil.rmtree(_ipc_dir, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    main()

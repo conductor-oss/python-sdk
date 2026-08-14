@@ -97,7 +97,12 @@ SESSION_FILE = Path("/tmp/Conductor_chat_repl.session")
 # Filesystem IPC setup
 # ---------------------------------------------------------------------------
 
-_ipc_dir = Path(tempfile.mkdtemp(prefix="chat_repl_"))
+_IPC_DIR_ENV = "CHAT_REPL_IPC_DIR"
+if _IPC_DIR_ENV in os.environ:
+    _ipc_dir = Path(os.environ[_IPC_DIR_ENV])
+else:
+    _ipc_dir = Path(tempfile.mkdtemp(prefix="chat_repl_"))
+    os.environ[_IPC_DIR_ENV] = str(_ipc_dir)
 _REPLY_FILE = _ipc_dir / "reply.txt"       # agent writes reply here
 _REPLY_READY = _ipc_dir / "reply.ready"    # sentinel: reply is ready to read
 _REGISTRY_FILE = _ipc_dir / "registry.json"  # active ephemeral tasks
@@ -119,6 +124,40 @@ def _read_registry() -> dict:
 # Agent definition
 # ---------------------------------------------------------------------------
 
+@tool
+def reply_to_user(message: str) -> str:
+    """Send a reply back to the user in the REPL.
+
+    Writes the reply to a shared file and touches a sentinel so the main
+    thread knows a new reply is ready to display.
+    """
+    _REPLY_FILE.write_text(message)
+    _REPLY_READY.touch()
+    return "reply sent"
+
+
+@tool
+def run_task(task_name: str, task_input: str) -> str:
+    """Run a registered ephemeral task by name.
+
+    Reads the active task registry at call time — newly registered tasks
+    are available immediately.  Returns the task output or an error if the
+    task name is not registered.
+    """
+    registry = _read_registry()
+    if task_name not in registry:
+        available = ", ".join(registry) or "(none)"
+        return f"Error: task '{task_name}' not found. Available: {available}"
+    impl_fn = _TASK_IMPLEMENTATIONS.get(task_name)
+    if impl_fn is None:
+        return f"Error: task '{task_name}' has no implementation."
+    _, fn = impl_fn
+    try:
+        return fn(task_input)
+    except Exception as exc:
+        return f"Error running '{task_name}': {exc}"
+
+
 def build_agent() -> Agent:
     receive_message = wait_for_message_tool(
         name="wait_for_message",
@@ -128,38 +167,6 @@ def build_agent() -> Agent:
             "New-tool notification: {tool_registered: name, tool_description: desc}."
         ),
     )
-
-    @tool
-    def reply_to_user(message: str) -> str:
-        """Send a reply back to the user in the REPL.
-
-        Writes the reply to a shared file and touches a sentinel so the main
-        thread knows a new reply is ready to display.
-        """
-        _REPLY_FILE.write_text(message)
-        _REPLY_READY.touch()
-        return "reply sent"
-
-    @tool
-    def run_task(task_name: str, task_input: str) -> str:
-        """Run a registered ephemeral task by name.
-
-        Reads the active task registry at call time — newly registered tasks
-        are available immediately.  Returns the task output or an error if the
-        task name is not registered.
-        """
-        registry = _read_registry()
-        if task_name not in registry:
-            available = ", ".join(registry) or "(none)"
-            return f"Error: task '{task_name}' not found. Available: {available}"
-        impl_fn = _TASK_IMPLEMENTATIONS.get(task_name)
-        if impl_fn is None:
-            return f"Error: task '{task_name}' has no implementation."
-        _, fn = impl_fn
-        try:
-            return fn(task_input)
-        except Exception as exc:
-            return f"Error running '{task_name}': {exc}"
 
     return Agent(
         name="chat_repl_agent",
@@ -224,99 +231,104 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-try:
-    args = parse_args()
-    active_tasks: dict[str, str] = {}
-    _write_registry(active_tasks)
-    agent = build_agent()
+def main() -> None:
+    try:
+        args = parse_args()
+        active_tasks: dict[str, str] = {}
+        _write_registry(active_tasks)
+        agent = build_agent()
 
-    with AgentRuntime() as runtime:
-        if args.resume:
-            if not args.session_file.exists():
-                print(f"No session file found at {args.session_file}")
-                print("Start a new session first (without --resume).")
-                raise SystemExit(1)
+        with AgentRuntime() as runtime:
+            if args.resume:
+                if not args.session_file.exists():
+                    print(f"No session file found at {args.session_file}")
+                    print("Start a new session first (without --resume).")
+                    raise SystemExit(1)
 
-            saved_eid = args.session_file.read_text().strip()
-            print(f"Resuming session: {saved_eid}")
+                saved_eid = args.session_file.read_text().strip()
+                print(f"Resuming session: {saved_eid}")
 
-            # resume() fetches the workflow from the server, extracts the
-            # domain from taskToDomain, and re-registers workers under it.
-            handle = runtime.resume(saved_eid, agent)
-            execution_id = handle.execution_id
-            print(f"Workers re-registered under domain: {handle.run_id}")
-        else:
-            handle = runtime.start(agent, "Begin. Wait for the user's first message.")
-            execution_id = handle.execution_id
-            args.session_file.write_text(execution_id)
-            print(f"Agent started: {execution_id}")
-            print(f"Domain (run_id): {handle.run_id}")
-            print(f"Session saved to {args.session_file}")
+                # resume() fetches the workflow from the server, extracts the
+                # domain from taskToDomain, and re-registers workers under it.
+                handle = runtime.resume(saved_eid, agent)
+                execution_id = handle.execution_id
+                print(f"Workers re-registered under domain: {handle.run_id}")
+            else:
+                handle = runtime.start(agent, "Begin. Wait for the user's first message.")
+                execution_id = handle.execution_id
+                args.session_file.write_text(execution_id)
+                print(f"Agent started: {execution_id}")
+                print(f"Domain (run_id): {handle.run_id}")
+                print(f"Session saved to {args.session_file}")
 
-        print("\n" + "=" * 60)
-        print("Chat REPL — type 'help' for commands, 'quit' to exit")
-        print("=" * 60 + "\n")
+            print("\n" + "=" * 60)
+            print("Chat REPL — type 'help' for commands, 'quit' to exit")
+            print("=" * 60 + "\n")
 
-        while True:
-            try:
-                user_input = input("You: ").strip()
-            except (EOFError, KeyboardInterrupt):
-                print("\n\nDisconnected (Ctrl+C). Resume later with --resume.")
-                break
+            while True:
+                try:
+                    user_input = input("You: ").strip()
+                except (EOFError, KeyboardInterrupt):
+                    print("\n\nDisconnected (Ctrl+C). Resume later with --resume.")
+                    break
 
-            if not user_input:
-                continue
-
-            if user_input.lower() in ("quit", "exit"):
-                handle.stop()
-                print("Agent stopped.\n")
-                # Clean up session file — agent is stopped
-                if args.session_file.exists():
-                    args.session_file.unlink()
-                break
-
-            if user_input.lower() == "/disconnect":
-                print("Disconnected. Resume later with: python 81_chat_repl.py --resume")
-                break
-
-            if user_input.lower() == "help":
-                print(HELP_TEXT)
-                continue
-
-            if user_input.lower() == "/tools":
-                if active_tasks:
-                    print("Active ephemeral tasks:")
-                    for name, desc in active_tasks.items():
-                        print(f"  {name:12s}  {desc}")
-                else:
-                    print("No ephemeral tasks activated yet. Use /tool <name>.")
-                print()
-                continue
-
-            if user_input.lower().startswith("/tool "):
-                task_name = user_input[6:].strip()
-                if task_name not in _TASK_IMPLEMENTATIONS:
-                    print(f"Unknown task '{task_name}'. "
-                          f"Available: {', '.join(_TASK_IMPLEMENTATIONS)}\n")
+                if not user_input:
                     continue
-                desc, _ = _TASK_IMPLEMENTATIONS[task_name]
-                active_tasks[task_name] = desc
-                _write_registry(active_tasks)
-                print(f"  → Registered ephemeral task '{task_name}'.\n")
-                # Notify the agent so it can acknowledge and use it in the next turn.
-                runtime.send_message(execution_id, {
-                    "tool_registered": task_name,
-                    "tool_description": desc,
-                })
+
+                if user_input.lower() in ("quit", "exit"):
+                    handle.stop()
+                    print("Agent stopped.\n")
+                    # Clean up session file — agent is stopped
+                    if args.session_file.exists():
+                        args.session_file.unlink()
+                    break
+
+                if user_input.lower() == "/disconnect":
+                    print("Disconnected. Resume later with: python 81_chat_repl.py --resume")
+                    break
+
+                if user_input.lower() == "help":
+                    print(HELP_TEXT)
+                    continue
+
+                if user_input.lower() == "/tools":
+                    if active_tasks:
+                        print("Active ephemeral tasks:")
+                        for name, desc in active_tasks.items():
+                            print(f"  {name:12s}  {desc}")
+                    else:
+                        print("No ephemeral tasks activated yet. Use /tool <name>.")
+                    print()
+                    continue
+
+                if user_input.lower().startswith("/tool "):
+                    task_name = user_input[6:].strip()
+                    if task_name not in _TASK_IMPLEMENTATIONS:
+                        print(f"Unknown task '{task_name}'. "
+                              f"Available: {', '.join(_TASK_IMPLEMENTATIONS)}\n")
+                        continue
+                    desc, _ = _TASK_IMPLEMENTATIONS[task_name]
+                    active_tasks[task_name] = desc
+                    _write_registry(active_tasks)
+                    print(f"  → Registered ephemeral task '{task_name}'.\n")
+                    # Notify the agent so it can acknowledge and use it in the next turn.
+                    runtime.send_message(execution_id, {
+                        "tool_registered": task_name,
+                        "tool_description": desc,
+                    })
+                    reply = _wait_for_reply()
+                    print(f"Agent: {reply}\n")
+                    continue
+
+                # Normal user message.
+                runtime.send_message(execution_id, {"text": user_input})
                 reply = _wait_for_reply()
                 print(f"Agent: {reply}\n")
-                continue
 
-            # Normal user message.
-            runtime.send_message(execution_id, {"text": user_input})
-            reply = _wait_for_reply()
-            print(f"Agent: {reply}\n")
+            print("Session ended.")
+    finally:
+        shutil.rmtree(_ipc_dir, ignore_errors=True)
 
-        print("Session ended.")
-finally:
-    shutil.rmtree(_ipc_dir, ignore_errors=True)
+
+if __name__ == "__main__":
+    main()

@@ -42,11 +42,14 @@ os.environ.setdefault("CONDUCTOR_LOG_LEVEL", "WARNING")
 from conductor.ai.agents import Agent, AgentRuntime, tool, wait_for_message_tool
 from settings import settings
 
-# Shared directory for IPC between main process and worker processes.
-# Workers run as separate OS processes (different PIDs, same filesystem).
-_ipc_dir = Path(tempfile.mkdtemp(prefix="message_bus_"))
+_IPC_DIR_ENV = "MESSAGE_BUS_IPC_DIR"
+if _IPC_DIR_ENV in os.environ:
+    _ipc_dir = Path(os.environ[_IPC_DIR_ENV])
+else:
+    _ipc_dir = Path(tempfile.mkdtemp(prefix="message_bus_"))
+    os.environ[_IPC_DIR_ENV] = str(_ipc_dir)
 _FORWARDED_DIR = _ipc_dir / "forwarded"  # one file per forwarded topic
-_FORWARDED_DIR.mkdir()
+_FORWARDED_DIR.mkdir(exist_ok=True)
 
 TOPICS = [
     "the impact of edge computing on cloud infrastructure",
@@ -54,22 +57,27 @@ TOPICS = [
     "how vector databases work",
 ]
 
+_WRITER_EXECUTION_ID_ENV = "MESSAGE_BUS_WRITER_EXECUTION_ID"
 
-def build_researcher(runtime: AgentRuntime, writer_execution_id: str) -> Agent:
+
+@tool
+def forward_to_writer(topic: str, notes: str) -> str:
+    """Forward research notes to the Writer and signal the main process."""
+    print(f"  [researcher → writer] forwarding notes on {topic!r}")
+    writer_execution_id = os.environ[_WRITER_EXECUTION_ID_ENV]
+    with AgentRuntime() as rt:
+        rt.send_message(writer_execution_id, {"topic": topic, "notes": notes})
+    (_FORWARDED_DIR / f"{time.time_ns()}.done").touch()
+    return "forwarded"
+
+
+def build_researcher() -> Agent:
     """Build the Researcher agent with a forward tool wired to the Writer's queue."""
 
     receive_topic = wait_for_message_tool(
         name="wait_for_topic",
         description="Wait for the next research topic.",
     )
-
-    @tool
-    def forward_to_writer(topic: str, notes: str) -> str:
-        """Forward research notes to the Writer and signal the main process."""
-        print(f"  [researcher → writer] forwarding notes on {topic!r}")
-        runtime.send_message(writer_execution_id, {"topic": topic, "notes": notes})
-        (_FORWARDED_DIR / f"{time.time_ns()}.done").touch()
-        return "forwarded"
 
     return Agent(
         name="researcher",
@@ -88,6 +96,14 @@ def build_researcher(runtime: AgentRuntime, writer_execution_id: str) -> Agent:
     )
 
 
+@tool
+def publish(topic: str, paragraph: str) -> str:
+    """Publish the finished paragraph."""
+    print(f"\n  [writer] ── {topic} ──")
+    print(f"  {paragraph}\n")
+    return "published"
+
+
 def build_writer() -> Agent:
     """Build the Writer agent that polishes research notes into paragraphs."""
 
@@ -98,13 +114,6 @@ def build_writer() -> Agent:
             "The payload contains 'topic' and 'notes' fields."
         ),
     )
-
-    @tool
-    def publish(topic: str, paragraph: str) -> str:
-        """Publish the finished paragraph."""
-        print(f"\n  [writer] ── {topic} ──")
-        print(f"  {paragraph}\n")
-        return "published"
 
     return Agent(
         name="writer",
@@ -122,34 +131,41 @@ def build_writer() -> Agent:
     )
 
 
-try:
-    with AgentRuntime() as runtime:
-        # Start the Writer first so its execution_id is available to the Researcher
-        writer_handle = runtime.start(build_writer(), "Begin. Wait for research notes.")
-        writer_id = writer_handle.execution_id
-        print(f"Writer  started: {writer_id}")
+def main() -> None:
+    try:
+        with AgentRuntime() as runtime:
+            # Start the Writer first so its execution_id is available to the Researcher
+            writer_handle = runtime.start(build_writer(), "Begin. Wait for research notes.")
+            writer_id = writer_handle.execution_id
+            print(f"Writer  started: {writer_id}")
 
-        researcher = build_researcher(runtime, writer_id)
-        researcher_handle = runtime.start(researcher, "Begin. Wait for your first topic.")
-        researcher_id = researcher_handle.execution_id
-        print(f"Researcher started: {researcher_id}\n")
+            os.environ[_WRITER_EXECUTION_ID_ENV] = writer_id
 
-        time.sleep(4)
-        print("Sending topics to Researcher...\n")
-        for topic in TOPICS:
-            print(f"  → {topic!r}")
-            runtime.send_message(researcher_id, {"topic": topic})
+            researcher = build_researcher()
+            researcher_handle = runtime.start(researcher, "Begin. Wait for your first topic.")
+            researcher_id = researcher_handle.execution_id
+            print(f"Researcher started: {researcher_id}\n")
 
-        # Wait until all topics have been forwarded to the Writer
-        while len(list(_FORWARDED_DIR.iterdir())) < len(TOPICS):
-            time.sleep(0.1)
+            time.sleep(4)
+            print("Sending topics to Researcher...\n")
+            for topic in TOPICS:
+                print(f"  → {topic!r}")
+                runtime.send_message(researcher_id, {"topic": topic})
 
-        # Deterministic stop — no stop-handling instructions needed.
-        researcher_handle.stop()
-        writer_handle.stop()
-        researcher_handle.join(timeout=30)
-        writer_handle.join(timeout=30)
+            # Wait until all topics have been forwarded to the Writer
+            while len(list(_FORWARDED_DIR.iterdir())) < len(TOPICS):
+                time.sleep(0.1)
 
-        print("Done.")
-finally:
-    shutil.rmtree(_ipc_dir, ignore_errors=True)
+            # Deterministic stop — no stop-handling instructions needed.
+            researcher_handle.stop()
+            writer_handle.stop()
+            researcher_handle.join(timeout=30)
+            writer_handle.join(timeout=30)
+
+            print("Done.")
+    finally:
+        shutil.rmtree(_ipc_dir, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    main()

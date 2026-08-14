@@ -324,23 +324,28 @@ def handle_events(handle):
                 print("\n" + summary)
 
 
-with AgentRuntime() as runtime:
-    print("\n📬 Hey! I'm your Gmail subscription analyst.")
-    print("I can find your subscriptions, spot duplicates, flag unused services,")
-    print("and tell you exactly what to cancel and where to cancel it.")
-    print("Type 'exit' to quit.\n")
+def main() -> None:
+    with AgentRuntime() as runtime:
+        print("\n📬 Hey! I'm your Gmail subscription analyst.")
+        print("I can find your subscriptions, spot duplicates, flag unused services,")
+        print("and tell you exactly what to cancel and where to cancel it.")
+        print("Type 'exit' to quit.\n")
 
-    while True:
-        try:
-            prompt = input("You: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\nGoodbye! 👋")
-            break
-        if not prompt:
-            continue
-        if prompt.lower() in ("exit", "quit", "bye"):
-            print("\nGoodbye! 👋")
-            break
-        print()
-        handle_events(runtime.start(agent, prompt))
-        print()
+        while True:
+            try:
+                prompt = input("You: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print("\nGoodbye! 👋")
+                break
+            if not prompt:
+                continue
+            if prompt.lower() in ("exit", "quit", "bye"):
+                print("\nGoodbye! 👋")
+                break
+            print()
+            handle_events(runtime.start(agent, prompt))
+            print()
+
+
+if __name__ == "__main__":
+    main()
