@@ -3,10 +3,16 @@
 Demonstrates:
     - Agent-to-agent messaging: one running agent sending messages directly
       into another running agent's WMQ via runtime.send_message()
-    - A tool that closes over an execution_id to forward results downstream
+    - Module-level tools that pick up runtime values from the environment:
+      forward_to_writer reads the Writer's execution id from
+      MESSAGE_BUS_WRITER_EXECUTION_ID, since a tool that closed over it could not
+      be pickled to its spawned worker process
     - Parallel agent pipelines: researcher → writer running concurrently
-    - Filesystem-based IPC: forward_to_writer writes sentinel files so the main
-      thread knows when all topics have been forwarded
+    - Filesystem-based IPC between the main process and worker processes:
+      forward_to_writer and publish each write sentinel files, so the main process
+      can tell forwarding from publishing.  The barrier waits on publish — the
+      Researcher forwards the last topic while the Writer is still mid-turn on it,
+      so stopping at "all forwarded" would cut the final paragraph.
     - Deterministic stop: handle.stop() exits each agent's loop gracefully
 
 How this differs from 06_sequential_pipeline:
@@ -26,7 +32,7 @@ Scenario:
     Researcher autonomously drives the Writer.
 
 Requirements:
-    - Conductor server running at http://localhost:8080
+    - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
     - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
@@ -48,8 +54,10 @@ if _IPC_DIR_ENV in os.environ:
 else:
     _ipc_dir = Path(tempfile.mkdtemp(prefix="message_bus_"))
     os.environ[_IPC_DIR_ENV] = str(_ipc_dir)
-_FORWARDED_DIR = _ipc_dir / "forwarded"  # one file per forwarded topic
+_FORWARDED_DIR = _ipc_dir / "forwarded"  # one file per topic forwarded by the Researcher
 _FORWARDED_DIR.mkdir(exist_ok=True)
+_PUBLISHED_DIR = _ipc_dir / "published"  # one file per paragraph published by the Writer
+_PUBLISHED_DIR.mkdir(exist_ok=True)
 
 TOPICS = [
     "the impact of edge computing on cloud infrastructure",
@@ -101,6 +109,7 @@ def publish(topic: str, paragraph: str) -> str:
     """Publish the finished paragraph."""
     print(f"\n  [writer] ── {topic} ──")
     print(f"  {paragraph}\n")
+    (_PUBLISHED_DIR / f"{time.time_ns()}.done").touch()
     return "published"
 
 
@@ -152,8 +161,18 @@ def main() -> None:
                 print(f"  → {topic!r}")
                 runtime.send_message(researcher_id, {"topic": topic})
 
-            # Wait until all topics have been forwarded to the Writer
-            while len(list(_FORWARDED_DIR.iterdir())) < len(TOPICS):
+            # Wait until the Writer has published every paragraph.  Gating on
+            # _FORWARDED_DIR is not enough: the Researcher forwards the last topic
+            # while the Writer is still mid-turn on it, so stopping there would cut
+            # the final paragraph and can leave the Researcher's stop() racing an
+            # in-flight iteration.
+            deadline = time.monotonic() + 180
+            while len(list(_PUBLISHED_DIR.iterdir())) < len(TOPICS):
+                if time.monotonic() > deadline:
+                    raise TimeoutError(
+                        f"Writer published {len(list(_PUBLISHED_DIR.iterdir()))} of "
+                        f"{len(TOPICS)} paragraphs before the deadline."
+                    )
                 time.sleep(0.1)
 
             # Deterministic stop — no stop-handling instructions needed.

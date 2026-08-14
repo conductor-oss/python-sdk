@@ -15,9 +15,9 @@ Usage:
     python 82_coding_agent.py --resume             # resume last session
 
 Requirements:
-    - Conductor server running at http://localhost:8080
+    - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api
-    - CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-4-20250514
+    - CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-5
 """
 
 import argparse
@@ -461,9 +461,12 @@ Available tools:
 - run_shell(command)                           run a shell command (cwd: {working_dir}, timeout: {shell_timeout}s)
 - find_files(pattern, path=".")               find files by glob, e.g. "**/*.py"
 - search_in_files(regex, path=".", file_glob) grep files by regex
-- reply_to_user(message)                       send your response to the user
+- reply_to_user(message)                       REQUIRED — how the user sees your answer
 
 Rules:
+- You MUST call reply_to_user before calling wait_for_message again. It is the only
+  channel the user can see — plain text replies are discarded.
+- Never call wait_for_message twice in a row. Every task ends with reply_to_user.
 - Work autonomously. Do not ask for permission before reading files, running commands, or writing.
 - Make as many tool calls as needed to fully complete the task before replying.
 - Keep replies concise: what was done, what changed, key output. No lengthy explanations.
@@ -474,8 +477,8 @@ Repeat indefinitely:
 1. Call wait_for_message to receive the next task.
 2. Think through the task. Explore, read, search, modify, and run as needed.
 3. Complete the task fully.
-4. Call reply_to_user with a concise summary.
-5. Return to step 1 immediately.
+4. Call reply_to_user with a concise summary. Never skip this step.
+5. Only then return to step 1.
 """,
     )
 

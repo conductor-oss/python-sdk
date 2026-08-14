@@ -1,7 +1,8 @@
 """Approval Workflow — agent dynamically decides which tasks need human sign-off.
 
 Demonstrates:
-    - wait_for_message_tool as a dynamic approval gate driven by LLM reasoning
+    - wait_for_message_tool as the task intake; flag_for_approval (a @tool) as a
+      dynamic approval gate driven by LLM reasoning
     - The agent itself decides mid-loop whether a task is risky, rather than
       the workflow being designed with an explicit approval step upfront
     - flag_for_approval blocks until the operator decides, returning "approve"
@@ -9,12 +10,15 @@ Demonstrates:
       which prevents the agent from pulling the next task while approval is pending
     - Filesystem-based IPC between the main process and worker processes:
       tool workers run as separate OS processes (different PIDs, same filesystem),
-      so @tool functions use sentinel files to communicate with the main thread
-    - Clean shutdown: the agent responds with no tool calls on the stop signal,
-      which lets the DoWhile loop exit naturally (workflow ends COMPLETED)
+      so @tool functions use sentinel files to talk to the main process.  The
+      shared directory crosses process boundaries via APPROVAL_WORKFLOW_IPC_DIR —
+      a per-import mkdtemp() would give every worker its own dir.
+    - Deterministic stop: handle.stop() ends the loop once every task has been
+      accounted for, without any stop-handling instructions in the prompt
+      (workflow ends COMPLETED)
 
-How this differs from examples 09a–09d (HITL):
-    In 09a–09d the approval pause is a WaitTask node baked into the workflow
+How this differs from examples 09–09d (HITL):
+    In 09–09d the approval pause is a WaitTask node baked into the workflow
     definition at compile time — the workflow always pauses at that point
     regardless of the input.  Here, the LLM inspects each incoming task and
     decides dynamically whether it is safe to execute immediately or requires
@@ -31,7 +35,7 @@ Scenario:
     blocks on flag_for_approval until the operator responds.
 
 Requirements:
-    - Conductor server running at http://localhost:8080
+    - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
     - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
@@ -49,12 +53,19 @@ from conductor.ai.agents import Agent, AgentRuntime, tool, wait_for_message_tool
 from settings import settings
 
 # Shared directory for IPC between main process and worker processes.
-# Workers run as separate OS processes (different PIDs, same filesystem).
-_ipc_dir = Path(tempfile.mkdtemp(prefix="approval_workflow_"))
+# Workers run as separate OS processes (different PIDs, same filesystem) that
+# re-import this module, so the directory is passed down via an env var — a
+# per-import mkdtemp() would give every worker its own dir and break the IPC.
+_IPC_DIR_ENV = "APPROVAL_WORKFLOW_IPC_DIR"
+if _IPC_DIR_ENV in os.environ:
+    _ipc_dir = Path(os.environ[_IPC_DIR_ENV])
+else:
+    _ipc_dir = Path(tempfile.mkdtemp(prefix="approval_workflow_"))
+    os.environ[_IPC_DIR_ENV] = str(_ipc_dir)
 _APPROVAL_DIR = _ipc_dir / "approvals"
 _DONE_DIR = _ipc_dir / "done"
-_APPROVAL_DIR.mkdir()
-_DONE_DIR.mkdir()
+_APPROVAL_DIR.mkdir(exist_ok=True)
+_DONE_DIR.mkdir(exist_ok=True)
 
 
 @tool
@@ -94,7 +105,7 @@ def log_rejection(task: str) -> str:
 
 receive_message = wait_for_message_tool(
     name="wait_for_message",
-    description="Dequeue the next task or stop signal ({stop: true}).",
+    description="Dequeue the next task to process.",
 )
 
 agent = Agent(
@@ -127,35 +138,43 @@ TASKS = [
     "Grant admin access to user@example.com",
 ]
 
-try:
-    with AgentRuntime() as runtime:
-        handle = runtime.start(agent, "Start processing the task queue.")
-        execution_id = handle.execution_id
-        time.sleep(4)
-        print(f"Agent started: {execution_id}\n")
+def main() -> None:
+    try:
+        with AgentRuntime() as runtime:
+            handle = runtime.start(agent, "Start processing the task queue.")
+            execution_id = handle.execution_id
+            time.sleep(4)
+            print(f"Agent started: {execution_id}\n")
 
-        print("Dispatching all tasks...\n")
-        for task in TASKS:
-            print(f"  → {task!r}")
-            runtime.send_message(execution_id, {"task": task})
+            print("Dispatching all tasks...\n")
+            for task in TASKS:
+                print(f"  → {task!r}")
+                runtime.send_message(execution_id, {"task": task})
 
-        # Poll for approval requests; write decision files to unblock the tool.
-        # Poll for completions to know when to send the stop signal.
-        while len(list(_DONE_DIR.iterdir())) < len(TASKS):
-            for req in sorted(_APPROVAL_DIR.glob("*.json")):
-                data = json.loads(req.read_text())
-                req.unlink()
-                print(f"\n  ⚠ APPROVAL REQUIRED")
-                print(f"    Task:   {data['task']}")
-                print(f"    Reason: {data['reason']}\n")
-                answer = input("  Approve? [Y/N]: ").strip().upper()
-                decision = "approve" if answer == "Y" else "reject"
-                req.with_suffix(".decision").write_text(decision)
-            time.sleep(0.1)
+            # Poll for approval requests; write decision files to unblock the tool.
+            # Poll for completions to know when to send the stop signal.
+            while len(list(_DONE_DIR.iterdir())) < len(TASKS):
+                for req in sorted(_APPROVAL_DIR.glob("*.json")):
+                    data = json.loads(req.read_text())
+                    req.unlink()
+                    print("\n  ⚠ APPROVAL REQUIRED")
+                    print(f"    Task:   {data['task']}")
+                    print(f"    Reason: {data['reason']}\n")
+                    answer = input("  Approve? [Y/N]: ").strip().upper()
+                    decision = "approve" if answer == "Y" else "reject"
+                    req.with_suffix(".decision").write_text(decision)
+                time.sleep(0.1)
 
-        # Deterministic stop — no stop-handling instructions needed.
-        handle.stop()
-        handle.join(timeout=30)
-        print("\nDone.")
-finally:
-    shutil.rmtree(_ipc_dir, ignore_errors=True)
+            # Deterministic stop — no stop-handling instructions needed.
+            handle.stop()
+            handle.join(timeout=30)
+            print("\nDone.")
+    finally:
+        shutil.rmtree(_ipc_dir, ignore_errors=True)
+
+
+# Guard the runtime block: spawned tool workers re-import this module, and
+# without the guard they would re-run the orchestration (multiprocessing's
+# "Safe importing of main module" error).
+if __name__ == "__main__":
+    main()

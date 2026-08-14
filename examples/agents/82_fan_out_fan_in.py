@@ -21,7 +21,9 @@ Demonstrates:
     - Filesystem IPC:
         * Workers write sentinels after submit_answer so main counts completions
         * Collector writes reports to files; main thread reads and prints them
-    - No time.sleep() to assume message delivery — synchronisation via files
+    - Result delivery is never assumed from elapsed time — every wait is on a
+      sentinel file.  The one bare sleep is a startup grace period, letting the
+      agents reach their first wait call before the first message is sent.
 
 Scenario:
     A research Orchestrator fans out each question to three Worker agents
@@ -29,8 +31,9 @@ Scenario:
     aggregates the three answers into a side-by-side comparison report.
 
 Requirements:
-    - Conductor server running (CONDUCTOR_SERVER_URL / CONDUCTOR_SERVER_URL)
-    - CONDUCTOR_AGENT_LLM_MODEL set to a working model
+    - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 
 import json
