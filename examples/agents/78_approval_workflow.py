@@ -1,7 +1,8 @@
 """Approval Workflow — agent dynamically decides which tasks need human sign-off.
 
 Demonstrates:
-    - wait_for_message_tool as a dynamic approval gate driven by LLM reasoning
+    - wait_for_message_tool as the task intake; flag_for_approval (a @tool) as a
+      dynamic approval gate driven by LLM reasoning
     - The agent itself decides mid-loop whether a task is risky, rather than
       the workflow being designed with an explicit approval step upfront
     - flag_for_approval blocks until the operator decides, returning "approve"
@@ -9,12 +10,15 @@ Demonstrates:
       which prevents the agent from pulling the next task while approval is pending
     - Filesystem-based IPC between the main process and worker processes:
       tool workers run as separate OS processes (different PIDs, same filesystem),
-      so @tool functions use sentinel files to communicate with the main thread
-    - Clean shutdown: the agent responds with no tool calls on the stop signal,
-      which lets the DoWhile loop exit naturally (workflow ends COMPLETED)
+      so @tool functions use sentinel files to talk to the main process.  The
+      shared directory crosses process boundaries via APPROVAL_WORKFLOW_IPC_DIR —
+      a per-import mkdtemp() would give every worker its own dir.
+    - Deterministic stop: handle.stop() ends the loop once every task has been
+      accounted for, without any stop-handling instructions in the prompt
+      (workflow ends COMPLETED)
 
-How this differs from examples 09a–09d (HITL):
-    In 09a–09d the approval pause is a WaitTask node baked into the workflow
+How this differs from examples 09–09d (HITL):
+    In 09–09d the approval pause is a WaitTask node baked into the workflow
     definition at compile time — the workflow always pauses at that point
     regardless of the input.  Here, the LLM inspects each incoming task and
     decides dynamically whether it is safe to execute immediately or requires
@@ -31,7 +35,7 @@ Scenario:
     blocks on flag_for_approval until the operator responds.
 
 Requirements:
-    - Conductor server running at http://localhost:8080
+    - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
     - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
@@ -101,7 +105,7 @@ def log_rejection(task: str) -> str:
 
 receive_message = wait_for_message_tool(
     name="wait_for_message",
-    description="Dequeue the next task or stop signal ({stop: true}).",
+    description="Dequeue the next task to process.",
 )
 
 agent = Agent(
