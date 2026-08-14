@@ -58,36 +58,48 @@ agent = Agent(
 )
 
 
-with AgentRuntime() as runtime:
-    handle = runtime.start(agent, "Start consuming messages from Kafka.")
-    print(f"Agent started: {handle.execution_id}")
+def main() -> None:
+    with AgentRuntime() as runtime:
+        handle = runtime.start(agent, "Start consuming messages from Kafka.")
+        print(f"Agent started: {handle.execution_id}")
 
-    consumer = Consumer(
-        {
-            "bootstrap.servers": KAFKA_BOOTSTRAP,
-            "group.id": KAFKA_GROUP,
-            "auto.offset.reset": "latest",
-        }
-    )
-    consumer.subscribe([KAFKA_TOPIC])
-    try:
-        while True:
-            msg = consumer.poll(timeout=1.0)
-            if msg is None:
-                continue
-            if msg.error():
-                if msg.error().code() == KafkaError._PARTITION_EOF:
+        consumer = Consumer(
+            {
+                "bootstrap.servers": KAFKA_BOOTSTRAP,
+                "group.id": KAFKA_GROUP,
+                "auto.offset.reset": "latest",
+            }
+        )
+        consumer.subscribe([KAFKA_TOPIC])
+        print(f"Consuming '{KAFKA_TOPIC}' from {KAFKA_BOOTSTRAP} — Ctrl+C to stop.")
+        try:
+            while True:
+                msg = consumer.poll(timeout=1.0)
+                if msg is None:
                     continue
-                raise RuntimeError(f"Kafka error: {msg.error()}")
-            runtime.send_message(
-                handle.execution_id,
-                {
-                    "topic": msg.topic(),
-                    "partition": msg.partition(),
-                    "offset": msg.offset(),
-                    "key": msg.key().decode("utf-8") if msg.key() else None,
-                    "value": msg.value().decode("utf-8") if msg.value() else "",
-                },
-            )
-    finally:
-        consumer.close()
+                if msg.error():
+                    if msg.error().code() == KafkaError._PARTITION_EOF:
+                        continue
+                    raise RuntimeError(f"Kafka error: {msg.error()}")
+                runtime.send_message(
+                    handle.execution_id,
+                    {
+                        "topic": msg.topic(),
+                        "partition": msg.partition(),
+                        "offset": msg.offset(),
+                        "key": msg.key().decode("utf-8") if msg.key() else None,
+                        "value": msg.value().decode("utf-8") if msg.value() else "",
+                    },
+                )
+        except KeyboardInterrupt:
+            print("\nStopping agent...")
+            handle.stop()
+        finally:
+            consumer.close()
+
+
+# Guard the runtime block: spawned tool workers re-import this module, and
+# without the guard they would re-run the orchestration (multiprocessing's
+# "Safe importing of main module" error).
+if __name__ == "__main__":
+    main()

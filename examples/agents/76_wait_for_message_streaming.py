@@ -4,10 +4,18 @@ Demonstrates:
     - wait_for_message_tool with streaming: push messages in and see the agent react
     - Using handle.stream() to observe WAITING → processing → WAITING cycles
     - runtime.send_message() to push payloads into the Workflow Message Queue
+    - handle.stop() ending the loop deterministically
 
-The agent starts, immediately waits for a message, processes whatever it
-receives (by calling wait_for_message again), then waits again.  The caller
-drives the conversation by sending messages and reading streamed events.
+The agent starts, immediately waits for a message, answers it with respond(),
+then loops back to wait_for_message.  The caller drives the conversation from a
+background thread — sending a task every 8 seconds — while the main thread reads
+streamed events.
+
+The agent's instructions tell it to never stop, so the loop only ends when the
+sender calls handle.stop() — after giving the last task time to be answered.
+That sets the ``_stop_requested`` workflow variable
+checked by the DoWhile condition and pushes a ``{"_signal": "stop"}`` message to
+unblock the pending PULL_WORKFLOW_MESSAGES.  stream() then yields DONE.
 
 Requirements:
     - Conductor server running at http://localhost:8080
@@ -66,15 +74,16 @@ def main() -> None:
         print(f"Agent started: {handle.execution_id}\n")
 
         # Push messages from a background thread while we stream events on the main thread.
-        # Wait long enough between sends for the agent to finish processing each message.
-        # No sleep after the last send — handle.stream() on the main thread is already the
-        # barrier: it blocks until DONE, which only fires once the workflow reaches a
-        # terminal state (after stop() sets the flag and the current iteration completes).
+        # Wait long enough between sends for the agent to finish processing each message —
+        # including after the last one.  Calling stop() immediately after the final send
+        # would set _stop_requested while the agent is still mid-turn on that task, and the
+        # DoWhile would exit before it ever answers.
         def sender():
             for task in TASKS:
                 time.sleep(8)
                 print(f"\n  [caller] sending -> {task!r}")
                 runtime.send_message(handle.execution_id, {"task": task})
+            time.sleep(8)
             handle.stop()
 
         threading.Thread(target=sender, daemon=True).start()
