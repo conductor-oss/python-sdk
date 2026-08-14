@@ -149,6 +149,22 @@ def serialize_agent(agent_obj: Any) -> Tuple[Dict[str, Any], List[WorkerInfo]]:
                 "parameters": worker.input_schema,
             }
 
+        # Google ADK agent-as-tool. Emitted with the public ``AgentTool`` shape rather
+        # than the wrapper's own class name, which is internal to ADK for the
+        # single_turn/task cases. Serialized through the enclosing ``_serialize`` so the
+        # shared ``seen`` set terminates ADK's ``parent_agent`` back-reference; routing it
+        # through ``serialize_agent`` would start a fresh set and recurse forever.
+        if _is_adk_agent_tool(obj):
+            adk_child = getattr(obj, "agent", None)
+            if adk_child is not None:
+                return {
+                    "_type": "AgentTool",
+                    "name": getattr(obj, "name", None)
+                    or getattr(adk_child, "name", "agent_tool"),
+                    "description": getattr(obj, "description", "") or "",
+                    "agent": _serialize(adk_child),
+                }
+
         # Agent-as-tool: framework tool wrapping a nested agent.
         # Must be checked BEFORE generic tool extraction so the embedded
         # agent is serialized as a child workflow, not a worker_ref.
@@ -197,8 +213,13 @@ def serialize_agent(agent_obj: Any) -> Tuple[Dict[str, Any], List[WorkerInfo]]:
                     # letting Pydantic truncate nested models mid-serialization.
                     # Include _type so server-side normalizers can identify the class.
                     d: Dict[str, Any] = {"_type": type(obj).__name__}
+                    # A sub-agent already reachable as an agent-tool must not also be listed
+                    # as a handoff target — see _adk_delegated_child_ids.
+                    delegated = _adk_delegated_child_ids(obj)
                     for field_name in model_fields:
                         val = getattr(obj, field_name, None)
+                        if field_name == "sub_agents" and delegated and val:
+                            val = [c for c in val if id(c) not in delegated]
                         d[field_name] = _serialize(val)
                     return d
                 try:
@@ -266,6 +287,50 @@ def _is_tool_callable(obj: Any) -> bool:
         return True
     except (ValueError, TypeError):
         return False
+
+
+def _is_adk_agent_tool(obj: Any) -> bool:
+    """Is this a Google ADK tool that wraps an agent?
+
+    Matches ``google.adk.tools.AgentTool`` — the public, exported base class — so it also
+    covers the private subclasses ADK materialises for ``mode="single_turn"`` and
+    ``mode="task"`` sub-agents, without naming them. Those names are internal and can change
+    between releases; the base class is part of ADK's public surface.
+    """
+    try:
+        from google.adk.tools import AgentTool as AdkAgentTool
+    except Exception:
+        return False
+    return isinstance(obj, AdkAgentTool)
+
+
+def _adk_delegated_child_ids(agent: Any) -> set:
+    """Ids of an agent's sub-agents that are already reachable as agent-tools.
+
+    ADK materialises a tool wrapper into the *parent's* ``tools`` for every sub-agent
+    declared ``mode="single_turn"`` or ``mode="task"``, and leaves that sub-agent in
+    ``sub_agents`` as well. ADK resolves the duplicate per request, when it assembles the
+    model call; a serialized snapshot has no such step, so the duplicate has to be resolved
+    here instead.
+
+    Left in, the same child reaches the server twice — once as a callable tool and once as a
+    handoff target — with no way to tell which placement was intended. The compiled workflow
+    then offers the model two routes with incompatible semantics, and only one of them has an
+    executor.
+
+    Identity is the right key: ADK builds the wrapper around the very same object listed in
+    ``sub_agents``, so this cannot mismatch on a duplicated or reused name.
+    """
+    tools = getattr(agent, "tools", None)
+    if not tools:
+        return set()
+    delegated = set()
+    for tool in tools:
+        if _is_adk_agent_tool(tool):
+            child = getattr(tool, "agent", None)
+            if child is not None:
+                delegated.add(id(child))
+    return delegated
 
 
 def _try_extract_agent_tool(obj: Any) -> Optional[Tuple[Dict[str, Any], List[WorkerInfo]]]:
