@@ -45,7 +45,7 @@ Ephemeral tools via /tool <name>:
 Requirements:
     - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
-    - CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-4-20250514 as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-5 as environment variable
 """
 
 import argparse
