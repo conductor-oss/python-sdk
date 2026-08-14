@@ -48,8 +48,10 @@ if _IPC_DIR_ENV in os.environ:
 else:
     _ipc_dir = Path(tempfile.mkdtemp(prefix="message_bus_"))
     os.environ[_IPC_DIR_ENV] = str(_ipc_dir)
-_FORWARDED_DIR = _ipc_dir / "forwarded"  # one file per forwarded topic
+_FORWARDED_DIR = _ipc_dir / "forwarded"  # one file per topic forwarded by the Researcher
 _FORWARDED_DIR.mkdir(exist_ok=True)
+_PUBLISHED_DIR = _ipc_dir / "published"  # one file per paragraph published by the Writer
+_PUBLISHED_DIR.mkdir(exist_ok=True)
 
 TOPICS = [
     "the impact of edge computing on cloud infrastructure",
@@ -101,6 +103,7 @@ def publish(topic: str, paragraph: str) -> str:
     """Publish the finished paragraph."""
     print(f"\n  [writer] ── {topic} ──")
     print(f"  {paragraph}\n")
+    (_PUBLISHED_DIR / f"{time.time_ns()}.done").touch()
     return "published"
 
 
@@ -152,8 +155,18 @@ def main() -> None:
                 print(f"  → {topic!r}")
                 runtime.send_message(researcher_id, {"topic": topic})
 
-            # Wait until all topics have been forwarded to the Writer
-            while len(list(_FORWARDED_DIR.iterdir())) < len(TOPICS):
+            # Wait until the Writer has published every paragraph.  Gating on
+            # _FORWARDED_DIR is not enough: the Researcher forwards the last topic
+            # while the Writer is still mid-turn on it, so stopping there would cut
+            # the final paragraph and can leave the Researcher's stop() racing an
+            # in-flight iteration.
+            deadline = time.monotonic() + 180
+            while len(list(_PUBLISHED_DIR.iterdir())) < len(TOPICS):
+                if time.monotonic() > deadline:
+                    raise TimeoutError(
+                        f"Writer published {len(list(_PUBLISHED_DIR.iterdir()))} of "
+                        f"{len(TOPICS)} paragraphs before the deadline."
+                    )
                 time.sleep(0.1)
 
             # Deterministic stop — no stop-handling instructions needed.
