@@ -85,6 +85,12 @@ jobs:
           exit 1
 
       - name: Start server
+        # conductor-oss serves secrets from the server process environment and
+        # rejects writes, so suites that consume a credential need theirs
+        # provisioned here or their authenticated phase self-skips.
+        env:
+          CONDUCTOR_SECRET_MCP_AUTH_KEY: e2e-test-secret-key-12345
+          CONDUCTOR_SECRET_HTTP_AUTH_KEY: e2e-http-test-secret-key-67890
         run: |
           java -jar conductor-server.jar --server.port=8080 > server.log 2>&1 &
 
