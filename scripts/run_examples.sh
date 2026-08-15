@@ -21,6 +21,15 @@ TIMEOUT="${EXAMPLE_TIMEOUT:-300}"
 # Cross-platform python: honour PYTHON env var, then try python3, then python.
 PYTHON="${PYTHON:-$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo python3)}"
 
+# Cross-platform timeout: GNU coreutils provides `timeout`; macOS ships it as
+# `gtimeout`, and only when coreutils is installed. Without either, run the
+# examples unbounded rather than failing every one of them.
+TIMEOUT_BIN="$(command -v timeout 2>/dev/null || command -v gtimeout 2>/dev/null || true)"
+if [[ -z "$TIMEOUT_BIN" ]]; then
+    echo "Warning: neither 'timeout' nor 'gtimeout' found; examples will run" >&2
+    echo "         without a time limit. On macOS: brew install coreutils" >&2
+fi
+
 # Cross-platform temp dir: honour TMPDIR (set on macOS/Linux), fall back to /tmp.
 TMP_BASE="${TMPDIR:-${TEMP:-/tmp}}"
 
@@ -139,7 +148,11 @@ echo " Running ${#EXAMPLES[@]} examples"
 if [[ ${#SKIPPED[@]} -gt 0 ]]; then
     echo " Skipping ${#SKIPPED[@]}: ${SKIPPED[*]}"
 fi
-echo " Timeout: ${TIMEOUT}s per example"
+if [[ -n "$TIMEOUT_BIN" ]]; then
+    echo " Timeout: ${TIMEOUT}s per example"
+else
+    echo " Timeout: none (no timeout binary found)"
+fi
 echo "=========================================="
 echo ""
 
@@ -163,9 +176,9 @@ for example in "${EXAMPLES[@]}"; do
     if [[ -n "$STDIN_RESPONSE" ]]; then
         # Use `yes` to provide unlimited identical responses — handles
         # cases where the LLM calls an approval tool multiple times.
-        RUN_CMD="yes '$STDIN_RESPONSE' | timeout $TIMEOUT $PYTHON $example"
+        RUN_CMD="yes '$STDIN_RESPONSE' | ${TIMEOUT_BIN:+$TIMEOUT_BIN $TIMEOUT }$PYTHON $example"
     else
-        RUN_CMD="timeout $TIMEOUT $PYTHON $example"
+        RUN_CMD="${TIMEOUT_BIN:+$TIMEOUT_BIN $TIMEOUT }$PYTHON $example"
     fi
 
     if eval "$RUN_CMD" > "$LOG_FILE" 2>&1; then
