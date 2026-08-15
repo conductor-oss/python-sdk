@@ -5,7 +5,6 @@ Demonstrates:
     - Coder writes code, transfers to QA when ready
     - QA tester reviews and runs tests, transfers back if bugs found
     - Natural back-and-forth until QA approves the code
-    - Extended thinking for step-by-step reasoning
 
 Flow (swarm — LLM-driven handoffs):
     1. coder writes the solution, executes it, transfers to qa_tester
@@ -37,7 +36,6 @@ qa_tester = Agent(
         "provide your final QA report. Do NOT transfer back if all tests pass."
     ),
     local_code_execution=True,
-    thinking_budget_tokens=4096,
     max_tokens=16384,
 )
 
@@ -56,7 +54,6 @@ coder = Agent(
         "to qa_tester for verification."
     ),
     local_code_execution=True,
-    thinking_budget_tokens=4096,
     max_tokens=16384,
     # Swarm: coder starts, can hand off to qa_tester and back
     agents=[qa_tester],

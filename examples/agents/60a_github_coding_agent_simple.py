@@ -69,7 +69,6 @@ github_agent = Agent(
         "transfer tool — the workflow ends automatically."
     ),
     local_code_execution=True,
-    thinking_budget_tokens=4096,
     max_tokens=16384,
 )
 
@@ -101,7 +100,6 @@ coder = Agent(
         "every code block runs in an isolated environment."
     ),
     local_code_execution=True,
-    thinking_budget_tokens=4096,
     max_tokens=16384,
 )
 
@@ -126,7 +124,6 @@ qa_tester = Agent(
         "  NEVER call transfer_to_coding_team (it will be rejected)\n"
     ),
     local_code_execution=True,
-    thinking_budget_tokens=4096,
     max_tokens=16384,
 )
 

@@ -274,7 +274,6 @@ github_agent = Agent(
         "transfer tool after this — the workflow ends automatically."
     ),
     tools=github_tools,
-    thinking_budget_tokens=4096,
     max_tokens=16384,
 )
 
@@ -303,7 +302,6 @@ coder = Agent(
     ),
     tools=coding_tools,
     local_code_execution=True,
-    thinking_budget_tokens=4096,
     max_tokens=16384,
 )
 
@@ -332,7 +330,6 @@ qa_tester = Agent(
     ),
     tools=qa_tools,
     local_code_execution=True,
-    thinking_budget_tokens=4096,
     max_tokens=16384,
 )
 
