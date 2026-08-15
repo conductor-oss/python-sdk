@@ -3,7 +3,7 @@
 Set ``CONDUCTOR_AGENT_LLM_MODEL`` as an environment variable to override the
 default model used by all examples::
 
-    export CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-5
+    export CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-4-6
     export CONDUCTOR_AGENT_LLM_MODEL=google_gemini/gemini-2.0-flash
 
 If unset, defaults to ``openai/gpt-4o``.
