@@ -5,6 +5,7 @@ Demonstrates:
     - Coder writes code, transfers to QA when ready
     - QA tester reviews and runs tests, transfers back if bugs found
     - Natural back-and-forth until QA approves the code
+    - Extended thinking for step-by-step reasoning
 
 Flow (swarm — LLM-driven handoffs):
     1. coder writes the solution, executes it, transfers to qa_tester
@@ -25,7 +26,7 @@ from conductor.ai.agents import Agent, AgentRuntime, Strategy
 
 qa_tester = Agent(
     name="qa_tester",
-    model="anthropic/claude-sonnet-5",
+    model="anthropic/claude-sonnet-4-6",
     instructions=(
         "You are a meticulous QA engineer. Review the code written by the "
         "coder for correctness, edge cases, and bugs. Write and execute test "
@@ -36,6 +37,7 @@ qa_tester = Agent(
         "provide your final QA report. Do NOT transfer back if all tests pass."
     ),
     local_code_execution=True,
+    thinking_budget_tokens=4096,
     max_tokens=16384,
 )
 
@@ -43,7 +45,7 @@ qa_tester = Agent(
 
 coder = Agent(
     name="coder",
-    model="anthropic/claude-sonnet-5",
+    model="anthropic/claude-sonnet-4-6",
     instructions=(
         "You are an expert Python developer. Write clean, well-structured "
         "Python code to solve the given problem. Always execute your code to "
@@ -54,6 +56,7 @@ coder = Agent(
         "to qa_tester for verification."
     ),
     local_code_execution=True,
+    thinking_budget_tokens=4096,
     max_tokens=16384,
     # Swarm: coder starts, can hand off to qa_tester and back
     agents=[qa_tester],
