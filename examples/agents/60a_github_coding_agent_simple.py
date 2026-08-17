@@ -41,7 +41,7 @@ WORK_DIR = f"/tmp/codingexamples-{uuid.uuid4().hex[:8]}"
 
 github_agent = Agent(
     name="github_agent",
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6",
     instructions=(
         "You are a GitHub operations specialist. You handle all git and "
         "GitHub CLI interactions.\n\n"
@@ -77,7 +77,7 @@ github_agent = Agent(
 
 coder = Agent(
     name="coder",
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6",
     instructions=(
         "You are an expert developer. You write clean, well-structured code.\n\n"
         f"The repo is cloned at {WORK_DIR}.\n\n"
@@ -109,7 +109,7 @@ coder = Agent(
 
 qa_tester = Agent(
     name="qa_tester",
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6",
     instructions=(
         "You are a meticulous QA engineer. Review the code written by the "
         "coder for correctness, edge cases, and bugs.\n\n"
@@ -134,7 +134,7 @@ qa_tester = Agent(
 
 coding_team = Agent(
     name="coding_team",
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6",
     instructions=(
         "You are a coding team coordinator. Delegate the incoming request "
         "to github_agent to get started — it will pick an issue and set "

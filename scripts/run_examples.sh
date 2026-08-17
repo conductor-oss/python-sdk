@@ -15,17 +15,27 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-EXAMPLES_DIR="$(cd "$SCRIPT_DIR/../examples" && pwd)"
+EXAMPLES_DIR="$(cd "$SCRIPT_DIR/../examples/agents" && pwd)"
 TIMEOUT="${EXAMPLE_TIMEOUT:-300}"
 
 # Cross-platform python: honour PYTHON env var, then try python3, then python.
 PYTHON="${PYTHON:-$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo python3)}"
 
+# Cross-platform timeout: GNU coreutils provides `timeout`; macOS ships it as
+# `gtimeout`, and only when coreutils is installed. Without either, run the
+# examples unbounded rather than failing every one of them.
+TIMEOUT_BIN="$(command -v timeout 2>/dev/null || command -v gtimeout 2>/dev/null || true)"
+if [[ -z "$TIMEOUT_BIN" ]]; then
+    echo "Warning: neither 'timeout' nor 'gtimeout' found; examples will run" >&2
+    echo "         without a time limit. On macOS: brew install coreutils" >&2
+fi
+
 # Cross-platform temp dir: honour TMPDIR (set on macOS/Linux), fall back to /tmp.
 TMP_BASE="${TMPDIR:-${TEMP:-/tmp}}"
 
 # Examples that require external services not typically available in a
-# standard test environment.
+# standard test environment.  Run them with --all once the services and
+# credentials they need are in place.
 SKIP_BY_DEFAULT=(
     "04_http_and_mcp_tools"    # needs MCP server running
     "04_mcp_weather"           # needs MCP server running
@@ -33,6 +43,27 @@ SKIP_BY_DEFAULT=(
     "25_semantic_memory"       # needs vector store / extra deps
     "26_opentelemetry_tracing" # needs OTel collector
     "28_gpt_assistant_agent"   # needs OpenAI Assistants API key
+
+    # Act on real third-party accounts: these clone, branch, push, open pull
+    # requests or post messages, so a default run must not reach them.
+    "16c_credentials_cli_tools"          # needs AWS credentials; can open PRs
+    "16d_credentials_gh_cli"             # needs an authenticated gh CLI
+    "60_github_coding_agent"             # pushes branches, opens PRs
+    "60a_github_coding_agent_simple"     # clones and pushes to a real repo
+    "61_github_coding_agent_chained"     # needs GITHUB_TOKEN; pushes branches
+    "61a_github_coding_agent_claude_code" # needs GITHUB_TOKEN; pushes branches
+    "91_slack_autofix_agent"             # pushes, opens PRs, posts to Slack
+
+    # Block on stdin with no canned response in HITL_STDIN below, so they would
+    # sit until the per-example timeout.
+    "09d_human_tool"
+    "18_manual_selection"
+    "32_human_guardrail"
+    "62_coding_agent_openai"
+    "78_approval_workflow"
+    "81_chat_repl"
+    "82_coding_agent"
+    "82b_coding_agent_tui"
 )
 
 # HITL examples that call input() — we pipe automated responses via stdin.
@@ -117,7 +148,11 @@ echo " Running ${#EXAMPLES[@]} examples"
 if [[ ${#SKIPPED[@]} -gt 0 ]]; then
     echo " Skipping ${#SKIPPED[@]}: ${SKIPPED[*]}"
 fi
-echo " Timeout: ${TIMEOUT}s per example"
+if [[ -n "$TIMEOUT_BIN" ]]; then
+    echo " Timeout: ${TIMEOUT}s per example"
+else
+    echo " Timeout: none (no timeout binary found)"
+fi
 echo "=========================================="
 echo ""
 
@@ -141,9 +176,9 @@ for example in "${EXAMPLES[@]}"; do
     if [[ -n "$STDIN_RESPONSE" ]]; then
         # Use `yes` to provide unlimited identical responses — handles
         # cases where the LLM calls an approval tool multiple times.
-        RUN_CMD="yes '$STDIN_RESPONSE' | timeout $TIMEOUT $PYTHON $example"
+        RUN_CMD="yes '$STDIN_RESPONSE' | ${TIMEOUT_BIN:+$TIMEOUT_BIN $TIMEOUT }$PYTHON $example"
     else
-        RUN_CMD="timeout $TIMEOUT $PYTHON $example"
+        RUN_CMD="${TIMEOUT_BIN:+$TIMEOUT_BIN $TIMEOUT }$PYTHON $example"
     fi
 
     if eval "$RUN_CMD" > "$LOG_FILE" 2>&1; then

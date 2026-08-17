@@ -90,7 +90,7 @@ def create_mcp_agent_workflow(executor: WorkflowExecutor, mcp_server: str) -> Co
     plan_task = LlmChatComplete(
         task_ref_name="plan_action",
         llm_provider="anthropic",
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-5",
         messages=[
             ChatMessage(
                 role="system",

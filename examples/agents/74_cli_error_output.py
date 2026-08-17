@@ -36,7 +36,7 @@ if __name__ == "__main__":
     with AgentRuntime() as rt:
         result = rt.run(agent, prompt)
         result.print_result()
-        output = result.output or ""
+        output = str(result.output)
 
         # Verify the agent saw the error output
         assert "No such file or directory" in output or "nonexistent" in output, (
