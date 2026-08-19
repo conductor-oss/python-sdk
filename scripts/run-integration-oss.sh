@@ -3,11 +3,14 @@
 # Spin up a local Conductor OSS stack and run the SDK integration suite
 # against it, mirroring the `integration-tests-oss` job in
 # .github/workflows/pull_request.yml. Orkes-Enterprise-only tests/classes/
-# modules (Authorization, Secrets, Schema, Service Registry, Signal API,
+# modules (Authorization, Secrets, Schema, Service Registry,
 # metadata/scheduler tags) check `os.environ.get('CONDUCTOR_SERVER_TYPE')`
 # directly and skip themselves when it's "oss" (confirmed empirically not
 # implemented by plain OSS Conductor -- see the individual test files for
-# details on each gap).
+# details on each gap). The Signal API tests run on OSS too, using a
+# WAIT-task-based fixture variant instead of the YIELD-based one used against
+# Orkes Enterprise -- see _signal_test_workflow_names() in
+# tests/integration/workflow/test_workflow_execution.py.
 #
 # The stack (Conductor OSS + Postgres + httpbin) is defined in
 # scripts/docker-compose-oss.yaml and is torn down automatically on exit.

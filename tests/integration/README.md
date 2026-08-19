@@ -17,10 +17,15 @@ scripts/run-integration-oss.sh
 This starts a Postgres-backed Conductor OSS stack (`scripts/docker-compose-oss.yaml`),
 waits for it to become healthy, and runs the suite against it with
 `CONDUCTOR_SERVER_TYPE=oss` set. Orkes-Enterprise-only tests/classes/modules
-(Authorization, Secrets, Schema, Service Registry, the Signal API, metadata/
-scheduler tags) check that env var directly and skip themselves -- see the
-individual test files for the specific gaps confirmed empirically against
-plain OSS Conductor. Pass `--version <tag>` to pin a specific
+(Authorization, Secrets, Schema, Service Registry, metadata/scheduler tags)
+check that env var directly and skip themselves -- see the individual test
+files for the specific gaps confirmed empirically against plain OSS
+Conductor. The Signal API tests run on OSS too, using a WAIT-task-based
+fixture (`complex_wf_signal_test_oss` and friends) instead of the
+Orkes-Enterprise-only YIELD-based one -- see `_signal_test_workflow_names()`
+in `tests/integration/workflow/test_workflow_execution.py`.
+
+Pass `--version <tag>` to pin a specific
 `conductoross/conductor` image, or `--keep-up` to leave the stack running
 after the suite finishes; anything after `--` is forwarded to
 `scripts/run_integration_tests.sh` (e.g. `-- --bucket=all`).

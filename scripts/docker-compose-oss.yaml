@@ -36,6 +36,6 @@ services:
       timeout: 5s
       retries: 12
   httpbin:
-    image: ghcr.io/orkes-io/test-utils/httpbin:latest
+    image: ghcr.io/conductor-oss/httpbin:latest
     expose:
       - "8081"
