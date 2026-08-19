@@ -110,10 +110,27 @@ class TestOrkesMetadataClient(unittest.TestCase):
         self.assertEqual(response.output_schema, None)
         self.assertEqual(response.enforce_schema, False)
 
+    def _register_or_update(self, workflow_def):
+        # Plain OSS Conductor's create endpoint does not honor `overwrite=true`
+        # the way Orkes Enterprise does (confirmed empirically via a direct
+        # curl bypassing the SDK: POST /metadata/workflow?overwrite=true still
+        # 500s "already exists" for a name+version that's already
+        # registered -- from a prior test run against the same long-lived
+        # server, or a second registration of the same version within this
+        # very test). Fall back to the update endpoint (PUT
+        # /metadata/workflow), which does apply the new definition on both
+        # OSS and Enterprise.
+        try:
+            self.metadata_client.register_workflow_def(workflow_def=workflow_def)
+        except Exception as e:
+            if 'already exists' not in str(e):
+                raise
+            self.metadata_client.update_workflow_def(workflow_def=workflow_def)
+
     def test_register_workflow_def(self):
         workflow_def = WorkflowDef(**workflow)
 
-        self.metadata_client.register_workflow_def(workflow_def=workflow_def)
+        self._register_or_update(workflow_def)
         response = self.metadata_client.get_workflow_def(name=WORKFLOW_NAME)
         self.assertEqual(response.name, WORKFLOW_NAME)
         self.assertEqual(response.input_schema.name, schema['name'])
@@ -122,7 +139,7 @@ class TestOrkesMetadataClient(unittest.TestCase):
 
         no_schema_wf = WorkflowDef(name='workflow-sdk-no-schema', tasks=[
             WorkflowTask(name='test', task_reference_name='test_ref', task_definition=TaskDef())])
-        self.metadata_client.register_workflow_def(workflow_def=no_schema_wf)
+        self._register_or_update(no_schema_wf)
         response = self.metadata_client.get_workflow_def(name=no_schema_wf.name)
         self.assertEqual(response.name, no_schema_wf.name)
         self.assertEqual(len(response.tasks), 1)
@@ -132,7 +149,7 @@ class TestOrkesMetadataClient(unittest.TestCase):
 
         no_schema_wf = WorkflowDef(name='workflow-sdk-no-schema', tasks=[
             WorkflowTask(name='test', task_reference_name='test_ref')])
-        self.metadata_client.register_workflow_def(workflow_def=no_schema_wf)
+        self._register_or_update(no_schema_wf)
         response = self.metadata_client.get_workflow_def(name=no_schema_wf.name)
         self.assertEqual(response.name, no_schema_wf.name)
         self.assertEqual(len(response.tasks), 1)

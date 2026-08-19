@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import unittest
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.schema_resource_api import SchemaResourceApi
@@ -20,6 +21,13 @@ schema = {
     }
   }
 }
+
+
+@unittest.skipIf(
+    os.environ.get('CONDUCTOR_SERVER_TYPE') == 'oss',
+    "The Schema API (/schema) is not implemented by plain OSS Conductor "
+    "-- confirmed empirically (404 'No static resource api/schema')."
+)
 class TestOrkesSchemaClient(unittest.TestCase):
 
     @classmethod
