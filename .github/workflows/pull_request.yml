@@ -8,6 +8,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      oss_conductor_version:
+        description: 'OSS Conductor image tag (falls back to E2E_TEST_OSS_CONDUCTOR_VERSION org var)'
+        required: false
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -133,3 +138,65 @@ jobs:
           bash scripts/run_integration_tests.sh --bucket=${{ matrix.bucket }}
           -s --log-cli-level=INFO
           --log-cli-format='%(asctime)s %(levelname)s %(name)s: %(message)s'
+
+  # Integration tests (OSS): spins up Conductor OSS + Postgres via
+  # scripts/docker-compose-oss.yaml and runs the integration suite
+  # unauthenticated, with Orkes-only tests gated out via
+  # CONDUCTOR_SERVER_TYPE=oss (see the individual test files for the
+  # empirically-confirmed gaps). The same stack can be run locally with
+  # scripts/run-integration-oss.sh.
+  integration-tests-oss:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        bucket: [test-all, long-sync, long-async, core]
+    name: integration-test-oss (${{ matrix.bucket }})
+    env:
+      CONDUCTOR_SERVER_URL: http://localhost:8080/api
+      CONDUCTOR_SERVER_TYPE: oss
+      # See the comment on CONDUCTOR_HTTP2_ENABLED in the integration-test job
+      # above; kept consistent here even though the local OSS stack doesn't
+      # have the same proxy/LB in front of it.
+      CONDUCTOR_HTTP2_ENABLED: "false"
+      OSS_CONDUCTOR_VERSION: ${{ inputs.oss_conductor_version || vars.E2E_TEST_OSS_CONDUCTOR_VERSION }}
+    steps:
+      - name: Verify OSS Conductor version is set
+        run: |
+          if [ -z "$OSS_CONDUCTOR_VERSION" ]; then
+            echo "::error::No Conductor OSS image tag resolved. Set the E2E_TEST_OSS_CONDUCTOR_VERSION organization variable (and ensure its repository access policy includes this repo), or pass the oss_conductor_version input via workflow_dispatch."
+            exit 1
+          fi
+          echo "Using conductoross/conductor:$OSS_CONDUCTOR_VERSION"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest
+
+      - name: Start Conductor OSS stack
+        run: docker compose -f scripts/docker-compose-oss.yaml up -d
+
+      - name: Wait for Conductor to be healthy
+        run: timeout 120 bash -c 'until curl -sf http://localhost:8080/health; do sleep 5; done'
+
+      - name: Run integration tests (OSS)
+        run: >-
+          bash scripts/run_integration_tests.sh --bucket=${{ matrix.bucket }}
+          -s --log-cli-level=INFO
+          --log-cli-format='%(asctime)s %(levelname)s %(name)s: %(message)s'
+
+      - name: Dump Conductor logs
+        if: failure()
+        run: docker compose -f scripts/docker-compose-oss.yaml logs conductor-server
