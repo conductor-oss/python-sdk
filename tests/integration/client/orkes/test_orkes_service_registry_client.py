@@ -273,6 +273,12 @@ class TestOrkesServiceRegistryClient:
             return b'\x08\x96\x01\x12\x04\x08\x02\x10\x03'
 
 
+@unittest.skipIf(
+    os.environ.get('CONDUCTOR_SERVER_TYPE') == 'oss',
+    "The Service Registry API (/service-registry) is not implemented by "
+    "plain OSS Conductor -- confirmed empirically (404 'No static resource "
+    "api/service-registry')."
+)
 class TestOrkesServiceRegistryClientIntg(unittest.TestCase):
     """Integration test wrapper following your existing pattern"""
 

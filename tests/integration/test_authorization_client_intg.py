@@ -1,4 +1,5 @@
 import logging
+import os
 import unittest
 import time
 from typing import List
@@ -31,6 +32,12 @@ def get_configuration():
     return configuration
 
 
+@unittest.skipIf(
+    os.environ.get('CONDUCTOR_SERVER_TYPE') == 'oss',
+    "The Authorization APIs (applications/users/groups/roles/permissions) "
+    "are not implemented by plain OSS Conductor -- confirmed empirically "
+    "(404 'No static resource api/applications|users|groups|...')."
+)
 class TestOrkesAuthorizationClientIntg(unittest.TestCase):
     """Comprehensive integration test for OrkesAuthorizationClient.
 
