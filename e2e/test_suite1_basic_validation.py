@@ -365,7 +365,7 @@ def _judge_call_anthropic(model: str, system: str, user: str) -> str:
         max_tokens=1024,
         system=system,
         messages=[{"role": "user", "content": user}],
-        temperature=0,
+        extra_body={"temperature": 0},
     )
     return response.content[0].text.strip()
 
