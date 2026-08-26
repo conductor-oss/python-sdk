@@ -51,6 +51,24 @@ logger = logging.getLogger(
 
 def run_workflow_execution_tests(configuration: Configuration, workflow_executor: WorkflowExecutor,
                                  deadline=None):
+    # Register the task def before any worker polls for it. Without this the
+    # def on the server is whatever some other suite last registered -- in
+    # practice a bare TaskDef(name=...), which the server fills in with its
+    # default responseTimeoutSeconds of 3600. A worker that leases a task and
+    # then stops updating it (a transport blip against the shared server, or the
+    # job simply ending) therefore holds it for an hour before the server
+    # reclaims it: far past this scenario's WORKFLOW_COMPLETION_MAX_WAIT_SECONDS
+    # budget, so the workflow sits IN_PROGRESS and the test fails. Registering
+    # generate_tasks_defs() sets response_timeout_seconds=2, so the server
+    # requeues the task in seconds and another worker picks it up.
+    #
+    # Note workflow_executor.metadata_client is a MetadataResourceApi, whose
+    # register_task_def takes the *list* of defs. (OrkesMetadataClient has a
+    # same-named method that takes a single TaskDef and wraps it itself --
+    # passing one def here instead yields a 500 "Cannot deserialize ...
+    # ArrayList<TaskDef> from Object value".)
+    workflow_executor.metadata_client.register_task_def(generate_tasks_defs())
+
     workers = [
         ClassWorker(TASK_NAME),
         ClassWorkerWithDomain(TASK_NAME),
