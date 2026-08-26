@@ -739,23 +739,29 @@ def _find_blocking_leaf_tasks(workflow_executor: WorkflowExecutor, workflow_id: 
     happens to be transiently IN_PROGRESS (e.g. the HTTP task preceding the
     blocking task in these fixtures).
 
-    Returns [] if nothing is blocked yet (or max_depth is exceeded).
+    Returns (blocking_tasks, workflow), where blocking_tasks is [] if nothing is
+    blocked yet, and workflow is the Workflow fetched at *this* level (None only
+    if max_depth was exceeded). Handing the workflow back lets the caller read
+    its status and task list without paying for a second get_workflow: this is
+    polled every `interval` seconds, so re-fetching the same object to read one
+    field doubled the request count for the whole wait.
     """
     if depth > max_depth:
-        return []
+        return [], None
     workflow = workflow_executor.get_workflow(workflow_id=workflow_id, include_tasks=True)
     tasks = workflow.tasks or []
     for t in tasks:
         if (getattr(t, 'task_type', None) == 'SUB_WORKFLOW'
                 and getattr(t, 'status', None) == 'IN_PROGRESS'
                 and getattr(t, 'sub_workflow_id', None)):
-            nested = _find_blocking_leaf_tasks(
+            nested, _ = _find_blocking_leaf_tasks(
                 workflow_executor, t.sub_workflow_id, depth + 1, max_depth)
             if nested:
-                return nested
-    return [t for t in tasks
-            if getattr(t, 'task_type', None) in _BLOCKING_TASK_TYPES
-            and getattr(t, 'status', None) in ('SCHEDULED', 'IN_PROGRESS')]
+                return nested, workflow
+    return ([t for t in tasks
+             if getattr(t, 'task_type', None) in _BLOCKING_TASK_TYPES
+             and getattr(t, 'status', None) in ('SCHEDULED', 'IN_PROGRESS')],
+            workflow)
 
 
 def _wait_for_blocking_task(workflow_executor: WorkflowExecutor, workflow_id: str,
@@ -771,24 +777,33 @@ def _wait_for_blocking_task(workflow_executor: WorkflowExecutor, workflow_id: st
     this needs to descend into nested sub-workflows rather than just checking
     the outer workflow's own task list.
 
-    Returns the tasks last seen so callers can report them if the wait times out.
+    Returns the blocking task(s) it found, or [] if the wait timed out. No
+    caller currently reads the return value; on timeout the diagnostic goes to
+    the log instead, since that is the only place the failure is visible.
     """
     deadline = time.time() + timeout
     tasks = []
+    workflow = None
     while time.time() < deadline:
-        tasks = _find_blocking_leaf_tasks(workflow_executor, workflow_id)
+        tasks, workflow = _find_blocking_leaf_tasks(workflow_executor, workflow_id)
         if tasks:
             return tasks
-        workflow = workflow_executor.get_workflow(workflow_id=workflow_id,
-                                                  include_tasks=False)
         if getattr(workflow, 'status', None) not in ('RUNNING', 'PAUSED'):
             # Already terminal: nothing is going to block, so stop waiting and
             # let the caller's assertion report the real state.
             break
         time.sleep(interval)
+    # Report the workflow's own last-seen state, not `tasks`: reaching here
+    # means the blocking-task filter came back empty, so logging `tasks` could
+    # only ever print [] -- which says nothing about *why* nothing blocked.
+    # What separates the cases is the outer workflow: still on its HTTP task,
+    # a SUB_WORKFLOW that never got decided, or already terminal.
     logger.warning(
-        'no blocking task on %s after %.0fs; tasks=%s', workflow_id, timeout,
-        [(getattr(t, 'task_def_name', '?'), getattr(t, 'status', '?')) for t in tasks])
+        'no blocking task on %s after %.0fs; workflow status=%s, tasks=%s',
+        workflow_id, timeout, getattr(workflow, 'status', '?'),
+        [(getattr(t, 'task_def_name', '?'), getattr(t, 'task_type', '?'),
+          getattr(t, 'status', '?'))
+         for t in (getattr(workflow, 'tasks', None) or [])])
     return tasks
 
 
