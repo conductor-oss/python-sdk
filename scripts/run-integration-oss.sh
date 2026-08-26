@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 #
 # Spin up a local Conductor OSS stack and run the SDK integration suite
-# against it, mirroring the `integration-tests-oss` job in
-# .github/workflows/pull_request.yml. Orkes-Enterprise-only tests/classes/
+# against it. To reproduce the `integration-tests-oss` job in
+# .github/workflows/pull_request.yml you need `-- --bucket=all`: that job runs
+# the full suite, whereas this script defaults to the faster `core` bucket,
+# which excludes tests/integration/test_workflow_client_intg.py -- the only
+# entry point to the workflow-execution and Signal API scenarios.
+#
+# Orkes-Enterprise-only tests/classes/
 # modules (Authorization, Secrets, Schema, Service Registry,
 # metadata/scheduler tags) check `os.environ.get('CONDUCTOR_SERVER_TYPE')`
 # directly and skip themselves when it's "oss" (confirmed empirically not
@@ -18,21 +23,26 @@
 # Usage:
 #   scripts/run-integration-oss.sh [--keep-up] [--version <tag>] [-- pytest args]
 # Examples:
-#   scripts/run-integration-oss.sh                        # run scripts/run_integration_tests.sh --bucket=core against `latest`
+#   scripts/run-integration-oss.sh -- --bucket=all        # what CI runs: the full suite
+#   scripts/run-integration-oss.sh                        # faster: --bucket=core against `latest`
 #   scripts/run-integration-oss.sh --version 3.32.0-rc18
-#   scripts/run-integration-oss.sh --keep-up
-#   scripts/run-integration-oss.sh -- --bucket=all
+#   scripts/run-integration-oss.sh --keep-up              # leave the stack up afterwards
 set -euo pipefail
 
 KEEP_UP=0
+UP_ONLY=0
 extra=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --keep-up) KEEP_UP=1; shift ;;
+    # Bring the stack up and stop there, for pointing repeated test runs at it
+    # by hand. Implies --keep-up: tearing down the stack we just started would
+    # defeat the purpose.
+    --up-only) UP_ONLY=1; KEEP_UP=1; shift ;;
     --version) OSS_CONDUCTOR_VERSION="${2:?--version needs a tag}"; shift 2 ;;
     -h|--help)
-      echo "Usage: $0 [--keep-up] [--version <tag>] [-- pytest args]"
+      echo "Usage: $0 [--up-only] [--keep-up] [--version <tag>] [-- pytest args]"
       exit 0
       ;;
     --) shift; extra=("$@"); break ;;
@@ -78,5 +88,13 @@ echo "Conductor is up."
 
 export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
 export CONDUCTOR_SERVER_TYPE="oss"
+
+if [[ "${UP_ONLY}" == "1" ]]; then
+  echo "--up-only set: stack is up, not running the suite. Point runs at it with:"
+  echo "  export CONDUCTOR_SERVER_URL=\"${CONDUCTOR_SERVER_URL}\""
+  echo "  export CONDUCTOR_SERVER_TYPE=\"${CONDUCTOR_SERVER_TYPE}\""
+  echo "  bash scripts/run_integration_tests.sh --bucket=all"
+  exit 0
+fi
 
 bash scripts/run_integration_tests.sh ${extra[@]+"${extra[@]}"}
