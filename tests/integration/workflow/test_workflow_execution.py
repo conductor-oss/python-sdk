@@ -315,7 +315,9 @@ def validate_workflow_status(workflow_id: str, workflow_executor: WorkflowExecut
         # GET /workflow/{id}/status is not implemented on plain OSS Conductor
         # (confirmed empirically: 404 "No static resource ..."); the
         # equivalent COMPLETED assertion above already covers this case.
-        if '404' in str(e):
+        # Gated on OSS on purpose: the endpoint does exist on Orkes, so an
+        # ungated swallow would turn a genuine 404 there into a silent pass.
+        if _is_oss() and '404' in str(e):
             return
         raise
     if workflow_status.status != 'COMPLETED':
@@ -528,7 +530,8 @@ def _wait_for_workflow_completion(workflow_executor: WorkflowExecutor, workflow_
 # ===== SIGNAL TESTS =====
 
 def _is_oss() -> bool:
-    return os.environ.get('CONDUCTOR_SERVER_TYPE') == 'oss'
+    from tests.integration.conftest import is_oss
+    return is_oss()
 
 
 def _signal_test_workflow_names():
