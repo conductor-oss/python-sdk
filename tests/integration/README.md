@@ -12,23 +12,17 @@ End-to-end integration tests that run against a **real Conductor server**.
 
 **Option A: Local Conductor OSS (Docker Compose, recommended)**
 ```bash
-scripts/run-integration-oss.sh
+scripts/run-integration-oss.sh --up-only
 ```
-This starts a Postgres-backed Conductor OSS stack (`scripts/docker-compose-oss.yaml`),
-waits for it to become healthy, and runs the suite against it with
-`CONDUCTOR_SERVER_TYPE=oss` set. Orkes-Enterprise-only tests/classes/modules
-(Authorization, Secrets, Schema, Service Registry, metadata/scheduler tags)
-check that env var directly and skip themselves -- see the individual test
-files for the specific gaps confirmed empirically against plain OSS
-Conductor. The Signal API tests run on OSS too, using a WAIT-task-based
-fixture (`complex_wf_signal_test_oss` and friends) instead of the
-Orkes-Enterprise-only YIELD-based one -- see `_signal_test_workflow_names()`
-in `tests/integration/workflow/test_workflow_execution.py`.
+This starts a Postgres-backed Conductor OSS stack
+(`scripts/docker-compose-oss.yaml`), waits for it to become healthy, and stops
+there, leaving it running for you to point test runs at. Tear it down with
+`docker compose -f scripts/docker-compose-oss.yaml down -v`. Pass
+`--version <tag>` to pin a specific `conductoross/conductor` image.
 
-Pass `--version <tag>` to pin a specific
-`conductoross/conductor` image, or `--keep-up` to leave the stack running
-after the suite finishes; anything after `--` is forwarded to
-`scripts/run_integration_tests.sh` (e.g. `-- --bucket=all`).
+Without `--up-only` the same script also runs the suite and then tears the
+stack down — see [Against local Conductor OSS](#against-local-conductor-oss)
+below.
 
 **Option B: Orkes Cloud**
 ```bash
@@ -44,6 +38,12 @@ export CONDUCTOR_AUTH_SECRET="your-key-secret"
 # Required
 export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
 
+# Required when the server is plain OSS Conductor (Option A). Orkes-only
+# tests check this and skip themselves; without it they fail instead.
+# run-integration-oss.sh exports it for the run it drives, but a stack left
+# up with --up-only or --keep-up needs it set in your own shell.
+export CONDUCTOR_SERVER_TYPE="oss"
+
 # Optional (for Orkes Cloud)
 export CONDUCTOR_AUTH_KEY="your-key"
 export CONDUCTOR_AUTH_SECRET="your-secret"
@@ -55,8 +55,11 @@ export CONDUCTOR_AUTH_SECRET="your-secret"
 
 ### Run the CI suite locally (recommended)
 
-Use the helper script to run exactly what CI runs (the `integration-test` job in
-[`.github/workflows/pull_request.yml`](../../.github/workflows/pull_request.yml)).
+Use the helper script to run exactly what the `integration-test` job in
+[`.github/workflows/pull_request.yml`](../../.github/workflows/pull_request.yml)
+runs against the authenticated Orkes server. (For the second CI job, which runs
+against plain OSS Conductor, see
+[Against local Conductor OSS](#against-local-conductor-oss) below.)
 It excludes the AI/agentic tests (which need a dedicated AI-enabled server) and
 the slow performance test, so you don't have to remember the `--ignore` flags:
 
@@ -96,6 +99,39 @@ Any extra arguments pass straight through to pytest, which is handy for
 targeting a subset of tests or getting more detail on failures. See additional
 options and examples in the comments at the top of
 [`scripts/run_integration_tests.sh`](../../scripts/run_integration_tests.sh).
+
+### Against local Conductor OSS
+
+`scripts/run-integration-oss.sh` brings up the OSS stack, runs the suite against
+it with `CONDUCTOR_SERVER_TYPE=oss` set, and tears the stack down on exit:
+
+```bash
+# What the integration-tests-oss CI job runs — the full suite:
+scripts/run-integration-oss.sh -- --bucket=all
+
+# Faster loop: the `core` bucket only (the default if no bucket is given)
+scripts/run-integration-oss.sh
+```
+
+**The default is `--bucket=core`, which is not what CI runs.** `core` excludes
+`test_workflow_client_intg.py`, and that file is the only entry point to the
+workflow-execution and Signal API scenarios — so the default run exercises
+neither. Use `-- --bucket=all` to reproduce a CI failure.
+
+Anything after `--` is forwarded to `scripts/run_integration_tests.sh`, so the
+bucket table and pytest passthrough above apply here too. `--version <tag>`,
+`--keep-up` (leave the stack up afterwards) and `--up-only` (start the stack and
+skip the suite) are handled by the script itself and go *before* the `--`.
+
+On OSS, the Orkes-Enterprise-only tests, classes, and modules (Authorization,
+Secrets, Schema, Service Registry, metadata/scheduler tags) check
+`CONDUCTOR_SERVER_TYPE` and skip themselves — see the individual test files for
+the specific gap each one covers. The Signal API tests *do* run, using
+WAIT-task-based fixtures (`complex_wf_signal_test_oss` and friends) instead of
+the Orkes-only YIELD-based ones; see `_signal_test_workflow_names()` in
+[`workflow/test_workflow_execution.py`](workflow/test_workflow_execution.py).
+
+Expect a large number of skips: a full OSS run is roughly 20 passed / 70 skipped.
 
 ### Run All Integration Tests
 
@@ -422,8 +458,8 @@ curl http://localhost:8080/api/health
 # Check environment variable
 echo $CONDUCTOR_SERVER_URL
 
-# Start local server
-scripts/run-integration-oss.sh --keep-up
+# Start local server (stack only, no test run)
+scripts/run-integration-oss.sh --up-only
 ```
 
 ### Tests Timeout

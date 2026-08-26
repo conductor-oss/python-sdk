@@ -146,17 +146,10 @@ jobs:
   # empirically-confirmed gaps). The same stack can be run locally with
   # scripts/run-integration-oss.sh.
   #
-  # Unlike the authenticated integration-test job above (which matrix-splits
-  # into 4 parallel buckets to spread load against the shared dev server),
-  # this runs the whole suite as a single --bucket=all job: the local OSS
-  # stack is dedicated to this one run, so there's no shared-server
-  # contention to justify paying for 4x the Docker-stack startup cost.
-  # --bucket=all also means the "server doesn't reliably fire a task timeout
-  # on a CI-bounded timeline" carve-out (server_timeout_unreliable, see
-  # scripts/run_integration_tests.sh) is skipped -- confirmed empirically
-  # that a local, non-shared OSS instance times those tasks out reliably, so
-  # the carve-out doesn't apply here. Confirmed empirically end-to-end: 20
-  # passed, 70 skipped, 0 failed in ~3m53s.
+  # Unlike the authenticated integration-test job above, this runs the whole
+  # suite in one job (--bucket=all) instead of matrix-splitting it: the full
+  # OSS run finishes in under 5 minutes, so splitting it would just cause
+  # extra runner usage for no performance benefit.
   integration-tests-oss:
     runs-on: ubuntu-latest
     timeout-minutes: 30
