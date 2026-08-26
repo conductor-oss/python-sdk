@@ -84,8 +84,21 @@ class TestOrkesMetadataClient(unittest.TestCase):
         from tests.integration.conftest import skip_if_server_unavailable
         skip_if_server_unavailable()
 
-        configuration = Configuration()
-        cls.metadata_client = OrkesMetadataClient(configuration)
+        cls.configuration = Configuration()
+        cls.metadata_client = OrkesMetadataClient(cls.configuration)
+
+    @classmethod
+    def tearDownClass(cls):
+        # These defs used to be left registered after every run, so the next run
+        # against the same long-lived server hit "already exists" on
+        # re-registration. cleanup_metadata swallows its own failures (see its
+        # docstring), so this can never turn a passing suite red.
+        from tests.integration.conftest import cleanup_metadata
+        cleanup_metadata(
+            cls.configuration,
+            task_defs=(TASK_NAME, 'task-sdk-no-schema'),
+            workflow_defs=(WORKFLOW_NAME, 'workflow-sdk-no-schema'),
+        )
 
     def setUp(self):
         self.taskDef = TaskDef(name='task-test-sdk-0')
@@ -114,12 +127,21 @@ class TestOrkesMetadataClient(unittest.TestCase):
         # Plain OSS Conductor's create endpoint does not honor `overwrite=true`
         # the way Orkes Enterprise does (confirmed empirically via a direct
         # curl bypassing the SDK: POST /metadata/workflow?overwrite=true still
-        # 500s "already exists" for a name+version that's already
-        # registered -- from a prior test run against the same long-lived
-        # server, or a second registration of the same version within this
-        # very test). Fall back to the update endpoint (PUT
-        # /metadata/workflow), which does apply the new definition on both
-        # OSS and Enterprise.
+        # 500s "already exists" for a name+version that's already registered --
+        # notably the second registration of 'workflow-sdk-no-schema' below,
+        # which re-registers the same name+version with a changed definition).
+        # Fall back to the update endpoint (PUT /metadata/workflow), which does
+        # apply the new definition.
+        #
+        # Gated on OSS on purpose: what this test covers is that
+        # register_workflow_def (POST create, overwrite=true) works. Falling
+        # back to update_workflow_def (PUT update1) is a *different* endpoint,
+        # so leaving the fallback ungated would let this test pass on Orkes
+        # even if create-with-overwrite regressed.
+        from tests.integration.conftest import is_oss
+        if not is_oss():
+            self.metadata_client.register_workflow_def(workflow_def=workflow_def)
+            return
         try:
             self.metadata_client.register_workflow_def(workflow_def=workflow_def)
         except Exception as e:
