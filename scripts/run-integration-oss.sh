@@ -7,26 +7,28 @@
 # which excludes tests/integration/test_workflow_client_intg.py -- the only
 # entry point to the workflow-execution and Signal API scenarios.
 #
-# Orkes-Enterprise-only tests/classes/
-# modules (Authorization, Secrets, Schema, Service Registry,
-# metadata/scheduler tags) check `os.environ.get('CONDUCTOR_SERVER_TYPE')`
-# directly and skip themselves when it's "oss" (confirmed empirically not
-# implemented by plain OSS Conductor -- see the individual test files for
-# details on each gap). The Signal API tests run on OSS too, using a
-# WAIT-task-based fixture variant instead of the YIELD-based one used against
-# Orkes Enterprise -- see _signal_test_workflow_names() in
+# Orkes-Enterprise-only tests, classes, and modules (Authorization, Secrets,
+# Schema, Service Registry, metadata/scheduler tags) gate themselves on
+# is_oss() in tests/integration/conftest.py, which reads the
+# CONDUCTOR_SERVER_TYPE this script exports below; its docstring carries the
+# authoritative list of gated surface (confirmed empirically not implemented by
+# plain OSS Conductor -- see the individual test files for details on each
+# gap). The Signal API tests run on OSS too, using a WAIT-task-based fixture
+# variant instead of the YIELD-based one used against Orkes Enterprise -- see
+# _signal_test_workflow_names() in
 # tests/integration/workflow/test_workflow_execution.py.
 #
 # The stack (Conductor OSS + Postgres + httpbin) is defined in
 # scripts/docker-compose-oss.yaml and is torn down automatically on exit.
 #
 # Usage:
-#   scripts/run-integration-oss.sh [--keep-up] [--version <tag>] [-- pytest args]
+#   scripts/run-integration-oss.sh [--up-only] [--keep-up] [--version <tag>] [-- pytest args]
 # Examples:
 #   scripts/run-integration-oss.sh -- --bucket=all        # what CI runs: the full suite
 #   scripts/run-integration-oss.sh                        # faster: --bucket=core against `latest`
 #   scripts/run-integration-oss.sh --version 3.32.0-rc18
 #   scripts/run-integration-oss.sh --keep-up              # leave the stack up afterwards
+#   scripts/run-integration-oss.sh --up-only              # start the stack, skip the suite
 set -euo pipefail
 
 KEEP_UP=0
@@ -70,7 +72,16 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "Starting Conductor OSS stack (conductoross/conductor:${OSS_CONDUCTOR_VERSION})..."
+echo "Using conductoross/conductor:${OSS_CONDUCTOR_VERSION}"
+
+# `docker compose up` only pulls an image when it is missing locally, so a
+# previously-cached `latest` (or any other mutable tag) would silently be
+# reused instead of getting the current version. Pull unconditionally so the
+# stack always reflects the tag we just printed.
+echo "Pulling conductoross/conductor:${OSS_CONDUCTOR_VERSION} to ensure it's current..."
+compose pull conductor-server
+
+echo "Starting Conductor OSS stack..."
 compose up -d
 
 echo "Waiting for Conductor to be healthy..."

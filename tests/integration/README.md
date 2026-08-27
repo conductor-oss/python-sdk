@@ -123,9 +123,13 @@ bucket table and pytest passthrough above apply here too. `--version <tag>`,
 `--keep-up` (leave the stack up afterwards) and `--up-only` (start the stack and
 skip the suite) are handled by the script itself and go *before* the `--`.
 
+`--version <tag>` pins the image; without it the stack uses `latest`, which is
+mutable — the script re-pulls on every run so it never serves a stale cache.
+
 On OSS, the Orkes-Enterprise-only tests, classes, and modules (Authorization,
-Secrets, Schema, Service Registry, metadata/scheduler tags) check
-`CONDUCTOR_SERVER_TYPE` and skip themselves — see the individual test files for
+Secrets, Schema, Service Registry, metadata/scheduler tags) gate themselves on
+`is_oss()` in [`conftest.py`](conftest.py) (which reads
+`CONDUCTOR_SERVER_TYPE`) and skip themselves — see the individual test files for
 the specific gap each one covers. The Signal API tests *do* run, using
 WAIT-task-based fixtures (`complex_wf_signal_test_oss` and friends) instead of
 the Orkes-only YIELD-based ones; see `_signal_test_workflow_names()` in

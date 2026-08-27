@@ -1,5 +1,4 @@
 import logging
-import os
 import unittest
 import time
 from typing import List
@@ -19,6 +18,7 @@ from conductor.client.orkes.models.access_type import AccessType
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.http.rest import ApiException
 from conductor.client.orkes.orkes_authorization_client import OrkesAuthorizationClient
+from tests.integration.conftest import is_oss
 
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(__name__)
@@ -33,7 +33,7 @@ def get_configuration():
 
 
 @unittest.skipIf(
-    os.environ.get('CONDUCTOR_SERVER_TYPE') == 'oss',
+    is_oss(),
     "The Authorization APIs (applications/users/groups/roles/permissions) "
     "are not implemented by plain OSS Conductor -- confirmed empirically "
     "(404 'No static resource api/applications|users|groups|...')."

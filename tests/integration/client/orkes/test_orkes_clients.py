@@ -1,5 +1,4 @@
 import json
-import os
 import time
 
 from shortuuid import uuid
@@ -27,6 +26,7 @@ from conductor.client.orkes_clients import OrkesClients
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.simple_task import SimpleTask
+from tests.integration.conftest import is_oss
 from tests.integration.retry_helpers import retry_scenario, wait_for_workflow_terminal
 
 SUFFIX = str(uuid())
@@ -141,7 +141,7 @@ class TestOrkesClients:
         # call 404s "No static resource api/secrets|applications|users|groups...".
         # Gate these Orkes-Enterprise-only lifecycles rather than letting them
         # fail against a local OSS stack.
-        if os.environ.get('CONDUCTOR_SERVER_TYPE') == 'oss':
+        if is_oss():
             return
 
         retry_scenario('test_secret_lifecycle', self.test_secret_lifecycle,
@@ -162,7 +162,7 @@ class TestOrkesClients:
         # that path 404s/500s as an unmapped route (DELETE even falls through
         # to the unrelated /metadata/workflow/{name}/{version} route, taking
         # "tags" as the version path segment).
-        if os.environ.get('CONDUCTOR_SERVER_TYPE') != 'oss':
+        if not is_oss():
             self.__test_workflow_tags()
         self.__test_unregister_workflow_definition()
 
@@ -189,7 +189,7 @@ class TestOrkesClients:
         # Metadata tagging (/metadata/task/{name}/tags) is not implemented by
         # plain OSS Conductor -- confirmed empirically (404 "No static
         # resource api/metadata/task/.../tags").
-        if os.environ.get('CONDUCTOR_SERVER_TYPE') != 'oss':
+        if not is_oss():
             self.__test_task_tags()
         self.__test_task_execution_lifecycle()
 
@@ -260,7 +260,7 @@ class TestOrkesClients:
         # Metadata tagging (/scheduler/schedules/{name}/tags) is not
         # implemented by plain OSS Conductor -- confirmed empirically (404
         # "No static resource api/scheduler/schedules/.../tags").
-        if os.environ.get('CONDUCTOR_SERVER_TYPE') != 'oss':
+        if not is_oss():
             tags = [
                 MetadataTag("sch_tag", "val"), MetadataTag("sch_tag_2", "val2")
             ]
@@ -639,7 +639,7 @@ class TestOrkesClients:
         # against OSS.
         self.workflow_client.delete_workflow(
             workflow_uuid,
-            archive_workflow=os.environ.get('CONDUCTOR_SERVER_TYPE') != 'oss'
+            archive_workflow=not is_oss()
         )
         _assert_not_found(
             lambda: self.workflow_client.get_workflow(workflow_uuid, False), workflow_uuid
