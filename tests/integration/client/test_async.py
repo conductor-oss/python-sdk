@@ -9,6 +9,13 @@ from conductor.client.http.models.task_def import TaskDef
 # registered last won. This file only needs *some* task def to exist for the
 # async lookup below, so it registers its own instead of overwriting one another
 # suite depends on.
+#
+# Fixed name on purpose, and no teardown: POST /metadata/taskdefs upserts and
+# this def's content never varies, so it costs exactly one task-def slot however
+# many times the suite runs. A per-run name (as in leaked_task_defs.TEST_PREFIXES)
+# would register a new def every run -- the leak that reached the 402 cap -- and
+# deleting a shared fixed name is worse still: it can race a concurrent run
+# between its register and its lookup.
 TASK_NAME = 'async_metadata_probe_task'
 
 
@@ -20,16 +27,7 @@ def test_async_method(api_client: ApiClient):
     # task, it only needs to be retrievable.
     metadata_client.register_task_def(body=[TaskDef(name=TASK_NAME)])
 
-    try:
-        thread = metadata_client.get_task_def(
-            async_req=True, tasktype=TASK_NAME)
-        thread.wait()
-        assert thread.get() is not None
-    finally:
-        # Don't leave this def behind on a long-lived shared server: the name is
-        # fixed rather than run-suffixed, so it isn't matched by
-        # leaked_task_defs.TEST_PREFIXES and the reclaim pass would never
-        # collect it. cleanup_metadata swallows its own failures, so this can
-        # never turn a passing test red.
-        from tests.integration.conftest import cleanup_metadata
-        cleanup_metadata(api_client.configuration, task_defs=(TASK_NAME,))
+    thread = metadata_client.get_task_def(
+        async_req=True, tasktype=TASK_NAME)
+    thread.wait()
+    assert thread.get() is not None
