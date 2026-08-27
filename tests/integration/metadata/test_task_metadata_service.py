@@ -1,12 +1,8 @@
-import json
 import logging
 import unittest
 from conductor.client.configuration.configuration import Configuration
-from conductor.client.http.api.schema_resource_api import SchemaResourceApi
 from conductor.client.http.models import TaskDef, WorkflowDef, WorkflowTask
-from conductor.client.http.models.schema_def import SchemaDef, SchemaType
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
-from conductor.client.orkes.orkes_schema_client import OrkesSchemaClient
 
 TASK_NAME = 'task-test-sdk'
 WORKFLOW_NAME = 'sdk-workflow-test-0'
@@ -32,7 +28,7 @@ task = {
     "response_timeout_seconds": 600,
     "rate_limit_per_frequency": 0,
     "rate_limit_frequency_in_seconds": 1,
-    "owner_email": "viren@orkes.io",
+    "owner_email": "test@conductoross.io",
     "poll_timeout_seconds": 3600,
     "input_keys": [],
     "output_keys": [],
@@ -66,7 +62,7 @@ workflow = {
     "schema_version": 2,
     "restartable": True,
     "workflow_status_listener_enabled": False,
-    "owner_email": "viren@orkes.io",
+    "owner_email": "test@conductoross.io",
     "timeout_policy": "ALERT_ONLY",
     "timeout_seconds": 0,
     "failure_workflow": "",
@@ -101,7 +97,6 @@ class TestOrkesMetadataClient(unittest.TestCase):
         )
 
     def setUp(self):
-        self.taskDef = TaskDef(name='task-test-sdk-0')
         logging.disable(logging.CRITICAL)
 
     def tearDown(self):

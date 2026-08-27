@@ -20,7 +20,16 @@ def test_async_method(api_client: ApiClient):
     # task, it only needs to be retrievable.
     metadata_client.register_task_def(body=[TaskDef(name=TASK_NAME)])
 
-    thread = metadata_client.get_task_def(
-        async_req=True, tasktype=TASK_NAME)
-    thread.wait()
-    assert thread.get() is not None
+    try:
+        thread = metadata_client.get_task_def(
+            async_req=True, tasktype=TASK_NAME)
+        thread.wait()
+        assert thread.get() is not None
+    finally:
+        # Don't leave this def behind on a long-lived shared server: the name is
+        # fixed rather than run-suffixed, so it isn't matched by
+        # leaked_task_defs.TEST_PREFIXES and the reclaim pass would never
+        # collect it. cleanup_metadata swallows its own failures, so this can
+        # never turn a passing test red.
+        from tests.integration.conftest import cleanup_metadata
+        cleanup_metadata(api_client.configuration, task_defs=(TASK_NAME,))
