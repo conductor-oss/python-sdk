@@ -244,11 +244,12 @@ def _to_conductor_agent_agent(agent: Any) -> Any:
 def _run_agent(starting_agent: Any, max_turns: int) -> Any:
     """Resolve the agent to pass to the Conductor runtime.
 
-    Foreign framework agents (openai-agents, google-adk, …) are passed
-    through unchanged — the runtime's :func:`detect_framework` handles
-    serialization and tool registration. Native Conductor Agents are also
-    passed through unchanged (with optional ``max_turns`` override).  Only
-    truly unknown objects fall back to :func:`_to_conductor_agent_agent`.
+    OpenAI Agents are passed through unchanged when they target OpenAI so the
+    existing framework bridge remains available. For another configured
+    provider, they are converted to native Conductor Agents so the server's
+    model routing is used instead of the OpenAI framework path. Other foreign
+    framework agents are passed through unchanged, and truly unknown objects
+    fall back to :func:`_to_conductor_agent_agent`.
     """
     from conductor.ai.agents.agent import Agent as ConductorAgent
     from conductor.ai.agents.frameworks.serializer import detect_framework
@@ -259,10 +260,19 @@ def _run_agent(starting_agent: Any, max_turns: int) -> Any:
         return starting_agent
 
     framework = detect_framework(starting_agent)
+    if framework == "openai":
+        raw_model = getattr(starting_agent, "model", None) or os.environ.get(
+            "CONDUCTOR_AGENT_LLM_MODEL"
+        )
+        if raw_model and not _model_to_conductor_agent(raw_model).startswith("openai/"):
+            agent = _to_conductor_agent_agent(starting_agent)
+            agent.max_turns = max_turns
+            return agent
+        return starting_agent
+
     if framework is not None:
-        # Framework agent (e.g. openai-agents) — pass directly so the
-        # runtime registers the *original* tool functions as Conductor
-        # workers (preserving correct parameter names and types).
+        # Other framework agents (e.g. Google ADK) — pass directly so the
+        # runtime can use their framework-specific bridge.
         return starting_agent
 
     # Unknown type — attempt duck-type conversion
