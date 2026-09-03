@@ -62,6 +62,11 @@ cd "${REPO_ROOT}"
 compose() { docker compose -f "${COMPOSE_FILE}" "$@"; }
 
 cleanup() {
+  local status=$?
+  if [[ "${status}" -ne 0 ]]; then
+    echo "Dumping conductor-server logs (exit ${status})..." >&2
+    compose logs conductor-server || true
+  fi
   if [[ "${KEEP_UP}" == "1" ]]; then
     echo "--keep-up set: leaving the OSS stack running. Tear down with:"
     echo "  docker compose -f ${COMPOSE_FILE} down -v"
@@ -90,7 +95,6 @@ deadline=$(( SECONDS + HEALTH_TIMEOUT ))
 until curl -sf http://localhost:8080/health >/dev/null 2>&1; do
   if (( SECONDS >= deadline )); then
     echo "Error: Conductor did not become healthy within ${HEALTH_TIMEOUT}s." >&2
-    compose logs conductor-server || true
     exit 1
   fi
   sleep 5
