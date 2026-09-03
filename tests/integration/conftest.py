@@ -7,6 +7,7 @@ or connection errors.
 """
 
 import logging
+import os
 import unittest
 
 import pytest
@@ -16,6 +17,22 @@ from conductor.client.http.api_client import ApiClient
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Server flavour
+# ---------------------------------------------------------------------------
+
+def is_oss():
+    """True when the suite is pointed at plain OSS Conductor rather than Orkes.
+
+    Set by scripts/run-integration-oss.sh and the integration-tests-oss CI job.
+    Gates the Orkes-Enterprise-only surface (Authorization, Secrets, Schema,
+    Service Registry, metadata/scheduler tags) and the handful of places where
+    OSS needs a different code path -- see the individual call sites.
+    """
+    return os.environ.get('CONDUCTOR_SERVER_TYPE') == 'oss'
+
 
 # ---------------------------------------------------------------------------
 # Connectivity check (cached at module level, runs once per session)

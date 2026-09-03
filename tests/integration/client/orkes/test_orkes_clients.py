@@ -26,6 +26,7 @@ from conductor.client.orkes_clients import OrkesClients
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.simple_task import SimpleTask
+from tests.integration.conftest import is_oss
 from tests.integration.retry_helpers import retry_scenario, wait_for_workflow_terminal
 
 SUFFIX = str(uuid())
@@ -130,13 +131,22 @@ class TestOrkesClients:
                        workflowDef, workflow, deadline=deadline)
         retry_scenario('test_task_lifecycle', self.test_task_lifecycle,
                        deadline=deadline)
-        retry_scenario('test_secret_lifecycle', self.test_secret_lifecycle,
-                       deadline=deadline)
         retry_scenario('test_scheduler_lifecycle', self.test_scheduler_lifecycle,
                        workflowDef, deadline=deadline)
-        retry_scenario('test_application_lifecycle', self.test_application_lifecycle,
-                       deadline=deadline)
         retry_scenario('__test_unit_test_workflow', self.__test_unit_test_workflow,
+                       deadline=deadline)
+
+        # Secret and Authorization (application/user/group/permission) APIs are
+        # not implemented by plain OSS Conductor -- confirmed empirically: every
+        # call 404s "No static resource api/secrets|applications|users|groups...".
+        # Gate these Orkes-Enterprise-only lifecycles rather than letting them
+        # fail against a local OSS stack.
+        if is_oss():
+            return
+
+        retry_scenario('test_secret_lifecycle', self.test_secret_lifecycle,
+                       deadline=deadline)
+        retry_scenario('test_application_lifecycle', self.test_application_lifecycle,
                        deadline=deadline)
         retry_scenario('test_user_group_permissions_lifecycle',
                        self.test_user_group_permissions_lifecycle, workflowDef,
@@ -147,7 +157,13 @@ class TestOrkesClients:
         self.__test_get_workflow_definition()
         self.__test_update_workflow_definition(workflow)
         self.__test_workflow_execution_lifecycle()
-        self.__test_workflow_tags()
+        # Metadata tagging (/metadata/workflow/{name}/tags) is not implemented
+        # by plain OSS Conductor -- confirmed empirically: every HTTP verb on
+        # that path 404s/500s as an unmapped route (DELETE even falls through
+        # to the unrelated /metadata/workflow/{name}/{version} route, taking
+        # "tags" as the version path segment).
+        if not is_oss():
+            self.__test_workflow_tags()
         self.__test_unregister_workflow_definition()
 
     def test_task_lifecycle(self):
@@ -170,7 +186,11 @@ class TestOrkesClients:
         assert fetchedTaskDef.description == taskDef.description
         assert len(fetchedTaskDef.input_keys) == 3
 
-        self.__test_task_tags()
+        # Metadata tagging (/metadata/task/{name}/tags) is not implemented by
+        # plain OSS Conductor -- confirmed empirically (404 "No static
+        # resource api/metadata/task/.../tags").
+        if not is_oss():
+            self.__test_task_tags()
         self.__test_task_execution_lifecycle()
 
         self.metadata_client.unregister_task_def(TASK_TYPE)
@@ -237,16 +257,20 @@ class TestOrkesClients:
         times = self.scheduler_client.get_next_few_schedule_execution_times("0 */5 * ? * *", limit=1)
         assert (len(times) == 1)
 
-        tags = [
-            MetadataTag("sch_tag", "val"), MetadataTag("sch_tag_2", "val2")
-        ]
-        self.scheduler_client.set_scheduler_tags(tags, SCHEDULE_NAME)
-        fetched_tags = self.scheduler_client.get_scheduler_tags(SCHEDULE_NAME)
-        assert len(fetched_tags) == 2
+        # Metadata tagging (/scheduler/schedules/{name}/tags) is not
+        # implemented by plain OSS Conductor -- confirmed empirically (404
+        # "No static resource api/scheduler/schedules/.../tags").
+        if not is_oss():
+            tags = [
+                MetadataTag("sch_tag", "val"), MetadataTag("sch_tag_2", "val2")
+            ]
+            self.scheduler_client.set_scheduler_tags(tags, SCHEDULE_NAME)
+            fetched_tags = self.scheduler_client.get_scheduler_tags(SCHEDULE_NAME)
+            assert len(fetched_tags) == 2
 
-        self.scheduler_client.delete_scheduler_tags(tags, SCHEDULE_NAME)
-        fetched_tags = self.scheduler_client.get_scheduler_tags(SCHEDULE_NAME)
-        assert len(fetched_tags) == 0
+            self.scheduler_client.delete_scheduler_tags(tags, SCHEDULE_NAME)
+            fetched_tags = self.scheduler_client.get_scheduler_tags(SCHEDULE_NAME)
+            assert len(fetched_tags) == 0
 
         self.scheduler_client.delete_schedule(SCHEDULE_NAME)
         _assert_not_found(
@@ -608,7 +632,15 @@ class TestOrkesClients:
         workflow = self.workflow_client.get_workflow(workflow_uuid, False)
         assert workflow.status == "RUNNING"
 
-        self.workflow_client.delete_workflow(workflow_uuid)
+        # archive_workflow=True (the default) requires a terminal-state workflow;
+        # this workflow is intentionally still RUNNING at this point (confirmed
+        # empirically: "Cannot archive workflow ... with status: RUNNING" on
+        # plain OSS Conductor), so skip archiving for this delete when running
+        # against OSS.
+        self.workflow_client.delete_workflow(
+            workflow_uuid,
+            archive_workflow=not is_oss()
+        )
         _assert_not_found(
             lambda: self.workflow_client.get_workflow(workflow_uuid, False), workflow_uuid
         )

@@ -1,8 +1,8 @@
 {
   "createTime": 1744299182957,
   "updateTime": 1744299435683,
-  "name": "complex_wf_signal_test",
-  "description": "http_yield_signal_test",
+  "name": "complex_wf_signal_test_oss",
+  "description": "http_wait_signal_test -- OSS-compatible variant of complex_wf_signal_test using WAIT instead of YIELD (YIELD is Orkes-Enterprise-only)",
   "version": 1,
   "tasks": [
     {
@@ -38,7 +38,7 @@
       "forkTasks": [],
       "startDelay": 0,
       "subWorkflowParam": {
-        "name": "complex_wf_signal_test_subworkflow_1",
+        "name": "complex_wf_signal_test_subworkflow_1_oss",
         "version": 1
       },
       "joinOn": [],
