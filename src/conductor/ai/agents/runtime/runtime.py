@@ -2864,16 +2864,19 @@ class AgentRuntime:
 
             output = status.output
             raw_status = status.status
+            failure_reason = self._extract_framework_failure_reason(
+                execution_id, raw_status, status.reason
+            )
 
             if raw_status in ("FAILED", "TERMINATED"):
                 logger.warning("Framework agent '%s' execution %s", agent_name, raw_status)
                 has_output = output and not (
                     isinstance(output, dict) and all(v is None for v in output.values())
                 )
-                if not has_output and status.reason:
-                    output = status.reason
+                if not has_output and failure_reason:
+                    output = failure_reason
 
-            output = self._normalize_output(output, raw_status, status.reason)
+            output = self._normalize_output(output, raw_status, failure_reason)
             logger.info(
                 "Framework agent '%s' completed (execution_id=%s)", agent_name, execution_id
             )
@@ -2884,7 +2887,7 @@ class AgentRuntime:
                 correlation_id=correlation_id,
                 status=raw_status,
                 finish_reason=self._derive_finish_reason(raw_status, status.output),
-                error=status.reason if raw_status in ("FAILED", "TERMINATED") else None,
+                error=failure_reason,
                 token_usage=token_usage,
                 sub_results=self._extract_sub_results(output),
             )
@@ -3216,7 +3219,17 @@ class AgentRuntime:
             on_event(event)
 
         status = self._poll_status_until_complete(execution_id, timeout=timeout)
-        output = self._normalize_output(status.output, status.status, status.reason)
+        failure_reason = self._extract_framework_failure_reason(
+            execution_id, status.status, status.reason
+        )
+        output = status.output
+        if (
+            status.status in ("FAILED", "TERMINATED")
+            and not output
+            and failure_reason
+        ):
+            output = failure_reason
+        output = self._normalize_output(output, status.status, failure_reason)
         token_usage = self._extract_token_usage(execution_id)
         return AgentResult(
             output=output,
@@ -3224,7 +3237,7 @@ class AgentRuntime:
             correlation_id=correlation_id,
             status=status.status,
             finish_reason=self._derive_finish_reason(status.status, status.output),
-            error=status.reason if status.status in ("FAILED", "TERMINATED") else None,
+            error=failure_reason,
             token_usage=token_usage,
             events=events,
             sub_results=self._extract_sub_results(output),
@@ -4414,12 +4427,15 @@ class AgentRuntime:
 
                 status = await self._poll_status_until_complete_async(execution_id, timeout=timeout)
                 output = status.output
+                failure_reason = self._extract_framework_failure_reason(
+                    execution_id, status.status, status.reason
+                )
                 has_output = output and not (
                     isinstance(output, dict) and all(v is None for v in output.values())
                 )
-                if not has_output and status.reason and status.status in ("FAILED", "TERMINATED"):
-                    output = status.reason
-                output = self._normalize_output(output, status.status, status.reason)
+                if not has_output and failure_reason:
+                    output = failure_reason
+                output = self._normalize_output(output, status.status, failure_reason)
                 token_usage = self._extract_token_usage(execution_id)
                 return AgentResult(
                     output=output,
@@ -4427,7 +4443,7 @@ class AgentRuntime:
                     correlation_id=correlation_id,
                     status=status.status,
                     finish_reason=self._derive_finish_reason(status.status, status.output),
-                    error=status.reason if status.status in ("FAILED", "TERMINATED") else None,
+                    error=failure_reason,
                     token_usage=token_usage,
                     events=captured_events,
                     sub_results=self._extract_sub_results(output),
@@ -4437,16 +4453,19 @@ class AgentRuntime:
 
             output = status.output
             raw_status = status.status
+            failure_reason = self._extract_framework_failure_reason(
+                execution_id, raw_status, status.reason
+            )
 
             if raw_status in ("FAILED", "TERMINATED"):
                 logger.warning("Framework agent '%s' execution %s", agent_name, raw_status)
                 has_output = output and not (
                     isinstance(output, dict) and all(v is None for v in output.values())
                 )
-                if not has_output and status.reason:
-                    output = status.reason
+                if not has_output and failure_reason:
+                    output = failure_reason
 
-            output = self._normalize_output(output, raw_status, status.reason)
+            output = self._normalize_output(output, raw_status, failure_reason)
             logger.info(
                 "Framework agent '%s' completed (execution_id=%s)", agent_name, execution_id
             )
@@ -4457,7 +4476,7 @@ class AgentRuntime:
                 correlation_id=correlation_id,
                 status=raw_status,
                 finish_reason=self._derive_finish_reason(raw_status, status.output),
-                error=status.reason if raw_status in ("FAILED", "TERMINATED") else None,
+                error=failure_reason,
                 token_usage=token_usage,
                 sub_results=self._extract_sub_results(output),
             )
@@ -4956,6 +4975,34 @@ class AgentRuntime:
                     return f"Task '{ref}' failed: {reason}"
                 return f"Task '{ref}' failed"
         return None
+
+    def _extract_framework_failure_reason(
+        self,
+        execution_id: str,
+        raw_status: str,
+        status_reason: Optional[str],
+    ) -> Optional[str]:
+        """Return the most useful failure reason for a framework execution.
+
+        Framework status responses can omit the reason even though the full
+        workflow contains a failed task with a diagnostic reason. Keep the
+        status endpoint as the fallback, but prefer the task and workflow
+        reasons when they are available.
+        """
+        if raw_status not in ("FAILED", "TERMINATED"):
+            return None
+        try:
+            wf = self._workflow_client.get_workflow(execution_id, include_tasks=True)
+            return (
+                self._extract_failed_task_reason(wf)
+                or getattr(wf, "reason_for_incompletion", None)
+                or status_reason
+            )
+        except Exception as exc:
+            logger.debug(
+                "Could not fetch framework failure details for %s: %s", execution_id, exc
+            )
+            return status_reason
 
     @staticmethod
     def _extract_sub_results(output: Dict[str, Any]) -> Dict[str, Any]:
