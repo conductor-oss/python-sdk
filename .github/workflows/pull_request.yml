@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       oss_conductor_version:
-        description: 'OSS Conductor image tag (falls back to E2E_TEST_OSS_CONDUCTOR_VERSION org var)'
+        description: 'OSS Conductor image tag (falls back to E2E_TEST_OSS_CONDUCTOR_VERSION org var, then to a pinned default on fork PRs)'
         required: false
         type: string
 
@@ -160,15 +160,36 @@ jobs:
       # above; kept consistent here even though the local OSS stack doesn't
       # have the same proxy/LB in front of it.
       CONDUCTOR_HTTP2_ENABLED: "false"
-      OSS_CONDUCTOR_VERSION: ${{ inputs.oss_conductor_version || vars.E2E_TEST_OSS_CONDUCTOR_VERSION }}
+      # Used only when the org variable is unreachable because the run is a fork
+      # PR -- see the resolve step below.
+      FORK_PR_FALLBACK_VERSION: '3.32.3'
     steps:
-      - name: Verify OSS Conductor version is set
+      # OSS_CONDUCTOR_VERSION is resolved here rather than in the job `env` so
+      # that the two ways it can come back empty get different treatment:
+      #
+      #   - Fork PR: GitHub withholds org/repo variables from pull_request runs
+      #     on forks exactly as it withholds secrets, so vars.* is always "" for
+      #     an outside contributor (observed in csharp-sdk#178). This job needs
+      #     no secrets, only a tag, so pin one and keep running.
+      #   - Anything else: the org variable is genuinely missing or its
+      #     repository access policy no longer covers this repo. Fail loudly
+      #     rather than silently drifting onto the pin.
+      - name: Resolve OSS Conductor version
+        env:
+          REQUESTED_VERSION: ${{ inputs.oss_conductor_version || vars.E2E_TEST_OSS_CONDUCTOR_VERSION }}
+          IS_FORK_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         run: |
-          if [ -z "$OSS_CONDUCTOR_VERSION" ]; then
+          if [ -n "$REQUESTED_VERSION" ]; then
+            resolved="$REQUESTED_VERSION"
+          elif [ "$IS_FORK_PR" = "true" ]; then
+            resolved="$FORK_PR_FALLBACK_VERSION"
+            echo "::notice::Fork PR: org variables are withheld, pinning conductoross/conductor:${resolved}"
+          else
             echo "::error::No Conductor OSS image tag resolved. Set the E2E_TEST_OSS_CONDUCTOR_VERSION organization variable (and ensure its repository access policy includes this repo), or pass the oss_conductor_version input via workflow_dispatch."
             exit 1
           fi
-          echo "Using conductoross/conductor:$OSS_CONDUCTOR_VERSION"
+          echo "OSS_CONDUCTOR_VERSION=${resolved}" >> "$GITHUB_ENV"
+          echo "Using conductoross/conductor:${resolved}"
 
       - name: Checkout code
         uses: actions/checkout@v4
