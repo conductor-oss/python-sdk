@@ -693,10 +693,8 @@ class AgentHandle:
 # ── AgentEvent (yielded by stream()) ───────────────────────────────────
 
 
-#: Keys Conductor injects into a tool task's input that are not arguments the
-#: LLM chose.  ``method`` and ``_agent_tool_name`` carry the tool's *name*;
-#: the rest are agent-loop plumbing.  Shared by :class:`AgentEvent` and the
-#: runtime's ``tool_calls`` extraction so both report the same arguments.
+# Keys Conductor injects into a tool task's input, not arguments the LLM chose.
+# Shared with the runtime's tool_calls extraction so both report the same args.
 INTERNAL_ARG_KEYS = frozenset(
     {
         "_agent_state",

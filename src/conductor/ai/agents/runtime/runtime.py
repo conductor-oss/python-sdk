@@ -17,7 +17,7 @@ import re
 import threading
 import time
 import uuid
-from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, Iterator, List, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     from conductor.ai.agents.runtime.config import AgentConfig
@@ -267,17 +267,13 @@ def _normalize_handoff_target(task_ref: str) -> str:
 
 # ── Tool-task identification ───────────────────────────────────────────
 #
-# A tool is identified by what the server compiled it *into*, never by the
-# task's reference name.  Reference names carry the LLM provider's tool-call id
-# (``call_…`` for OpenAI, ``toolu_…`` for Anthropic, a UUID otherwise), so
-# matching on one silently drops every other provider's tool calls.
+# Tools are identified by the task type they compiled to, not by reference name:
+# reference names carry the provider's tool-call id (`call_…` on OpenAI, `toolu_…`
+# on Anthropic), so matching on one drops every other provider's tool calls.
 
-#: Conductor task types a tool compiles to, per the server's
-#: ``ToolCompiler.TYPE_MAP``.  Two kinds are absent.  ``worker`` compiles to
-#: SIMPLE, whose type Conductor rewrites to the task's own name on execution, so
-#: those are matched by :func:`_is_tool_task`'s task-definition fallback.
-#: ``agent_tool`` compiles to SUB_WORKFLOW, which is also how a strategy handoff
-#: is compiled, so those are told apart by the tool-name key alone.
+# Task types a tool compiles to, per the server's ToolCompiler.TYPE_MAP. Worker
+# tools (SIMPLE) and agent_tool (SUB_WORKFLOW) share a type with non-tool tasks,
+# so _is_tool_task tells those apart by other means.
 _TOOL_TASK_TYPES = frozenset(
     {
         "HTTP",  # http and api tools
@@ -292,7 +288,7 @@ _TOOL_TASK_TYPES = frozenset(
     }
 )
 
-#: Task types the agent compiler emits that are never a tool invocation.
+# Task types the agent compiler emits that are never a tool invocation.
 _NON_TOOL_TASK_TYPES = frozenset(
     {
         "LLM_CHAT_COMPLETE",
@@ -315,27 +311,20 @@ _NON_TOOL_TASK_TYPES = frozenset(
     }
 )
 
-#: Reference-name prefix of the framework passthrough wrapper task.  It wraps a
-#: whole foreign-framework agent, which emits its own fine-grained events.
+# Wrapper task around a whole foreign-framework agent, which emits its own events.
 _FRAMEWORK_TASK_REF_PREFIX = "_fw_"
 
-#: Input key the server's tool-dispatch script sets on every tool task,
-#: whatever kind it compiled to.
+# Input key the server's tool-dispatch script sets on every tool task.
 _TOOL_NAME_KEY = "_agent_tool_name"
 
-#: Name suffixes of the workers this runtime registers for an agent's own
-#: machinery — callbacks, termination conditions, gates, routing.  They compile
-#: to SIMPLE tasks exactly as a worker tool does, but the LLM never chose to
-#: call one, so they are not tool calls.  Kept in step with the
-#: ``AgentRuntime._register_*_worker`` methods, which are where these names are
-#: minted; swarm ``{agent}_transfer_to_{sub}`` workers are deliberately absent,
-#: because the LLM does call those.
+# Workers for the agent's own machinery (callbacks, termination, gates, routing):
+# they compile to SIMPLE like a worker tool, but the LLM never called them. Keep in
+# step with _register_*_worker. Swarm transfer workers belong to the LLM.
 _AGENT_INTERNAL_TASK_SUFFIXES = (
     "_stop_when",
     "_gate",
     "_termination",
     "_check_transfer",
-    "_transfer_check",
     "_router",
     "_router_fn",
     "_handoff_check",
@@ -349,11 +338,9 @@ _AGENT_INTERNAL_TASK_SUFFIXES = (
     "_after_tool",
 )
 
-#: A custom guardrail's worker is named after the user's guardrail rather than
-#: after the agent, so it is matched on the reference name the guardrail
-#: compiler builds — ``{agent}_{kind}_guardrail_{name}``, optionally
-#: ``_worker``-suffixed.  Matched with both underscores so a tool the user
-#: called ``guardrail_lookup`` is still a tool.
+# Custom guardrail workers are named after the guardrail rather than the agent, so
+# they are matched on the reference name. Both underscores, so a user's tool named
+# guardrail_lookup stays a tool.
 _GUARDRAIL_TASK_MARKER = "_guardrail_"
 
 
@@ -366,17 +353,18 @@ def _is_guardrail_task(ref: str) -> bool:
 def _is_agent_internal_task(ref: str, task_def_name: Optional[str]) -> bool:
     """Whether a task is the agent's own machinery rather than a tool call.
 
-    Name-based, and deliberately so — these tasks are compiled statically and
-    carry nothing else to tell them apart from a worker tool.  It is the one
-    place a name is read for identity, and it is safe because a dispatched tool
-    is settled by :data:`_TOOL_NAME_KEY` before this is ever consulted.
+    Name-based because these tasks are compiled statically and carry nothing
+    else to tell them apart from a worker tool.  Both names have to look
+    internal: a framework injects tool tasks under a provider-id reference name
+    (`toolu_…`), so a user tool of its own called ``refresh_gate`` keeps its
+    reference name to vouch for it.
     """
     if _is_guardrail_task(ref):
         return True
-    return any(
-        name.lower().endswith(_AGENT_INTERNAL_TASK_SUFFIXES)
-        for name in (ref, task_def_name or "")
-    )
+    compiled_ref = re.sub(r"(__\d+)?(_worker)?$", "", ref.lower())
+    if not compiled_ref.endswith(_AGENT_INTERNAL_TASK_SUFFIXES):
+        return False
+    return (task_def_name or "").lower().endswith(_AGENT_INTERNAL_TASK_SUFFIXES)
 
 
 def _is_tool_task(task: Any) -> bool:
@@ -385,10 +373,8 @@ def _is_tool_task(task: Any) -> bool:
     if ref.startswith(_FRAMEWORK_TASK_REF_PREFIX):
         return False
 
-    # The server's tool-dispatch script stamps the tool-name key on every tool
-    # it dispatches and on nothing else, so its presence settles the question
-    # outright — including for a tool whose own name happens to end like one of
-    # the agent-internal suffixes below.
+    # The dispatch script sets this key on tools and nothing else, so it settles
+    # the question before the name checks below.
     if _TOOL_NAME_KEY in (getattr(task, "input_data", None) or {}):
         return True
 
@@ -400,26 +386,23 @@ def _is_tool_task(task: Any) -> bool:
     if task_type in _NON_TOOL_TASK_TYPES:
         return False
 
-    # A SUB_WORKFLOW without the key above is a strategy handoff, not an
-    # ``agent_tool``.
+    # Without that key, a SUB_WORKFLOW is a strategy handoff, not an agent_tool.
     if task_type == "SUB_WORKFLOW":
         return False
 
     if task_type in _TOOL_TASK_TYPES:
         return True
 
-    # Worker tools: Conductor rewrites an executed SIMPLE task's type to the
-    # task's own name, so a worker tool's type is unenumerable and anything left
-    # with a task definition behind it is one.  That makes an unrecognised task
-    # type read as a tool rather than vanish — the safer way round, because a
-    # missing tool call is what makes an assertion pass without evidence.
+    # Conductor rewrites an executed SIMPLE task's type to the task's own name, so
+    # a worker tool's type is unenumerable: anything left with a task definition is
+    # one. A dropped tool call passes an assertion, so err towards calling it one.
     return task_type == "SIMPLE" or task_def_name is not None
 
 
 def _tool_name(task: Any) -> str:
-    """Resolve a tool task's name from a field that actually carries it.
+    """Resolve a tool task's name from a field that carries it.
 
-    Never case-folds: ``getWeather`` is a different tool from ``getweather`` to
+    Never case-folds: ``getWeather`` and ``getweather`` are different tools to
     every assertion that compares names.
     """
     input_data = getattr(task, "input_data", None) or {}
@@ -449,9 +432,8 @@ def _tool_args(task: Any) -> Dict[str, Any]:
 def _task_events(task: Any, execution_id: str) -> Iterator[AgentEvent]:
     """Yield the events a single execution task represents.
 
-    The one place that knows how a Conductor task maps onto an
-    :class:`AgentEvent`, shared by the polling streams and by
-    :meth:`AgentRuntime._extract_events`.
+    Shared by the polling streams and :meth:`AgentRuntime._extract_events`, so an
+    assertion reads the same events whichever way the agent was run.
     """
     task_type = str(getattr(task, "task_type", "") or "").upper()
     task_ref = str(getattr(task, "reference_task_name", "") or "")
@@ -505,10 +487,9 @@ def _task_events(task: Any, execution_id: str) -> Iterator[AgentEvent]:
                 )
         return
 
-    # Tool task -> TOOL_CALL + TOOL_RESULT.  Only once the task has completed,
-    # because a TOOL_RESULT is half of what this pair means; ``tool_calls``
-    # deliberately differs and records a tool in any status, so that a failed
-    # tool still answers ``assert_tool_used``.
+    # Tool task -> TOOL_CALL + TOOL_RESULT, only once completed, since the pair
+    # includes a result. tool_calls records a tool in any status, so a failed tool
+    # still answers assert_tool_used.
     is_tool = _is_tool_task(task)
     if is_tool and task_status == "COMPLETED":
         fn_name = _tool_name(task)
@@ -526,9 +507,8 @@ def _task_events(task: Any, execution_id: str) -> Iterator[AgentEvent]:
         )
         return
 
-    # Sub-workflow that is not an agent_tool -> HANDOFF.  Guarded on ``is_tool``
-    # rather than on falling through the branch above, so an agent_tool still
-    # running does not read as a handoff.
+    # Sub-workflow that is not an agent_tool -> HANDOFF. Guarded on is_tool so a
+    # running agent_tool does not read as a handoff.
     if task_type == "SUB_WORKFLOW" and not is_tool:
         yield AgentEvent(
             type=EventType.HANDOFF,
@@ -3196,6 +3176,7 @@ class AgentRuntime:
                 "Framework agent '%s' completed (execution_id=%s)", agent_name, execution_id
             )
             token_usage = self._extract_token_usage(execution_id)
+            tool_calls, events = self._extract_tool_calls_and_events(execution_id)
             return AgentResult(
                 output=output,
                 execution_id=execution_id,
@@ -3204,6 +3185,8 @@ class AgentRuntime:
                 finish_reason=self._derive_finish_reason(raw_status, status.output),
                 error=status.reason if raw_status in ("FAILED", "TERMINATED") else None,
                 token_usage=token_usage,
+                tool_calls=tool_calls,
+                events=events,
                 sub_results=self._extract_sub_results(output),
             )
         finally:
@@ -3536,6 +3519,7 @@ class AgentRuntime:
         status = self._poll_status_until_complete(execution_id, timeout=timeout)
         output = self._normalize_output(status.output, status.status, status.reason)
         token_usage = self._extract_token_usage(execution_id)
+        tool_calls, _ = self._extract_tool_calls_and_events(execution_id)
         return AgentResult(
             output=output,
             execution_id=execution_id,
@@ -3544,6 +3528,7 @@ class AgentRuntime:
             finish_reason=self._derive_finish_reason(status.status, status.output),
             error=status.reason if status.status in ("FAILED", "TERMINATED") else None,
             token_usage=token_usage,
+            tool_calls=tool_calls,
             events=events,
             sub_results=self._extract_sub_results(output),
         )
@@ -4523,6 +4508,10 @@ class AgentRuntime:
                     output = status.reason
                 output = self._normalize_output(output, status.status, status.reason)
                 token_usage = self._extract_token_usage(execution_id)
+                loop = asyncio.get_event_loop()
+                tool_calls, _ = await loop.run_in_executor(
+                    None, lambda: self._extract_tool_calls_and_events(execution_id)
+                )
                 return AgentResult(
                     output=output,
                     execution_id=execution_id,
@@ -4531,6 +4520,7 @@ class AgentRuntime:
                     finish_reason=self._derive_finish_reason(status.status, status.output),
                     error=status.reason if status.status in ("FAILED", "TERMINATED") else None,
                     token_usage=token_usage,
+                    tool_calls=tool_calls,
                     events=captured_events,
                     sub_results=self._extract_sub_results(output),
                 )
@@ -4553,6 +4543,10 @@ class AgentRuntime:
                 "Framework agent '%s' completed (execution_id=%s)", agent_name, execution_id
             )
             token_usage = self._extract_token_usage(execution_id)
+            loop = asyncio.get_event_loop()
+            tool_calls, events = await loop.run_in_executor(
+                None, lambda: self._extract_tool_calls_and_events(execution_id)
+            )
             return AgentResult(
                 output=output,
                 execution_id=execution_id,
@@ -4561,6 +4555,8 @@ class AgentRuntime:
                 finish_reason=self._derive_finish_reason(raw_status, status.output),
                 error=status.reason if raw_status in ("FAILED", "TERMINATED") else None,
                 token_usage=token_usage,
+                tool_calls=tool_calls,
+                events=events,
                 sub_results=self._extract_sub_results(output),
             )
         finally:
@@ -5263,12 +5259,10 @@ class AgentRuntime:
         ]
 
     def _extract_events(self, workflow_run: Any, execution_id: str) -> List[AgentEvent]:
-        """Rebuild an execution's event history from its finished task list.
+        """Rebuild an execution's event history from its task list.
 
-        ``run()`` polls rather than streams, so its events are derived here from
-        the same execution it already fetched for ``tool_calls``.  Same mapping
-        as the polling stream, so an assertion reads identically whichever way
-        the agent was run.
+        ``run()`` polls rather than streams, so events are derived from the
+        execution it already fetched for ``tool_calls``.
         """
         events: List[AgentEvent] = []
         for task in getattr(workflow_run, "tasks", None) or []:
@@ -5278,6 +5272,22 @@ class AgentRuntime:
         if terminal is not None:
             events.append(terminal)
         return events
+
+    def _extract_tool_calls_and_events(
+        self, execution_id: str
+    ) -> Tuple[List[Dict[str, Any]], List[AgentEvent]]:
+        """Tool calls and events derivable from an execution's task list.
+
+        A framework agent runs inside a single passthrough task, but the Claude
+        Agent SDK injects one task per tool it calls, so the task list can still
+        carry the tool calls even though this runtime never compiled them.
+        """
+        try:
+            wf = self._workflow_client.get_workflow(execution_id, include_tasks=True)
+        except Exception as exc:
+            logger.debug("Could not fetch execution details for %s: %s", execution_id, exc)
+            return [], []
+        return self._extract_tool_calls(wf), self._extract_events(wf, execution_id)
 
     def _fetch_agent_workflow(self, execution_id: str) -> Optional[dict]:
         """Fetch an execution with its full task list from GET /api/agent/execution/{id}."""

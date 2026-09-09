@@ -1,15 +1,12 @@
 """Unit tests for tool-call and event extraction from an execution's tasks.
 
-Covers the two surfaces the ``testing`` assertions read:
-:meth:`AgentRuntime._extract_tool_calls` and :meth:`AgentRuntime._extract_events`.
-
-Tasks are built as plain objects rather than ``MagicMock`` on purpose — a mock
-answers every attribute with a truthy stub, which is how a fixture ends up
-agreeing with a detection bug instead of catching it.
+Covers what the testing assertions read: _extract_tool_calls and
+_extract_events. Tasks are plain objects rather than MagicMock, which answers
+every attribute with a truthy stub and would agree with a detection bug.
 """
 
 from typing import Any, Dict, Optional
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -18,7 +15,7 @@ from conductor.ai.agents.result import AgentStatus, EventType
 from conductor.ai.agents.testing.assertions import assert_max_turns, assert_no_errors
 
 
-class Task:
+class FakeTask:
     """A minimal stand-in for ``conductor.client.http.models.Task``."""
 
     def __init__(
@@ -41,7 +38,7 @@ class Task:
         self.task_id = task_id or reference_task_name
 
 
-class Workflow:
+class FakeWorkflowRun:
     """A minimal stand-in for a workflow execution with tasks."""
 
     def __init__(self, tasks=None, status="COMPLETED", output=None, reason=None):
@@ -67,7 +64,7 @@ def runtime():
 class TestToolCallDetection:
     def test_detects_worker_tool_under_an_anthropic_call_id(self, runtime):
         """The reference name carries the provider's tool-call id, not ours."""
-        task = Task(
+        task = FakeTask(
             task_type="SIMPLE",
             reference_task_name="toolu_01PJDP6YvZbhFp3wBnQeC2D3",
             task_def_name="Read",
@@ -75,7 +72,7 @@ class TestToolCallDetection:
             output_data={"content": "hello"},
         )
 
-        calls = runtime._extract_tool_calls(Workflow([task]))
+        calls = runtime._extract_tool_calls(FakeWorkflowRun([task]))
 
         assert len(calls) == 1
         assert calls[0]["name"] == "Read"
@@ -83,45 +80,45 @@ class TestToolCallDetection:
         assert calls[0]["result"] == {"content": "hello"}
 
     def test_detects_worker_tool_under_an_openai_call_id(self, runtime):
-        task = Task(
+        task = FakeTask(
             task_type="get_weather",
             reference_task_name="call_PMnNIdOPvm9EQ8e6tn2kbxPY_0__1",
             task_def_name="get_weather",
             input_data={"city": "NYC"},
         )
 
-        calls = runtime._extract_tool_calls(Workflow([task]))
+        calls = runtime._extract_tool_calls(FakeWorkflowRun([task]))
 
         assert [c["name"] for c in calls] == ["get_weather"]
 
     def test_preserves_camel_case_worker_names(self, runtime):
-        task = Task(
+        task = FakeTask(
             task_type="getWeather",
             reference_task_name="call_abc__0",
             task_def_name="getWeather",
         )
 
-        calls = runtime._extract_tool_calls(Workflow([task]))
+        calls = runtime._extract_tool_calls(FakeWorkflowRun([task]))
 
         assert calls[0]["name"] == "getWeather"
 
     def test_skips_framework_passthrough_wrapper(self, runtime):
-        task = Task(
+        task = FakeTask(
             task_type="my_agent_worker",
             reference_task_name="_fw_task",
             task_def_name="my_agent_worker",
         )
 
-        assert runtime._extract_tool_calls(Workflow([task])) == []
+        assert runtime._extract_tool_calls(FakeWorkflowRun([task])) == []
 
     @pytest.mark.parametrize(
         "task_type",
         ["LLM_CHAT_COMPLETE", "SWITCH", "DO_WHILE", "INLINE", "SET_VARIABLE", "JOIN", "TERMINATE"],
     )
     def test_skips_system_tasks(self, runtime, task_type):
-        task = Task(task_type=task_type, task_def_name=task_type.lower())
+        task = FakeTask(task_type=task_type, task_def_name=task_type.lower())
 
-        assert runtime._extract_tool_calls(Workflow([task])) == []
+        assert runtime._extract_tool_calls(FakeWorkflowRun([task])) == []
 
     @pytest.mark.parametrize(
         "worker_name",
@@ -140,57 +137,57 @@ class TestToolCallDetection:
     )
     def test_skips_the_agents_own_machinery(self, runtime, worker_name):
         """Callbacks, guardrails and routing compile to SIMPLE tasks too."""
-        task = Task(
+        task = FakeTask(
             task_type=worker_name,
             reference_task_name=worker_name,
             task_def_name=worker_name,
         )
 
-        assert runtime._extract_tool_calls(Workflow([task])) == []
+        assert runtime._extract_tool_calls(FakeWorkflowRun([task])) == []
 
     def test_skips_a_custom_guardrail_worker_named_by_the_user(self, runtime):
-        task = Task(
+        task = FakeTask(
             task_type="no_profanity",
             reference_task_name="support_output_guardrail_no_profanity_worker",
             task_def_name="no_profanity",
         )
 
-        assert runtime._extract_tool_calls(Workflow([task])) == []
+        assert runtime._extract_tool_calls(FakeWorkflowRun([task])) == []
 
     def test_keeps_a_user_tool_whose_name_merely_mentions_guardrails(self, runtime):
-        task = Task(
+        task = FakeTask(
             task_type="guardrail_lookup",
             reference_task_name="toolu_01LOOKUP",
             task_def_name="guardrail_lookup",
         )
 
-        calls = runtime._extract_tool_calls(Workflow([task]))
+        calls = runtime._extract_tool_calls(FakeWorkflowRun([task]))
 
         assert [c["name"] for c in calls] == ["guardrail_lookup"]
 
     def test_dispatched_tool_wins_over_an_internal_name_suffix(self, runtime):
         """A user tool may legitimately be called ``open_gate``."""
-        task = Task(
+        task = FakeTask(
             task_type="open_gate",
             reference_task_name="toolu_01GATE",
             task_def_name="open_gate",
             input_data={"_agent_tool_name": "open_gate", "door": "front"},
         )
 
-        calls = runtime._extract_tool_calls(Workflow([task]))
+        calls = runtime._extract_tool_calls(FakeWorkflowRun([task]))
 
         assert [c["name"] for c in calls] == ["open_gate"]
         assert calls[0]["args"] == {"door": "front"}
 
     def test_keeps_swarm_transfer_tools(self, runtime):
         """``transfer_to_x`` is a tool the LLM chose to call, not machinery."""
-        task = Task(
+        task = FakeTask(
             task_type="support_transfer_to_billing",
             reference_task_name="call_abc__0",
             task_def_name="support_transfer_to_billing",
         )
 
-        calls = runtime._extract_tool_calls(Workflow([task]))
+        calls = runtime._extract_tool_calls(FakeWorkflowRun([task]))
 
         assert [c["name"] for c in calls] == ["support_transfer_to_billing"]
 
@@ -213,48 +210,48 @@ class TestToolKindsAndNaming:
         ],
     )
     def test_non_worker_tool_kinds_are_detected_and_named(self, runtime, task_type, tool_name):
-        task = Task(
+        task = FakeTask(
             task_type=task_type,
             reference_task_name="whatever_0",
             task_def_name=task_type.lower(),
             input_data={"_agent_tool_name": tool_name, "query": "q"},
         )
 
-        calls = runtime._extract_tool_calls(Workflow([task]))
+        calls = runtime._extract_tool_calls(FakeWorkflowRun([task]))
 
         assert [c["name"] for c in calls] == [tool_name]
         assert calls[0]["args"] == {"query": "q"}
 
     def test_agent_tool_sub_workflow_is_a_tool_call(self, runtime):
-        task = Task(
+        task = FakeTask(
             task_type="SUB_WORKFLOW",
             reference_task_name="call_x__0",
             input_data={"_agent_tool_name": "research_agent", "prompt": "find it"},
         )
 
-        calls = runtime._extract_tool_calls(Workflow([task]))
+        calls = runtime._extract_tool_calls(FakeWorkflowRun([task]))
 
         assert [c["name"] for c in calls] == ["research_agent"]
 
     def test_handoff_sub_workflow_is_not_a_tool_call(self, runtime):
         """A strategy handoff has no ``_agent_tool_name``; it is not a tool."""
-        task = Task(task_type="SUB_WORKFLOW", reference_task_name="support_handoff_0_billing")
+        task = FakeTask(task_type="SUB_WORKFLOW", reference_task_name="support_handoff_0_billing")
 
-        assert runtime._extract_tool_calls(Workflow([task])) == []
+        assert runtime._extract_tool_calls(FakeWorkflowRun([task])) == []
 
     def test_mcp_tool_name_falls_back_to_method(self, runtime):
-        task = Task(
+        task = FakeTask(
             task_type="CALL_MCP_TOOL",
             task_def_name="call_mcp_tool",
             input_data={"method": "read_file", "arguments": {"path": "/tmp/x"}},
         )
 
-        calls = runtime._extract_tool_calls(Workflow([task]))
+        calls = runtime._extract_tool_calls(FakeWorkflowRun([task]))
 
         assert calls[0]["name"] == "read_file"
 
     def test_internal_keys_are_stripped_from_args(self, runtime):
-        task = Task(
+        task = FakeTask(
             task_type="get_weather",
             task_def_name="get_weather",
             input_data={
@@ -268,7 +265,7 @@ class TestToolKindsAndNaming:
             },
         )
 
-        calls = runtime._extract_tool_calls(Workflow([task]))
+        calls = runtime._extract_tool_calls(FakeWorkflowRun([task]))
 
         assert calls[0]["args"] == {"city": "NYC"}
 
@@ -278,7 +275,7 @@ class TestToolKindsAndNaming:
 
 class TestExtractEvents:
     def test_tool_task_yields_call_and_result(self, runtime):
-        task = Task(
+        task = FakeTask(
             task_type="SIMPLE",
             reference_task_name="toolu_01ABC",
             task_def_name="Read",
@@ -286,7 +283,7 @@ class TestExtractEvents:
             output_data={"content": "hi"},
         )
 
-        events = runtime._extract_events(Workflow([task]), "wf-1")
+        events = runtime._extract_events(FakeWorkflowRun([task]), "wf-1")
         by_type = [e.type for e in events]
 
         assert EventType.TOOL_CALL in by_type
@@ -297,52 +294,52 @@ class TestExtractEvents:
         assert call.execution_id == "wf-1"
 
     def test_llm_task_yields_thinking(self, runtime):
-        task = Task(task_type="LLM_CHAT_COMPLETE", reference_task_name="llm_0")
+        task = FakeTask(task_type="LLM_CHAT_COMPLETE", reference_task_name="llm_0")
 
-        events = runtime._extract_events(Workflow([task]), "wf-1")
+        events = runtime._extract_events(FakeWorkflowRun([task]), "wf-1")
 
         assert [e.type for e in events] == [EventType.THINKING, EventType.DONE]
 
     def test_handoff_sub_workflow_yields_handoff(self, runtime):
-        task = Task(task_type="SUB_WORKFLOW", reference_task_name="support_handoff_0_billing")
+        task = FakeTask(task_type="SUB_WORKFLOW", reference_task_name="support_handoff_0_billing")
 
-        events = runtime._extract_events(Workflow([task]), "wf-1")
+        events = runtime._extract_events(FakeWorkflowRun([task]), "wf-1")
         handoffs = [e for e in events if e.type == EventType.HANDOFF]
 
         assert [e.target for e in handoffs] == ["billing"]
 
     def test_running_agent_tool_is_not_reported_as_a_handoff(self, runtime):
         """An ``agent_tool`` is a SUB_WORKFLOW; only a strategy handoff is one."""
-        task = Task(
+        task = FakeTask(
             task_type="SUB_WORKFLOW",
             reference_task_name="toolu_01SUB",
             status="IN_PROGRESS",
             input_data={"_agent_tool_name": "research_agent"},
         )
 
-        events = runtime._extract_events(Workflow([task], status="RUNNING"), "wf-1")
+        events = runtime._extract_events(FakeWorkflowRun([task], status="RUNNING"), "wf-1")
 
         assert [e.type for e in events if e.type == EventType.HANDOFF] == []
 
     def test_guardrail_task_yields_pass_and_fail(self, runtime):
-        ok = Task(
+        ok = FakeTask(
             task_type="SIMPLE",
             reference_task_name="support_regex_guardrail_pii",
             output_data={"passed": True, "guardrail_name": "pii"},
         )
-        bad = Task(
+        bad = FakeTask(
             task_type="SIMPLE",
             reference_task_name="support_llm_guardrail_tone",
             output_data={"passed": False, "guardrail_name": "tone", "message": "rude"},
         )
 
-        events = runtime._extract_events(Workflow([ok, bad]), "wf-1")
+        events = runtime._extract_events(FakeWorkflowRun([ok, bad]), "wf-1")
 
         assert [e.guardrail_name for e in events if e.type == EventType.GUARDRAIL_PASS] == ["pii"]
         assert [e.guardrail_name for e in events if e.type == EventType.GUARDRAIL_FAIL] == ["tone"]
 
     def test_completed_workflow_ends_with_done(self, runtime):
-        wf = Workflow([], status="COMPLETED", output={"result": "42"})
+        wf = FakeWorkflowRun([], status="COMPLETED", output={"result": "42"})
 
         events = runtime._extract_events(wf, "wf-1")
 
@@ -350,14 +347,14 @@ class TestExtractEvents:
         assert events[-1].output == "42"
 
     def test_failed_task_yields_error(self, runtime):
-        task = Task(
+        task = FakeTask(
             task_type="get_weather",
             task_def_name="get_weather",
             status="FAILED",
             output_data={"reason": "boom"},
         )
 
-        events = runtime._extract_events(Workflow([task], status="FAILED"), "wf-1")
+        events = runtime._extract_events(FakeWorkflowRun([task], status="FAILED"), "wf-1")
         errors = [e for e in events if e.type == EventType.ERROR]
 
         assert "boom" in errors[0].content
@@ -379,10 +376,10 @@ class TestRunPopulatesEvents:
             status="COMPLETED",
         )
 
-        wf = Workflow(
+        wf = FakeWorkflowRun(
             [
-                Task(task_type="LLM_CHAT_COMPLETE", reference_task_name="llm_0"),
-                Task(
+                FakeTask(task_type="LLM_CHAT_COMPLETE", reference_task_name="llm_0"),
+                FakeTask(
                     task_type="SIMPLE",
                     reference_task_name="toolu_01ABC",
                     task_def_name="get_weather",
@@ -427,17 +424,17 @@ class TestEvalRunnerAgainstAPolledRun:
     @pytest.fixture()
     def support_run(self, runtime):
         """A handoff run: one tool call, then a handoff to ``billing``."""
-        wf = Workflow(
+        wf = FakeWorkflowRun(
             [
-                Task(task_type="LLM_CHAT_COMPLETE", reference_task_name="llm_0"),
-                Task(
+                FakeTask(task_type="LLM_CHAT_COMPLETE", reference_task_name="llm_0"),
+                FakeTask(
                     task_type="SIMPLE",
                     reference_task_name="toolu_01LOOKUP",
                     task_def_name="lookup_order",
                     input_data={"order_id": "123"},
                     output_data={"status": "shipped"},
                 ),
-                Task(
+                FakeTask(
                     task_type="SUB_WORKFLOW",
                     reference_task_name="support_handoff_0_billing",
                 ),
@@ -498,3 +495,95 @@ class TestEvalRunnerAgainstAPolledRun:
 
         failed = {c.check for case in suite.cases for c in case.checks if not c.passed}
         assert failed == {"tool_not_used:lookup_order", "no_handoff_to:billing"}
+
+# ── Agent-internal workers, and the tools that look like them ───────────
+
+
+class TestAgentInternalTasks:
+    def test_skips_internal_worker_with_a_turn_counter(self, runtime):
+        """Conductor appends __N inside the agent loop; the name still matches."""
+        task = FakeTask(
+            task_type="support_gate",
+            reference_task_name="support_gate__1",
+            task_def_name="support_gate",
+        )
+
+        assert runtime._extract_tool_calls(FakeWorkflowRun([task])) == []
+
+    def test_skips_internal_worker_with_a_worker_suffix(self, runtime):
+        task = FakeTask(
+            task_type="support_router",
+            reference_task_name="support_router_worker",
+            task_def_name="support_router",
+        )
+
+        assert runtime._extract_tool_calls(FakeWorkflowRun([task])) == []
+
+    def test_keeps_an_injected_tool_whose_name_ends_like_internal_machinery(self, runtime):
+        """A framework injects tools under a provider id, so the ref vouches for them."""
+        task = FakeTask(
+            task_type="SIMPLE",
+            reference_task_name="toolu_01PJDP6YvZbhFp3wBnQeC2D3",
+            task_def_name="refresh_gate",
+            input_data={"scope": "session"},
+        )
+
+        calls = runtime._extract_tool_calls(FakeWorkflowRun([task]))
+
+        assert [c["name"] for c in calls] == ["refresh_gate"]
+
+    def test_keeps_a_dispatched_tool_whose_name_ends_like_internal_machinery(self, runtime):
+        """The dispatch key settles it before any name is read."""
+        task = FakeTask(
+            task_type="my_router",
+            reference_task_name="my_router",
+            task_def_name="my_router",
+            input_data={"_agent_tool_name": "my_router", "q": "x"},
+        )
+
+        calls = runtime._extract_tool_calls(FakeWorkflowRun([task]))
+
+        assert [c["name"] for c in calls] == ["my_router"]
+
+    def test_bare_simple_task_counts_as_a_tool(self, runtime):
+        """The server's own isToolTask does the same: a dropped call passes assertions."""
+        task = FakeTask(task_type="SIMPLE", reference_task_name="anything")
+
+        assert len(runtime._extract_tool_calls(FakeWorkflowRun([task]))) == 1
+
+
+# ── Framework agents: tool tasks injected into the execution ────────────
+
+
+class TestFrameworkExecutionExtraction:
+    def test_extracts_injected_tool_tasks(self, runtime):
+        """The Claude Agent SDK injects one task per tool call it makes."""
+        wf = FakeWorkflowRun(
+            [
+                FakeTask(
+                    task_type="my_agent_worker",
+                    reference_task_name="_fw_my_agent",
+                    task_def_name="my_agent_worker",
+                ),
+                FakeTask(
+                    task_type="SIMPLE",
+                    reference_task_name="toolu_01PJDP6YvZbhFp3wBnQeC2D3",
+                    task_def_name="Read",
+                    input_data={"file_path": "/tmp/x"},
+                    output_data={"content": "hello"},
+                ),
+            ]
+        )
+        runtime._workflow_client = MagicMock()
+        runtime._workflow_client.get_workflow.return_value = wf
+
+        tool_calls, events = runtime._extract_tool_calls_and_events("exec-1")
+
+        assert [c["name"] for c in tool_calls] == ["Read"]
+        assert EventType.TOOL_CALL in [e.type for e in events]
+
+    def test_survives_an_unreachable_execution(self, runtime):
+        runtime._workflow_client = MagicMock()
+        runtime._workflow_client.get_workflow.side_effect = RuntimeError("boom")
+
+        assert runtime._extract_tool_calls_and_events("exec-1") == ([], [])
