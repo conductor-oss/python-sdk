@@ -17,7 +17,7 @@ import re
 import threading
 import time
 import uuid
-from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, Iterator, List, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     from conductor.ai.agents.runtime.config import AgentConfig
@@ -34,6 +34,7 @@ from conductor.ai.agents.result import (
     AsyncAgentStream,
     DeploymentInfo,
     EventType,
+    INTERNAL_ARG_KEYS,
     FinishReason,
     TokenUsage,
 )
@@ -262,6 +263,294 @@ def _normalize_handoff_target(task_ref: str) -> str:
         return idx_pattern.group(1)
 
     return name
+
+
+# ── Tool-task identification ───────────────────────────────────────────
+#
+# Tools are identified by the task type they compiled to, not by reference name:
+# reference names carry the provider's tool-call id (`call_…` on OpenAI, `toolu_…`
+# on Anthropic), so matching on one drops every other provider's tool calls.
+
+# Task types a tool compiles to, per the server's ToolCompiler.TYPE_MAP. Worker
+# tools (SIMPLE) and agent_tool (SUB_WORKFLOW) share a type with non-tool tasks,
+# so _is_tool_task tells those apart by other means.
+_TOOL_TASK_TYPES = frozenset(
+    {
+        "HTTP",  # http and api tools
+        "CALL_MCP_TOOL",
+        "HUMAN",
+        "PULL_WORKFLOW_MESSAGES",
+        "GENERATE_IMAGE",
+        "GENERATE_AUDIO",
+        "GENERATE_VIDEO",
+        "LLM_INDEX_TEXT",  # rag_index
+        "LLM_SEARCH_INDEX",  # rag_search
+    }
+)
+
+# Task types the agent compiler emits that are never a tool invocation.
+_NON_TOOL_TASK_TYPES = frozenset(
+    {
+        "LLM_CHAT_COMPLETE",
+        "SWITCH",
+        "DO_WHILE",
+        "INLINE",
+        "SET_VARIABLE",
+        "FORK",
+        "FORK_JOIN",
+        "FORK_JOIN_DYNAMIC",
+        "JOIN",
+        "EXCLUSIVE_JOIN",
+        "TERMINATE",
+        "LIST_MCP_TOOLS",
+        "WAIT",
+        "EVENT",
+        "DECISION",
+        "START_WORKFLOW",
+        "JSON_JQ_TRANSFORM",
+    }
+)
+
+# Wrapper task around a whole foreign-framework agent, which emits its own events.
+_FRAMEWORK_TASK_REF_PREFIX = "_fw_"
+
+# Input key the server's tool-dispatch script sets on every tool task.
+_TOOL_NAME_KEY = "_agent_tool_name"
+
+# Workers for the agent's own machinery (callbacks, termination, gates, routing):
+# they compile to SIMPLE like a worker tool, but the LLM never called them. Keep in
+# step with _register_*_worker. Swarm transfer workers belong to the LLM.
+_AGENT_INTERNAL_TASK_SUFFIXES = (
+    "_stop_when",
+    "_gate",
+    "_termination",
+    "_check_transfer",
+    "_router",
+    "_router_fn",
+    "_handoff_check",
+    "_process_selection",
+    "_guardrail",
+    "_before_agent",
+    "_after_agent",
+    "_before_model",
+    "_after_model",
+    "_before_tool",
+    "_after_tool",
+)
+
+# Custom guardrail workers are named after the guardrail rather than the agent, so
+# they are matched on the reference name. Both underscores, so a user's tool named
+# guardrail_lookup stays a tool.
+_GUARDRAIL_TASK_MARKER = "_guardrail_"
+
+
+def _is_guardrail_task(ref: str) -> bool:
+    """Whether a reference name is one the guardrail compiler built."""
+    lowered = ref.lower()
+    return _GUARDRAIL_TASK_MARKER in lowered or lowered.endswith("_guardrail")
+
+
+def _is_agent_internal_task(ref: str, task_def_name: Optional[str]) -> bool:
+    """Whether a task is the agent's own machinery rather than a tool call.
+
+    Name-based because these tasks are compiled statically and carry nothing
+    else to tell them apart from a worker tool.  Both names have to look
+    internal: a framework injects tool tasks under a provider-id reference name
+    (`toolu_…`), so a user tool of its own called ``refresh_gate`` keeps its
+    reference name to vouch for it.
+    """
+    if _is_guardrail_task(ref):
+        return True
+    compiled_ref = re.sub(r"(__\d+)?(_worker)?$", "", ref.lower())
+    if not compiled_ref.endswith(_AGENT_INTERNAL_TASK_SUFFIXES):
+        return False
+    return (task_def_name or "").lower().endswith(_AGENT_INTERNAL_TASK_SUFFIXES)
+
+
+def _is_tool_task(task: Any) -> bool:
+    """Whether an execution task is a tool invocation."""
+    ref = str(getattr(task, "reference_task_name", "") or "")
+    if ref.startswith(_FRAMEWORK_TASK_REF_PREFIX):
+        return False
+
+    # The dispatch script sets this key on tools and nothing else, so it settles
+    # the question before the name checks below.
+    if _TOOL_NAME_KEY in (getattr(task, "input_data", None) or {}):
+        return True
+
+    task_def_name = getattr(task, "task_def_name", None)
+    if _is_agent_internal_task(ref, task_def_name if isinstance(task_def_name, str) else None):
+        return False
+
+    task_type = str(getattr(task, "task_type", "") or "").upper()
+    if task_type in _NON_TOOL_TASK_TYPES:
+        return False
+
+    # Without that key, a SUB_WORKFLOW is a strategy handoff, not an agent_tool.
+    if task_type == "SUB_WORKFLOW":
+        return False
+
+    if task_type in _TOOL_TASK_TYPES:
+        return True
+
+    # Conductor rewrites an executed SIMPLE task's type to the task's own name, so
+    # a worker tool's type is unenumerable: anything left with a task definition is
+    # one. A dropped tool call passes an assertion, so err towards calling it one.
+    return task_type == "SIMPLE" or task_def_name is not None
+
+
+def _tool_name(task: Any) -> str:
+    """Resolve a tool task's name from a field that carries it.
+
+    Never case-folds: ``getWeather`` and ``getweather`` are different tools to
+    every assertion that compares names.
+    """
+    input_data = getattr(task, "input_data", None) or {}
+    for key in (_TOOL_NAME_KEY, "method"):
+        value = input_data.get(key)
+        if isinstance(value, str) and value:
+            return value
+
+    task_def_name = getattr(task, "task_def_name", None)
+    if isinstance(task_def_name, str) and task_def_name:
+        return task_def_name
+
+    return str(getattr(task, "task_type", "") or "")
+
+
+def _tool_args(task: Any) -> Dict[str, Any]:
+    """A tool task's input with Conductor's own injected keys removed."""
+    input_data = getattr(task, "input_data", None) or {}
+    if not isinstance(input_data, dict):
+        return {}
+    return {k: v for k, v in input_data.items() if k not in INTERNAL_ARG_KEYS}
+
+
+# ── Task-to-event mapping ──────────────────────────────────────────────
+
+
+def _task_events(task: Any, execution_id: str) -> Iterator[AgentEvent]:
+    """Yield the events a single execution task represents.
+
+    Shared by the polling streams and :meth:`AgentRuntime._extract_events`, so an
+    assertion reads the same events whichever way the agent was run.
+    """
+    task_type = str(getattr(task, "task_type", "") or "").upper()
+    task_ref = str(getattr(task, "reference_task_name", "") or "")
+    task_status = str(getattr(task, "status", "") or "").upper()
+    output_data = getattr(task, "output_data", None) or {}
+
+    # LLM task -> THINKING
+    if "LLM_CHAT_COMPLETE" in task_type:
+        yield AgentEvent(
+            type=EventType.THINKING,
+            content=f"LLM processing ({task_ref})",
+            execution_id=execution_id,
+        )
+        return
+
+    # Dispatch task with function -> TOOL_CALL + TOOL_RESULT (local compile)
+    if "dispatch" in task_ref.lower() and task_status == "COMPLETED":
+        fn_name = output_data.get("function")
+        if fn_name:
+            yield AgentEvent(
+                type=EventType.TOOL_CALL,
+                tool_name=fn_name,
+                args=output_data.get("parameters"),
+                execution_id=execution_id,
+            )
+            yield AgentEvent(
+                type=EventType.TOOL_RESULT,
+                tool_name=fn_name,
+                result=output_data.get("result"),
+                execution_id=execution_id,
+            )
+        return
+
+    # Guardrail task -> GUARDRAIL_PASS or GUARDRAIL_FAIL
+    if _is_guardrail_task(task_ref) and task_status == "COMPLETED":
+        passed = output_data.get("passed")
+        if passed is not None:
+            guardrail_name = output_data.get("guardrail_name", task_ref)
+            if passed:
+                yield AgentEvent(
+                    type=EventType.GUARDRAIL_PASS,
+                    guardrail_name=guardrail_name,
+                    execution_id=execution_id,
+                )
+            else:
+                yield AgentEvent(
+                    type=EventType.GUARDRAIL_FAIL,
+                    guardrail_name=guardrail_name,
+                    content=output_data.get("message", ""),
+                    execution_id=execution_id,
+                )
+        return
+
+    # Tool task -> TOOL_CALL + TOOL_RESULT, only once completed, since the pair
+    # includes a result. tool_calls records a tool in any status, so a failed tool
+    # still answers assert_tool_used.
+    is_tool = _is_tool_task(task)
+    if is_tool and task_status == "COMPLETED":
+        fn_name = _tool_name(task)
+        yield AgentEvent(
+            type=EventType.TOOL_CALL,
+            tool_name=fn_name,
+            args=_tool_args(task),
+            execution_id=execution_id,
+        )
+        yield AgentEvent(
+            type=EventType.TOOL_RESULT,
+            tool_name=fn_name,
+            result=output_data,
+            execution_id=execution_id,
+        )
+        return
+
+    # Sub-workflow that is not an agent_tool -> HANDOFF. Guarded on is_tool so a
+    # running agent_tool does not read as a handoff.
+    if task_type == "SUB_WORKFLOW" and not is_tool:
+        yield AgentEvent(
+            type=EventType.HANDOFF,
+            target=_normalize_handoff_target(task_ref),
+            execution_id=execution_id,
+        )
+        return
+
+    # Failed task -> ERROR
+    if task_status == "FAILED":
+        reason = output_data.get("reason", "Task failed")
+        yield AgentEvent(
+            type=EventType.ERROR,
+            content=f"Task '{task_ref}' failed: {reason}",
+            execution_id=execution_id,
+        )
+
+
+def _terminal_event(workflow_run: Any, execution_id: str) -> Optional[AgentEvent]:
+    """The DONE or ERROR event closing a finished execution, if it has finished."""
+    raw_status = str(getattr(workflow_run, "status", "") or "").upper()
+    if raw_status not in ("COMPLETED", "FAILED", "TERMINATED", "TIMED_OUT"):
+        return None
+
+    output = None
+    raw_output = getattr(workflow_run, "output", None)
+    if raw_output:
+        if isinstance(raw_output, dict):
+            output = raw_output.get("result", raw_output)
+        else:
+            output = raw_output
+
+    if raw_status == "COMPLETED":
+        return AgentEvent(type=EventType.DONE, output=output, execution_id=execution_id)
+
+    reason = getattr(workflow_run, "reason", None)
+    return AgentEvent(
+        type=EventType.ERROR,
+        content=reason if isinstance(reason, str) and reason else f"Execution {raw_status}",
+        output=output,
+        execution_id=execution_id,
+    )
 
 
 # Backward compat alias — SSEUnavailableError is now in conductor.client.agent_client
@@ -2520,6 +2809,7 @@ class AgentRuntime:
         # and token_usage — these are not available from the status endpoint.
         tool_calls: List[Dict[str, Any]] = []
         messages: List[Dict[str, Any]] = []
+        events: List[AgentEvent] = []
         token_usage: Optional[TokenUsage] = None
         task_failure_reason: Optional[str] = None
         try:
@@ -2529,6 +2819,7 @@ class AgentRuntime:
             )
             tool_calls = self._extract_tool_calls(wf)
             messages = self._extract_messages(wf)
+            events = self._extract_events(wf, execution_id)
             token_usage = self._extract_token_usage(execution_id)
             if raw_status == "FAILED":
                 task_failure_reason = self._extract_failed_task_reason(wf)
@@ -2552,6 +2843,7 @@ class AgentRuntime:
             tool_calls=tool_calls,
             messages=messages,
             token_usage=token_usage,
+            events=events,
             sub_results=self._extract_sub_results(output),
         )
 
@@ -2612,12 +2904,14 @@ class AgentRuntime:
 
         tool_calls: List[Dict[str, Any]] = []
         messages: List[Dict[str, Any]] = []
+        events: List[AgentEvent] = []
         token_usage: Optional[TokenUsage] = None
         task_failure_reason: Optional[str] = None
         try:
             wf = self._workflow_client.get_workflow(execution_id, include_tasks=True)
             tool_calls = self._extract_tool_calls(wf)
             messages = self._extract_messages(wf)
+            events = self._extract_events(wf, execution_id)
             token_usage = self._extract_token_usage(execution_id)
             if status.status == "FAILED":
                 task_failure_reason = self._extract_failed_task_reason(wf)
@@ -2638,6 +2932,7 @@ class AgentRuntime:
             tool_calls=tool_calls,
             messages=messages,
             token_usage=token_usage,
+            events=events,
         )
 
     def _start_by_name(
@@ -2722,6 +3017,7 @@ class AgentRuntime:
 
         tool_calls: List[Dict[str, Any]] = []
         messages: List[Dict[str, Any]] = []
+        events: List[AgentEvent] = []
         token_usage: Optional[TokenUsage] = None
         try:
             wf = await loop.run_in_executor(
@@ -2730,6 +3026,7 @@ class AgentRuntime:
             )
             tool_calls = self._extract_tool_calls(wf)
             messages = self._extract_messages(wf)
+            events = self._extract_events(wf, execution_id)
             token_usage = self._extract_token_usage(execution_id)
         except Exception as exc:
             logger.debug("Could not fetch execution details: %s", exc)
@@ -2744,6 +3041,7 @@ class AgentRuntime:
             tool_calls=tool_calls,
             messages=messages,
             token_usage=token_usage,
+            events=events,
         )
 
     async def _start_by_name_async(
@@ -2878,6 +3176,7 @@ class AgentRuntime:
                 "Framework agent '%s' completed (execution_id=%s)", agent_name, execution_id
             )
             token_usage = self._extract_token_usage(execution_id)
+            tool_calls, events = self._extract_tool_calls_and_events(execution_id)
             return AgentResult(
                 output=output,
                 execution_id=execution_id,
@@ -2886,6 +3185,8 @@ class AgentRuntime:
                 finish_reason=self._derive_finish_reason(raw_status, status.output),
                 error=status.reason if raw_status in ("FAILED", "TERMINATED") else None,
                 token_usage=token_usage,
+                tool_calls=tool_calls,
+                events=events,
                 sub_results=self._extract_sub_results(output),
             )
         finally:
@@ -3218,6 +3519,7 @@ class AgentRuntime:
         status = self._poll_status_until_complete(execution_id, timeout=timeout)
         output = self._normalize_output(status.output, status.status, status.reason)
         token_usage = self._extract_token_usage(execution_id)
+        tool_calls, _ = self._extract_tool_calls_and_events(execution_id)
         return AgentResult(
             output=output,
             execution_id=execution_id,
@@ -3226,6 +3528,7 @@ class AgentRuntime:
             finish_reason=self._derive_finish_reason(status.status, status.output),
             error=status.reason if status.status in ("FAILED", "TERMINATED") else None,
             token_usage=token_usage,
+            tool_calls=tool_calls,
             events=events,
             sub_results=self._extract_sub_results(output),
         )
@@ -3657,105 +3960,11 @@ class AgentRuntime:
             raw_status = getattr(wf, "status", "UNKNOWN")
 
             # Process new/updated tasks
-            if hasattr(wf, "tasks") and wf.tasks:
-                for task in wf.tasks:
-                    task_id = getattr(task, "task_id", None)
-                    if task_id and task_id not in seen_task_ids:
-                        seen_task_ids.add(task_id)
-                        task_type = str(getattr(task, "task_type", "")).upper()
-                        task_ref = getattr(task, "reference_task_name", "")
-                        task_status = str(getattr(task, "status", "")).upper()
-                        output_data = getattr(task, "output_data", {}) or {}
-
-                        # Built-in Conductor task types (not tool workers)
-                        # LLM task -> THINKING
-                        if "LLM_CHAT_COMPLETE" in task_type:
-                            yield AgentEvent(
-                                type=EventType.THINKING,
-                                content=f"LLM processing ({task_ref})",
-                                execution_id=execution_id,
-                            )
-
-                        # Dispatch task with function -> TOOL_CALL (local compile)
-                        elif "dispatch" in task_ref.lower() and task_status == "COMPLETED":
-                            fn_name = output_data.get("function")
-                            if fn_name:
-                                yield AgentEvent(
-                                    type=EventType.TOOL_CALL,
-                                    tool_name=fn_name,
-                                    args=output_data.get("parameters"),
-                                    execution_id=execution_id,
-                                )
-                                yield AgentEvent(
-                                    type=EventType.TOOL_RESULT,
-                                    tool_name=fn_name,
-                                    result=output_data.get("result"),
-                                    execution_id=execution_id,
-                                )
-
-                        # Worker/tool task -> TOOL_CALL + TOOL_RESULT (server compile)
-                        # Server-compiled workflows use the tool function name as
-                        # the task type (e.g. "get_weather") with a "call_" ref.
-                        elif (
-                            task_ref.startswith("call_")
-                            and task_type not in self._SYSTEM_TASK_TYPES
-                            and task_status == "COMPLETED"
-                        ):
-                            fn_name = task_type.lower()
-                            raw_args = getattr(task, "input_data", None) or {}
-                            clean_args = {
-                                k: v for k, v in raw_args.items() if k != "__conductor_agent_ctx__"
-                            }
-                            yield AgentEvent(
-                                type=EventType.TOOL_CALL,
-                                tool_name=fn_name,
-                                args=clean_args,
-                                execution_id=execution_id,
-                            )
-                            yield AgentEvent(
-                                type=EventType.TOOL_RESULT,
-                                tool_name=fn_name,
-                                result=output_data,
-                                execution_id=execution_id,
-                            )
-
-                        # Guardrail task -> GUARDRAIL_PASS or GUARDRAIL_FAIL
-                        elif "guardrail" in task_ref.lower() and task_status == "COMPLETED":
-                            passed = output_data.get("passed")
-                            if passed is not None:
-                                g_name = output_data.get("guardrail_name", task_ref)
-                                g_message = output_data.get("message", "")
-                                if passed:
-                                    yield AgentEvent(
-                                        type=EventType.GUARDRAIL_PASS,
-                                        guardrail_name=g_name,
-                                        execution_id=execution_id,
-                                    )
-                                else:
-                                    yield AgentEvent(
-                                        type=EventType.GUARDRAIL_FAIL,
-                                        guardrail_name=g_name,
-                                        content=g_message,
-                                        execution_id=execution_id,
-                                    )
-
-                        # SubWorkflow -> HANDOFF
-                        elif "SUB_WORKFLOW" in task_type:
-                            target = _normalize_handoff_target(task_ref)
-                            yield AgentEvent(
-                                type=EventType.HANDOFF,
-                                target=target,
-                                execution_id=execution_id,
-                            )
-
-                        # Failed task -> ERROR
-                        elif task_status == "FAILED":
-                            reason = output_data.get("reason", "Task failed")
-                            yield AgentEvent(
-                                type=EventType.ERROR,
-                                content=f"Task '{task_ref}' failed: {reason}",
-                                execution_id=execution_id,
-                            )
+            for task in getattr(wf, "tasks", None) or []:
+                task_id = getattr(task, "task_id", None)
+                if task_id and task_id not in seen_task_ids:
+                    seen_task_ids.add(task_id)
+                    yield from _task_events(task, execution_id)
 
             # Detect HUMAN and PULL_WORKFLOW_MESSAGES tasks waiting for input
             has_waiting_human = False
@@ -3793,32 +4002,9 @@ class AgentRuntime:
                     execution_id=execution_id,
                 )
 
-            if raw_status in ("COMPLETED", "FAILED", "TERMINATED", "TIMED_OUT"):
-                output = None
-                if hasattr(wf, "output") and wf.output:
-                    output_data = wf.output
-                    if isinstance(output_data, dict):
-                        output = output_data.get("result", output_data)
-                    else:
-                        output = output_data
-
-                if raw_status == "COMPLETED":
-                    yield AgentEvent(
-                        type=EventType.DONE,
-                        output=output,
-                        execution_id=execution_id,
-                    )
-                else:
-                    reason = getattr(wf, "reason", None)
-                    error_msg = (
-                        reason if isinstance(reason, str) and reason else f"Execution {raw_status}"
-                    )
-                    yield AgentEvent(
-                        type=EventType.ERROR,
-                        content=error_msg,
-                        output=output,
-                        execution_id=execution_id,
-                    )
+            terminal = _terminal_event(wf, execution_id)
+            if terminal is not None:
+                yield terminal
                 break
 
             # Don't busy-poll while waiting for human input
@@ -3977,6 +4163,7 @@ class AgentRuntime:
         # and token_usage — these are not available from the status endpoint.
         tool_calls: List[Dict[str, Any]] = []
         messages: List[Dict[str, Any]] = []
+        events: List[AgentEvent] = []
         token_usage: Optional[TokenUsage] = None
         try:
             loop = asyncio.get_event_loop()
@@ -3989,6 +4176,7 @@ class AgentRuntime:
             )
             tool_calls = self._extract_tool_calls(wf)
             messages = self._extract_messages(wf)
+            events = self._extract_events(wf, execution_id)
             token_usage = self._extract_token_usage(execution_id)
         except Exception as exc:
             logger.debug("Could not fetch execution details for %s: %s", execution_id, exc)
@@ -4004,6 +4192,7 @@ class AgentRuntime:
             tool_calls=tool_calls,
             messages=messages,
             token_usage=token_usage,
+            events=events,
             sub_results=self._extract_sub_results(output),
         )
 
@@ -4194,91 +4383,12 @@ class AgentRuntime:
             raw_status = getattr(wf, "status", "UNKNOWN")
 
             # Process new/updated tasks
-            if hasattr(wf, "tasks") and wf.tasks:
-                for task in wf.tasks:
-                    task_id = getattr(task, "task_id", None)
-                    if task_id and task_id not in seen_task_ids:
-                        seen_task_ids.add(task_id)
-                        task_type = str(getattr(task, "task_type", "")).upper()
-                        task_ref = getattr(task, "reference_task_name", "")
-                        task_status = str(getattr(task, "status", "")).upper()
-                        output_data = getattr(task, "output_data", {}) or {}
-
-                        if "LLM_CHAT_COMPLETE" in task_type:
-                            yield AgentEvent(
-                                type=EventType.THINKING,
-                                content=f"LLM processing ({task_ref})",
-                                execution_id=execution_id,
-                            )
-                        elif "dispatch" in task_ref.lower() and task_status == "COMPLETED":
-                            fn_name = output_data.get("function")
-                            if fn_name:
-                                yield AgentEvent(
-                                    type=EventType.TOOL_CALL,
-                                    tool_name=fn_name,
-                                    args=output_data.get("parameters"),
-                                    execution_id=execution_id,
-                                )
-                                yield AgentEvent(
-                                    type=EventType.TOOL_RESULT,
-                                    tool_name=fn_name,
-                                    result=output_data.get("result"),
-                                    execution_id=execution_id,
-                                )
-                        elif (
-                            task_ref.startswith("call_")
-                            and task_type not in self._SYSTEM_TASK_TYPES
-                            and task_status == "COMPLETED"
-                        ):
-                            fn_name = task_type.lower()
-                            raw_args = getattr(task, "input_data", None) or {}
-                            clean_args = {
-                                k: v for k, v in raw_args.items() if k != "__conductor_agent_ctx__"
-                            }
-                            yield AgentEvent(
-                                type=EventType.TOOL_CALL,
-                                tool_name=fn_name,
-                                args=clean_args,
-                                execution_id=execution_id,
-                            )
-                            yield AgentEvent(
-                                type=EventType.TOOL_RESULT,
-                                tool_name=fn_name,
-                                result=output_data,
-                                execution_id=execution_id,
-                            )
-                        elif "guardrail" in task_ref.lower() and task_status == "COMPLETED":
-                            passed = output_data.get("passed")
-                            if passed is not None:
-                                g_name = output_data.get("guardrail_name", task_ref)
-                                g_message = output_data.get("message", "")
-                                if passed:
-                                    yield AgentEvent(
-                                        type=EventType.GUARDRAIL_PASS,
-                                        guardrail_name=g_name,
-                                        execution_id=execution_id,
-                                    )
-                                else:
-                                    yield AgentEvent(
-                                        type=EventType.GUARDRAIL_FAIL,
-                                        guardrail_name=g_name,
-                                        content=g_message,
-                                        execution_id=execution_id,
-                                    )
-                        elif "SUB_WORKFLOW" in task_type:
-                            target = _normalize_handoff_target(task_ref)
-                            yield AgentEvent(
-                                type=EventType.HANDOFF,
-                                target=target,
-                                execution_id=execution_id,
-                            )
-                        elif task_status == "FAILED":
-                            reason = output_data.get("reason", "Task failed")
-                            yield AgentEvent(
-                                type=EventType.ERROR,
-                                content=f"Task '{task_ref}' failed: {reason}",
-                                execution_id=execution_id,
-                            )
+            for task in getattr(wf, "tasks", None) or []:
+                task_id = getattr(task, "task_id", None)
+                if task_id and task_id not in seen_task_ids:
+                    seen_task_ids.add(task_id)
+                    for event in _task_events(task, execution_id):
+                        yield event
 
             # Detect HUMAN and PULL_WORKFLOW_MESSAGES tasks waiting for input
             has_waiting_human = False
@@ -4315,32 +4425,9 @@ class AgentRuntime:
                     execution_id=execution_id,
                 )
 
-            if raw_status in ("COMPLETED", "FAILED", "TERMINATED", "TIMED_OUT"):
-                output = None
-                if hasattr(wf, "output") and wf.output:
-                    output_data = wf.output
-                    if isinstance(output_data, dict):
-                        output = output_data.get("result", output_data)
-                    else:
-                        output = output_data
-
-                if raw_status == "COMPLETED":
-                    yield AgentEvent(
-                        type=EventType.DONE,
-                        output=output,
-                        execution_id=execution_id,
-                    )
-                else:
-                    reason = getattr(wf, "reason", None)
-                    error_msg = (
-                        reason if isinstance(reason, str) and reason else f"Execution {raw_status}"
-                    )
-                    yield AgentEvent(
-                        type=EventType.ERROR,
-                        content=error_msg,
-                        output=output,
-                        execution_id=execution_id,
-                    )
+            terminal = _terminal_event(wf, execution_id)
+            if terminal is not None:
+                yield terminal
                 break
 
             if has_waiting_human:
@@ -4421,6 +4508,10 @@ class AgentRuntime:
                     output = status.reason
                 output = self._normalize_output(output, status.status, status.reason)
                 token_usage = self._extract_token_usage(execution_id)
+                loop = asyncio.get_event_loop()
+                tool_calls, _ = await loop.run_in_executor(
+                    None, lambda: self._extract_tool_calls_and_events(execution_id)
+                )
                 return AgentResult(
                     output=output,
                     execution_id=execution_id,
@@ -4429,6 +4520,7 @@ class AgentRuntime:
                     finish_reason=self._derive_finish_reason(status.status, status.output),
                     error=status.reason if status.status in ("FAILED", "TERMINATED") else None,
                     token_usage=token_usage,
+                    tool_calls=tool_calls,
                     events=captured_events,
                     sub_results=self._extract_sub_results(output),
                 )
@@ -4451,6 +4543,10 @@ class AgentRuntime:
                 "Framework agent '%s' completed (execution_id=%s)", agent_name, execution_id
             )
             token_usage = self._extract_token_usage(execution_id)
+            loop = asyncio.get_event_loop()
+            tool_calls, events = await loop.run_in_executor(
+                None, lambda: self._extract_tool_calls_and_events(execution_id)
+            )
             return AgentResult(
                 output=output,
                 execution_id=execution_id,
@@ -4459,6 +4555,8 @@ class AgentRuntime:
                 finish_reason=self._derive_finish_reason(raw_status, status.output),
                 error=status.reason if raw_status in ("FAILED", "TERMINATED") else None,
                 token_usage=token_usage,
+                tool_calls=tool_calls,
+                events=events,
                 sub_results=self._extract_sub_results(output),
             )
         finally:
@@ -5022,6 +5120,7 @@ class AgentRuntime:
 
         tool_calls: List[Dict[str, Any]] = []
         messages: List[Dict[str, Any]] = []
+        events: List[AgentEvent] = []
         token_usage: Optional[TokenUsage] = None
         task_failure_reason: Optional[str] = None
         try:
@@ -5032,6 +5131,7 @@ class AgentRuntime:
             )
             tool_calls = self._extract_tool_calls(full)
             messages = self._extract_messages(full)
+            events = self._extract_events(full, execution_id)
             token_usage = self._extract_token_usage(execution_id)
             if raw_status == "FAILED":
                 task_failure_reason = self._extract_failed_task_reason(full)
@@ -5052,6 +5152,7 @@ class AgentRuntime:
             tool_calls=tool_calls,
             messages=messages,
             token_usage=token_usage,
+            events=events,
             sub_results=self._extract_sub_results(output),
         )
 
@@ -5139,66 +5240,54 @@ class AgentRuntime:
                     last_llm_msgs = msgs
         return last_llm_msgs
 
-    # System task types that are never user-defined tool calls
-    _SYSTEM_TASK_TYPES = frozenset(
-        {
-            "LLM_CHAT_COMPLETE",
-            "SWITCH",
-            "DO_WHILE",
-            "INLINE",
-            "SET_VARIABLE",
-            "FORK",
-            "FORK_JOIN_DYNAMIC",
-            "JOIN",
-            "SUB_WORKFLOW",
-            "HUMAN",
-            "PULL_WORKFLOW_MESSAGES",
-            "TERMINATE",
-            "HTTP",
-            "CALL_MCP_TOOL",
-            "LIST_MCP_TOOLS",
-            "WAIT",
-            "EVENT",
-            "DECISION",
-        }
-    )
-
     def _extract_tool_calls(self, workflow_run: Any) -> List[Dict[str, Any]]:
         """Extract tool call history from execution tasks.
 
-        Tool tasks are identified by their reference task name starting with
-        ``call_`` (the pattern the compiler uses for all tool invocations).
+        Tool tasks are identified by the task type they compiled to and named
+        from the input key the server sets on every one — never from the
+        reference name, which carries the LLM provider's tool-call id.
         """
-        tool_calls: List[Dict[str, Any]] = []
-        if not (hasattr(workflow_run, "tasks") and workflow_run.tasks):
-            return tool_calls
+        tasks = getattr(workflow_run, "tasks", None) or []
+        return [
+            {
+                "name": _tool_name(task),
+                "args": _tool_args(task),
+                "result": getattr(task, "output_data", {}),
+            }
+            for task in tasks
+            if _is_tool_task(task)
+        ]
 
-        for task in workflow_run.tasks:
-            task_type = str(getattr(task, "task_type", "")).upper()
-            ref = str(getattr(task, "reference_task_name", ""))
+    def _extract_events(self, workflow_run: Any, execution_id: str) -> List[AgentEvent]:
+        """Rebuild an execution's event history from its task list.
 
-            # Skip known system tasks
-            if task_type in self._SYSTEM_TASK_TYPES:
-                continue
+        ``run()`` polls rather than streams, so events are derived from the
+        execution it already fetched for ``tool_calls``.
+        """
+        events: List[AgentEvent] = []
+        for task in getattr(workflow_run, "tasks", None) or []:
+            events.extend(_task_events(task, execution_id))
 
-            # Tool invocation refs follow the pattern call_<hash>__<turn>
-            if not ref.startswith("call_"):
-                continue
+        terminal = _terminal_event(workflow_run, execution_id)
+        if terminal is not None:
+            events.append(terminal)
+        return events
 
-            input_data = dict(getattr(task, "input_data", {}) or {})
-            # Strip internal Conductor keys from the displayed args
-            for k in ("_agent_state", "method", "__humanTaskDefinition"):
-                input_data.pop(k, None)
+    def _extract_tool_calls_and_events(
+        self, execution_id: str
+    ) -> Tuple[List[Dict[str, Any]], List[AgentEvent]]:
+        """Tool calls and events derivable from an execution's task list.
 
-            tool_calls.append(
-                {
-                    "name": task_type.lower(),
-                    "args": input_data,
-                    "result": getattr(task, "output_data", {}),
-                }
-            )
-
-        return tool_calls
+        A framework agent runs inside a single passthrough task, but the Claude
+        Agent SDK injects one task per tool it calls, so the task list can still
+        carry the tool calls even though this runtime never compiled them.
+        """
+        try:
+            wf = self._workflow_client.get_workflow(execution_id, include_tasks=True)
+        except Exception as exc:
+            logger.debug("Could not fetch execution details for %s: %s", execution_id, exc)
+            return [], []
+        return self._extract_tool_calls(wf), self._extract_events(wf, execution_id)
 
     def _fetch_agent_workflow(self, execution_id: str) -> Optional[dict]:
         """Fetch an execution with its full task list from GET /api/agent/execution/{id}."""

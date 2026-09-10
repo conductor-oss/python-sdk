@@ -835,7 +835,7 @@ class TestExtractToolCalls:
 
     def test_non_tool_tasks_ignored(self, runtime):
         task = MagicMock()
-        task.task_type = "SIMPLE"
+        task.task_type = "INLINE"
         wf_run = MockWorkflowRun(tasks=[task])
         assert runtime._extract_tool_calls(wf_run) == []
 
