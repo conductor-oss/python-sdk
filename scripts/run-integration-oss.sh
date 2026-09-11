@@ -19,14 +19,17 @@
 # tests/integration/workflow/test_workflow_execution.py.
 #
 # The stack (Conductor OSS + Postgres + httpbin) is defined in
-# scripts/docker-compose-oss.yaml and is torn down automatically on exit.
+# scripts/docker-compose-oss.yaml and is torn down automatically on exit. That
+# file's `image:` line is also where the default tag lives -- this script
+# applies no default of its own, so a plain run and a fork-PR CI run land on the
+# identical image.
 #
 # Usage:
 #   scripts/run-integration-oss.sh [--up-only] [--keep-up] [--version <tag>] [-- pytest args]
 # Examples:
 #   scripts/run-integration-oss.sh -- --bucket=all        # what CI runs: the full suite
-#   scripts/run-integration-oss.sh                        # faster: --bucket=core against `latest`
-#   scripts/run-integration-oss.sh --version 3.32.0-rc18
+#   scripts/run-integration-oss.sh                        # faster: --bucket=core, default tag
+#   scripts/run-integration-oss.sh --version 3.33.0-rc1
 #   scripts/run-integration-oss.sh --keep-up              # leave the stack up afterwards
 #   scripts/run-integration-oss.sh --up-only              # start the stack, skip the suite
 set -euo pipefail
@@ -52,7 +55,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-export OSS_CONDUCTOR_VERSION="${OSS_CONDUCTOR_VERSION:-latest}"
+# No default is applied here on purpose. The default tag is written once, in the
+# `image:` line of scripts/docker-compose-oss.yaml, so leaving OSS_CONDUCTOR_VERSION
+# unset lets compose supply it -- the same path a fork PR takes in CI. Only export
+# it when the caller actually asked for a specific tag, otherwise a value set but
+# not exported in the caller's shell would never reach compose anyway.
+if [[ -n "${OSS_CONDUCTOR_VERSION:-}" ]]; then
+  export OSS_CONDUCTOR_VERSION
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -77,13 +87,18 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "Using conductoross/conductor:${OSS_CONDUCTOR_VERSION}"
+# Ask compose what it resolved rather than reconstructing the tag here, so this
+# stays correct whether the tag came from --version or from the compose default.
+# `--images` lists every service's image and does not reliably honour a service
+# filter, so select the server's by name rather than by position.
+SERVER_IMAGE="$(compose config --images | grep -m1 '^conductoross/conductor:')"
+echo "Using ${SERVER_IMAGE}"
 
 # `docker compose up` only pulls an image when it is missing locally, so a
-# previously-cached `latest` (or any other mutable tag) would silently be
-# reused instead of getting the current version. Pull unconditionally so the
-# stack always reflects the tag we just printed.
-echo "Pulling conductoross/conductor:${OSS_CONDUCTOR_VERSION} to ensure it's current..."
+# previously-cached mutable tag (a re-pushed rc, or `latest` if that is what was
+# asked for) would silently be reused instead of getting the current version.
+# Pull unconditionally so the stack always reflects the tag we just printed.
+echo "Pulling ${SERVER_IMAGE} to ensure it's current..."
 compose pull conductor-server
 
 echo "Starting Conductor OSS stack..."
