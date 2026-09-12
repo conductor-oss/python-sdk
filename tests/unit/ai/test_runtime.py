@@ -7,6 +7,7 @@ using mock workflow objects. Does NOT require a running Conductor server.
 import logging
 import threading
 import uuid
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -1972,6 +1973,63 @@ class TestFrameworkCredentials:
         assert mock_start.call_args.kwargs["credentials"] == ["FW_API_KEY"]
         with _workflow_credentials_lock:
             assert "wf-framework-1" not in _workflow_credentials
+
+
+class TestFrameworkFailureReason:
+    """Test that framework failures retain server-side diagnostic reasons."""
+
+    @pytest.fixture()
+    def runtime(self):
+        with patch("conductor.client.orkes_clients.OrkesClients"):
+            with patch("conductor.ai.agents.runtime.worker_manager.TaskHandler", create=True):
+                from conductor.ai.agents.runtime.config import AgentConfig
+                from conductor.ai.agents.runtime.runtime import AgentRuntime
+
+                config = AgentConfig()
+                return AgentRuntime(settings=config)
+
+    def test_framework_failure_uses_failed_task_reason_when_status_reason_is_empty(self, runtime):
+        fake_framework_agent = object()
+        failed_task = SimpleNamespace(
+            status="FAILED",
+            reference_task_name="Assistant_llm",
+            reason_for_incompletion="Responses API failed with status 401",
+        )
+        workflow = SimpleNamespace(
+            tasks=[failed_task],
+            reason_for_incompletion="workflow failed",
+        )
+        status = AgentStatus(
+            execution_id="wf-framework-failed",
+            is_complete=True,
+            status="FAILED",
+            output=None,
+            reason=None,
+        )
+
+        with patch(
+            "conductor.ai.agents.frameworks.serializer.detect_framework", return_value="openai"
+        ):
+            with patch(
+                "conductor.ai.agents.frameworks.serializer.serialize_agent",
+                return_value=({"name": "fw_agent"}, []),
+            ):
+                with patch.object(
+                    runtime, "_start_framework_via_server", return_value="wf-framework-failed"
+                ):
+                    with patch.object(runtime, "_poll_status_until_complete", return_value=status):
+                        with patch.object(runtime, "_extract_token_usage", return_value=None):
+                            runtime._workflow_client.get_workflow = MagicMock(
+                                return_value=workflow
+                            )
+                            result = runtime.run(fake_framework_agent, "hello")
+
+        expected = "Task 'Assistant_llm' failed: Responses API failed with status 401"
+        assert result.error == expected
+        assert result.output == {"error": expected, "status": "FAILED"}
+        runtime._workflow_client.get_workflow.assert_called_once_with(
+            "wf-framework-failed", include_tasks=True
+        )
 
 
 class TestPollStatusUntilComplete:
