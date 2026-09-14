@@ -22,7 +22,7 @@ class WaitTask(TaskInterface, ABC):
             raise Exception("both wait_until and wait_for_seconds are provided.  ONLY one is allowed")
         if wait_until:
             self.input_parameters = {
-                "wait_until": wait_until
+                "until": wait_until
             }
         if wait_for_seconds:
             self.input_parameters = {
