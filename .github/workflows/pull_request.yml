@@ -150,6 +150,12 @@ jobs:
   # suite in one job (--bucket=all) instead of matrix-splitting it: the full
   # OSS run finishes in under 5 minutes, so splitting it would just cause
   # extra runner usage for no performance benefit.
+  #
+  # --bucket=all also means the server_timeout_unreliable carve-out (see
+  # scripts/run_integration_tests.sh) is not applied here, deliberately: that
+  # carve-out exists because the shared sdkdev server doesn't fire server-side
+  # task timeouts on a CI-bounded timeline, which doesn't hold for a dedicated
+  # local OSS stack. This job is the only CI coverage those cases get.
   integration-tests-oss:
     runs-on: ubuntu-latest
     timeout-minutes: 30
