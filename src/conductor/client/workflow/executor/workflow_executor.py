@@ -195,7 +195,7 @@ class WorkflowExecutor:
         also includes workflows that are completed otherwise only running workflows are returned
         """
         return self.workflow_client.get_by_correlation_ids_in_batch(batch_request=batch_request,
-                                                                    include_closed=include_closed,
+                                                                    include_completed=include_closed,
                                                                     include_tasks=include_tasks)
 
     def pause(self, workflow_id: str) -> None:
