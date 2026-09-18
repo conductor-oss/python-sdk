@@ -67,6 +67,23 @@ def _walk_qualname(module_obj, qualname: str):
 # .coroutine; our Guardrail / ToolDef → .func.
 _CONTAINER_ATTRS = ("func", "coroutine")
 
+def _is_importable_function(fn: Callable) -> bool:
+    """Whether *fn* can be referenced by module + qualified name.
+
+    Mirrors the condition :meth:`FunctionRef.of` enforces (it raises a
+    per-case ``SpawnSafetyError`` rather than returning a bool, so the two
+    can't simply share a body). Factored out so the closure walk can *prefer*
+    a candidate that will actually survive the trip to a spawn child.
+    """
+    qualname = getattr(fn, "__qualname__", None)
+    return bool(
+        getattr(fn, "__module__", None)
+        and qualname
+        and "<locals>" not in qualname
+        and "<lambda>" not in qualname
+    )
+
+
 def _extract_from_closure(func: Callable) -> Optional[Callable]:
     """Extract the original user function from a closure's cell variables.
 
@@ -74,28 +91,45 @@ def _extract_from_closure(func: Callable) -> Optional[Callable]:
     - In turn shared by :mod:`conductor.ai.agents.frameworks.serializer`'s
       discovery and :class:`FunctionRef`'s parent-verification /
       child-reconstruction — one implementation, can't drift apart.
+    - Preference-ordered, not first-match: one closure can hold several plain
+      functions, with the framework's own nested helpers sitting alongside the
+      user's function. An importable candidate always wins over a nested one,
+      because importability is exactly what the caller needs
+      (``FunctionRef.of``) and is a property of the candidate itself rather
+      than a guess from its parameter names. openai-agents 0.22.3 is why:
+      it added a nested ``_prepare_arguments(input, tool_name)`` beside
+      ``the_func`` in the same closure, and ``input`` is not ``ctx``, so
+      first-match started returning the framework's wrapper.
+    - The nested-candidate fallback is kept for closures that genuinely hold
+      no importable function: callers get the same value (and the same
+      actionable ``SpawnSafetyError`` from ``FunctionRef.of``) as before.
     """
     closure = getattr(func, "__closure__", None)
     if not closure:
         return None
 
+    fallback = None
     for cell in closure:
         try:
             val = cell.cell_contents
         except ValueError:
             continue
-        if inspect.isfunction(val):
-            # Skip internal wrappers that take (ctx, input) or (context, ...)
-            try:
-                sig = inspect.signature(val)
-                param_names = list(sig.parameters.keys())
-                # Internal wrappers typically start with ctx/context as first param
-                if param_names and param_names[0] in ("ctx", "context"):
-                    continue
-                return val
-            except (ValueError, TypeError):
+        if not inspect.isfunction(val):
+            continue
+        # Skip internal wrappers that take (ctx, input) or (context, ...)
+        try:
+            sig = inspect.signature(val)
+            param_names = list(sig.parameters.keys())
+            # Internal wrappers typically start with ctx/context as first param
+            if param_names and param_names[0] in ("ctx", "context"):
                 continue
-    return None
+        except (ValueError, TypeError):
+            continue
+        if _is_importable_function(val):
+            return val
+        if fallback is None:
+            fallback = val
+    return fallback
 
 
 # How many attribute-nesting levels _find_embedded_function will descend.
@@ -118,6 +152,12 @@ def _find_embedded_function(obj: Any, max_depth: int = _DEEP_EXTRACT_MAX_DEPTH) 
       shape-based walk degrades to "not found" (the pre-existing, actionable
       ``SpawnSafetyError``) instead of breaking outright if openai-agents
       restructures its internals.
+    - "Degrades to not found" only holds while the walk can't mistake a
+      framework helper for the user's function. openai-agents 0.22.3 showed
+      the failure mode — a new nested helper in the same closure was returned
+      *instead of* the user's function, which is worse than None (the
+      serializer would have registered a worker around the wrapper). See
+      :func:`_extract_from_closure` for the preference rule that fixes it.
     """
     if max_depth <= 0:
         return None

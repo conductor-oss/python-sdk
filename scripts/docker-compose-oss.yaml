@@ -1,0 +1,49 @@
+# Conductor OSS stack used to run the SDK integration tests against open-source
+# Conductor. Shared by scripts/run-integration-oss.sh and the
+# integration-tests-oss job in .github/workflows/pull_request.yml.
+#
+# The Conductor server reaches httpbin over the compose network at
+# http://httpbin:8081 (see e.g. tests/integration/client/orkes/test_orkes_service_registry_client.py
+# and the complex_wf_signal_test*.json fixtures).
+#
+# The `image:` default below is the SINGLE place the Conductor OSS image tag is
+# written. Everything that does not override OSS_CONDUCTOR_VERSION lands on it:
+# a plain `scripts/run-integration-oss.sh` run, and the integration-tests-oss
+# job on a fork PR (where GitHub withholds org variables). Overrides are the
+# script's --version flag and, in CI, the E2E_TEST_OSS_CONDUCTOR_VERSION org
+# variable or a workflow_dispatch input. Bump the tag here and both follow.
+#
+# Note that the org variable is currently set to `latest`, so a normal CI run
+# still tracks whatever `latest` resolves to at run time; this default is what
+# actually pins fork PRs and local runs until someone sets it to a real tag.
+services:
+  conductor-server:
+    image: conductoross/conductor:${OSS_CONDUCTOR_VERSION:-3.32.3}
+    environment:
+      - CONFIG_PROP=config-postgres.properties
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-I", "-XGET", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+    links:
+      - conductor-postgres:postgresdb
+    depends_on:
+      conductor-postgres:
+        condition: service_healthy
+  conductor-postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=conductor
+      - POSTGRES_PASSWORD=conductor
+    healthcheck:
+      test: timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/5432'
+      interval: 5s
+      timeout: 5s
+      retries: 12
+  httpbin:
+    image: ghcr.io/conductor-oss/httpbin:v1.0.1
+    expose:
+      - "8081"

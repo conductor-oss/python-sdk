@@ -1,8 +1,8 @@
 {
-  "createTime": 1744299182957,
-  "updateTime": 1744299435683,
-  "name": "complex_wf_signal_test",
-  "description": "http_yield_signal_test",
+  "createTime": 1744299356718,
+  "updateTime": 1744287643769,
+  "name": "complex_wf_signal_test_subworkflow_1_oss",
+  "description": "complex_wf_signal_test_subworkflow_1_oss -- OSS-compatible variant using WAIT instead of YIELD",
   "version": 1,
   "tasks": [
     {
@@ -29,6 +29,23 @@
       "permissive": false
     },
     {
+      "name": "wait",
+      "taskReferenceName": "simple_ref_1",
+      "inputParameters": {},
+      "type": "WAIT",
+      "decisionCases": {},
+      "defaultCase": [],
+      "forkTasks": [],
+      "startDelay": 0,
+      "joinOn": [],
+      "optional": false,
+      "defaultExclusiveJoinTask": [],
+      "asyncComplete": false,
+      "loopOver": [],
+      "onStateChange": {},
+      "permissive": false
+    },
+    {
       "name": "sub_workflow",
       "taskReferenceName": "sub_workflow_ref",
       "inputParameters": {},
@@ -38,7 +55,7 @@
       "forkTasks": [],
       "startDelay": 0,
       "subWorkflowParam": {
-        "name": "complex_wf_signal_test_subworkflow_1",
+        "name": "complex_wf_signal_test_subworkflow_2_oss",
         "version": 1
       },
       "joinOn": [],
