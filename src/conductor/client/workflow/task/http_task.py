@@ -14,6 +14,7 @@ class HttpMethod(str, Enum):
     PUT = "PUT",
     POST = "POST",
     DELETE = "DELETE",
+    PATCH = "PATCH",
     HEAD = "HEAD",
     OPTIONS = "OPTIONS"
 
