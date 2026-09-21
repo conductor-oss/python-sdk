@@ -12,6 +12,7 @@ from conductor.client.http.models.service_method import ServiceMethod
 from conductor.client.http.models.proto_registry_entry import ProtoRegistryEntry
 from conductor.client.orkes.orkes_service_registry_client import OrkesServiceRegistryClient
 from conductor.client.http.rest import ApiException
+from tests.integration.conftest import is_oss
 from tests.integration.retry_helpers import (
     DEFAULT_OVERALL_DEADLINE_SECONDS,
     retry_scenario,
@@ -273,6 +274,12 @@ class TestOrkesServiceRegistryClient:
             return b'\x08\x96\x01\x12\x04\x08\x02\x10\x03'
 
 
+@unittest.skipIf(
+    is_oss(),
+    "The Service Registry API (/service-registry) is not implemented by "
+    "plain OSS Conductor -- confirmed empirically (404 'No static resource "
+    "api/service-registry')."
+)
 class TestOrkesServiceRegistryClientIntg(unittest.TestCase):
     """Integration test wrapper following your existing pattern"""
 

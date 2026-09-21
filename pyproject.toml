@@ -201,7 +201,7 @@ markers = [
     "slow_sync: long-running sync lease-extension tests (~90s)",
     "slow_async: long-running async lease-extension tests (~90s)",
     "slow_test_all: long-running aggregate workflow-client test_all (~83s)",
-    "server_timeout_unreliable: depends on server-side task timeout firing in a bounded window; excluded from CI",
+    "server_timeout_unreliable: depends on server-side task timeout firing in a bounded window; deselected in the shared-server long-* buckets, still run against the dedicated OSS stack (--bucket=all)",
 ]
 
 [tool.coverage.run]

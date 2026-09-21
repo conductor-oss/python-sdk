@@ -28,6 +28,15 @@ from conductor.client.http.models.authentication_config import AuthenticationCon
 from conductor.client.orkes.models.access_type import AccessType
 from conductor.client.orkes.models.metadata_tag import MetadataTag
 from conductor.client.http.rest import ApiException, RestException
+from tests.integration.conftest import is_oss
+
+# The Authorization APIs (applications/users/groups/roles/permissions) are
+# not implemented by plain OSS Conductor -- confirmed empirically (404 'No
+# static resource api/applications|users|groups|...').
+pytestmark = pytest.mark.skipif(
+    is_oss(),
+    reason="Authorization APIs are Orkes-Enterprise-only (confirmed empirically not on plain OSS Conductor)"
+)
 
 
 @pytest.fixture(scope="module")
