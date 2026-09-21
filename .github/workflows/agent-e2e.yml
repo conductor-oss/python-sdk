@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CONDUCTOR_SERVER_VERSION: "3.32.0-rc18"   # pinned server release — bump deliberately
+  CONDUCTOR_SERVER_VERSION: ${{ vars.CONDUCTOR_SERVER_VERSION || '3.32.1' }}
 
 jobs:
   agent-e2e:
