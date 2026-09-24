@@ -51,6 +51,8 @@ from conductor.ai.agents.code_executor import (
     ServerlessCodeExecutor,
 )
 
+from conductor.ai.agents.decision import DecisionModelTool
+
 # Exceptions
 from conductor.ai.agents.exceptions import (
     AgentAPIError,
@@ -232,6 +234,7 @@ function_tool = tool
 from conductor.ai.agents.tracing import is_tracing_enabled
 
 __all__ = [
+    "DecisionModelTool",
     # OpenAI Agents SDK compatibility
     "Runner",
     "RunResult",
