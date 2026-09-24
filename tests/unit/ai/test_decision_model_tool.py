@@ -1,3 +1,5 @@
+import pytest
+
 from conductor.ai.agents import Agent, DecisionModelTool, agent
 from conductor.ai.agents.config_serializer import AgentConfigSerializer
 
@@ -47,8 +49,6 @@ def test_dynamic_questions_use_provider_neutral_schema():
 
 
 def test_invalid_config_fails_locally():
-    import pytest
-
     with pytest.raises(ValueError):
         DecisionModelTool("decide", "Test", provider="", model="v1")
     with pytest.raises(ValueError):

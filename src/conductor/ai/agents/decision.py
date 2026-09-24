@@ -9,18 +9,10 @@ from conductor.ai.agents.tool import ToolDef
 
 
 class DecisionModelTool(ToolDef):
-    """Expose a server decision provider as an agent tool without a Python worker.
+    """A server decision tool with fixed provider and model.
 
-    ``provider`` and ``model`` are fixed configuration, not model-generated tool
-    arguments. When ``questions`` is supplied, only ``state`` is exposed to the
-    orchestration model. Otherwise the caller supplies both state and questions.
-
-    Question types are ``choice`` (named ``choices``), ``score`` (ordered
-    ``scale``), and ``boolean`` (a probability). Each has ``instructions``.
-    Jev-specific wire formats are translated by the server implementation.
-
-    Requires a Conductor server supporting the ``DECISION_MODEL`` task and
-    ``decision_model`` tool type. This does not register provider credentials.
+    Supply ``questions`` to expose only ``state`` as a tool argument. Otherwise
+    the agent supplies both. Requires server support for ``DECISION_MODEL``.
     """
 
     def __init__(
