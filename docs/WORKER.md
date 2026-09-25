@@ -334,6 +334,16 @@ variable.
 export CONDUCTOR_HTTP2_ENABLED=false
 ```
 
+#### `CONDUCTOR_HTTP2_AUTO_FALLBACK`
+
+- **What it does**: When HTTP/2 is enabled, a protocol-level error (e.g. `httpcore.RemoteProtocolError: <ConnectionTerminated ...>`) triggers a one-time, one-way automatic fallback to HTTP/1.1 for the remainder of the process.
+- **Default**: `true` (auto-fallback enabled).
+- **Values**: `false|0|no|off` keeps retrying on HTTP/2 instead of falling back. Anything else keeps it enabled.
+
+```shell
+export CONDUCTOR_HTTP2_AUTO_FALLBACK=false
+```
+
 If you paste the above code in a file called main.py, you can launch the workers by running:
 ```shell
 python3 main.py

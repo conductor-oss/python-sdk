@@ -44,6 +44,47 @@ class TestRESTClientObject(unittest.TestCase):
         self.assertTrue(first_client.close.called)
         self.assertEqual(result.status, 200)
 
+    @patch.dict("os.environ", {"CONDUCTOR_HTTP2_ENABLED": "true"})
+    @patch.object(rest.RESTClientObject, "_create_default_httpx_client")
+    def test_http2_protocol_error_downgrades_to_http1(self, mock_create_client):
+        """A protocol error on an HTTP/2 connection disables HTTP/2 for the
+        rest of the process and heals onto HTTP/1.1."""
+        first_client = _mock_client()
+        second_client = _mock_client()
+        mock_create_client.side_effect = [first_client, second_client]
+
+        first_client.request.side_effect = httpx.RemoteProtocolError("ConnectionTerminated")
+        second_client.request.return_value = _ok_response()
+
+        client = rest.RESTClientObject(connection=None)
+        self.assertTrue(client._http2_enabled)  # default on
+
+        result = client.request("GET", "http://example")
+
+        self.assertEqual(result.status, 200)
+        self.assertFalse(client._http2_enabled)       # HTTP/2 turned off
+        self.assertTrue(client._http2_downgraded)
+
+    @patch.dict("os.environ", {"CONDUCTOR_HTTP2_ENABLED": "true",
+                               "CONDUCTOR_HTTP2_AUTO_FALLBACK": "false"})
+    @patch.object(rest.RESTClientObject, "_create_default_httpx_client")
+    def test_http2_auto_fallback_can_be_disabled(self, mock_create_client):
+        """With CONDUCTOR_HTTP2_AUTO_FALLBACK=false we still self-heal, but
+        stay on HTTP/2 instead of downgrading."""
+        first_client = _mock_client()
+        second_client = _mock_client()
+        mock_create_client.side_effect = [first_client, second_client]
+
+        first_client.request.side_effect = httpx.RemoteProtocolError("ConnectionTerminated")
+        second_client.request.return_value = _ok_response()
+
+        client = rest.RESTClientObject(connection=None)
+        result = client.request("GET", "http://example")
+
+        self.assertEqual(result.status, 200)
+        self.assertTrue(client._http2_enabled)        # still HTTP/2
+        self.assertFalse(client._http2_downgraded)
+
     def test_is_closed_client_error_recognises_httpx_messages(self):
         self.assertTrue(
             rest._is_closed_client_error(
