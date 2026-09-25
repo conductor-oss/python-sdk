@@ -1,4 +1,4 @@
-"""Route a request with AI_DECISION → SWITCH → SET_VARIABLE.
+"""Route a request with AI_DECISION → SWITCH → INLINE branch → INLINE result.
 
 Requires server-side AI_DECISION support and Jev credentials. No worker needed.
 Run: CONDUCTOR_SERVER_URL=http://localhost:8080/api python -m examples.agentic_workflows.ai_decision_routing
@@ -12,7 +12,7 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.orkes_clients import OrkesClients
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.task.ai_decision_task import AiDecisionTask
-from conductor.client.workflow.task.set_variable_task import SetVariableTask
+from conductor.client.workflow.task.inline import InlineTask
 from conductor.client.workflow.task.switch_task import SwitchTask
 
 
@@ -33,17 +33,30 @@ def create_workflow(executor) -> ConductorWorkflow:
             }
         },
     )
+    billing = InlineTask(
+        "handle_billing",
+        script='({team: "billing", nextAction: "review_invoice", '
+               'message: "Check invoice line items and payment records.", request: $.request})',
+        bindings={"request": workflow.input("request")},
+    )
+    technical = InlineTask(
+        "handle_technical",
+        script='({team: "technical", nextAction: "collect_diagnostics", '
+               'message: "Collect error logs and steps to reproduce.", request: $.request})',
+        bindings={"request": workflow.input("request")},
+    )
     route = SwitchTask("route_request", decision.output("selectedCase"))
-    route.switch_case("billing", [
-        SetVariableTask("assign_billing").input_parameter("team", "billing"),
-    ])
-    route.switch_case("technical", [
-        SetVariableTask("assign_technical").input_parameter("team", "technical"),
-    ])
-    workflow >> decision >> route
+    route.switch_case("billing", [billing])
+    route.switch_case("technical", [technical])
+    result = InlineTask(
+        "selected_result",
+        script="$.billing || $.technical",
+        bindings={"billing": billing.output("result"), "technical": technical.output("result")},
+    )
+    workflow >> decision >> route >> result
     workflow.output_parameters({
         "decision": decision.output(),
-        "team": "${workflow.variables.team}",
+        "result": result.output("result"),
     })
     return workflow
 

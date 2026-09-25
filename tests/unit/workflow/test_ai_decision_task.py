@@ -39,7 +39,7 @@ def test_custom_name_and_input_reference():
 
 def test_routing_example_preserves_decision_output():
     definition = ApiClient().sanitize_for_serialization(create_workflow(None).to_workflow_def())
-    decision, switch = definition["tasks"]
+    decision, switch, result = definition["tasks"]
     assert decision["type"] == "AI_DECISION"
     assert decision["inputParameters"]["state"] == "${workflow.input.request}"
     assert switch["type"] == "SWITCH"
@@ -48,9 +48,13 @@ def test_routing_example_preserves_decision_output():
     assert set(switch["decisionCases"]) == {"billing", "technical"}
     for team, tasks in switch["decisionCases"].items():
         assert len(tasks) == 1
-        assert tasks[0]["type"] == "SET_VARIABLE"
-        assert tasks[0]["inputParameters"] == {"team": team}
+        assert tasks[0]["type"] == "INLINE"
+        assert tasks[0]["taskReferenceName"] == f"handle_{team}"
+        assert tasks[0]["inputParameters"]["request"] == "${workflow.input.request}"
+    assert result["type"] == "INLINE"
+    assert result["inputParameters"]["billing"] == "${handle_billing.output.result}"
+    assert result["inputParameters"]["technical"] == "${handle_technical.output.result}"
     assert definition["outputParameters"] == {
         "decision": "${decision.output}",
-        "team": "${workflow.variables.team}",
+        "result": "${selected_result.output.result}",
     }

@@ -16,7 +16,7 @@ The AI decision example requires server-side `AI_DECISION` support and Jev crede
 
 | Example | Description | Interactive? | Pattern |
 |---------|-------------|:------------:|---------|
-| [ai_decision_routing.py](ai_decision_routing.py) | Route requests to billing or technical support | No | AI_DECISION + SwitchTask + SetVariableTask |
+| [ai_decision_routing.py](ai_decision_routing.py) | Route requests and return the selected branch's result | No | AI_DECISION + SwitchTask + InlineTask |
 | [llm_chat.py](llm_chat.py) | Automated multi-turn science Q&A between two LLMs | No | LoopTask + LLM_CHAT_COMPLETE + worker for history |
 | [llm_chat_human_in_loop.py](llm_chat_human_in_loop.py) | Interactive chat with WAIT task pauses for user input | Yes | LoopTask + WaitTask + LLM_CHAT_COMPLETE |
 | [multiagent_chat.py](multiagent_chat.py) | Multi-agent debate with moderator routing between panelists | No | LoopTask + SwitchTask + SetVariableTask + JavaScript routing |
