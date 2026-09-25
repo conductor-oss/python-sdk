@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License.
-
 """115 — Plan-Execute with ``planner_context``: customer onboarding plan.
 
 The PAE planner's static ``instructions`` string is fine for *how* to
@@ -57,8 +54,8 @@ What to look for in the run:
     the markdown that gets templated into the planner's user message.
 
 Requirements:
-  - AGENTSPAN_SERVER_URL=http://localhost:8080/api (default)
-  - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini (default)
+  - CONDUCTOR_SERVER_URL=http://localhost:8080/api (default)
+  - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini (default)
 """
 
 from __future__ import annotations
@@ -114,7 +111,7 @@ def schedule_kickoff_call(customer_id: str, account_id: str) -> dict:
 
 
 def main() -> None:
-    model = os.environ.get("AGENTSPAN_LLM_MODEL", "anthropic/claude-sonnet-4-6")
+    model = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "anthropic/claude-sonnet-4-6")
 
     planner = Agent(
         name="onboarding_planner",
@@ -202,7 +199,7 @@ def _show_executed_steps(execution_id: str) -> None:
     """Walk into the plan_exec sub-workflow and print the tool tasks."""
     import requests
 
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+    base = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
 
     parent = requests.get(

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Unit tests for ``Context`` + ``Agent.planner_context`` wiring.
 
 Pure dataclass + serialiser tests — no LLM, no server. Validates:

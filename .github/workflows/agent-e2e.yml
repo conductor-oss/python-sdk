@@ -2,12 +2,8 @@ name: Agent E2E
 
 # Runs the agent e2e suites (e2e/) against the Conductor OSS server boot
 # JAR (Maven Central) — the server this SDK ships against, with the agent
-# runtime on by default from 3.32.0-rc.8 onward. The Agentspan server JAR
-# is no longer used here; the Agentspan CLI binary is still downloaded
-# (its own separate pin) since e2e/test_suite16_cli_skills.py drives it
-# against this same server.
-# tests/integration/ai stays manual-only (same as upstream Agentspan,
-# which never ran its tests/integration in CI): run it locally against
+# runtime on by default from 3.32.0-rc.8 onward.
+# tests/integration/ai stays manual-only: run it locally against
 # a live server with `pytest tests/integration/ai`.
 #
 # These tests call real LLMs via the OPENAI_API_KEY / ANTHROPIC_API_KEY
@@ -16,8 +12,6 @@ name: Agent E2E
 
 on: [pull_request, workflow_dispatch]
 
-# least privilege: the token is only used to download the public agentspan
-# CLI release asset (gh release download) — read access suffices
 permissions:
   contents: read
 
@@ -26,8 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CONDUCTOR_SERVER_VERSION: "3.32.0-rc.8"   # pinned server release — bump deliberately
-  AGENTSPAN_CLI_VERSION: "0.4.4"          # pinned CLI release — independent of the server (revert to 0.4.3 if this breaks)
+  CONDUCTOR_SERVER_VERSION: "3.32.0-rc18"   # pinned server release — bump deliberately
 
 jobs:
   agent-e2e:
@@ -36,8 +29,7 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      AGENTSPAN_SERVER_URL: http://localhost:8080/api
-      AGENTSPAN_CLI_PATH: ${{ github.workspace }}/agentspan
+      CONDUCTOR_SERVER_URL: http://localhost:8080/api
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -67,26 +59,38 @@ jobs:
           curl -fL --retry 3 -o conductor-server.jar \
             "https://repo1.maven.org/maven2/org/conductoross/conductor-server/${CONDUCTOR_SERVER_VERSION}/conductor-server-${CONDUCTOR_SERVER_VERSION}-boot.jar"
 
-      - name: Download CLI binary from release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release download "v${AGENTSPAN_CLI_VERSION}" --repo agentspan-ai/agentspan \
-            --pattern "agentspan_linux_amd64" --output agentspan
-          chmod +x agentspan
-
       - name: Install SDK + test deps
         run: |
           python -m pip install --upgrade pip
           pip install -e '.[agents]'
-          pip install pytest pytest-asyncio pytest-xdist pytest-rerunfailures mcp-testkit
+          # mcp 2.0 dropped mcp.server.fastmcp, which mcp-testkit's server and
+          # tool modules still import — hold the resolver on the 1.x line until
+          # the testkit ships a 2.x-compatible release.
+          pip install pytest pytest-asyncio pytest-xdist pytest-rerunfailures mcp-testkit 'mcp<2'
 
       - name: Start mcp-testkit
         run: |
           mcp-testkit --transport http --port 3001 &
-          sleep 2
+          # Probe the port instead of a blind sleep — a testkit that dies on
+          # import used to leave this step green and surface only as downstream
+          # skips. curl exits non-zero while the port is refusing connections
+          # (a bare GET on a live /mcp answers 406, which counts as up).
+          for i in $(seq 1 15); do
+            if curl -s -o /dev/null http://localhost:3001/mcp; then
+              echo "mcp-testkit ready after ~${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::mcp-testkit failed to start on port 3001"
+          exit 1
 
       - name: Start server
+        # conductor-oss serves secrets from the server process environment and
+        # rejects writes, so suites that consume a credential need theirs
+        # provisioned here or their authenticated phase self-skips.
+        env:
+          CONDUCTOR_SECRET_MCP_AUTH_KEY: e2e-test-secret-key-12345
+          CONDUCTOR_SECRET_HTTP_AUTH_KEY: e2e-http-test-secret-key-67890
         run: |
           java -jar conductor-server.jar --server.port=8080 > server.log 2>&1 &
 

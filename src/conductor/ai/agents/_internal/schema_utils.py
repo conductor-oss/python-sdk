@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """JSON Schema generation from Python type hints, Pydantic models, and dataclasses.
 
 Wraps ``conductor.client.automator.json_schema_generator`` and adds support

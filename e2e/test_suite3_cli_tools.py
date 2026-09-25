@@ -7,7 +7,7 @@ Tests CLI tool execution with credential isolation:
   4. Commands outside whitelist are rejected (cd)
 
 Single sequential test with try/finally cleanup.
-No mocks. Real server, real CLI, real LLM.
+No mocks. Real server, real gh CLI, real LLM.
 """
 
 import os
@@ -27,6 +27,38 @@ pytestmark = [
 
 CRED_NAME = "GITHUB_TOKEN"
 TIMEOUT = 120
+
+API = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api").rstrip("/")
+
+
+# ── Credential store (server API — no agentspan CLI) ────────────────────
+
+
+def _put_secret(name: str, value: str) -> None:
+    """Store a credential, skipping the suite when the store is read-only.
+
+    This suite removes the credential, proves ``gh`` fails without it, then adds
+    the real token back — so it needs a writable store. conductor-oss serves
+    secrets from the server process env and rejects writes with 501.
+    """
+    r = requests.put(
+        f"{API}/secrets/{name}",
+        data=value,
+        headers={"Content-Type": "text/plain"},
+        timeout=10,
+    )
+    if not r.ok:
+        pytest.skip(
+            f"server credential store rejected a write (HTTP {r.status_code}) — "
+            f"this suite needs a writable store to add and remove the token"
+        )
+
+
+def _delete_secret(name: str) -> None:
+    try:
+        requests.delete(f"{API}/secrets/{name}", timeout=10)
+    except Exception:
+        pass  # best-effort cleanup
 
 
 # ── Tools ───────────────────────────────────────────────────────────────
@@ -166,7 +198,7 @@ def _run_diagnostic(result) -> str:
 
 def _get_workflow(execution_id: str) -> dict:
     """Fetch workflow from server API."""
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+    base = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
     resp = requests.get(f"{base_url}/api/workflow/{execution_id}", timeout=10)
     resp.raise_for_status()
@@ -233,15 +265,12 @@ def _assert_run_completed(result, step_name: str):
     )
 
 
-# ── Test ────────────────────────────────────────────────────────────────
-
-
 @pytest.mark.timeout(600)
 class TestSuite3CliTools:
     """CLI tools: credential lifecycle + command whitelist."""
 
     @pytest.mark.usefixtures("requires_runtime_metadata")
-    def test_cli_credential_lifecycle(self, runtime, cli_credentials, model):
+    def test_cli_credential_lifecycle(self, runtime, model):
         """Full CLI credential lifecycle — sequential steps with cleanup."""
         real_token = os.environ.get("GITHUB_TOKEN")
         if not real_token:
@@ -259,16 +288,16 @@ class TestSuite3CliTools:
             pytest.skip("gh CLI not installed — required for Suite 3 CLI tools test")
 
         try:
-            self._run_lifecycle(runtime, cli_credentials, model, real_token)
+            self._run_lifecycle(runtime, model, real_token)
         finally:
-            cli_credentials.delete(CRED_NAME)
+            _delete_secret(CRED_NAME)
             os.environ.pop(CRED_NAME, None)
 
-    def _run_lifecycle(self, runtime, cli_credentials, model, real_token):
+    def _run_lifecycle(self, runtime, model, real_token):
         agent = _make_agent(model)
 
         # ── Step 1: Clean slate — remove credential from server ─────
-        cli_credentials.delete(CRED_NAME)
+        _delete_secret(CRED_NAME)
 
         # ── Step 2: Export GITHUB_TOKEN to env ──────────────────────
         # This validates the SDK does NOT read credentials from env.
@@ -316,40 +345,13 @@ class TestSuite3CliTools:
             f"  output={output[:500]}"
         )
 
-        # ── Step 4: Add credential via CLI ──────────────────────────
-        cli_credentials.set(CRED_NAME, real_token)
-
-        # ── Step 5: Run agent — all three should succeed ────────────
-        result = runtime.run(agent, PROMPT_ALL_THREE, timeout=TIMEOUT)
-        _assert_run_completed(result, "Step 5: With credential")
-
-        output = _get_output_text(result)
-
-        assert "ls_ok" in output, (
-            f"[Step 5: With credential] cli_ls should succeed.\n"
-            f"  output={output[:500]}\n"
-            f"  {_run_diagnostic(result)}"
-        )
-        assert "mktemp_ok" in output, (
-            f"[Step 5: With credential] cli_mktemp should succeed.\n"
-            f"  output={output[:500]}\n"
-            f"  {_run_diagnostic(result)}"
-        )
-        assert "gh_ok" in output, (
-            f"[Step 5: With credential] cli_gh should succeed — "
-            f"GITHUB_TOKEN was added to server credential store.\n"
-            f"  output={output[:500]}\n"
-            f"  {_run_diagnostic(result)}\n"
-            f"  {_tool_diagnostics(result.execution_id, {'cli_ls', 'cli_mktemp', 'cli_gh'})}"
-        )
-
-        # ── Step 6: cd command — not allowed ─────────────────────────
+        # ── Step 4: cd command — not allowed ─────────────────────────
         # All validation is algorithmic — no LLM output parsing.
 
         EXPECTED_ALLOWED = ["ls", "mktemp", "gh"]
         whitelist_agent = _make_whitelist_agent(model)
 
-        # 6a. Validate whitelist via plan() — the compiled tool description
+        # 4a. Validate whitelist via plan() — the compiled tool description
         #     must list exactly the expected allowed commands.
         plan = runtime.plan(whitelist_agent)
         ad = plan["workflowDef"]["metadata"]["agentDef"]
@@ -358,7 +360,7 @@ class TestSuite3CliTools:
             None,
         )
         assert cli_tool is not None, (
-            f"[Step 6: cd blocked] No run_command tool in compiled agent. "
+            f"[Step 4: cd blocked] No run_command tool in compiled agent. "
             f"Tools: {[t['name'] for t in ad.get('tools', [])]}"
         )
         # Parse the exact allowed commands from the tool description.
@@ -366,18 +368,18 @@ class TestSuite3CliTools:
         tool_desc = cli_tool.get("description", "")
         match = re.search(r"Allowed commands:\s*(.+?)\.", tool_desc)
         assert match, (
-            f"[Step 6: cd blocked] Could not find 'Allowed commands:' in "
+            f"[Step 4: cd blocked] Could not find 'Allowed commands:' in "
             f"compiled run_command tool description.\n"
             f"  description={tool_desc}"
         )
         actual_commands = sorted(c.strip() for c in match.group(1).split(","))
         assert actual_commands == sorted(EXPECTED_ALLOWED), (
-            f"[Step 6: cd blocked] Allowed commands mismatch.\n"
+            f"[Step 4: cd blocked] Allowed commands mismatch.\n"
             f"  expected={sorted(EXPECTED_ALLOWED)}\n"
             f"  actual={actual_commands}"
         )
 
-        # 6b. Validate cd rejection directly — call the validation function
+        # 4b. Validate cd rejection directly — call the validation function
         #     and assert it raises ValueError with the correct message.
         with pytest.raises(ValueError, match="not allowed") as exc_info:
             _validate_cli_command("cd", EXPECTED_ALLOWED)
@@ -385,20 +387,47 @@ class TestSuite3CliTools:
         error_msg = str(exc_info.value)
         for cmd in EXPECTED_ALLOWED:
             assert cmd in error_msg, (
-                f"[Step 6: cd blocked] Rejection error must list '{cmd}' "
+                f"[Step 4: cd blocked] Rejection error must list '{cmd}' "
                 f"as an allowed command.\n"
                 f"  error_msg={error_msg}"
             )
 
-        # 6c. Run the agent to verify it reaches terminal status.
+        # 4c. Run the agent to verify it reaches terminal status.
         result_cd = runtime.run(whitelist_agent, PROMPT_CD, timeout=TIMEOUT)
 
         assert result_cd.execution_id, (
-            f"[Step 6: cd blocked] No execution_id. "
+            f"[Step 4: cd blocked] No execution_id. "
             f"{_run_diagnostic(result_cd)}"
         )
         assert result_cd.status in ("COMPLETED", "FAILED", "TERMINATED"), (
-            f"[Step 6: cd blocked] Expected terminal status, "
+            f"[Step 4: cd blocked] Expected terminal status, "
             f"got '{result_cd.status}'.\n"
             f"  {_run_diagnostic(result_cd)}"
         )
+        # ── Step 5: Add credential to the server store ──────────────
+        _put_secret(CRED_NAME, real_token)
+
+        # ── Step 6: Run agent — all three should succeed ────────────
+        result = runtime.run(agent, PROMPT_ALL_THREE, timeout=TIMEOUT)
+        _assert_run_completed(result, "Step 5: With credential")
+
+        output = _get_output_text(result)
+
+        assert "ls_ok" in output, (
+            f"[Step 6: With credential] cli_ls should succeed.\n"
+            f"  output={output[:500]}\n"
+            f"  {_run_diagnostic(result)}"
+        )
+        assert "mktemp_ok" in output, (
+            f"[Step 6: With credential] cli_mktemp should succeed.\n"
+            f"  output={output[:500]}\n"
+            f"  {_run_diagnostic(result)}"
+        )
+        assert "gh_ok" in output, (
+            f"[Step 6: With credential] cli_gh should succeed — "
+            f"GITHUB_TOKEN was added to server credential store.\n"
+            f"  output={output[:500]}\n"
+            f"  {_run_diagnostic(result)}\n"
+            f"  {_tool_diagnostics(result.execution_id, {'cli_ls', 'cli_mktemp', 'cli_gh'})}"
+        )
+

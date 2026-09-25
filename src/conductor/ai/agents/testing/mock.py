@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Mock execution — deterministic agent testing without LLM or server.
 
 Provides :class:`MockEvent` (a factory for :class:`AgentEvent` objects) and

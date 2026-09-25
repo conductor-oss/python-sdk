@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Result types — AgentResult, AgentHandle, AgentEvent, AgentStatus, AgentStream, AsyncAgentStream.
 
 These classes provide the interface between the user and a running or
@@ -109,6 +106,8 @@ class AgentResult:
         error: Human-readable error message when the agent failed.
         token_usage: Aggregated token usage across all LLM calls.
         metadata: Extra data from the workflow execution.
+        events: The execution's event history (:class:`AgentEvent`), whether the
+            agent was streamed or run to completion.
         sub_results: Per-agent outputs for multi-agent strategies (parallel).
             Empty dict for single-agent runs. Keyed by agent name.
     """
@@ -694,6 +693,20 @@ class AgentHandle:
 # ── AgentEvent (yielded by stream()) ───────────────────────────────────
 
 
+# Keys Conductor injects into a tool task's input, not arguments the LLM chose.
+# Shared with the runtime's tool_calls extraction so both report the same args.
+INTERNAL_ARG_KEYS = frozenset(
+    {
+        "_agent_state",
+        "_agent_tool_name",
+        "_allowed_commands",
+        "method",
+        "__humanTaskDefinition",
+        "__conductor_agent_ctx__",
+    }
+)
+
+
 class EventType(str, Enum):
     """Types of events emitted during agent execution."""
 
@@ -726,9 +739,6 @@ class AgentEvent:
         guardrail_name: Guardrail name (for ``guardrail_pass``, ``guardrail_fail``).
     """
 
-    # Keys injected by Conductor that should not appear in user-facing args.
-    _INTERNAL_ARG_KEYS = frozenset({"_agent_state", "method"})
-
     type: str
     content: Optional[str] = None
     tool_name: Optional[str] = None
@@ -741,7 +751,7 @@ class AgentEvent:
 
     def __post_init__(self):
         if self.args and isinstance(self.args, dict):
-            cleaned = {k: v for k, v in self.args.items() if k not in self._INTERNAL_ARG_KEYS}
+            cleaned = {k: v for k, v in self.args.items() if k not in INTERNAL_ARG_KEYS}
             object.__setattr__(self, "args", cleaned if cleaned else None)
 
 

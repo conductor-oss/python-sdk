@@ -146,16 +146,16 @@ getAuthenticationHeaders() -> { "X-Authorization": <token> } | null
 
 **Contract:**
 1. **Host resolution order** (when not passed explicitly):
-   `CONDUCTOR_SERVER_URL` → `AGENTSPAN_SERVER_URL` → default
+   `CONDUCTOR_SERVER_URL` → `CONDUCTOR_SERVER_URL` → default
    `http://localhost:8080/api`.
 2. **Log level**: `Configuration` accepts an optional `logLevel` (level name or
    numeric level). Resolution order: explicit param → `CONDUCTOR_LOG_LEVEL` env →
-   `AGENTSPAN_LOG_LEVEL` env → derived from the `debug` flag (DEBUG/INFO). This is
+   `CONDUCTOR_LOG_LEVEL` env → derived from the `debug` flag (DEBUG/INFO). This is
    the **only** log-level setting in the SDK; the agent runtime reads it from
    `Configuration` (see R4 — `AgentConfig` has no log level).
 
 **Acceptance criteria**
-- [ ] With only `AGENTSPAN_SERVER_URL` set, `Configuration()` resolves it; with
+- [ ] With only `CONDUCTOR_SERVER_URL` set, `Configuration()` resolves it; with
       both set, `CONDUCTOR_SERVER_URL` wins.
 - [ ] `Configuration(logLevel="WARNING")` and `CONDUCTOR_LOG_LEVEL=WARNING` both
       yield WARNING; the agent runtime applies it to the agent loggers.
@@ -176,15 +176,15 @@ creating two sources of truth. Connection, auth, and log level now come from
 
 | Field | Type | Default | Env var |
 |---|---|---|---|
-| `workerPollIntervalMs` | int | 100 | `AGENTSPAN_WORKER_POLL_INTERVAL` |
-| `workerThreadCount` | int | 1 | `AGENTSPAN_WORKER_THREADS` |
-| `autoStartWorkers` | bool | true | `AGENTSPAN_AUTO_START_WORKERS` |
-| `daemonWorkers` | bool | true | `AGENTSPAN_DAEMON_WORKERS` |
-| `autoRegisterIntegrations` | bool | false | `AGENTSPAN_INTEGRATIONS_AUTO_REGISTER` |
-| `streamingEnabled` | bool | true | `AGENTSPAN_STREAMING_ENABLED` |
-| `livenessEnabled` | bool | true | `AGENTSPAN_LIVENESS_ENABLED` |
-| `livenessStallSeconds` | float | 30.0 | `AGENTSPAN_LIVENESS_STALL_SECONDS` |
-| `livenessCheckIntervalSeconds` | float | 10.0 | `AGENTSPAN_LIVENESS_CHECK_INTERVAL_SECONDS` |
+| `workerPollIntervalMs` | int | 100 | `CONDUCTOR_AGENT_WORKER_POLL_INTERVAL` |
+| `workerThreadCount` | int | 1 | `CONDUCTOR_AGENT_WORKER_THREADS` |
+| `autoStartWorkers` | bool | true | `CONDUCTOR_AGENT_AUTO_START_WORKERS` |
+| `daemonWorkers` | bool | true | `CONDUCTOR_AGENT_DAEMON_WORKERS` |
+| `autoRegisterIntegrations` | bool | false | `CONDUCTOR_AGENT_INTEGRATIONS_AUTO_REGISTER` |
+| `streamingEnabled` | bool | true | `CONDUCTOR_AGENT_STREAMING_ENABLED` |
+| `livenessEnabled` | bool | true | `CONDUCTOR_AGENT_LIVENESS_ENABLED` |
+| `livenessStallSeconds` | float | 30.0 | `CONDUCTOR_AGENT_LIVENESS_STALL_SECONDS` |
+| `livenessCheckIntervalSeconds` | float | 10.0 | `CONDUCTOR_AGENT_LIVENESS_CHECK_INTERVAL_SECONDS` |
 
 `AgentConfig.fromEnv()` reads the env vars above. It MUST NOT read server URL,
 credentials, or log level.
@@ -229,7 +229,7 @@ FUNCTION startInternal(agent, prompt, runSettings?, media?, sessionId?,
     payload = { agentConfig: configJson, prompt: prompt,
                 sessionId: sessionId ?? "", media: media ?? [] }
     // optional keys, only when set:
-    //   context, idempotencyKey, timeoutSeconds, credentials, runId
+    //   context, idempotencyKey, timeoutSeconds, runId
     data = agentClient.startAgent(payload)             // server: compile+register+start
     executionId     = data["executionId"]
     requiredWorkers = data["requiredWorkers"]          // optional set of task names
@@ -284,11 +284,11 @@ FUNCTION resolveSecrets(task, declaredNames):
   a clear error. The worker MUST NOT fall back to reading the ambient process
   environment.
 - **RETIRE** the execution-token flow: remove any `executionToken` /
-  `__agentspan_ctx__` handling and any `POST /workers/secrets` client code.
+  `__conductor_agent_ctx__` handling and any `POST /workers/secrets` client code.
 
 **Server dependency note:** this contract requires a server that persists
 `TaskDef.runtimeMetadata` and delivers `Task.runtimeMetadata`
-(conductor-oss PR #1255 / agentspan server > 0.4.2). Integration tests SHOULD
+(conductor-oss PR #1255 / Conductor Agents server > 0.4.2). Integration tests SHOULD
 capability-probe (register a TaskDef with `runtimeMetadata`, read it back; skip
 the suite if the server drops the field).
 
@@ -492,7 +492,7 @@ Remove (and ensure nothing references them):
       its own JWT) and any DX wrapper client around them.
 - [ ] The credentials **fetcher** (execution-token + `POST /workers/secrets`).
 - [ ] Agent **server auto-start / detection** logic and its config flag
-      (`autoStartServer` / `AGENTSPAN_AUTO_START_SERVER`).
+      (`autoStartServer` / `CONDUCTOR_AGENT_AUTO_START_SERVER`).
 - [ ] The **parallel token cache** (standalone `POST /token` mint helper) — keep
       at most a JWT-`exp` decoder.
 - [ ] Dead `AgentConfig` fields (R4 list) and any `toConductorConfiguration()`
@@ -515,7 +515,7 @@ observed in production runs and are now part of the contract:
    first were **silently dropped** — the model's fan-out intent vanished with no
    trace in any task output.
 
-The server compiler (conductor `agentspan-server` `MultiAgentCompiler`) now
+The server compiler (conductor `conductor_agent-server` `MultiAgentCompiler`) now
 generates transfer tools with a required `message` argument ("hand-off note"),
 records honored hand-offs in the conversation as
 `[source -> target]: <message>`, drops `[]`/`{}` tool-call-only results from
@@ -620,11 +620,13 @@ open (auth-disabled) server — treat as anonymous.
   "context":        { },            // optional
   "idempotencyKey": "…",            // optional
   "timeoutSeconds": 120,            // optional
-  "credentials":   ["GH_TOKEN"],    // optional — names to resolve for this run
   "runId":         "…",             // optional — stateful worker-domain routing
   "static_plan":   { }              // optional — PLAN_EXECUTE fixed plan
 }
 ```
+
+Credential names are local worker configuration. They populate task-definition runtime metadata
+and are not part of the agent start request or workflow input.
 
 ### 3.4 `agentConfig` LLM wire keys (subset relevant to RunSettings)
 

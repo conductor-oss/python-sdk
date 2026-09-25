@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Multi-agent orchestration matrix integration tests — 21 tests, parallel execution.
 
 All 21 workflows fire concurrently via runtime.start(), then polled to
@@ -14,7 +11,7 @@ Run:
 
 Requirements:
     - Conductor server running
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - AGENT_LLM_MODEL set (default: anthropic/claude-sonnet-4-6)
 """
 

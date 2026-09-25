@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Google ADK Thinking Config — extended reasoning for complex tasks.
 
 Uses ADK's ThinkingConfig to enable extended thinking mode,
@@ -9,8 +6,8 @@ allowing the LLM to reason step-by-step before responding.
 Requirements:
     - pip install google-adk
     - Conductor server with thinking config support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=google_gemini/gemini-2.0-flash as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=google_gemini/gemini-2.0-flash as environment variable
 """
 
 from google.adk.agents import Agent
@@ -65,7 +62,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.30_thinking_config
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

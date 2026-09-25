@@ -1,4 +1,5 @@
 import json
+import time
 
 from shortuuid import uuid
 
@@ -25,6 +26,8 @@ from conductor.client.orkes_clients import OrkesClients
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.simple_task import SimpleTask
+from tests.integration.conftest import is_oss
+from tests.integration.retry_helpers import retry_scenario, wait_for_workflow_terminal
 
 SUFFIX = str(uuid())
 WORKFLOW_NAME = 'IntegrationTestOrkesClientsWf_' + SUFFIX
@@ -36,6 +39,64 @@ USER_ID = 'integrationtest_' + SUFFIX[0:5].lower() + "@orkes.io"
 GROUP_ID = 'integrationtest_group_' + SUFFIX[0:5].lower()
 TEST_WF_JSON = 'tests/integration/resources/test_data/calculate_loan_workflow.json'
 TEST_IP_JSON = 'tests/integration/resources/test_data/loan_workflow_input.json'
+
+
+def _retry_on_404(func, *args, retries=5, **kwargs):
+    # Updating a task by ref name can transiently 404 while the server is still
+    # scheduling the referenced task. Retry with backoff to tolerate that race.
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except ApiException as e:
+            if e.status == 404 and attempt < retries - 1:
+                time.sleep(1 << attempt)
+                continue
+            raise
+
+
+def _assert_not_found(fetch, *identifiers):
+    # Assert the 404 status, not the server's prose. The wording is not part of
+    # the API contract: a server release changed "Workflow with id: X not found."
+    # to "No execution found for id: X" and turned CI red with no SDK change.
+    # Also fail loudly when the resource is still readable -- the bare
+    # try/except this replaces passed silently in exactly that case.
+    try:
+        fetch()
+    except ApiException as e:
+        assert e.code == 404, f"expected a 404, got {e.code}: {e.message}"
+        for identifier in identifiers:
+            assert str(identifier) in str(e.message), \
+                f"expected {identifier!r} in the 404 message, got: {e.message}"
+        return
+    raise AssertionError("expected a 404, but the resource is still readable")
+
+
+def _clear_tags(get_tags, delete_tag, target):
+    # Best-effort: leave the target with no tags so a scenario that asserts on
+    # exact tag counts can be re-run. Failures are ignored -- a tag that is
+    # already gone is nothing to report, and cleanup must not fail the test.
+    try:
+        existing = get_tags(target) or []
+    except Exception:
+        return
+    for tag in existing:
+        try:
+            delete_tag(MetadataTag(tag.key, tag.value), target)
+        except Exception:
+            pass
+
+
+def _await_value(fetch, expected, timeout=15, interval=1):
+    # Queue size is eventually consistent -- the server enqueues and indexes
+    # asynchronously, so reading straight after starting or draining work
+    # intermittently returns a stale count. Poll until it settles, then let the
+    # caller assert on the last value seen so failures still show the mismatch.
+    deadline = time.time() + timeout
+    value = fetch()
+    while value != expected and time.time() < deadline:
+        time.sleep(interval)
+        value = fetch()
+    return value
 
 
 class TestOrkesClients:
@@ -52,7 +113,7 @@ class TestOrkesClients:
         self.authorization_client = orkes_clients.get_authorization_client()
         self.workflow_id = None
 
-    def run(self) -> None:
+    def run(self, deadline=None) -> None:
         workflow = ConductorWorkflow(
             executor=self.workflow_executor,
             name=WORKFLOW_NAME,
@@ -63,20 +124,46 @@ class TestOrkesClients:
         workflow >> SimpleTask("simple_task", "simple_task_ref")
         workflowDef = workflow.to_workflow_def()
 
-        self.test_workflow_lifecycle(workflowDef, workflow)
-        self.test_task_lifecycle()
-        self.test_secret_lifecycle()
-        self.test_scheduler_lifecycle(workflowDef)
-        self.test_application_lifecycle()
-        self.__test_unit_test_workflow()
-        self.test_user_group_permissions_lifecycle(workflowDef)
+        # Each lifecycle is a scenario: on a transient (status 0) blip against
+        # the shared dev server it retries from the top until the shared deadline
+        # passes (see retry_helpers.retry_scenario); real failures raise at once.
+        retry_scenario('test_workflow_lifecycle', self.test_workflow_lifecycle,
+                       workflowDef, workflow, deadline=deadline)
+        retry_scenario('test_task_lifecycle', self.test_task_lifecycle,
+                       deadline=deadline)
+        retry_scenario('test_scheduler_lifecycle', self.test_scheduler_lifecycle,
+                       workflowDef, deadline=deadline)
+        retry_scenario('__test_unit_test_workflow', self.__test_unit_test_workflow,
+                       deadline=deadline)
+
+        # Secret and Authorization (application/user/group/permission) APIs are
+        # not implemented by plain OSS Conductor -- confirmed empirically: every
+        # call 404s "No static resource api/secrets|applications|users|groups...".
+        # Gate these Orkes-Enterprise-only lifecycles rather than letting them
+        # fail against a local OSS stack.
+        if is_oss():
+            return
+
+        retry_scenario('test_secret_lifecycle', self.test_secret_lifecycle,
+                       deadline=deadline)
+        retry_scenario('test_application_lifecycle', self.test_application_lifecycle,
+                       deadline=deadline)
+        retry_scenario('test_user_group_permissions_lifecycle',
+                       self.test_user_group_permissions_lifecycle, workflowDef,
+                       deadline=deadline)
 
     def test_workflow_lifecycle(self, workflowDef, workflow):
         self.__test_register_workflow_definition(workflowDef)
         self.__test_get_workflow_definition()
         self.__test_update_workflow_definition(workflow)
         self.__test_workflow_execution_lifecycle()
-        self.__test_workflow_tags()
+        # Metadata tagging (/metadata/workflow/{name}/tags) is not implemented
+        # by plain OSS Conductor -- confirmed empirically: every HTTP verb on
+        # that path 404s/500s as an unmapped route (DELETE even falls through
+        # to the unrelated /metadata/workflow/{name}/{version} route, taking
+        # "tags" as the version path segment).
+        if not is_oss():
+            self.__test_workflow_tags()
         self.__test_unregister_workflow_definition()
 
     def test_task_lifecycle(self):
@@ -99,15 +186,15 @@ class TestOrkesClients:
         assert fetchedTaskDef.description == taskDef.description
         assert len(fetchedTaskDef.input_keys) == 3
 
-        self.__test_task_tags()
+        # Metadata tagging (/metadata/task/{name}/tags) is not implemented by
+        # plain OSS Conductor -- confirmed empirically (404 "No static
+        # resource api/metadata/task/.../tags").
+        if not is_oss():
+            self.__test_task_tags()
         self.__test_task_execution_lifecycle()
 
         self.metadata_client.unregister_task_def(TASK_TYPE)
-        try:
-            self.metadata_client.get_task_def(TASK_TYPE)
-        except ApiException as e:
-            assert e.code == 404
-            assert e.message == "Task {0} not found".format(TASK_TYPE)
+        _assert_not_found(lambda: self.metadata_client.get_task_def(TASK_TYPE), TASK_TYPE)
 
     def test_secret_lifecycle(self):
         self.secret_client.put_secret(SECRET_NAME, "secret_value")
@@ -138,11 +225,7 @@ class TestOrkesClients:
         assert self.secret_client.secret_exists(SECRET_NAME) == False
 
         self.secret_client.delete_secret(SECRET_NAME + "_2")
-
-        try:
-            self.secret_client.get_secret(SECRET_NAME + "_2")
-        except ApiException as e:
-            assert e.code == 404
+        _assert_not_found(lambda: self.secret_client.get_secret(SECRET_NAME + "_2"))
 
     def test_scheduler_lifecycle(self, workflowDef):
         startWorkflowRequest = StartWorkflowRequest(
@@ -158,7 +241,7 @@ class TestOrkesClients:
 
         schedule = self.scheduler_client.get_schedule(SCHEDULE_NAME)
 
-        assert schedule['name'] == SCHEDULE_NAME
+        assert schedule.name == SCHEDULE_NAME
 
         self.scheduler_client.pause_schedule(SCHEDULE_NAME)
 
@@ -169,29 +252,30 @@ class TestOrkesClients:
 
         self.scheduler_client.resume_schedule(SCHEDULE_NAME)
         schedule = self.scheduler_client.get_schedule(SCHEDULE_NAME)
-        assert not schedule['paused']
+        assert not schedule.paused
 
         times = self.scheduler_client.get_next_few_schedule_execution_times("0 */5 * ? * *", limit=1)
         assert (len(times) == 1)
 
-        tags = [
-            MetadataTag("sch_tag", "val"), MetadataTag("sch_tag_2", "val2")
-        ]
-        self.scheduler_client.set_scheduler_tags(tags, SCHEDULE_NAME)
-        fetched_tags = self.scheduler_client.get_scheduler_tags(SCHEDULE_NAME)
-        assert len(fetched_tags) == 2
+        # Metadata tagging (/scheduler/schedules/{name}/tags) is not
+        # implemented by plain OSS Conductor -- confirmed empirically (404
+        # "No static resource api/scheduler/schedules/.../tags").
+        if not is_oss():
+            tags = [
+                MetadataTag("sch_tag", "val"), MetadataTag("sch_tag_2", "val2")
+            ]
+            self.scheduler_client.set_scheduler_tags(tags, SCHEDULE_NAME)
+            fetched_tags = self.scheduler_client.get_scheduler_tags(SCHEDULE_NAME)
+            assert len(fetched_tags) == 2
 
-        self.scheduler_client.delete_scheduler_tags(tags, SCHEDULE_NAME)
-        fetched_tags = self.scheduler_client.get_scheduler_tags(SCHEDULE_NAME)
-        assert len(fetched_tags) == 0
+            self.scheduler_client.delete_scheduler_tags(tags, SCHEDULE_NAME)
+            fetched_tags = self.scheduler_client.get_scheduler_tags(SCHEDULE_NAME)
+            assert len(fetched_tags) == 0
 
         self.scheduler_client.delete_schedule(SCHEDULE_NAME)
-
-        try:
-            schedule = self.scheduler_client.get_schedule(SCHEDULE_NAME)
-        except ApiException as e:
-            assert e.code == 404
-            assert e.message == "Schedule '{0}' not found".format(SCHEDULE_NAME)
+        _assert_not_found(
+            lambda: self.scheduler_client.get_schedule(SCHEDULE_NAME), SCHEDULE_NAME
+        )
 
     def test_application_lifecycle(self):
         req = CreateOrUpdateApplicationRequest(APPLICATION_NAME)
@@ -237,11 +321,10 @@ class TestOrkesClients:
         self.authorization_client.delete_access_key(created_app.id, created_access_key.id)
 
         self.authorization_client.delete_application(created_app.id)
-        try:
-            application = self.authorization_client.get_application(created_app.id)
-        except ApiException as e:
-            assert e.code == 404
-            assert e.message == "Application '{0}' not found".format(created_app.id)
+        _assert_not_found(
+            lambda: self.authorization_client.get_application(created_app.id),
+            created_app.id
+        )
 
     def test_user_group_permissions_lifecycle(self, workflowDef):
         req = UpsertUserRequest("Integration User", ["USER"])
@@ -314,18 +397,10 @@ class TestOrkesClients:
         self.authorization_client.remove_user_from_group(GROUP_ID, USER_ID)
 
         self.authorization_client.delete_user(USER_ID)
-        try:
-            self.authorization_client.get_user(USER_ID)
-        except ApiException as e:
-            assert e.code == 404
-            assert e.message == "User '{0}' not found".format(USER_ID)
+        _assert_not_found(lambda: self.authorization_client.get_user(USER_ID), USER_ID)
 
         self.authorization_client.delete_group(GROUP_ID)
-        try:
-            self.authorization_client.get_group(GROUP_ID)
-        except ApiException as e:
-            assert e.code == 404
-            assert e.message == "Group '{0}' not found".format(GROUP_ID)
+        _assert_not_found(lambda: self.authorization_client.get_group(GROUP_ID), GROUP_ID)
 
     def __test_register_workflow_definition(self, workflowDef: WorkflowDef):
         self.__create_workflow_definition(workflowDef)
@@ -368,8 +443,27 @@ class TestOrkesClients:
         execution = self.workflow_client.test_workflow(testRequest)
         assert execution != None
 
+        # There appears to be no guarantee about it actually coming back
+        # complete, because it happens (often) that it does not. So we accept a
+        # COMPLETED result immediately, but if it isn't COMPLETED yet we don't
+        # fail: we poll the workflow and wait for it to reach a terminal state.
+        if execution.status != "COMPLETED":
+            print(
+                f"[test_workflow] workflow_id={getattr(execution, 'workflow_id', None)} status={execution.status} (was expecting COMPLETED - but will poll for that now)"
+            )
+            workflow_id = getattr(execution, "workflow_id", None)
+            polled = (
+                self.__poll_workflow_until_complete(workflow_id)
+                if workflow_id else None
+            )
+            if polled is not None:
+                execution = polled
+
         # Ensure workflow is completed successfully
-        assert execution.status == "COMPLETED"
+        assert execution.status == "COMPLETED", (
+            f"workflow expected to be COMPLETED, but received {execution.status}, "
+            f"workflow_id: {getattr(execution, 'workflow_id', None)}"
+        )
 
         # Ensure the inputs were captured correctly
         assert execution.input["loanAmount"] == testRequest.input["loanAmount"]
@@ -421,14 +515,25 @@ class TestOrkesClients:
         # Workflow output takes the latest iteration output of a loopOver task.
         assert execution.output["phoneNumberValid"]
 
+    def __poll_workflow_until_complete(self, workflow_id, timeout_seconds=60,
+                                       poll_interval=2):
+        """Poll ``workflow_id`` until it reaches a terminal state or the timeout
+        passes, returning the last observed Workflow (or None if it could never
+        be fetched). Transient poll errors are swallowed and retried within the
+        timeout so a slow-but-eventually-complete run isn't reported as a bare
+        failure. Thin wrapper over the shared ``wait_for_workflow_terminal``.
+        """
+        return wait_for_workflow_terminal(
+            self.workflow_client, workflow_id,
+            timeout_seconds=timeout_seconds, poll_interval=poll_interval,
+            include_tasks=True, swallow='all',
+            log=lambda msg: print(f"[test_workflow] {msg}"))
+
     def __test_unregister_workflow_definition(self):
         self.metadata_client.unregister_workflow_def(WORKFLOW_NAME, 1)
-
-        try:
-            self.metadata_client.get_workflow_def(WORKFLOW_NAME, 1)
-        except ApiException as e:
-            assert e.code == 404
-            assert e.message == 'No such workflow found by name: {0}, version: 1'.format(WORKFLOW_NAME)
+        _assert_not_found(
+            lambda: self.metadata_client.get_workflow_def(WORKFLOW_NAME, 1), WORKFLOW_NAME
+        )
 
     def __test_task_tags(self):
         tags = [
@@ -436,6 +541,14 @@ class TestOrkesClients:
             MetadataTag("tag2", "val2"),
             MetadataTag("tag3", "val3")
         ]
+
+        # retry_scenario re-runs this whole scenario from the top on a transient
+        # blip, but tags survive the failed attempt -- so the "add one tag, now
+        # there is exactly one" assertion below saw the leftovers and failed with
+        # `assert 2 == 1`. Start from a known-empty set so the scenario is
+        # re-runnable.
+        _clear_tags(self.metadata_client.getTaskTags,
+                    self.metadata_client.deleteTaskTag, TASK_TYPE)
 
         self.metadata_client.addTaskTag(tags[0], TASK_TYPE)
         fetchedTags = self.metadata_client.getTaskTags(TASK_TYPE)
@@ -452,6 +565,10 @@ class TestOrkesClients:
 
     def __test_workflow_tags(self):
         singleTag = MetadataTag("wftag", "val")
+
+        # Same re-runnability problem as __test_task_tags.
+        _clear_tags(self.metadata_client.get_workflow_tags,
+                    self.metadata_client.delete_workflow_tag, WORKFLOW_NAME)
 
         self.metadata_client.add_workflow_tag(singleTag, WORKFLOW_NAME)
         fetchedTags = self.metadata_client.get_workflow_tags(WORKFLOW_NAME)
@@ -515,12 +632,18 @@ class TestOrkesClients:
         workflow = self.workflow_client.get_workflow(workflow_uuid, False)
         assert workflow.status == "RUNNING"
 
-        self.workflow_client.delete_workflow(workflow_uuid)
-        try:
-            workflow = self.workflow_client.get_workflow(workflow_uuid, False)
-        except ApiException as e:
-            assert e.code == 404
-            assert str(e.message).lower() == "workflow with id: {} not found.".format(workflow_uuid)
+        # archive_workflow=True (the default) requires a terminal-state workflow;
+        # this workflow is intentionally still RUNNING at this point (confirmed
+        # empirically: "Cannot archive workflow ... with status: RUNNING" on
+        # plain OSS Conductor), so skip archiving for this delete when running
+        # against OSS.
+        self.workflow_client.delete_workflow(
+            workflow_uuid,
+            archive_workflow=not is_oss()
+        )
+        _assert_not_found(
+            lambda: self.workflow_client.get_workflow(workflow_uuid, False), workflow_uuid
+        )
 
     def __test_task_execution_lifecycle(self):
 
@@ -547,7 +670,9 @@ class TestOrkesClients:
         workflow_uuid_2 = self.workflow_client.start_workflow(startWorkflowRequest)
 
         # First task of each workflow is in the queue
-        assert self.task_client.get_queue_size_for_task(TASK_TYPE) == 2
+        assert _await_value(
+            lambda: self.task_client.get_queue_size_for_task(TASK_TYPE), 2
+        ) == 2
 
         polledTask = self.task_client.poll_task(TASK_TYPE)
         assert polledTask.status == TaskResultStatus.IN_PROGRESS
@@ -555,13 +680,15 @@ class TestOrkesClients:
         self.task_client.add_task_log(polledTask.task_id, "Polled task...")
 
         taskExecLogs = self.task_client.get_task_logs(polledTask.task_id)
-        taskExecLogs[0].log == "Polled task..."
+        assert taskExecLogs[0].log == "Polled task..."
 
-        # First task of second workflow is in the queue
-        assert self.task_client.get_queue_size_for_task(TASK_TYPE) == 1
+        # First task of second workflow is still in the queue
+        assert _await_value(
+            lambda: self.task_client.get_queue_size_for_task(TASK_TYPE), 1
+        ) == 1
 
         taskResult = TaskResult(
-            workflow_instance_id=workflow_uuid,
+            workflow_instance_id=polledTask.workflow_instance_id,
             task_id=polledTask.task_id,
             status=TaskResultStatus.COMPLETED
         )
@@ -571,33 +698,45 @@ class TestOrkesClients:
         task = self.task_client.get_task(polledTask.task_id)
         assert task.status == TaskResultStatus.COMPLETED
 
+        # The second task of the first workflow and both tasks of the second
+        # workflow all share TASK_TYPE and land in the same queue, so a poll can
+        # return a task from either workflow in a non-deterministic order. Drive
+        # every update from the polled task's own workflow id and reference name
+        # instead of assuming which workflow/ref we got back (the previous
+        # hardcoded workflow_uuid_2 / "simple_task_ref_2" pairing produced
+        # spurious 404s whenever the queue handed back the other workflow's
+        # task). We still exercise update_task_by_ref_name and update_task_sync.
+
+        # Three task executions remain (we completed one above); drain them all.
         batchPolledTasks = self.task_client.batch_poll_tasks(TASK_TYPE)
-        assert len(batchPolledTasks) == 1
+        remaining = 3
+        completed = 0
+        for polledTask in batchPolledTasks:
+            _retry_on_404(
+                self.task_client.update_task_by_ref_name,
+                polledTask.workflow_instance_id,
+                polledTask.reference_task_name,
+                "COMPLETED",
+                f"task op {completed + 1} (by ref name)"
+            )
+            completed += 1
 
-        polledTask = batchPolledTasks[0]
-        # Update first task of second workflow
-        self.task_client.update_task_by_ref_name(
-            workflow_uuid_2,
-            polledTask.reference_task_name,
-            "COMPLETED",
-            "task 2 op 2nd wf"
+        while completed < remaining:
+            polledTask = self.task_client.poll_task(TASK_TYPE)
+            assert polledTask is not None, \
+                "expected a task to be available to poll while draining the queue"
+            _retry_on_404(
+                self.task_client.update_task_sync,
+                polledTask.workflow_instance_id,
+                polledTask.reference_task_name,
+                "COMPLETED",
+                f"task op {completed + 1} (sync)"
+            )
+            completed += 1
+
+        queue_size = _await_value(
+            lambda: self.task_client.get_queue_size_for_task(TASK_TYPE), 0
         )
-
-        # Update second task of first workflow
-        self.task_client.update_task_by_ref_name(
-            workflow_uuid_2, "simple_task_ref_2", "COMPLETED", "task 2 op 1st wf"
-        )
-
-        # # Second task of second workflow is in the queue
-        # assert self.task_client.getQueueSizeForTask(TASK_TYPE) == 1
-        polledTask = self.task_client.poll_task(TASK_TYPE)
-
-        # Update second task of second workflow
-        self.task_client.update_task_sync(
-            workflow_uuid, "simple_task_ref_2", "COMPLETED", "task 1 op 2nd wf"
-        )
-
-        queue_size = self.task_client.get_queue_size_for_task(TASK_TYPE)
         print(f'queue size for {TASK_TYPE} is {queue_size}')
         assert queue_size == 0
 

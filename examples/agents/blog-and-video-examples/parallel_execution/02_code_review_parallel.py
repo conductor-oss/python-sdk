@@ -15,8 +15,8 @@ Demonstrates:
     - sub_results for per-agent outputs
 
 Setup:
-    pip install agentspan
-    agentspan server start
+    pip install Conductor
+    Conductor server start
     python 02_code_review_parallel.py
 """
 

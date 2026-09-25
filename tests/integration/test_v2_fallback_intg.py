@@ -25,6 +25,7 @@ from conductor.client.http.models.workflow_task import WorkflowTask
 from conductor.client.orkes.orkes_metadata_client import OrkesMetadataClient
 from conductor.client.orkes.orkes_workflow_client import OrkesWorkflowClient
 from conductor.client.worker.worker_task import worker_task
+from tests.integration.retry_helpers import retry_on_transient
 
 logger = logging.getLogger(__name__)
 
@@ -84,10 +85,14 @@ class TestV2FallbackIntegration(unittest.TestCase):
 
         workflow = WorkflowDef(name=WORKFLOW_NAME, version=WORKFLOW_VERSION)
         workflow._tasks = tasks
+        # Retry registration on a transient (status 0) transport blip against the
+        # shared dev server so a dropped connection doesn't fail the suite.
         try:
-            self.metadata_client.update_workflow_def(workflow, overwrite=True)
+            retry_on_transient(self.metadata_client.update_workflow_def,
+                               workflow, overwrite=True)
         except Exception:
-            self.metadata_client.register_workflow_def(workflow, overwrite=True)
+            retry_on_transient(self.metadata_client.register_workflow_def,
+                               workflow, overwrite=True)
         print(f"\n  Registered workflow '{WORKFLOW_NAME}' with {len(tasks)} tasks")
 
     def test_1_workflows_complete_with_v2_or_fallback(self):
@@ -128,13 +133,22 @@ class TestV2FallbackIntegration(unittest.TestCase):
                 req.name = WORKFLOW_NAME
                 req.version = WORKFLOW_VERSION
                 req.input = {"run_index": i}
-                wf_id = self.workflow_client.start_workflow(start_workflow_request=req)
+                # A status-0 blip here means no response arrived, so no id was
+                # returned; retrying gets a fresh attempt (any orphaned run just
+                # completes untracked and doesn't affect the tracked-id count).
+                wf_id = retry_on_transient(self.workflow_client.start_workflow,
+                                           start_workflow_request=req)
                 workflow_ids.append(wf_id)
 
             print(f"\n  Submitted {len(workflow_ids)} workflows")
 
-            # Wait for completion
-            deadline = time.time() + 60  # 60s timeout
+            # Wait for completion. 60s was marginal: a red run showed 4 of a
+            # workflow's 5 tasks COMPLETED and the last one still IN_PROGRESS on
+            # a live worker, i.e. the run was progressing when the budget ran
+            # out. Give the shared server the same headroom the other suites
+            # use. A task still IN_PROGRESS after this is a genuine stuck
+            # update, and the diagnostic below prints it.
+            deadline = time.time() + 120
             pending = set(workflow_ids)
             completed = 0
             failed = 0
@@ -161,6 +175,31 @@ class TestV2FallbackIntegration(unittest.TestCase):
                     time.sleep(1)
 
             print(f"  Results: {completed} completed, {failed} failed, {len(pending)} pending")
+
+            # On failure the workflow status alone ("still RUNNING") says nothing
+            # about why. Dump the tasks so the next red run distinguishes:
+            #   SCHEDULED    -> queued but never polled (wrong queue/domain, or
+            #                   no live worker for that task type)
+            #   IN_PROGRESS  -> polled and leased, never updated (worker stuck)
+            #   no tasks     -> the workflow was never decided (server side)
+            if pending:
+                print(f"  DIAGNOSTIC: {len(pending)} workflow(s) did not complete")
+                for wf_id in sorted(pending):
+                    try:
+                        wf = self.workflow_client.get_workflow(wf_id, include_tasks=True)
+                        tasks = wf.tasks or []
+                        print(f"    {wf_id} status={wf.status} tasks={len(tasks)}")
+                        for t in tasks:
+                            print(
+                                f"      task={getattr(t, 'task_def_name', '?')} "
+                                f"ref={getattr(t, 'reference_task_name', '?')} "
+                                f"status={getattr(t, 'status', '?')} "
+                                f"domain={getattr(t, 'domain', None)} "
+                                f"pollCount={getattr(t, 'poll_count', None)} "
+                                f"workerId={getattr(t, 'worker_id', None)}"
+                            )
+                    except Exception as e:
+                        print(f"    {wf_id}: could not fetch tasks: {e}")
 
             self.assertEqual(len(pending), 0, f"{len(pending)} workflows did not complete in time")
             self.assertEqual(completed, workflow_count, f"Expected {workflow_count} completed, got {completed}")

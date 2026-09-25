@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Per-run LLM overrides for :meth:`AgentRuntime.run` / :meth:`AgentRuntime.start`.
 
 ``RunSettings`` lets a single invocation override the LLM settings baked into an

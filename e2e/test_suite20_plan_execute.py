@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Suite 20: Plan-Execute (PAC/PAE) — workflow scheduling regression guard.
 
 Catches the conductor-side bug where ``subWorkflowParam.workflowDefinition``
@@ -35,9 +32,9 @@ from conductor.ai.agents import Agent, Context, Op, Plan, Ref, Step, Strategy, p
 
 pytestmark = pytest.mark.e2e
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 BASE_URL = SERVER_URL.rstrip("/").replace("/api", "")
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
 
 PLAN_EXEC_TIMEOUT = 300  # 5 min — plan + compile + execute + (optional) fallback
 
@@ -97,10 +94,10 @@ class TestSuite20PlanExecute:
             max_turns=3,
             instructions=(
                 "Produce a JSON plan inside a ```json fence describing exactly one "
-                "step that calls the ``append_line`` tool with path='/tmp/agentspan_s20.txt' "
+                "step that calls the ``append_line`` tool with path='/tmp/conductor_agent_s20.txt' "
                 "and line='hello'. Use this exact shape:\n"
                 '```json\n{"steps": [{"tool": "append_line", '
-                '"args": {"path": "/tmp/agentspan_s20.txt", "line": "hello"}}]}\n```'
+                '"args": {"path": "/tmp/conductor_agent_s20.txt", "line": "hello"}}]}\n```'
             ),
         )
 
@@ -123,7 +120,7 @@ class TestSuite20PlanExecute:
         )
 
         result = runtime.run(
-            harness, "Append 'hello' to /tmp/agentspan_s20.txt", timeout=PLAN_EXEC_TIMEOUT
+            harness, "Append 'hello' to /tmp/conductor_agent_s20.txt", timeout=PLAN_EXEC_TIMEOUT
         )
 
         assert result.execution_id, f"start failed; result={result!r}"
@@ -399,7 +396,7 @@ class TestSuite20PlanExecuteWhitelist:
     """PAC/PAE tool whitelist enforcement.
 
     Verifies the security boundary at
-    ``server/src/main/java/dev/agentspan/runtime/service/PlanAndCompileTask.java:301``:
+    ``server/src/main/java/dev/conductor_agent/runtime/service/PlanAndCompileTask.java:301``:
     a plan ``op.tool`` not in the agent's declared ``tools`` list (plus
     the implicit ``llm_chat_complete`` builtin) is rejected at compile
     time. The compile-fail SWITCH then routes to the fallback agent (or
@@ -678,7 +675,7 @@ class TestSuite20PlannerContext:
         )
 
         result = runtime.run(
-            harness, "Append 'hi' to /tmp/agentspan_s20_ctx.txt", timeout=PLAN_EXEC_TIMEOUT
+            harness, "Append 'hi' to /tmp/conductor_agent_s20_ctx.txt", timeout=PLAN_EXEC_TIMEOUT
         )
         assert result.execution_id, f"start failed; result={result!r}"
         assert str(result.status) in (
@@ -771,7 +768,7 @@ class TestSuite20PlannerContext:
         )
 
         result = runtime.run(
-            harness, "Append 'hi' to /tmp/agentspan_s20_noctx.txt", timeout=PLAN_EXEC_TIMEOUT
+            harness, "Append 'hi' to /tmp/conductor_agent_s20_noctx.txt", timeout=PLAN_EXEC_TIMEOUT
         )
         assert result.execution_id, f"start failed; result={result!r}"
 

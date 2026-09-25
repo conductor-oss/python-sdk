@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Composable assertion functions for agent correctness testing.
 
 Every function takes an :class:`AgentResult` as its first argument and raises

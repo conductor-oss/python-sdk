@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """E2E test: verify retry_policy on @tool flows through to Conductor TaskDef.
 
 Registers tools with different retry policies, then queries the Conductor
@@ -8,8 +5,8 @@ metadata API to confirm each TaskDef has the correct retryLogic, retryCount,
 and retryDelaySeconds.
 
 Requirements:
-    - Agentspan server running
-    - export AGENTSPAN_SERVER_URL=http://localhost:8080/api (or via env)
+    - Conductor Agents server running
+    - export CONDUCTOR_SERVER_URL=http://localhost:8080/api (or via env)
 """
 
 import os
@@ -22,7 +19,7 @@ from conductor.ai.agents import Agent, tool
 pytestmark = pytest.mark.integration
 
 
-_MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
+_MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
 
 
 @tool(retry_policy="fixed", retry_count=4, retry_delay_seconds=7)
@@ -65,7 +62,7 @@ _EXPECTED = {
 
 
 def _conductor_base() -> str:
-    url = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+    url = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
     return url.rstrip("/").replace("/api", "")
 
 

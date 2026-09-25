@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Skills — Multi-agent workflows with skills as sub-agents.
 
 Demonstrates:
@@ -12,7 +9,7 @@ Demonstrates:
 
 Requirements:
     - Conductor server with LLM support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
     - /dg skill installed (https://github.com/v1r3n/dinesh-gilfoyle)
     - conductor skill installed (https://github.com/conductor-oss/conductor-skills)
 """
@@ -154,10 +151,11 @@ def example_pipeline():
         print(f"Execution ID: {result.execution_id}")
         print(f"Status:      {result.status}")
         print(f"Tokens:      {result.token_usage}")
+        # sub_results is a dict keyed by agent name — see AgentResult.sub_results.
         if result.sub_results:
-            print("\nSub-agent executions:")
-            for sub in result.sub_results:
-                print(f"  - {getattr(sub, "execution_id", "?")}: {sub.status}")
+            print("\nSub-agent outputs:")
+            for agent_name, agent_output in result.sub_results.items():
+                print(f"  - {agent_name}: {str(agent_output)[:120]}")
         result.print_result()
 
 
@@ -216,10 +214,11 @@ def example_parallel():
         print(f"Execution ID: {result.execution_id}")
         print(f"Status:      {result.status}")
         print(f"Tokens:      {result.token_usage}")
+        # sub_results is a dict keyed by agent name — see AgentResult.sub_results.
         if result.sub_results:
-            print("\nParallel sub-agent executions:")
-            for sub in result.sub_results:
-                print(f"  - {getattr(sub, "execution_id", "?")}: {sub.status}")
+            print("\nParallel sub-agent outputs:")
+            for agent_name, agent_output in result.sub_results.items():
+                print(f"  - {agent_name}: {str(agent_output)[:120]}")
         result.print_result()
 
 

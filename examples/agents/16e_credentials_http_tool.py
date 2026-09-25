@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Credentials — HTTP tool with server-side credential resolution.
 
 Demonstrates:
@@ -13,11 +10,11 @@ value from the store at execution time. The plaintext value never appears
 in the workflow definition.
 
 Setup (one-time):
-    agentspan credentials set GITHUB_TOKEN <your-github-token>
+    the Conductor server credential store
 Requirements:
-    - Agentspan server running at AGENTSPAN_SERVER_URL
-    - AGENTSPAN_LLM_MODEL set (or defaults to openai/gpt-5.4)
-    - GITHUB_TOKEN stored via `agentspan credentials set`
+    - Conductor server running at CONDUCTOR_SERVER_URL
+    - CONDUCTOR_AGENT_LLM_MODEL set (or defaults to openai/gpt-5.4)
+    - GITHUB_TOKEN stored via `the Conductor server credential store`
 """
 
 from conductor.ai.agents import Agent, AgentRuntime
@@ -30,7 +27,7 @@ from settings import settings
 list_repos = http_tool(
     name="list_github_repos",
     description="List public GitHub repositories for a user. Returns JSON array with name, url, and stars.",
-    url="https://api.github.com/users/agentspan/repos?per_page=5&sort=updated",
+    url="https://api.github.com/users/Conductor/repos?per_page=5&sort=updated",
     headers={
         "Authorization": "Bearer ${GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json",
@@ -48,14 +45,14 @@ agent = Agent(
 
 if __name__ == "__main__":
     with AgentRuntime() as runtime:
-        result = runtime.run(agent, "List the repos for agentspan")
+        result = runtime.run(agent, "List the repos for Conductor")
         result.print_result()
 
         # Production pattern:
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.16e_credentials_http_tool
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

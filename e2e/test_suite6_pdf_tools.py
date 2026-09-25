@@ -30,7 +30,7 @@ TIMEOUT = 240
 # ── Sample Markdown ──────────────────────────────────────────────────────
 
 SAMPLE_MARKDOWN = """\
-# Agentspan E2E Test Report
+# Conductor Agents E2E Test Report
 
 ## Overview
 
@@ -70,7 +70,7 @@ All critical paths validated successfully.
 # Key phrases that MUST survive the markdown → PDF → markdown round trip.
 # These are content-level checks, not formatting checks.
 EXPECTED_PHRASES = [
-    "Agentspan E2E Test Report",
+    "Conductor Agents E2E Test Report",
     "Overview",
     "Key Metrics",
     "Tests Run",
@@ -103,7 +103,7 @@ def _make_agent(model):
 
 def _get_workflow(execution_id):
     """Fetch workflow from server API."""
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+    base = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
     resp = requests.get(f"{base_url}/api/workflow/{execution_id}", timeout=10)
     resp.raise_for_status()
@@ -250,7 +250,7 @@ class TestSuite6PdfTools:
             )
 
         # Download PDF
-        base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+        base = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
         base_url = base.rstrip("/").replace("/api", "")
         if pdf_url.startswith("/"):
             pdf_url = f"{base_url}{pdf_url}"

@@ -1,9 +1,6 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """End-to-end test for PAC tool-type routing.
 
-Drives ``Strategy.PLAN_EXECUTE`` against a live agentspan server with a typed
+Drives ``Strategy.PLAN_EXECUTE`` against a live Conductor Agents server with a typed
 Plan that mixes four tool types in one workflow:
 
   - 2 × ``mcp``        tools (mcp-testkit math_add + string_uppercase)
@@ -32,7 +29,7 @@ Three layers of validation, all algorithmic — no LLM-as-judge per CLAUDE.md:
       asserts every routed task transitioned to status=COMPLETED.
 
 Requirements (the test SKIPs cleanly if either is absent):
-  - agentspan server reachable at ``AGENTSPAN_SERVER_URL`` (default
+  - Conductor Agents server reachable at ``CONDUCTOR_SERVER_URL`` (default
     http://localhost:8080/api) with the PAC tool-type routing fix
   - mcp-testkit running on http://localhost:3001/mcp
     (``uv run mcp-testkit --transport http --port 3001``)
@@ -55,14 +52,14 @@ from conductor.ai.agents.tool import ToolDef, agent_tool
 
 pytestmark = pytest.mark.integration
 
-AGENTSPAN_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
-CONDUCTOR_BASE = AGENTSPAN_URL.replace("/api", "")
+CONDUCTOR_AGENT_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
+CONDUCTOR_BASE = CONDUCTOR_AGENT_URL.replace("/api", "")
 MCP_URL = "http://localhost:3001/mcp"
 
 
-def _agentspan_up() -> bool:
+def _conductor_agent_up() -> bool:
     try:
-        return requests.get(f"{AGENTSPAN_URL}/metadata/workflow", timeout=2).status_code == 200
+        return requests.get(f"{CONDUCTOR_AGENT_URL}/metadata/workflow", timeout=2).status_code == 200
     except Exception:  # noqa: BLE001
         return False
 
@@ -111,7 +108,7 @@ string_uppercase = _mcp_static_tool(
 
 mini_agent = Agent(
     name="mini_agent_e2e",
-    model=os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini"),
+    model=os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini"),
     instructions=(
         "Reply with EXACTLY the single token 'AGENT_OK' and nothing else. "
         "No punctuation, no whitespace, no preamble, no explanation."
@@ -194,7 +191,7 @@ def _collect_task_types(tasks: list[dict]) -> list[tuple[str, str]]:
 # ── The test ──────────────────────────────────────────────────────────
 
 
-@pytest.mark.skipif(not _agentspan_up(), reason="agentspan server not running")
+@pytest.mark.skipif(not _conductor_agent_up(), reason="Conductor Agents server not running")
 @pytest.mark.skipif(not _mcp_up(), reason="mcp-testkit not running on :3001")
 def test_pac_toolType_routing_end_to_end() -> None:
     """Single end-to-end run that proves PAC compiles each toolType to
@@ -205,7 +202,7 @@ def test_pac_toolType_routing_end_to_end() -> None:
         name="pac_routing_e2e",
         tools=[math_add, string_uppercase, agent_tool(mini_agent), stitch_e2e],
         planner_instructions="",  # typed Plan injected; planner output discarded
-        model=os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini"),
+        model=os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini"),
     )
 
     plan = Plan(

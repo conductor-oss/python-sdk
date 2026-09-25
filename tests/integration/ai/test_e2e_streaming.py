@@ -1,15 +1,12 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """E2E streaming tests — validate complete SSE event streams for all agent categories.
 
 These tests require a running Conductor server with LLM and streaming support.
 Skip with: pytest -m "not integration"
 
 Requirements:
-    - export AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - export CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - LLM provider configured (OpenAI by default)
-    - Optionally: export AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini
+    - Optionally: export CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini
 """
 
 import re
@@ -41,7 +38,7 @@ DEFAULT_MODEL = "anthropic/claude-sonnet-4-6"
 
 def _model() -> str:
     import os
-    return os.environ.get("AGENTSPAN_LLM_MODEL", DEFAULT_MODEL)
+    return os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", DEFAULT_MODEL)
 
 
 # ── Data-Driven Validation ──────────────────────────────────────────────

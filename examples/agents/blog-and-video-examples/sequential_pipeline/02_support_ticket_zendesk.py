@@ -10,10 +10,10 @@ Same pipeline as 02, but the classifier fetches real tickets
 from Zendesk instead of using hardcoded input.
 
 Setup:
-    pip install agentspan requests
-    agentspan server start
+    pip install Conductor requests
+    Conductor server start
 
-    # Store credentials in the AgentSpan UI (localhost:8080 → Credentials):
+    # Store credentials in the Conductor UI (localhost:8080 → Credentials):
     #   ZENDESK_API   = your Zendesk API token
     #   ZENDESK_EMAIL = your Zendesk email (e.g. you@company.com)
 
@@ -26,7 +26,7 @@ from conductor.ai.agents import Agent, AgentRuntime, tool
 
 
 # ── Zendesk Tools ────────────────────────────────────────────────
-# Credentials are injected into os.environ by the AgentSpan server
+# Credentials are injected into os.environ by the Conductor server
 # at execution time. No secrets in code.
 
 ZENDESK_SUBDOMAIN = "orkeshelp"

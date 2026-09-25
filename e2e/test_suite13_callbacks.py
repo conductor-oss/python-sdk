@@ -17,7 +17,7 @@ from conductor.ai.agents import Agent, CallbackHandler, tool
 
 pytestmark = [pytest.mark.e2e]
 
-MODEL = os.environ.get("AGENTSPAN_LLM_MODEL", "openai/gpt-4o-mini")
+MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
 TIMEOUT = 120
 
 
@@ -100,7 +100,7 @@ class AllCallbackHandler(CallbackHandler):
 
 def _get_workflow(execution_id):
     """Fetch workflow execution from server API."""
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+    base = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
     resp = requests.get(f"{base_url}/api/workflow/{execution_id}", timeout=10)
     resp.raise_for_status()

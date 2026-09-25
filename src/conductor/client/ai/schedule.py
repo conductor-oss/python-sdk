@@ -1,6 +1,3 @@
-# Copyright (c) 2026 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """User-facing dataclasses: ``Schedule`` (input) and ``ScheduleInfo`` (output),
 plus the mapping layer between them and Conductor's ``SchedulerClient`` models.
 

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Skills — Load conductor skill for workflow management.
 
 Demonstrates:
@@ -11,7 +8,7 @@ Demonstrates:
 
 Requirements:
     - Conductor server with LLM support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
     - conductor-skills installed (https://github.com/conductor-oss/conductor-skills)
 
 Install conductor-skills:

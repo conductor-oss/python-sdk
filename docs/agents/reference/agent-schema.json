@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/conductor-oss/python-sdk/blob/main/docs/agents/reference/agent-schema.json",
+  "title": "Conductor Python AgentConfig",
+  "description": "The public wire shape emitted by AgentConfigSerializer under agentConfig.",
+  "$ref": "#/$defs/agentConfig",
+  "$defs": {
+    "jsonValue": {
+      "anyOf": [
+        { "type": "string" }, { "type": "number" }, { "type": "integer" },
+        { "type": "boolean" }, { "type": "null" },
+        { "type": "array", "items": { "$ref": "#/$defs/jsonValue" } },
+        { "type": "object", "additionalProperties": { "$ref": "#/$defs/jsonValue" } }
+      ]
+    },
+    "taskReference": {
+      "type": "object",
+      "required": ["taskName"],
+      "properties": { "taskName": { "type": "string", "minLength": 1 } },
+      "additionalProperties": false
+    },
+    "tool": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "toolType": { "type": "string" },
+        "taskName": { "type": "string" },
+        "inputSchema": { "type": "object" },
+        "outputSchema": { "type": "object" },
+        "credentials": { "type": "array", "items": { "type": "string" } },
+        "approvalRequired": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "agentConfig": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-zA-Z_][a-zA-Z0-9_-]*$" },
+        "model": { "type": ["string", "null"] },
+        "baseUrl": { "type": ["string", "null"] },
+        "strategy": { "type": ["string", "null"] },
+        "maxTurns": { "type": ["integer", "null"], "minimum": 0 },
+        "timeoutSeconds": { "type": ["integer", "null"], "minimum": 0 },
+        "external": { "type": ["boolean", "null"] },
+        "instructions": { "anyOf": [{ "type": "string" }, { "type": "object" }, { "type": "null" }] },
+        "tools": { "type": "array", "items": { "$ref": "#/$defs/tool" } },
+        "agents": { "type": "array", "items": { "$ref": "#/$defs/agentConfig" } },
+        "router": { "anyOf": [{ "$ref": "#/$defs/taskReference" }, { "$ref": "#/$defs/agentConfig" }] },
+        "outputType": { "type": "object" },
+        "guardrails": { "type": "array", "items": { "type": "object" } },
+        "memory": { "type": "object" },
+        "maxTokens": { "type": "integer", "minimum": 0 },
+        "contextWindowBudget": { "type": "integer", "minimum": 0 },
+        "temperature": { "type": "number" },
+        "reasoningEffort": { "type": "string" },
+        "stopWhen": { "$ref": "#/$defs/taskReference" },
+        "termination": { "type": "object" },
+        "handoffs": { "type": "array", "items": { "type": "object" } },
+        "allowedTransitions": { "type": "array", "items": { "type": "string" } },
+        "introduction": { "type": "string" },
+        "metadata": { "type": "object" },
+        "enablePlanning": { "type": "boolean" },
+        "planner": { "$ref": "#/$defs/agentConfig" },
+        "fallback": { "$ref": "#/$defs/agentConfig" },
+        "callbacks": { "type": "array", "items": { "type": "object" } },
+        "includeContents": { "type": "boolean" },
+        "thinkingConfig": { "type": "object" },
+        "requiredTools": { "type": "array", "items": { "type": "string" } },
+        "prefillTools": { "type": "array", "items": { "type": "object" } },
+        "fallbackMaxTurns": { "type": "integer", "minimum": 0 },
+        "planSource": { "type": "string" },
+        "plannerContext": { "type": "array", "items": { "type": "object" } },
+        "synthesize": { "type": "boolean" },
+        "maskedFields": { "type": "array", "items": { "type": "string" } },
+        "gate": { "type": "object" },
+        "codeExecution": { "type": "object" },
+        "cliConfig": { "type": "object" },
+        "credentials": { "type": "array", "items": { "type": "string" } },
+        "_framework": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

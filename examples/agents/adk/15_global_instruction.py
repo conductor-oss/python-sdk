@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Global Instruction — global_instruction for system-wide context.
 
 Mirrors the pattern from Google ADK samples (data-science, customer-service).
@@ -17,42 +14,44 @@ from conductor.ai.agents import AgentRuntime
 from settings import settings
 
 
+def get_product_info(product_name: str) -> dict:
+    """Look up product information."""
+    products = {
+        "widget pro": {
+            "name": "Widget Pro",
+            "price": 49.99,
+            "category": "electronics",
+            "in_stock": True,
+            "rating": 4.7,
+        },
+        "gadget max": {
+            "name": "Gadget Max",
+            "price": 89.99,
+            "category": "electronics",
+            "in_stock": False,
+            "rating": 4.2,
+        },
+        "smart lamp": {
+            "name": "Smart Lamp",
+            "price": 34.99,
+            "category": "home",
+            "in_stock": True,
+            "rating": 4.5,
+        },
+    }
+    return products.get(product_name.lower(), {"error": f"Product '{product_name}' not found"})
+
+
+def get_store_hours(location: str) -> dict:
+    """Get store hours for a location."""
+    stores = {
+        "downtown": {"hours": "9 AM - 9 PM", "open_today": True},
+        "mall": {"hours": "10 AM - 8 PM", "open_today": True},
+    }
+    return stores.get(location.lower(), {"error": f"Location '{location}' not found"})
+
+
 def main():
-    def get_product_info(product_name: str) -> dict:
-        """Look up product information."""
-        products = {
-            "widget pro": {
-                "name": "Widget Pro",
-                "price": 49.99,
-                "category": "electronics",
-                "in_stock": True,
-                "rating": 4.7,
-            },
-            "gadget max": {
-                "name": "Gadget Max",
-                "price": 89.99,
-                "category": "electronics",
-                "in_stock": False,
-                "rating": 4.2,
-            },
-            "smart lamp": {
-                "name": "Smart Lamp",
-                "price": 34.99,
-                "category": "home",
-                "in_stock": True,
-                "rating": 4.5,
-            },
-        }
-        return products.get(product_name.lower(), {"error": f"Product '{product_name}' not found"})
-
-    def get_store_hours(location: str) -> dict:
-        """Get store hours for a location."""
-        stores = {
-            "downtown": {"hours": "9 AM - 9 PM", "open_today": True},
-            "mall": {"hours": "10 AM - 8 PM", "open_today": True},
-        }
-        return stores.get(location.lower(), {"error": f"Location '{location}' not found"})
-
     agent = Agent(
         name="store_assistant",
         model=settings.llm_model,
@@ -81,7 +80,7 @@ def main():
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.15_global_instruction
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

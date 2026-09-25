@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Token usage collection tests.
 
 Validates that AgentResult.token_usage is populated correctly for:
@@ -9,8 +6,8 @@ Validates that AgentResult.token_usage is populated correctly for:
 - Parallel agents (all sub-workflows aggregated)
 
 Requires:
-    - Agentspan server running (AGENTSPAN_SERVER_URL)
-    - LLM integration configured (AGENTSPAN_LLM_MODEL)
+    - Conductor Agents server running (CONDUCTOR_SERVER_URL)
+    - LLM integration configured (CONDUCTOR_AGENT_LLM_MODEL)
 
 Run with:
     python3 -m pytest tests/integration/test_token_usage.py -v -s

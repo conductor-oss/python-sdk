@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Context Condensation Stress Test — orchestrator + sub-agents, history condenses 3+ times.
 
 An orchestrator agent calls a ``deep_analyst`` sub-agent once per technology
@@ -27,10 +24,10 @@ Setup — required for condensation to trigger
 ---------------------------------------------
 Add to ``server/src/main/resources/application.properties`` and restart::
 
-    agentspan.default-context-window=10000
+    Conductor.default-context-window=10000
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY
 """
 
@@ -358,7 +355,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(graph)
         # CLI alternative:
-        # agentspan deploy --package examples.langgraph.44_context_condensation
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(graph)

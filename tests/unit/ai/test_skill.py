@@ -249,8 +249,8 @@ class TestWorkerRegistration:
         agent = skill(FIXTURES / "script-skill", model="openai/gpt-4o")
         workers = create_skill_workers(agent)
         script_worker = next(w for w in workers if "hello" in w.name)
-        result = script_worker.func(command="Agentspan")
-        assert "Hello, Agentspan!" in result
+        result = script_worker.func(command="Conductor Agents")
+        assert "Hello, Conductor Agents!" in result
 
     def test_no_workers_for_instruction_only_skill(self):
         from conductor.ai.agents.skill import create_skill_workers, skill

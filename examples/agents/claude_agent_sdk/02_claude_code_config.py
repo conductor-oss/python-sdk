@@ -36,7 +36,7 @@ def main():
         # 1. Deploy once during CI/CD:
         # runtime.deploy(reviewer)
         # CLI alternative:
-        # agentspan deploy --package examples.claude_agent_sdk.02_claude_code_config
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(reviewer)

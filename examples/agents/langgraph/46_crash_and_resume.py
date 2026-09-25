@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Crash & Resume — restart workers after a process crash.
 
 Demonstrates the production pattern for durable LangGraph execution:
@@ -22,7 +19,7 @@ How this works:
     resume logic, no execution_id needed.
 
 Why this matters:
-    LangGraph graphs running through Agentspan are compiled into durable
+    LangGraph graphs running through Conductor are compiled into durable
     Conductor workflows.  If your process crashes (OOM, deploy, exception),
     no work is lost — the server holds the workflow state.  You just need
     to restart serve() and the workers pick up from where they left off.
@@ -38,7 +35,7 @@ Production pattern:
     runtime.start("sales_analyst", "prompt")  # or via server API / UI
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY for ChatOpenAI
 """
 
@@ -51,8 +48,8 @@ from langchain_openai import ChatOpenAI
 
 from conductor.ai.agents import AgentRuntime
 
-SESSION_FILE = "/tmp/agentspan_langgraph_resume.session"
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+SESSION_FILE = "/tmp/Conductor_langgraph_resume.session"
+SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 UI_BASE = SERVER_URL.replace("/api", "")
 
 
@@ -107,80 +104,80 @@ graph = create_agent(
 )
 
 
-# -- Phase 1: Deploy, start, serve briefly, then crash --------------------
+if __name__ == "__main__":
+    # -- Phase 1: Deploy, start, serve briefly, then crash --------------------
 
-print("=" * 60)
-print("Phase 1: Deploy + start, then simulate crash")
-print("=" * 60)
+    print("=" * 60)
+    print("Phase 1: Deploy + start, then simulate crash")
+    print("=" * 60)
 
-with AgentRuntime() as runtime:
-    # Deploy the workflow definition (in production, do this once in CI/CD)
-    runtime.deploy(graph)
-    print("Agent deployed to server.")
+    with AgentRuntime() as runtime:
+        # Deploy the workflow definition (in production, do this once in CI/CD)
+        runtime.deploy(graph)
+        print("Agent deployed to server.")
 
-    # Start an execution by name — the agent is already deployed on the server,
-    # so we only need to send the name and prompt (not the full graph object).
-    handle = runtime.start(
-        "sales_analyst",
-        "Fetch the Q4 2025 sales data, run a full trend analysis on it, "
-        "then generate an executive summary report. "
-        "Call each tool in sequence — do not skip any step.",
-    )
-    print(f"Execution started: {handle.execution_id}")
+        # Start an execution by name — the agent is already deployed on the server,
+        # so we only need to send the name and prompt (not the full graph object).
+        handle = runtime.start(
+            "sales_analyst",
+            "Fetch the Q4 2025 sales data, run a full trend analysis on it, "
+            "then generate an executive summary report. "
+            "Call each tool in sequence — do not skip any step.",
+        )
+        print(f"Execution started: {handle.execution_id}")
 
-    # Save execution_id so we can check status later
-    with open(SESSION_FILE, "w") as f:
-        f.write(handle.execution_id)
+        # Save execution_id so we can check status later
+        with open(SESSION_FILE, "w") as f:
+            f.write(handle.execution_id)
 
-    # Serve workers just long enough for the first tool to start
-    print("\nServing workers briefly...")
-    runtime.serve(graph, blocking=False)
-    time.sleep(8)
+        # Serve workers just long enough for the first tool to start
+        print("\nServing workers briefly...")
+        runtime.serve(graph, blocking=False)
+        time.sleep(8)
 
-print("\nRuntime closed — workers are dead, workflow persists on server.")
-print()
+    print("\nRuntime closed — workers are dead, workflow persists on server.")
+    print()
 
-with open(SESSION_FILE) as f:
-    saved_execution_id = f.read().strip()
+    with open(SESSION_FILE) as f:
+        saved_execution_id = f.read().strip()
 
-# -- Pause: let the user see the stalled execution in the UI --------------
+    # -- Pause: let the user see the stalled execution in the UI --------------
 
-ui_link = f"{UI_BASE}/execution/{saved_execution_id}"
-print("-" * 60)
-print("Open the Agentspan UI to see the execution in RUNNING state:")
-print(f"  {ui_link}")
-print()
-print("The workflow is alive on the server but stalled — no workers are")
-print("polling to pick up the next task.  The completed steps are")
-print("preserved; only the remaining steps need to run.")
-print("-" * 60)
-input("\nPress Enter to resume (restart workers)...")
-print()
-
-
-# -- Phase 2: Restart serve — workers pick up stalled tasks ----------------
-
-print("=" * 60)
-print("Phase 2: Restart serve() — workers reconnect automatically")
-print("=" * 60)
-
-with AgentRuntime() as runtime:
-    # serve() re-registers the same workers.  The server dispatches
-    # stalled tasks to them — no resume() call needed.
-    print("\nServing workers (non-blocking for demo)...")
-    runtime.serve(graph, blocking=False)
-
-    # Poll until the execution completes
-    print(f"Polling execution: {saved_execution_id}")
-    status = runtime.get_status(saved_execution_id)
-    while not status.is_complete:
-        time.sleep(2)
-        status = runtime.get_status(saved_execution_id)
-        print(f"  status: {status.status}")
-
-    print(f"\nStatus: {status.status}")
-    print(f"Output: {status.output}")
-    print("\nCheck the completed execution in the UI:")
+    ui_link = f"{UI_BASE}/execution/{saved_execution_id}"
+    print("-" * 60)
+    print("Open the Conductor UI to see the execution in RUNNING state:")
     print(f"  {ui_link}")
+    print()
+    print("The workflow is alive on the server but stalled — no workers are")
+    print("polling to pick up the next task.  The completed steps are")
+    print("preserved; only the remaining steps need to run.")
+    print("-" * 60)
+    input("\nPress Enter to resume (restart workers)...")
+    print()
 
-print("\nDone — same workflow, seamless resume after simulated crash.")
+    # -- Phase 2: Restart serve — workers pick up stalled tasks ----------------
+
+    print("=" * 60)
+    print("Phase 2: Restart serve() — workers reconnect automatically")
+    print("=" * 60)
+
+    with AgentRuntime() as runtime:
+        # serve() re-registers the same workers.  The server dispatches
+        # stalled tasks to them — no resume() call needed.
+        print("\nServing workers (non-blocking for demo)...")
+        runtime.serve(graph, blocking=False)
+
+        # Poll until the execution completes
+        print(f"Polling execution: {saved_execution_id}")
+        status = runtime.get_status(saved_execution_id)
+        while not status.is_complete:
+            time.sleep(2)
+            status = runtime.get_status(saved_execution_id)
+            print(f"  status: {status.status}")
+
+        print(f"\nStatus: {status.status}")
+        print(f"Output: {status.output}")
+        print("\nCheck the completed execution in the UI:")
+        print(f"  {ui_link}")
+
+    print("\nDone — same workflow, seamless resume after simulated crash.")

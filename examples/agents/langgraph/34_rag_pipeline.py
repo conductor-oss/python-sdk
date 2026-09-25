@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """RAG Pipeline — Retrieval-Augmented Generation with a StateGraph.
 
 Demonstrates:
@@ -11,7 +8,7 @@ Demonstrates:
     - Practical use case: Q&A over a private knowledge base
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - OPENAI_API_KEY for ChatOpenAI
 """
 
@@ -46,11 +43,11 @@ DOCUMENTS = [
     ),
     Document(
         page_content=(
-            "Agentspan provides a runtime for deploying LangGraph and LangChain agents at scale. "
+            "Conductor provides a runtime for deploying LangGraph and LangChain agents at scale. "
             "It uses Conductor as an orchestration engine and exposes agents as Conductor tasks. "
             "The AgentRuntime class handles worker registration and lifecycle management."
         ),
-        metadata={"source": "agentspan_docs", "topic": "agentspan"},
+        metadata={"source": "Conductor_docs", "topic": "Conductor"},
     ),
     Document(
         page_content=(
@@ -174,7 +171,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(graph)
         # CLI alternative:
-        # agentspan deploy --package examples.langgraph.34_rag_pipeline
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(graph)

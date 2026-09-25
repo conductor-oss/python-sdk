@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Live correctness tests — runs real agents with real LLM calls.
 
 These tests verify that orchestration strategies actually work end-to-end:
@@ -12,7 +9,7 @@ These tests verify that orchestration strategies actually work end-to-end:
   - Strategy validators catch real violations
 
 Requires:
-  - Agentspan server running (AGENTSPAN_SERVER_URL)
+  - Conductor Agents server running (CONDUCTOR_SERVER_URL)
   - OPENAI_API_KEY set
 
 Run with:

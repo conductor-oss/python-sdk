@@ -1,7 +1,4 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
-"""Unit tests for ``agent_http`` — the worker HTTP path that posts to Agentspan
+"""Unit tests for ``agent_http`` — the worker HTTP path that posts to Conductor Agents
 ``/agent/*`` endpoints through the SDK ``ApiClient``.
 
 Uses a real in-process HTTP server (no mocks, per repo test policy) serving both

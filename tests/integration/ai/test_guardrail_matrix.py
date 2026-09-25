@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Guardrail matrix integration tests — full 3x3x3 coverage, parallel execution.
 
 All 27 workflows are fired concurrently via runtime.start(), then polled to
@@ -13,7 +10,7 @@ Run:
 
 Requirements:
     - Conductor server running
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
     - AGENT_LLM_MODEL set (default: anthropic/claude-sonnet-4-6)
 """
 

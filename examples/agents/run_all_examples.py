@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-"""Run every agent example against a live Agentspan server and report status.
+"""Run every agent example against a live Conductor server and report status.
 
 "Works fine" means:
   * PASS  — process exits 0 within the timeout (no compile/import/runtime error,
@@ -24,8 +22,8 @@ Usage:
         [--only PATTERN] [--out report.html]
 
 Env (with sensible defaults for the local dev server on :6767):
-    CONDUCTOR_SERVER_URL / AGENTSPAN_SERVER_URL  server API base
-    AGENTSPAN_LLM_MODEL                          model steered to a working provider
+    CONDUCTOR_SERVER_URL / CONDUCTOR_SERVER_URL  server API base
+    CONDUCTOR_AGENT_LLM_MODEL                          model steered to a working provider
 """
 from __future__ import annotations
 
@@ -64,6 +62,12 @@ DAEMON_SKIP = {
 }
 # Require external infra / providers not available in this environment.
 INFRA_SKIP = {
+    "30_skills_dg_review.py": "needs the dg skill cloned to ~/.claude/skills/dg",
+    "32_skills_multi_agent.py": "needs the dg skill cloned to ~/.claude/skills/dg",
+    "75_wait_for_message.py": "needs the workflow messages API (not in conductor-oss 3.32.0-rc.8)",
+    "82_fan_out_fan_in.py": "needs the workflow messages API (not in conductor-oss 3.32.0-rc.8)",
+    "83_stateful_resume.py": "needs the workflow messages API (not in conductor-oss 3.32.0-rc.8)",
+    "84_deterministic_stop.py": "needs the workflow messages API (not in conductor-oss 3.32.0-rc.8)",
     "04_mcp_weather.py": "needs an MCP server",
     "04_http_and_mcp_tools.py": "needs an MCP server",
     "16f_credentials_mcp_tool.py": "needs an MCP server",
@@ -249,13 +253,13 @@ def main() -> int:
     ap.add_argument("--out", default=str(HERE / "run_report.html"))
     args = ap.parse_args()
 
-    server = os.environ.get("CONDUCTOR_SERVER_URL") or os.environ.get("AGENTSPAN_SERVER_URL") or DEFAULT_SERVER
-    model = os.environ.get("AGENTSPAN_LLM_MODEL", DEFAULT_MODEL)
+    server = os.environ.get("CONDUCTOR_SERVER_URL") or os.environ.get("CONDUCTOR_SERVER_URL") or DEFAULT_SERVER
+    model = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", DEFAULT_MODEL)
 
     env = dict(os.environ)
     env["CONDUCTOR_SERVER_URL"] = server
-    env["AGENTSPAN_SERVER_URL"] = server
-    env["AGENTSPAN_LLM_MODEL"] = model
+    env["CONDUCTOR_SERVER_URL"] = server
+    env["CONDUCTOR_AGENT_LLM_MODEL"] = model
     env["PYTHONPATH"] = os.pathsep.join([str(REPO / "src"), str(HERE), env.get("PYTHONPATH", "")])
     env["PYTHONUNBUFFERED"] = "1"
 

@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """109 — Plan-Execute-Replan loop on top of PAE.
 
 The ``Strategy.PLAN_EXECUTE`` harness gives you a deterministic compiled
@@ -40,8 +37,8 @@ What to look for in the output:
   * The loop exits when the threshold is met OR ``max_iterations`` hits.
 
 Requirements:
-  - AGENTSPAN_SERVER_URL=http://localhost:8080/api (default)
-  - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini (default)
+  - CONDUCTOR_SERVER_URL=http://localhost:8080/api (default)
+  - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini (default)
   - An LLM key for the chosen model (sections are generated, not static).
 """
 
@@ -346,7 +343,7 @@ def main(argv: list[str]) -> None:
         name="report_replan",
         tools=[create_directory, write_file, assemble_files, check_word_count],
         planner_instructions="(planner unused; plans supplied directly each iteration)",
-        model=os.environ.get("AGENTSPAN_LLM_MODEL", "anthropic/claude-sonnet-4-6"),
+        model=os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "anthropic/claude-sonnet-4-6"),
     )
 
     with AgentRuntime() as runtime:

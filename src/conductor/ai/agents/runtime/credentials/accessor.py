@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """get_secret() accessor — read resolved credentials without going through env vars.
 
 The worker framework calls ``set_credential_context(secrets_dict)`` before

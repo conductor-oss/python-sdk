@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Determinism tests for the PLAN_EXECUTE typed-Plan path.
 
 Together with the Java-side ``testCompileIsDeterministicAcrossInvocations``

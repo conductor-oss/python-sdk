@@ -10,10 +10,19 @@ End-to-end integration tests that run against a **real Conductor server**.
 
 ### 1. Conductor Server Running
 
-**Option A: Local Conductor (Docker)**
+**Option A: Local Conductor OSS (Docker Compose, recommended)**
 ```bash
-docker run --init -p 8080:8080 -p 5000:5000 conductoross/conductor-standalone:3.15.0
+scripts/run-integration-oss.sh --up-only
 ```
+This starts a Postgres-backed Conductor OSS stack
+(`scripts/docker-compose-oss.yaml`), waits for it to become healthy, and stops
+there, leaving it running for you to point test runs at. Tear it down with
+`docker compose -f scripts/docker-compose-oss.yaml down -v`. Pass
+`--version <tag>` to pin a specific `conductoross/conductor` image.
+
+Without `--up-only` the same script also runs the suite and then tears the
+stack down — see [Against local Conductor OSS](#against-local-conductor-oss)
+below.
 
 **Option B: Orkes Cloud**
 ```bash
@@ -29,6 +38,12 @@ export CONDUCTOR_AUTH_SECRET="your-key-secret"
 # Required
 export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
 
+# Required when the server is plain OSS Conductor (Option A). Orkes-only
+# tests check this and skip themselves; without it they fail instead.
+# run-integration-oss.sh exports it for the run it drives, but a stack left
+# up with --up-only or --keep-up needs it set in your own shell.
+export CONDUCTOR_SERVER_TYPE="oss"
+
 # Optional (for Orkes Cloud)
 export CONDUCTOR_AUTH_KEY="your-key"
 export CONDUCTOR_AUTH_SECRET="your-secret"
@@ -38,7 +53,94 @@ export CONDUCTOR_AUTH_SECRET="your-secret"
 
 ## Running Tests
 
+### Run the CI suite locally (recommended)
+
+Use the helper script to run exactly what the `integration-test` job in
+[`.github/workflows/pull_request.yml`](../../.github/workflows/pull_request.yml)
+runs against the authenticated Orkes server. (For the second CI job, which runs
+against plain OSS Conductor, see
+[Against local Conductor OSS](#against-local-conductor-oss) below.)
+It excludes the AI/agentic tests (which need a dedicated AI-enabled server) and
+the slow performance test, so you don't have to remember the `--ignore` flags:
+
+```bash
+export CONDUCTOR_SERVER_URL="http://localhost:8080/api"
+# For Orkes / authenticated servers also set:
+# export CONDUCTOR_AUTH_KEY="your-key"
+# export CONDUCTOR_AUTH_SECRET="your-secret"
+
+./scripts/run_integration_tests.sh
+
+# Also run the performance test (test_update_task_v2_perf.py, ~1000 workflows,
+# several minutes):
+./scripts/run_integration_tests.sh --with-perf
+```
+
+By default this runs the fast `core` bucket and **skips the slowest tests**
+(a few tests deliberately sleep ~50-90s to exercise lease-extension timeouts and
+one aggregate `test_all`). Those live in their own buckets, each of which runs as
+a separate parallel CI job. Select one with `--bucket=<name>`:
+
+| Bucket | What it runs |
+| --- | --- |
+| `core` (default) | everything except the slow buckets below |
+| `long-sync` | sync lease-extension tests (`test_lease_extension.py`, ~90s) |
+| `long-async` | async lease-extension tests (`test_async_lease_extension.py`, ~90s) |
+| `test-all` | aggregate workflow-client `test_all` (`test_workflow_client_intg.py`, ~83s) |
+| `all` | the full suite (no bucket filtering) — for a complete local run |
+
+```bash
+./scripts/run_integration_tests.sh                  # fast: skips the slow buckets
+./scripts/run_integration_tests.sh --bucket=long-sync
+./scripts/run_integration_tests.sh --bucket=all     # run everything
+```
+
+Any extra arguments pass straight through to pytest, which is handy for
+targeting a subset of tests or getting more detail on failures. See additional
+options and examples in the comments at the top of
+[`scripts/run_integration_tests.sh`](../../scripts/run_integration_tests.sh).
+
+### Against local Conductor OSS
+
+`scripts/run-integration-oss.sh` brings up the OSS stack, runs the suite against
+it with `CONDUCTOR_SERVER_TYPE=oss` set, and tears the stack down on exit:
+
+```bash
+# What the integration-tests-oss CI job runs — the full suite:
+scripts/run-integration-oss.sh -- --bucket=all
+
+# Faster loop: the `core` bucket only (the default if no bucket is given)
+scripts/run-integration-oss.sh
+```
+
+**The default is `--bucket=core`, which is not what CI runs.** `core` excludes
+`test_workflow_client_intg.py`, and that file is the only entry point to the
+workflow-execution and Signal API scenarios — so the default run exercises
+neither. Use `-- --bucket=all` to reproduce a CI failure.
+
+Anything after `--` is forwarded to `scripts/run_integration_tests.sh`, so the
+bucket table and pytest passthrough above apply here too. `--version <tag>`,
+`--keep-up` (leave the stack up afterwards) and `--up-only` (start the stack and
+skip the suite) are handled by the script itself and go *before* the `--`.
+
+`--version <tag>` pins the image; without it the stack uses `latest`, which is
+mutable — the script re-pulls on every run so it never serves a stale cache.
+
+On OSS, the Orkes-Enterprise-only tests, classes, and modules (Authorization,
+Secrets, Schema, Service Registry, metadata/scheduler tags) gate themselves on
+`is_oss()` in [`conftest.py`](conftest.py) (which reads
+`CONDUCTOR_SERVER_TYPE`) and skip themselves — see the individual test files for
+the specific gap each one covers. The Signal API tests *do* run, using
+WAIT-task-based fixtures (`complex_wf_signal_test_oss` and friends) instead of
+the Orkes-only YIELD-based ones; see `_signal_test_workflow_names()` in
+[`workflow/test_workflow_execution.py`](workflow/test_workflow_execution.py).
+
+Expect a large number of skips: a full OSS run is roughly 20 passed / 70 skipped.
+
 ### Run All Integration Tests
+
+This includes the AI/agentic tests, which require an AI-enabled server (see
+[Tests excluded by default](#tests-excluded-by-default) below):
 
 ```bash
 python3 -m pytest tests/integration/ -v -s
@@ -360,8 +462,8 @@ curl http://localhost:8080/api/health
 # Check environment variable
 echo $CONDUCTOR_SERVER_URL
 
-# Start local server
-docker run --init -p 8080:8080 -p 5000:5000 conductoross/conductor-standalone:3.15.0
+# Start local server (stack only, no test run)
+scripts/run-integration-oss.sh --up-only
 ```
 
 ### Tests Timeout
@@ -442,46 +544,42 @@ To add more test scenarios:
 
 ---
 
+## Tests excluded by default
+
+`scripts/run_integration_tests.sh` (and CI) skip a few tests by default.
+
+**AI/agentic tests** need a dedicated AI-enabled server:
+
+- `test_ai_task_types.py` and `test_ai_examples.py` hardcode
+  `http://localhost:7001/api`.
+- `test_agentic_workflows.py` needs an `openai` LLM provider (model
+  `gpt-4o-mini`) configured on the server.
+
+Run them only against a suitably configured AI-enabled server, e.g.:
+
+```bash
+python3 -m pytest tests/integration/test_ai_task_types.py -v -s
+```
+
+**Performance test** (`test_update_task_v2_perf.py`) submits ~1000 workflows and
+takes several minutes. Include it with the `--with-perf` flag:
+
+```bash
+./scripts/run_integration_tests.sh --with-perf
+```
+
+---
+
 ## CI/CD Integration
 
-### GitHub Actions Example
+Integration tests run in CI via the `integration-test` job in
+[`.github/workflows/pull_request.yml`](../../.github/workflows/pull_request.yml)
+on pushes to `main`, PRs targeting `main`, and manual dispatch. The job invokes
+`scripts/run_integration_tests.sh` (excluding the AI tests and the performance
+test) and reads the server from the `SDKDEV_V5_*` repository variables/secret.
 
-```yaml
-name: Integration Tests
-
-on: [push, pull_request]
-
-jobs:
-  integration:
-    runs-on: ubuntu-latest
-
-    services:
-      conductor:
-        image: conductoross/conductor-standalone:3.15.0
-        ports:
-          - 8080:8080
-          - 5000:5000
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
-
-      - name: Install dependencies
-        run: pip install -e .
-
-      - name: Wait for Conductor
-        run: |
-          timeout 60 bash -c 'until curl -f http://localhost:8080/api/health; do sleep 2; done'
-
-      - name: Run integration tests
-        env:
-          CONDUCTOR_SERVER_URL: http://localhost:8080/api
-        run: python3 -m pytest tests/integration/ -v -s
-```
+To reproduce the CI run locally, use the script documented in
+[Running Tests](#running-tests) above.
 
 ---
 

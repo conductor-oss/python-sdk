@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Unit tests for the JWT-expiry decoder.
 
 Token minting/caching moved to the SDK ``ApiClient`` — see ``test_agent_http.py``

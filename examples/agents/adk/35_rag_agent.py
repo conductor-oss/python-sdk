@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Google ADK RAG Agent — vector search + document indexing.
 
 Mirrors the pattern from google/adk-samples/RAG but uses Conductor's native
@@ -27,8 +24,8 @@ Requirements:
     - pip install google-adk
     - Conductor server with RAG system tasks enabled (--spring.profiles.active=rag)
     - A configured vector database (e.g., pgvector)
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
-    - AGENTSPAN_LLM_MODEL=google_gemini/gemini-2.0-flash in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_AGENT_LLM_MODEL=google_gemini/gemini-2.0-flash in .env or environment
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, search_tool, index_tool
@@ -79,7 +76,7 @@ DOCUMENTS = [
         "text": (
             "Agent Configuration. Agents are defined with a name, model, instructions, "
             "and tools. The model field uses the format 'provider/model_name', e.g. "
-            "'openai/gpt-4o' or 'anthropic/claude-sonnet-4-20250514'. Instructions can be "
+            "'openai/gpt-4o' or 'anthropic/claude-sonnet-5'. Instructions can be "
             "a string or a PromptTemplate referencing a stored prompt. Tools can be "
             "@tool-decorated Python functions, http_tool for REST APIs, mcp_tool for "
             "MCP servers, or agent_tool to wrap another agent as a callable tool. "
@@ -208,7 +205,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(rag_agent)
         # CLI alternative:
-        # agentspan deploy --package examples.adk.35_rag_agent
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(rag_agent)

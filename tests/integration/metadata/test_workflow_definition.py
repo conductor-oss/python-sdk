@@ -1,6 +1,8 @@
+import time
 from typing import List
 
 from conductor.client.http.models import TaskDef
+from conductor.client.http.rest import ApiException
 from conductor.client.http.models.start_workflow_request import StartWorkflowRequest
 from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
@@ -15,14 +17,17 @@ from conductor.client.workflow.task.simple_task import SimpleTask
 from conductor.client.workflow.task.sub_workflow_task import SubWorkflowTask, InlineSubWorkflowTask
 from conductor.client.workflow.task.switch_task import SwitchTask
 from conductor.client.workflow.task.terminate_task import TerminateTask, WorkflowStatus
+from tests.integration.retry_helpers import retry_scenario
 
 WORKFLOW_NAME = 'python_test_workflow'
 TASK_NAME = 'python_test_simple_task'
 WORKFLOW_OWNER_EMAIL = "test@test"
 
 
-def run_workflow_definition_tests(workflow_executor: WorkflowExecutor) -> None:
-    test_kitchensink_workflow_registration(workflow_executor)
+def run_workflow_definition_tests(workflow_executor: WorkflowExecutor, deadline=None) -> None:
+    retry_scenario('test_kitchensink_workflow_registration',
+                   test_kitchensink_workflow_registration, workflow_executor,
+                   deadline=deadline)
 
 
 def generate_tasks_defs() -> List[TaskDef]:
@@ -68,7 +73,23 @@ def test_kitchensink_workflow_registration(workflow_executor: WorkflowExecutor) 
     if type(workflow_id) != str or workflow_id == '':
         raise Exception(f'failed to start workflow, name: {WORKFLOW_NAME}')
 
-    workflow_executor.terminate(workflow_id=workflow_id, reason="End test")
+    _terminate_with_retry(workflow_executor, workflow_id, reason="End test")
+
+
+def _terminate_with_retry(workflow_executor: WorkflowExecutor, workflow_id: str,
+                          reason: str, retries: int = 5) -> None:
+    # Terminating a workflow that the server is still evaluating can transiently
+    # return 423 Locked ("Unable to acquire lock"). Retry with backoff so the
+    # test tolerates that race instead of failing.
+    for attempt in range(retries):
+        try:
+            workflow_executor.terminate(workflow_id=workflow_id, reason=reason)
+            return
+        except ApiException as e:
+            if e.status == 423 and attempt < retries - 1:
+                time.sleep(1 << attempt)
+                continue
+            raise
 
 
 def generate_simple_task(id: int) -> SimpleTask:

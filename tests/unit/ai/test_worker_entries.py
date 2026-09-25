@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """FunctionRef / SpawnSafetyError / probe / async-detection tests (idea-5 Stage 1).
 
 Cross-process cases use the real 'spawn' context regardless of platform
@@ -18,6 +15,7 @@ from conductor.ai.agents.runtime._worker_entries import (
     FunctionRef,
     SpawnSafetyError,
     ToolWorkerEntry,
+    _find_embedded_function,
     probe_spawn_safety,
 )
 from conductor.ai.agents.tool import get_tool_def
@@ -161,6 +159,113 @@ class TestFunctionRefContainerHop:
         finally:
             p.join(timeout=30)
         assert p.exitcode == 0
+
+
+# ── FunctionTool resolution (real openai-agents @function_tool) ────────────
+
+
+class TestFunctionRefDeepExtract:
+    """OpenAI Agents SDK 0.19+ exposes FunctionTool functions via wrappers."""
+
+    def test_sync_function_tool_deep_extract(self):
+        pytest.importorskip("agents")
+        from tests.unit.resources import openai_agents_entry_helpers as oa
+
+        raw = _find_embedded_function(oa.oa_get_weather)
+        assert raw is not None
+        ref = FunctionRef.of(raw)
+        assert ref == FunctionRef(oa.__name__, "oa_get_weather", unwrap_depth=1)
+        assert ref.resolve() is raw
+
+    def test_async_function_tool_deep_extract(self):
+        pytest.importorskip("agents")
+        from tests.unit.resources import openai_agents_entry_helpers as oa
+
+        raw = _find_embedded_function(oa.oa_get_weather_async)
+        assert raw is not None
+        ref = FunctionRef.of(raw)
+        assert ref.unwrap_depth == 1
+        assert ref.deep_extract is False
+        assert ref.resolve() is raw
+
+    def test_ref_pickles(self):
+        pytest.importorskip("agents")
+        from tests.unit.resources import openai_agents_entry_helpers as oa
+
+        raw = _find_embedded_function(oa.oa_get_weather)
+        ref = pickle.loads(pickle.dumps(FunctionRef.of(raw)))
+        assert ref.resolve() is raw
+
+    def test_entry_transports_function_tool_fn_by_ref(self):
+        # Pre-fix this fell to fn_direct, whose reference pickling then found
+        # the FunctionTool at the global name: "it's not the same object as …".
+        pytest.importorskip("agents")
+        from tests.unit.resources import openai_agents_entry_helpers as oa
+
+        raw = _find_embedded_function(oa.oa_get_weather)
+        entry = ToolWorkerEntry.for_callable(raw, "oa_get_weather")
+        assert entry.fn_ref is not None
+        clone = pickle.loads(pickle.dumps(entry))
+        assert clone._target() is raw
+
+    def test_cross_process_spawn_roundtrip(self):
+        pytest.importorskip("agents")
+        from tests.unit.resources import openai_agents_entry_helpers as oa
+
+        raw = _find_embedded_function(oa.oa_get_weather)
+        ctx = multiprocessing.get_context("spawn")
+        q = ctx.Queue()
+        ref_bytes = pickle.dumps(FunctionRef.of(raw))
+        p = ctx.Process(target=helpers.resolve_and_call_child, args=(ref_bytes, "Boston", q))
+        p.start()
+        try:
+            assert q.get(timeout=30) == "sunny in Boston"
+        finally:
+            p.join(timeout=30)
+        assert p.exitcode == 0
+
+
+class TestClosureCandidatePreference:
+    """_extract_from_closure prefers an importable candidate over a nested one.
+
+    Always-runs counterpart to TestFunctionRefDeepExtract above, which is
+    importorskip'd on the openai-agents extra and pins whatever internals the
+    installed version happens to have. openai-agents 0.22.3 broke the old
+    first-match walk by adding a nested ``_prepare_arguments(input, tool_name)``
+    beside the user's function in one closure — `input` is not `ctx`, so the
+    wrapper was returned instead. These pin the rule, not a library's shape.
+    """
+
+    def test_prefers_importable_over_nested_helper(self):
+        target = helpers.plain_sample  # local binding -> a real closure cell
+
+        def _prepare_arguments(input: str, tool_name: str) -> dict:
+            return {"input": input, "tool": tool_name}
+
+        def impl():
+            return _prepare_arguments, target
+
+        # co_freevars is alphabetical, so the nested helper is seen first —
+        # the same adverse ordering openai-agents 0.22.3 produces.
+        assert impl.__code__.co_freevars == ("_prepare_arguments", "target")
+        found = we._extract_from_closure(impl)
+        assert found is helpers.plain_sample
+        assert FunctionRef.of(found).resolve() is helpers.plain_sample
+
+    def test_falls_back_to_nested_when_nothing_importable(self):
+        # Closures holding no importable function keep the old behaviour: the
+        # nested candidate is still returned, so callers get the same
+        # actionable SpawnSafetyError from FunctionRef.of as before.
+        def nested(city: str) -> str:
+            return city
+
+        def impl():
+            return nested
+
+        found = we._extract_from_closure(impl)
+        assert found is nested
+        with pytest.raises(SpawnSafetyError, match="defined inside a function"):
+            FunctionRef.of(found)
 
 
 # ── Guardrail spawn transport ─────────────────────────────────────────────

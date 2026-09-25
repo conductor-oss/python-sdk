@@ -1,6 +1,3 @@
-# Copyright (c) 2026 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Cron-based scheduling for deployed agents.
 
 A :class:`Schedule` attaches a cron trigger to an agent at deploy time.

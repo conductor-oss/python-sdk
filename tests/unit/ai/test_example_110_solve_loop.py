@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Agentspan
+# Copyright (c) 2025 Conductor OSS
 # Licensed under the MIT License. See LICENSE file in the project root for details.
 
 """Unit tests for the goal-seeking plan-execute-replan loop in example 110.
@@ -25,7 +25,7 @@ def _load_example():
 
 def test_evaluate_one_passes_a_known_good_sentence():
     ex = _load_example()
-    # Exactly 20 words, starts with "Agentspan", contains all three keywords.
+    # Exactly 25 words, starts with "Agentspan", and contains every keyword.
     s = (
         "Agentspan reliably compiles each deterministic loop, iteratively validated through feedback "
         "and refinement until the orchestrated outcome converges to a stable, predictable, observable system state today."
@@ -78,7 +78,7 @@ def test_evaluate_one_keyword_check_requires_whole_word():
     ex = _load_example()
     # Contains 'looping' but not the standalone 'loop'.
     s = (
-        "Agentspan keeps looping through deterministic feedback for "
+        "Conductor keeps looping through deterministic feedback for "
         "fifteen consecutive minutes until the task is finally finished today."
     )
     ev = ex.evaluate_one(s)

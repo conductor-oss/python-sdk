@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Tier 2: Mock SSE server tests for _stream_sse().
 
 Spins up a real HTTP server in a thread that speaks SSE protocol,
@@ -416,9 +413,9 @@ class TestStreamSSEAuth:
         for k in (
             "CONDUCTOR_AUTH_KEY",
             "CONDUCTOR_AUTH_SECRET",
-            "AGENTSPAN_AUTH_KEY",
-            "AGENTSPAN_AUTH_SECRET",
-            "AGENTSPAN_API_KEY",
+            "CONDUCTOR_AGENT_AUTH_KEY",
+            "CONDUCTOR_AGENT_AUTH_SECRET",
+            "CONDUCTOR_AGENT_API_KEY",
         ):
             monkeypatch.delenv(k, raising=False)
 

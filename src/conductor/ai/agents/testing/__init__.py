@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Agent correctness testing framework.
 
 Provides composable assertions, mock execution, fluent API, and
@@ -55,6 +52,9 @@ from conductor.ai.agents.testing.mock import MockEvent, mock_run
 # Record/replay
 from conductor.ai.agents.testing.recording import record, replay
 
+# Semantic assertions
+from conductor.ai.agents.testing.semantic import assert_output_satisfies
+
 # Strategy validators
 from conductor.ai.agents.testing.strategy_validators import (
     StrategyViolation,
@@ -80,6 +80,8 @@ __all__ = [
     "assert_guardrail_passed",
     "assert_guardrail_failed",
     "assert_max_turns",
+    # Semantic assertions
+    "assert_output_satisfies",
     # Fluent API
     "expect",
     "AgentResultExpectation",

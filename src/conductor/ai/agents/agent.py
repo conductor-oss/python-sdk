@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Agent — the single orchestration primitive for Conductor Agents.
 
 Everything is an Agent. A single agent wraps an LLM + tools.

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Software Bug Assistant — agent_tool + mcp_tool for bug triage.
 
 Native SDK version of ADK example 33. Demonstrates:
@@ -10,8 +7,8 @@ Native SDK version of ADK example 33. Demonstrates:
 
 Requirements:
     - Conductor server with AgentTool + MCP support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini in .env or environment
     - GH_TOKEN in .env or environment
 """
 
@@ -269,7 +266,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(software_assistant)
         # CLI alternative:
-        # agentspan deploy --package examples.54_software_bug_assistant
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(software_assistant)

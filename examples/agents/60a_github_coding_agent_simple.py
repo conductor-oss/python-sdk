@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """GitHub Coding Agent (simplified) — pick an issue, code the fix, create a PR.
 
 Uses built-in code execution (local_code_execution=True) so the LLM
@@ -27,7 +24,7 @@ Architecture:
 
 Requirements:
     - Conductor server running
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
     - gh CLI authenticated (gh auth status)
     - Git configured with push access to the repo
 """
@@ -37,14 +34,14 @@ import uuid
 from conductor.ai.agents import Agent, AgentRuntime, Strategy
 from conductor.ai.agents.handoff import OnTextMention
 
-REPO = "agentspan/codingexamples"
+REPO = "Conductor/codingexamples"
 WORK_DIR = f"/tmp/codingexamples-{uuid.uuid4().hex[:8]}"
 
 # ── GitHub Agent: handles all git/gh operations ──────────────────────
 
 github_agent = Agent(
     name="github_agent",
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6",
     instructions=(
         "You are a GitHub operations specialist. You handle all git and "
         "GitHub CLI interactions.\n\n"
@@ -80,7 +77,7 @@ github_agent = Agent(
 
 coder = Agent(
     name="coder",
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6",
     instructions=(
         "You are an expert developer. You write clean, well-structured code.\n\n"
         f"The repo is cloned at {WORK_DIR}.\n\n"
@@ -112,7 +109,7 @@ coder = Agent(
 
 qa_tester = Agent(
     name="qa_tester",
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6",
     instructions=(
         "You are a meticulous QA engineer. Review the code written by the "
         "coder for correctness, edge cases, and bugs.\n\n"
@@ -137,7 +134,7 @@ qa_tester = Agent(
 
 coding_team = Agent(
     name="coding_team",
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6",
     instructions=(
         "You are a coding team coordinator. Delegate the incoming request "
         "to github_agent to get started — it will pick an issue and set "
@@ -202,7 +199,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(coding_team)
         # CLI alternative:
-        # agentspan deploy --package examples.60a_github_coding_agent_simple
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(coding_team)

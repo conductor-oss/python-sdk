@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """The SDK must stamp a credential-requiring worker's declared secret names onto
 TaskDef.runtimeMetadata at registration, so the host resolves them at poll time
 and the SDK's overwrite-registration does not wipe the value."""

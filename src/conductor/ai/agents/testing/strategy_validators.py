@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Strategy validators — verify that an execution trace obeys the rules of its strategy.
 
 These validators inspect an :class:`AgentResult` and the :class:`Agent` definition

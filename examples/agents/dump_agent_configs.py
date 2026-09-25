@@ -16,8 +16,8 @@ import sys
 # Ensure the examples directory is on the path for settings import
 sys.path.insert(0, os.path.dirname(__file__))
 # Force a consistent model name so both SDKs produce identical values
-os.environ["AGENTSPAN_LLM_MODEL"] = "openai/gpt-4o-mini"
-os.environ["AGENTSPAN_SECONDARY_LLM_MODEL"] = "openai/gpt-4o"
+os.environ["CONDUCTOR_AGENT_LLM_MODEL"] = "openai/gpt-4o-mini"
+os.environ["CONDUCTOR_AGENT_SECONDARY_LLM_MODEL"] = "openai/gpt-4o"
 
 from conductor.ai.agents.config_serializer import AgentConfigSerializer
 

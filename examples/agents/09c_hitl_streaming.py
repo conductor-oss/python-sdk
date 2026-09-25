@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Human-in-the-Loop with Streaming — Console Interactive.
 
 Streams agent events in real time via SSE.  When the agent pauses for
@@ -13,8 +10,8 @@ in real time and intervenes only for destructive actions.
 
 Requirements:
     - Conductor server with LLM support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, EventType, tool
@@ -44,9 +41,14 @@ agent = Agent(
     model=settings.llm_model,
     tools=[check_service, restart_service, delete_service_data],
     instructions=(
-        "You are an operations assistant. You can check, restart, and manage services. "
-        "If a service is unhealthy, check it first, then restart it. Only suggest "
-        "deleting data if explicitly asked."
+        "You are an operations assistant. Work through the request one tool call at a "
+        "time, in this order:\n"
+        "1. Check the service with check_service.\n"
+        "2. If it is unhealthy, restart it with restart_service.\n"
+        "3. Last, if the user asked you to clear or delete data, call "
+        "delete_service_data.\n"
+        "A human approves the deletion, not you — delete_service_data pauses for that "
+        "approval by itself, so never ask for approval in your own reply."
     ),
 )
 

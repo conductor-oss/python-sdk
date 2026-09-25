@@ -7,12 +7,10 @@ Tests HTTP/API tool integration end-to-end:
 
 Manages its own mcp-testkit instance on a dedicated port.
 Single sequential test with try/finally cleanup.
-No mocks. Real server, real CLI, real LLM.
+No mocks. Real server, real LLM.
 """
 
-import inspect
 import os
-import re
 import subprocess
 import time
 
@@ -36,6 +34,51 @@ CRED_NAME = "HTTP_AUTH_KEY"
 TIMEOUT = 120
 
 ORKES_SPEC_URL = "https://developer.orkescloud.com/api-docs"
+
+API = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api").rstrip("/")
+
+
+# ── Credential store (server API — no CLI) ───────────────────────────────
+
+
+def _ensure_credential(name: str, preferred: str) -> tuple[str, bool]:
+    """Make a credential available to the server. Returns (auth_key, created_by_us).
+
+    Provisioning differs by server flavor, but *consuming* a credential is core
+    behaviour on both, so the auth phase should run on either:
+
+      - Orkes: the store is writable, so store ``preferred``.
+      - conductor-oss: the store is env-backed and read-only (writes return 501),
+        so adopt whatever ``CONDUCTOR_SECRET_<name>`` already holds rather than
+        insisting on our own value.
+
+    Skips only when neither is possible.
+    """
+    r = requests.put(
+        f"{API}/secrets/{name}",
+        data=preferred,
+        headers={"Content-Type": "text/plain"},
+        timeout=10,
+    )
+    if r.ok:
+        return preferred, True
+
+    existing = requests.get(f"{API}/secrets/{name}", timeout=10)
+    if existing.ok and existing.text.strip():
+        return existing.text.strip(), False
+
+    pytest.skip(
+        f"no credential available for {name}: the store rejected the write "
+        f"(HTTP {r.status_code}) and the name is not provisioned. Set "
+        f"CONDUCTOR_SECRET_{name} in the server environment to run this phase."
+    )
+
+
+def _delete_secret(name: str) -> None:
+    try:
+        requests.delete(f"{API}/secrets/{name}", timeout=10)
+    except Exception:
+        pass  # best-effort cleanup
 
 # ── Expected tools (from mcp-testkit endpoint registry) ──────────────────
 
@@ -233,7 +276,7 @@ def _make_orkes_agent(model):
 
 def _get_workflow(execution_id):
     """Fetch workflow from server API."""
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+    base = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
     resp = requests.get(f"{base_url}/api/workflow/{execution_id}", timeout=10)
     resp.raise_for_status()
@@ -450,7 +493,7 @@ def _validate_tool_execution(result, step_name):
 class TestSuite5HttpTools:
     """HTTP tools: API discovery, execution, and authenticated access."""
 
-    def test_http_lifecycle(self, runtime, cli_credentials, model):
+    def test_http_lifecycle(self, runtime, model):
         """Full HTTP lifecycle — unauthenticated → authenticated."""
         try:
             subprocess.run(
@@ -466,13 +509,18 @@ class TestSuite5HttpTools:
             )
 
         server_proc = None
+        created = False
         try:
-            self._run_lifecycle(runtime, cli_credentials, model)
+            created = self._run_lifecycle(runtime, model)
         finally:
-            cli_credentials.delete(CRED_NAME)
+            # Only remove what we stored; a pre-provisioned credential belongs
+            # to the environment.
+            if created:
+                _delete_secret(CRED_NAME)
 
-    def _run_lifecycle(self, runtime, cli_credentials, model):
+    def _run_lifecycle(self, runtime, model) -> bool:
         server_proc = None
+        created = False
         try:
             # ── Phase 1: Unauthenticated ──────────────────────────────
 
@@ -500,11 +548,16 @@ class TestSuite5HttpTools:
 
             # ── Phase 2: Authenticated ────────────────────────────────
 
+            # Resolve the credential before restarting: the HTTP server's auth key
+            # has to match whatever the server will inject, and on a read-only
+            # store that value is the environment's, not ours.
+            auth_key, created = _ensure_credential(CRED_NAME, HTTP_AUTH_KEY)
+
             # Step g: Stop server, restart with auth
             _stop_http_server(server_proc)
             server_proc = None
             time.sleep(1)  # Let port release
-            server_proc = _start_http_server(HTTP_PORT, auth_key=HTTP_AUTH_KEY)
+            server_proc = _start_http_server(HTTP_PORT, auth_key=auth_key)
 
             # Verify auth is enforced — unauthenticated spec fetch should fail
             unauth_resp = requests.get(HTTP_SPEC_URL, timeout=5)
@@ -516,12 +569,9 @@ class TestSuite5HttpTools:
             # Step h: Create auth agent with credential placeholder
             auth_agent = _make_auth_agent(model, HTTP_BASE_URL, CRED_NAME)
 
-            # Step i: Set credential via CLI
-            cli_credentials.set(CRED_NAME, HTTP_AUTH_KEY)
-
-            # Step j: Discover tools with auth, validate all present
+            # Step i: Discover tools with auth, validate all present
             discovered_auth = _discover_tools_via_openapi(
-                HTTP_SPEC_URL, auth_key=HTTP_AUTH_KEY
+                HTTP_SPEC_URL, auth_key=auth_key
             )
             assert len(discovered_auth) == EXPECTED_TOOL_COUNT, (
                 f"[Phase 2: Auth Discovery] Expected {EXPECTED_TOOL_COUNT} tools, "
@@ -533,17 +583,19 @@ class TestSuite5HttpTools:
                 f"  Extra: {sorted(set(discovered_auth) - set(EXPECTED_TOOL_NAMES))}"
             )
 
-            # Step k: Execute and validate
+            # Step j: Execute and validate
             result_auth = runtime.run(
                 auth_agent, PROMPT_USE_3_TOOLS, timeout=TIMEOUT
             )
             _validate_tool_execution(
                 result_auth, "Phase 2: Authenticated execution"
             )
+            return created
 
         finally:
             if server_proc:
                 _stop_http_server(server_proc)
+
 
     def test_external_openapi_spec(self, runtime, model):
         """External OpenAPI spec — validate startWorkflow discovery (steps l-n).

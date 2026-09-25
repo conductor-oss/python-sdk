@@ -3,11 +3,11 @@
 Tests the credential pipeline end-to-end:
   1. Tools fail when credentials are missing
   2. Env vars are NOT read (security boundary)
-  3. Credentials added via CLI are resolved at execution time
+  3. Credentials added to the server store are resolved at execution time
   4. Credential updates propagate to subsequent runs
 
 Single sequential test with try/finally cleanup.
-No mocks. Real server, real CLI, real LLM.
+No mocks. Real server, real LLM.
 """
 
 import os
@@ -27,6 +27,38 @@ pytestmark = [
 CRED_A = "E2E_CRED_A"
 CRED_B = "E2E_CRED_B"
 TIMEOUT = 300  # 5 min per agent run — CI runners are slower
+
+API = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api").rstrip("/")
+
+
+# ── Credential store (server API — no CLI) ──────────────────────────────
+
+
+def _put_secret(name: str, value: str) -> None:
+    """Store a credential, skipping the suite when the store is read-only.
+
+    Unlike a suite that only *consumes* a credential, this one sets specific
+    values and then updates them, so it needs a writable store: conductor-oss
+    serves secrets from the server process env and rejects writes with 501.
+    """
+    r = requests.put(
+        f"{API}/secrets/{name}",
+        data=value,
+        headers={"Content-Type": "text/plain"},
+        timeout=10,
+    )
+    if not r.ok:
+        pytest.skip(
+            f"server credential store rejected a write (HTTP {r.status_code}) — "
+            f"this suite needs a writable store to set and update credentials"
+        )
+
+
+def _delete_secret(name: str) -> None:
+    try:
+        requests.delete(f"{API}/secrets/{name}", timeout=10)
+    except Exception:
+        pass  # best-effort cleanup
 
 
 # ── Tools ───────────────────────────────────────────────────────────────
@@ -94,7 +126,7 @@ def _make_agent(model: str) -> Agent:
 
 def _get_workflow(execution_id: str) -> dict:
     """Fetch workflow from server API."""
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+    base = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
     resp = requests.get(f"{base_url}/api/workflow/{execution_id}", timeout=10)
     resp.raise_for_status()
@@ -199,14 +231,14 @@ def _credential_audit(agent: Agent) -> str:
     Returns a human-readable report showing which credentials are required
     and which are missing from the server.
     """
-    base = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+    base = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
     base_url = base.rstrip("/").replace("/api", "")
 
     # Fetch stored credentials from server
     try:
-        resp = requests.get(f"{base_url}/api/credentials", timeout=5)
+        resp = requests.get(f"{base_url}/api/secrets", timeout=5)
         resp.raise_for_status()
-        stored = {c["name"] for c in resp.json()}
+        stored = {c if isinstance(c, str) else c.get("name") for c in resp.json()}
     except Exception as e:
         return f"(could not fetch credentials from server: {e})"
 
@@ -296,19 +328,19 @@ class TestSuite2ToolCalling:
     """Credential lifecycle: missing -> env ignored -> add -> update."""
 
     @pytest.mark.usefixtures("requires_runtime_metadata")
-    def test_credential_lifecycle(self, runtime, cli_credentials, model):
+    def test_credential_lifecycle(self, runtime, model):
         """Full credential lifecycle test — sequential steps with cleanup."""
         try:
-            self._run_lifecycle(runtime, cli_credentials, model)
+            self._run_lifecycle(runtime, model)
         finally:
             # Always clean up credentials
-            cli_credentials.delete(CRED_A)
-            cli_credentials.delete(CRED_B)
+            _delete_secret(CRED_A)
+            _delete_secret(CRED_B)
             # Clean env vars if they leaked
             os.environ.pop(CRED_A, None)
             os.environ.pop(CRED_B, None)
 
-    def _run_lifecycle(self, runtime, cli_credentials, model):
+    def _run_lifecycle(self, runtime, model):
         agent = _make_agent(model)
         owned_runtimes: list[AgentRuntime] = []
 
@@ -323,8 +355,8 @@ class TestSuite2ToolCalling:
 
         try:
             # ── Step 1: Clean slate ─────────────────────────────────────
-            cli_credentials.delete(CRED_A)
-            cli_credentials.delete(CRED_B)
+            _delete_secret(CRED_A)
+            _delete_secret(CRED_B)
 
             # ── Step 2: No credentials — paid tools should fail ─────────
             result = runtime.run(agent, "Call all three tools.", timeout=TIMEOUT)
@@ -385,10 +417,10 @@ class TestSuite2ToolCalling:
                 os.environ.pop(CRED_A, None)
                 os.environ.pop(CRED_B, None)
 
-            # ── Step 4: Add credentials via CLI ─────────────────────────
+            # ── Step 4: Add credentials ─────────────────────────────────
             runtime = restart_runtime(runtime)
-            cli_credentials.set(CRED_A, "secret-aaa-value")
-            cli_credentials.set(CRED_B, "secret-bbb-value")
+            _put_secret(CRED_A, "secret-aaa-value")
+            _put_secret(CRED_B, "secret-bbb-value")
 
             result_with_creds = runtime.run(
                 agent, "Call all three tools.", timeout=TIMEOUT
@@ -457,10 +489,10 @@ class TestSuite2ToolCalling:
                 f"  {_tool_diagnostics(result_with_creds.execution_id)}"
             )
 
-            # ── Step 5: Update credentials via CLI ──────────────────────
+            # ── Step 5: Update credentials ──────────────────────────────
             runtime = restart_runtime(runtime)
-            cli_credentials.set(CRED_A, "newval-xxx-updated")
-            cli_credentials.set(CRED_B, "newval-yyy-updated")
+            _put_secret(CRED_A, "newval-xxx-updated")
+            _put_secret(CRED_B, "newval-yyy-updated")
 
             result_updated = runtime.run(
                 agent, "Call all three tools.", timeout=TIMEOUT
@@ -491,7 +523,7 @@ class TestSuite2ToolCalling:
             assert "new" in output_updated, (
                 f"[Step 5: Updated credentials] paid_tool_a should return 'new' "
                 f"(first 3 chars of 'newval-xxx-updated'). If missing, the "
-                f"credential update via CLI may not have propagated.\n"
+                f"credential update may not have propagated.\n"
                 f"  {_run_diagnostic(result_updated)}\n"
                 f"  output_text={output_updated[:300]}\n"
                 f"  {_tool_diagnostics(result_updated.execution_id)}"

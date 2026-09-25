@@ -1,6 +1,3 @@
-# Copyright (c) 2026 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Regeneration guards for the HAND-FIXes in scheduler_resource_api.py, plus the
 OrkesSchedulerClient contract they enable.
 

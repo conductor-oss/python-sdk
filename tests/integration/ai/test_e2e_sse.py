@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Tier 3: Real server SSE integration tests.
 
 Tests the full Python SDK → Java Runtime → Conductor → SSE path.
@@ -37,7 +34,7 @@ DEFAULT_MODEL = "anthropic/claude-sonnet-4-6"
 
 
 def _model() -> str:
-    return os.environ.get("AGENTSPAN_LLM_MODEL", DEFAULT_MODEL)
+    return os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", DEFAULT_MODEL)
 
 
 def _unique_name(prefix: str) -> str:

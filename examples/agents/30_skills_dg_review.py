@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Skills — Load /dg skill as a durable agent.
 
 Demonstrates:
@@ -12,7 +9,7 @@ Demonstrates:
 
 Requirements:
     - Conductor server with LLM support
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
     - /dg skill installed (https://github.com/v1r3n/dinesh-gilfoyle)
 
 Install /dg:
@@ -73,11 +70,12 @@ def run_standalone():
         print(f"Status: {result.status}")
         print(f"Tokens: {result.token_usage}")
 
-        # Sub-agent results are individually visible
+        # Sub-agent results are individually visible: a dict keyed by agent
+        # name — see AgentResult.sub_results.
         if result.sub_results:
-            print(f"\nSub-agent executions:")
-            for sub in result.sub_results:
-                print(f"  - {sub.agent_name}: {sub.status} ({sub.token_usage})")
+            print(f"\nSub-agent outputs:")
+            for agent_name, agent_output in result.sub_results.items():
+                print(f"  - {agent_name}: {str(agent_output)[:120]}")
 
 
 # ── Example 2: Compose with regular agent in pipeline ──────────────

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """First-class code execution configuration for agents.
 
 Provides :class:`CodeExecutionConfig` for declarative code execution on

@@ -9,9 +9,8 @@ set -euo pipefail
 #
 # Downstream repos (e.g. orkes-io/orkes-conductor) download the bundle from
 # the python-sdk GitHub release and run it against their own server build.
-# This replaces the agentspan-sdk-e2e-python-* bundles formerly cut from
-# agentspan-ai/agentspan — python-sdk is now the canonical home of these
-# suites. Mirrors conductor-oss/java-sdk (conductor-ai-e2e/release/) and
+# The python-sdk is the canonical home of these suites. Mirrors
+# conductor-oss/java-sdk (conductor-ai-e2e/release/) and
 # conductor-oss/javascript-sdk (scripts/).
 #
 # Usage:
@@ -70,16 +69,14 @@ cat > "$STAGE/run.sh" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 # Runs the agent e2e suite against a live Conductor server with the agent
-# runtime enabled (conductor-oss >= 3.32.0-rc.8, or orkes-conductor with
-# agentspan.embedded=true).
+# runtime enabled (conductor-oss >= 3.32.0-rc.8).
 #
 # Required services (NOT started by this script):
-#   - Conductor server → AGENTSPAN_SERVER_URL (default http://localhost:8080/api)
+#   - Conductor server → CONDUCTOR_SERVER_URL (default http://localhost:8080/api)
 #   - mcp-testkit      → MCP_TESTKIT_URL      (default http://localhost:3001)
 # Optional:
-#   - AGENTSPAN_LLM_MODEL (default openai/gpt-4o-mini); the provider API key
+#   - CONDUCTOR_AGENT_LLM_MODEL (default openai/gpt-4o-mini); the provider API key
 #     must be configured on the SERVER — the suites never read it.
-#   - AGENTSPAN_CLI_PATH (default `agentspan` on PATH) — CLI suites skip if absent.
 #
 # Requires python 3.10–3.13 on PATH as `python` (use a venv; the harness deps
 # may not build on newer interpreters). Usage: ./run.sh [extra pytest args]
@@ -101,23 +98,20 @@ Self-contained end-to-end tests for the Conductor Python agent SDK, pinned to
 release **@VERSION@**. Resolves `conductor-python[agents]==@VERSION@` from
 PyPI — no SDK source is vendored. Cut from
 [conductor-oss/python-sdk](https://github.com/conductor-oss/python-sdk)
-(`e2e/`); supersedes the `agentspan-sdk-e2e-python-*` bundles formerly
-released from agentspan-ai/agentspan.
+(`e2e/`).
 
 ## Prerequisites (you provide these)
 
 | Requirement                       | Env var                | Default                     |
 |-----------------------------------|------------------------|-----------------------------|
 | python 3.10–3.13 (use a venv)     | —                      | —                           |
-| Conductor server w/ agent runtime | `AGENTSPAN_SERVER_URL` | `http://localhost:8080/api` |
-| LLM model                         | `AGENTSPAN_LLM_MODEL`  | `openai/gpt-4o-mini`        |
+| Conductor server w/ agent runtime | `CONDUCTOR_SERVER_URL` | `http://localhost:8080/api` |
+| LLM model                         | `CONDUCTOR_AGENT_LLM_MODEL`  | `openai/gpt-4o-mini`        |
 | mcp-testkit (MCP suites)          | `MCP_TESTKIT_URL`      | `http://localhost:3001`     |
-| agentspan CLI (CLI suites)        | `AGENTSPAN_CLI_PATH`   | `agentspan` (on `PATH`)     |
 
-The server needs the agent runtime: conductor-oss `>= 3.32.0-rc.8`, or
-orkes-conductor booted with `agentspan.embedded=true`. LLM provider API keys
+The server needs the agent runtime: conductor-oss `>= 3.32.0-rc.8`. LLM provider API keys
 (e.g. `OPENAI_API_KEY`) go to the **server** process, not this suite.
-Suites that need an absent optional service (CLI, LangGraph) skip rather
+Suites that need an absent optional service (LangGraph) skip rather
 than fail.
 
 ## Run

@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Scatter-Gather — massive parallel multi-agent orchestration.
 
 Demonstrates:
@@ -14,7 +11,7 @@ dispatches 100 worker agents in parallel, and synthesizes the results.
 
 Requirements:
     - Conductor server running
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
     - AGENT_SECONDARY_LLM_MODEL=openai/gpt-4o in .env or environment
 """
 
@@ -134,7 +131,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(coordinator)
         # CLI alternative:
-        # agentspan deploy --package examples.58_scatter_gather
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(coordinator)

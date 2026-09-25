@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """JWT helper for the agent runtime.
 
 Auth-token minting/caching lives in the SDK ``ApiClient`` (a single token

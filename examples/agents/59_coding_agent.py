@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Coding Agent with QA Tester — write, review, and fix code.
 
 Demonstrates:
@@ -20,7 +17,7 @@ Flow (swarm — LLM-driven handoffs):
 
 Requirements:
     - Conductor server running
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api in .env or environment
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, Strategy
@@ -29,7 +26,7 @@ from conductor.ai.agents import Agent, AgentRuntime, Strategy
 
 qa_tester = Agent(
     name="qa_tester",
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6",
     instructions=(
         "You are a meticulous QA engineer. Review the code written by the "
         "coder for correctness, edge cases, and bugs. Write and execute test "
@@ -48,7 +45,7 @@ qa_tester = Agent(
 
 coder = Agent(
     name="coder",
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6",
     instructions=(
         "You are an expert Python developer. Write clean, well-structured "
         "Python code to solve the given problem. Always execute your code to "
@@ -102,7 +99,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(coder)
         # CLI alternative:
-        # agentspan deploy --package examples.59_coding_agent
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(coder)

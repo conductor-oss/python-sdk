@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Stateful Agent Resume — reconnect to a running workflow after runtime restart.
 
 Demonstrates:
@@ -32,8 +29,8 @@ Why stateful matters:
 
 Requirements:
     - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
 """
 
 import time
@@ -41,7 +38,7 @@ import time
 from conductor.ai.agents import Agent, AgentRuntime, tool, wait_for_message_tool
 from settings import settings
 
-SESSION_FILE = "/tmp/agentspan_stateful_resume.session"
+SESSION_FILE = "/tmp/Conductor_stateful_resume.session"
 
 
 @tool

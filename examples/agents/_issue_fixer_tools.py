@@ -766,7 +766,7 @@ def web_fetch(url: str) -> str:
             return "".join(self._texts)
 
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "AgentSpan-IssueFixer/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Conductor-IssueFixer/1.0"})
         with urllib.request.urlopen(req, timeout=30) as resp:
             content_type = resp.headers.get("Content-Type", "")
             raw = resp.read(500_000).decode("utf-8", errors="replace")

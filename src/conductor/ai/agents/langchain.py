@@ -1,9 +1,6 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """User-facing create_agent wrapper for LangChain/LangGraph agents.
 
-Import from here instead of langchain.agents so that Agentspan can
+Import from here instead of langchain.agents so that Conductor can
 extract the LLM model, tools, and instructions for proper server-side
 orchestration (AI_MODEL + SIMPLE tasks — same as OpenAI/ADK).
 
@@ -39,10 +36,10 @@ def create_agent(
     system_prompt: Optional[Union[str, Any]] = None,
     **kwargs: Any,
 ) -> Any:
-    """Agentspan wrapper around ``langchain.agents.create_agent``.
+    """Conductor wrapper around ``langchain.agents.create_agent``.
 
     Captures the LLM, tools, and instructions *before* compilation so that
-    Agentspan can translate the agent into a proper server-side workflow
+    Conductor can translate the agent into a proper server-side workflow
     (AI_MODEL task for the LLM + SIMPLE tasks for each tool), matching the
     OpenAI/ADK integration pattern.
 
@@ -55,8 +52,8 @@ def create_agent(
         **kwargs: Forwarded to ``langchain.agents.create_agent``.
 
     Returns:
-        A ``CompiledStateGraph`` with ``._agentspan_meta`` attached for
-        proper Agentspan serialization.
+        A ``CompiledStateGraph`` with ``._conductor_agent_meta`` attached for
+        proper Conductor serialization.
     """
     from langchain.agents import create_agent as _lc_create_agent  # type: ignore[import]
 
@@ -80,7 +77,7 @@ def create_agent(
         except AttributeError:
             pass
 
-    graph._agentspan_meta = {
+    graph._conductor_agent_meta = {
         "llm": model,
         "tools": resolved_tools,
         "instructions": instructions,

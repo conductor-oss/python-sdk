@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Slack Auto-Fix Agent — monitors a Slack channel and auto-creates PRs for bug reports.
 
 Monitors a Slack channel for bug reports. When a message describes something
@@ -18,13 +15,13 @@ Architecture:
     └── pr_creator        — creates branch + commit + PR
 
 Requirements:
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
-    - AGENTSPAN_LLM_MODEL=anthropic/claude-opus-4-6 (or gpt-4o)
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-opus-4-6 (or gpt-4o)
     - SLACK_BOT_TOKEN=xoxb-...     (Bot token with channels:read, channels:history)
     - SLACK_CHANNEL_ID=C...        (Channel to monitor)
     - GITHUB_TOKEN=ghp_...         (Token with repo write access)
     - REPO_PATH=/path/to/repo      (Local path to the codebase)
-    - GITHUB_REPO=owner/repo       (e.g. agentspan-ai/agentspan)
+    - GITHUB_REPO=owner/repo       (e.g. Conductor-ai/Conductor)
 
 Usage:
     # Run once — picks up latest unprocessed bug report
@@ -56,7 +53,7 @@ DRY_RUN = False
 
 # ── State file — tracks last processed Slack message ───────────────────────
 
-STATE_FILE = Path("/tmp/agentspan_autofix_state.json")
+STATE_FILE = Path("/tmp/Conductor_autofix_state.json")
 
 
 def _load_state() -> dict:
@@ -335,7 +332,7 @@ code_investigator = Agent(
     model=settings.llm_model,
     tools=[search_codebase, read_file, run_git_command],
     instructions="""
-You are a senior engineer investigating a bug in the Agentspan codebase.
+You are a senior engineer investigating a bug in the Conductor codebase.
 
 Given a bug description, you:
 1. Search the codebase to find the relevant files

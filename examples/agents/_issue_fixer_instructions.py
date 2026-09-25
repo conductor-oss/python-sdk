@@ -147,7 +147,7 @@ IMPLEMENTATION MODE (implementation_plan tells you what to do):
        "issue_title": "<title>",
        "change_type": "bug_fix" or "feature",
        "date": "<YYYY-MM-DD>",
-       "author": "agentspan-bot",
+       "author": "Conductor-bot",
        "root_cause": "<what was broken and why>",
        "what_changed": [
          {{"file": "<path>", "change": "<what was modified and why>"}}

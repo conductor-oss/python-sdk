@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 from time import sleep
 
@@ -12,6 +13,7 @@ from conductor.client.workflow.conductor_workflow import ConductorWorkflow
 from conductor.client.workflow.executor.workflow_executor import WorkflowExecutor
 from conductor.client.workflow.task.simple_task import SimpleTask
 from tests.integration.resources.worker.python.python_worker import *
+from tests.integration.retry_helpers import retry_scenario, wait_for_workflow_terminal
 
 WORKFLOW_NAME = "sdk_python_integration_test_workflow"
 WORKFLOW_DESCRIPTION = "Python SDK Integration Test"
@@ -22,6 +24,24 @@ COMPLEX_WF_NAME = 'complex_wf_signal_test'
 SUB_WF_1_NAME = 'complex_wf_signal_test_subworkflow_1'
 SUB_WF_2_NAME = 'complex_wf_signal_test_subworkflow_2'
 
+# OSS-compatible variants of the fixtures above: identical shape (HTTP task,
+# then a nested SUB_WORKFLOW chain that parks on a blocking task twice before
+# completing), except the blocking task is a WAIT instead of a YIELD. YIELD is
+# an Orkes-Enterprise-only task type that plain OSS Conductor doesn't
+# recognize at all, so it never reaches the "pending blocking task" state the
+# Signal API looks for; WAIT is a real OSS task type that does (confirmed
+# empirically -- see the comment in run_signal_tests below).
+COMPLEX_WF_NAME_OSS = 'complex_wf_signal_test_oss'
+SUB_WF_1_NAME_OSS = 'complex_wf_signal_test_subworkflow_1_oss'
+SUB_WF_2_NAME_OSS = 'complex_wf_signal_test_subworkflow_2_oss'
+
+# Max time to wait for the batch of simple workflows to reach a terminal state.
+# These normally finish in seconds, but on a loaded shared server we've observed
+# them take ~30s+; the old ~12s budget (5s sleep + 1+2+4 retry backoff) produced
+# confirmed false-negative timeouts on workflows that did complete. Poll up to
+# this budget instead.
+WORKFLOW_COMPLETION_MAX_WAIT_SECONDS = 120
+
 logger = logging.getLogger(
     Configuration.get_logging_formatted_name(
         __name__
@@ -29,7 +49,26 @@ logger = logging.getLogger(
 )
 
 
-def run_workflow_execution_tests(configuration: Configuration, workflow_executor: WorkflowExecutor):
+def run_workflow_execution_tests(configuration: Configuration, workflow_executor: WorkflowExecutor,
+                                 deadline=None):
+    # Register the task def before any worker polls for it. Without this the
+    # def on the server is whatever some other suite last registered -- in
+    # practice a bare TaskDef(name=...), which the server fills in with its
+    # default responseTimeoutSeconds of 3600. A worker that leases a task and
+    # then stops updating it (a transport blip against the shared server, or the
+    # job simply ending) therefore holds it for an hour before the server
+    # reclaims it: far past this scenario's WORKFLOW_COMPLETION_MAX_WAIT_SECONDS
+    # budget, so the workflow sits IN_PROGRESS and the test fails. Registering
+    # generate_tasks_defs() sets response_timeout_seconds=2, so the server
+    # requeues the task in seconds and another worker picks it up.
+    #
+    # Note workflow_executor.metadata_client is a MetadataResourceApi, whose
+    # register_task_def takes the *list* of defs. (OrkesMetadataClient has a
+    # same-named method that takes a single TaskDef and wraps it itself --
+    # passing one def here instead yields a 500 "Cannot deserialize ...
+    # ArrayList<TaskDef> from Object value".)
+    workflow_executor.metadata_client.register_task_def(generate_tasks_defs())
+
     workers = [
         ClassWorker(TASK_NAME),
         ClassWorkerWithDomain(TASK_NAME),
@@ -45,30 +84,45 @@ def run_workflow_execution_tests(configuration: Configuration, workflow_executor
         import_modules=['tests.integration.resources.worker.python.python_worker']
     )
     task_handler.start_processes()
+    # Use try/finally (not try/except+re-raise): the sole purpose here is to
+    # stop the workers on the way out. Re-raising as a bare `Exception` used to
+    # discard the original type and traceback, which hid transient
+    # ApiException(status=0) transport blips from the caller's retry logic
+    # (they'd surface as an opaque generic Exception instead). finally cleans up
+    # on both success and failure while letting the original error propagate.
     try:
-        test_get_workflow_by_correlation_ids(workflow_executor)
+        retry_scenario('scenario_get_workflow_by_correlation_ids',
+                       scenario_get_workflow_by_correlation_ids, workflow_executor,
+                       deadline=deadline)
         logger.debug('finished workflow correlation ids test')
-        test_workflow_registration(workflow_executor)
+        retry_scenario('scenario_workflow_registration',
+                       scenario_workflow_registration, workflow_executor,
+                       deadline=deadline)
         logger.debug('finished workflow registration tests')
-        test_workflow_execution(
+        retry_scenario(
+            'scenario_workflow_execution', scenario_workflow_execution,
             workflow_quantity=6,
             workflow_name=WORKFLOW_NAME,
             workflow_executor=workflow_executor,
-            workflow_completion_timeout=5.0
+            workflow_completion_timeout=5.0,
+            deadline=deadline,
         )
-        test_decorated_workers(workflow_executor)
+        retry_scenario('scenario_decorated_workers',
+                       scenario_decorated_workers, workflow_executor,
+                       deadline=deadline)
         logger.debug('finished decorated workers tests')
-        test_execute_workflow_async_features(workflow_executor)
+        retry_scenario('scenario_execute_workflow_async_features',
+                       scenario_execute_workflow_async_features, workflow_executor,
+                       deadline=deadline)
         logger.debug('finished execute_workflow reactive features tests')
-        test_execute_workflow_error_handling(workflow_executor)
+        retry_scenario('scenario_execute_workflow_error_handling',
+                       scenario_execute_workflow_error_handling, workflow_executor,
+                       deadline=deadline)
         logger.debug('finished execute_workflow error handling tests')
-        run_signal_tests(configuration, workflow_executor)
+        run_signal_tests(configuration, workflow_executor, deadline=deadline)
         logger.debug('finished signal API tests')
-
-    except Exception as e:
+    finally:
         task_handler.stop_processes()
-        raise Exception(f'failed integration tests, reason: {e}')
-    task_handler.stop_processes()
 
 
 def generate_tasks_defs():
@@ -86,7 +140,7 @@ def generate_tasks_defs():
     return [python_simple_task_from_code]
 
 
-def test_get_workflow_by_correlation_ids(workflow_executor: WorkflowExecutor):
+def scenario_get_workflow_by_correlation_ids(workflow_executor: WorkflowExecutor):
     _run_with_retry_attempt(
         workflow_executor.get_by_correlation_ids,
         {
@@ -98,14 +152,18 @@ def test_get_workflow_by_correlation_ids(workflow_executor: WorkflowExecutor):
     )
 
 
-def test_workflow_registration(workflow_executor: WorkflowExecutor):
+def scenario_workflow_registration(workflow_executor: WorkflowExecutor):
     workflow = generate_workflow(workflow_executor)
     try:
         workflow_executor.metadata_client.unregister_workflow_def_with_http_info(
             workflow.name, workflow.version
         )
     except Exception as e:
-        if '404' not in str(e):
+        # Best-effort cleanup: tolerate "doesn't exist" regardless of how the
+        # server reports it. Orkes Enterprise returns 404; plain OSS Conductor
+        # returns a 500 with a "No such workflow definition" message instead
+        # (confirmed empirically) -- treat both as success for this purpose.
+        if '404' not in str(e) and 'No such workflow definition' not in str(e):
             raise e
     workflow.register(overwrite=True) == None
     workflow_executor.register_workflow(
@@ -113,7 +171,7 @@ def test_workflow_registration(workflow_executor: WorkflowExecutor):
     )
 
 
-def test_decorated_workers(
+def scenario_decorated_workers(
         workflow_executor: WorkflowExecutor,
         workflow_name: str = 'TestPythonDecoratedWorkerWf',
 ) -> None:
@@ -132,8 +190,20 @@ def test_decorated_workers(
     start_wf_req = StartWorkflowRequest(name=workflow_name, task_to_domain=td_map)
     workflow_id_2 = workflow_executor.start_workflow(start_wf_req)
 
-    logger.debug(f'started TestPythonDecoratedWorkerWf with domain:cool and id: {workflow_id_2}')
-    sleep(15)
+    logger.info('started TestPythonDecoratedWorkerWf %s (no domain) and %s (domain:cool)',
+                workflow_id, workflow_id_2)
+
+    # Poll to terminal instead of sleeping a fixed 15s. Both of these run a
+    # single decorated-worker task, and on a loaded shared server the task can
+    # sit SCHEDULED well past 15s before the server hands it to a poller --
+    # observed as status=SCHEDULED pollCount=0 while the worker was demonstrably
+    # alive and polling every 100ms. Same false-negative the batch-completion
+    # budget above was raised to fix; use that budget here too.
+    for wf_id in (workflow_id, workflow_id_2):
+        wait_for_workflow_terminal(
+            workflow_executor, wf_id,
+            timeout_seconds=WORKFLOW_COMPLETION_MAX_WAIT_SECONDS,
+        )
 
     _run_with_retry_attempt(
         validate_workflow_status,
@@ -154,7 +224,7 @@ def test_decorated_workers(
     workflow_executor.metadata_client.unregister_workflow_def(wf.name, wf.version)
 
 
-def test_workflow_execution(
+def scenario_workflow_execution(
         workflow_quantity: int,
         workflow_name: str,
         workflow_executor: WorkflowExecutor,
@@ -164,8 +234,14 @@ def test_workflow_execution(
     for i in range(workflow_quantity):
         start_workflow_requests[i] = StartWorkflowRequest(name=workflow_name)
     workflow_ids = workflow_executor.start_workflows(*start_workflow_requests)
+    # Brief head start, then poll each workflow until it's terminal. The
+    # workflows were all started together, so we share one wall-clock deadline
+    # across the batch (bounding total wait to ~WORKFLOW_COMPLETION_MAX_WAIT_SECONDS
+    # even on a genuine failure) rather than giving each its own long budget.
     sleep(workflow_completion_timeout)
+    deadline = time.time() + WORKFLOW_COMPLETION_MAX_WAIT_SECONDS
     for workflow_id in workflow_ids:
+        _wait_for_workflow_terminal(workflow_id, workflow_executor, deadline)
         _run_with_retry_attempt(
             validate_workflow_status,
             {
@@ -173,6 +249,23 @@ def test_workflow_execution(
                 'workflow_executor': workflow_executor
             }
         )
+
+
+def _wait_for_workflow_terminal(workflow_id, workflow_executor, deadline,
+                                poll_interval=2):
+    """Poll until the workflow reaches a terminal state or the shared ``deadline``
+    (a ``time.time()`` wall-clock value shared across a batch) passes, logging
+    progress so a slow-but-eventually-complete run is visible instead of a bare
+    timeout. A transient poll error is logged and retried. Returns the last
+    observed status; the caller still runs validate_workflow_status for the
+    actual assertion. Thin wrapper over the shared ``wait_for_workflow_terminal``.
+    """
+    workflow = wait_for_workflow_terminal(
+        workflow_executor, workflow_id,
+        timeout_seconds=max(0.0, deadline - time.time()),
+        poll_interval=poll_interval, include_tasks=False,
+        swallow='all', log=logger.info)
+    return getattr(workflow, 'status', None)
 
 
 def generate_workflow(workflow_executor: WorkflowExecutor, workflow_name: str = WORKFLOW_NAME,
@@ -192,6 +285,33 @@ def generate_workflow(workflow_executor: WorkflowExecutor, workflow_name: str = 
     )
 
 
+def _describe_tasks(workflow_id: str, workflow_executor: WorkflowExecutor) -> str:
+    """Task-level detail for a workflow that did not reach COMPLETED.
+
+    "still RUNNING" on its own says nothing about why. The task states separate
+    the possibilities: SCHEDULED means queued but never polled (wrong
+    queue/domain, or no live worker for that task type), IN_PROGRESS means
+    polled and leased but never updated, and no tasks at all means the workflow
+    was never decided server-side.
+    """
+    try:
+        wf = workflow_executor.get_workflow(workflow_id=workflow_id, include_tasks=True)
+        tasks = wf.tasks or []
+        if not tasks:
+            return 'no tasks on the workflow'
+        return '; '.join(
+            f"{getattr(t, 'task_def_name', '?')}"
+            f"[ref={getattr(t, 'reference_task_name', '?')}"
+            f" status={getattr(t, 'status', '?')}"
+            f" domain={getattr(t, 'domain', None)}"
+            f" pollCount={getattr(t, 'poll_count', None)}"
+            f" workerId={getattr(t, 'worker_id', None)}]"
+            for t in tasks
+        )
+    except Exception as e:
+        return f'could not fetch tasks: {e}'
+
+
 def validate_workflow_status(workflow_id: str, workflow_executor: WorkflowExecutor) -> None:
     workflow = workflow_executor.get_workflow(
         workflow_id=workflow_id,
@@ -199,13 +319,25 @@ def validate_workflow_status(workflow_id: str, workflow_executor: WorkflowExecut
     )
     if workflow.status != 'COMPLETED':
         raise Exception(
-            f'workflow expected to be COMPLETED, but received {workflow.status}, workflow_id: {workflow_id}'
+            f'workflow expected to be COMPLETED, but received {workflow.status}, '
+            f'workflow_id: {workflow_id}, tasks: '
+            f'{_describe_tasks(workflow_id, workflow_executor)}'
         )
-    workflow_status = workflow_executor.get_workflow_status(
-        workflow_id=workflow_id,
-        include_output=False,
-        include_variables=False,
-    )
+    try:
+        workflow_status = workflow_executor.get_workflow_status(
+            workflow_id=workflow_id,
+            include_output=False,
+            include_variables=False,
+        )
+    except Exception as e:
+        # GET /workflow/{id}/status is not implemented on plain OSS Conductor
+        # (confirmed empirically: 404 "No static resource ..."); the
+        # equivalent COMPLETED assertion above already covers this case.
+        # Gated on OSS on purpose: the endpoint does exist on Orkes, so an
+        # ungated swallow would turn a genuine 404 there into a silent pass.
+        if _is_oss() and '404' in str(e):
+            return
+        raise
     if workflow_status.status != 'COMPLETED':
         raise Exception(
             f'workflow expected to be COMPLETED, but received {workflow_status.status}, workflow_id: {workflow_id}'
@@ -229,7 +361,7 @@ def _run_with_retry_attempt(f, params, retries=4) -> None:
                 raise e
             sleep(1 << attempt)
 
-def test_execute_workflow_async_features(workflow_executor: WorkflowExecutor):
+def scenario_execute_workflow_async_features(workflow_executor: WorkflowExecutor):
     """Test the execute_workflow method with reactive features (consistency and return_strategy)"""
     logger.debug('Starting execute_workflow reactive features tests')
 
@@ -367,7 +499,7 @@ def test_execute_workflow_async_features(workflow_executor: WorkflowExecutor):
     logger.debug('All execute_workflow reactive features tests passed!')
 
 
-def test_execute_workflow_error_handling(workflow_executor: WorkflowExecutor):
+def scenario_execute_workflow_error_handling(workflow_executor: WorkflowExecutor):
     """Test error handling in execute_workflow with invalid parameters"""
     logger.debug('Starting execute_workflow error handling tests')
 
@@ -405,47 +537,90 @@ def test_execute_workflow_error_handling(workflow_executor: WorkflowExecutor):
 
 
 def _wait_for_workflow_completion(workflow_executor: WorkflowExecutor, workflow_id: str, max_wait_seconds: int = 60):
-    """Helper function to wait for workflow completion"""
-    import time
-    start_time = time.time()
-
-    while time.time() - start_time < max_wait_seconds:
-        workflow = workflow_executor.get_workflow(workflow_id, True)
-
-        if workflow.status in ['COMPLETED', 'FAILED', 'TERMINATED', 'TIMED_OUT']:
-            logger.debug(f'Workflow {workflow_id} finished with status: {workflow.status}')
-            return workflow
-
-        logger.debug(f'Waiting for workflow {workflow_id}... Status: {workflow.status}')
-        time.sleep(2)
-
-    # Return final state even if not completed
-    return workflow_executor.get_workflow(workflow_id, True)
+    """Helper function to wait for workflow completion. Thin wrapper over the
+    shared ``wait_for_workflow_terminal``; returns the last observed Workflow.
+    """
+    return wait_for_workflow_terminal(
+        workflow_executor, workflow_id,
+        timeout_seconds=max_wait_seconds, poll_interval=2,
+        include_tasks=True, swallow='none', log=logger.debug)
 
 # ===== SIGNAL TESTS =====
 
-def run_signal_tests(configuration: Configuration, workflow_executor: WorkflowExecutor):
-    """Run all signal API tests using WorkflowExecutor methods"""
+def _is_oss() -> bool:
+    from tests.integration.conftest import is_oss
+    return is_oss()
+
+
+def _signal_test_workflow_names():
+    """(complex_wf_name, sub_wf_1_name, sub_wf_2_name) for the fixture set
+    appropriate to the server under test.
+
+    On plain OSS Conductor the YIELD-based fixtures never reach a signalable
+    state: YIELD is an Orkes-Enterprise-only task type that isn't in OSS's
+    TaskType enum at all, so OSS never transitions it into the WAIT-task
+    state that TaskServiceImpl.findPendingBlockingTask() looks for (it only
+    recognizes a non-terminal WAIT task, optionally nested inside a
+    SUB_WORKFLOW) -- confirmed empirically by reading
+    TaskServiceImpl/TaskResource in the conductor-oss source and by
+    reproducing the exact 404 ("Found no blocked task in workflow ... to
+    signal") against the YIELD fixtures, then confirming a hand-built
+    WAIT-based workflow signals successfully instead. The POST
+    /tasks/{workflowId}/{status}/signal(/sync) endpoints themselves ARE
+    implemented on plain OSS Conductor and work correctly with a real WAIT
+    task -- all four return strategies (TARGET_WORKFLOW, BLOCKING_WORKFLOW,
+    BLOCKING_TASK, BLOCKING_TASK_INPUT) signal it successfully and return 200
+    with a well-formed SignalResponse. So on OSS we swap in the
+    _OSS-suffixed fixtures, which are identical except the blocking task is
+    WAIT instead of YIELD.
+    """
+    if _is_oss():
+        return COMPLEX_WF_NAME_OSS, SUB_WF_1_NAME_OSS, SUB_WF_2_NAME_OSS
+    return COMPLEX_WF_NAME, SUB_WF_1_NAME, SUB_WF_2_NAME
+
+
+def run_signal_tests(configuration: Configuration, workflow_executor: WorkflowExecutor,
+                     deadline=None):
+    """Run all signal API tests using WorkflowExecutor methods.
+
+    Each scenario is retried at the scenario level on a transient blip (see
+    retry_scenario): a retry starts a fresh workflow and issues a fresh sync
+    signal, so the asserted SignalResponse is always from a signal this attempt
+    actually sent — no double-signalling of a single workflow.
+
+    The workflow fixtures used here differ between Orkes Enterprise and plain
+    OSS Conductor -- see _signal_test_workflow_names().
+    """
     logger.info('START: Signal API tests using WorkflowExecutor')
+    complex_wf_name, sub_wf_1_name, sub_wf_2_name = _signal_test_workflow_names()
 
     try:
         # Register signal test workflows (same as original test)
-        _register_signal_test_workflows(workflow_executor)
+        retry_scenario('_register_signal_test_workflows',
+                       _register_signal_test_workflows, workflow_executor,
+                       deadline=deadline)
 
         # Test sync signal with different return strategies
-        test_signal_target_workflow(workflow_executor)
-        test_signal_blocking_workflow(workflow_executor)
-        test_signal_blocking_task(workflow_executor)
-        test_signal_blocking_task_input(workflow_executor)
+        retry_scenario('scenario_signal_target_workflow',
+                       scenario_signal_target_workflow, workflow_executor, deadline=deadline)
+        retry_scenario('scenario_signal_blocking_workflow',
+                       scenario_signal_blocking_workflow, workflow_executor, deadline=deadline)
+        retry_scenario('scenario_signal_blocking_task',
+                       scenario_signal_blocking_task, workflow_executor, deadline=deadline)
+        retry_scenario('scenario_signal_blocking_task_input',
+                       scenario_signal_blocking_task_input, workflow_executor, deadline=deadline)
 
         # Test default return strategy
-        test_signal_default_strategy(workflow_executor)
+        retry_scenario('scenario_signal_default_strategy',
+                       scenario_signal_default_strategy, workflow_executor, deadline=deadline)
 
         # Test async signal
-        test_signal_async(workflow_executor)
+        retry_scenario('scenario_signal_async',
+                       scenario_signal_async, workflow_executor, deadline=deadline)
 
         # Test to_dict fix
-        test_signal_to_dict_fix(workflow_executor)
+        retry_scenario('scenario_signal_to_dict_fix',
+                       scenario_signal_to_dict_fix, workflow_executor, deadline=deadline)
 
         logger.info('All signal tests completed successfully')
 
@@ -456,13 +631,13 @@ def run_signal_tests(configuration: Configuration, workflow_executor: WorkflowEx
         # Cleanup
         try:
             workflow_executor.metadata_client.unregister_workflow_def(
-                COMPLEX_WF_NAME, 1
+                complex_wf_name, 1
             )
             workflow_executor.metadata_client.unregister_workflow_def(
-                SUB_WF_1_NAME, 1
+                sub_wf_1_name, 1
             )
             workflow_executor.metadata_client.unregister_workflow_def(
-                SUB_WF_2_NAME, 1
+                sub_wf_2_name, 1
             )
         except Exception as cleanup_error:
             logger.warning(f'Cleanup failed: {cleanup_error}')
@@ -473,7 +648,8 @@ def run_signal_tests(configuration: Configuration, workflow_executor: WorkflowEx
 def _register_signal_test_workflows(workflow_executor: WorkflowExecutor):
     """Register the complex signal test workflows from JSON files"""
     import json
-    import os
+
+    complex_wf_name, sub_wf_1_name, sub_wf_2_name = _signal_test_workflow_names()
 
     def _get_workflow_definition(path):
         """Get workflow definition from JSON file, following existing pattern"""
@@ -505,18 +681,18 @@ def _register_signal_test_workflows(workflow_executor: WorkflowExecutor):
 
     try:
         # Register main workflow
-        complex_wf_def = _get_workflow_definition(f'tests/integration/resources/test_data/{COMPLEX_WF_NAME}.json')
+        complex_wf_def = _get_workflow_definition(f'tests/integration/resources/test_data/{complex_wf_name}.json')
         workflow_executor.metadata_client.update1(body=[complex_wf_def], overwrite=True)
-        logger.info(f'Registered workflow: {COMPLEX_WF_NAME}')
+        logger.info(f'Registered workflow: {complex_wf_name}')
 
         # Register subworkflows
-        sub_wf1_def = _get_workflow_definition(f'tests/integration/resources/test_data/{SUB_WF_1_NAME}.json')
+        sub_wf1_def = _get_workflow_definition(f'tests/integration/resources/test_data/{sub_wf_1_name}.json')
         workflow_executor.metadata_client.update1(body=[sub_wf1_def], overwrite=True)
-        logger.info(f'Registered workflow: {SUB_WF_1_NAME}')
+        logger.info(f'Registered workflow: {sub_wf_1_name}')
 
-        sub_wf2_def = _get_workflow_definition(f'tests/integration/resources/test_data/{SUB_WF_2_NAME}.json')
+        sub_wf2_def = _get_workflow_definition(f'tests/integration/resources/test_data/{sub_wf_2_name}.json')
         workflow_executor.metadata_client.update1(body=[sub_wf2_def], overwrite=True)
-        logger.info(f'Registered workflow: {SUB_WF_2_NAME}')
+        logger.info(f'Registered workflow: {sub_wf_2_name}')
 
     except Exception as e:
         logger.warning(f'Some workflows may already be registered: {e}')
@@ -527,9 +703,10 @@ def _register_signal_test_workflows(workflow_executor: WorkflowExecutor):
 
 def _start_complex_workflow(workflow_executor: WorkflowExecutor) -> str:
     """Start complex workflow and return workflow ID"""
+    complex_wf_name, _, _ = _signal_test_workflow_names()
     try:
         start_request = StartWorkflowRequest(
-            name=COMPLEX_WF_NAME,
+            name=complex_wf_name,
             version=1,
             input={}
         )
@@ -547,6 +724,105 @@ def _start_complex_workflow(workflow_executor: WorkflowExecutor) -> str:
     except Exception as e:
         logger.error(f'Failed to start workflow: {e}')
         raise
+
+
+# The task type(s) these fixtures actually use as their intended "park here
+# until signaled" point: YIELD (Orkes Enterprise, complex_wf_signal_test) or
+# WAIT (plain OSS Conductor, complex_wf_signal_test_oss) -- see
+# _signal_test_workflow_names(). Deliberately narrower than "any non-terminal
+# leaf task": an ordinary task that's merely mid-flight (e.g. the HTTP task
+# that runs *before* the blocking task) is also transiently SCHEDULED/
+# IN_PROGRESS, and matching on that caused a false-positive "blocked" result
+# that raced the real block -- confirmed empirically as a 404 "Found no
+# blocked task in workflow ... to signal" moments after this incorrectly
+# reported the workflow as ready to signal.
+_BLOCKING_TASK_TYPES = ('WAIT', 'YIELD')
+
+
+def _find_blocking_leaf_tasks(workflow_executor: WorkflowExecutor, workflow_id: str,
+                              depth: int = 0, max_depth: int = 5):
+    """Recursively find the actual blocking task(s) (see _BLOCKING_TASK_TYPES)
+    that are non-terminal, descending into any IN_PROGRESS SUB_WORKFLOW's own
+    tasks.
+
+    This mirrors the server's own signal-target resolution (TaskServiceImpl.
+    findPendingBlockingTask on the OSS side descends into running sub-workflows
+    the same way looking specifically for a pending WAIT task), which matters
+    for complex_wf_signal_test(_oss): the *outer* workflow's SUB_WORKFLOW task
+    itself flips to IN_PROGRESS essentially the instant it's scheduled, well
+    before the decider has actually started the nested workflow and run it as
+    far as its own blocking task -- so a signal issued right then races the
+    real block. Restricting to _BLOCKING_TASK_TYPES (rather than "any
+    non-terminal task") avoids also raced-matching on an ordinary task that
+    happens to be transiently IN_PROGRESS (e.g. the HTTP task preceding the
+    blocking task in these fixtures).
+
+    Returns (blocking_tasks, workflow), where blocking_tasks is [] if nothing is
+    blocked yet, and workflow is the Workflow fetched at *this* level (None only
+    if max_depth was exceeded). Handing the workflow back lets the caller read
+    its status and task list without paying for a second get_workflow: this is
+    polled every `interval` seconds, so re-fetching the same object to read one
+    field doubled the request count for the whole wait.
+    """
+    if depth > max_depth:
+        return [], None
+    workflow = workflow_executor.get_workflow(workflow_id=workflow_id, include_tasks=True)
+    tasks = workflow.tasks or []
+    for t in tasks:
+        if (getattr(t, 'task_type', None) == 'SUB_WORKFLOW'
+                and getattr(t, 'status', None) == 'IN_PROGRESS'
+                and getattr(t, 'sub_workflow_id', None)):
+            nested, _ = _find_blocking_leaf_tasks(
+                workflow_executor, t.sub_workflow_id, depth + 1, max_depth)
+            if nested:
+                return nested, workflow
+    return ([t for t in tasks
+             if getattr(t, 'task_type', None) in _BLOCKING_TASK_TYPES
+             and getattr(t, 'status', None) in ('SCHEDULED', 'IN_PROGRESS')],
+            workflow)
+
+
+def _wait_for_blocking_task(workflow_executor: WorkflowExecutor, workflow_id: str,
+                            timeout: float = 30.0, interval: float = 0.5):
+    """Wait until the workflow is actually parked on a task, before signalling.
+
+    Every signal return strategy (BLOCKING_TASK, BLOCKING_WORKFLOW, ...)
+    describes the task the workflow is currently blocked on. A freshly started
+    workflow needs a moment to run its first task and schedule that one, and the
+    fixed sleep(0.5) this replaces was not enough on a loaded shared server: the
+    signal came back with no responseType at all, surfacing as the intermittent
+    "Expected BLOCKING_TASK, got None". See _find_blocking_leaf_tasks for why
+    this needs to descend into nested sub-workflows rather than just checking
+    the outer workflow's own task list.
+
+    Returns the blocking task(s) it found, or [] if the wait timed out. No
+    caller currently reads the return value; on timeout the diagnostic goes to
+    the log instead, since that is the only place the failure is visible.
+    """
+    deadline = time.time() + timeout
+    tasks = []
+    workflow = None
+    while time.time() < deadline:
+        tasks, workflow = _find_blocking_leaf_tasks(workflow_executor, workflow_id)
+        if tasks:
+            return tasks
+        if getattr(workflow, 'status', None) not in ('RUNNING', 'PAUSED'):
+            # Already terminal: nothing is going to block, so stop waiting and
+            # let the caller's assertion report the real state.
+            break
+        time.sleep(interval)
+    # Report the workflow's own last-seen state, not `tasks`: reaching here
+    # means the blocking-task filter came back empty, so logging `tasks` could
+    # only ever print [] -- which says nothing about *why* nothing blocked.
+    # What separates the cases is the outer workflow: still on its HTTP task,
+    # a SUB_WORKFLOW that never got decided, or already terminal.
+    logger.warning(
+        'no blocking task on %s after %.0fs; workflow status=%s, tasks=%s',
+        workflow_id, timeout, getattr(workflow, 'status', '?'),
+        [(getattr(t, 'task_def_name', '?'), getattr(t, 'task_type', '?'),
+          getattr(t, 'status', '?'))
+         for t in (getattr(workflow, 'tasks', None) or [])])
+    return tasks
 
 
 def _complete_workflow(workflow_executor: WorkflowExecutor, workflow_id: str):
@@ -569,15 +845,15 @@ def _complete_workflow(workflow_executor: WorkflowExecutor, workflow_id: str):
         raise
 
 
-def test_signal_target_workflow(workflow_executor: WorkflowExecutor):
+def scenario_signal_target_workflow(workflow_executor: WorkflowExecutor):
     """Test signal with TARGET_WORKFLOW return strategy"""
     logger.info('Testing signal with TARGET_WORKFLOW strategy...')
 
     # Start workflow
     workflow_id = _start_complex_workflow(workflow_executor)
 
-    # Wait and check workflow status
-    time.sleep(1.0)
+    # Wait until it is actually parked on a task, rather than a fixed sleep.
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     # Debug: Check workflow status before signaling
     try:
@@ -640,12 +916,12 @@ def test_signal_target_workflow(workflow_executor: WorkflowExecutor):
     logger.info('TARGET_WORKFLOW strategy test completed')
 
 
-def test_signal_blocking_workflow(workflow_executor: WorkflowExecutor):
+def scenario_signal_blocking_workflow(workflow_executor: WorkflowExecutor):
     """Test signal with BLOCKING_WORKFLOW return strategy"""
     logger.info('Testing signal with BLOCKING_WORKFLOW strategy...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     response = workflow_executor.signal(
         workflow_id=workflow_id,
@@ -669,12 +945,12 @@ def test_signal_blocking_workflow(workflow_executor: WorkflowExecutor):
     logger.info('BLOCKING_WORKFLOW strategy test completed')
 
 
-def test_signal_blocking_task(workflow_executor: WorkflowExecutor):
+def scenario_signal_blocking_task(workflow_executor: WorkflowExecutor):
     """Test signal with BLOCKING_TASK return strategy"""
     logger.info('Testing signal with BLOCKING_TASK strategy...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     response = workflow_executor.signal(
         workflow_id=workflow_id,
@@ -699,12 +975,12 @@ def test_signal_blocking_task(workflow_executor: WorkflowExecutor):
     logger.info('BLOCKING_TASK strategy test completed')
 
 
-def test_signal_blocking_task_input(workflow_executor: WorkflowExecutor):
+def scenario_signal_blocking_task_input(workflow_executor: WorkflowExecutor):
     """Test signal with BLOCKING_TASK_INPUT return strategy"""
     logger.info('Testing signal with BLOCKING_TASK_INPUT strategy...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     response = workflow_executor.signal(
         workflow_id=workflow_id,
@@ -730,12 +1006,12 @@ def test_signal_blocking_task_input(workflow_executor: WorkflowExecutor):
     logger.info('BLOCKING_TASK_INPUT strategy test completed')
 
 
-def test_signal_default_strategy(workflow_executor: WorkflowExecutor):
+def scenario_signal_default_strategy(workflow_executor: WorkflowExecutor):
     """Test signal with default return strategy"""
     logger.info('Testing signal with default strategy...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     # Don't specify return_strategy - should default to TARGET_WORKFLOW
     response = workflow_executor.signal(
@@ -754,12 +1030,12 @@ def test_signal_default_strategy(workflow_executor: WorkflowExecutor):
     logger.info('Default strategy test completed')
 
 
-def test_signal_async(workflow_executor: WorkflowExecutor):
+def scenario_signal_async(workflow_executor: WorkflowExecutor):
     """Test async signal"""
     logger.info('Testing async signal...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     # Send async signal (should not return response)
     result = workflow_executor.signal_async(
@@ -775,12 +1051,12 @@ def test_signal_async(workflow_executor: WorkflowExecutor):
     logger.info('Async signal test completed')
 
 
-def test_signal_to_dict_fix(workflow_executor: WorkflowExecutor):
+def scenario_signal_to_dict_fix(workflow_executor: WorkflowExecutor):
     """Test that to_dict() returns actual values, not property objects"""
     logger.info('Testing to_dict() method fix...')
 
     workflow_id = _start_complex_workflow(workflow_executor)
-    time.sleep(0.5)
+    _wait_for_blocking_task(workflow_executor, workflow_id)
 
     response = workflow_executor.signal(
         workflow_id=workflow_id,
@@ -810,21 +1086,3 @@ def test_signal_to_dict_fix(workflow_executor: WorkflowExecutor):
     _wait_for_workflow_completion(workflow_executor, workflow_id)
 
     logger.info('to_dict() method test completed')
-
-
-def _wait_for_workflow_completion(workflow_executor: WorkflowExecutor, workflow_id: str, timeout: int = 10):
-    """Wait for workflow to complete with timeout"""
-    max_iterations = timeout * 10  # Check every 0.1 seconds
-
-    for i in range(max_iterations):
-        try:
-            workflow = workflow_executor.get_workflow(workflow_id, include_tasks=False)
-            if workflow.status in ["COMPLETED", "FAILED", "TERMINATED"]:
-                logger.debug(f'Workflow {workflow_id} completed with status: {workflow.status}')
-                return
-        except Exception as e:
-            logger.warning(f'Error checking workflow status: {e}')
-
-        time.sleep(0.1)
-
-    logger.warning(f'Workflow {workflow_id} did not complete within {timeout} seconds')

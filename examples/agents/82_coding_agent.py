@@ -1,7 +1,4 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
-"""Coding Agent REPL — a filesystem-aware coding assistant backed by AgentSpan runtime.
+"""Coding Agent REPL — a filesystem-aware coding assistant backed by Conductor runtime.
 
 This example is a Claude Code-style assistant you can actually use in a working session.
 It runs as a durable Conductor workflow, giving you things a local agent cannot:
@@ -18,9 +15,9 @@ Usage:
     python 82_coding_agent.py --resume             # resume last session
 
 Requirements:
-    - AgentSpan server running at http://localhost:8080
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api
-    - AGENTSPAN_LLM_MODEL=anthropic/claude-sonnet-4-20250514
+    - Conductor server with WMQ support (conductor.workflow-message-queue.enabled=true)
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api
+    - CONDUCTOR_AGENT_LLM_MODEL=anthropic/claude-sonnet-5
 """
 
 import argparse
@@ -31,7 +28,7 @@ import subprocess
 import threading
 from pathlib import Path
 
-os.environ.setdefault("AGENTSPAN_LOG_LEVEL", "WARNING")
+os.environ.setdefault("CONDUCTOR_LOG_LEVEL", "WARNING")
 
 from conductor.ai.agents import Agent, AgentRuntime, EventType, tool, wait_for_message_tool
 from settings import settings
@@ -40,11 +37,22 @@ from settings import settings
 # Constants
 # ---------------------------------------------------------------------------
 
-SESSION_FILE = Path("/tmp/agentspan_coding_agent.session")
+SESSION_FILE = Path("/tmp/Conductor_coding_agent.session")
 _DEFAULT_SHELL_TIMEOUT = 30   # seconds per shell command
 _MAX_FILE_BYTES = 200_000     # 200 KB — refuse larger files in read_file
 _MAX_SHELL_OUTPUT = 8_000     # truncate shell output shown to the LLM
 _MAX_SHELL_DISPLAY = 2_000    # truncate shell output shown in the terminal
+
+_WORKING_DIR_ENV = "CODING_AGENT_WORKING_DIR"
+_SHELL_TIMEOUT_ENV = "CODING_AGENT_SHELL_TIMEOUT"
+
+
+def _working_dir() -> str:
+    return os.environ[_WORKING_DIR_ENV]
+
+
+def _shell_timeout() -> int:
+    return int(os.environ.get(_SHELL_TIMEOUT_ENV, str(_DEFAULT_SHELL_TIMEOUT)))
 
 
 # ---------------------------------------------------------------------------
@@ -269,148 +277,164 @@ def _run_repl(
 # Agent builder
 # ---------------------------------------------------------------------------
 
+@tool
+def read_file(path: str) -> str:
+    """Read a file and return its text contents. Paths may be absolute or relative to the working directory."""
+    working_dir = _working_dir()
+    target = Path(path) if os.path.isabs(path) else Path(working_dir) / path
+    if not target.exists():
+        return f"Error: {path!r} does not exist."
+    if target.is_dir():
+        return f"Error: {path!r} is a directory. Use list_dir to browse it."
+    size = target.stat().st_size
+    if size > _MAX_FILE_BYTES:
+        return (
+            f"Error: {path!r} is {size:,} bytes (limit {_MAX_FILE_BYTES:,}). "
+            "Use search_in_files to find specific content instead."
+        )
+    try:
+        return target.read_text(encoding="utf-8", errors="replace")
+    except Exception as exc:
+        return f"Error reading {path!r}: {exc}"
+
+
+@tool
+def write_file(path: str, content: str) -> str:
+    """Write content to a file, creating parent directories as needed. Overwrites existing files."""
+    working_dir = _working_dir()
+    target = Path(path) if os.path.isabs(path) else Path(working_dir) / path
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        return f"Wrote {len(content):,} bytes to {str(target)!r}."
+    except Exception as exc:
+        return f"Error writing {path!r}: {exc}"
+
+
+@tool
+def list_dir(path: str = ".") -> str:
+    """List directory contents with file sizes. Paths may be absolute or relative to the working directory."""
+    working_dir = _working_dir()
+    target = Path(path) if os.path.isabs(path) else Path(working_dir) / path
+    if not target.exists():
+        return f"Error: {path!r} does not exist."
+    if not target.is_dir():
+        return f"Error: {path!r} is not a directory."
+    try:
+        entries = sorted(target.iterdir(), key=lambda p: (p.is_file(), p.name))
+        lines = []
+        for entry in entries:
+            if entry.is_dir():
+                lines.append(f"  {entry.name}/")
+            else:
+                lines.append(f"  {entry.name}  ({entry.stat().st_size:,} bytes)")
+        header = str(target) + "/"
+        return header + "\n" + "\n".join(lines) if lines else header + " (empty)"
+    except Exception as exc:
+        return f"Error listing {path!r}: {exc}"
+
+
+@tool
+def find_files(pattern: str, path: str = ".") -> str:
+    """Find files matching a glob pattern (e.g. '**/*.py'). Path relative to working directory."""
+    working_dir = _working_dir()
+    base = Path(path) if os.path.isabs(path) else Path(working_dir) / path
+    if not base.exists():
+        return f"Error: {path!r} does not exist."
+    if not base.is_dir():
+        return f"Error: {path!r} is not a directory."
+    try:
+        matches = sorted(m for m in base.glob(pattern) if m.is_file())
+        if not matches:
+            return f"No files matching {pattern!r} under {str(base)!r}."
+        lines = []
+        for m in matches[:200]:
+            try:
+                rel = m.relative_to(working_dir)
+            except ValueError:
+                rel = m
+            lines.append(str(rel))
+        suffix = f"\n... ({len(matches) - 200} more)" if len(matches) > 200 else ""
+        return "\n".join(lines) + suffix
+    except Exception as exc:
+        return f"Error finding files: {exc}"
+
+
+@tool
+def search_in_files(regex: str, path: str = ".", file_glob: str = "**/*") -> str:
+    """Search for a regex pattern in file contents. Returns file:line: matching_line entries."""
+    import re as _re
+    working_dir = _working_dir()
+    base = Path(path) if os.path.isabs(path) else Path(working_dir) / path
+    try:
+        compiled = _re.compile(regex)
+    except _re.error as exc:
+        return f"Invalid regex {regex!r}: {exc}"
+    results = []
+    for filepath in sorted(base.glob(file_glob)):
+        if not filepath.is_file() or filepath.stat().st_size > _MAX_FILE_BYTES:
+            continue
+        try:
+            for lineno, line in enumerate(
+                filepath.read_text(encoding="utf-8", errors="replace").splitlines(), 1
+            ):
+                if compiled.search(line):
+                    try:
+                        label = str(filepath.relative_to(working_dir))
+                    except ValueError:
+                        label = str(filepath)
+                    results.append(f"{label}:{lineno}: {line.rstrip()}")
+                    if len(results) >= 100:
+                        break
+        except Exception:
+            continue
+        if len(results) >= 100:
+            break
+    if not results:
+        return f"No matches for {regex!r} in {str(base)!r} ({file_glob})."
+    suffix = "\n... (truncated at 100 matches)" if len(results) >= 100 else ""
+    return "\n".join(results) + suffix
+
+
+@tool
+def run_shell(command: str) -> str:
+    """Run a shell command in the working directory. Returns stdout + stderr with exit code."""
+    working_dir = _working_dir()
+    shell_timeout = _shell_timeout()
+    try:
+        proc = subprocess.run(
+            command,
+            shell=True,
+            cwd=working_dir,
+            capture_output=True,
+            text=True,
+            timeout=shell_timeout,
+        )
+        combined = (proc.stdout + proc.stderr).strip()
+        if len(combined) > _MAX_SHELL_OUTPUT:
+            combined = combined[:_MAX_SHELL_OUTPUT] + f"\n... (truncated, {len(combined):,} chars total)"
+        return f"[exit {proc.returncode}]\n{combined}" if combined else f"[exit {proc.returncode}] (no output)"
+    except subprocess.TimeoutExpired:
+        return f"Error: command timed out after {shell_timeout}s."
+    except Exception as exc:
+        return f"Error: {exc}"
+
+
+@tool
+def reply_to_user(message: str) -> str:
+    """Send your response to the user. Call this when the task is complete."""
+    return "ok"
+
+
 def build_agent(working_dir: str, shell_timeout: int = _DEFAULT_SHELL_TIMEOUT) -> Agent:
-    """Build the coding agent. All tools close over working_dir and shell_timeout."""
+    """Build the coding agent. Tools read working_dir/shell_timeout from env vars set here."""
+    os.environ[_WORKING_DIR_ENV] = working_dir
+    os.environ[_SHELL_TIMEOUT_ENV] = str(shell_timeout)
 
     receive_message = wait_for_message_tool(
         name="wait_for_message",
         description="Wait for the next user message. Payload has a 'text' field.",
     )
-
-    @tool
-    def read_file(path: str) -> str:
-        """Read a file and return its text contents. Paths may be absolute or relative to the working directory."""
-        target = Path(path) if os.path.isabs(path) else Path(working_dir) / path
-        if not target.exists():
-            return f"Error: {path!r} does not exist."
-        if target.is_dir():
-            return f"Error: {path!r} is a directory. Use list_dir to browse it."
-        size = target.stat().st_size
-        if size > _MAX_FILE_BYTES:
-            return (
-                f"Error: {path!r} is {size:,} bytes (limit {_MAX_FILE_BYTES:,}). "
-                "Use search_in_files to find specific content instead."
-            )
-        try:
-            return target.read_text(encoding="utf-8", errors="replace")
-        except Exception as exc:
-            return f"Error reading {path!r}: {exc}"
-
-    @tool
-    def write_file(path: str, content: str) -> str:
-        """Write content to a file, creating parent directories as needed. Overwrites existing files."""
-        target = Path(path) if os.path.isabs(path) else Path(working_dir) / path
-        try:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(content, encoding="utf-8")
-            return f"Wrote {len(content):,} bytes to {str(target)!r}."
-        except Exception as exc:
-            return f"Error writing {path!r}: {exc}"
-
-    @tool
-    def list_dir(path: str = ".") -> str:
-        """List directory contents with file sizes. Paths may be absolute or relative to the working directory."""
-        target = Path(path) if os.path.isabs(path) else Path(working_dir) / path
-        if not target.exists():
-            return f"Error: {path!r} does not exist."
-        if not target.is_dir():
-            return f"Error: {path!r} is not a directory."
-        try:
-            entries = sorted(target.iterdir(), key=lambda p: (p.is_file(), p.name))
-            lines = []
-            for entry in entries:
-                if entry.is_dir():
-                    lines.append(f"  {entry.name}/")
-                else:
-                    lines.append(f"  {entry.name}  ({entry.stat().st_size:,} bytes)")
-            header = str(target) + "/"
-            return header + "\n" + "\n".join(lines) if lines else header + " (empty)"
-        except Exception as exc:
-            return f"Error listing {path!r}: {exc}"
-
-    @tool
-    def find_files(pattern: str, path: str = ".") -> str:
-        """Find files matching a glob pattern (e.g. '**/*.py'). Path relative to working directory."""
-        base = Path(path) if os.path.isabs(path) else Path(working_dir) / path
-        if not base.exists():
-            return f"Error: {path!r} does not exist."
-        if not base.is_dir():
-            return f"Error: {path!r} is not a directory."
-        try:
-            matches = sorted(m for m in base.glob(pattern) if m.is_file())
-            if not matches:
-                return f"No files matching {pattern!r} under {str(base)!r}."
-            lines = []
-            for m in matches[:200]:
-                try:
-                    rel = m.relative_to(working_dir)
-                except ValueError:
-                    rel = m
-                lines.append(str(rel))
-            suffix = f"\n... ({len(matches) - 200} more)" if len(matches) > 200 else ""
-            return "\n".join(lines) + suffix
-        except Exception as exc:
-            return f"Error finding files: {exc}"
-
-    @tool
-    def search_in_files(regex: str, path: str = ".", file_glob: str = "**/*") -> str:
-        """Search for a regex pattern in file contents. Returns file:line: matching_line entries."""
-        import re as _re
-        base = Path(path) if os.path.isabs(path) else Path(working_dir) / path
-        try:
-            compiled = _re.compile(regex)
-        except _re.error as exc:
-            return f"Invalid regex {regex!r}: {exc}"
-        results = []
-        for filepath in sorted(base.glob(file_glob)):
-            if not filepath.is_file() or filepath.stat().st_size > _MAX_FILE_BYTES:
-                continue
-            try:
-                for lineno, line in enumerate(
-                    filepath.read_text(encoding="utf-8", errors="replace").splitlines(), 1
-                ):
-                    if compiled.search(line):
-                        try:
-                            label = str(filepath.relative_to(working_dir))
-                        except ValueError:
-                            label = str(filepath)
-                        results.append(f"{label}:{lineno}: {line.rstrip()}")
-                        if len(results) >= 100:
-                            break
-            except Exception:
-                continue
-            if len(results) >= 100:
-                break
-        if not results:
-            return f"No matches for {regex!r} in {str(base)!r} ({file_glob})."
-        suffix = "\n... (truncated at 100 matches)" if len(results) >= 100 else ""
-        return "\n".join(results) + suffix
-
-    @tool
-    def run_shell(command: str) -> str:
-        """Run a shell command in the working directory. Returns stdout + stderr with exit code."""
-        try:
-            proc = subprocess.run(
-                command,
-                shell=True,
-                cwd=working_dir,
-                capture_output=True,
-                text=True,
-                timeout=shell_timeout,
-            )
-            combined = (proc.stdout + proc.stderr).strip()
-            if len(combined) > _MAX_SHELL_OUTPUT:
-                combined = combined[:_MAX_SHELL_OUTPUT] + f"\n... (truncated, {len(combined):,} chars total)"
-            return f"[exit {proc.returncode}]\n{combined}" if combined else f"[exit {proc.returncode}] (no output)"
-        except subprocess.TimeoutExpired:
-            return f"Error: command timed out after {shell_timeout}s."
-        except Exception as exc:
-            return f"Error: {exc}"
-
-    @tool
-    def reply_to_user(message: str) -> str:
-        """Send your response to the user. Call this when the task is complete."""
-        return "ok"
 
     return Agent(
         name="coding_agent",
@@ -437,9 +461,12 @@ Available tools:
 - run_shell(command)                           run a shell command (cwd: {working_dir}, timeout: {shell_timeout}s)
 - find_files(pattern, path=".")               find files by glob, e.g. "**/*.py"
 - search_in_files(regex, path=".", file_glob) grep files by regex
-- reply_to_user(message)                       send your response to the user
+- reply_to_user(message)                       REQUIRED — how the user sees your answer
 
 Rules:
+- You MUST call reply_to_user before calling wait_for_message again. It is the only
+  channel the user can see — plain text replies are discarded.
+- Never call wait_for_message twice in a row. Every task ends with reply_to_user.
 - Work autonomously. Do not ask for permission before reading files, running commands, or writing.
 - Make as many tool calls as needed to fully complete the task before replying.
 - Keep replies concise: what was done, what changed, key output. No lengthy explanations.
@@ -450,8 +477,8 @@ Repeat indefinitely:
 1. Call wait_for_message to receive the next task.
 2. Think through the task. Explore, read, search, modify, and run as needed.
 3. Complete the task fully.
-4. Call reply_to_user with a concise summary.
-5. Return to step 1 immediately.
+4. Call reply_to_user with a concise summary. Never skip this step.
+5. Only then return to step 1.
 """,
     )
 

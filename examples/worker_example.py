@@ -30,6 +30,7 @@ import asyncio
 import logging
 import os
 import shutil
+import tempfile
 import time
 from typing import Union
 
@@ -313,7 +314,7 @@ def main():
     api_config = Configuration()
 
     # Metrics configuration - HTTP mode (recommended)
-    metrics_dir = os.path.join('/Users/viren/', 'conductor_metrics')
+    metrics_dir = os.path.join(tempfile.gettempdir(), 'conductor_metrics')
 
     # Clean up any stale metrics data from previous runs
     if os.path.exists(metrics_dir):

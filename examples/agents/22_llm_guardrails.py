@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """LLM Guardrails — AI-powered content safety evaluation.
 
 Demonstrates ``LLMGuardrail`` which uses a separate (typically smaller/faster)
@@ -15,8 +12,8 @@ so the LLM retries automatically on guardrail failure.
 Requirements:
     - Conductor server with LLM support
     - pip install litellm (for the guardrail LLM call)
-    - AGENTSPAN_SERVER_URL=http://localhost:8080/api as environment variable
-    - AGENTSPAN_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
     - OPENAI_API_KEY=sk-... as environment variable
 """
 
@@ -67,7 +64,7 @@ if __name__ == "__main__":
         # 1. Deploy once during CI/CD:
         # runtime.deploy(agent)
         # CLI alternative:
-        # agentspan deploy --package examples.22_llm_guardrails
+        # runtime.deploy(agent) from a release script
         #
         # 2. In a separate long-lived worker process:
         # runtime.serve(agent)

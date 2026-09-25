@@ -201,6 +201,95 @@ class TestBuildPassthroughFunc:
         assert mock_worker.call_args.kwargs == {"credential_names": None}
 
 
+class TestClaudeCodeAgentRegistration:
+    """Regression tests for idea-19: the two ``is_claude_code`` branches in
+    ``_register_workers`` must route through ``_build_passthrough_func``
+    (a picklable ``PassthroughWorkerEntry``) instead of building the
+    ``tool_worker`` closure eagerly in the parent process, which is never
+    picklable under the SDK's default ``spawn`` start method.
+    """
+
+    def _make_runtime(self, auto_start_workers=False):
+        from conductor.ai.agents.runtime.runtime import AgentRuntime
+        from conductor.ai.agents.runtime.config import AgentConfig
+        from conductor.client.configuration.configuration import Configuration
+
+        runtime = AgentRuntime.__new__(AgentRuntime)
+        runtime._config = AgentConfig(auto_start_workers=auto_start_workers)
+        runtime._conductor_config = Configuration(server_api_url="http://testserver:8080/api")
+        runtime._auth_key = "my_key"
+        runtime._auth_secret = "my_secret"
+        return runtime
+
+    def test_register_workers_top_level_claude_code_uses_passthrough_entry(self):
+        pytest.importorskip("claude_code_sdk")
+        from conductor.ai.agents.agent import Agent
+        from conductor.ai.agents.runtime._worker_entries import PassthroughWorkerEntry
+
+        agent = Agent(name="reviewer", model="claude-code/sonnet")
+        runtime = self._make_runtime()
+
+        with patch.object(runtime, "_register_passthrough_worker") as mock_register:
+            runtime._register_workers(agent)
+
+        mock_register.assert_called_once()
+        worker = mock_register.call_args.args[0]
+        assert worker.name == "reviewer"
+        assert isinstance(worker.func, PassthroughWorkerEntry)
+
+    def test_register_workers_nested_claude_code_sub_agent_uses_passthrough_entry(self):
+        pytest.importorskip("claude_code_sdk")
+        from conductor.ai.agents.agent import Agent
+        from conductor.ai.agents.runtime._worker_entries import PassthroughWorkerEntry
+
+        sub = Agent(name="builder", model="claude-code/sonnet")
+        parent = Agent(name="swarm_parent", model="anthropic/claude-sonnet-4-5", agents=[sub])
+        runtime = self._make_runtime()
+
+        with patch.object(runtime, "_register_passthrough_worker") as mock_register:
+            runtime._register_workers(parent)
+
+        mock_register.assert_called_once()
+        worker = mock_register.call_args.args[0]
+        assert worker.name == "builder"
+        assert isinstance(worker.func, PassthroughWorkerEntry)
+
+    def test_register_workers_claude_code_top_level_pickles_under_spawn(self):
+        """The actual regression test: no SpawnSafetyError under the default
+        spawn probe. Before the fix this raised PicklingError("Can't pickle
+        local object make_claude_agent_sdk_worker.<locals>.tool_worker")."""
+        pytest.importorskip("claude_code_sdk")
+        from conductor.ai.agents.agent import Agent
+        from conductor.client.automator.task_handler import _decorated_functions
+
+        agent = Agent(name="reviewer2", model="claude-code/sonnet")
+        runtime = self._make_runtime()
+
+        try:
+            runtime._register_workers(agent)
+        finally:
+            # Real registration reaches worker_task -> register_decorated_fn,
+            # which writes into this process-wide registry — clean up so
+            # other tests (e.g. test_worker_manager.py) see it empty again.
+            _decorated_functions.pop(("reviewer2", None), None)
+
+    def test_register_workers_claude_code_nested_pickles_under_spawn(self):
+        """Same regression test, nested sub-agent shape (mirrors `builder` in
+        06_github_issue_swarm.py)."""
+        pytest.importorskip("claude_code_sdk")
+        from conductor.ai.agents.agent import Agent
+        from conductor.client.automator.task_handler import _decorated_functions
+
+        sub = Agent(name="builder2", model="claude-code/sonnet")
+        parent = Agent(name="swarm_parent2", model="anthropic/claude-sonnet-4-5", agents=[sub])
+        runtime = self._make_runtime()
+
+        try:
+            runtime._register_workers(parent)
+        finally:
+            _decorated_functions.pop(("builder2", None), None)
+
+
 def _make_fake_task(workflow_instance_id="wf-123", prompt="test prompt", runtime_metadata=None):
     """Build a minimal Conductor-like Task object for passthrough worker tests.
 

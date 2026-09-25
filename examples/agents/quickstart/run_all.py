@@ -47,7 +47,7 @@ _m04 = _load_module("04_guardrails.py")
 # ── Config ──────────────────────────────────────────────
 
 TIMEOUT_SECONDS = 30
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 
 
 @dataclass
@@ -85,7 +85,7 @@ def fetch_execution(execution_id: str) -> dict:
     return resp.json()
 
 
-# System task types managed by Conductor/AgentSpan — everything else is a tool worker task
+# System task types managed by Conductor/Conductor — everything else is a tool worker task
 SYSTEM_TASK_TYPES = {
     "LLM_CHAT_COMPLETE", "SET_VARIABLE", "DO_WHILE", "SWITCH", "FORK", "JOIN",
     "INLINE", "SUB_WORKFLOW", "HUMAN", "TERMINATE", "WAIT", "EVENT",

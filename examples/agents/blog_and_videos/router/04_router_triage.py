@@ -5,8 +5,8 @@ right specialist. The specialist (gpt-4o) does the actual work. Two
 brains, each doing what it is good at.
 
 Setup:
-    pip install agentspan
-    agentspan server start
+    pip install Conductor
+    Conductor server start
 
     python split-the-brain.py
 """

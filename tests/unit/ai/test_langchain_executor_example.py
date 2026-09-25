@@ -52,7 +52,7 @@ class TestLangChainWorkerInvocation:
         assert result.output_data["result"] == "42"
 
     def test_worker_injects_callback_handler(self, agent_executor):
-        """Verify that AgentspanCallbackHandler is passed to executor.invoke."""
+        """Verify that ConductorAgentCallbackHandler is passed to executor.invoke."""
         from conductor.ai.agents.frameworks.langchain import make_langchain_worker, _get_callback_handler_class
 
         task = MagicMock()

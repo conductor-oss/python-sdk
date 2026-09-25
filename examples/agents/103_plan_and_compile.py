@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """PLAN_AND_COMPILE — server-side plan compiler in action.
 
 A planner agent produces a JSON DAG; the server's ``PLAN_AND_COMPILE`` Java
@@ -17,13 +14,13 @@ The plan combines:
   - a ``validation`` block with a sandboxed success_condition
 
 Usage:
-    AGENTSPAN_SERVER_URL=http://localhost:8080/api \\
+    CONDUCTOR_SERVER_URL=http://localhost:8080/api \\
     OPENAI_API_KEY=... \\
     python 103_plan_and_compile.py "Compute factorials of 1..5 and explain"
 
 Requirements:
-  - Agentspan server running with PLAN_AND_COMPILE registered
-  - OPENAI_API_KEY (or whichever provider matches AGENTSPAN_LLM_MODEL)
+  - Conductor server running with PLAN_AND_COMPILE registered
+  - OPENAI_API_KEY (or whichever provider matches CONDUCTOR_AGENT_LLM_MODEL)
 """
 
 import math
@@ -36,7 +33,7 @@ from conductor.ai.agents import AgentRuntime, plan_execute, tool
 from settings import settings
 
 
-SERVER_URL = os.environ.get("AGENTSPAN_SERVER_URL", "http://localhost:8080/api")
+SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 CONDUCTOR_BASE = SERVER_URL.rstrip("/").replace("/api", "")
 
 

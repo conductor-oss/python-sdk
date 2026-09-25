@@ -1,21 +1,18 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Credential exception hierarchy."""
 
 from __future__ import annotations
 
 from typing import List
 
-from conductor.ai.agents.exceptions import AgentspanError
+from conductor.ai.agents.exceptions import ConductorAgentError
 
 
-class CredentialNotFoundError(AgentspanError):
+class CredentialNotFoundError(ConductorAgentError):
     """One or more required credentials could not be resolved.
 
     Raised when a declared credential is not found in the credential store.
     There is no env var fallback for declared credentials — store them with
-    ``agentspan credentials set --name <NAME>``.
+    Configure the credential in the Conductor server's secret provider.
     """
 
     def __init__(self, missing_names: List[str], detail: str = "") -> None:
@@ -27,7 +24,7 @@ class CredentialNotFoundError(AgentspanError):
         super().__init__(msg)
 
 
-class CredentialAuthError(AgentspanError):
+class CredentialAuthError(ConductorAgentError):
     """Execution token is invalid, expired, or revoked.
 
     Raised on HTTP 401 from ``/api/workers/credentials``.
@@ -41,7 +38,7 @@ class CredentialAuthError(AgentspanError):
         super().__init__(msg)
 
 
-class CredentialRateLimitError(AgentspanError):
+class CredentialRateLimitError(ConductorAgentError):
     """Rate limit exceeded on ``/api/workers/credentials`` (HTTP 429).
 
     Do NOT fall through to env var fallback.
@@ -54,7 +51,7 @@ class CredentialRateLimitError(AgentspanError):
         )
 
 
-class CredentialServiceError(AgentspanError):
+class CredentialServiceError(ConductorAgentError):
     """Credential service returned a 5xx error or is unreachable.
 
     Always fatal — no env var fallback.

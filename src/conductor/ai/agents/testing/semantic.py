@@ -1,11 +1,8 @@
-# Copyright (c) 2025 Agentspan
-# Licensed under the MIT License. See LICENSE file in the project root for details.
-
 """Semantic assertions using an LLM judge.
 
 Requires ``litellm`` (optional dependency).  Install with::
 
-    pip install agentspan[testing]
+    pip install conductor-python[agents]
 
 Usage::
 
@@ -52,7 +49,7 @@ def assert_output_satisfies(
     except ImportError:
         raise ImportError(
             "litellm is required for semantic assertions.\n"
-            "Install it with: pip install agentspan[testing]"
+            "Install it with: pip install conductor-python[agents]"
         )
 
     output = str(result.output) if result.output is not None else ""
