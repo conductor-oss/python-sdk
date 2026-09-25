@@ -50,7 +50,14 @@ from conductor.ai.agents.code_executor import (
     LocalCodeExecutor,
     ServerlessCodeExecutor,
 )
-from conductor.ai.agents.decision import DecisionModelTool
+from conductor.ai.agents.jev import (
+    JevAgent,
+    ChoiceQuestion,
+    ScoreQuestion,
+    BooleanQuestion,
+    JevAnswer,
+    JevResult,
+)
 
 # Exceptions
 from conductor.ai.agents.exceptions import (
@@ -233,7 +240,12 @@ function_tool = tool
 from conductor.ai.agents.tracing import is_tracing_enabled
 
 __all__ = [
-    "DecisionModelTool",
+    "JevAgent",
+    "ChoiceQuestion",
+    "ScoreQuestion",
+    "BooleanQuestion",
+    "JevAnswer",
+    "JevResult",
     # OpenAI Agents SDK compatibility
     "Runner",
     "RunResult",

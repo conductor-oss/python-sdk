@@ -75,6 +75,8 @@ class AgentDef:
         name: Agent name (becomes the Conductor workflow name).
         model: LLM model in ``"provider/model"`` format.  Empty string
             means "inherit from parent agent at resolution time".
+        kind: Set to "jev" for a Jev agent; omitted for chat agents.
+        questions: Fixed Jev questions, or omit and supply context.questions at runtime.
         instructions: System prompt — a string or the decorated callable.
         tools: List of tools for the agent.
         guardrails: List of guardrails for the agent.
@@ -109,6 +111,8 @@ class AgentDef:
     credentials: List[Any] = field(default_factory=list)
     context_window_budget: Optional[int] = None
     prefill_tools: List[Any] = field(default_factory=list)
+    kind: Optional[str] = None
+    questions: Optional[Dict[str, Any]] = None
 
 
 # ── @agent decorator ────────────────────────────────────────────────────
@@ -207,7 +211,7 @@ def agent(
 
 
 def _resolve_agent(obj: Any, parent_model: str = "") -> "Agent":
-    """Convert an ``@agent``-decorated function into an :class:`Agent` instance.
+    """Convert an AgentDef or ``@agent``-decorated function into an Agent.
 
     If *obj* is already an :class:`Agent`, it is returned as-is.
 
@@ -215,12 +219,35 @@ def _resolve_agent(obj: Any, parent_model: str = "") -> "Agent":
     *parent_model* is provided, the parent's model is inherited.
 
     Raises:
-        TypeError: If *obj* is not an Agent or ``@agent``-decorated function.
+        TypeError: If *obj* is not an Agent, AgentDef or ``@agent``-decorated function.
     """
     if isinstance(obj, Agent):
         return obj
-    if callable(obj) and hasattr(obj, "_agent_def"):
-        ad: AgentDef = obj._agent_def
+    if isinstance(obj, AgentDef) or (callable(obj) and hasattr(obj, "_agent_def")):
+        ad: AgentDef = obj if isinstance(obj, AgentDef) else obj._agent_def
+        if ad.kind == "jev":
+            from conductor.ai.agents.jev import JevAgent
+
+            if (
+                ad.tools
+                or ad.agents
+                or ad.guardrails
+                or ad.instructions
+                or ad.func
+                or ad.local_code_execution
+                or ad.code_execution
+                or ad.cli_commands
+                or ad.credentials
+                or ad.prefill_tools
+                or ad.max_tokens is not None
+                or ad.temperature is not None
+            ):
+                raise ValueError(
+                    "Jev AgentDef supports model, questions and metadata; chat configuration is unsupported"
+                )
+            return JevAgent(ad.name, model=ad.model, questions=ad.questions, metadata=ad.metadata)
+        if ad.kind is not None:
+            raise ValueError(f"Unsupported agent kind: {ad.kind}")
         # Handle ClaudeCode: don't inherit parent model for claude-code agents
         if isinstance(ad.model, ClaudeCode):
             resolved_model = ad.model
@@ -229,7 +256,7 @@ def _resolve_agent(obj: Any, parent_model: str = "") -> "Agent":
         return Agent(
             name=ad.name,
             model=resolved_model,
-            instructions=ad.func,
+            instructions=ad.func or ad.instructions,
             tools=ad.tools,
             guardrails=ad.guardrails,
             agents=ad.agents,
@@ -249,7 +276,9 @@ def _resolve_agent(obj: Any, parent_model: str = "") -> "Agent":
             context_window_budget=ad.context_window_budget,
             prefill_tools=ad.prefill_tools or None,
         )
-    raise TypeError(f"Expected an Agent or @agent-decorated function, got {type(obj).__name__}")
+    raise TypeError(
+        f"Expected an Agent, AgentDef or @agent-decorated function, got {type(obj).__name__}"
+    )
 
 
 # ── from_instance resolution helpers ────────────────────────────────────

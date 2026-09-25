@@ -8,7 +8,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, Callable, Dict, Iterator, List, Optional
+
+if TYPE_CHECKING:
+    from conductor.ai.agents.jev import JevResult
 
 # ── Status & FinishReason enums ────────────────────────────────────────
 
@@ -94,7 +97,9 @@ class AgentResult:
 
     Attributes:
         output: The agent's final answer as a dict.  Always contains a
-            ``"result"`` key whose value is a string (or ``None``).
+            ``"result"`` key whose value is a string (or ``None``) for chat
+            agents, or a structured result for Jev agents. The latter
+            is also available through :attr:`jev`.
             If ``output_type`` was set on the agent, this is a validated
             instance of that type instead.
         execution_id: The Conductor execution ID (for debugging in the UI).
@@ -124,6 +129,21 @@ class AgentResult:
     error: Optional[str] = None
     events: List["AgentEvent"] = field(default_factory=list)
     sub_results: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def jev(self) -> Optional[JevResult]:
+        """Typed view of a successful Jev-shaped result; raw data stays in output."""
+        from conductor.ai.agents.jev import JevResult
+
+        if (
+            self.is_success
+            and isinstance(self.output, dict)
+            and isinstance(self.output.get("result"), dict)
+        ):
+            value = self.output["result"]
+            if isinstance(value.get("model"), str) and isinstance(value.get("answers"), dict):
+                return JevResult.from_dict(value)
+        return None
 
     @property
     def is_success(self) -> bool:
@@ -598,7 +618,7 @@ class AgentHandle:
             correlation_id=self.correlation_id,
             status=status.status,
             finish_reason=self._runtime._derive_finish_reason(status.status, status.output),
-            error=status.reason if status.status in ("FAILED", "TERMINATED") else None,
+            error=status.reason if status.status in ("FAILED", "TERMINATED", "TIMED_OUT") else None,
             token_usage=token_usage,
             metadata=metadata,
         )

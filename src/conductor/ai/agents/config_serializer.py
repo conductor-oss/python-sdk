@@ -36,7 +36,27 @@ class AgentConfigSerializer:
         return self._serialize_agent(agent)
 
     def _serialize_agent(self, agent: "Agent") -> dict:
-        from conductor.ai.agents.agent import PromptTemplate
+        from conductor.ai.agents.agent import AgentDef, PromptTemplate, _resolve_agent
+
+        if isinstance(agent, AgentDef):
+            agent = _resolve_agent(agent)
+        if getattr(agent, "kind", None) == "jev":
+            from conductor.ai.agents.jev import jev_questions
+
+            if agent.tools or agent.agents or agent.memory or agent.guardrails or agent.output_type:
+                raise ValueError(
+                    "Jev agents cannot contain chat tools, agents, memory, output schemas or guardrails"
+                )
+            config = {"name": agent.name, "kind": "jev", "model": agent.model}
+            if agent.questions is not None:
+                config["questions"] = jev_questions(agent.questions)
+            if agent.timeout_seconds:
+                config["timeoutSeconds"] = agent.timeout_seconds
+            if agent.metadata:
+                config["metadata"] = agent.metadata
+            if agent.masked_fields:
+                config["maskedFields"] = agent.masked_fields
+            return config
 
         # Skill agents — emit the raw skill config so the server's
         # SkillNormalizer can compile sub-agents (e.g. gilfoyle, dinesh)

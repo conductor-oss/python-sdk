@@ -34,12 +34,40 @@
       },
       "additionalProperties": true
     },
+    "jevQuestion": {
+      "type": "object",
+      "required": ["type", "instructions"],
+      "properties": {
+        "type": { "enum": ["choice", "score", "boolean"] },
+        "instructions": { "type": "string", "pattern": "\\S" },
+        "choices": {
+          "type": "object", "minProperties": 2, "maxProperties": 255,
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "scale": {
+          "type": "array", "minItems": 2, "maxItems": 10,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "oneOf": [
+        { "properties": { "type": { "const": "choice" } }, "required": ["choices"], "not": { "required": ["scale"] } },
+        { "properties": { "type": { "const": "score" } }, "required": ["scale"], "not": { "required": ["choices"] } },
+        { "properties": { "type": { "const": "boolean" } }, "not": { "anyOf": [{ "required": ["choices"] }, { "required": ["scale"] }] } }
+      ],
+      "additionalProperties": false
+    },
     "agentConfig": {
       "type": "object",
       "required": ["name"],
       "properties": {
         "name": { "type": "string", "pattern": "^[a-zA-Z_][a-zA-Z0-9_-]*$" },
         "model": { "type": ["string", "null"] },
+        "kind": { "const": "jev" },
+        "questions": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/jevQuestion" }
+        },
         "baseUrl": { "type": ["string", "null"] },
         "strategy": { "type": ["string", "null"] },
         "maxTurns": { "type": ["integer", "null"], "minimum": 0 },
