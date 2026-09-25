@@ -26,3 +26,11 @@ the Conductor CLI manages the server with `conductor server start`.
 Framework-specific examples are in [ADK](adk/README.md),
 [LangGraph](langgraph/README.md), and [OpenAI Agents SDK](openai/README.md).
 Review tool side effects before using real credentials.
+
+Jev: [jev_agent.py](jev_agent.py) compiles by default. Pass `--run` for inference.
+
+- `jev_nested_triage.py`: Jev department selection, Jev specialist selection, then a Jev specialist.
+- `luna_jev_triage.py --model INTEGRATION/luna-6`: Luna selects one of ten Jev specialists.
+
+Both compile by default. Pass `--run` for inference. These require the server's
+Jev router support and structured output for single-turn routers without synthesis.

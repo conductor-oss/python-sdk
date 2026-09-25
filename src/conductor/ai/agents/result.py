@@ -94,7 +94,7 @@ class AgentResult:
 
     Attributes:
         output: The agent's final answer as a dict.  Always contains a
-            ``"result"`` key whose value is a string (or ``None``).
+            ``"result"`` key with text, structured data or ``None``.
             If ``output_type`` was set on the agent, this is a validated
             instance of that type instead.
         execution_id: The Conductor execution ID (for debugging in the UI).
@@ -598,7 +598,7 @@ class AgentHandle:
             correlation_id=self.correlation_id,
             status=status.status,
             finish_reason=self._runtime._derive_finish_reason(status.status, status.output),
-            error=status.reason if status.status in ("FAILED", "TERMINATED") else None,
+            error=status.reason if status.status in ("FAILED", "TERMINATED", "TIMED_OUT") else None,
             token_usage=token_usage,
             metadata=metadata,
         )
@@ -711,6 +711,7 @@ class EventType(str, Enum):
     """Types of events emitted during agent execution."""
 
     THINKING = "thinking"
+    JEV = "jev"
     TOOL_CALL = "tool_call"
     TOOL_RESULT = "tool_result"
     HANDOFF = "handoff"
@@ -732,7 +733,7 @@ class AgentEvent:
             ``guardrail_pass``, ``guardrail_fail``).
         tool_name: Tool name (for ``tool_call``, ``tool_result``).
         args: Tool call arguments (for ``tool_call``).
-        result: Tool result (for ``tool_result``).
+        result: Structured result for ``tool_result`` or ``jev``.
         target: Target agent name (for ``handoff``).
         output: Final output (for ``done``).
         execution_id: The Conductor execution ID.

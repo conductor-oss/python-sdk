@@ -1,10 +1,12 @@
 # Agentic Workflow Examples
 
-AI/LLM workflow examples using Conductor's built-in system tasks (`LLM_CHAT_COMPLETE`, `LLM_INDEX_TEXT`, `LLM_SEARCH_INDEX`, MCP tools) combined with Python workers.
+AI workflow examples using Conductor's built-in system tasks, with Python workers where needed.
 
-All examples use **inline ChatMessage objects** for system prompts -- no named prompt templates or AIOrchestrator required. They work with OSS Conductor with AI/LLM support.
+Chat examples use inline ChatMessage objects for system prompts. No named prompt templates or AIOrchestrator required.
 
 ## Prerequisites
+
+The AI decision example requires server-side `AI_DECISION` support and Jev credentials. It needs no chat model or Python worker. The other examples require:
 
 - Conductor server with AI/LLM support running (e.g., `http://localhost:7001/api`)
 - LLM provider named `openai` configured with a valid API key
@@ -14,6 +16,7 @@ All examples use **inline ChatMessage objects** for system prompts -- no named p
 
 | Example | Description | Interactive? | Pattern |
 |---------|-------------|:------------:|---------|
+| [ai_decision_routing.py](ai_decision_routing.py) | Route requests and return the selected branch's result | No | AI_DECISION + SwitchTask + InlineTask |
 | [llm_chat.py](llm_chat.py) | Automated multi-turn science Q&A between two LLMs | No | LoopTask + LLM_CHAT_COMPLETE + worker for history |
 | [llm_chat_human_in_loop.py](llm_chat_human_in_loop.py) | Interactive chat with WAIT task pauses for user input | Yes | LoopTask + WaitTask + LLM_CHAT_COMPLETE |
 | [multiagent_chat.py](multiagent_chat.py) | Multi-agent debate with moderator routing between panelists | No | LoopTask + SwitchTask + SetVariableTask + JavaScript routing |
@@ -23,6 +26,9 @@ All examples use **inline ChatMessage objects** for system prompts -- no named p
 ## Quick Start
 
 ```bash
+# Jev request routing with server-managed credentials
+CONDUCTOR_SERVER_URL=http://localhost:8080/api python -m examples.agentic_workflows.ai_decision_routing
+
 # Automated multi-turn chat (no interaction needed)
 python examples/agentic_workflows/llm_chat.py
 

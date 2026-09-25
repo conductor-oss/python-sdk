@@ -49,3 +49,17 @@ def test_agent_schema_rejects_unknown_root_fields():
     schema = json.loads(SCHEMA_PATH.read_text())
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate({"name": "valid_name", "unknownField": True}, schema)
+
+
+def test_agent_schema_accepts_jev_definition():
+    from conductor.ai.agents import JevAgent
+
+    questions = {
+        "team": {"type": "choice", "instructions": "Choose", "choices": {"a": "A", "b": "B"}},
+        "priority": {"type": "score", "instructions": "Score", "scale": ["low", "high"]},
+        "ready": {"type": "boolean", "instructions": "Ready?"},
+    }
+    schema = json.loads(SCHEMA_PATH.read_text())
+    for fixed_questions in (questions, None):
+        agent = JevAgent("jev", model="jev-1.13", questions=fixed_questions)
+        jsonschema.validate(AgentConfigSerializer().serialize(agent), schema)

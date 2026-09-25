@@ -50,6 +50,7 @@ from conductor.ai.agents.code_executor import (
     LocalCodeExecutor,
     ServerlessCodeExecutor,
 )
+from conductor.ai.agents.jev import JevAgent
 
 # Exceptions
 from conductor.ai.agents.exceptions import (
@@ -232,6 +233,7 @@ function_tool = tool
 from conductor.ai.agents.tracing import is_tracing_enabled
 
 __all__ = [
+    "JevAgent",
     # OpenAI Agents SDK compatibility
     "Runner",
     "RunResult",
