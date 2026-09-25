@@ -13,24 +13,21 @@ maintained in [api-reference.md](../api-reference.md) and
 
 ## Jev agents
 
-Use `JevAgent(name="jev_support_agent", model="jev-1.13", questions=questions)`
-or `AgentDef(name="jev_support_agent", kind="jev", model="jev-1.13", questions=questions)`.
-Both serialize through `AgentConfigSerializer` with `kind: "jev"` and use the
-standard agent runtime APIs. Jev credentials and provider HTTP calls stay on
-Conductor. A chat model and Python worker are not required.
+Use `JevAgent(name, model="jev-1.13", questions=questions)` or
+`AgentDef(name=name, kind="jev", model="jev-1.13", questions=questions)`.
+Questions are dictionaries with `instructions` and a `type`:
+`choice` uses a `choices` map, `score` uses an ordered `scale`, and `boolean`
+returns a probability. Omit questions to supply `context={"questions": questions}`.
 
-Each question requires `instructions`. Use `ChoiceQuestion(instructions, choices)`
-for a choices map, `ScoreQuestion(instructions, scale)` for an ordered scale, or
-`BooleanQuestion(instructions)` for a probability response. Plain dictionaries
-with `type` and the corresponding fields are also accepted. Omit definition
-questions to supply them in `context={"questions": questions}` for each run.
+Use `runtime.plan(agent, prompt)` to compile or `runtime.start(agent, prompt)`
+to run. Call `handle.join()` and check `result.is_success` or `result.error`.
+`result.output["result"]` preserves `model`, `answers`, `usage`, `latencyMs`
+and optional `requestId`. Credentials and inference stay on Conductor.
+No chat model or Python worker is needed.
 
-`runtime.plan(agent, prompt, context=context)` calls `/agent/compile` without
-inference. `runtime.start(agent, prompt, context=context)` calls `/agent/start`;
-`handle.join()` polls status until complete. Check `result.is_success` and report
-`result.error` on failure. `result.output["result"]` retains the structured
-`model`, `answers`, `usage`, `latencyMs`, and optional `requestId` fields.
+[Example](../../../examples/agents/jev_agent.py)
 
-See [the runnable Jev example](../../../examples/agents/jev_agent.py), which
-compiles by default and requires `--run` to start inference. Jev is supported
-only as an agent definition; there is no public Jev task or decision-model tool.
+For server-side Jev routing, use `Agent(strategy="router", router=selector,
+agents=children)`. The Jev selector must have one fixed choice question whose
+choice keys match the child agent names. No parent chat model is needed.
+Routing runs one child and preserves its structured result.

@@ -27,19 +27,10 @@ Framework-specific examples are in [ADK](adk/README.md),
 [LangGraph](langgraph/README.md), and [OpenAI Agents SDK](openai/README.md).
 Review tool side effects before using real credentials.
 
-## Jev agents
+Jev: [jev_agent.py](jev_agent.py) compiles by default. Pass `--run` for inference.
 
-`python examples/agents/jev_agent.py` (from the repository root) compiles the
-`jev_support_agent` definition without inference. Pass `--run` to explicitly start
-it and poll for completion. The example uses `JevAgent` and `AgentRuntime`, requires
-no chat model or Python worker, and prints structured `output.result` data:
-`model`, `answers`, `usage`, `latencyMs`, and optional `requestId`.
-Configure Jev credentials only on Conductor; the SDK calls the agent APIs.
+- `jev_nested_triage.py`: Jev department selection, Jev specialist selection, then a Jev specialist.
+- `luna_jev_triage.py --model INTEGRATION/luna-6`: Luna selects one of ten Jev specialists.
 
-The equivalent generic definition is
-`AgentDef(name="jev_support_agent", kind="jev", model="jev-1.13", questions=questions)`.
-Both forms support `runtime.plan()`, `runtime.start()`, and deployment. Questions
-require `instructions`: `ChoiceQuestion` uses a choices map, `ScoreQuestion` uses
-an ordered scale, and `BooleanQuestion` returns a probability. If questions are
-omitted from the definition, pass `context={"questions": questions}` to `plan()`
-or `start()`. There is no public Jev tool or standalone decision-model API.
+Both compile by default. Pass `--run` for inference. These require the server's
+Jev router support and structured output for single-turn routers without synthesis.

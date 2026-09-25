@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from conductor.ai.agents.runtime.config import AgentConfig
     from conductor.client.configuration.configuration import Configuration
 
-from conductor.ai.agents.agent import Agent
+from conductor.ai.agents.agent import Agent, AgentDef, _resolve_agent
 from conductor.ai.agents.run_settings import RunSettings
 from conductor.ai.agents.result import (
     AgentEvent,
@@ -292,6 +292,7 @@ _TOOL_TASK_TYPES = frozenset(
 _NON_TOOL_TASK_TYPES = frozenset(
     {
         "LLM_CHAT_COMPLETE",
+        "JEV_AGENT",
         "SWITCH",
         "DO_WHILE",
         "INLINE",
@@ -439,6 +440,15 @@ def _task_events(task: Any, execution_id: str) -> Iterator[AgentEvent]:
     task_ref = str(getattr(task, "reference_task_name", "") or "")
     task_status = str(getattr(task, "status", "") or "").upper()
     output_data = getattr(task, "output_data", None) or {}
+
+    if task_type == "JEV_AGENT" and task_status == "COMPLETED":
+        yield AgentEvent(
+            type=EventType.JEV,
+            content=task_ref,
+            result=output_data,
+            execution_id=execution_id,
+        )
+        return
 
     # LLM task -> THINKING
     if "LLM_CHAT_COMPLETE" in task_type:
@@ -842,14 +852,6 @@ class AgentRuntime:
         serializer = AgentConfigSerializer()
         config_json = serializer.serialize(agent)
 
-        if getattr(agent, "kind", None) == "jev" and agent.questions is None:
-            from conductor.ai.agents.jev import jev_questions
-
-            context = {
-                **(context or {}),
-                "questions": jev_questions((context or {}).get("questions")),
-            }
-
         # Per-run LLM overrides (model/temperature/…) mutate the serialized
         # agentConfig before compile+register+start, so they flow into the
         # LLM tasks without a new server field.
@@ -913,14 +915,6 @@ class AgentRuntime:
 
         serializer = AgentConfigSerializer()
         config_json = serializer.serialize(agent)
-
-        if getattr(agent, "kind", None) == "jev" and agent.questions is None:
-            from conductor.ai.agents.jev import jev_questions
-
-            context = {
-                **(context or {}),
-                "questions": jev_questions((context or {}).get("questions")),
-            }
 
         # Per-run LLM overrides (see :meth:`_start_via_server`).
         rs = RunSettings.coerce(run_settings)
@@ -1121,7 +1115,6 @@ class AgentRuntime:
                 handle = runtime.start(agent, prompt)
         """
         from conductor.ai.agents.frameworks.serializer import detect_framework
-        from conductor.ai.agents.agent import AgentDef, _resolve_agent
 
         if isinstance(agent, AgentDef):
             agent = _resolve_agent(agent)
@@ -2023,9 +2016,6 @@ class AgentRuntime:
             return ""
         if isinstance(prompt, str):
             return prompt
-        if isinstance(prompt, (dict, list)):
-            # Structured agent input must be JSON, not Python's repr with single quotes.
-            return json.dumps(prompt, separators=(",", ":"), allow_nan=False)
         if not isinstance(prompt, PromptTemplate):
             return str(prompt)
 
@@ -2344,7 +2334,6 @@ class AgentRuntime:
             ``requiredWorkers`` keys.
         """
         from conductor.ai.agents.frameworks.serializer import detect_framework
-        from conductor.ai.agents.agent import AgentDef, _resolve_agent
 
         if isinstance(agent, AgentDef):
             agent = _resolve_agent(agent)
@@ -2368,10 +2357,6 @@ class AgentRuntime:
         if prompt is not None:
             payload["prompt"] = self._resolve_prompt(prompt)
         if context is not None:
-            if getattr(agent, "kind", None) == "jev" and agent.questions is None:
-                from conductor.ai.agents.jev import jev_questions
-
-                context = {**context, "questions": jev_questions(context.get("questions"))}
             payload["context"] = context
         return self._agent_client.compile_agent(payload)
 
@@ -2418,7 +2403,6 @@ class AgentRuntime:
         results = []
         for agent in all_agents:
             from conductor.ai.agents.frameworks.serializer import detect_framework
-            from conductor.ai.agents.agent import AgentDef, _resolve_agent
 
             if isinstance(agent, AgentDef):
                 agent = _resolve_agent(agent)
@@ -2460,7 +2444,6 @@ class AgentRuntime:
         results = []
         for agent in all_agents:
             from conductor.ai.agents.frameworks.serializer import detect_framework
-            from conductor.ai.agents.agent import AgentDef, _resolve_agent
 
             if isinstance(agent, AgentDef):
                 agent = _resolve_agent(agent)
@@ -2596,7 +2579,6 @@ class AgentRuntime:
 
         # Register local Python worker functions for each agent
         from conductor.ai.agents.frameworks.serializer import detect_framework
-        from conductor.ai.agents.agent import AgentDef, _resolve_agent
 
         has_new = False
         for agent in all_agents:
@@ -2751,7 +2733,6 @@ class AgentRuntime:
 
         # Check for foreign framework agent
         from conductor.ai.agents.frameworks.serializer import detect_framework
-        from conductor.ai.agents.agent import AgentDef, _resolve_agent
 
         if isinstance(agent, AgentDef):
             agent = _resolve_agent(agent)
@@ -3865,7 +3846,6 @@ class AgentRuntime:
 
         # Check for foreign framework agent
         from conductor.ai.agents.frameworks.serializer import detect_framework
-        from conductor.ai.agents.agent import AgentDef, _resolve_agent
 
         if isinstance(agent, AgentDef):
             agent = _resolve_agent(agent)
@@ -4128,7 +4108,6 @@ class AgentRuntime:
 
         # Foreign framework check
         from conductor.ai.agents.frameworks.serializer import detect_framework
-        from conductor.ai.agents.agent import AgentDef, _resolve_agent
 
         if isinstance(agent, AgentDef):
             agent = _resolve_agent(agent)
@@ -4303,7 +4282,6 @@ class AgentRuntime:
             )
 
         from conductor.ai.agents.frameworks.serializer import detect_framework
-        from conductor.ai.agents.agent import AgentDef, _resolve_agent
 
         if isinstance(agent, AgentDef):
             agent = _resolve_agent(agent)

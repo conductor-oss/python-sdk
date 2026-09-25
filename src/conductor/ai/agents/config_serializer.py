@@ -41,21 +41,15 @@ class AgentConfigSerializer:
         if isinstance(agent, AgentDef):
             agent = _resolve_agent(agent)
         if getattr(agent, "kind", None) == "jev":
-            from conductor.ai.agents.jev import jev_questions
-
             if agent.tools or agent.agents or agent.memory or agent.guardrails or agent.output_type:
                 raise ValueError(
                     "Jev agents cannot contain chat tools, agents, memory, output schemas or guardrails"
                 )
             config = {"name": agent.name, "kind": "jev", "model": agent.model}
             if agent.questions is not None:
-                config["questions"] = jev_questions(agent.questions)
-            if agent.timeout_seconds:
-                config["timeoutSeconds"] = agent.timeout_seconds
+                config["questions"] = agent.questions
             if agent.metadata:
                 config["metadata"] = agent.metadata
-            if agent.masked_fields:
-                config["maskedFields"] = agent.masked_fields
             return config
 
         # Skill agents — emit the raw skill config so the server's

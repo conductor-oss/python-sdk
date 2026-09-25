@@ -8,10 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, AsyncIterator, Callable, Dict, Iterator, List, Optional
-
-if TYPE_CHECKING:
-    from conductor.ai.agents.jev import JevResult
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional
 
 # ── Status & FinishReason enums ────────────────────────────────────────
 
@@ -97,9 +94,7 @@ class AgentResult:
 
     Attributes:
         output: The agent's final answer as a dict.  Always contains a
-            ``"result"`` key whose value is a string (or ``None``) for chat
-            agents, or a structured result for Jev agents. The latter
-            is also available through :attr:`jev`.
+            ``"result"`` key with text, structured data or ``None``.
             If ``output_type`` was set on the agent, this is a validated
             instance of that type instead.
         execution_id: The Conductor execution ID (for debugging in the UI).
@@ -129,21 +124,6 @@ class AgentResult:
     error: Optional[str] = None
     events: List["AgentEvent"] = field(default_factory=list)
     sub_results: Dict[str, Any] = field(default_factory=dict)
-
-    @property
-    def jev(self) -> Optional[JevResult]:
-        """Typed view of a successful Jev-shaped result; raw data stays in output."""
-        from conductor.ai.agents.jev import JevResult
-
-        if (
-            self.is_success
-            and isinstance(self.output, dict)
-            and isinstance(self.output.get("result"), dict)
-        ):
-            value = self.output["result"]
-            if isinstance(value.get("model"), str) and isinstance(value.get("answers"), dict):
-                return JevResult.from_dict(value)
-        return None
 
     @property
     def is_success(self) -> bool:
@@ -731,6 +711,7 @@ class EventType(str, Enum):
     """Types of events emitted during agent execution."""
 
     THINKING = "thinking"
+    JEV = "jev"
     TOOL_CALL = "tool_call"
     TOOL_RESULT = "tool_result"
     HANDOFF = "handoff"
@@ -752,7 +733,7 @@ class AgentEvent:
             ``guardrail_pass``, ``guardrail_fail``).
         tool_name: Tool name (for ``tool_call``, ``tool_result``).
         args: Tool call arguments (for ``tool_call``).
-        result: Tool result (for ``tool_result``).
+        result: Structured result for ``tool_result`` or ``jev``.
         target: Target agent name (for ``handoff``).
         output: Final output (for ``done``).
         execution_id: The Conductor execution ID.

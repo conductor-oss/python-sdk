@@ -587,3 +587,34 @@ class TestFrameworkExecutionExtraction:
         runtime._workflow_client.get_workflow.side_effect = RuntimeError("boom")
 
         assert runtime._extract_tool_calls_and_events("exec-1") == ([], [])
+
+
+@pytest.mark.parametrize("status", ["COMPLETED", "IN_PROGRESS", "FAILED"])
+def test_jev_is_inference_not_a_tool(runtime, status):
+    output = {
+        "model": "jev-1.13",
+        "answers": {"department": {"type": "choice", "choice": "billing"}},
+        "usage": {"inputTokens": 10, "outputTokens": 2},
+        "latencyMs": 42,
+        "requestId": "request-1",
+    }
+    task = FakeTask(
+        task_type="JEV_AGENT",
+        task_def_name="JEV_AGENT",
+        reference_task_name="support_jev",
+        output_data=output,
+        status=status,
+    )
+    workflow = FakeWorkflowRun([task], status=status)
+    assert runtime._extract_tool_calls(workflow) == []
+    events = runtime._extract_events(workflow, "wf-1")
+    assert not any(e.type in (EventType.TOOL_CALL, EventType.TOOL_RESULT) for e in events)
+    if status == "COMPLETED":
+        sse = runtime._sse_to_agent_event(
+            {"event": "jev", "data": {"content": "support_jev", "result": output}}, "wf-1"
+        )
+        assert events[0] == sse
+        assert events[0].type == EventType.JEV
+        assert events[0].result == output
+    elif status == "FAILED":
+        assert any(e.type == EventType.ERROR for e in events)

@@ -75,7 +75,7 @@ class AgentDef:
         name: Agent name (becomes the Conductor workflow name).
         model: LLM model in ``"provider/model"`` format.  Empty string
             means "inherit from parent agent at resolution time".
-        kind: Set to "jev" for a Jev agent; omitted for chat agents.
+        kind: Set to "jev" for a Jev agent. Omit for chat agents.
         questions: Fixed Jev questions, or omit and supply context.questions at runtime.
         instructions: System prompt — a string or the decorated callable.
         tools: List of tools for the agent.
@@ -242,9 +242,7 @@ def _resolve_agent(obj: Any, parent_model: str = "") -> "Agent":
                 or ad.max_tokens is not None
                 or ad.temperature is not None
             ):
-                raise ValueError(
-                    "Jev AgentDef supports model, questions and metadata; chat configuration is unsupported"
-                )
+                raise ValueError("Jev AgentDef does not support chat configuration")
             return JevAgent(ad.name, model=ad.model, questions=ad.questions, metadata=ad.metadata)
         if ad.kind is not None:
             raise ValueError(f"Unsupported agent kind: {ad.kind}")
@@ -942,11 +940,12 @@ class Agent:
     def external(self) -> bool:
         """``True`` if this agent references an external workflow (no local definition).
 
-        An agent with no ``model`` is treated as external — the server
-        produces a ``SubWorkflowTask`` referencing the workflow by name
-        instead of compiling the agent inline.
+        An agent with no model references an existing workflow, except a
+        ROUTER with a Jev selector, which is compiled locally by the server.
         """
-        return not self.model
+        return not self.model and not (
+            self.strategy == Strategy.ROUTER and getattr(self.router, "kind", None) == "jev"
+        )
 
     # ── Instance-method resolution ──────────────────────────────────────
 

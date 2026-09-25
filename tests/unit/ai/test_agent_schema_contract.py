@@ -52,19 +52,14 @@ def test_agent_schema_rejects_unknown_root_fields():
 
 
 def test_agent_schema_accepts_jev_definition():
-    from conductor.ai.agents import JevAgent, ChoiceQuestion, ScoreQuestion, BooleanQuestion
+    from conductor.ai.agents import JevAgent
 
-    definition = JevAgent(
-        "jev",
-        model="jev-1.13",
-        questions={
-            "team": ChoiceQuestion("Choose", {"billing": "Payments", "technical": "Bugs"}),
-            "priority": ScoreQuestion("Score", ["low", "high"]),
-            "ready": BooleanQuestion("Ready?"),
-        },
-    )
+    questions = {
+        "team": {"type": "choice", "instructions": "Choose", "choices": {"a": "A", "b": "B"}},
+        "priority": {"type": "score", "instructions": "Score", "scale": ["low", "high"]},
+        "ready": {"type": "boolean", "instructions": "Ready?"},
+    }
     schema = json.loads(SCHEMA_PATH.read_text())
-    jsonschema.validate(AgentConfigSerializer().serialize(definition), schema)
-    jsonschema.validate(
-        AgentConfigSerializer().serialize(JevAgent("dynamic", model="jev-1.13")), schema
-    )
+    for fixed_questions in (questions, None):
+        agent = JevAgent("jev", model="jev-1.13", questions=fixed_questions)
+        jsonschema.validate(AgentConfigSerializer().serialize(agent), schema)
