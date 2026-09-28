@@ -64,8 +64,6 @@ def _start_mock_server(port: int = 9753) -> HTTPServer:
 
 # ── Agent setup ───────────────────────────────────────────────────────
 
-mock_server = _start_mock_server(port=9753)
-
 serverless_coder = Agent(
     name="serverless_coder",
     model=settings.llm_model,
@@ -84,6 +82,11 @@ serverless_coder = Agent(
 
 
 if __name__ == "__main__":
+    # Bind the mock server here, not at module level: AgentRuntime re-imports
+    # this file in its worker process, and a second bind on port 9753 would
+    # fail with "Address already in use" and kill the worker.
+    mock_server = _start_mock_server(port=9753)
+
     with AgentRuntime() as runtime:
         print("--- Serverless Code Execution ---")
         result = runtime.run(
