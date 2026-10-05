@@ -17,6 +17,27 @@ configuration = Configuration(
 workflow_client = OrkesWorkflowClient(configuration)
 ```
 
+### Exclusive Join Task
+
+Use `ExclusiveJoinTask` to merge mutually exclusive branches. The server selects
+an executed, non-skipped task from `join_on` and copies its output. If none of
+those tasks ran, it checks the optional `default_exclusive_join_task` references.
+
+```python
+from conductor.client.workflow.task.exclusive_join_task import ExclusiveJoinTask
+
+merge = ExclusiveJoinTask(
+    task_ref_name="merge_ref",
+    join_on=["approved_ref", "rejected_ref"],
+    default_exclusive_join_task=["fallback_ref"],
+)
+workflow >> merge
+```
+
+The references must identify tasks in your workflow. This serializes as
+`EXCLUSIVE_JOIN`, with `joinOn` and optional `defaultExclusiveJoinTask` fields.
+Use `JoinTask` when all listed branches must finish.
+
 ### Start Workflow Execution
 
 #### Start using StartWorkflowRequest
