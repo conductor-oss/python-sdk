@@ -410,3 +410,69 @@ class LLMGuardrail(Guardrail):
         return (
             f"LLMGuardrail(name={self.name!r}, model={self._model!r}, position={self.position!r})"
         )
+
+
+class ServerGuardrail:
+    """A guardrail defined on the Conductor server, bound by name to the agent's LLM calls.
+
+    The server enforces it inside every LLM task the agent compiles, including those of
+    sub-agents compiled with it, before the prompt reaches the model and on the model's answer.
+    Nothing runs in this process. A server that does not enforce server guardrails rejects
+    the agent rather than run it unguarded.
+
+    Args:
+        name: The guardrail's name on the server, or a builtin such as ``"pii"``.
+        at: Where to check: ``"PROMPT"``, ``"USER_MESSAGE"`` or ``"MODEL_OUTPUT"``.
+            Defaults to every point the guardrail can check.
+        action: ``"REDACT"``, ``"BLOCK"``, ``"REASK"`` or ``"HUMAN"``.
+            Defaults to the guardrail's own default action.
+        version: Pin a version. Defaults to the latest.
+        on_error: ``"BLOCK"`` or ``"RETRY_THEN_BLOCK"`` when the check itself fails.
+        max_attempts: Re-asks allowed when ``action="REASK"``.
+        on_exhausted: The action once re-asks run out.
+
+    Example::
+
+        agent = Agent(
+            name="support",
+            model="openai/gpt-4o",
+            guardrails=[ServerGuardrail("pii", action="REDACT"), ServerGuardrail("support.no-refunds")],
+        )
+    """
+
+    def __init__(
+        self,
+        name: str,
+        *,
+        at: Optional[str] = None,
+        action: Optional[str] = None,
+        version: Optional[int] = None,
+        on_error: Optional[str] = None,
+        max_attempts: Optional[int] = None,
+        on_exhausted: Optional[str] = None,
+    ) -> None:
+        if not name:
+            raise ValueError("ServerGuardrail requires a name")
+        self.name = name
+        self.at = at
+        self.action = action
+        self.version = version
+        self.on_error = on_error
+        self.max_attempts = max_attempts
+        self.on_exhausted = on_exhausted
+
+    def to_binding(self) -> Union[str, dict]:
+        """The entry for an LLM task's ``guardrails`` input: the name alone when nothing is tuned."""
+        options = {
+            "at": self.at,
+            "action": self.action,
+            "version": self.version,
+            "onError": self.on_error,
+            "maxAttempts": self.max_attempts,
+            "onExhausted": self.on_exhausted,
+        }
+        options = {key: value for key, value in options.items() if value is not None}
+        return {"guardrail": self.name, **options} if options else self.name
+
+    def __repr__(self) -> str:
+        return f"ServerGuardrail(name={self.name!r})"

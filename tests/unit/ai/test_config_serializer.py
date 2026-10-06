@@ -101,6 +101,37 @@ class TestAgentConfigSerializer:
         assert g["mode"] == "block"
         assert g["onFail"] == "retry"
 
+    def test_serialize_server_guardrails(self):
+        """ServerGuardrail entries serialize as taskGuardrails bindings, apart from guardrails."""
+        from conductor.ai.agents.agent import Agent
+        from conductor.ai.agents.guardrail import RegexGuardrail, ServerGuardrail
+
+        regex = RegexGuardrail(patterns=[r"\d{3}-\d{2}-\d{4}"], name="no_ssn")
+        agent = Agent(
+            name="test",
+            model="openai/gpt-4o",
+            guardrails=[
+                ServerGuardrail("pii"),
+                regex,
+                ServerGuardrail("support.no-refunds", at="MODEL_OUTPUT", action="REASK", max_attempts=2),
+            ],
+        )
+        config = self.serializer.serialize(agent)
+
+        assert agent.guardrails == [regex]
+        assert [g["name"] for g in config["guardrails"]] == ["no_ssn"]
+        assert config["taskGuardrails"] == [
+            "pii",
+            {"guardrail": "support.no-refunds", "at": "MODEL_OUTPUT", "action": "REASK", "maxAttempts": 2},
+        ]
+
+    def test_serialize_without_server_guardrails_has_no_task_guardrails(self):
+        from conductor.ai.agents.agent import Agent
+
+        config = self.serializer.serialize(Agent(name="test", model="openai/gpt-4o"))
+
+        assert "taskGuardrails" not in config
+
     def test_serialize_guardrails_llm(self):
         """LLMGuardrail serializes with model and policy."""
         from conductor.ai.agents.agent import Agent

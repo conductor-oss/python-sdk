@@ -126,6 +126,8 @@ class AgentConfigSerializer:
         # Guardrails
         if agent.guardrails:
             config["guardrails"] = [self._serialize_guardrail(g) for g in agent.guardrails]
+        if getattr(agent, "task_guardrails", None):
+            config["taskGuardrails"] = [g.to_binding() for g in agent.task_guardrails]
 
         # Memory
         if hasattr(agent, "memory") and agent.memory:

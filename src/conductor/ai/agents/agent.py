@@ -719,7 +719,17 @@ class Agent:
         self.strategy = strategy
         self.router = router
         self.output_type = output_type
-        self.guardrails: List[Any] = list(guardrails) if guardrails else []
+        from conductor.ai.agents.guardrail import ServerGuardrail
+
+        all_guardrails = list(guardrails) if guardrails else []
+        self.guardrails: List[Any] = [
+            g for g in all_guardrails if not isinstance(g, ServerGuardrail)
+        ]
+        # Enforced by the server inside the agent's LLM tasks, so kept apart from the guardrails
+        # this runtime compiles or runs as workers.
+        self.task_guardrails: List[ServerGuardrail] = [
+            g for g in all_guardrails if isinstance(g, ServerGuardrail)
+        ]
         self.memory = memory
         self.dependencies: Dict[str, Any] = dict(dependencies) if dependencies else {}
         self.max_turns = max_turns
