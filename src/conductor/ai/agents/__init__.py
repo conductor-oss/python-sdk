@@ -70,6 +70,7 @@ from conductor.ai.agents.guardrail import (
     OnFail,
     Position,
     RegexGuardrail,
+    ServerGuardrail,
     guardrail,
 )
 
@@ -307,6 +308,7 @@ __all__ = [
     "Position",
     "RegexGuardrail",
     "LLMGuardrail",
+    "ServerGuardrail",
     # Termination conditions
     "TerminationCondition",
     "TerminationResult",
