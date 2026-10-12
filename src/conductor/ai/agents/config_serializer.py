@@ -11,6 +11,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Dict
 
+from conductor.ai.agents.tool import ToolDef
+
 if TYPE_CHECKING:
     from conductor.ai.agents.agent import Agent
 
@@ -455,8 +457,22 @@ class AgentConfigSerializer:
     def _serialize_router(self, agent: "Agent") -> Any:
         """Serialize a router to either an AgentConfig or a WorkerRef."""
         from conductor.ai.agents.agent import Agent as AgentClass
-
         router = agent.router
+        if isinstance(router, ToolDef):
+            if router.tool_type != "decision":
+                raise ValueError("Only a decision ToolDef can be used as a router")
+            config = router.config
+            if not config.get("model"):
+                raise ValueError("Decision router tool config requires 'model'")
+            if not config.get("questions"):
+                raise ValueError("Decision router tool config requires 'questions'")
+            return {
+                "name": router.name,
+                "kind": "decision",
+                "model": config["model"],
+                "questions": config["questions"],
+                **({"provider": config["provider"]} if config.get("provider") is not None else {}),
+            }
         if isinstance(router, AgentClass) or (hasattr(router, "model") and router.model):
             return self._serialize_agent(router)
         elif callable(router):

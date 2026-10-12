@@ -40,6 +40,9 @@
       "properties": {
         "name": { "type": "string", "pattern": "^[a-zA-Z_][a-zA-Z0-9_-]*$" },
         "model": { "type": ["string", "null"] },
+        "kind": { "const": "decision" },
+        "provider": { "type": "string" },
+        "questions": { "type": "object", "additionalProperties": { "type": "object" } },
         "baseUrl": { "type": ["string", "null"] },
         "strategy": { "type": ["string", "null"] },
         "maxTurns": { "type": ["integer", "null"], "minimum": 0 },
