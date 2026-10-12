@@ -11,6 +11,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Dict
 
+from conductor.ai.agents.tool import ToolDef
+
 if TYPE_CHECKING:
     from conductor.ai.agents.agent import Agent
 
@@ -36,10 +38,8 @@ class AgentConfigSerializer:
         return self._serialize_agent(agent)
 
     def _serialize_agent(self, agent: "Agent") -> dict:
-        from conductor.ai.agents.agent import AgentDef, PromptTemplate, _resolve_agent
+        from conductor.ai.agents.agent import PromptTemplate
 
-        if isinstance(agent, AgentDef):
-            agent = _resolve_agent(agent)
         # Skill agents — emit the raw skill config so the server's
         # SkillNormalizer can compile sub-agents (e.g. gilfoyle, dinesh)
         # and tools (scripts, read_skill_file) into the workflow.
@@ -457,8 +457,6 @@ class AgentConfigSerializer:
     def _serialize_router(self, agent: "Agent") -> Any:
         """Serialize a router to either an AgentConfig or a WorkerRef."""
         from conductor.ai.agents.agent import Agent as AgentClass
-        from conductor.ai.agents.tool import ToolDef
-
         router = agent.router
         if isinstance(router, ToolDef):
             if router.tool_type != "decision":
@@ -468,15 +466,13 @@ class AgentConfigSerializer:
                 raise ValueError("Decision router tool config requires 'model'")
             if not config.get("questions"):
                 raise ValueError("Decision router tool config requires 'questions'")
-            result = {
+            return {
                 "name": router.name,
                 "kind": "decision",
                 "model": config["model"],
                 "questions": config["questions"],
+                **({"provider": config["provider"]} if config.get("provider") is not None else {}),
             }
-            if config.get("provider") is not None:
-                result["provider"] = config["provider"]
-            return result
         if isinstance(router, AgentClass) or (hasattr(router, "model") and router.model):
             return self._serialize_agent(router)
         elif callable(router):

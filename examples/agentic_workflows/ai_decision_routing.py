@@ -21,23 +21,23 @@ def create_workflow(executor, model="jev-1.13", provider=None) -> ConductorWorkf
     decision = SwitchTask(
         task_ref_name="route_request",
         case_expression="route",
-        evaluator_type=EvaluatorType.DECISION,
-        input_parameters={
-            "model": model,
-            **({"provider": provider} if provider is not None else {}),
-            "state": workflow.input("request"),
-            "questions": {
-                "route": {
-                    "type": "choice",
-                    "instructions": "Choose the team best suited to handle this request.",
-                    "choices": {
-                        "billing": "Payments, invoices, refunds, or subscriptions.",
-                        "technical": "Errors, outages, or product troubleshooting.",
-                    },
-                }
-            },
-        },
     )
+    decision.evaluator_type = EvaluatorType.DECISION.value
+    decision.input_parameters = {
+        "model": model,
+        **({"provider": provider} if provider is not None else {}),
+        "state": workflow.input("request"),
+        "questions": {
+            "route": {
+                "type": "choice",
+                "instructions": "Choose the team best suited to handle this request.",
+                "choices": {
+                    "billing": "Payments, invoices, refunds, or subscriptions.",
+                    "technical": "Errors, outages, or product troubleshooting.",
+                },
+            }
+        },
+    }
     billing = InlineTask(
         "handle_billing",
         script='({team: "billing", nextAction: "review_invoice", '

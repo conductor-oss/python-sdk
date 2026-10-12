@@ -70,7 +70,7 @@ def main():
     with AgentRuntime(config) as runtime:
         agent = support_router()
         if not args.run:
-            print(json.dumps(runtime.plan(agent, PROMPT), indent=2))
+            print(json.dumps(runtime.plan(agent), indent=2))
             return
 
         runtime.deploy(agent)

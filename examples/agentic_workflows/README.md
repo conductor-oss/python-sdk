@@ -1,8 +1,8 @@
 # Agentic Workflow Examples
 
-AI workflow examples using Conductor's built-in system tasks, with Python workers where needed.
+AI/LLM workflow examples using Conductor's built-in system tasks (`LLM_CHAT_COMPLETE`, `LLM_INDEX_TEXT`, `LLM_SEARCH_INDEX`, MCP tools) combined with Python workers.
 
-Chat examples use inline ChatMessage objects for system prompts. No named prompt templates or AIOrchestrator required.
+Chat examples use **inline ChatMessage objects** for system prompts -- no named prompt templates or AIOrchestrator required. They work with OSS Conductor with AI/LLM support.
 
 ## Prerequisites
 
@@ -47,21 +47,13 @@ python examples/agentic_workflows/function_calling_example.py
 
 ### AI decision routing
 
-Use one `SwitchTask` with `evaluator_type="decision"`. Its input parameters contain
+Set `SwitchTask.evaluator_type = "decision"`. Its input parameters contain
 `model`, optional `provider`, `state`, and exactly one choice question in
 `questions`; its `expression` names that question. The choice keys must match the
 task's `decisionCases` keys. The server performs inference, writes the full
 response and `selectedCase` to the SWITCH output, and runs the selected branch.
 Evaluation runs synchronously during task mapping. Provider failures fail the
 workflow without task retries.
-
-Run the live [JEV integration cases](../../tests/integration/test_decision_switch_e2e.py)
-against a dedicated server with OpenRouter decision and OpenAI chat credentials:
-
-```bash
-RUN_JEV_E2E=1 CONDUCTOR_SERVER_URL=http://localhost:8081/api \
-  python -m pytest tests/integration/test_decision_switch_e2e.py -v -s
-```
 
 Agent definitions with a decision `ToolDef` in `router=` compile the selector and
 selected child workflow into this same decision-backed SWITCH shape automatically.

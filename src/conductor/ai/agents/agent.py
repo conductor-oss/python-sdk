@@ -15,6 +15,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from conductor.ai.agents.claude_code import ClaudeCode
+from conductor.ai.agents.tool import ToolDef
 
 _VALID_NAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_-]*$")
 
@@ -207,7 +208,7 @@ def agent(
 
 
 def _resolve_agent(obj: Any, parent_model: str = "") -> "Agent":
-    """Convert an AgentDef or ``@agent``-decorated function into an Agent.
+    """Convert an ``@agent``-decorated function into an :class:`Agent` instance.
 
     If *obj* is already an :class:`Agent`, it is returned as-is.
 
@@ -215,12 +216,12 @@ def _resolve_agent(obj: Any, parent_model: str = "") -> "Agent":
     *parent_model* is provided, the parent's model is inherited.
 
     Raises:
-        TypeError: If *obj* is not an Agent, AgentDef or ``@agent``-decorated function.
+        TypeError: If *obj* is not an Agent or ``@agent``-decorated function.
     """
     if isinstance(obj, Agent):
         return obj
-    if isinstance(obj, AgentDef) or (callable(obj) and hasattr(obj, "_agent_def")):
-        ad: AgentDef = obj if isinstance(obj, AgentDef) else obj._agent_def
+    if callable(obj) and hasattr(obj, "_agent_def"):
+        ad: AgentDef = obj._agent_def
         # Handle ClaudeCode: don't inherit parent model for claude-code agents
         if isinstance(ad.model, ClaudeCode):
             resolved_model = ad.model
@@ -229,7 +230,7 @@ def _resolve_agent(obj: Any, parent_model: str = "") -> "Agent":
         return Agent(
             name=ad.name,
             model=resolved_model,
-            instructions=ad.func or ad.instructions,
+            instructions=ad.func,
             tools=ad.tools,
             guardrails=ad.guardrails,
             agents=ad.agents,
@@ -249,9 +250,7 @@ def _resolve_agent(obj: Any, parent_model: str = "") -> "Agent":
             context_window_budget=ad.context_window_budget,
             prefill_tools=ad.prefill_tools or None,
         )
-    raise TypeError(
-        f"Expected an Agent, AgentDef or @agent-decorated function, got {type(obj).__name__}"
-    )
+    raise TypeError(f"Expected an Agent or @agent-decorated function, got {type(obj).__name__}")
 
 
 # ── from_instance resolution helpers ────────────────────────────────────
@@ -557,7 +556,7 @@ class Agent:
         tools: Optional[List[Any]] = None,
         agents: Optional[List[Any]] = None,
         strategy: Union[str, Strategy] = Strategy.HANDOFF,
-        router: Optional[Any] = None,
+        router: Optional[Union["Agent", Callable[..., Any], "ToolDef"]] = None,
         output_type: Optional[type] = None,
         guardrails: Optional[List[Any]] = None,
         memory: Optional[Any] = None,
@@ -916,16 +915,13 @@ class Agent:
         """``True`` if this agent references an external workflow (no local definition).
 
         An agent with no model references an existing workflow, except a
-        ROUTER with a decision tool, which is compiled locally by the server.
+        ROUTER with a decision tool, which the server compiles inline.
         """
-        decision_router = False
-        if self.strategy == Strategy.ROUTER and self.router is not None:
-            from conductor.ai.agents.tool import ToolDef
-
-            decision_router = (
-                isinstance(self.router, ToolDef) and self.router.tool_type == "decision"
-            )
-        return not self.model and not decision_router
+        return not self.model and not (
+            self.strategy == Strategy.ROUTER
+            and isinstance(self.router, ToolDef)
+            and self.router.tool_type == "decision"
+        )
 
     # ── Instance-method resolution ──────────────────────────────────────
 
