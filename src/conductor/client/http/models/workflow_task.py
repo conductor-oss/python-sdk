@@ -78,10 +78,6 @@ class WorkflowTask:
     _loop_condition: str = field(default=None, repr=False)
     _loop_over: List['WorkflowTask'] = field(default=None, repr=False)
     _retry_count: int = field(default=None, repr=False)
-    _retry_logic: str = field(default=None, repr=False)
-    _retry_delay_seconds: int = field(default=None, repr=False)
-    _backoff_scale_factor: int = field(default=None, repr=False)
-    _max_retry_delay_seconds: int = field(default=None, repr=False)
     _evaluator_type: str = field(default=None, repr=False)
     _expression: str = field(default=None, repr=False)
     _workflow_task_type: str = field(default=None, repr=False)
@@ -118,10 +114,6 @@ class WorkflowTask:
         'loop_condition': 'str',
         'loop_over': 'list[WorkflowTask]',
         'retry_count': 'int',
-        'retry_logic': 'str',
-        'retry_delay_seconds': 'int',
-        'backoff_scale_factor': 'int',
-        'max_retry_delay_seconds': 'int',
         'evaluator_type': 'str',
         'expression': 'str',
         'workflow_task_type': 'str',
@@ -159,10 +151,6 @@ class WorkflowTask:
         'loop_condition': 'loopCondition',
         'loop_over': 'loopOver',
         'retry_count': 'retryCount',
-        'retry_logic': 'retryLogic',
-        'retry_delay_seconds': 'retryDelaySeconds',
-        'backoff_scale_factor': 'backoffScaleFactor',
-        'max_retry_delay_seconds': 'maxRetryDelaySeconds',
         'evaluator_type': 'evaluatorType',
         'expression': 'expression',
         'workflow_task_type': 'workflowTaskType',
@@ -178,8 +166,7 @@ class WorkflowTask:
                  dynamic_fork_tasks_input_param_name=None, default_case=None, fork_tasks=None, start_delay=None,
                  sub_workflow_param=None, join_on=None, sink=None, optional=None, task_definition : 'TaskDef' =None,
                  rate_limited=None, default_exclusive_join_task=None, async_complete=None, loop_condition=None,
-                 loop_over=None, retry_count=None, retry_logic=None, retry_delay_seconds=None,
-                 backoff_scale_factor=None, max_retry_delay_seconds=None, evaluator_type=None, expression=None,
+                 loop_over=None, retry_count=None, evaluator_type=None, expression=None,
                  workflow_task_type=None, on_state_change: Dict[str, StateChangeConfig] = None,
                  cache_config: CacheConfig = None, join_status=None, permissive=None):  # noqa: E501
         """WorkflowTask - a model defined in Swagger"""  # noqa: E501
@@ -210,10 +197,6 @@ class WorkflowTask:
         self._loop_condition = None
         self._loop_over = None
         self._retry_count = None
-        self._retry_logic = None
-        self._retry_delay_seconds = None
-        self._backoff_scale_factor = None
-        self._max_retry_delay_seconds = None
         self._evaluator_type = None
         self._expression = None
         self._workflow_task_type = None
@@ -274,14 +257,6 @@ class WorkflowTask:
             self.loop_over = loop_over
         if retry_count is not None:
             self.retry_count = retry_count
-        if retry_logic is not None:
-            self.retry_logic = retry_logic
-        if retry_delay_seconds is not None:
-            self.retry_delay_seconds = retry_delay_seconds
-        if backoff_scale_factor is not None:
-            self.backoff_scale_factor = backoff_scale_factor
-        if max_retry_delay_seconds is not None:
-            self.max_retry_delay_seconds = max_retry_delay_seconds
         if evaluator_type is not None:
             self.evaluator_type = evaluator_type
         if expression is not None:
@@ -863,38 +838,6 @@ class WorkflowTask:
         """
 
         self._retry_count = retry_count
-
-    @property
-    def retry_logic(self):
-        return self._retry_logic
-
-    @retry_logic.setter
-    def retry_logic(self, retry_logic):
-        self._retry_logic = retry_logic
-
-    @property
-    def retry_delay_seconds(self):
-        return self._retry_delay_seconds
-
-    @retry_delay_seconds.setter
-    def retry_delay_seconds(self, retry_delay_seconds):
-        self._retry_delay_seconds = retry_delay_seconds
-
-    @property
-    def backoff_scale_factor(self):
-        return self._backoff_scale_factor
-
-    @backoff_scale_factor.setter
-    def backoff_scale_factor(self, backoff_scale_factor):
-        self._backoff_scale_factor = backoff_scale_factor
-
-    @property
-    def max_retry_delay_seconds(self):
-        return self._max_retry_delay_seconds
-
-    @max_retry_delay_seconds.setter
-    def max_retry_delay_seconds(self, max_retry_delay_seconds):
-        self._max_retry_delay_seconds = max_retry_delay_seconds
 
     @property
     def evaluator_type(self):

@@ -28,11 +28,6 @@ class SwitchTask(TaskInterface):
         *,
         evaluator_type: Optional[Union[EvaluatorType, str]] = None,
         input_parameters: Optional[Dict[str, Any]] = None,
-        retry_count: Optional[int] = None,
-        retry_logic: Optional[str] = None,
-        retry_delay_seconds: Optional[int] = None,
-        backoff_scale_factor: Optional[int] = None,
-        max_retry_delay_seconds: Optional[int] = None,
     ) -> Self:
         super().__init__(
             task_reference_name=task_ref_name,
@@ -46,11 +41,6 @@ class SwitchTask(TaskInterface):
         self._expression = deepcopy(case_expression)
         self._use_javascript = deepcopy(use_javascript)
         self._switch_evaluator_type = deepcopy(evaluator_type)
-        self._retry_count = deepcopy(retry_count)
-        self._retry_logic = deepcopy(retry_logic)
-        self._retry_delay_seconds = deepcopy(retry_delay_seconds)
-        self._backoff_scale_factor = deepcopy(backoff_scale_factor)
-        self._max_retry_delay_seconds = deepcopy(max_retry_delay_seconds)
 
     def switch_case(self, case_name: str, tasks: List[TaskInterface]) -> Self:
         if isinstance(tasks, List):
@@ -90,9 +80,4 @@ class SwitchTask(TaskInterface):
         if self._default_case is None:
             self._default_case = []
         workflow.default_case = get_task_interface_list_as_workflow_task_list(*self._default_case)
-        workflow.retry_count = self._retry_count
-        workflow.retry_logic = self._retry_logic
-        workflow.retry_delay_seconds = self._retry_delay_seconds
-        workflow.backoff_scale_factor = self._backoff_scale_factor
-        workflow.max_retry_delay_seconds = self._max_retry_delay_seconds
         return workflow

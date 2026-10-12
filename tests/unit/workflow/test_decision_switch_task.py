@@ -27,14 +27,14 @@ def test_direct_example_serializes_one_decision_backed_switch():
     choice_keys = set(inputs["questions"][decision["expression"]]["choices"])
     assert choice_keys == set(decision["decisionCases"])
 
-    retry_fields = {
-        "retryCount": 3,
-        "retryLogic": "EXPONENTIAL_BACKOFF",
-        "retryDelaySeconds": 1,
-        "backoffScaleFactor": 2,
-        "maxRetryDelaySeconds": 5,
-    }
-    assert {key: decision[key] for key in retry_fields} == retry_fields
+    assert not {
+        "retryCount",
+        "retryLogic",
+        "retryDelaySeconds",
+        "backoffScaleFactor",
+        "maxRetryDelaySeconds",
+        "asyncComplete",
+    }.intersection(decision)
 
     assert definition["outputParameters"] == {
         "selectedCase": "${route_request.output.selectedCase}",

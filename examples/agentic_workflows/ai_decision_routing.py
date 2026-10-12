@@ -1,6 +1,7 @@
 """Route a request with one decision-backed SWITCH and an inline branch.
 
-The server evaluates the SWITCH and selects its branch. No Python worker is needed.
+The server evaluates the SWITCH synchronously and selects its branch. Provider
+failures fail the workflow without task retries. No Python worker is needed.
 Run: CONDUCTOR_SERVER_URL=http://localhost:8080/api python -m examples.agentic_workflows.ai_decision_routing
 """
 
@@ -36,11 +37,6 @@ def create_workflow(executor, model="jev-1.13", provider=None) -> ConductorWorkf
                 }
             },
         },
-        retry_count=3,
-        retry_logic="EXPONENTIAL_BACKOFF",
-        retry_delay_seconds=1,
-        backoff_scale_factor=2,
-        max_retry_delay_seconds=5,
     )
     billing = InlineTask(
         "handle_billing",
