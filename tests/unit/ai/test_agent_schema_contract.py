@@ -12,7 +12,7 @@ from conductor.ai.agents.agent import Agent
 from conductor.ai.agents.config_serializer import AgentConfigSerializer
 from conductor.ai.agents.guardrail import RegexGuardrail
 from conductor.ai.agents.termination import TextMentionTermination
-from conductor.ai.agents.tool import tool
+from conductor.ai.agents.tool import ToolDef, tool
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -49,3 +49,19 @@ def test_agent_schema_rejects_unknown_root_fields():
     schema = json.loads(SCHEMA_PATH.read_text())
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate({"name": "valid_name", "unknownField": True}, schema)
+
+
+def test_agent_schema_accepts_decision_tool_router():
+    questions = {"team": {"type": "choice", "choices": {"a": "A", "b": "B"}}}
+    schema = json.loads(SCHEMA_PATH.read_text())
+    agent = Agent(
+        name="router",
+        strategy="router",
+        router=ToolDef(
+            name="selector",
+            tool_type="decision",
+            config={"model": "jev-1.13", "questions": questions},
+        ),
+        agents=[Agent(name="a", model="openai/gpt-4o-mini")],
+    )
+    jsonschema.validate(AgentConfigSerializer().serialize(agent), schema)

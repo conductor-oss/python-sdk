@@ -15,6 +15,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from conductor.ai.agents.claude_code import ClaudeCode
+from conductor.ai.agents.tool import ToolDef
 
 _VALID_NAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_-]*$")
 
@@ -496,8 +497,8 @@ class Agent:
             ``"handoff"``).  Valid values: ``handoff``, ``sequential``,
             ``parallel``, ``router``, ``round_robin``, ``random``, ``swarm``,
             ``manual``.
-        router: For ``strategy="router"``, an :class:`Agent` or callable that
-            selects which sub-agent runs each turn.
+        router: For ``strategy="router"``, an :class:`Agent`, callable, or
+            decision :class:`ToolDef` that selects which sub-agent runs each turn.
         output_type: A Pydantic model or dataclass for structured output.
         guardrails: List of :class:`Guardrail` instances for input/output validation.
         memory: Optional :class:`ConversationMemory` for session management.
@@ -555,7 +556,7 @@ class Agent:
         tools: Optional[List[Any]] = None,
         agents: Optional[List[Any]] = None,
         strategy: Union[str, Strategy] = Strategy.HANDOFF,
-        router: Optional[Union["Agent", Callable[..., Any]]] = None,
+        router: Optional[Union["Agent", Callable[..., Any], "ToolDef"]] = None,
         output_type: Optional[type] = None,
         guardrails: Optional[List[Any]] = None,
         memory: Optional[Any] = None,
@@ -913,11 +914,14 @@ class Agent:
     def external(self) -> bool:
         """``True`` if this agent references an external workflow (no local definition).
 
-        An agent with no ``model`` is treated as external — the server
-        produces a ``SubWorkflowTask`` referencing the workflow by name
-        instead of compiling the agent inline.
+        An agent with no model references an existing workflow, except a
+        ROUTER with a decision tool, which the server compiles inline.
         """
-        return not self.model
+        return not self.model and not (
+            self.strategy == Strategy.ROUTER
+            and isinstance(self.router, ToolDef)
+            and self.router.tool_type == "decision"
+        )
 
     # ── Instance-method resolution ──────────────────────────────────────
 

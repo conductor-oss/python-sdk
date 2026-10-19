@@ -13,6 +13,7 @@ class EvaluatorType(str, Enum):
     JAVASCRIPT = "javascript",
     ECMASCRIPT = "graaljs",
     VALUE_PARAM = "value-param"
+    DECISION = "decision"
 
 
 class SwitchTask(TaskInterface):
@@ -42,7 +43,9 @@ class SwitchTask(TaskInterface):
 
     def to_workflow_task(self) -> WorkflowTask:
         workflow = super().to_workflow_task()
-        if self._use_javascript:
+        if self.evaluator_type is not None:
+            workflow.expression = self._expression
+        elif self._use_javascript:
             workflow.evaluator_type = EvaluatorType.ECMASCRIPT
             workflow.expression = self._expression
         else:

@@ -26,3 +26,15 @@ the Conductor CLI manages the server with `conductor server start`.
 Framework-specific examples are in [ADK](adk/README.md),
 [LangGraph](langgraph/README.md), and [OpenAI Agents SDK](openai/README.md).
 Review tool side effects before using real credentials.
+
+Decision: [decision_router.py](decision_router.py) uses a decision `ToolDef` as a
+router selector, with normal chat agents as executable children. Deployment
+compiles it into one decision-backed `SWITCH`; the tool is not deployed as a
+standalone agent. It compiles by default; pass `--run` for inference.
+
+`decision_tool.py` shows the other agent pattern: a normal chat agent calls
+Decision inference as a server-side tool. The server maps the tool call to a
+branchless decision-backed `SWITCH`; no tool worker is needed.
+
+For direct use in a traditional workflow, see
+[`ai_decision_routing.py`](../agentic_workflows/ai_decision_routing.py).
