@@ -10,4 +10,4 @@ deprecated >= 1.2.14
 httpx[http2] >= 0.26.0
 h2 >= 4.1.0
 python-dateutil >= 2.8.2
-urllib3 >= 2.6.3
+urllib3 >= 2.8.0
