@@ -113,6 +113,7 @@ pip install conductor-python
 |---|---|
 | `conductor-python` | Workflow, task, worker, metadata, scheduler, and metrics clients |
 | `conductor-python[agents]` | Durable Conductor agents, tools, guardrails, handoffs, and all supported framework bridges |
+| `conductor-python[langchain-anthropic]` | LangChain Anthropic model integration (`ChatAnthropic`) |
 | `conductor-python[adk]` | Google ADK bridge |
 | `conductor-python[langchain]` | LangChain bridge |
 | `conductor-python[langgraph]` | LangGraph bridge |
