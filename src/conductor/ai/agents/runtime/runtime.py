@@ -52,6 +52,24 @@ _RETRY_POLICY_MAP = {
 VALID_RETRY_POLICIES = frozenset(_RETRY_POLICY_MAP.keys())
 
 
+def _iter_child_agents(agent: Agent):
+    """Yield an agent's direct sub-agents.
+
+    Covers both the positional ``agents=[...]`` list and the PLAN_EXECUTE
+    named slots ``planner=`` / ``fallback=``.  The named slots are stored as
+    separate attributes (``agent.planner`` / ``agent.fallback``) and are not
+    present in ``agent.agents``, so any tree walk that only iterates
+    ``agent.agents`` silently skips them — leaving the planner's tools with no
+    workers started (tasks sit SCHEDULED forever).
+    """
+    for sub in agent.agents:
+        yield sub
+    for slot in ("planner", "fallback"):
+        sub = getattr(agent, slot, None)
+        if isinstance(sub, Agent):
+            yield sub
+
+
 def _resolve_retry_logic(policy: str) -> str:
     """Convert a user-friendly retry policy name to the Conductor retry logic constant."""
     key = policy.lower().strip()
@@ -1246,7 +1264,7 @@ class AgentRuntime:
                 continue
 
         # Recurse into sub-agents for their tool names
-        for sub in agent.agents:
+        for sub in _iter_child_agents(agent):
             if getattr(sub, "is_claude_code", False):
                 tool_names.add(sub.name)
             elif not getattr(sub, "external", False):
@@ -1508,7 +1526,7 @@ class AgentRuntime:
                 self._register_manual_selection_worker(agent, domain=domain)
 
         # Recurse into sub-agents
-        for sub in agent.agents:
+        for sub in _iter_child_agents(agent):
             if getattr(sub, "is_claude_code", False):
                 if _server_needs(sub.name):
                     # Register passthrough worker for claude-code sub-agent
@@ -2235,7 +2253,7 @@ class AgentRuntime:
                 return
             if a.model and a.model not in seen:
                 seen.add(a.model)
-            for sub in a.agents:
+            for sub in _iter_child_agents(a):
                 _collect(sub)
 
         _collect(agent)
@@ -2295,7 +2313,7 @@ class AgentRuntime:
                 if not getattr(nested_agent, "external", False):
                     if self._has_worker_tools(nested_agent):
                         return True
-        return any(self._has_worker_tools(sub) for sub in agent.agents)
+        return any(self._has_worker_tools(sub) for sub in _iter_child_agents(agent))
 
     # ── Plan (compile without executing) ────────────────────────────
 
