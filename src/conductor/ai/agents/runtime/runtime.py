@@ -3177,13 +3177,22 @@ class AgentRuntime:
             )
             token_usage = self._extract_token_usage(execution_id)
             tool_calls, events = self._extract_tool_calls_and_events(execution_id)
+
+            # Build the richest error message available: prefer task-level reason
+            # (includes which task failed and why) over the workflow-level reason,
+            # mirroring the native-agent run() path. status.reason is often empty
+            # for framework failures, so fall back to the failed task's reason.
+            error_reason: Optional[str] = None
+            if raw_status in ("FAILED", "TERMINATED"):
+                error_reason = status.reason or self._framework_failure_reason(execution_id)
+
             return AgentResult(
                 output=output,
                 execution_id=execution_id,
                 correlation_id=correlation_id,
                 status=raw_status,
                 finish_reason=self._derive_finish_reason(raw_status, status.output),
-                error=status.reason if raw_status in ("FAILED", "TERMINATED") else None,
+                error=error_reason,
                 token_usage=token_usage,
                 tool_calls=tool_calls,
                 events=events,
@@ -3520,13 +3529,16 @@ class AgentRuntime:
         output = self._normalize_output(status.output, status.status, status.reason)
         token_usage = self._extract_token_usage(execution_id)
         tool_calls, _ = self._extract_tool_calls_and_events(execution_id)
+        error_reason: Optional[str] = None
+        if status.status in ("FAILED", "TERMINATED"):
+            error_reason = status.reason or self._framework_failure_reason(execution_id)
         return AgentResult(
             output=output,
             execution_id=execution_id,
             correlation_id=correlation_id,
             status=status.status,
             finish_reason=self._derive_finish_reason(status.status, status.output),
-            error=status.reason if status.status in ("FAILED", "TERMINATED") else None,
+            error=error_reason,
             token_usage=token_usage,
             tool_calls=tool_calls,
             events=events,
@@ -4512,13 +4524,18 @@ class AgentRuntime:
                 tool_calls, _ = await loop.run_in_executor(
                     None, lambda: self._extract_tool_calls_and_events(execution_id)
                 )
+                error_reason: Optional[str] = None
+                if status.status in ("FAILED", "TERMINATED"):
+                    error_reason = status.reason or await loop.run_in_executor(
+                        None, lambda: self._framework_failure_reason(execution_id)
+                    )
                 return AgentResult(
                     output=output,
                     execution_id=execution_id,
                     correlation_id=correlation_id,
                     status=status.status,
                     finish_reason=self._derive_finish_reason(status.status, status.output),
-                    error=status.reason if status.status in ("FAILED", "TERMINATED") else None,
+                    error=error_reason,
                     token_usage=token_usage,
                     tool_calls=tool_calls,
                     events=captured_events,
@@ -4547,13 +4564,18 @@ class AgentRuntime:
             tool_calls, events = await loop.run_in_executor(
                 None, lambda: self._extract_tool_calls_and_events(execution_id)
             )
+            error_reason = None
+            if raw_status in ("FAILED", "TERMINATED"):
+                error_reason = status.reason or await loop.run_in_executor(
+                    None, lambda: self._framework_failure_reason(execution_id)
+                )
             return AgentResult(
                 output=output,
                 execution_id=execution_id,
                 correlation_id=correlation_id,
                 status=raw_status,
                 finish_reason=self._derive_finish_reason(raw_status, status.output),
-                error=status.reason if raw_status in ("FAILED", "TERMINATED") else None,
+                error=error_reason,
                 token_usage=token_usage,
                 tool_calls=tool_calls,
                 events=events,
@@ -5054,6 +5076,24 @@ class AgentRuntime:
                     return f"Task '{ref}' failed: {reason}"
                 return f"Task '{ref}' failed"
         return None
+
+    def _framework_failure_reason(self, execution_id: str) -> Optional[str]:
+        """Resolve a failure reason for a framework execution.
+
+        ``status.reason`` from the status endpoint is frequently empty for
+        framework-agent failures even though the server recorded a reason.
+        Fetch the full execution and prefer the first FAILED task's
+        ``reasonForIncompletion`` (via :meth:`_extract_failed_task_reason`),
+        falling back to the workflow's own ``reasonForIncompletion``.
+        """
+        try:
+            wf = self._workflow_client.get_workflow(execution_id, include_tasks=True)
+        except Exception as exc:
+            logger.debug("Could not fetch execution details for %s: %s", execution_id, exc)
+            return None
+        return self._extract_failed_task_reason(wf) or getattr(
+            wf, "reason_for_incompletion", None
+        )
 
     @staticmethod
     def _extract_sub_results(output: Dict[str, Any]) -> Dict[str, Any]:
