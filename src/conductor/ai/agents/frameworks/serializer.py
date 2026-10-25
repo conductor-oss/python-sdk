@@ -11,6 +11,7 @@ from __future__ import annotations
 import enum
 import inspect
 import logging
+import os
 from dataclasses import dataclass, is_dataclass
 from dataclasses import fields as dc_fields
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
@@ -70,6 +71,61 @@ def detect_framework(agent_obj: Any) -> Optional[str]:
         if module == prefix or module.startswith(prefix + "."):
             return framework_id
     return None
+
+
+# ── Model resolution ─────────────────────────────────────────────────
+
+#: Environment variable naming the default ``"provider/model"`` used when a
+#: foreign framework agent does not declare a model of its own.
+_FRAMEWORK_MODEL_ENV = "CONDUCTOR_AGENT_LLM_MODEL"
+
+
+def normalize_model_string(model: Any) -> str:
+    """Add a provider prefix when a bare model name lacks one.
+
+    ``"gpt-4o"``          → ``"openai/gpt-4o"``
+    ``"claude-opus-4-6"`` → ``"anthropic/claude-opus-4-6"``
+    ``"anthropic/x"``     → ``"anthropic/x"`` (already qualified)
+    ``None``/``""``       → ``""``
+    """
+    if not model:
+        return ""
+    model = str(model)
+    if "/" in model:
+        return model
+    if model.startswith(("gpt", "o1", "o3", "o4")):
+        return f"openai/{model}"
+    if model.startswith("claude"):
+        return f"anthropic/{model}"
+    if model.startswith("gemini"):
+        return f"google/{model}"
+    return f"openai/{model}"
+
+
+def resolve_framework_model(config: Dict[str, Any]) -> Dict[str, Any]:
+    """Ensure a serialized framework config carries a routable model.
+
+    Foreign framework agents (e.g. openai-agents) frequently leave their
+    ``model`` unset, which makes the server fall back to its OpenAI default
+    regardless of the operator's configured model.  When the serialized
+    config has no model, populate it from ``CONDUCTOR_AGENT_LLM_MODEL`` so
+    the server routes the request to the intended provider.
+
+    A model explicitly declared on the agent is always preserved.
+
+    Returns the same dict, mutated in place.
+    """
+    if not isinstance(config, dict):
+        return config
+
+    existing = config.get("model")
+    if existing:
+        return config
+
+    configured = os.environ.get(_FRAMEWORK_MODEL_ENV)
+    if configured:
+        config["model"] = normalize_model_string(configured)
+    return config
 
 
 # ── Worker info ──────────────────────────────────────────────────────
@@ -240,6 +296,11 @@ def serialize_agent(agent_obj: Any) -> Tuple[Dict[str, Any], List[WorkerInfo]]:
             seen.discard(obj_id)
 
     config = _serialize(agent_obj)
+    if framework == "openai":
+        # openai-agents leaves ``model`` unset unless the author sets it; the
+        # server would then default to OpenAI even when the operator configured
+        # a different provider.  Resolve it from CONDUCTOR_AGENT_LLM_MODEL.
+        resolve_framework_model(config)
     return config, workers
 
 
