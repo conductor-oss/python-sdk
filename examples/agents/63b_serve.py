@@ -1,23 +1,24 @@
 """Serve — keep tool workers running as a persistent service.
 
 Demonstrates:
-    - runtime.serve() to register Python workers and block until interrupted
+    - runtime.serve() to register agents + Python workers and block until interrupted
     - Serving multiple agents in a single process
-    - Decoupled from deploy: workers only, no workflow registration
+    - The deploy/serve/run separation: this process owns the workers for a
+      pre-deployed agent while another process runs it by name
 
-serve() registers the Python tool functions (tools, custom guardrails,
-callbacks, handoff checks) as Conductor workers and starts polling for
-tasks. The workflow must already exist on the server (from a prior
-deploy() or run() call, possibly in a different process).
+serve() = deploy() + serve: it registers each agent on the server (compiles
+the workflow and task definitions), registers the local Python tool functions
+(tools, custom guardrails, callbacks, handoff checks) as Conductor workers,
+and starts polling for tasks. It blocks until Ctrl+C / SIGTERM.
 
-Start this in a long-running process (systemd, Docker, k8s pod).
-Press Ctrl+C to stop.
+Run this in one terminal and run the matching run-by-name client
+(63c_run_by_name.py) in another. Without a process serving the workers the
+run-by-name client schedules tool tasks that nothing ever polls, so it hangs.
 
     python 63b_serve.py
 
 Requirements:
     - Conductor server running
-    - Agents already deployed (run 63_deploy.py first)
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
     - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini in .env or environment
 """
@@ -70,14 +71,8 @@ ops_bot = Agent(
 
 if __name__ == "__main__":
     with AgentRuntime() as runtime:
-        result = runtime.run(ops_bot, "Check the status of the API gateway.")
-        result.print_result()
-
-        # Production pattern:
-        # 1. Deploy once during CI/CD:
-        # runtime.deploy(doc_assistant, ops_bot)
-        # CLI alternative:
-        # runtime.deploy(agent) from a release script
-        #
-        # 2. In a separate long-lived worker process:
-        # runtime.serve(doc_assistant, ops_bot)
+        # serve() registers doc_assistant/ops_bot on the server, then serves
+        # their tool workers and blocks until Ctrl+C. Run this in one terminal
+        # so that 63c_run_by_name.py (and any other run-by-name client) finds
+        # a live process polling the agents' task queues.
+        runtime.serve(doc_assistant, ops_bot)
