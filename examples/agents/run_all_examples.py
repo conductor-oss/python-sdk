@@ -49,9 +49,9 @@ DEFAULT_MODEL = "openai/gpt-4o-mini"
 # Long-running by design or interactive — would legitimately never terminate.
 DAEMON_SKIP = {
     "12_long_running.py": "long-running by design",
-    "63b_serve.py": "serve() worker daemon (blocks forever)",
-    "63d_serve_from_package.py": "serve() worker daemon (blocks forever)",
-    "63e_run_monitoring.py": "live monitoring loop",
+    "63b_serve.py": "serve() worker daemon (blocks forever; serves 63c's agents)",
+    "63d_serve_from_package.py": "serve() worker daemon (blocks forever; serves 63e's agent)",
+    "63e_run_monitoring.py": "run-by-name client; needs 63d_serve_from_package.py serving in another terminal",
     "77_kafka_consumer_agent.py": "kafka consumer daemon (+ needs Kafka)",
     "79_agent_message_bus.py": "message-bus daemon",
     "80_live_dashboard.py": "interactive live dashboard",
