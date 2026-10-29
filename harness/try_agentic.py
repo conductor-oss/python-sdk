@@ -26,7 +26,13 @@ from typing import Any, Optional
 from conductor.ai.agents import AgentRuntime
 from conductor.client.configuration.configuration import Configuration
 
-from agentic.story_agents import CRITIC_TOOL_NAME, build_storyteller, find_verdict, story_prompt
+from agentic.story_agents import (
+    CRITIC_TOOL_NAME,
+    STORYTELLER_NAME,
+    build_storyteller,
+    find_verdict,
+    story_prompt,
+)
 from agentic.story_concepts import StoryConcept, invent_concept, pick_setting
 from harness_env import env_str_or_default
 
@@ -169,7 +175,12 @@ def run_story(args: argparse.Namespace, runtime: AgentRuntime, rng: random.Rando
     print(f"setting: {setting}\n")
 
     agent = build_storyteller(concept, args.model, args.max_turns)
-    handle = runtime.start(agent, story_prompt(setting))
+    # The harness's way: serve() saves the agent and starts every worker the agent declares,
+    # then the run starts the saved agent by name. Don't pass the agent object to start():
+    # the SDK then starts worker processes only if _has_worker_tools() is true, which
+    # ignores stop_when, so this agent's stop_when worker would never run.
+    runtime.serve(agent, blocking=False)
+    handle = runtime.start(STORYTELLER_NAME, story_prompt(setting), version=1)
     link = _execution_url(args.ui_url or args.server, handle.execution_id)
     print(f"execution: {handle.execution_id}")
     print(f"view:      {link}")

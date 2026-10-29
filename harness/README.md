@@ -155,7 +155,11 @@ python3 harness/try_agentic.py run --seed 3f9a1c2e --setting "a flooded library"
 
 `run` prints a link to the execution in the UI as soon as it starts (Cmd-click it in VS Code or iTerm2), and `--open` opens it in your browser. The link assumes the UI is served at the server URL without `/api`; if it isn't, pass `--ui-url` or set `HARNESS_UI_URL`.
 
-A run is cancelled on Ctrl-C or after `--timeout` seconds (default 600), so it doesn't keep calling the LLM. It registers the agent as `python_storyteller`, the name the harness uses, so don't run it against a cluster where the harness's agentic testing is enabled. On Orkes, `--model` takes the AI integration's name before the slash.
+A run is cancelled on Ctrl-C or after `--timeout` seconds (default 600), so it doesn't keep calling the LLM.
+
+`run` starts things the way the harness does: `serve()` saves the agent and starts every worker it declares, then the run starts the saved agent by name.
+
+Passing the agent object straight to `start()` doesn't work for this agent. The SDK then starts worker processes only if `_has_worker_tools()` is true, and that check ignores `stop_when`. The storyteller's only tool is the critic, which runs on the server, so its `stop_when` worker is registered but never started, and the run waits forever. It registers the agent as `python_storyteller`, the name the harness uses, so don't run it against a cluster where the harness's agentic testing is enabled. On Orkes, `--model` takes the AI integration's name before the slash.
 
 ### Agentic Environment Variables
 
