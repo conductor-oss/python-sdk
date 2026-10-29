@@ -99,3 +99,71 @@ All resource names use a `python_` prefix so multiple SDK harnesses (C#, JS, Go,
 | `HARNESS_WORKFLOWS_PER_SEC` | no | 2 | Workflows to start per second |
 | `HARNESS_BATCH_SIZE` | no | 20 | Number of tasks each worker polls per batch |
 | `HARNESS_POLL_INTERVAL_MS` | no | 100 | Milliseconds between poll cycles |
+| `HARNESS_SDK_TESTING_ENABLED` | no | true | Run the simulated-task workflows described above |
+| `HARNESS_AGENTIC_TESTING_ENABLED` | no | false | Run the agentic storyteller described below |
+
+## Agentic Testing
+
+Off by default. When enabled, the harness also exercises the agent runtime. It compiles a `python_storyteller` agent from a randomly chosen story concept (protagonist, conflict, resolution, constraint, tone), serves the agent's `python_storyteller_stop_when` worker from this process, and starts a run on an interval, each in a randomly chosen setting.
+
+Each run adds one sentence per turn. After every sentence the storyteller calls a `python_story_critic` sub-agent, which returns a JSON verdict: whether the story meets the concept, and what is still missing. The `stop_when` worker ends the loop once the critic approves. If the critic never approves, `HARNESS_AGENTIC_MAX_TURNS` ends it. Either way the run completes. After `HARNESS_AGENTIC_RUNS_PER_CONCEPT` runs, the harness invents a new concept and redeploys over the same name, which replaces version 1 in place rather than adding versions.
+
+The worker logs each verdict it sees:
+
+```text
+[python_storyteller] turn 3: latest verdict done=False missing=['introduce the conflict']
+[python_storyteller] turn 7: latest verdict done=True missing=[]
+```
+
+### Requirements
+
+The LLM call runs on the Conductor server, so the provider key belongs in the **server's** environment, not the harness's. Conductor OSS enables the AI integration by default and reads `ANTHROPIC_API_KEY` into `conductor.ai.anthropic.api-key`.
+
+### Running Locally Against Conductor OSS
+
+```bash
+# Terminal 1: start the server with the provider key in its environment
+export ANTHROPIC_API_KEY=...
+npm install -g @conductor-oss/conductor-cli
+conductor server start
+
+# Terminal 2: agentic testing only
+export CONDUCTOR_SERVER_URL=http://localhost:8080/api
+HARNESS_SDK_TESTING_ENABLED=false \
+HARNESS_AGENTIC_TESTING_ENABLED=true \
+HARNESS_AGENTIC_INTERVAL_SECONDS=60 \
+  python3 harness/main.py
+```
+
+Open the execution in the Conductor UI to see each storyteller turn and critic call.
+
+### Trying One Run
+
+`try_agentic.py` runs the storyteller once, without the governors or the simulated-task workflows. It reads the same `CONDUCTOR_SERVER_URL`, `CONDUCTOR_AUTH_KEY` and `CONDUCTOR_AUTH_SECRET` variables; everything else is a flag.
+
+```bash
+# Ask the server to compile the agent. Nothing runs and no LLM is called.
+# Confirms the agent API is on and shows the compiled workflow.
+python3 harness/try_agentic.py plan
+
+# Run one story: one line per sentence and critic verdict, then a report.
+python3 harness/try_agentic.py run
+
+# Repeat a concept and setting, with a shorter limit
+python3 harness/try_agentic.py run --seed 3f9a1c2e --setting "a flooded library" --max-turns 10
+```
+
+A run is cancelled on Ctrl-C or after `--timeout` seconds (default 600), so it doesn't keep calling the LLM. It registers the agent as `python_storyteller`, the name the harness uses, so don't run it against a cluster where the harness's agentic testing is enabled. On Orkes, `--model` takes the AI integration's name before the slash.
+
+### Agentic Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `HARNESS_AGENTIC_MODEL` | `anthropic/claude-haiku-4-5` | Model for the storyteller and the critic, in `provider/model` form |
+| `HARNESS_AGENTIC_INTERVAL_SECONDS` | 300 | Seconds between run starts |
+| `HARNESS_AGENTIC_RUNS_PER_CONCEPT` | 3 | Runs per concept before a new one is invented and redeployed |
+| `HARNESS_AGENTIC_MAX_TURNS` | 20 | Turn limit for a run whose story the critic never approves |
+| `HARNESS_AGENTIC_SEED` | random | Fixed seed for a reproducible concept and setting sequence. Required to replay recordings through `mock/mockLLM` |
+| `HARNESS_AGENTIC_DEBUG` | false | Print the raw message history when the worker finds no verdict |
+
+**Cost:** each run makes two LLM calls per turn, one for the storyteller and one for the critic. Because every turn resends the growing story, input tokens grow faster than linearly with turn count. On Claude Haiku 4.5 a 15-turn run costs roughly $0.04. At the default 300-second interval that is about $10 per day. Lower the cadence before you leave it running.
