@@ -13,12 +13,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import random
 import secrets
 import sys
 import textwrap
 import threading
+import webbrowser
 from typing import Any, Optional
 
 from conductor.ai.agents import AgentRuntime
@@ -34,6 +36,11 @@ WRAP = 88
 
 def main() -> int:
     args = parse_args()
+    if args.verbose:
+        # Only the SDK's loggers: HTTP-library logs are noisy at INFO, and at DEBUG
+        # they can print request headers, which carry the auth token.
+        logging.basicConfig(level=logging.WARNING, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+        logging.getLogger("conductor").setLevel(logging.INFO)
     if getattr(args, "debug", False):
         # Read by the stop_when worker, which runs in a separate process.
         os.environ["HARNESS_AGENTIC_DEBUG"] = "true"
@@ -42,6 +49,7 @@ def main() -> int:
     rng = random.Random(seed)
     concept = invent_concept(rng)
     configuration = Configuration()
+    args.server = configuration.host
 
     print(f"server:  {configuration.host}")
     print(f"model:   {args.model}")
@@ -65,6 +73,8 @@ def parse_args() -> argparse.Namespace:
                              f"(default: $HARNESS_AGENTIC_MODEL or {DEFAULT_MODEL})")
     common.add_argument("--seed", help="seed for the concept and setting (default: random, printed)")
     common.add_argument("--max-turns", type=int, default=20, help="turn limit (default: 20)")
+    common.add_argument("--verbose", action="store_true",
+                        help="show the SDK's INFO logs, e.g. which workers the server asked for")
 
     plan = commands.add_parser("plan", parents=[common],
                                help="compile the storyteller on the server and show the result")
@@ -76,6 +86,11 @@ def parse_args() -> argparse.Namespace:
     run.add_argument("--timeout", type=int, default=600,
                      help="seconds before the run is cancelled (default: 600)")
     run.add_argument("--quiet", action="store_true", help="no live progress, just the report")
+    run.add_argument("--open", action="store_true",
+                     help="open the execution in your browser as soon as the run starts")
+    run.add_argument("--ui-url", default=os.environ.get("HARNESS_UI_URL"),
+                     help="UI address for execution links (default: $HARNESS_UI_URL, else the "
+                          "server URL without /api)")
     run.add_argument("--debug", action="store_true",
                      help="the stop_when worker prints raw message history when it finds no verdict")
     run.set_defaults(handler=run_story)
@@ -155,7 +170,12 @@ def run_story(args: argparse.Namespace, runtime: AgentRuntime, rng: random.Rando
 
     agent = build_storyteller(concept, args.model, args.max_turns)
     handle = runtime.start(agent, story_prompt(setting))
-    print(f"execution: {handle.execution_id}\n")
+    link = _execution_url(args.ui_url or args.server, handle.execution_id)
+    print(f"execution: {handle.execution_id}")
+    print(f"view:      {link}")
+    if args.open and not webbrowser.open(link):
+        print("           (could not open a browser; Cmd-click the link instead)")
+    print()
 
     # handle.stream() has no timeout of its own (and run(on_event=...) ignores the one it
     # accepts), so read it on a thread and enforce the deadline here.
@@ -183,7 +203,7 @@ def run_story(args: argparse.Namespace, runtime: AgentRuntime, rng: random.Rando
         print(f"\nInterrupted; cancelled {handle.execution_id}.")
         return 130
 
-    return _report(handle, stream, progress)
+    return _report(handle, stream, progress, link)
 
 
 class _Progress:
@@ -215,7 +235,7 @@ class _Progress:
             print(line if len(line) <= limit else line[:limit - 4] + " ...")
 
 
-def _report(handle: Any, stream: Any, progress: _Progress) -> int:
+def _report(handle: Any, stream: Any, progress: _Progress, link: str) -> int:
     try:
         result = stream.get_result()
         status = str(getattr(result.status, "value", result.status))
@@ -228,6 +248,7 @@ def _report(handle: Any, stream: Any, progress: _Progress) -> int:
     print("\n" + "=" * WRAP)
     print(f"status:       {status}")
     print(f"execution:    {handle.execution_id}")
+    print(f"view:         {link}")
     print(f"critic calls: {len(progress.verdicts)}   approved: "
           f"{'yes' if approved else 'no (stopped at the turn limit, or failed)'}")
     if usage is not None:
@@ -248,6 +269,17 @@ def _describe_verdict(verdict: Optional[dict]) -> str:
     if verdict.get("done") is True:
         return "done"
     return f"not done, missing: {verdict.get('missing')}"
+
+
+def _execution_url(base: str, execution_id: str) -> str:
+    """UI link for an execution. Agent runs use the normal execution page in both the
+    OSS and Orkes UIs; the agent view is a tab on it. Printed as a plain URL, which
+    VS Code's terminal and iTerm2 make Cmd-clickable and which survives logs and
+    copy-paste."""
+    base = base.rstrip("/")
+    if base.endswith("/api"):
+        base = base[: -len("/api")]
+    return f"{base}/execution/{execution_id}"
 
 
 def _field(obj: Any, *names: str) -> Any:
