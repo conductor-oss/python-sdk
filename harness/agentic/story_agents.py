@@ -50,7 +50,8 @@ def build_storyteller(concept: StoryConcept, model: str, max_turns: int) -> Agen
 def story_prompt(setting: str) -> str:
     """The user prompt for one run. Shared so every caller sends identical bytes,
     which replaying recordings through mock/mockLLM depends on."""
-    return f"Write the story. It is set in {setting}."
+    # Settings like "... at 3 a.m." already end in a period.
+    return f"Write the story. It is set in {setting.rstrip('.')}."
 
 
 def _storyteller_instructions(concept: StoryConcept) -> str:
