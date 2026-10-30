@@ -25,7 +25,11 @@ from typing import Any, Optional
 
 from conductor.ai.agents import AgentRuntime
 from conductor.client.configuration.configuration import Configuration
+from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
+from conductor.client.http.api_client import ApiClient
 
+from agentic.run_report import fetch_execution, llm_tokens, summarize
+from agentic.stop_wiring import rewire_stop_when
 from agentic.story_agents import (
     CRITIC_TOOL_NAME,
     STORYTELLER_NAME,
@@ -55,6 +59,7 @@ def main() -> int:
     rng = random.Random(seed)
     concept = invent_concept(rng)
     configuration = Configuration()
+    args.configuration = configuration
     args.server = configuration.host
 
     print(f"server:  {configuration.host}")
@@ -91,6 +96,10 @@ def parse_args() -> argparse.Namespace:
     run.add_argument("--setting", help="story setting (default: random pick)")
     run.add_argument("--timeout", type=int, default=600,
                      help="seconds before the run is cancelled (default: 600)")
+    run.add_argument("--stop-same-turn", action="store_true",
+                     help="before the run, rewire stop_when to see the critic's verdict on the turn "
+                          "the critic gives it, saving the extra storyteller call after approval "
+                          "(edits the stored workflow; see agentic/stop_wiring.py)")
     run.add_argument("--quiet", action="store_true", help="no live progress, just the report")
     run.add_argument("--open", action="store_true",
                      help="open the execution in your browser as soon as the run starts")
@@ -180,6 +189,17 @@ def run_story(args: argparse.Namespace, runtime: AgentRuntime, rng: random.Rando
     # the SDK then starts worker processes only if _has_worker_tools() is true, which
     # ignores stop_when, so this agent's stop_when worker would never run.
     runtime.serve(agent, blocking=False)
+    if args.stop_same_turn:
+        # stop_when's decision depends on the critic's verdict, the result of a tool call, which
+        # as compiled it only sees one turn late. serve() just redeployed the definition, so
+        # the edit is re-applied here every time. See agentic/stop_wiring.py.
+        try:
+            changed = rewire_stop_when(MetadataResourceApi(ApiClient(args.configuration)), STORYTELLER_NAME)
+        except RuntimeError as e:
+            print(f"Not starting the run; could not rewire stop_when: {e}")
+            return 1
+        print("stop_when: rewired to see the critic's verdict on the same turn"
+              + ("" if changed else " (it already was)") + "\n")
     handle = runtime.start(STORYTELLER_NAME, story_prompt(setting), version=1)
     link = _execution_url(args.ui_url or args.server, handle.execution_id)
     print(f"execution: {handle.execution_id}")
@@ -214,7 +234,7 @@ def run_story(args: argparse.Namespace, runtime: AgentRuntime, rng: random.Rando
         print(f"\nInterrupted; cancelled {handle.execution_id}.")
         return 130
 
-    return _report(handle, stream, progress, link)
+    return _report(args, handle, link)
 
 
 class _Progress:
@@ -246,32 +266,64 @@ class _Progress:
             print(line if len(line) <= limit else line[:limit - 4] + " ...")
 
 
-def _report(handle: Any, stream: Any, progress: _Progress, link: str) -> int:
+def _report(args: argparse.Namespace, handle: Any, link: str) -> int:
+    """Report from the execution record. Streamed events can't be relied on: Orkes 5.6.0-rc4
+    streams no tool-call events, so an event-based report misses every critic call."""
+    api_client = ApiClient(args.configuration)
     try:
-        result = stream.get_result()
-        status = str(getattr(result.status, "value", result.status))
-        output, usage, error = result.output, result.token_usage, result.error
-    except Exception:
-        snapshot = handle.get_status()
-        status, output, usage, error = snapshot.status, snapshot.output, None, snapshot.reason
+        summary = summarize(fetch_execution(api_client, handle.execution_id))
+    except Exception as e:
+        print(f"\nCould not fetch the execution to report on it: {type(e).__name__}: {e}")
+        print(f"view: {link}")
+        return 1
+    critic_tokens = _critic_tokens(api_client, summary.critic_execution_ids)
 
-    approved = any(v is not None and v.get("done") is True for v in progress.verdicts)
     print("\n" + "=" * WRAP)
-    print(f"status:       {status}")
-    print(f"execution:    {handle.execution_id}")
-    print(f"view:         {link}")
-    print(f"critic calls: {len(progress.verdicts)}   approved: "
-          f"{'yes' if approved else 'no (stopped at the turn limit, or failed)'}")
-    if usage is not None:
-        print(f"tokens:       {usage.prompt_tokens} in, {usage.completion_tokens} out, "
-              f"{usage.total_tokens} total")
-    if error:
-        print(f"error:        {error}")
+    print(f"status:     {summary.status}")
+    print(f"execution:  {handle.execution_id}")
+    print(f"view:       {link}")
+    print(f"stop_when:  {_describe_wiring(summary.stop_when_same_turn)}")
+    print(f"approved:   {f'yes, on turn {summary.approved_on}' if summary.approved_on else 'no'}")
+    tokens_in, tokens_out = summary.storyteller_tokens
+    tokens = f"storyteller {tokens_in:,} in / {tokens_out:,} out"
+    if critic_tokens is not None:
+        tokens += f"; critic {critic_tokens[0]:,} in / {critic_tokens[1]:,} out"
+    print(f"tokens:     {tokens}")
 
-    story = output if isinstance(output, str) and output.strip() else progress.story
-    print("\nstory:\n")
-    print(textwrap.fill(story, WRAP) if story else "(no story text came back)")
-    return 0 if status.upper() == "COMPLETED" else 1
+    print("\nturns:")
+    for turn in summary.turns:
+        if turn.story is None:
+            what = "replied without calling the critic" if turn.finish_reason else "LLM call did not complete"
+            print(f"  {turn.number:>2}  ({what})")
+        else:
+            print(_clip(f"  {turn.number:>2}  + {turn.added}"))
+            print(_clip(f"      critic: {_describe_verdict(turn.verdict)}"))
+
+    print(f"\nstory ({summary.story_source}):\n")
+    print(textwrap.fill(summary.story, WRAP) if summary.story else "(no story)")
+    return 0 if summary.status.upper() == "COMPLETED" else 1
+
+
+def _critic_tokens(api_client: Any, critic_execution_ids: list) -> Optional[tuple]:
+    """Tokens over the critic's sub-workflows, or None if any can't be fetched."""
+    try:
+        totals = [llm_tokens(fetch_execution(api_client, i)) for i in critic_execution_ids]
+    except Exception:
+        return None
+    return sum(t[0] for t in totals), sum(t[1] for t in totals)
+
+
+def _describe_wiring(same_turn: Optional[bool]) -> str:
+    if same_turn is None:
+        return "unknown (no stop_when task found in the run's definition)"
+    if same_turn:
+        return "saw the critic's verdict on the same turn (rewired by --stop-same-turn)"
+    return "saw the critic's verdict one turn late (as compiled)"
+
+
+def _clip(line: str) -> str:
+    limit = WRAP + 40
+    return line if len(line) <= limit else line[:limit - 4] + " ..."
 
 
 def _describe_verdict(verdict: Optional[dict]) -> str:
@@ -283,10 +335,10 @@ def _describe_verdict(verdict: Optional[dict]) -> str:
 
 
 def _execution_url(base: str, execution_id: str) -> str:
-    """UI link for an execution. Agent runs use the normal execution page in both the
-    OSS and Orkes UIs; the agent view is a tab on it. Printed as a plain URL, which
-    VS Code's terminal and iTerm2 make Cmd-clickable and which survives logs and
-    copy-paste."""
+    """UI link for an execution. Agent runs use the normal execution page, which switches
+    to its agent view by itself when the workflow definition carries agent metadata.
+    Printed as a plain URL, which VS Code's terminal and iTerm2 make Cmd-clickable and
+    which survives logs and copy-paste."""
     base = base.rstrip("/")
     if base.endswith("/api"):
         base = base[: -len("/api")]
