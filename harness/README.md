@@ -146,12 +146,17 @@ Open the execution in the Conductor UI to see each storyteller turn and critic c
 # Confirms the agent API is on and shows the compiled workflow.
 python3 harness/try_agentic.py plan
 
-# Run one story: one line per sentence and critic verdict, then a report.
+# Run one story, then report each turn's sentence and critic verdict, tokens, and the story.
 python3 harness/try_agentic.py run
 
 # Repeat a concept and setting, with a shorter limit
 python3 harness/try_agentic.py run --seed 3f9a1c2e --setting "a flooded library" --max-turns 10
+
+# Stop on the turn the critic approves, saving one storyteller call (see below)
+python3 harness/try_agentic.py run --stop-same-turn
 ```
+
+The report is built from the execution record after the run, not from streamed events: Orkes 5.6.0-rc4 streams no tool-call events, so live per-turn lines appear only on servers that do. The story it prints is the text the critic approved, exactly as the critic judged it. The storyteller's own final reply can add commentary such as a checklist of the requirements.
 
 `run` prints a link to the execution in the UI as soon as it starts (Cmd-click it in VS Code or iTerm2), and `--open` opens it in your browser. The link assumes the UI is served at the server URL without `/api`; if it isn't, pass `--ui-url` or set `HARNESS_UI_URL`.
 
@@ -159,7 +164,15 @@ A run is cancelled on Ctrl-C or after `--timeout` seconds (default 600), so it d
 
 `run` starts things the way the harness does: `serve()` saves the agent and starts every worker it declares, then the run starts the saved agent by name.
 
-Passing the agent object straight to `start()` doesn't work for this agent. The SDK then starts worker processes only if `_has_worker_tools()` is true, and that check ignores `stop_when`. The storyteller's only tool is the critic, which runs on the server, so its `stop_when` worker is registered but never started, and the run waits forever. It registers the agent as `python_storyteller`, the name the harness uses, so don't run it against a cluster where the harness's agentic testing is enabled. On Orkes, `--model` takes the AI integration's name before the slash.
+Passing the agent object straight to `start()` doesn't work for this agent. The SDK then starts worker processes only if `_has_worker_tools()` is true, and that check ignores `stop_when`. The storyteller's only tool is the critic, which runs on the server, so its `stop_when` worker is registered but never started, and the run waits forever.
+
+`run` registers the agent as `python_storyteller`, the name the harness uses, so don't run it against a cluster where the harness's agentic testing is enabled. On Orkes, `--model` takes the AI integration's name before the slash.
+
+#### `--stop-same-turn`
+
+`stop_when` decides whether the loop ends, and that decision depends on the critic's verdict: the result of a tool call. As compiled, `stop_when` reads the storyteller LLM call's input messages, a snapshot taken before that turn's critic call, so it sees each verdict one turn late and the loop runs one extra storyteller call after the critic approves. That call carries the whole conversation, so it is the most expensive turn.
+
+`--stop-same-turn` edits the stored workflow definition after `serve()` deploys it and before the run starts: it points `stop_when` at `_last_tool_results`, a workflow variable that already holds every tool result so far and is updated after the critic and before `stop_when`. The loop then stops on the approving turn. The edit is made on the raw JSON so no field is lost, it refuses to write a definition without its agent markers in `metadata`, and it re-reads the definition to confirm. Every deploy regenerates the definition, so the edit has to be re-applied each time; the report's `stop_when:` line says which wiring the run actually used. The proper fix is in the server's compiler: pass this turn's tool results to `stop_when`. See `agentic/stop_wiring.py`.
 
 ### Agentic Environment Variables
 
