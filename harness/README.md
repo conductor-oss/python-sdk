@@ -108,6 +108,8 @@ Off by default. When enabled, the harness also exercises the agent runtime. It c
 
 Each run adds one sentence per turn. After every sentence the storyteller calls a `python_story_critic` sub-agent, which returns a JSON verdict: whether the story meets the concept, and what is still missing. The `stop_when` worker ends the loop once the critic approves. If the critic never approves, `HARNESS_AGENTIC_MAX_TURNS` ends it. Either way the run completes. After `HARNESS_AGENTIC_RUNS_PER_CONCEPT` runs, the harness invents a new concept and redeploys over the same name, which replaces version 1 in place rather than adding versions.
 
+By default the harness edits the deployed definition so that `stop_when` sees each verdict on the turn the critic gives it, the same edit as `try_agentic.py run --stop-same-turn` (see [below](#--stop-same-turn)). Every deploy undoes the edit, so the governor re-applies it after the first deploy and after each concept rotation, before it starts the next run. If the edit fails, the governor logs a warning, does not start that run, and tries again at the next interval. Set `HARNESS_AGENTIC_STOP_SAME_TURN=false` to run with the definition as compiled. The proper fix is described under [`--stop-same-turn`](#--stop-same-turn).
+
 The worker logs each verdict it sees:
 
 ```text
@@ -117,25 +119,29 @@ The worker logs each verdict it sees:
 
 ### Requirements
 
-The LLM call runs on the Conductor server, so the provider key belongs in the **server's** environment, not the harness's. Conductor OSS enables the AI integration by default and reads `ANTHROPIC_API_KEY` into `conductor.ai.anthropic.api-key`.
+So far this has been tested only with `try_agentic.py` against Orkes Conductor 5.6.0-rc4.
 
-### Running Locally Against Conductor OSS
+The LLM calls run on the Conductor server, so the harness needs no provider key. The key is stored in an AI integration on the Orkes cluster:
+
+- The cluster needs an AI integration for the provider, holding its API key, with the model enabled.
+- `HARNESS_AGENTIC_MODEL` takes the form `<integration name>/<model>`. The default, `anthropic/claude-haiku-4-5`, works only if the integration is named `anthropic`.
+- If the integration or the model is missing, the server fails the storyteller's first LLM task with a terminal error when it schedules it.
+
+### Running Against Orkes Conductor
 
 ```bash
-# Terminal 1: start the server with the provider key in its environment
-export ANTHROPIC_API_KEY=...
-npm install -g @conductor-oss/conductor-cli
-conductor server start
+export CONDUCTOR_SERVER_URL=https://your-cluster.example.com/api
+export CONDUCTOR_AUTH_KEY=$CONDUCTOR_AUTH_KEY
+export CONDUCTOR_AUTH_SECRET=$CONDUCTOR_AUTH_SECRET
 
-# Terminal 2: agentic testing only
-export CONDUCTOR_SERVER_URL=http://localhost:8080/api
+# Agentic testing only
 HARNESS_SDK_TESTING_ENABLED=false \
 HARNESS_AGENTIC_TESTING_ENABLED=true \
-HARNESS_AGENTIC_INTERVAL_SECONDS=60 \
+HARNESS_AGENTIC_MODEL=<integration name>/claude-haiku-4-5 \
   python3 harness/main.py
 ```
 
-Open the execution in the Conductor UI to see each storyteller turn and critic call.
+Open the execution in the Orkes UI to see each storyteller turn and critic call.
 
 ### Trying One Run
 
@@ -166,23 +172,26 @@ A run is cancelled on Ctrl-C or after `--timeout` seconds (default 600), so it d
 
 Passing the agent object straight to `start()` doesn't work for this agent. The SDK then starts worker processes only if `_has_worker_tools()` is true, and that check ignores `stop_when`. The storyteller's only tool is the critic, which runs on the server, so its `stop_when` worker is registered but never started, and the run waits forever.
 
-`run` registers the agent as `python_storyteller`, the name the harness uses, so don't run it against a cluster where the harness's agentic testing is enabled. On Orkes, `--model` takes the AI integration's name before the slash.
+`run` registers the agent as `python_storyteller`, the name the harness uses, so don't run it against a cluster where the harness's agentic testing is enabled. `--model` takes the AI integration's name before the slash, as `HARNESS_AGENTIC_MODEL` does.
 
 #### `--stop-same-turn`
 
 `stop_when` decides whether the loop ends, and that decision depends on the critic's verdict: the result of a tool call. As compiled, `stop_when` reads the storyteller LLM call's input messages, a snapshot taken before that turn's critic call, so it sees each verdict one turn late and the loop runs one extra storyteller call after the critic approves. That call carries the whole conversation, so it is the most expensive turn.
 
-`--stop-same-turn` edits the stored workflow definition after `serve()` deploys it and before the run starts: it points `stop_when` at `_last_tool_results`, a workflow variable that already holds every tool result so far and is updated after the critic and before `stop_when`. The loop then stops on the approving turn. The edit is made on the raw JSON so no field is lost, it refuses to write a definition without its agent markers in `metadata`, and it re-reads the definition to confirm. Every deploy regenerates the definition, so the edit has to be re-applied each time; the report's `stop_when:` line says which wiring the run actually used. The proper fix is in the server's compiler: pass this turn's tool results to `stop_when`. See `agentic/stop_wiring.py`.
+`--stop-same-turn` edits the stored workflow definition after `serve()` deploys it and before the run starts: it points `stop_when` at `_last_tool_results`, a workflow variable that already holds every tool result so far and is updated after the critic and before `stop_when`. The loop then stops on the approving turn. The edit is made on the raw JSON so no field is lost, it refuses to write a definition without its agent markers in `metadata`, and it re-reads the definition to confirm. Every deploy regenerates the definition, so the edit has to be re-applied each time; the report's `stop_when:` line says which wiring the run actually used. The harness applies the same edit by default; see `HARNESS_AGENTIC_STOP_SAME_TURN`. The edit reuses the `messages` input because the Python SDK's `stop_when` worker passes only `result`, `messages` and `iteration` to the function and drops any other input. See `agentic/stop_wiring.py`.
+
+The proper fix: single-agent `stop_when` can't see this turn's tool results; add a `toolResults` input in the server's compiler and expose it in each SDK's `stop_when` context.
 
 ### Agentic Environment Variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `HARNESS_AGENTIC_MODEL` | `anthropic/claude-haiku-4-5` | Model for the storyteller and the critic, in `provider/model` form |
+| `HARNESS_AGENTIC_MODEL` | `anthropic/claude-haiku-4-5` | Model for the storyteller and the critic, in `<integration name>/<model>` form |
 | `HARNESS_AGENTIC_INTERVAL_SECONDS` | 300 | Seconds between run starts |
 | `HARNESS_AGENTIC_RUNS_PER_CONCEPT` | 3 | Runs per concept before a new one is invented and redeployed |
 | `HARNESS_AGENTIC_MAX_TURNS` | 20 | Turn limit for a run whose story the critic never approves |
-| `HARNESS_AGENTIC_SEED` | random | Fixed seed for a reproducible concept and setting sequence. Required to replay recordings through `mock/mockLLM` |
+| `HARNESS_AGENTIC_STOP_SAME_TURN` | true | Edit the deployed definition so `stop_when` sees the critic's verdict on the same turn. A run is not started while the edit fails |
+| `HARNESS_AGENTIC_SEED` | random | Fixed seed for a reproducible concept and setting sequence |
 | `HARNESS_AGENTIC_DEBUG` | false | Print the raw message history when the worker finds no verdict |
 
 **Cost:** each run makes two LLM calls per turn, one for the storyteller and one for the critic. Because every turn resends the growing story, input tokens grow faster than linearly with turn count. On Claude Haiku 4.5 a 15-turn run costs roughly $0.04. At the default 300-second interval that is about $10 per day. Lower the cadence before you leave it running.
