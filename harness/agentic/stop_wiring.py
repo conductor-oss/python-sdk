@@ -12,8 +12,12 @@ late and the loop runs one extra storyteller turn after the critic approves.
 far, newest last, written after the critic and before stop_when. Pointing ``messages`` at it
 lets stop_when see the verdict on the same turn and stop the loop on the approving turn.
 
-This edits the compiler's output, so it has to be re-applied after every deploy. The proper
-fix is in the server's compiler: pass this turn's tool results to stop_when.
+This edits the compiler's output, so it has to be re-applied after every deploy. It reuses
+the ``messages`` input because the Python SDK's stop_when worker passes only ``result``,
+``messages`` and ``iteration`` to the function and drops any other input.
+
+The proper fix: single-agent stop_when can't see this turn's tool results; add a
+``toolResults`` input in the server's compiler and expose it in each SDK's stop_when context.
 """
 from __future__ import annotations
 

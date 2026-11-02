@@ -6,11 +6,13 @@ import threading
 
 from conductor.ai.agents import AgentRuntime
 from conductor.client.configuration.configuration import Configuration
+from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
+from conductor.client.http.api_client import ApiClient
 
 from agentic.agentic_governor import AgenticGovernor
 from agentic.story_agents import STORYTELLER_NAME, build_storyteller
 from agentic.story_concepts import invent_concept
-from harness_env import env_int_or_default, env_str_or_default
+from harness_env import env_bool_or_default, env_int_or_default, env_str_or_default
 
 
 class AgenticTesting:
@@ -25,6 +27,9 @@ class AgenticTesting:
         self._max_turns = env_int_or_default("HARNESS_AGENTIC_MAX_TURNS", 20)
         self._interval_seconds = env_int_or_default("HARNESS_AGENTIC_INTERVAL_SECONDS", 300)
         self._runs_per_concept = env_int_or_default("HARNESS_AGENTIC_RUNS_PER_CONCEPT", 3)
+        # Rewire stop_when so it sees the critic's verdict on the turn the critic gives it,
+        # saving one storyteller call per run. See agentic/stop_wiring.py.
+        self._stop_same_turn = env_bool_or_default("HARNESS_AGENTIC_STOP_SAME_TURN", True)
         # A fixed seed reproduces the same concept and setting sequence, which is what
         # recording once and replaying through mock/mockLLM requires.
         self._rng = random.Random(os.environ.get("HARNESS_AGENTIC_SEED") or None)
@@ -41,9 +46,10 @@ class AgenticTesting:
         )
         print(f"AgenticTesting: serving {STORYTELLER_NAME} on {self._model}, "
               f"first concept: {concept.summary()}")
+        metadata_api = MetadataResourceApi(ApiClient(self._configuration)) if self._stop_same_turn else None
         self._governor = AgenticGovernor(
             self._runtime, self._rng, concept, self._model, self._max_turns,
-            self._interval_seconds, self._runs_per_concept,
+            self._interval_seconds, self._runs_per_concept, metadata_api,
         )
 
     def start(self) -> None:
