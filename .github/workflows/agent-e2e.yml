@@ -20,7 +20,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CONDUCTOR_SERVER_VERSION: "3.32.0-rc18"   # pinned server release — bump deliberately
+  # Tracks the org-level E2E_TEST_OSS_CONDUCTOR_VERSION, set by conductor's
+  # publish.yml on each release (shared with the pull_request.yml docker e2e).
+  # Fork PRs can't read org vars, so they fall back to the pinned default.
+  CONDUCTOR_SERVER_VERSION: ${{ vars.E2E_TEST_OSS_CONDUCTOR_VERSION || '3.33.0' }}
 
 jobs:
   agent-e2e:
