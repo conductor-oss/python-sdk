@@ -135,6 +135,8 @@ With the compiled wiring, a 6-turn story's run says `COMPLETED after 7 turn(s): 
 
 Each run is reported once. Checks that find it still running are silent. If it hasn't finished by the next start, that start reports it as still running and stops checking it.
 
+A run can't finish correctly once the harness that started it stops: its `stop_when` worker is gone, and the next harness deploys a new concept, which gives the run a different critic from its next turn on. So on shutdown the governor terminates its last run if it hasn't finished, and on startup, before deploying, the harness terminates any `python_storyteller` run still RUNNING (one left by a crash). Run only one agentic harness per cluster: each one deploys `python_storyteller` and `python_story_critic` with its own concept.
+
 ### Requirements
 
 So far this has been tested only against Orkes Conductor 5.6.0-rc4 and 5.6.0-rc6, with both `try_agentic.py` and the harness.

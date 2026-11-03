@@ -7,9 +7,10 @@ import threading
 from conductor.ai.agents import AgentRuntime
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
+from conductor.client.http.api.workflow_resource_api import WorkflowResourceApi
 from conductor.client.http.api_client import ApiClient
 
-from agentic.agentic_governor import AgenticGovernor
+from agentic.agentic_governor import AgenticGovernor, terminate_running_runs
 from agentic.story_agents import STORYTELLER_NAME, build_storyteller
 from agentic.story_concepts import invent_concept
 from harness_env import env_bool_or_default, env_int_or_default, env_str_or_default
@@ -40,13 +41,16 @@ class AgenticTesting:
     def prepare(self) -> None:
         """Deploy the first concept and fork the storyteller's worker processes. Starts no threads."""
         self._runtime = AgentRuntime(configuration=self._configuration)
+        api_client = ApiClient(self._configuration)
+        # serve() deploys a new concept, and a run left by a previous harness would get its
+        # critic from the next turn on, so end any such run first.
+        terminate_running_runs(WorkflowResourceApi(api_client))
         concept = invent_concept(self._rng)
         self._runtime.serve(
             build_storyteller(concept, self._model, self._max_turns), blocking=False,
         )
         print(f"AgenticTesting: serving {STORYTELLER_NAME} on {self._model}, "
               f"first concept: {concept.summary()}")
-        api_client = ApiClient(self._configuration)
         self._governor = AgenticGovernor(
             self._runtime, self._rng, concept, self._model, self._max_turns,
             self._interval_seconds, self._runs_per_concept,
