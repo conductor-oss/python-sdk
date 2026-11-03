@@ -7,6 +7,7 @@ import time
 
 from conductor.ai.agents import AgentRuntime
 from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
+from conductor.client.http.api.workflow_resource_api import WorkflowResourceApi
 from conductor.client.http.api_client import ApiClient
 
 from agentic.run_report import RunSummary, execution_url, fetch_execution, summarize
@@ -39,6 +40,10 @@ class AgenticGovernor:
     has finished, read from its execution record: the outcome and the story. Checks that find
     it still running are silent. If it hasn't finished by the next start, that start reports
     it as still running and stops tracking it. Each run is reported once.
+
+    On stop it terminates the last run if it hasn't finished. That run can't finish
+    correctly: its stop_when worker stops with this process, and the next harness to start
+    deploys a new concept, so the run would get a different critic from its next turn on.
     """
 
     def __init__(
@@ -63,6 +68,7 @@ class AgenticGovernor:
         self._runs_per_concept = runs_per_concept
         self._runs_left = runs_per_concept
         self._api_client = api_client
+        self._workflow_api = WorkflowResourceApi(api_client)
         self._server_url = server_url
         self._last_run: str | None = None
         self._metadata_api = metadata_api
@@ -85,11 +91,11 @@ class AgenticGovernor:
         self._stop_event.set()
         if self._thread is not None:
             self._thread.join(timeout=5.0)
+        # Report the last run if it has just finished; terminate it if it hasn't.
+        self._report_last_run(final=False)
         if self._last_run is not None:
-            # Its stop_when worker stops with this process, so a run still in progress
-            # waits at stop_when until a harness serves it again.
-            print(f"AgenticGovernor: last run not yet reported, possibly still running: "
-                  f"{self._last_run}")
+            terminate_run(self._workflow_api, self._last_run, "agentic harness shutting down")
+            self._last_run = None
         print("AgenticGovernor stopped")
 
     def _run(self) -> None:
@@ -173,6 +179,30 @@ class AgenticGovernor:
         print("AgenticGovernor: rewired stop_when to see the critic's verdict on the same turn"
               + ("" if changed else " (it already was)"))
         return True
+
+
+def terminate_running_runs(workflow_api: WorkflowResourceApi) -> None:
+    """Terminate every storyteller run still RUNNING, e.g. one left by a harness that crashed.
+
+    Call before deploying: such a run would otherwise get the new concept's critic.
+    """
+    try:
+        found = workflow_api.search(
+            query=f"workflowType IN ({STORYTELLER_NAME}) AND status IN (RUNNING)", size=100)
+    except Exception as e:
+        print(f"AgenticGovernor: could not search for leftover storyteller runs: {e}")
+        return
+    for summary in found.results or []:
+        terminate_run(workflow_api, summary.workflow_id, "left running by a previous agentic harness")
+
+
+def terminate_run(workflow_api: WorkflowResourceApi, execution_id: str, reason: str) -> None:
+    try:
+        workflow_api.terminate(execution_id, reason=reason)
+    except Exception as e:
+        print(f"AgenticGovernor: could not terminate run {execution_id}: {e}")
+        return
+    print(f"AgenticGovernor: terminated run {execution_id} ({reason})")
 
 
 def _describe_outcome(summary: RunSummary) -> str:

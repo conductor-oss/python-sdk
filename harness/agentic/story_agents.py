@@ -89,9 +89,10 @@ def story_is_complete(context: dict) -> bool:
     """Loop exit gate: True once the critic's latest verdict says the story is done.
 
     Runs as a worker in a spawned process, so it must stay a module-level function:
-    spawn pickling cannot carry closures. ``context["messages"]`` is the LLM's *input*
-    history, so the newest verdict it can see is the previous turn's -- the loop ends
-    at most one turn after the critic approves.
+    spawn pickling cannot carry closures. As compiled, ``context["messages"]`` is the LLM's
+    *input* history, so the newest verdict it can see is the previous turn's and the loop
+    ends one turn after the critic approves. With the stop_when edit (agentic/stop_wiring.py)
+    it holds every tool result so far, so it sees the verdict on the turn the critic gives it.
     """
     iteration = context.get("iteration", 0)
     verdict = find_verdict(context.get("messages"))
