@@ -110,6 +110,8 @@ Each run adds one sentence per turn. After every sentence the storyteller calls 
 
 By default the harness edits the deployed definition so that `stop_when` sees each verdict on the turn the critic gives it, the same edit as `try_agentic.py run --stop-same-turn` (see [below](#--stop-same-turn)). Every deploy undoes the edit, so the governor re-applies it after the first deploy and after each concept rotation, before it starts the next run. If the edit fails, the governor logs a warning, does not start that run, and tries again at the next interval. Set `HARNESS_AGENTIC_STOP_SAME_TURN=false` to run with the definition as compiled. The proper fix is described under [`--stop-same-turn`](#--stop-same-turn).
 
+The concept is compiled into the agent's instructions and the critic's rubric, so changing it means redeploying. The setting is only in each run's prompt, so it varies every run without a redeploy.
+
 The worker logs each verdict it sees:
 
 ```text
@@ -117,9 +119,25 @@ The worker logs each verdict it sees:
 [python_storyteller] turn 7: latest verdict done=True missing=[]
 ```
 
+Between starts, the governor checks the last run every 15 seconds and reports it as soon as it has finished, read from its execution record. The outcome is followed by the story:
+
+```text
+AgenticGovernor: run <id> COMPLETED after 10 turn(s): stopped on the approving turn 10; stop_when rewired; 10 critic call(s); storyteller tokens 27,163 in / 1,825 out https://<ui>/execution/<id>
+  story (approved by the critic on turn 10):
+    Twelve-year-old Maya clutched her canvas bag of lost keys as the ferry horn wailed through the
+    suffocating fog. ...
+AgenticGovernor: run <id> FAILED after 0 turn(s): No such model configured or enabled. integration: chatbotsxz, model: claude-haiku-4-5 https://<ui>/execution/<id>
+```
+
+The story is read from the execution, not the workflow output: a run that stops on the approving turn has no story in its output (see [Known Issues](#known-issues)).
+
+With the compiled wiring, a 6-turn story's run says `COMPLETED after 7 turn(s): approved on turn 6, stopped 1 turn(s) later; stop_when as compiled; 6 critic call(s); storyteller tokens 14,034 in / 1,089 out`: the extra turn cost 3,201 input tokens.
+
+Each run is reported once. Checks that find it still running are silent. If it hasn't finished by the next start, that start reports it as still running and stops checking it.
+
 ### Requirements
 
-So far this has been tested only with `try_agentic.py` against Orkes Conductor 5.6.0-rc4.
+So far this has been tested only against Orkes Conductor 5.6.0-rc4 and 5.6.0-rc6, with both `try_agentic.py` and the harness.
 
 The LLM calls run on the Conductor server, so the harness needs no provider key. The key is stored in an AI integration on the Orkes cluster:
 
@@ -164,7 +182,7 @@ python3 harness/try_agentic.py run --stop-same-turn
 
 The report is built from the execution record after the run, not from streamed events: Orkes 5.6.0-rc4 streams no tool-call events, so live per-turn lines appear only on servers that do. The story it prints is the text the critic approved, exactly as the critic judged it. The storyteller's own final reply can add commentary such as a checklist of the requirements.
 
-`run` prints a link to the execution in the UI as soon as it starts (Cmd-click it in VS Code or iTerm2), and `--open` opens it in your browser. The link assumes the UI is served at the server URL without `/api`; if it isn't, pass `--ui-url` or set `HARNESS_UI_URL`.
+`run` prints a link to the execution in the UI as soon as it starts (Cmd-click it in VS Code or iTerm2), and `--open` opens it in your browser. The link is the server URL without `/api`, which is where Orkes serves the UI.
 
 A run is cancelled on Ctrl-C or after `--timeout` seconds (default 600), so it doesn't keep calling the LLM.
 
@@ -180,7 +198,30 @@ Passing the agent object straight to `start()` doesn't work for this agent. The 
 
 `--stop-same-turn` edits the stored workflow definition after `serve()` deploys it and before the run starts: it points `stop_when` at `_last_tool_results`, a workflow variable that already holds every tool result so far and is updated after the critic and before `stop_when`. The loop then stops on the approving turn. The edit is made on the raw JSON so no field is lost, it refuses to write a definition without its agent markers in `metadata`, and it re-reads the definition to confirm. Every deploy regenerates the definition, so the edit has to be re-applied each time; the report's `stop_when:` line says which wiring the run actually used. The harness applies the same edit by default; see `HARNESS_AGENTIC_STOP_SAME_TURN`. The edit reuses the `messages` input because the Python SDK's `stop_when` worker passes only `result`, `messages` and `iteration` to the function and drops any other input. See `agentic/stop_wiring.py`.
 
-The proper fix: single-agent `stop_when` can't see this turn's tool results; add a `toolResults` input in the server's compiler and expose it in each SDK's `stop_when` context.
+The proper fix: single-agent `stop_when` can't see this turn's tool results; add a `tool_results` input in the server's compiler and expose it in each SDK's `stop_when` context. SWARM handoff checks already receive `${workflow.variables._last_tool_results}` under that name, so the server has precedent for this wiring.
+
+### Known Issues
+
+Problems found while building agentic testing, and how the harness works around them. Observed on Orkes Conductor 5.6.0-rc4 and 5.6.0-rc6, which both use Conductor OSS 3.32.1.
+
+**Server**
+
+- **`stop_when` sees tool results one turn late.** See [`--stop-same-turn`](#--stop-same-turn). Worked around by the stop_when edit, which is on by default.
+- **A run that ends on a tool call loses its output.** When the loop stops on a turn where the LLM called a tool, the `synth_output` step builds the workflow output from that turn's tool calls, and their inputs come out empty: `[{"name":"story_critic","inputs":{}}]`. The step's script calls `JSON.stringify` on the inputs, which arrive as Java maps, and GraalJS serializes a Java map as `{}`. Reproduced with the server's own `GraalJSEvaluator`. With the stop_when edit every approved run ends this way, so the harness and `try_agentic.py` read the story from the execution record.
+- **Orkes 5.6.0-rc4 streams no tool-call events**, so reports are built from the execution record.
+
+**Python SDK**
+
+- **`start(agent)` and `run(agent)` never start the `stop_when` worker** of an agent with no local tools: `_has_worker_tools()` ignores `stop_when`, so the run waits at `stop_when` forever. Workaround: `serve()`, then start by name.
+- **The `stop_when` worker drops every task input except `result`, `messages` and `iteration`**, which is why the stop_when edit reuses `messages`.
+- **`run(on_event=...)` ignores `timeout`.** `try_agentic.py` reads the event stream on a thread with its own deadline.
+- **Raw responses (`_preload_content=False`) crash on the httpx transport**, which has `status_code` where the SDK reads `status`. Workaround: `call_api(..., response_type="object")`.
+- **`examples/agents/kitchen_sink.py`'s `stop_when` predicate never stops the loop.** Its first parameter is `messages`, but it receives the context dict, so `messages[-1]` raises `KeyError`, which the worker logs and treats as "continue".
+- Found while reading the code, not hit by the harness: `output_type` with a dataclass produces no schema, and `_type_to_json_schema(str | None)` returns `{}`.
+
+**Conductor CLI**
+
+- **It drops `metadata` from workflow definitions**, so round-tripping an agent definition through it would remove the agent markers and make the server treat it as a plain workflow. `agentic/stop_wiring.py` edits the raw JSON instead.
 
 ### Agentic Environment Variables
 

@@ -28,7 +28,7 @@ from conductor.client.configuration.configuration import Configuration
 from conductor.client.http.api.metadata_resource_api import MetadataResourceApi
 from conductor.client.http.api_client import ApiClient
 
-from agentic.run_report import fetch_execution, llm_tokens, summarize
+from agentic.run_report import execution_url, fetch_execution, llm_tokens, summarize
 from agentic.stop_wiring import rewire_stop_when
 from agentic.story_agents import (
     CRITIC_TOOL_NAME,
@@ -103,9 +103,6 @@ def parse_args() -> argparse.Namespace:
     run.add_argument("--quiet", action="store_true", help="no live progress, just the report")
     run.add_argument("--open", action="store_true",
                      help="open the execution in your browser as soon as the run starts")
-    run.add_argument("--ui-url", default=os.environ.get("HARNESS_UI_URL"),
-                     help="UI address for execution links (default: $HARNESS_UI_URL, else the "
-                          "server URL without /api)")
     run.add_argument("--debug", action="store_true",
                      help="the stop_when worker prints raw message history when it finds no verdict")
     run.set_defaults(handler=run_story)
@@ -201,7 +198,7 @@ def run_story(args: argparse.Namespace, runtime: AgentRuntime, rng: random.Rando
         print("stop_when: rewired to see the critic's verdict on the same turn"
               + ("" if changed else " (it already was)") + "\n")
     handle = runtime.start(STORYTELLER_NAME, story_prompt(setting), version=1)
-    link = _execution_url(args.ui_url or args.server, handle.execution_id)
+    link = execution_url(args.server, handle.execution_id)
     print(f"execution: {handle.execution_id}")
     print(f"view:      {link}")
     if args.open and not webbrowser.open(link):
@@ -332,17 +329,6 @@ def _describe_verdict(verdict: Optional[dict]) -> str:
     if verdict.get("done") is True:
         return "done"
     return f"not done, missing: {verdict.get('missing')}"
-
-
-def _execution_url(base: str, execution_id: str) -> str:
-    """UI link for an execution. Agent runs use the normal execution page, which switches
-    to its agent view by itself when the workflow definition carries agent metadata.
-    Printed as a plain URL, which VS Code's terminal and iTerm2 make Cmd-clickable and
-    which survives logs and copy-paste."""
-    base = base.rstrip("/")
-    if base.endswith("/api"):
-        base = base[: -len("/api")]
-    return f"{base}/execution/{execution_id}"
 
 
 def _field(obj: Any, *names: str) -> Any:

@@ -46,10 +46,13 @@ class AgenticTesting:
         )
         print(f"AgenticTesting: serving {STORYTELLER_NAME} on {self._model}, "
               f"first concept: {concept.summary()}")
-        metadata_api = MetadataResourceApi(ApiClient(self._configuration)) if self._stop_same_turn else None
+        api_client = ApiClient(self._configuration)
         self._governor = AgenticGovernor(
             self._runtime, self._rng, concept, self._model, self._max_turns,
-            self._interval_seconds, self._runs_per_concept, metadata_api,
+            self._interval_seconds, self._runs_per_concept,
+            api_client=api_client,
+            server_url=self._configuration.host,
+            metadata_api=MetadataResourceApi(api_client) if self._stop_same_turn else None,
         )
 
     def start(self) -> None:

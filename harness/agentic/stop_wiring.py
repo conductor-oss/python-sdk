@@ -17,7 +17,9 @@ the ``messages`` input because the Python SDK's stop_when worker passes only ``r
 ``messages`` and ``iteration`` to the function and drops any other input.
 
 The proper fix: single-agent stop_when can't see this turn's tool results; add a
-``toolResults`` input in the server's compiler and expose it in each SDK's stop_when context.
+``tool_results`` input in the server's compiler and expose it in each SDK's stop_when context.
+SWARM handoff checks already receive ``${workflow.variables._last_tool_results}`` under that
+name, so the server has precedent for this wiring.
 """
 from __future__ import annotations
 
