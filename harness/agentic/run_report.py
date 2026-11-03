@@ -28,6 +28,7 @@ class Turn:
 @dataclass
 class RunSummary:
     status: str
+    reason: str                 # why the run failed or was terminated; empty if it didn't
     turns: List[Turn]
     approved_on: Optional[int]
     story: str
@@ -68,6 +69,7 @@ def summarize(execution: dict) -> RunSummary:
 
     return RunSummary(
         status=str(execution.get("status") or "UNKNOWN"),
+        reason=str(execution.get("reasonForIncompletion") or ""),
         turns=turns,
         approved_on=approved.number if approved is not None else None,
         story=story,
@@ -90,6 +92,17 @@ def fetch_execution(api_client: Any, execution_id: str) -> dict:
         auth_settings=[],
         _return_http_data_only=True,
     )
+
+
+def execution_url(base: str, execution_id: str) -> str:
+    """UI link for an execution. Agent runs use the normal execution page, which switches
+    to its agent view by itself when the workflow definition carries agent metadata.
+    Printed as a plain URL, which VS Code's terminal and iTerm2 make Cmd-clickable and
+    which survives logs and copy-paste."""
+    base = base.rstrip("/")
+    if base.endswith("/api"):
+        base = base[: -len("/api")]
+    return f"{base}/execution/{execution_id}"
 
 
 def llm_tokens(execution: dict) -> Tuple[int, int]:
