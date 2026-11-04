@@ -1,5 +1,23 @@
 # Workflow Management
 
+## No-op workflow steps
+
+`NoopTask` creates a built-in `NOOP` task that completes immediately on the
+server. It needs no worker or input parameters and can serve as an explicit
+placeholder when a workflow branch has nothing to do:
+
+```python
+from conductor.client.workflow.task.noop_task import NoopTask
+from conductor.client.workflow.task.switch_task import SwitchTask
+
+route = SwitchTask("route", "${workflow.input.action}").default_case(
+    [NoopTask(task_ref_name="skip_action")]
+)
+```
+
+Add `route` to a workflow like any other task. The Conductor server must support
+the `NOOP` system task type.
+
 ## Workflow Client
 
 ### Initialization
