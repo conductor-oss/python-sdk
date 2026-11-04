@@ -6,6 +6,7 @@ that the X-Authorization JWT is minted via the shared ApiClient and sent, and th
 HTTP errors map to the agent SDK exceptions.
 """
 
+import asyncio
 import base64
 import json
 import threading
@@ -195,3 +196,21 @@ def test_parse_sse_events_and_heartbeats():
     assert events[2]["event"] == "done"
     assert events[2]["id"] == "42"
     assert events[2]["data"]["output"] == "result"
+
+
+def test_sse_async_client_is_recreated_for_a_new_event_loop():
+    client = _client("http://localhost:8080/api")
+
+    async def get_first_client():
+        return client._get_sse_async_client()
+
+    first_client = asyncio.run(get_first_client())
+
+    async def get_second_client():
+        second_client = client._get_sse_async_client()
+        await client.close_async()
+        return second_client
+
+    second_client = asyncio.run(get_second_client())
+
+    assert second_client is not first_client
