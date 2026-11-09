@@ -69,7 +69,12 @@ jobs:
           # mcp 2.0 dropped mcp.server.fastmcp, which mcp-testkit's server and
           # tool modules still import — hold the resolver on the 1.x line until
           # the testkit ships a 2.x-compatible release.
-          pip install pytest pytest-asyncio pytest-xdist pytest-rerunfailures mcp-testkit 'mcp<2'
+          # pytest 9.2.0 silently breaks --dist=loadgroup with pytest-xdist 3.8.0:
+          # xdist_group marks are ignored, so grouped suites (shared ports, shared
+          # server credentials) run in parallel and collide. Fixed on xdist master
+          # (pytest-dev/pytest-xdist#1388), not yet released. Once a pytest-xdist
+          # release after 3.8.0 is out, drop the pytest cap and require that xdist.
+          pip install 'pytest<9.2' pytest-asyncio pytest-xdist pytest-rerunfailures mcp-testkit 'mcp<2'
 
       - name: Start mcp-testkit
         run: |
