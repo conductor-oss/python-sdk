@@ -175,6 +175,7 @@ class TestSuite7MediaTools:
 
     # ── Audio: OpenAI ─────────────────────────────────────────────────
 
+    @pytest.mark.skip(reason="The CI OpenAI project does not have access to tts-1 (HTTP 403)")
     def test_audio_openai(self, runtime, model):
         """Generate audio via OpenAI TTS-1."""
         if not os.environ.get("OPENAI_API_KEY"):
