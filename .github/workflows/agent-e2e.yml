@@ -34,6 +34,37 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CONDUCTOR_SERVER_URL: http://localhost:8080/api
     steps:
+      # A dead key, exhausted quota, retired model or provider outage makes
+      # every agent test fail at its client timeout, three times over with
+      # reruns — the job then hits timeout-minutes before pytest prints a
+      # single traceback. Call each model the suites use directly, before any
+      # setup: the HTTP status and body name the cause in seconds.
+      - name: LLM provider check
+        timeout-minutes: 1
+        run: |
+          fail=0
+          probe() {  # label, url, curl args...
+            local label=$1 url=$2; shift 2
+            local code
+            code=$(curl -sS -m 15 -o "$RUNNER_TEMP/probe.json" -w '%{http_code}' "$url" "$@" \
+              -H 'content-type: application/json') || true
+            echo "$label: HTTP $code"
+            if [ "$code" != 200 ]; then
+              echo "::error::$label check failed (HTTP $code; 000 = no response in 15s)"
+              cat "$RUNNER_TEMP/probe.json" 2>/dev/null || true; echo
+              fail=1
+            fi
+          }
+          probe "OpenAI gpt-4o-mini" https://api.openai.com/v1/chat/completions \
+            -H "authorization: Bearer $OPENAI_API_KEY" \
+            -d '{"model":"gpt-4o-mini","max_tokens":5,"messages":[{"role":"user","content":"ping"}]}'
+          for model in claude-sonnet-4-6 claude-sonnet-4-5; do
+            probe "Anthropic $model" https://api.anthropic.com/v1/messages \
+              -H "x-api-key: $ANTHROPIC_API_KEY" -H 'anthropic-version: 2023-06-01' \
+              -d "{\"model\":\"$model\",\"max_tokens\":5,\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}"
+          done
+          exit $fail
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -114,57 +145,6 @@ jobs:
           tail -100 server.log
           exit 1
 
-      # A dead key, exhausted quota, retired model or provider outage makes
-      # every agent test fail at its client timeout, three times over with
-      # reruns — the job then hits timeout-minutes before pytest prints a
-      # single traceback. Probe each provider directly (the HTTP status names
-      # the cause), then run one tiny agent through the server, and stop here
-      # in ~2 minutes instead.
-      - name: LLM preflight
-        timeout-minutes: 4
-        run: |
-          fail=0
-          probe() {  # label, url, curl args...
-            local label=$1 url=$2; shift 2
-            local code
-            code=$(curl -sS -m 30 -o probe.json -w '%{http_code}' "$url" "$@" \
-              -H 'content-type: application/json') || true
-            echo "$label: HTTP $code"
-            if [ "$code" != 200 ]; then
-              echo "::error::$label probe failed (HTTP $code; 000 = no response in 30s)"
-              cat probe.json 2>/dev/null || true; echo
-              fail=1
-            fi
-          }
-          probe "OpenAI gpt-4o-mini" https://api.openai.com/v1/chat/completions \
-            -H "authorization: Bearer $OPENAI_API_KEY" \
-            -d '{"model":"gpt-4o-mini","max_tokens":5,"messages":[{"role":"user","content":"ping"}]}'
-          probe "Anthropic claude-sonnet-4-6" https://api.anthropic.com/v1/messages \
-            -H "x-api-key: $ANTHROPIC_API_KEY" -H 'anthropic-version: 2023-06-01' \
-            -d '{"model":"claude-sonnet-4-6","max_tokens":5,"messages":[{"role":"user","content":"ping"}]}'
-
-          python - <<'EOF' || fail=1
-          import os, sys, requests
-          from conductor.ai.agents import Agent, AgentRuntime
-
-          model = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
-          agent = Agent(name="e2e_preflight", model=model,
-                        instructions="Answer in one word.", max_turns=1)
-          with AgentRuntime() as rt:
-              result = rt.run(agent, "Say hello.", timeout=90)
-          print(f"canary agent ({model}): status={result.status} "
-                f"execution_id={result.execution_id} error={result.error}")
-          if result.execution_id:
-              wf = requests.get(f"http://localhost:8080/api/workflow/{result.execution_id}",
-                                timeout=10).json()
-              print(f"workflow: {wf.get('status')} {wf.get('reasonForIncompletion') or ''}")
-              for t in wf.get("tasks", []):
-                  print(f"  {t.get('taskType')} {t.get('referenceTaskName')}: {t.get('status')} "
-                        f"retry={t.get('retryCount')} {t.get('reasonForIncompletion') or ''}")
-          sys.exit(0 if str(result.status).endswith("COMPLETED") else 1)
-          EOF
-          exit $fail
-
       - name: Run e2e suites
         run: |
           mkdir -p results
@@ -177,8 +157,9 @@ jobs:
       - name: Show server errors
         if: failure() || cancelled()
         run: |
+          [ -f server.log ] || exit 0
           grep -nE ' (ERROR|WARN) |Exception|[Qq]uota|rate.?limit|\b(401|403|404|429)\b' server.log \
-            | tail -150
+            | grep -vE 'cannot init (Cohere|Mistral)' | tail -150
 
       # e2e/conftest.py pytest.skip()s the whole session when the server is
       # unreachable — without this guard a boot failure after the health gate
