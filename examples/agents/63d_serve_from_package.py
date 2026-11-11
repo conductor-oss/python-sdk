@@ -9,12 +9,18 @@ discover_agents() recursively imports the specified packages and
 collects all module-level Agent instances. This avoids the need to
 explicitly list every agent when serving a large codebase.
 
+serve() registers each agent on the server (compile + register, like
+deploy()) and then serves its Python tool workers, blocking until Ctrl+C.
+Run this in one terminal and run the matching run-by-name client
+(63e_run_monitoring.py) in another; without a serving process the client
+schedules tool tasks that nothing ever polls, so it hangs.
+
     python 63d_serve_from_package.py
 
 Requirements:
     - Conductor server running
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
-    - A Python package with Agent instances at module level
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini in .env or environment
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, discover_agents, tool
@@ -51,14 +57,11 @@ monitoring_agent = Agent(
 
 if __name__ == "__main__":
     with AgentRuntime() as runtime:
-        result = runtime.run(monitoring_agent, "Is everything healthy? Run a full check.")
-        result.print_result()
-
-        # Production pattern:
-        # 1. Deploy once during CI/CD:
-        # runtime.deploy(monitoring_agent, *discover_agents(["myapp.agents"]))
-        # CLI alternative:
-        # runtime.deploy(agent) from a release script
+        # serve() registers monitoring on the server, serves its tool workers,
+        # and blocks until Ctrl+C. Run this in one terminal so that
+        # 63e_run_monitoring.py (and any other run-by-name client) finds a live
+        # process polling the monitoring agent's task queue.
         #
-        # 2. In a separate long-lived worker process:
-        # runtime.serve(monitoring_agent, packages=["myapp.agents"])
+        # Add packages=["myapp.agents"] to auto-discover and serve every
+        # module-level Agent in that package alongside the explicit agent.
+        runtime.serve(monitoring_agent)
