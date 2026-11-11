@@ -33,7 +33,44 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CONDUCTOR_SERVER_URL: http://localhost:8080/api
+      # Default model for every suite. The CI OpenAI project only allows the
+      # gpt-5.6 / gpt-6 families; gpt-6-luna is OpenAI's replacement for
+      # gpt-4o-mini, which shuts down on 2027-01-14.
+      CONDUCTOR_AGENT_LLM_MODEL: openai/gpt-6-luna
     steps:
+      # A dead key, exhausted quota, retired model or provider outage makes
+      # every agent test fail at its client timeout, three times over with
+      # reruns — the job then hits timeout-minutes before pytest prints a
+      # single traceback. Call each model the suites use directly, before any
+      # setup: the HTTP status and body name the cause in seconds.
+      - name: LLM provider check
+        timeout-minutes: 1
+        run: |
+          fail=0
+          probe() {  # label, url, curl args...
+            local label=$1 url=$2; shift 2
+            local code
+            code=$(curl -sS -m 15 -o "$RUNNER_TEMP/probe.json" -w '%{http_code}' "$url" "$@" \
+              -H 'content-type: application/json') || true
+            echo "$label: HTTP $code"
+            if [ "$code" != 200 ]; then
+              echo "::error::$label check failed (HTTP $code; 000 = no response in 15s)"
+              cat "$RUNNER_TEMP/probe.json" 2>/dev/null || true; echo
+              fail=1
+            fi
+          }
+          # Responses API, as the server uses; 16 is its minimum max_output_tokens.
+          openai_model=${CONDUCTOR_AGENT_LLM_MODEL#openai/}
+          probe "OpenAI $openai_model" https://api.openai.com/v1/responses \
+            -H "authorization: Bearer $OPENAI_API_KEY" \
+            -d "{\"model\":\"$openai_model\",\"input\":\"ping\",\"max_output_tokens\":16,\"reasoning\":{\"effort\":\"none\"}}"
+          for model in claude-sonnet-4-6 claude-sonnet-4-5; do
+            probe "Anthropic $model" https://api.anthropic.com/v1/messages \
+              -H "x-api-key: $ANTHROPIC_API_KEY" -H 'anthropic-version: 2023-06-01' \
+              -d "{\"model\":\"$model\",\"max_tokens\":5,\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}"
+          done
+          exit $fail
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -69,7 +106,12 @@ jobs:
           # mcp 2.0 dropped mcp.server.fastmcp, which mcp-testkit's server and
           # tool modules still import — hold the resolver on the 1.x line until
           # the testkit ships a 2.x-compatible release.
-          pip install pytest pytest-asyncio pytest-xdist pytest-rerunfailures mcp-testkit 'mcp<2'
+          # pytest 9.2.0 silently breaks --dist=loadgroup with pytest-xdist 3.8.0:
+          # xdist_group marks are ignored, so grouped suites (shared ports, shared
+          # server credentials) run in parallel and collide. Fixed on xdist master
+          # (pytest-dev/pytest-xdist#1388), not yet released. Once a pytest-xdist
+          # release after 3.8.0 is out, drop the pytest cap and require that xdist.
+          pip install 'pytest<9.2' pytest-asyncio pytest-xdist pytest-rerunfailures mcp-testkit 'mcp<2'
 
       - name: Start mcp-testkit
         run: |
@@ -114,6 +156,16 @@ jobs:
           mkdir -p results
           pytest e2e/ -v --tb=short -n 3 --dist=loadgroup \
             --junitxml=results/junit-e2e.xml
+
+      # The uploaded server.log is lost when the run is re-run, and a run
+      # killed at timeout-minutes never prints pytest's tracebacks — keep the
+      # server's own errors in the job log, which survives both.
+      - name: Show server errors
+        if: failure() || cancelled()
+        run: |
+          [ -f server.log ] || exit 0
+          grep -nE ' (ERROR|WARN) |Exception|[Qq]uota|rate.?limit|\b(401|403|404|429)\b' server.log \
+            | grep -vE 'cannot init (Cohere|Mistral)' | tail -150
 
       # e2e/conftest.py pytest.skip()s the whole session when the server is
       # unreachable — without this guard a boot failure after the health gate

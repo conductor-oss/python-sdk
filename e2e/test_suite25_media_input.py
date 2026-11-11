@@ -42,6 +42,7 @@ pytestmark = [
 ]
 
 TIMEOUT = 120
+OPENAI_MODEL = os.environ.get("CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini")
 
 # ── Test image (self-contained) ───────────────────────────────────────────────
 # A 600x200 PNG rendering the exact text "MELON7391" (black on white), committed
@@ -82,7 +83,7 @@ _ANTHROPIC_MEDIA_SKIP = pytest.mark.skip(reason=SUITE25_ANTHROPIC_SKIP_REASON)
 
 # Positive test: Anthropic is skipped (no image reaches the model — see above).
 POSITIVE_CASES = [
-    pytest.param("OPENAI_API_KEY", "openai/gpt-4o-mini", id="openai"),
+    pytest.param("OPENAI_API_KEY", OPENAI_MODEL, id="openai"),
     pytest.param(
         "ANTHROPIC_API_KEY",
         "anthropic/claude-sonnet-4-5",
@@ -94,7 +95,7 @@ POSITIVE_CASES = [
 # Counterfactual: both providers should COMPLETE and simply not emit the token
 # (no media is sent at all), so neither is expected to fail.
 COUNTERFACTUAL_CASES = [
-    pytest.param("OPENAI_API_KEY", "openai/gpt-4o-mini", id="openai"),
+    pytest.param("OPENAI_API_KEY", OPENAI_MODEL, id="openai"),
     pytest.param("ANTHROPIC_API_KEY", "anthropic/claude-sonnet-4-5", id="anthropic"),
 ]
 
