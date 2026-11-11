@@ -116,6 +116,7 @@ class TestSuite7MediaTools:
 
     # ── Image: OpenAI ─────────────────────────────────────────────────
 
+    @pytest.mark.skip(reason="dall-e-3 has been removed from OpenAI's API ('model does not exist')")
     def test_image_openai(self, runtime, model):
         """Generate image via OpenAI DALL-E 3."""
         if not os.environ.get("OPENAI_API_KEY"):
