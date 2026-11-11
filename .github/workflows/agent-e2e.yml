@@ -33,6 +33,10 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CONDUCTOR_SERVER_URL: http://localhost:8080/api
+      # Default model for every suite. The CI OpenAI project only allows the
+      # gpt-5.6 / gpt-6 families; gpt-6-luna is OpenAI's replacement for
+      # gpt-4o-mini, which shuts down on 2027-01-14.
+      CONDUCTOR_AGENT_LLM_MODEL: openai/gpt-6-luna
     steps:
       # A dead key, exhausted quota, retired model or provider outage makes
       # every agent test fail at its client timeout, three times over with
@@ -55,9 +59,11 @@ jobs:
               fail=1
             fi
           }
-          probe "OpenAI gpt-4o-mini" https://api.openai.com/v1/chat/completions \
+          # Responses API, as the server uses; 16 is its minimum max_output_tokens.
+          openai_model=${CONDUCTOR_AGENT_LLM_MODEL#openai/}
+          probe "OpenAI $openai_model" https://api.openai.com/v1/responses \
             -H "authorization: Bearer $OPENAI_API_KEY" \
-            -d '{"model":"gpt-4o-mini","max_tokens":5,"messages":[{"role":"user","content":"ping"}]}'
+            -d "{\"model\":\"$openai_model\",\"input\":\"ping\",\"max_output_tokens\":16,\"reasoning\":{\"effort\":\"none\"}}"
           for model in claude-sonnet-4-6 claude-sonnet-4-5; do
             probe "Anthropic $model" https://api.anthropic.com/v1/messages \
               -H "x-api-key: $ANTHROPIC_API_KEY" -H 'anthropic-version: 2023-06-01' \
