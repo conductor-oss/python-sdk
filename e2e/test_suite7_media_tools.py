@@ -116,10 +116,6 @@ class TestSuite7MediaTools:
 
     # ── Image: OpenAI ─────────────────────────────────────────────────
 
-    @pytest.mark.skip(
-        reason="dall-e-3 is not in the CI OpenAI project's model allowlist, and OpenAI "
-        "rejects the image tool's 'style' parameter for it (HTTP 400)"
-    )
     def test_image_openai(self, runtime, model):
         """Generate image via OpenAI DALL-E 3."""
         if not os.environ.get("OPENAI_API_KEY"):
