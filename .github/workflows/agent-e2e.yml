@@ -33,10 +33,12 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CONDUCTOR_SERVER_URL: http://localhost:8080/api
-      # Default model for every suite. The CI OpenAI project only allows the
-      # gpt-5.6 / gpt-6 families; gpt-6-luna is OpenAI's replacement for
-      # gpt-4o-mini, which shuts down on 2027-01-14.
+      # Default model for every suite. The Orkes-Developers OpenAI project only
+      # allows the gpt-5.6 / gpt-6 families; gpt-6-luna is OpenAI's replacement
+      # for gpt-4o-mini, which shuts down on 2027-01-14.
       CONDUCTOR_AGENT_LLM_MODEL: openai/gpt-6-luna
+      SKIP_IMAGE_GEN: 'true'  # no image models in the Orkes-Developers OpenAI project; dall-e-3 is retired, so re-enabling also needs gpt-image-1
+      SKIP_TTS: 'true'  # tts-1 is not enabled in the Orkes-Developers OpenAI project (HTTP 403)
     steps:
       # A dead key, exhausted quota, retired model or provider outage makes
       # every agent test fail at its client timeout, three times over with
@@ -165,7 +167,7 @@ jobs:
         run: |
           [ -f server.log ] || exit 0
           grep -nE ' (ERROR|WARN) |Exception|[Qq]uota|rate.?limit|\b(401|403|404|429)\b' server.log \
-            | grep -vE 'cannot init (Cohere|Mistral)' | tail -150
+            | grep -vE 'cannot init (Cohere|Mistral)' | tail -150 || true
 
       # e2e/conftest.py pytest.skip()s the whole session when the server is
       # unreachable — without this guard a boot failure after the health gate
