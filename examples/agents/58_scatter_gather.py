@@ -3,7 +3,7 @@
 Demonstrates:
     - scatter_gather() helper: decompose → fan-out → synthesize
     - 100 sub-agents running in parallel via FORK_JOIN_DYNAMIC
-    - Coordinator (gpt-4o) dispatching worker agents (claude-sonnet)
+    - Coordinator (secondary model) dispatching worker agents (primary model)
     - Durable execution with automatic retries on transient failures
 
 The coordinator analyzes the input, splits it into 100 independent sub-tasks,
@@ -12,7 +12,7 @@ dispatches 100 worker agents in parallel, and synthesizes the results.
 Requirements:
     - Conductor server running
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api in .env or environment
-    - AGENT_SECONDARY_LLM_MODEL=openai/gpt-4o in .env or environment
+    - CONDUCTOR_AGENT_SECONDARY_LLM_MODEL=openai/gpt-6-sol in .env or environment
 """
 
 from conductor.ai.agents import Agent, AgentRuntime, scatter_gather, tool
@@ -59,7 +59,7 @@ researcher = Agent(
     max_turns=5,
 )
 
-# ── Coordinator (gpt-4o-mini): dispatches 100 parallel researchers ───
+# ── Coordinator (secondary model): dispatches 100 parallel researchers ───
 
 COUNTRIES = [
     "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",
@@ -89,7 +89,7 @@ country_list = "\n".join(f"{i+1}. {c}" for i, c in enumerate(COUNTRIES))
 coordinator = scatter_gather(
     name="coordinator",
     worker=researcher,
-    model=settings.secondary_llm_model,  # gpt-4o — needs larger context for 100 results
+    model=settings.secondary_llm_model,  # larger model — needs larger context for 100 results
     instructions=(
         f"You MUST create EXACTLY {len(COUNTRIES)} researcher calls — one per "
         f"country below. Each call should pass just the country name as the "
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     print("=" * 70)
     print(f"  Scatter-Gather: {len(COUNTRIES)} Parallel Sub-Agents")
-    print("  Coordinator: openai/gpt-4o  |  Workers: anthropic/claude-sonnet")
+    print(f"  Coordinator: {settings.secondary_llm_model}  |  Workers: {settings.llm_model}")
     print("=" * 70)
     print(f"\nPrompt: {prompt}")
     print(f"Countries: {len(COUNTRIES)}")

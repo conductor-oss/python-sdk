@@ -9,8 +9,8 @@ Requirements:
     - pip install openai-agents
     - Conductor server with OpenAI LLM integrations configured
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
-    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
-    - CONDUCTOR_AGENT_SECONDARY_LLM_MODEL=openai/gpt-4o as environment variable
+    - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-6-luna as environment variable
+    - CONDUCTOR_AGENT_SECONDARY_LLM_MODEL=openai/gpt-6-sol as environment variable
 """
 
 from agents import Agent, ModelSettings, function_tool
