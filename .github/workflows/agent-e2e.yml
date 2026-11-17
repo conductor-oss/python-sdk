@@ -33,10 +33,12 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CONDUCTOR_SERVER_URL: http://localhost:8080/api
-      # Default model for every suite. The Orkes-Developers OpenAI project only
-      # allows the gpt-5.6 / gpt-6 families; gpt-6-luna is OpenAI's replacement
-      # for gpt-4o-mini, which shuts down on 2027-01-14.
-      CONDUCTOR_AGENT_LLM_MODEL: openai/gpt-6-luna
+      # Default model for every suite. Tracks the org-level E2E_TEST_OPENAI_MODEL
+      # (provider-prefixed, e.g. openai/gpt-6-luna); fork PRs can't read org
+      # vars, so they fall back to the pinned default. The Orkes-Developers
+      # OpenAI project only allows the gpt-5.6 / gpt-6 families; gpt-6-luna is
+      # OpenAI's replacement for gpt-4o-mini, which shuts down on 2027-01-14.
+      CONDUCTOR_AGENT_LLM_MODEL: ${{ vars.E2E_TEST_OPENAI_MODEL || 'openai/gpt-6-luna' }}
       SKIP_IMAGE_GEN: 'true'  # no image models in the Orkes-Developers OpenAI project; dall-e-3 is retired, so re-enabling also needs gpt-image-1
       SKIP_TTS: 'true'  # tts-1 is not enabled in the Orkes-Developers OpenAI project (HTTP 403)
     steps:
