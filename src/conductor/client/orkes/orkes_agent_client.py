@@ -48,6 +48,7 @@ class OrkesAgentClient(OrkesBaseClient, AgentClient):
         self._schedule_client_instance: Any = None
         # Persistent httpx client for async SSE streaming (created lazily).
         self._sse_async_client: Any = None
+        self._sse_async_client_loop: Any = None
 
     # ── internal helpers ─────────────────────────────────────────────────
 
@@ -272,10 +273,19 @@ class OrkesAgentClient(OrkesBaseClient, AgentClient):
                 await asyncio.sleep(1)
 
     def _get_sse_async_client(self):
+        import asyncio
+
         import httpx
 
-        if self._sse_async_client is None or self._sse_async_client.is_closed:
+        current_loop = asyncio.get_running_loop()
+        # httpx transports are bound to the event loop that first uses them.
+        if (
+            self._sse_async_client is None
+            or self._sse_async_client.is_closed
+            or self._sse_async_client_loop is not current_loop
+        ):
             self._sse_async_client = httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=5.0))
+            self._sse_async_client_loop = current_loop
         return self._sse_async_client
 
     @staticmethod
@@ -356,6 +366,7 @@ class OrkesAgentClient(OrkesBaseClient, AgentClient):
         if self._sse_async_client is not None and not self._sse_async_client.is_closed:
             await self._sse_async_client.aclose()
             self._sse_async_client = None
+            self._sse_async_client_loop = None
         if self._async_api_client is not None:
             try:
                 await self._async_api_client.close()
