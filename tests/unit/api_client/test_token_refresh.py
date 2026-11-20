@@ -5,7 +5,6 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 
 import httpx
-import pytest
 
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.authentication_settings import AuthenticationSettings
@@ -39,7 +38,6 @@ class TestTokenRefresh(unittest.TestCase):
         finally:
             loop.close()
 
-    @pytest.mark.xfail(strict=True, reason='each rejected request fetches its own token')
     def test_concurrent_rejections_fetch_one_new_token(self):
         issued = []
         rejected = []
@@ -77,7 +75,6 @@ class TestTokenRefresh(unittest.TestCase):
         self.assertEqual(N, len(rejected))
         self.assertEqual(2, len(issued))  # t1 before the failover, t2 shared by every retry
 
-    @pytest.mark.xfail(strict=True, reason='each rejected request fetches its own token')
     def test_concurrent_rejections_fetch_one_new_token_async(self):
         issued = []
         rejected = []
@@ -114,7 +111,6 @@ class TestTokenRefresh(unittest.TestCase):
         self.assertEqual(N, len(rejected))
         self.assertEqual(2, len(issued))  # t1 before the failover, t2 shared by every retry
 
-    @pytest.mark.xfail(strict=True, reason='each first call fetches its own token')
     def test_concurrent_first_calls_fetch_one_token_async(self):
         issued = []
 
