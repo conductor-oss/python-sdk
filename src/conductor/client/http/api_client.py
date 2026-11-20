@@ -7,6 +7,7 @@ import mimetypes
 import os
 import re
 import tempfile
+import threading
 import time
 from typing import Dict, Optional, TYPE_CHECKING
 import uuid
@@ -68,6 +69,9 @@ class ApiClient(object):
         self._token_refresh_failures = 0
         self._last_token_refresh_attempt = 0
         self._max_token_refresh_failures = 5  # Stop after 5 consecutive failures
+        # Serializes token renewal so threads that need a new token together fetch it once.
+        # RLock because the token fetch itself goes through call_api.
+        self._token_lock = threading.RLock()
 
         # Metrics collector for API request tracking
         self.metrics_collector = metrics_collector
@@ -95,7 +99,7 @@ class ApiClient(object):
                 logger.info(
                     f'Authentication token is {token_status}, renewing token... (request: {method} {resource_path})')
                 # if the token has expired or is invalid, lets refresh the token
-                success = self.__force_refresh_auth_token()
+                success = self.__refresh_auth_token_if_stale(getattr(ae, 'rejected_token', None))
                 if success:
                     logger.debug('Authentication token successfully renewed')
                     # and now retry the same request
@@ -176,13 +180,18 @@ class ApiClient(object):
         url = self.configuration.host + resource_path
 
         # perform request and return response
-        response_data = self.request(
-            method, url, query_params=query_params, headers=header_params,
-            post_params=post_params, body=body,
-            _preload_content=_preload_content,
-            _request_timeout=_request_timeout,
-            metric_uri=metric_uri,
-            metric_context=metric_context)
+        try:
+            response_data = self.request(
+                method, url, query_params=query_params, headers=header_params,
+                post_params=post_params, body=body,
+                _preload_content=_preload_content,
+                _request_timeout=_request_timeout,
+                metric_uri=metric_uri,
+                metric_context=metric_context)
+        except AuthorizationException as ae:
+            # The token this request carried, so a refresh can tell whether another thread already replaced it.
+            ae.rejected_token = auth_headers['header']['X-Authorization'] if auth_headers else None
+            raise
 
         return_data = response_data
         if _preload_content:
@@ -793,12 +802,15 @@ class ApiClient(object):
         time_since_last_update = now - self.configuration.token_update_time
 
         if time_since_last_update > self.configuration.auth_token_ttl_msec:
-            # time to refresh the token - skip backoff for legitimate renewal
-            logger.info('Authentication token TTL expired, renewing token...')
-            token = self.__get_new_token(skip_backoff=True)
-            self.configuration.update_token(token)
-            if token:
-                logger.debug('Authentication token successfully renewed')
+            with self._token_lock:
+                # Threads that found the token expired together queue here; only the first renews it.
+                if now - self.configuration.token_update_time > self.configuration.auth_token_ttl_msec:
+                    # time to refresh the token - skip backoff for legitimate renewal
+                    logger.info('Authentication token TTL expired, renewing token...')
+                    token = self.__get_new_token(skip_backoff=True)
+                    self.configuration.update_token(token)
+                    if token:
+                        logger.debug('Authentication token successfully renewed')
 
         return {
             'header': {
@@ -839,6 +851,20 @@ class ApiClient(object):
     def __force_refresh_auth_token(self) -> bool:
         """Deprecated: Use force_refresh_auth_token() instead"""
         return self.force_refresh_auth_token()
+
+    def __refresh_auth_token_if_stale(self, stale_token) -> bool:
+        """
+        Replaces stale_token, the token the server rejected, unless another thread already has.
+        After a failover every in-flight request is rejected at once, and they should share one new token.
+        """
+        if stale_token is None:
+            # The request carried no token (such as /token itself), so there is nothing to compare.
+            return self.__force_refresh_auth_token()
+        with self._token_lock:
+            current = self.configuration.AUTH_TOKEN
+            if current is not None and current != stale_token:
+                return True
+            return self.__force_refresh_auth_token()
 
     def __get_new_token(self, skip_backoff: bool = False) -> str:
         """
