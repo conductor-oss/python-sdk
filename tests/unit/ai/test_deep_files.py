@@ -1,7 +1,7 @@
 """Tests for the deep agent's Conductor file backend.
 
 Uses a real in-process HTTP server (no mocks, per repo test policy) that emulates
-the file API, including ``GET /api/files?workflowId=`` and the workflow-family
+the file API, including ``GET /api/files?workflowId=`` (a ``SearchResult``) and the workflow-family
 access rule: a workflow sees files owned by itself, its ancestors and its
 descendants.
 """
@@ -106,7 +106,8 @@ class _Handler(BaseHTTPRequestHandler):
             visible = family(caller)
             items = [r for r in STATE.records.values()
                      if r["uploadStatus"] == "UPLOADED" and r["workflowId"] in visible]
-            return self._json(200, sorted(items, key=lambda r: r["createdAt"]))
+            results = sorted(items, key=lambda r: r["createdAt"])
+            return self._json(200, {"totalHits": len(results), "results": results})
         m = re.fullmatch(r"/api/files/content/([^/]+)/([^/]+)", url.path)
         if m:
             data = STATE.content[m.group(2)]

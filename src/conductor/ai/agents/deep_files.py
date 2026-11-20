@@ -209,7 +209,7 @@ class ConductorBackend(_Backend):
             _return_http_data_only=True,
             _preload_content=True,
         )
-        return list(items or [])
+        return list((items or {}).get("results") or [])
 
     def list(self, context):
         out: Dict[str, FileEntry] = {}
