@@ -5,13 +5,14 @@ things out of the conversation so the model's context stays small:
 
 - the plan, in ``_agent_state`` through :func:`write_todos`, private to the
   agent that wrote it and shown to it on every turn;
-- large data, in files under a per-run workspace directory, shared with the
-  sub-agents of the same run;
+- large data, in files of a run-scoped workspace shared with the sub-agents of
+  the same run, stored through Conductor's file API (see
+  :mod:`conductor.ai.agents.deep_files`);
 - delegated work, in sub-agents that return a short result and never see the
   parent's plan or history.
 
-This is a proof of concept on the Python SDK alone: the todo and file tools are
-ordinary ``@tool`` workers. See ``examples/agents/deep_agent_research.py``.
+This is a proof of concept: the todo and file tools are ordinary ``@tool``
+workers. See ``examples/agents/deep_agent_research.py``.
 
 Example::
 
@@ -30,26 +31,29 @@ Example::
 
 from __future__ import annotations
 
+import copy
 import dataclasses
+import json
 import datetime as dt
 import os
 import threading
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
+from conductor.ai.agents import deep_files
 from conductor.ai.agents.agent import Agent
+from conductor.ai.agents.deep_files import (
+    DEFAULT_WORKSPACE,
+    STORAGE_ENV,
+    SUBAGENTS_ENV,
+    WORKSPACE_ENV,
+    export_run,
+    list_run_files,
+    read_run_file,
+)
 from conductor.ai.agents.tool import ToolContext, agent_tool, get_tool_def, tool
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.orkes_clients import OrkesClients
-
-WORKSPACE_ENV = "CONDUCTOR_DEEP_AGENT_WORKSPACE"
-"""Environment variable naming the workspace root directory.
-
-Tool workers run in separate processes, so the root is passed through the
-environment rather than captured in a closure.
-"""
-
-DEFAULT_WORKSPACE = "./workspace"
 
 TODOS_KEY = "todos"
 """Key under which the plan lives in ``ToolContext.state`` (``_agent_state``).
@@ -77,19 +81,23 @@ a status changes, never twice in a row, and never skip the plan on a multi-step
 task. Your current plan is shown to you under "Context" on every turn.
 
 ## Files
-The workspace is private to this run. Paths are relative to it; "/report.md"
-and "report.md" are the same file. Write anything long or anything worth
-keeping to a file instead of repeating it in the conversation: research notes,
-drafts, the final report. Read a file only when you need its content. Use
-edit_file for small changes; use write_file to create or replace a whole file.
-Use the file names your instructions ask for.
+Every agent in this run shares one file workspace. Paths that start with "/"
+are absolute; a relative path is resolved from your own directory, which for you
+is the root, so "/report.md" and "report.md" are the same file. Write anything
+long or anything worth keeping to a file instead of repeating it in the
+conversation: research notes, drafts, the final report. Read a file only when
+you need its content. Use edit_file for small changes; use write_file to create
+or replace a whole file. Use the file names your instructions ask for. Sub-agents
+write in their own directories under /subagents/; read their results from the
+paths they return. A sub-agent's directory belongs to it: you can read it but
+not change it. If two agents write the same path, the last write wins.
 
 ## Sub-agents
 Each sub-agent is a tool. Delegate a self-contained piece of work with a clear
 request and everything it needs to know; it does not see your plan or this
-conversation. Ask it to write long results to a file in the workspace and to
-return a short summary plus the file path. Delegate when a step would otherwise
-fill your context with material you only need a summary of.
+conversation. It writes long results to a file in its own directory and returns
+a short summary plus the file path. Delegate when a step would otherwise fill
+your context with material you only need a summary of.
 
 ## Finishing
 When every step is completed, give the user the result they asked for in your
@@ -97,6 +105,17 @@ final message, in the same turn or the next one. Marking the last todo
 completed is not an answer, and the plan does not need further edits once it
 is complete. If something cannot be done, say so and finish; do not rewrite
 the plan to work around it.
+"""
+
+SUBAGENT_INSTRUCTIONS = """\
+## Files
+You are a sub-agent. You share a file workspace with the agent that called you,
+and you have your own directory in it. A relative path such as "notes.md" is
+inside your directory, and you can only write there. Read other files with
+absolute paths such as "/report.md". Put long results in a file in your
+directory. The calling agent sees only your final message, so finish with a
+short summary and the full path of every file you wrote, as write_file returned
+it.
 """
 
 
@@ -189,6 +208,10 @@ write_todos._tool_def.input_schema = {  # type: ignore[attr-defined]
 
 # ── Workspace ───────────────────────────────────────────────────────────
 
+# Used by the local backend, which keys a run's directory by its root execution
+# id. The conductor backend needs none of this: the server scopes file access to
+# the workflow family.
+
 _root_cache: Dict[str, str] = {}
 _root_lock = threading.Lock()
 
@@ -242,50 +265,54 @@ def _run_id(context: Optional[ToolContext]) -> str:
     return _root_execution_id(context.execution_id)
 
 
-def _workspace_root(context: Optional[ToolContext]) -> Path:
-    base = Path(os.environ.get(WORKSPACE_ENV) or DEFAULT_WORKSPACE)
-    root = (base / _run_id(context)).resolve()
-    root.mkdir(parents=True, exist_ok=True)
-    return root
-
-
-def _resolve(root: Path, path: str) -> Path:
-    """Map a model-supplied path onto the workspace, refusing escapes."""
-    rel = (path or "").strip().lstrip("/")
-    target = (root / rel).resolve() if rel else root
-    if target != root and root not in target.parents:
-        raise ValueError(f"path {path!r} is outside the workspace")
-    return target
-
-
 # ── File tools ──────────────────────────────────────────────────────────
 
 
+def _display(path: str) -> str:
+    return "/" + path
+
+
+def _writer(entry: deep_files.FileEntry, context: Optional[ToolContext]) -> str:
+    if not entry.owner:
+        return ""
+    if context is not None and entry.owner == context.execution_id:
+        return "you"
+    return f"another agent ({entry.owner[:8]})"
+
+
 @tool
-def ls(path: str = "/", context: ToolContext = None) -> dict:
+def ls(path: str = "", context: ToolContext = None) -> dict:
     """List the files and directories at a path in the workspace.
 
     Args:
-        path: Directory to list, relative to the workspace root. Default is the root.
+        path: Directory to list. Relative paths start at your own directory;
+            "/" is the root of the workspace. Default is your own directory.
 
     Returns:
-        The entries with their type and size in bytes.
+        The entries with their type, size in bytes, and who wrote each file.
     """
-    root = _workspace_root(context)
-    target = _resolve(root, path)
-    if not target.exists():
-        return {"path": path, "entries": [], "error": "no such directory"}
-    if not target.is_dir():
-        return {"path": path, "entries": [], "error": "not a directory"}
-    entries = [
-        {
-            "name": p.name,
-            "type": "dir" if p.is_dir() else "file",
-            "size": p.stat().st_size if p.is_file() else 0,
-        }
-        for p in sorted(target.iterdir())
-    ]
-    return {"path": path, "entries": entries}
+    target = deep_files.resolve(context, path)
+    files = deep_files.backend().list(context)
+    if target in files:
+        return {"path": _display(target), "entries": [], "error": "not a directory"}
+    prefix = target + "/" if target else ""
+    entries: Dict[str, dict] = {}
+    for p, entry in files.items():
+        if not p.startswith(prefix):
+            continue
+        name, _, rest = p[len(prefix) :].partition("/")
+        if rest:
+            entries.setdefault(name, {"name": name, "type": "dir", "size": 0})
+        else:
+            entries[name] = {
+                "name": name,
+                "type": "file",
+                "size": entry.size,
+                "written_by": _writer(entry, context),
+            }
+    if not entries and target:
+        return {"path": _display(target), "entries": [], "error": "no such directory"}
+    return {"path": _display(target), "entries": [entries[k] for k in sorted(entries)]}
 
 
 @tool
@@ -293,21 +320,21 @@ def read_file(path: str, offset: int = 0, limit: int = 2000, context: ToolContex
     """Read a text file from the workspace.
 
     Args:
-        path: File path relative to the workspace root.
+        path: File path. Relative paths start at your own directory.
         offset: First line to return, counting from 0.
         limit: Maximum number of lines to return.
 
     Returns:
         The requested lines and the file's total line count.
     """
-    root = _workspace_root(context)
-    target = _resolve(root, path)
-    if not target.is_file():
-        return {"path": path, "error": "no such file"}
-    lines = target.read_text(encoding="utf-8").splitlines()
+    target = deep_files.resolve(context, path)
+    entry = deep_files.backend().list(context).get(target)
+    if entry is None:
+        return {"path": _display(target), "error": "no such file"}
+    lines = deep_files.backend().read(context, entry).decode("utf-8").splitlines()
     chunk = lines[offset : offset + limit]
     return {
-        "path": path,
+        "path": _display(target),
         "content": "\n".join(chunk),
         "total_lines": len(lines),
         "offset": offset,
@@ -315,25 +342,28 @@ def read_file(path: str, offset: int = 0, limit: int = 2000, context: ToolContex
     }
 
 
+def _store(context: Optional[ToolContext], target: str, text: str) -> dict:
+    entry, replaced = deep_files.backend().write(context, target, text.encode("utf-8"))
+    out: Dict[str, Any] = {"path": _display(target), "bytes": entry.size}
+    if replaced:
+        out["note"] = f"This replaced a version written by another agent ({replaced[:8]})."
+    return out
+
+
 @tool
 def write_file(path: str, content: str, context: ToolContext = None) -> dict:
     """Create or replace a text file in the workspace.
 
     Args:
-        path: File path relative to the workspace root. Parent directories are created.
+        path: File path. Relative paths start at your own directory.
         content: The full file content.
 
     Returns:
-        The path written and its size in bytes.
+        The absolute path written and its size in bytes.
     """
-    root = _workspace_root(context)
-    target = _resolve(root, path)
-    if target == root:
-        raise ValueError("path must name a file")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    data = content.encode("utf-8")
-    target.write_bytes(data)
-    return {"path": path, "bytes": len(data)}
+    target = deep_files.resolve(context, path)
+    deep_files.check_writable(context, target)
+    return _store(context, target, content)
 
 
 @tool
@@ -347,7 +377,7 @@ def edit_file(
     """Replace text in a workspace file.
 
     Args:
-        path: File path relative to the workspace root.
+        path: File path. Relative paths start at your own directory.
         old_string: The exact text to find. It must occur once unless replace_all is set.
         new_string: The replacement text.
         replace_all: Replace every occurrence instead of requiring a unique match.
@@ -355,19 +385,25 @@ def edit_file(
     Returns:
         The path edited and how many replacements were made.
     """
-    root = _workspace_root(context)
-    target = _resolve(root, path)
-    if not target.is_file():
-        return {"path": path, "error": "no such file"}
+    target = deep_files.resolve(context, path)
+    deep_files.check_writable(context, target)
     if not old_string:
         raise ValueError("old_string is empty")
-    text = target.read_text(encoding="utf-8")
+    store = deep_files.backend()
+    done = store.written_by_task(context, target)
+    if done is not None:
+        # A retried delivery of a call that already applied its edit.
+        return {"path": _display(target), "replacements": None, "note": "already applied"}
+    entry = store.list(context).get(target)
+    if entry is None:
+        return {"path": _display(target), "error": "no such file"}
+    text = store.read(context, entry).decode("utf-8")
     count = text.count(old_string)
     if count == 0:
-        return {"path": path, "error": "old_string not found", "replacements": 0}
+        return {"path": _display(target), "error": "old_string not found", "replacements": 0}
     if count > 1 and not replace_all:
         return {
-            "path": path,
+            "path": _display(target),
             "error": f"old_string occurs {count} times; include more context or set replace_all",
             "replacements": 0,
         }
@@ -376,8 +412,9 @@ def edit_file(
         if replace_all
         else text.replace(old_string, new_string, 1)
     )
-    target.write_text(updated, encoding="utf-8")
-    return {"path": path, "replacements": count if replace_all else 1}
+    out = _store(context, target, updated)
+    out["replacements"] = count if replace_all else 1
+    return out
 
 
 FILE_TOOLS = (ls, read_file, write_file, edit_file)
@@ -416,6 +453,24 @@ def _describe(sub: Agent) -> str:
     return f"Delegate a self-contained task to the {sub.name} agent. Give it everything it needs."
 
 
+def _as_subagent(sub: Agent, approval: Tuple[str, ...]) -> Agent:
+    """A copy of *sub* with the file tools and sub-agent file rules added.
+
+    The caller's object is left unchanged, so the same agent can be used
+    elsewhere without the harness tools.
+    """
+    copied = copy.copy(sub)
+    existing = _tool_names(sub.tools or [])
+    missing = [ft for ft in FILE_TOOLS if get_tool_def(ft).name not in existing]
+    copied.tools = [
+        *(_with_approval(t, approval) for t in sub.tools or []),
+        *(_with_approval(t, approval) for t in missing),
+    ]
+    if isinstance(sub.instructions, str):
+        copied.instructions = f"{sub.instructions.rstrip()}\n\n{SUBAGENT_INSTRUCTIONS}"
+    return copied
+
+
 def deep_agent(
     name: str,
     *,
@@ -423,6 +478,7 @@ def deep_agent(
     instructions: str = "",
     tools: Optional[Sequence[Any]] = None,
     subagents: Optional[Sequence[Agent]] = None,
+    storage: str = "conductor",
     workspace: Optional[Union[str, Path]] = None,
     approval: Iterable[str] = (),
     max_turns: int = 50,
@@ -436,19 +492,32 @@ def deep_agent(
         instructions: Your instructions. They follow the harness's default
             prompt, which explains planning, files and delegation.
         tools: Your own tools, in addition to the harness tools.
-        subagents: Agents to expose as tools. Each gets the file tools so it
-            can write to the shared workspace, and does not get ``write_todos``.
-        workspace: Root directory for run workspaces. Each run gets a
+        subagents: Agents to expose as tools. Each is copied and the copy gets
+            the file tools and a directory of its own in the shared workspace.
+            Sub-agents do not get ``write_todos``.
+        storage: Where the workspace lives: ``"conductor"`` (default) uses
+            Conductor's file API, which works across machines and needs
+            ``conductor.file-storage.enabled=true`` on the server;
+            ``"local"`` uses a directory on the worker's disk, for development.
+        workspace: Root directory for the ``local`` storage. Each run gets a
             sub-directory named by its root execution id. Defaults to
             ``./workspace``.
         approval: Names of tools that pause for human approval before they
-            run, for example ``["write_file"]``.
+            run, for example ``["write_file"]``. Applies to sub-agents too.
         max_turns: Turn limit for the agent loop; deep agents need more than
             the ``Agent`` default.
         **agent_kwargs: Passed through to :class:`Agent`.
     """
+    if storage not in ("conductor", "local"):
+        raise ValueError(f"storage must be 'conductor' or 'local', not {storage!r}")
+    # Tool workers run in separate processes and read their configuration from
+    # the environment, so set it before the runtime starts them.
+    os.environ[STORAGE_ENV] = storage
     if workspace is not None:
         os.environ[WORKSPACE_ENV] = str(Path(workspace).resolve())
+    known = set(deep_files.subagent_names())
+    known.update(sub.name for sub in subagents or ())
+    os.environ[SUBAGENTS_ENV] = json.dumps(sorted(known))
 
     approval = tuple(approval)
     agent_tools: List[Any] = [write_todos]
@@ -456,11 +525,9 @@ def deep_agent(
     agent_tools.extend(_with_approval(t, approval) for t in tools or ())
 
     for sub in subagents or ():
-        existing = _tool_names(sub.tools or [])
-        missing = [ft for ft in FILE_TOOLS if get_tool_def(ft).name not in existing]
-        if missing:
-            sub.tools = [*(sub.tools or []), *missing]
-        agent_tools.append(agent_tool(sub, name=sub.name, description=_describe(sub)))
+        agent_tools.append(
+            agent_tool(_as_subagent(sub, approval), name=sub.name, description=_describe(sub))
+        )
 
     # The model's idea of today comes from its training data, which makes it
     # argue with dated tool results; tell it the date.
@@ -492,12 +559,18 @@ def workspace_dir(execution_id: str, workspace: Optional[Union[str, Path]] = Non
 __all__ = [
     "DEFAULT_INSTRUCTIONS",
     "FILE_TOOLS",
+    "STORAGE_ENV",
+    "SUBAGENTS_ENV",
+    "SUBAGENT_INSTRUCTIONS",
     "TODOS_KEY",
     "WORKSPACE_ENV",
     "deep_agent",
     "edit_file",
+    "export_run",
+    "list_run_files",
     "ls",
     "read_file",
+    "read_run_file",
     "resolve_root_execution_id",
     "stored_todos",
     "workspace_dir",

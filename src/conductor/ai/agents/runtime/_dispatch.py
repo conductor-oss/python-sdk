@@ -328,7 +328,7 @@ def run_tool_task(task, *, tool_name, tool_func, guardrails=None, credential_nam
     from conductor.client.http.models import Task, TaskResult
     from conductor.client.http.models.task_result_status import TaskResultStatus
 
-    def _execute(kwargs, execution_id="", agent_state=None):
+    def _execute(kwargs, execution_id="", agent_state=None, agent_name="", task_id=""):
         """Core execution logic shared by both Task-based and kwargs-based paths."""
         # Circuit breaker: disable tool after N consecutive failures
         if _tool_error_counts.get(tool_name, 0) >= _CIRCUIT_BREAKER_THRESHOLD:
@@ -344,11 +344,13 @@ def run_tool_task(task, *, tool_name, tool_func, guardrails=None, credential_nam
             state = dict(agent_state) if agent_state else {}
             ctx = ToolContext(
                 execution_id=execution_id,
-                agent_name=_current_context.get("agent_name", ""),
+                # The task's workflow is the agent's own execution, named after the agent.
+                agent_name=agent_name or _current_context.get("agent_name", ""),
                 session_id=_current_context.get("session_id", ""),
                 metadata=_current_context.get("metadata", {}),
                 dependencies=_current_context.get("dependencies", {}),
                 state=state,
+                task_id=task_id,
             )
             kwargs["context"] = ctx
 
@@ -508,6 +510,8 @@ def run_tool_task(task, *, tool_name, tool_func, guardrails=None, credential_nam
                         fn_kwargs,
                         execution_id=task.workflow_instance_id or "",
                         agent_state=agent_state,
+                        agent_name=task.workflow_type or "",
+                        task_id=task.task_id or "",
                     )
                 finally:
                     if resolved_secrets:

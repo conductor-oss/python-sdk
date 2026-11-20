@@ -32,6 +32,8 @@ class ToolContext:
         agent_name: The name of the agent executing this tool.
         metadata: Arbitrary metadata from the agent.
         dependencies: User-provided dependencies (DB connections, API clients, etc.)
+        task_id: The Conductor task ID of this tool call. A retried delivery of the
+            same call keeps the same ID, so tools can use it to stay idempotent.
     """
 
     session_id: str = ""
@@ -40,6 +42,7 @@ class ToolContext:
     metadata: Dict[str, Any] = field(default_factory=dict)
     dependencies: Dict[str, Any] = field(default_factory=dict)
     state: Dict[str, Any] = field(default_factory=dict)
+    task_id: str = ""
 
 
 # ── ToolDef (serialisable tool definition) ──────────────────────────────

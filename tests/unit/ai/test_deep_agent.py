@@ -6,6 +6,9 @@ from conductor.ai.agents import Agent
 from conductor.ai.agents import deep
 from conductor.ai.agents.deep import (
     DEFAULT_INSTRUCTIONS,
+    STORAGE_ENV,
+    SUBAGENT_INSTRUCTIONS,
+    SUBAGENTS_ENV,
     TODOS_KEY,
     WORKSPACE_ENV,
     deep_agent,
@@ -22,15 +25,19 @@ from conductor.ai.agents.tool import ToolContext, get_tool_def
 
 @pytest.fixture
 def workspace(tmp_path, monkeypatch):
-    """A workspace root in tmp, with root-id resolution short-circuited."""
+    """A local workspace root in tmp, with root-id resolution short-circuited."""
+    monkeypatch.setenv(STORAGE_ENV, "local")
+    monkeypatch.setenv(SUBAGENTS_ENV, '["analyst"]')
     monkeypatch.setenv(WORKSPACE_ENV, str(tmp_path))
     monkeypatch.setattr(deep, "_root_execution_id", lambda eid: eid)
     return tmp_path
 
 
-def ctx(execution_id="exec-1", state=None):
+def ctx(execution_id="exec-1", state=None, agent_name="t"):
     return ToolContext(
-        execution_id=execution_id, agent_name="t", state=state if state is not None else {}
+        execution_id=execution_id,
+        agent_name=agent_name,
+        state=state if state is not None else {},
     )
 
 
@@ -178,6 +185,57 @@ def test_no_context_uses_a_local_directory(workspace):
     assert (workspace / "local" / "r.md").exists()
 
 
+def test_subagent_relative_paths_resolve_to_its_own_directory(workspace):
+    sub = ctx(agent_name="analyst", execution_id="exec-1")
+    out = write_file.__wrapped__(path="notes.md", content="x", context=sub)
+    assert out["path"] == "/subagents/analyst-exec-1/notes.md"
+    assert (workspace / "exec-1" / "subagents" / "analyst-exec-1" / "notes.md").exists()
+    assert ls.__wrapped__(context=sub)["entries"][0]["name"] == "notes.md"
+
+
+def test_subagent_reads_anywhere_but_writes_only_at_home(workspace):
+    write_file.__wrapped__(path="/brief.md", content="brief", context=ctx())
+    sub = ctx(agent_name="analyst")
+    assert read_file.__wrapped__(path="/brief.md", context=sub)["content"] == "brief"
+    with pytest.raises(ValueError, match="own directory"):
+        write_file.__wrapped__(path="/report.md", content="x", context=sub)
+    with pytest.raises(ValueError, match="own directory"):
+        edit_file.__wrapped__(path="/brief.md", old_string="b", new_string="c", context=sub)
+
+
+def test_top_level_agent_sees_subagent_files(workspace):
+    sub = ctx(agent_name="analyst")
+    write_file.__wrapped__(path="result.md", content="r", context=sub)
+    parent = ctx()
+    listing = ls.__wrapped__(path="/subagents", context=parent)
+    assert listing["entries"] == [{"name": "analyst-exec-1", "type": "dir", "size": 0}]
+    got = read_file.__wrapped__(path="/subagents/analyst-exec-1/result.md", context=parent)
+    assert got["content"] == "r"
+
+
+def test_top_level_agent_cannot_change_a_subagent_directory(workspace):
+    sub = ctx(agent_name="analyst")
+    path = write_file.__wrapped__(path="tests.py", content="assert True", context=sub)["path"]
+    parent = ctx()
+    with pytest.raises(ValueError, match="belongs to a sub-agent"):
+        write_file.__wrapped__(path=path, content="", context=parent)
+    with pytest.raises(ValueError, match="belongs to a sub-agent"):
+        edit_file.__wrapped__(path=path, old_string="True", new_string="1", context=parent)
+    assert read_file.__wrapped__(path=path, context=parent)["content"] == "assert True"
+
+
+def test_export_files_copies_the_workspace_layout(workspace, tmp_path):
+    from conductor.ai.agents import deep_files
+
+    c = ctx()
+    write_file.__wrapped__(path="/src/m.py", content="x = 1", context=c)
+    write_file.__wrapped__(path="/notes.md", content="n", context=c)
+    out = tmp_path / "export"
+    assert deep_files.export_files(c, out, prefix="/src") == ["src/m.py"]
+    assert (out / "src" / "m.py").read_text() == "x = 1"
+    assert not (out / "notes.md").exists()
+
+
 # ── root execution id ───────────────────────────────────────────────────
 
 
@@ -255,7 +313,10 @@ def test_deep_agent_assembles_tools_and_prompt(tmp_path, monkeypatch):
     assert agent.max_turns == 50
     assert agent.instructions.startswith(DEFAULT_INSTRUCTIONS)
     assert "You are a travel assistant." in agent.instructions
-    assert __import__("os").environ[WORKSPACE_ENV] == str((tmp_path / "ws").resolve())
+    env = __import__("os").environ
+    assert env[WORKSPACE_ENV] == str((tmp_path / "ws").resolve())
+    assert env[STORAGE_ENV] == "conductor"
+    assert "weather_analyst" in __import__("json").loads(env[SUBAGENTS_ENV])
 
     by_name = {get_tool_def(t).name: get_tool_def(t) for t in agent.tools}
     assert by_name["write_file"].approval_required is True
@@ -263,10 +324,23 @@ def test_deep_agent_assembles_tools_and_prompt(tmp_path, monkeypatch):
     assert by_name["edit_file"].approval_required is False
     assert by_name["weather_analyst"].tool_type == "agent_tool"
 
-    # The sub-agent shares the workspace but not the plan.
-    sub_names = names(analyst)
-    assert "write_todos" not in sub_names
-    assert set(("ls", "read_file", "write_file", "edit_file")) <= set(sub_names)
+    # The caller's sub-agent is left unchanged; the harness wires a copy.
+    assert analyst.tools in (None, [])
+    assert analyst.instructions == "Compare cities."
+    wired = by_name["weather_analyst"].config["agent"]
+    assert wired is not analyst
+    assert wired.instructions.startswith("Compare cities.")
+    assert wired.instructions.endswith(SUBAGENT_INSTRUCTIONS)
+    # The copy shares the workspace but not the plan, and approval applies to it.
+    sub_tools = {get_tool_def(t).name: get_tool_def(t) for t in wired.tools}
+    assert "write_todos" not in sub_tools
+    assert {"ls", "read_file", "write_file", "edit_file"} <= set(sub_tools)
+    assert sub_tools["write_file"].approval_required is True
+
+
+def test_deep_agent_rejects_unknown_storage():
+    with pytest.raises(ValueError, match="storage"):
+        deep_agent(name="a", model="m", storage="s3")
 
 
 def test_deep_agent_applies_approval_to_user_tools():

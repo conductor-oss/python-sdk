@@ -2,18 +2,20 @@
 
 A travel assistant that plans with write_todos, hands weather lookups to a
 weather-analyst sub-agent, asks for approval before writing a file, and writes
-its recommendation to report.md in the run's workspace.
+its recommendation to report.md in the run's workspace. The workspace is stored
+through Conductor's file API, so it works across machines.
 
 Demonstrates:
     - deep_agent(): one call gives an Agent with planning, file tools and sub-agents
     - The plan lives in _agent_state, outside the conversation
-    - A sub-agent with its own context, sharing the run's workspace
-    - Human approval before write_file
+    - A sub-agent with its own context and its own directory in the run's workspace
+    - Human approval before write_file, for the sub-agent too
 
 Requirements:
     - Conductor server with LLM support
     - CONDUCTOR_SERVER_URL=http://localhost:8080/api as environment variable
     - CONDUCTOR_AGENT_LLM_MODEL=openai/gpt-4o-mini as environment variable
+    - conductor.file-storage.enabled=true on the server, and its GET /api/files listing
     - Network access to open-meteo.com for the weather tool
 """
 
@@ -22,7 +24,7 @@ import urllib.parse
 import urllib.request
 
 from conductor.ai.agents import Agent, AgentRuntime, EventType, tool
-from conductor.ai.agents.deep import deep_agent, workspace_dir
+from conductor.ai.agents.deep import deep_agent, list_run_files, read_run_file
 from settings import settings
 
 _WMO = {
@@ -100,8 +102,8 @@ weather_analyst = Agent(
     model=settings.llm_model,
     instructions=(
         "You are a weather analyst. Call get_weather for each city you are given. "
-        "Write the full forecast for each city to weather-<city>.md in the workspace "
-        "with write_file, then reply with a two-sentence summary and the file paths."
+        "Write the full forecast for each city to weather-<city>.md with write_file, "
+        "then reply with a two-sentence summary and the file paths."
     ),
     tools=[get_weather],
     metadata={
@@ -118,7 +120,6 @@ agent = deep_agent(
         "and tell the user what you chose and why."
     ),
     subagents=[weather_analyst],
-    workspace="./workspace",
     approval=["write_file"],
 )
 
@@ -137,14 +138,17 @@ if __name__ == "__main__":
             elif event.type == EventType.TOOL_RESULT:
                 print(f"  [tool_result] {event.tool_name} -> {str(event.result)[:120]}")
             elif event.type == EventType.WAITING:
-                print("  [waiting] approving write_file")
-                handle.approve()
+                # Pass the event: a sub-agent's approval waits in its own execution.
+                print(f"  [waiting] approving write_file in {event.execution_id[:8]}")
+                handle.approve(event=event)
             elif event.type == EventType.DONE:
                 print(f"\nDone: {event.output}")
 
-        ws = workspace_dir(handle.execution_id, "./workspace")
-        report = ws / "report.md"
-        print(f"\nWorkspace: {ws}")
-        if report.exists():
+        print("\nWorkspace files:")
+        for path, entry in list_run_files(handle.execution_id).items():
+            print(f"  /{path}  {entry.size} bytes  written by {entry.owner[:8]}")
+        try:
             print("--- report.md ---")
-            print(report.read_text())
+            print(read_run_file(handle.execution_id, "/report.md"))
+        except FileNotFoundError:
+            print("(no report.md)")
