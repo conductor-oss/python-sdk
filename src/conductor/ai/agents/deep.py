@@ -556,24 +556,12 @@ def workspace_dir(execution_id: str, workspace: Optional[Union[str, Path]] = Non
     return (base / _root_execution_id(execution_id)).resolve()
 
 
+# Public API. The tools, prompts and settings are internal: users get them
+# through deep_agent() and should not attach them to other agents.
 __all__ = [
-    "DEFAULT_INSTRUCTIONS",
-    "FILE_TOOLS",
-    "STORAGE_ENV",
-    "SUBAGENTS_ENV",
-    "SUBAGENT_INSTRUCTIONS",
-    "TODOS_KEY",
-    "WORKSPACE_ENV",
     "deep_agent",
-    "edit_file",
     "export_run",
     "list_run_files",
-    "ls",
-    "read_file",
     "read_run_file",
-    "resolve_root_execution_id",
-    "stored_todos",
     "workspace_dir",
-    "write_file",
-    "write_todos",
 ]
