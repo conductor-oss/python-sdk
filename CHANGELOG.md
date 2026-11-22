@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Allow python-dateutil 3.x and 4.x (it was capped at `<3`).
 - **Multiprocessing start method now defaults to `spawn` on all platforms** (was `fork` everywhere except Windows). `fork` caused silently-restarting `SIGSEGV` worker subprocesses on macOS (exitcode `-11`) and fork-with-held-lock deadlocks on POSIX. 
 - Legacy metrics emit unchanged by default; no env var required
 - `metrics_collector.py` is now a compatibility shim; `from conductor.client.telemetry.metrics_collector import MetricsCollector` continues to work
