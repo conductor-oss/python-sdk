@@ -36,6 +36,11 @@ pytestmark = [pytest.mark.e2e]
 TIMEOUT = 120
 SERVER_URL = os.environ.get("CONDUCTOR_SERVER_URL", "http://localhost:8080/api")
 BASE_URL = SERVER_URL.rstrip("/").replace("/api", "")
+# LangChain takes the bare OpenAI model name. No temperature: reasoning
+# models (gpt-6-luna) reject it unless reasoning effort is "none".
+OPENAI_MODEL = os.environ.get(
+    "CONDUCTOR_AGENT_LLM_MODEL", "openai/gpt-4o-mini"
+).removeprefix("openai/")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -88,7 +93,7 @@ def multiply(a: int, b: int) -> str:
 # Module-level LLM instance — needed for StateGraph node functions that
 # reference `llm` via closure. The LLM detection in the serializer finds
 # module-level variables via func.__globals__ but not closure variables.
-_module_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+_module_llm = ChatOpenAI(model=OPENAI_MODEL)
 
 # Tests
 # ═══════════════════════════════════════════════════════════════════════════
@@ -104,7 +109,7 @@ class TestSuite11LangGraph:
         """create_react_agent graph -> detect_framework returns 'langgraph'."""
         from langchain.agents import create_agent
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model=OPENAI_MODEL)
         graph = create_agent(llm, tools=[], name="detect_test")
 
         framework = detect_framework(graph)
@@ -119,7 +124,7 @@ class TestSuite11LangGraph:
         """create_agent(llm, tools=[]) serializes to full extraction path."""
         from langchain.agents import create_agent
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model=OPENAI_MODEL)
         graph = create_agent(llm, tools=[], name="hello_world_test")
 
         raw_config, workers = serialize_langgraph(graph)
@@ -164,7 +169,7 @@ class TestSuite11LangGraph:
         """create_agent(llm, tools=[calculate, count_words]) -> full extraction."""
         from langchain.agents import create_agent
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model=OPENAI_MODEL)
         graph = create_agent(
             llm, tools=[calculate, count_words], name="react_tools_test"
         )
@@ -175,7 +180,7 @@ class TestSuite11LangGraph:
         assert "model" in raw_config, (
             f"[React] 'model' missing. Keys: {list(raw_config.keys())}"
         )
-        assert "gpt-4o-mini" in str(raw_config["model"]), (
+        assert OPENAI_MODEL in str(raw_config["model"]), (
             f"[React] Wrong model: {raw_config['model']}"
         )
 
@@ -478,7 +483,7 @@ class TestSuite11LangGraph:
         """React agent tool parameters must be valid JSON Schema."""
         from langchain.agents import create_agent
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model=OPENAI_MODEL)
         graph = create_agent(
             llm, tools=[calculate, multiply], name="schema_test"
         )
@@ -533,7 +538,7 @@ class TestSuite11LangGraph:
 
         from langchain.agents import create_agent
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model=OPENAI_MODEL)
         graph = create_agent(llm, tools=[], name="compile_hello_world")
 
         raw_config, _workers = serialize_langgraph(graph)
@@ -556,7 +561,7 @@ class TestSuite11LangGraph:
 
         from langchain.agents import create_agent
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model=OPENAI_MODEL)
         graph = create_agent(
             llm, tools=[calculate, count_words], name="compile_react_tools"
         )
@@ -579,7 +584,7 @@ class TestSuite11LangGraph:
         if not _server_available():
             pytest.skip("Server not available")
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model=OPENAI_MODEL)
 
         class State(TypedDict):
             query: str
@@ -655,5 +660,5 @@ def _make_react_agent_with_multiply():
     """Build a react agent with multiply tool for runtime execution."""
     from langchain.agents import create_agent
 
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    llm = ChatOpenAI(model=OPENAI_MODEL)
     return create_agent(llm, tools=[multiply], name="e2e_lg_runtime")

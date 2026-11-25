@@ -4,67 +4,14 @@ import os
 import signal
 import sys
 
-from conductor.client.automator.task_handler import TaskHandler
 from conductor.client.configuration.configuration import Configuration
 from conductor.client.configuration.settings.metrics_settings import MetricsSettings
-from conductor.client.http.models.task_def import TaskDef
 from conductor.client.orkes_clients import OrkesClients
 from conductor.client.telemetry.metrics_factory import create_metrics_collector_for_parent
-from conductor.client.workflow.conductor_workflow import ConductorWorkflow
-from conductor.client.workflow.task.simple_task import SimpleTask
 
-from simulated_task_worker import SimulatedTaskWorker
-from workflow_governor import WorkflowGovernor
-from workflow_status_probe import WorkflowStatusProbe
-
-WORKFLOW_NAME = "python_simulated_tasks_workflow"
-
-SIMULATED_WORKERS = [
-    ("python_worker_0", "quickpulse", 1),
-    ("python_worker_1", "whisperlink", 2),
-    ("python_worker_2", "shadowfetch", 3),
-    ("python_worker_3", "ironforge", 4),
-    ("python_worker_4", "deepcrawl", 5),
-]
-
-
-def env_int_or_default(key: str, default: int) -> int:
-    s = os.environ.get(key, "")
-    if not s:
-        return default
-    try:
-        return int(s)
-    except ValueError:
-        return default
-
-
-def register_metadata(clients: OrkesClients) -> None:
-    metadata_client = clients.get_metadata_client()
-    workflow_executor = clients.get_workflow_executor()
-
-    for task_name, codename, sleep_seconds in SIMULATED_WORKERS:
-        task_def = TaskDef(
-            name=task_name,
-            description=f"Python SDK harness simulated task ({codename}, default delay {sleep_seconds}s)",
-            retry_count=1,
-            timeout_seconds=300,
-            response_timeout_seconds=300,
-        )
-        metadata_client.register_task_def(task_def)
-
-    wf = ConductorWorkflow(
-        executor=workflow_executor,
-        name=WORKFLOW_NAME,
-        version=1,
-        description="Python SDK harness simulated task workflow",
-    )
-    wf.owner_email("python-sdk-harness@conductor.io")
-
-    for task_name, codename, _ in SIMULATED_WORKERS:
-        wf.add(SimpleTask(task_def_name=task_name, task_reference_name=codename))
-
-    wf.register(overwrite=True)
-    print(f"Registered workflow {WORKFLOW_NAME} with {len(SIMULATED_WORKERS)} tasks")
+from agentic import AgenticTesting
+from harness_env import env_bool_or_default, env_int_or_default
+from sdk_testing import SDKTesting
 
 
 def main() -> None:
@@ -86,34 +33,17 @@ def main() -> None:
     print(f"Prometheus metrics server started on port {metrics_port} ({metrics_collector.collector_name()} metrics)")
     clients = OrkesClients(configuration, metrics_collector=metrics_collector)
 
-    register_metadata(clients)
+    sdk_testing = None
+    if env_bool_or_default("HARNESS_SDK_TESTING_ENABLED", True):
+        sdk_testing = SDKTesting(configuration, clients, metrics_settings)
 
-    workflows_per_sec = env_int_or_default("HARNESS_WORKFLOWS_PER_SEC", 2)
-    batch_size = env_int_or_default("HARNESS_BATCH_SIZE", 20)
-    poll_interval_ms = env_int_or_default("HARNESS_POLL_INTERVAL_MS", 100)
+    agentic_testing = None
+    if env_bool_or_default("HARNESS_AGENTIC_TESTING_ENABLED", False):
+        agentic_testing = AgenticTesting(configuration)
 
-    workers = []
-    for task_name, codename, sleep_seconds in SIMULATED_WORKERS:
-        worker = SimulatedTaskWorker(task_name, codename, sleep_seconds, batch_size, poll_interval_ms)
-        workers.append(worker)
-
-    task_handler = TaskHandler(
-        workers=workers,
-        configuration=configuration,
-        scan_for_annotated_workers=False,
-        metrics_settings=metrics_settings,
-    )
-
-    workflow_executor = clients.get_workflow_executor()
-    workflow_client = clients.get_workflow_client()
-
-    probe_rate = env_int_or_default("HARNESS_PROBE_RATE_PER_SEC", 0)
-    probe = WorkflowStatusProbe(workflow_client, probe_rate)
-
-    governor = WorkflowGovernor(
-        workflow_executor, WORKFLOW_NAME, workflows_per_sec,
-        id_sink=probe.offer,
-    )
+    if sdk_testing is None and agentic_testing is None:
+        print("Nothing to run: HARNESS_SDK_TESTING_ENABLED and HARNESS_AGENTIC_TESTING_ENABLED are both off")
+        sys.exit(1)
 
     main_pid = os.getpid()
     shutting_down = False
@@ -124,23 +54,34 @@ def main() -> None:
             return
         shutting_down = True
         print("Shutting down...")
-        probe.shutdown()
-        governor.stop()
-        task_handler.stop_processes()
+        if agentic_testing is not None:
+            agentic_testing.stop()
+        if sdk_testing is not None:
+            sdk_testing.stop()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
-    # Fork worker processes BEFORE starting the governor thread. The parent's
-    # MetricsCollector uses prometheus_client's multiprocess mode, which guards
-    # its mmapped value files with a threading.Lock. If the governor thread is
-    # already running at fork() time, a child can inherit that lock in a held
-    # state and deadlock on its first metric write.
-    task_handler.start_processes()
-    probe.start()
-    governor.start()
-    task_handler.join_processes()
+    # Fork every module's worker processes BEFORE starting any module's threads.
+    # The parent's MetricsCollector uses prometheus_client's multiprocess mode,
+    # which guards its mmapped value files with a threading.Lock. If a governor
+    # thread is already running at fork() time, a child can inherit that lock in
+    # a held state and deadlock on its first metric write.
+    if sdk_testing is not None:
+        sdk_testing.prepare()
+    if agentic_testing is not None:
+        agentic_testing.prepare()
+
+    if sdk_testing is not None:
+        sdk_testing.start()
+    if agentic_testing is not None:
+        agentic_testing.start()
+
+    if sdk_testing is not None:
+        sdk_testing.wait()
+    else:
+        agentic_testing.wait()
 
 
 if __name__ == "__main__":

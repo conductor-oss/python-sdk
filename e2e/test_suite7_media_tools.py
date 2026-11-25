@@ -116,7 +116,11 @@ class TestSuite7MediaTools:
 
     # ── Image: OpenAI ─────────────────────────────────────────────────
 
-    @pytest.mark.xfail(reason="OpenAI removed dall-e-2 default; model passthrough issue in Conductor runtime")
+    @pytest.mark.skipif(
+        os.environ.get("SKIP_IMAGE_GEN", "").lower() == "true",
+        reason="dall-e-3 has been removed from OpenAI's API ('model does not exist'), and "
+        "its gpt-image-* replacements are not enabled in the Orkes-Developers OpenAI project",
+    )
     def test_image_openai(self, runtime, model):
         """Generate image via OpenAI DALL-E 3."""
         if not os.environ.get("OPENAI_API_KEY"):
@@ -175,6 +179,10 @@ class TestSuite7MediaTools:
 
     # ── Audio: OpenAI ─────────────────────────────────────────────────
 
+    @pytest.mark.skipif(
+        os.environ.get("SKIP_TTS", "").lower() == "true",
+        reason="The Orkes-Developers OpenAI project does not have access to tts-1 (HTTP 403)",
+    )
     def test_audio_openai(self, runtime, model):
         """Generate audio via OpenAI TTS-1."""
         if not os.environ.get("OPENAI_API_KEY"):
