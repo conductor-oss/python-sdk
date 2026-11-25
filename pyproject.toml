@@ -33,7 +33,7 @@ astor = ">=0.8.1"
 shortuuid = ">=1.0.11"
 dacite = ">=1.8.1"
 deprecated = ">=1.2.14"
-python-dateutil = "^2.8.2"
+python-dateutil = ">=2.8.2,<5"
 httpx = {version = ">=0.26.0", extras = ["http2"]}
 h2 = ">=4.1.0"
 urllib3 = ">=2.8.0"
