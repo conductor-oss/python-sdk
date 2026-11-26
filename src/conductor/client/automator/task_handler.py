@@ -331,9 +331,17 @@ class TaskHandler:
         self._next_restart_at: List[float] = [0.0 for _ in self.workers]
         # Lock to protect process list during concurrent access (monitor thread vs main thread)
         self._process_lock = threading.Lock()
+        self._processes_started = False
         logger.info("TaskHandler initialized")
 
     def __enter__(self):
+        try:
+            self.start_processes()
+        except BaseException:
+            # __exit__ is not called if __enter__ raises, so clean up any
+            # partially-spawned workers here before propagating.
+            self.stop_processes()
+            raise
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -347,11 +355,14 @@ class TaskHandler:
         with self._process_lock:
             self.__stop_task_runner_processes()
             self.__stop_metrics_provider_process()
+        self._processes_started = False
         logger.info("Stopped worker processes...")
         self.queue.put(None)
         self.logger_process.terminate()
 
     def start_processes(self) -> None:
+        if self._processes_started:
+            return
         logger.info("Starting worker processes...")
         freeze_support()
         self._monitor_stop_event.clear()
@@ -376,6 +387,7 @@ class TaskHandler:
             self.stop_processes()
             raise
         self.__start_monitor_thread()
+        self._processes_started = True
         logger.info("Started all processes")
 
     def join_processes(self) -> None:

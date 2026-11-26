@@ -57,8 +57,13 @@ class TestTaskHandler(unittest.TestCase):
                 workers=[ClassWorker('task')],
                 metrics_settings=metrics_settings,
             )
-            with task_handler:
+            try:
+                # Assert before any processes are started — the mock on
+                # metrics_settings is not picklable, so we must not call
+                # start_processes() (which __enter__ now does automatically).
                 metrics_settings.clean_metrics_directory.assert_called_once_with()
+            finally:
+                task_handler.stop_processes()
 
 
 def _get_valid_task_handler():
